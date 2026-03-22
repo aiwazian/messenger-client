@@ -4,133 +4,139 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
-import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Downloading
+import androidx.compose.material.icons.rounded.FilePresent
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Upload
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.domain.DownloadStatus
 import com.aiwazian.messenger.domain.MessageFile
+import com.aiwazian.messenger.enums.FileAction
 import kotlin.math.log10
 import kotlin.math.pow
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MessageFile(
     file: MessageFile,
-    isMine: Boolean,
     onAction: (FileAction) -> Unit
 ) {
-    val containerColor = if (isMine) MaterialTheme.colorScheme.primaryContainer else Color(0x66646464)
-    
-    Box(
+    Row(
         modifier = Modifier
-            .padding(vertical = 4.dp)
-            .background(containerColor, RoundedCornerShape(16.dp))
-            .widthIn(max = 280.dp)
             .clickable {
                 when (file.status) {
                     DownloadStatus.DOWNLOADING -> onAction(FileAction.PAUSE)
                     DownloadStatus.PAUSED -> onAction(FileAction.RESUME)
                     DownloadStatus.IDLE -> onAction(FileAction.DOWNLOAD)
+                    DownloadStatus.UPLOADING -> onAction(FileAction.CANCEL)
+                    DownloadStatus.COMPLETED -> onAction(FileAction.OPEN)
                     else -> {}
                 }
             }
-            .padding(8.dp)
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                StatusIcon(file.status, onAction)
-                if (file.status == DownloadStatus.DOWNLOADING || file.status == DownloadStatus.UPLOADING) {
-                    CircularProgressIndicator(
-                        progress = { file.progress / 100f },
-                        modifier = Modifier.size(48.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = file.name,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp
+            StatusIcon(file.status)
+            if (file.status == DownloadStatus.DOWNLOADING || file.status == DownloadStatus.UPLOADING) {
+                CircularWavyProgressIndicator(
+                    progress = { file.progress / 100f },
+                    modifier = Modifier.size(48.dp),
+                    color = MaterialTheme.colorScheme.primary
                 )
-                
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = formatFileSize(file.size),
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    
-                    if (file.status == DownloadStatus.DOWNLOADING || file.status == DownloadStatus.UPLOADING) {
-                        Text(
-                            text = "${file.progress}%",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
             }
-            
-            if (file.status == DownloadStatus.UPLOADING) {
-                IconButton(onClick = { onAction(FileAction.CANCEL) }) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Cancel Upload")
-                }
-            }
+        }
+        
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = file.name,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp,
+                lineHeight = 14.sp
+            )
+
+            Text(
+                text = "${formatFileSize(file.size)} • ${file.extension.uppercase()}",
+                fontSize = 10.sp,
+                lineHeight = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
 
 @Composable
-private fun StatusIcon(status: DownloadStatus, onAction: (FileAction) -> Unit) {
+private fun StatusIcon(
+    status: DownloadStatus
+) {
     val icon = when (status) {
         DownloadStatus.IDLE -> Icons.Rounded.Download
         DownloadStatus.DOWNLOADING -> Icons.Rounded.Pause
         DownloadStatus.UPLOADING -> Icons.Rounded.Upload
-        DownloadStatus.PAUSED -> Icons.Rounded.PlayArrow
+        DownloadStatus.PAUSED -> Icons.Rounded.Downloading
         DownloadStatus.COMPLETED -> Icons.Rounded.FilePresent
         DownloadStatus.FAILED -> Icons.Rounded.Refresh
         DownloadStatus.CANCELLED -> Icons.Rounded.Download
     }
-    Icon(icon, contentDescription = status.name, tint = MaterialTheme.colorScheme.primary)
+    Icon(
+        imageVector = icon,
+        contentDescription = status.name,
+        tint = MaterialTheme.colorScheme.primary
+    )
 }
 
 private fun formatFileSize(size: Long): String {
     if (size <= 0) return "0 B"
-    val units = arrayOf("B", "KB", "MB", "GB", "TB")
+    val units =
+        arrayOf(
+            "B",
+            "KB",
+            "MB",
+            "GB",
+            "TB"
+        )
     val digitGroups = (log10(size.toDouble()) / log10(1024.0)).toInt()
-    return String.format("%.1f %s", size / 1024.0.pow(digitGroups.toDouble()), units[digitGroups])
-}
-
-enum class FileAction {
-    DOWNLOAD, PAUSE, RESUME, CANCEL
+    return String.format(
+        "%.1f %s",
+        size / 1024.0.pow(digitGroups.toDouble()),
+        units[digitGroups]
+    )
 }

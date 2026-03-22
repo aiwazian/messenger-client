@@ -25,8 +25,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -82,16 +84,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
-import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
-import com.aiwazian.messenger.ui.screens.chat.components.FileAction
-import com.aiwazian.messenger.ui.screens.main.MainViewModel
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
+import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
+import com.aiwazian.messenger.ui.screens.main.MainViewModel
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -166,7 +168,7 @@ fun ChatScreen(
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.Bottom,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
                     overscrollEffect = rememberOverscrollEffect()
                 ) {
                     items(
@@ -187,11 +189,19 @@ fun ChatScreen(
                                     if (action == FileAction.CANCEL) {
                                         fileToCancelId = item.message.id
                                     } else {
-                                        chatViewModel.onFileAction(item.message, file, action)
+                                        chatViewModel.onFileAction(
+                                            item.message,
+                                            file,
+                                            action
+                                        )
                                     }
                                 }
                             )
                         }
+                    }
+                    
+                    item {
+                        Spacer(modifier = Modifier.height(2.dp))
                     }
                 }
                 
@@ -201,7 +211,12 @@ fun ChatScreen(
                     onSendClicked = chatViewModel::onSendMessageClicked,
                     onJoinClicked = chatViewModel::onJoinClicked,
                     onToggleMuteClicked = chatViewModel::onToggleMuteClicked,
-                    onFilesSelected = { uris -> chatViewModel.uploadFiles(uris, context) }
+                    onFilesSelected = { uris ->
+                        chatViewModel.uploadFiles(
+                            uris,
+                            context
+                        )
+                    }
                 )
             }
             
@@ -229,8 +244,8 @@ fun ChatScreen(
                     TextButton(onClick = { fileToCancelId = null }) { Text("Нет") }
                     TextButton(
                         onClick = {
-                            fileToCancelId?.let { 
-                                chatViewModel.cancelUpload(it) 
+                            fileToCancelId?.let {
+                                chatViewModel.cancelUpload(it)
                             }
                             fileToCancelId = null
                         },
@@ -426,6 +441,7 @@ private fun TopBar(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
+        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
         targetValue = if (isPressed) 0.96f else 1f,
         label = "card_scale_animation"
     )

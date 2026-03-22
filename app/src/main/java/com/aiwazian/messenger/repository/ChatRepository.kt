@@ -9,15 +9,18 @@ import com.aiwazian.messenger.network.api.ChatApi
 import com.aiwazian.messenger.network.api.MessageApi
 import com.aiwazian.messenger.network.dto.*
 import com.aiwazian.messenger.mappers.toDomain
+import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class ChatRepository @Inject constructor(
     private val chatApi: ChatApi,
-    private val messageApi: MessageApi
+    private val messageApi: MessageApi,
+    private val messageDao: com.aiwazian.messenger.database.dao.MessageDao
 ) {
 
     fun getAllChats(): Flow<List<Chat>> = flow {
@@ -62,12 +65,19 @@ class ChatRepository @Inject constructor(
         return null
     }
 
+    fun getMessagesFlow(chatId: Long): Flow<List<Message>> =
+        messageDao.getMessages(chatId).map { entities ->
+            entities.map { it.toDomain() }
+        }
+
     suspend fun getMessages(chatId: Long): List<Message> {
         return try {
             val response = messageApi.getMessages(chatId)
             if (response.isSuccessful) {
                 val dtos = response.body().orEmpty()
-                dtos.map { it.toDomain() }
+                val domains = dtos.map { it.toDomain() }
+                messageDao.saveMessages(domains.map { it.toEntity() })
+                domains
             } else {
                 Log.e("ChatRepository", "Failed to get messages for chat $chatId: ${response.message()}")
                 emptyList()
@@ -83,7 +93,9 @@ class ChatRepository @Inject constructor(
             val request = TextMessageRequestDto(text = message.text ?: "")
             val response = messageApi.sendTextMessage(chatId, request)
             if (response.isSuccessful) {
-                response.body()?.toDomain()
+                val sentMessage = response.body()?.toDomain()
+                sentMessage?.let { messageDao.saveMessages(listOf(it.toEntity())) }
+                sentMessage
             } else {
                 Log.e("ChatRepository", "Failed to send message: ${response.message()}")
                 null
@@ -93,6 +105,11 @@ class ChatRepository @Inject constructor(
             null
         }
     }
+
+    suspend fun saveMessage(message: Message) {
+        messageDao.saveMessages(listOf(message.toEntity()))
+    }
+
 
     suspend fun initFileUpload(chatId: Long, dto: FileInitRequestDto): FileInitResponseDto? {
         return try {

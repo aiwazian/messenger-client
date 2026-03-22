@@ -4,7 +4,18 @@
   -->
 
 <paths>
-    <external-files-path
-        name="files"
-        path="." />
+    <!-- For context.getFilesDir() -->
+    <files-path name="internal_files" path="." />
+
+    <!-- For context.getCacheDir() -->
+    <cache-path name="internal_cache" path="." />
+
+    <!-- For Environment.getExternalStorageDirectory() -->
+    <external-path name="external_storage" path="." />
+
+    <!-- For context.getExternalFilesDir(null) -->
+    <external-files-path name="external_app_files" path="." />
+
+    <!-- For context.getExternalCacheDir() -->
+    <external-cache-path name="external_app_cache" path="." />
 </paths>

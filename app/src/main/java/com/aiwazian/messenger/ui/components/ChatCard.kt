@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Icon
@@ -99,26 +101,12 @@ private fun LastMessageSendTime(lastMessage: Message) {
     val sendTime = lastMessage.sendTime.toInstance().toPrettyTime()
     
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(contentAlignment = Alignment.CenterEnd) {
-            Icon(
-                imageVector = Icons.Rounded.Check,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.dp)
-            )
-            
-            if (isRead) {
-                Icon(
-                    imageVector = Icons.Rounded.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(end = 6.dp)
-                        .size(16.dp)
-                )
-            }
-        }
-        
+        Icon(
+            imageVector = if (isRead) Icons.Rounded.DoneAll else Icons.Rounded.Done,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(16.dp)
+        )
         Text(sendTime)
     }
 }

@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +13,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -20,10 +23,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.unit.dp
 import com.aiwazian.messenger.domain.MessageFile
+import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
 
 @Composable
@@ -34,7 +39,7 @@ fun MessageBubble(
 ) {
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
-    val alignment = if (item.isMine) Alignment.Companion.CenterEnd else Alignment.CenterStart
+    val alignment = if (item.isMine) Arrangement.End else Arrangement.Start
     var isVisible by remember { mutableStateOf(false) }
     
     LaunchedEffect(isVisible) {
@@ -45,7 +50,7 @@ fun MessageBubble(
     
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = alignment,
         modifier = Modifier
             .fillMaxWidth()
             .onGloballyPositioned { coordinates ->
@@ -55,52 +60,58 @@ fun MessageBubble(
                         ?: 0)
                 if (isElementVisible) isVisible = true
             }
+            .combinedClickable(
+                onClick = { expanded = true },
+                onLongClick = { },
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            )
     ) {
+        val containerColor =
+            if (item.isMine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+        
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = 8.dp,
-                    vertical = 1.dp
+                .widthIn(
+                    min = 60.dp,
+                    max = 280.dp
                 )
-                .combinedClickable(
-                    onClick = { expanded = true },
-                    onLongClick = { },
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ),
-            contentAlignment = alignment
+                .padding(horizontal = 2.dp)
+                .clip(MaterialTheme.shapes.large)
+                .background(containerColor)
         ) {
-            Column(
-                horizontalAlignment = if (item.isMine) Alignment.End else Alignment.Start
-            ) {
+            Column {
                 if (message.files.isNotEmpty()) {
                     message.files.forEach { file ->
                         MessageFile(
                             file = file,
-                            isMine = item.isMine,
-                            onAction = { action -> onFileAction(file, action) }
+                            onAction = { action ->
+                                onFileAction(
+                                    file,
+                                    action
+                                )
+                            }
                         )
                     }
                 }
-
+                
                 if (!message.text.isNullOrBlank()) {
-                    MessageText(
-                        message.text,
-                        item.time,
-                        item.isRead,
-                        alignment,
-                        item.senderName,
-                        item.dropdownActions
-                    )
+                    MessageText(message.text)
                 }
             }
+            
+            Box(modifier = Modifier.align(Alignment.BottomEnd)) {
+                MessageFooter(
+                    time = item.time,
+                    isRead = if (item.isMine) item.isRead else null
+                )
+            }
+            
+            MessageDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                actions = item.dropdownActions
+            )
         }
-        
-        MessageDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            actions = item.dropdownActions
-        )
     }
 }

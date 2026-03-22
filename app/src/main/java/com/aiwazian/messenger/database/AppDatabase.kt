@@ -10,6 +10,7 @@ import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.GroupDao
+import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.database.dao.UserDao
 import com.aiwazian.messenger.database.entity.AccountEntity
 import com.aiwazian.messenger.database.entity.AttachmentEntity
@@ -33,4 +34,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun chatDao(): ChatDao
 
     abstract fun accountDao(): AccountDao
+
+    abstract fun messageDao(): MessageDao
 }

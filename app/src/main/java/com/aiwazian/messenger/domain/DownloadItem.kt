@@ -13,5 +13,6 @@ data class DownloadItem(
     val progress: Int,
     val status: DownloadStatus,
     val isUpload: Boolean = false,
-    val speed: String? = null
+    val speed: String? = null,
+    val localUri: String? = null
 )

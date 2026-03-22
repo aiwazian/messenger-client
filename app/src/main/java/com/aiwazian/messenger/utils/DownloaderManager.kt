@@ -5,6 +5,9 @@
 package com.aiwazian.messenger.utils
 
 import android.content.Context
+import android.content.Intent
+import android.util.Log
+import androidx.core.content.FileProvider
 import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.domain.DownloadStatus
 import com.ketch.DownloadConfig
@@ -24,6 +27,7 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import javax.inject.Inject
 import javax.inject.Singleton
+import androidx.core.net.toUri
 
 @Singleton
 class DownloaderManager @Inject constructor(
@@ -35,8 +39,8 @@ class DownloaderManager @Inject constructor(
         .setOkHttpClient(okHttpClient)
         .setDownloadConfig(
             DownloadConfig(
-                connectTimeOutInMs = 15000,
-                readTimeOutInMs = 15000
+                connectTimeOutInMs = 30000,
+                readTimeOutInMs = 30000
             )
         )
         .build(context)
@@ -61,9 +65,12 @@ class DownloaderManager @Inject constructor(
         size: Long
     ): Int {
         val path = context.getExternalFilesDir(null)?.absolutePath ?: context.filesDir.absolutePath
+        val extension = fileName.substringAfterLast('.', "")
+        val finalFileName = if (extension.isNotEmpty()) "$fileId.$extension" else fileId
+
         val id = ketch.download(
             url = url,
-            fileName = fileName,
+            fileName = finalFileName,
             path = path,
             tag = "chat_$chatId"
         )
@@ -89,15 +96,21 @@ class DownloaderManager @Inject constructor(
                 if (model != null) {
                     _downloads.update { current ->
                         val existing = current[id] ?: return@update current
+                        
+                        val finalStatus = mapKetchStatus(model.status)
+                        val finalUri = if (finalStatus == DownloadStatus.COMPLETED) {
+                            // Assuming model.path is the directory and model.fileName is the file name
+                            "${model.path}/${model.fileName}"
+                        } else {
+                            existing.localUri
+                        }
+                        
                         current + (id to existing.copy(
                             progress = model.progress,
-                            status = mapKetchStatus(model.status),
-                            speed = model.speedInBytePerMs.toString()
+                            status = finalStatus,
+                            speed = model.speedInBytePerMs.toString(),
+                            localUri = finalUri
                         ))
-                    }
-                    
-                    if (model.status == Status.SUCCESS || model.status == Status.FAILED || model.status == Status.CANCELLED) {
-                        // Optional: remove from active list after some time or keep it
                     }
                 }
             }
@@ -107,13 +120,13 @@ class DownloaderManager @Inject constructor(
     private fun mapKetchStatus(status: Status): DownloadStatus {
         return when (status) {
             Status.DEFAULT -> DownloadStatus.IDLE
-            Status.QUEUED -> DownloadStatus.IDLE
+            Status.QUEUED -> DownloadStatus.DOWNLOADING
             Status.PROGRESS -> DownloadStatus.DOWNLOADING
             Status.PAUSED -> DownloadStatus.PAUSED
             Status.SUCCESS -> DownloadStatus.COMPLETED
             Status.FAILED -> DownloadStatus.FAILED
             Status.CANCELLED -> DownloadStatus.CANCELLED
-            else -> DownloadStatus.IDLE
+            Status.STARTED -> DownloadStatus.DOWNLOADING
         }
     }
     
@@ -124,12 +137,10 @@ class DownloaderManager @Inject constructor(
         _downloads.update { it - id }
     }
     
-    // For Uploads (since Ketch is primarily for downloads, we manage uploads manually but keep them in the same list)
     fun registerUpload(
         id: Int,
         name: String,
-        size: Long,
-        chatId: Long
+        size: Long
     ) {
         val item = DownloadItem(
             id = id,
@@ -166,6 +177,81 @@ class DownloaderManager @Inject constructor(
         _downloads.update { current ->
             val existing = current[id] ?: return@update current
             current + (id to existing.copy(status = DownloadStatus.FAILED))
+        }
+    }
+    
+    fun isDownloaded(fileId: String, extension: String): Boolean {
+        val file = getFile(fileId, extension)
+        return file.exists() && file.length() > 0
+    }
+
+    fun getFile(fileId: String, extension: String): java.io.File {
+        val path = context.getExternalFilesDir(null) ?: context.filesDir
+        val finalFileName = if (extension.isNotEmpty()) "$fileId.$extension" else fileId
+        return java.io.File(path, finalFileName)
+    }
+    
+    fun openFile(path: String) {
+        val file = java.io.File(path)
+        if (!file.exists()) {
+            Log.e("DownloaderManager", "File does not exist at path: $path")
+            return
+        }
+
+        if (file.extension.equals("apk", ignoreCase = true)) {
+            openApkFile(file)
+        } else {
+            openGenericFile(file)
+        }
+    }
+
+    private fun openApkFile(file: java.io.File) {
+        val fileUri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+        
+        if (!context.packageManager.canRequestPackageInstalls()) {
+            val intent = Intent(
+                android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                "package:${context.packageName}".toUri()
+            )
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+            return
+        }
+        
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(fileUri, "application/vnd.android.package-archive")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("DownloaderManager", "Error opening APK file", e)
+        }
+    }
+
+    private fun openGenericFile(file: java.io.File) {
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, context.contentResolver.getType(uri) ?: "*/*")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("DownloaderManager", "Error opening generic file", e)
         }
     }
 }

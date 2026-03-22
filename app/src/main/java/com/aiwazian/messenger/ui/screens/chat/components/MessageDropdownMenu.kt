@@ -25,16 +25,10 @@ fun MessageDropdownMenu(
     onDismissRequest: () -> Unit,
     actions: List<DropdownMenuAction>
 ) {
-    val width = LocalConfiguration.current.screenWidthDp.dp
-    
     DropdownMenu(
         shape = MaterialTheme.shapes.large,
         expanded = expanded,
         onDismissRequest = onDismissRequest,
-        offset = DpOffset(
-            width / 2,
-            0.dp
-        ),
         properties = PopupProperties(focusable = true),
     ) {
         actions.forEach { action ->

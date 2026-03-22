@@ -10,16 +10,25 @@ import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.domain.*
+import com.aiwazian.messenger.domain.Chat
+import com.aiwazian.messenger.domain.DeleteChatPayload
+import com.aiwazian.messenger.domain.DeleteMessagePayload
+import com.aiwazian.messenger.domain.DownloadItem
+import com.aiwazian.messenger.domain.DownloadStatus
+import com.aiwazian.messenger.domain.DropdownMenuAction
+import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.domain.MessageFile
+import com.aiwazian.messenger.domain.ReadMessagePayload
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.WebSocketAction
+import com.aiwazian.messenger.extensions.toInstance
+import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.repository.ChannelRepository
@@ -28,9 +37,15 @@ import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
-import com.aiwazian.messenger.ui.screens.chat.components.FileAction
+import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.screens.profile.Profile
-import com.aiwazian.messenger.utils.*
+import com.aiwazian.messenger.utils.ChatState
+import com.aiwazian.messenger.utils.ClipboardService
+import com.aiwazian.messenger.utils.DownloaderManager
+import com.aiwazian.messenger.utils.ProgressRequestBody
+import com.aiwazian.messenger.utils.UserManager
+import com.aiwazian.messenger.utils.VibrationManager
+import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -45,7 +60,6 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.TextStyle
@@ -76,21 +90,12 @@ class ChatViewModel @Inject constructor(
     val uiEffect = _uiEffect.asSharedFlow()
     
     private val _selectedMessageId = MutableStateFlow<Int?>(null)
-    private val timeFormatter =
-        SimpleDateFormat(
-            "HH:mm",
-            Locale.getDefault()
-        )
     
     private var profileCollectionJob: Job? = null
     private var isInitialized = false
-
+    
     private val uploadJobs = mutableMapOf<Long, Job>()
     
-    /**
-     * Инициализация ViewModel с chatId
-     * Вызывается из Composable при создании экрана
-     */
     fun init(chatId: Long) {
         if (isInitialized) return
         isInitialized = true
@@ -151,22 +156,50 @@ class ChatViewModel @Inject constructor(
                 _uiState.update { it.copy(isConnected = state == ConnectionState.CONNECTED) }
             }
         }
-
+        
         viewModelScope.launch {
             downloaderManager.downloads.collect { downloads ->
                 updateDownloadsInUi(downloads)
             }
         }
     }
-
+    
     private fun updateDownloadsInUi(downloads: List<DownloadItem>) {
         val currentItems = _uiState.value.chatItems.map { item ->
             if (item is ChatItem.MessageItem) {
                 val updatedFiles = item.message.files.map { file ->
-                    val download = downloads.find { it.fileId == file.id || (it.messageId == item.message.id && it.name == file.name) }
+                    val download =
+                        downloads.find { it.fileId == file.id || (it.messageId == item.message.id && it.name == file.name) }
                     if (download != null) {
-                        file.copy(status = download.status, progress = download.progress)
-                    } else file
+                        if (download.status == DownloadStatus.COMPLETED && file.status != DownloadStatus.COMPLETED) {
+                            val updatedFile = file.copy(
+                                status = download.status,
+                                progress = 100,
+                                localUri = download.localUri
+                            )
+                            viewModelScope.launch {
+                                val messageToUpdate = item.message
+                                val finalFiles = messageToUpdate.files.map { 
+                                    if (it.id == updatedFile.id) updatedFile else it
+                                }
+                                chatRepository.saveMessage(messageToUpdate.copy(files = finalFiles))
+                            }
+                            updatedFile
+                        } else {
+                            file.copy(
+                                status = download.status,
+                                progress = download.progress
+                            )
+                        }
+                    } else if (downloaderManager.isDownloaded(file.id, file.extension)) {
+                        file.copy(
+                            status = DownloadStatus.COMPLETED,
+                            progress = 100,
+                            localUri = downloaderManager.getFile(file.id, file.extension).absolutePath
+                        )
+                    } else {
+                        file
+                    }
                 }
                 item.copy(message = item.message.copy(files = updatedFiles))
             } else item
@@ -277,16 +310,19 @@ class ChatViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
-            val chatMessages = chatRepository.getMessages(chatId)
-            if (chatMessages.isNotEmpty()) {
-                updateChatItems(chatMessages)
-                _uiState.update { it.copy(isLoading = false) }
+            chatRepository.getMessagesFlow(chatId).collect { messages ->
+                if (messages.isNotEmpty()) {
+                    updateChatItems(messages)
+                    _uiState.update { it.copy(isLoading = false) }
+                }
             }
-            
+        }
+
+        viewModelScope.launch {
             try {
                 val freshMessages = chatRepository.getMessages(chatId)
-                if (freshMessages.isNotEmpty() && freshMessages != chatMessages) {
-                    updateChatItems(freshMessages)
+                if (freshMessages.isNotEmpty()) {
+                    // This will trigger the flow and update the UI
                 }
             } catch (e: Exception) {
                 Log.e(
@@ -294,13 +330,12 @@ class ChatViewModel @Inject constructor(
                     "Error fetching fresh messages",
                     e
                 )
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
             }
-            
-            _uiState.update { it.copy(isLoading = false) }
             updateUiContent()
         }
-    }
-    
+        }    
     private fun updateUiContent() {
         val state = _uiState.value
         val profile = state.profile
@@ -442,6 +477,24 @@ class ChatViewModel @Inject constructor(
             val isMine = message.senderId == myId
             val isSingleEmoji = isSingleEmoji(message.text ?: "")
             
+            val updatedFiles = message.files.map { file ->
+                val localFile by lazy { downloaderManager.getFile(file.id, file.extension) }
+
+                if (file.localUri != null && java.io.File(file.localUri).exists()) {
+                    file.copy(status = DownloadStatus.COMPLETED, progress = 100)
+                } else if (localFile.exists() && localFile.length() > 0) {
+                    file.copy(status = DownloadStatus.COMPLETED, progress = 100, localUri = localFile.absolutePath)
+                } else {
+                    val download = downloaderManager.downloads.value.find { it.fileId == file.id }
+                    if (download != null) {
+                        file.copy(status = download.status, progress = download.progress)
+                    } else {
+                        file
+                    }
+                }
+            }
+            val processedMessage = message.copy(files = updatedFiles)
+            
             val actions = mutableListOf<DropdownMenuAction>()
             if (!message.text.isNullOrBlank()) {
                 actions.add(
@@ -463,8 +516,8 @@ class ChatViewModel @Inject constructor(
             
             chatItems.add(
                 ChatItem.MessageItem(
-                    message = message,
-                    time = timeFormatter.format(message.sendTime),
+                    message = processedMessage,
+                    time = message.sendTime.toInstance().toPrettyTime(),
                     isMine = isMine,
                     isRead = if (isMine) message.isRead else null,
                     senderName = if (!isMine && ChatType.fromId(message.chatId) == ChatType.GROUP) {
@@ -647,7 +700,7 @@ class ChatViewModel @Inject constructor(
     fun onBackClicked() = viewModelScope.launch {
         _uiEffect.emit(ChatUiEffect.NavigateBack)
     }
-
+    
     fun cancelUpload(tempMessageId: Int) {
         val uploadId = tempMessageId.toLong()
         uploadJobs[uploadId]?.cancel()
@@ -658,12 +711,21 @@ class ChatViewModel @Inject constructor(
         updateChatItems(updatedMessages)
     }
     
-    fun onFileAction(message: Message, file: MessageFile, action: FileAction) {
+    fun onFileAction(
+        message: Message,
+        file: MessageFile,
+        action: FileAction
+    ) {
         when (action) {
             FileAction.DOWNLOAD -> {
                 viewModelScope.launch {
                     try {
-                        val response = chatRepository.getDownloadUrl(message.chatId, message.id, file.id)
+                        val response =
+                            chatRepository.getDownloadUrl(
+                                message.chatId,
+                                message.id,
+                                file.id
+                            )
                         if (response != null) {
                             downloaderManager.download(
                                 url = response.downloadUrl,
@@ -675,68 +737,105 @@ class ChatViewModel @Inject constructor(
                             )
                         }
                     } catch (e: Exception) {
-                        Log.e("ChatVM", "Error getting download URL", e)
+                        Log.e(
+                            "ChatVM",
+                            "Error getting download URL",
+                            e
+                        )
                     }
                 }
             }
+            
             FileAction.PAUSE -> {
                 val download = downloaderManager.downloads.value.find { it.fileId == file.id }
                 download?.let { downloaderManager.pause(it.id) }
             }
+            
             FileAction.RESUME -> {
                 val download = downloaderManager.downloads.value.find { it.fileId == file.id }
                 download?.let { downloaderManager.resume(it.id) }
             }
+            
             FileAction.CANCEL -> {
                 val download = downloaderManager.downloads.value.find { it.fileId == file.id }
                 download?.let { downloaderManager.cancel(it.id) }
             }
+            
+            FileAction.OPEN -> {
+                if (file.localUri != null) {
+                    downloaderManager.openFile(file.localUri)
+                }
+            }
         }
     }
-
-    fun uploadFiles(uris: List<Uri>, context: Context) {
+    
+    fun uploadFiles(
+        uris: List<Uri>,
+        context: Context
+    ) {
         viewModelScope.launch {
             uris.forEach { uri ->
-                val fileName = getFileName(context, uri) ?: "file"
-                val fileSize = getFileSize(context, uri)
+                val fileName =
+                    getFileName(
+                        context,
+                        uri
+                    ) ?: "file"
+                val fileSize =
+                    getFileSize(
+                        context,
+                        uri
+                    )
                 val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
                 
-                // Create temp message
-                val tempId = Random.nextInt(1000000, Int.MAX_VALUE)
+                val tempId = Random.nextInt(
+                    1000000,
+                    Int.MAX_VALUE
+                )
                 val tempMessage = Message(
                     id = tempId,
                     senderId = _uiState.value.currentUserId,
                     chatId = _uiState.value.chat.id,
                     sendTime = System.currentTimeMillis(),
-                    files = listOf(MessageFile(
-                        id = "temp_${tempId}",
-                        name = fileName,
-                        size = fileSize,
-                        extension = fileName.substringAfterLast('.', ""),
-                        status = DownloadStatus.UPLOADING,
-                        progress = 0
-                    ))
+                    files = listOf(
+                        MessageFile(
+                            id = "temp_${tempId}",
+                            name = fileName,
+                            size = fileSize,
+                            extension = fileName.substringAfterLast(
+                                '.',
+                                ""
+                            ),
+                            status = DownloadStatus.UPLOADING,
+                            progress = 0
+                        )
+                    )
                 )
                 
                 updateChatItems(getRawMessages() + tempMessage)
                 
-                downloaderManager.registerUpload(tempId, fileName, fileSize, _uiState.value.chat.id)
+                downloaderManager.registerUpload(
+                    tempId,
+                    fileName,
+                    fileSize
+                )
+                
+                val initResponse = chatRepository.initFileUpload(
+                    _uiState.value.chat.id,
+                    FileInitRequestDto(
+                        name = fileName,
+                        size = fileSize,
+                        mimeType = mimeType
+                    )
+                )
                 
                 try {
-                    // 1. Init upload on server
-                    val initResponse = chatRepository.initFileUpload(
-                        _uiState.value.chat.id,
-                        FileInitRequestDto(
-                            name = fileName,
-                            size = fileSize,
-                            mimeType = mimeType
-                        )
-                    )
-                    
                     if (initResponse != null) {
-                        // 2. Upload to S3 (manual for now as Ketch is for downloads)
-                        performUpload(uri, initResponse.signedUrl, tempId, context) {
-                            // 3. Confirm on server
+                        performUpload(
+                            uri,
+                            initResponse.signedUrl,
+                            tempId,
+                            context
+                        ) {
                             viewModelScope.launch {
                                 val confirmedMessage = chatRepository.confirmFileUpload(
                                     _uiState.value.chat.id,
@@ -747,7 +846,8 @@ class ChatViewModel @Inject constructor(
                                 )
                                 if (confirmedMessage != null) {
                                     downloaderManager.completeUpload(tempId)
-                                    val updated = getRawMessages().map { if (it.id == tempId) confirmedMessage else it }
+                                    val updated =
+                                        getRawMessages().map { if (it.id == tempId) confirmedMessage else it }
                                     updateChatItems(updated)
                                 }
                             }
@@ -755,28 +855,46 @@ class ChatViewModel @Inject constructor(
                     } else {
                         handleUploadError(tempId)
                     }
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     handleUploadError(tempId)
                 }
             }
         }
     }
-
+    
     private fun handleUploadError(id: Int) {
         downloaderManager.failUpload(id)
         vibrationManager.vibrate(VibrationPattern.Error)
     }
-
-    private fun performUpload(uri: Uri, url: String, id: Int, context: Context, onSuccess: () -> Unit) {
+    
+    private fun performUpload(
+        uri: Uri,
+        url: String,
+        id: Int,
+        context: Context,
+        onSuccess: () -> Unit
+    ) {
         val job = viewModelScope.launch(Dispatchers.IO) {
             try {
                 val inputStream = context.contentResolver.openInputStream(uri) ?: return@launch
-                val fileSize = getFileSize(context, uri)
+                val fileSize =
+                    getFileSize(
+                        context,
+                        uri
+                    )
                 val mimeType = context.contentResolver.getType(uri)?.toMediaTypeOrNull()
                 
-                val requestBody = ProgressRequestBody(inputStream, mimeType, fileSize) { progress ->
-                    downloaderManager.updateUploadProgress(id, progress)
-                }
+                val requestBody =
+                    ProgressRequestBody(
+                        inputStream,
+                        mimeType,
+                        fileSize
+                    ) { progress ->
+                        downloaderManager.updateUploadProgress(
+                            id,
+                            progress
+                        )
+                    }
                 
                 val request = Request.Builder()
                     .url(url)
@@ -804,27 +922,47 @@ class ChatViewModel @Inject constructor(
         }
         uploadJobs[id.toLong()] = job
     }
-
-    private fun getFileName(context: Context, uri: Uri): String? {
+    
+    private fun getFileName(
+        context: Context,
+        uri: Uri
+    ): String? {
         var name: String? = null
-        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+        context.contentResolver.query(
+            uri,
+            null,
+            null,
+            null,
+            null
+        )?.use { cursor ->
             if (cursor.moveToFirst()) {
-                name = cursor.getString(cursor.getColumnIndexOrThrow(android.provider.OpenableColumns.DISPLAY_NAME))
+                name =
+                    cursor.getString(cursor.getColumnIndexOrThrow(android.provider.OpenableColumns.DISPLAY_NAME))
             }
         }
         return name
     }
-
-    private fun getFileSize(context: Context, uri: Uri): Long {
+    
+    private fun getFileSize(
+        context: Context,
+        uri: Uri
+    ): Long {
         var size: Long = 0
-        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+        context.contentResolver.query(
+            uri,
+            null,
+            null,
+            null,
+            null
+        )?.use { cursor ->
             if (cursor.moveToFirst()) {
-                size = cursor.getLong(cursor.getColumnIndexOrThrow(android.provider.OpenableColumns.SIZE))
+                size =
+                    cursor.getLong(cursor.getColumnIndexOrThrow(android.provider.OpenableColumns.SIZE))
             }
         }
         return size
     }
-
+    
     fun markAsReadMessage(message: Message) {
         if (message.senderId == _uiState.value.currentUserId || message.isRead) return
         viewModelScope.launch {

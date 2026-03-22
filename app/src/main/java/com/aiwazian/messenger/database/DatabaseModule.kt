@@ -10,6 +10,7 @@ import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.GroupDao
+import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.database.dao.UserDao
 import dagger.Module
 import dagger.Provides
@@ -60,5 +61,10 @@ object DatabaseModule {
     @Provides
     fun provideAccountDao(database: AppDatabase): AccountDao {
         return database.accountDao()
+    }
+    
+    @Provides
+    fun provideMessageDao(database: AppDatabase): MessageDao {
+        return database.messageDao()
     }
 }

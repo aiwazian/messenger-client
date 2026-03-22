@@ -46,12 +46,6 @@ data class TextMessageRequestDto(
 )
 
 @Serializable
-data class MediaMessageRequestDto(
-    @SerialName("text") val text: String? = null,
-    @SerialName("fileIds") val fileIds: List<String>
-)
-
-@Serializable
 data class FileInitRequestDto(
     @SerialName("name") val name: String,
     @SerialName("size") val size: Long,
