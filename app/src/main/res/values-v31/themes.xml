@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
+<resources>
+
+    <style name="Theme.Messenger" parent="Theme.AppCompat.Light.NoActionBar" />
+
+    <style name="Theme.MessengerSplashScreen" parent="Theme.Messenger">
+        <item name="android:windowSplashScreenBackground">#fff</item>
+        <item name="postSplashScreenTheme">@style/Theme.Messenger</item>
+    </style>
+</resources>

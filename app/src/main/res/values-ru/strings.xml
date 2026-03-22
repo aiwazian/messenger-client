@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     <string name="search">Поиск</string>
     <string name="message">Сообщение</string>
@@ -113,6 +117,9 @@
     <string name="remove_date_of_birth">Удалить дату рождения</string>
     <string name="subscriberCount">Подписчиков</string>
     <string name="leave_group">Покинуть группу</string>
+    <string name="leave_group_confirm">Вы точно хотите покинуть</string>
+    <string name="leave">Покинуть</string>
+    <string name="leave_confirm">Вы точно хотите покинуть</string>
     <string name="add_member">Добавить участников</string>
     <string name="delete_group">Удалить группу</string>
     <string name="save_to_downloads">Сохранить в загрузки</string>

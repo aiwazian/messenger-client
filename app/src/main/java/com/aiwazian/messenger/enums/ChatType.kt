@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.enums
 
 enum class ChatType {
@@ -7,13 +11,10 @@ enum class ChatType {
     UNKNOWN;
     
     companion object {
-        fun fromOrdinal(ordinal: Int): ChatType {
-            return entries.firstOrNull { it.ordinal == ordinal } ?: UNKNOWN
-        }
-        
         fun fromId(id: Long): ChatType {
-            val idString = id.toString()
-            val firstDigit = idString[0].digitToInt()
+            if (id == -1L) return UNKNOWN
+            
+            val firstDigit = id.toString().firstOrNull()?.digitToInt()
             
             return when (firstDigit) {
                 1-> PRIVATE

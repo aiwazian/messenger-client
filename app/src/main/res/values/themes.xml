@@ -1,4 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
-    <style name="Theme.Messenger" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.Messenger" parent="Theme.AppCompat.Light.NoActionBar" />
+
+    <style name="Theme.MessengerSplashScreen" parent="Theme.Messenger" />
 </resources>

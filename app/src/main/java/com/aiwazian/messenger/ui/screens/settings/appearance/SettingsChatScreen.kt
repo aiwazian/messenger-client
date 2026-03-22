@@ -1,0 +1,143 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
+package com.aiwazian.messenger.ui.screens.settings.appearance
+
+import android.os.Build
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.aiwazian.messenger.R
+import com.aiwazian.messenger.enums.PrimaryColorOption
+import com.aiwazian.messenger.enums.ThemeOption
+import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.section.SectionContainer
+import com.aiwazian.messenger.ui.components.section.SectionHeader
+import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionToggleItem
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun SettingsChatScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
+    val navHost = LocalNavHost.current
+    
+    val primaryColor by viewModel.primaryColor.collectAsState()
+    val isDynamicColorEnable by viewModel.dynamicColor.collectAsState()
+    
+    val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+    
+    Scaffold(
+        topBar = {
+            TopBar()
+        },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+        ) {
+            val theme = when (viewModel.currentTheme.collectAsState().value) {
+                ThemeOption.DARK -> "Включена"
+                ThemeOption.LIGHT -> "Отключена"
+                else -> "Как в системе"
+            }
+            
+            SectionContainer(header = {
+                SectionHeader(stringResource(R.string.color_theme))
+            }) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    SectionToggleItem(
+                        text = stringResource(R.string.dynamic_color),
+                        isChecked = isDynamicColorEnable,
+                        onCheckedChange = {
+                            coroutineScope.launch {
+                                viewModel.setDynamicColor(!isDynamicColorEnable)
+                            }
+                        })
+                }
+                
+                AnimatedContent(targetState = isDynamicColorEnable) { enableDynamicColor ->
+                    if (!enableDynamicColor) {
+                        Row(
+                            modifier = Modifier
+                                .horizontalScroll(rememberScrollState())
+                                .padding(8.dp)
+                        ) {
+                            PrimaryColorOption.entries.forEach { option ->
+                                RadioButton(
+                                    enabled = !isDynamicColorEnable,
+                                    modifier = Modifier.scale(1.5f),
+                                    selected = primaryColor == option,
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            viewModel.setPrimaryColor(option)
+                                        }
+                                    },
+                                    colors = RadioButtonDefaults.colors(
+                                        selectedColor = option.color,
+                                        unselectedColor = option.color,
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
+            SectionContainer {
+                SectionItem(
+                    text = stringResource(R.string.dark_theme),
+                    primaryText = theme,
+                    onClick = {
+                        navHost.add(AppRoute.SettingsDesign)
+                    })
+            }
+        }
+    }
+}
+
+@Composable
+private fun TopBar() {
+    val navHost = LocalNavHost.current
+    
+    PageTopBar(
+        title = {
+            Text(stringResource(R.string.appearance))
+        },
+        navigationIcon = NavigationIcon(
+            icon = Icons.AutoMirrored.Rounded.ArrowBack,
+            onClick = navHost::removeLastOrNull
+        )
+    )
+}
+
+
+

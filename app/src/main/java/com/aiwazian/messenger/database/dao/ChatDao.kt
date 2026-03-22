@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.database.dao
 
 import androidx.room.Dao
@@ -16,3 +20,4 @@ interface ChatDao {
     suspend fun get(id: Int): AttachmentEntity
     
 }
+

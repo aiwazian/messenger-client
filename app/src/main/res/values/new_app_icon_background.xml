@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     <color name="new_app_icon_background">#FFFFFF</color>
 </resources>

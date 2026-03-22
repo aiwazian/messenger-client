@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.database
 
 import android.content.Context
@@ -5,8 +9,6 @@ import androidx.room.Room
 import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
-import com.aiwazian.messenger.database.dao.FolderChatDao
-import com.aiwazian.messenger.database.dao.FolderDao
 import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.database.dao.UserDao
 import dagger.Module
@@ -22,22 +24,17 @@ object DatabaseModule {
     
     @Provides
     @Singleton
-    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
+    fun provideAppDatabase(
+        @ApplicationContext
+        context: Context
+    ): AppDatabase {
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             "app_database"
-        ).fallbackToDestructiveMigration(true).build()
-    }
-    
-    @Provides
-    fun provideFolderDao(database: AppDatabase): FolderDao {
-        return database.folderDao()
-    }
-    
-    @Provides
-    fun provideFolderChatDao(database: AppDatabase): FolderChatDao {
-        return database.folderChatDao()
+        )
+            .fallbackToDestructiveMigration(true)
+            .build()
     }
     
     @Provides
@@ -51,11 +48,6 @@ object DatabaseModule {
     }
     
     @Provides
-    fun provideAccount(database: AppDatabase): AccountDao {
-        return database.accountDao()
-    }
-    
-    @Provides
     fun provideGroup(database: AppDatabase): GroupDao {
         return database.groupDao()
     }
@@ -63,5 +55,10 @@ object DatabaseModule {
     @Provides
     fun provideChat(database: AppDatabase): ChatDao {
         return database.chatDao()
+    }
+    
+    @Provides
+    fun provideAccountDao(database: AppDatabase): AccountDao {
+        return database.accountDao()
     }
 }

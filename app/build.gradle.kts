@@ -1,12 +1,12 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.gms)
-    
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.21"
+    alias(libs.plugins.serialization)
     
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
@@ -18,24 +18,44 @@ android {
     
     defaultConfig {
         applicationId = "com.aiwazian.messenger"
-        minSdk = 28
+        minSdk = 30
         targetSdk = 36
         versionCode = 13
         versionName = "1.6.1"
-        
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     
     buildTypes {
+        debug {
+            buildConfigField(
+                "String",
+                "API_URL",
+                "\"http://10.155.204.101:3000/api/\""
+            )
+            
+            buildConfigField(
+                "String",
+                "WS_URL",
+                "\"ws://10.155.204.101:3000\""
+            )
+        }
+        
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                
-                "proguard-rules.pro"
-            )
+            proguardFiles("proguard-rules.pro")
             signingConfig = signingConfigs.getByName("debug")
+            
+            buildConfigField(
+                "String",
+                "API_URL",
+                "\"https://aiwazian.ru/api/\""
+            )
+            
+            buildConfigField(
+                "String",
+                "WS_URL",
+                "\"wss://aiwazian.ru\""
+            )
         }
     }
     compileOptions {
@@ -51,11 +71,6 @@ android {
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
-    }
-    kotlin {
-        compilerOptions {
-            jvmTarget = JvmTarget.JVM_17
-        }
     }
 }
 
@@ -73,6 +88,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.animation)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended.android)
@@ -91,20 +107,22 @@ dependencies {
     implementation(libs.protobuf.javalite)
     
     implementation(libs.retrofit)
-    implementation(libs.converter.gson)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.retrofit2.kotlinx.serialization.converter)
     
     // Ktor
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
-    implementation(libs.ktor.client.websockets)
+    
+    // Navigation 3
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     
     implementation(libs.coil.compose)
     
     // Lottie animation
     implementation(libs.lottie.compose)
-    
-    implementation(libs.zxing.android.embedded)
     
     implementation(libs.okhttp)
     
@@ -121,4 +139,15 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     
     implementation(libs.material.icons.extended)
+    
+    implementation(libs.socketio.client) {
+        exclude(
+            "org.json",
+            "json"
+        )
+    }
+    
+    implementation(libs.androidx.core.splashscreen)
+    
+    implementation(libs.ketch)
 }

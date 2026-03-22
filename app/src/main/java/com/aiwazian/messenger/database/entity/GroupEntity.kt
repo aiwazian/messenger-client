@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.database.entity
 
 import androidx.room.Entity
@@ -6,8 +10,8 @@ import androidx.room.PrimaryKey
 @Entity("group")
 data class GroupEntity(
     @PrimaryKey val id: Long,
-    val ownerId: Long,
+    val ownerId: Long?,
     var name: String,
-    var bio: String,
+    var bio: String?,
     val members: Int
 )

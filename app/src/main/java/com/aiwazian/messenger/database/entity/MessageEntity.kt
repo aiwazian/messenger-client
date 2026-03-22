@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.database.entity
 
 import androidx.room.Entity
@@ -10,5 +14,6 @@ data class MessageEntity(
     val chatId: Long,
     val text: String? = null,
     val sendTime: Long = 0,
-    var isRead: Boolean = false
+    var isRead: Boolean = false,
+    val filesJson: String? = null
 )

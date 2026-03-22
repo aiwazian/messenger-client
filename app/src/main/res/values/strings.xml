@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     <string name="app_name" translatable="false">Messenger</string>
     <string name="search">Search</string>
@@ -16,7 +20,7 @@
     <string name="saved_messages">Saved Messages</string>
     <string name="new_message">New Message</string>
     <string name="information">Info</string>
-    <string name="dark_theme">Dark theme</string>
+    <string name="dark_theme">Dark Theme</string>
     <string name="security">Security</string>
     <string name="devices">Devices</string>
     <string name="create_group">New Group</string>
@@ -106,7 +110,7 @@
     <string name="channel_type">Channel Type</string>
     <string name="delete_channel">Delete Channel</string>
     <string name="clear_history">Clear History</string>
-    <string name="public_link">Public link</string>
+    <string name="public_link">Public Link</string>
     <string name="invite_link">Invite Link</string>
     <string name="private_channel">Private Channel</string>
     <string name="public_channel">Public Channel</string>
@@ -115,6 +119,9 @@
     <string name="remove_date_of_birth">Remove Date of Birth</string>
     <string name="subscriberCount">Subscribers</string>
     <string name="leave_group">Leave Group</string>
+    <string name="leave_group_confirm">Are you sure you want to leave</string>
+    <string name="leave">Leave</string>
+    <string name="leave_confirm">Are you sure you want to leave</string>
     <string name="add_member">Add Members</string>
     <string name="delete_group">Delete Group</string>
     <string name="save_to_downloads">Save to Downloads</string>

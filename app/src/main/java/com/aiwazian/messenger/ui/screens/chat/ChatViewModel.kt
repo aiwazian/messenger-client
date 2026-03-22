@@ -1,0 +1,875 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
+package com.aiwazian.messenger.ui.screens.chat
+
+import android.content.Context
+import android.net.Uri
+import android.util.Log
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.*
+import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.enums.ConnectionState
+import com.aiwazian.messenger.enums.WebSocketAction
+import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
+import com.aiwazian.messenger.network.dto.FileInitRequestDto
+import com.aiwazian.messenger.repository.ChannelRepository
+import com.aiwazian.messenger.repository.ChatRepository
+import com.aiwazian.messenger.repository.GroupRepository
+import com.aiwazian.messenger.repository.UserRepository
+import com.aiwazian.messenger.socket.WebSocketClient
+import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.ui.screens.chat.components.FileAction
+import com.aiwazian.messenger.ui.screens.profile.Profile
+import com.aiwazian.messenger.utils.*
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.TextStyle
+import java.util.Locale
+import javax.inject.Inject
+import kotlin.random.Random
+
+@HiltViewModel
+class ChatViewModel @Inject constructor(
+    private val chatRepository: ChatRepository,
+    private val channelRepository: ChannelRepository,
+    private val groupRepository: GroupRepository,
+    private val userRepository: UserRepository,
+    private val userManager: UserManager,
+    private val clipboardService: ClipboardService,
+    private val webSocketClient: WebSocketClient,
+    private val downloaderManager: DownloaderManager,
+    private val okHttpClient: OkHttpClient,
+    private val vibrationManager: VibrationManager
+) : ViewModel() {
+    
+    private var _chatId: Long = -1L
+    
+    private val _uiState = MutableStateFlow(ChatUiState())
+    val uiState = _uiState.asStateFlow()
+    
+    private val _uiEffect = MutableSharedFlow<ChatUiEffect>()
+    val uiEffect = _uiEffect.asSharedFlow()
+    
+    private val _selectedMessageId = MutableStateFlow<Int?>(null)
+    private val timeFormatter =
+        SimpleDateFormat(
+            "HH:mm",
+            Locale.getDefault()
+        )
+    
+    private var profileCollectionJob: Job? = null
+    private var isInitialized = false
+
+    private val uploadJobs = mutableMapOf<Long, Job>()
+    
+    /**
+     * Инициализация ViewModel с chatId
+     * Вызывается из Composable при создании экрана
+     */
+    fun init(chatId: Long) {
+        if (isInitialized) return
+        isInitialized = true
+        _chatId = chatId
+        
+        setupUserObserver()
+        setupWebSocketListeners()
+        loadChatData(chatId)
+    }
+    
+    private fun setupUserObserver() {
+        viewModelScope.launch {
+            userManager.user.collect { user ->
+                _uiState.update { it.copy(currentUserId = user.id) }
+                updateUiContent()
+            }
+        }
+    }
+    
+    private fun setupWebSocketListeners() {
+        webSocketClient.subscribeToTypedMessages<Message>(WebSocketAction.NEW_MESSAGE) { message ->
+            if (message.chatId == _uiState.value.chat.id && message.senderId != _uiState.value.currentUserId) {
+                viewModelScope.launch {
+                    val messages = getRawMessages() + message
+                    updateChatItems(messages)
+                }
+            }
+        }
+        
+        webSocketClient.subscribeToTypedMessages<DeleteChatPayload>(WebSocketAction.DELETE_CHAT) { chat ->
+            if (chat.chatId == _uiState.value.chat.id) {
+                viewModelScope.launch {
+                    _uiEffect.emit(ChatUiEffect.NavigateToMain)
+                }
+            }
+        }
+        
+        webSocketClient.subscribeToTypedMessages<DeleteMessagePayload>(WebSocketAction.DELETE_MESSAGE) { message ->
+            if (message.chatId == _uiState.value.chat.id) {
+                viewModelScope.launch {
+                    val messages = getRawMessages().filter { it.id != message.messageId }
+                    updateChatItems(messages)
+                }
+            }
+        }
+        
+        webSocketClient.subscribeToTypedMessages<ReadMessagePayload>(WebSocketAction.READ_MESSAGE) { message ->
+            viewModelScope.launch {
+                val messages = getRawMessages().map {
+                    if (it.id == message.messageId) it.copy(isRead = true) else it
+                }
+                updateChatItems(messages)
+            }
+        }
+        
+        viewModelScope.launch {
+            webSocketClient.connectionState.collect { state ->
+                _uiState.update { it.copy(isConnected = state == ConnectionState.CONNECTED) }
+            }
+        }
+
+        viewModelScope.launch {
+            downloaderManager.downloads.collect { downloads ->
+                updateDownloadsInUi(downloads)
+            }
+        }
+    }
+
+    private fun updateDownloadsInUi(downloads: List<DownloadItem>) {
+        val currentItems = _uiState.value.chatItems.map { item ->
+            if (item is ChatItem.MessageItem) {
+                val updatedFiles = item.message.files.map { file ->
+                    val download = downloads.find { it.fileId == file.id || (it.messageId == item.message.id && it.name == file.name) }
+                    if (download != null) {
+                        file.copy(status = download.status, progress = download.progress)
+                    } else file
+                }
+                item.copy(message = item.message.copy(files = updatedFiles))
+            } else item
+        }
+        _uiState.update { it.copy(chatItems = currentItems) }
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        profileCollectionJob?.cancel()
+        close()
+    }
+    
+    private fun getRawMessages(): List<Message> {
+        return _uiState.value.chatItems.filterIsInstance<ChatItem.MessageItem>().map { it.message }
+    }
+    
+    /**
+     * Загрузка данных чата с Flow: сначала Room, потом сервер
+     */
+    private fun loadChatData(chatId: Long) {
+        ChatState.openChat(chatId)
+        _uiState.update {
+            it.copy(
+                isLoading = true,
+                profile = null,
+                chat = Chat(id = chatId)
+            )
+        }
+        
+        val chatType = ChatType.fromId(chatId)
+        
+        profileCollectionJob = when (chatType) {
+            ChatType.CHANNEL -> {
+                viewModelScope.launch {
+                    channelRepository.getById(chatId).collectLatest { channel ->
+                        val profile = Profile.Channel(
+                            id = channel.id,
+                            ownerId = channel.ownerId,
+                            name = channel.name,
+                            bio = channel.bio,
+                            subscribers = channel.subscribers,
+                            removedUser = channel.removedUser,
+                            channelType = channel.channelType,
+                            publicLink = channel.username,
+                            isSubscribed = channel.isSubscribed
+                        )
+                        _uiState.update {
+                            it.copy(
+                                profile = profile,
+                                isJoined = channel.isSubscribed
+                            )
+                        }
+                        updateUiContent()
+                    }
+                }
+            }
+            
+            ChatType.GROUP -> {
+                viewModelScope.launch {
+                    groupRepository.getById(chatId).collectLatest { group ->
+                        val profile = Profile.Group(
+                            id = group.id,
+                            ownerId = group.ownerId,
+                            name = group.name,
+                            bio = group.bio,
+                            members = group.members
+                        )
+                        _uiState.update { it.copy(profile = profile) }
+                        updateUiContent()
+                    }
+                }
+            }
+            
+            ChatType.PRIVATE -> {
+                viewModelScope.launch {
+                    if (chatId == userManager.user.value.id) {
+                        userManager.user.collectLatest { user ->
+                            val profile = Profile.User(
+                                id = user.id,
+                                firstName = user.firstName,
+                                lastName = user.lastName,
+                                username = user.username,
+                                bio = user.bio,
+                                dateOfBirth = user.dateOfBirth
+                            )
+                            _uiState.update { it.copy(profile = profile) }
+                            updateUiContent()
+                        }
+                    } else {
+                        userRepository.getById(chatId).collectLatest { user ->
+                            val profile = Profile.User(
+                                id = user.id,
+                                firstName = user.firstName,
+                                lastName = user.lastName,
+                                username = user.username,
+                                bio = user.bio,
+                                dateOfBirth = user.dateOfBirth
+                            )
+                            _uiState.update { it.copy(profile = profile) }
+                            updateUiContent()
+                        }
+                    }
+                }
+            }
+            
+            else -> null
+        }
+        
+        viewModelScope.launch {
+            val chatMessages = chatRepository.getMessages(chatId)
+            if (chatMessages.isNotEmpty()) {
+                updateChatItems(chatMessages)
+                _uiState.update { it.copy(isLoading = false) }
+            }
+            
+            try {
+                val freshMessages = chatRepository.getMessages(chatId)
+                if (freshMessages.isNotEmpty() && freshMessages != chatMessages) {
+                    updateChatItems(freshMessages)
+                }
+            } catch (e: Exception) {
+                Log.e(
+                    "ChatVM",
+                    "Error fetching fresh messages",
+                    e
+                )
+            }
+            
+            _uiState.update { it.copy(isLoading = false) }
+            updateUiContent()
+        }
+    }
+    
+    private fun updateUiContent() {
+        val state = _uiState.value
+        val profile = state.profile
+        val chatId = state.chat.id
+        val myId = state.currentUserId
+        
+        val isSavedMessages = chatId == myId
+        val chatName = when {
+            isSavedMessages -> "Избранное"
+            profile is Profile.User -> "${profile.firstName} ${profile.lastName.orEmpty()}".trim()
+            profile is Profile.Channel -> profile.name
+            profile is Profile.Group -> profile.name
+            else -> state.chat.chatName.ifBlank { "Чат" }
+        }
+        
+        val subTitle = ""
+        var subCount: Int? = null
+        var memCount: Int? = null
+        var actions = listOf<TopBarAction>()
+        var isOwner = false
+        
+        when (ChatType.fromId(chatId)) {
+            ChatType.PRIVATE -> {
+                actions = listOf(
+                    TopBarAction(
+                        icon = Icons.Rounded.MoreVert,
+                        dropdownActions = listOf(
+                            DropdownMenuAction(
+                                Icons.Rounded.DeleteOutline,
+                                R.string.clear_history,
+                                ::showClearHistoryDialog
+                            )
+                        )
+                    )
+                )
+                isOwner = true
+            }
+            
+            ChatType.CHANNEL -> {
+                if (profile is Profile.Channel) {
+                    subCount = profile.subscribers
+                    isOwner = profile.ownerId == myId
+                    
+                    if (isOwner) {
+                        actions = listOf(
+                            TopBarAction(
+                                icon = Icons.Rounded.MoreVert,
+                                dropdownActions = listOf(
+                                    DropdownMenuAction(
+                                        Icons.Rounded.DeleteOutline,
+                                        R.string.clear_history,
+                                        ::showClearHistoryDialog
+                                    )
+                                )
+                            )
+                        )
+                    } else if (profile.isSubscribed) {
+                        actions = emptyList()
+                    } else {
+                        actions = emptyList()
+                    }
+                }
+            }
+            
+            ChatType.GROUP -> {
+                if (profile is Profile.Group) {
+                    memCount = profile.members
+                    isOwner = profile.ownerId == myId
+                    
+                    if (isOwner) {
+                        actions = listOf(
+                            TopBarAction(
+                                icon = Icons.Rounded.MoreVert,
+                                dropdownActions = listOf(
+                                    DropdownMenuAction(
+                                        Icons.Rounded.DeleteOutline,
+                                        R.string.clear_history,
+                                        ::showClearHistoryDialog
+                                    )
+                                )
+                            )
+                        )
+                    } else {
+                        actions = listOf(
+                            TopBarAction(
+                                icon = Icons.Rounded.MoreVert,
+                                dropdownActions = listOf(
+                                    DropdownMenuAction(
+                                        Icons.AutoMirrored.Rounded.Logout,
+                                        R.string.leave_group,
+                                        ::showLeaveDialog
+                                    )
+                                )
+                            )
+                        )
+                    }
+                }
+            }
+            
+            else -> {}
+        }
+        
+        _uiState.update {
+            it.copy(
+                topBarTitle = chatName,
+                isSavedMessages = isSavedMessages,
+                subTitle = subTitle,
+                subscriberCount = subCount,
+                memberCount = memCount,
+                topBarActions = actions,
+                isOwner = isOwner
+            )
+        }
+    }
+    
+    private fun updateChatItems(messages: List<Message>) {
+        val myId = _uiState.value.currentUserId
+        val chatItems = mutableListOf<ChatItem>()
+        var lastDate: java.time.LocalDate? = null
+        
+        messages.forEach { message ->
+            val messageDate = Instant.ofEpochMilli(message.sendTime)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate()
+            
+            if (lastDate == null || !messageDate.isEqual(lastDate)) {
+                val monthName =
+                    messageDate.month.getDisplayName(
+                        TextStyle.FULL,
+                        Locale.getDefault()
+                    )
+                val capitalizedMonthName = monthName.replaceFirstChar {
+                    if (it.isLowerCase()) it.titlecase() else it.toString()
+                }
+                chatItems.add(ChatItem.DateSeparator("${messageDate.dayOfMonth} $capitalizedMonthName"))
+                lastDate = messageDate
+            }
+            
+            val isMine = message.senderId == myId
+            val isSingleEmoji = isSingleEmoji(message.text ?: "")
+            
+            val actions = mutableListOf<DropdownMenuAction>()
+            if (!message.text.isNullOrBlank()) {
+                actions.add(
+                    DropdownMenuAction(
+                        Icons.Rounded.ContentCopy,
+                        R.string.copy
+                    ) { copyToClipboard(message.text) }
+                )
+            }
+            actions.add(
+                DropdownMenuAction(
+                    Icons.Rounded.DeleteOutline,
+                    R.string.delete
+                ) {
+                    showDeleteMessageDialog(message.id)
+                    selectMessage(message)
+                }
+            )
+            
+            chatItems.add(
+                ChatItem.MessageItem(
+                    message = message,
+                    time = timeFormatter.format(message.sendTime),
+                    isMine = isMine,
+                    isRead = if (isMine) message.isRead else null,
+                    senderName = if (!isMine && ChatType.fromId(message.chatId) == ChatType.GROUP) {
+                        _uiState.value.userNamesCache[message.senderId].also {
+                            if (it == null) loadUserName(message.senderId)
+                        }
+                    } else null,
+                    isSingleEmoji = isSingleEmoji,
+                    dropdownActions = actions
+                )
+            )
+        }
+        _uiState.update { it.copy(chatItems = chatItems) }
+    }
+    
+    fun close() {
+        _uiState.update { ChatUiState() }
+        ChatState.closeChat()
+        isInitialized = false
+        _chatId = -1L
+    }
+    
+    fun changeText(newText: String) {
+        _uiState.update { it.copy(messageText = newText) }
+    }
+    
+    fun onSendMessageClicked() {
+        viewModelScope.launch {
+            val text = _uiState.value.messageText
+            if (text.isBlank()) return@launch
+            
+            val validText = text.trim()
+            val rawMessages = getRawMessages()
+            val lastId = if (rawMessages.isNotEmpty()) rawMessages.last().id + 1 else 1
+            val tempId =
+                Random.nextInt(
+                    lastId + 1,
+                    Int.MAX_VALUE
+                )
+            
+            val message = Message(
+                id = tempId,
+                senderId = _uiState.value.currentUserId,
+                chatId = _uiState.value.chat.id,
+                text = validText,
+                isRead = _uiState.value.chat.id == _uiState.value.currentUserId,
+                sendTime = System.currentTimeMillis()
+            )
+            
+            changeText("")
+            updateChatItems(rawMessages + message)
+            
+            try {
+                val sentMessage =
+                    chatRepository.sendMessage(
+                        message.chatId,
+                        message
+                    )
+                if (sentMessage != null) {
+                    val updatedMessages = (rawMessages + message).map {
+                        if (it.id == tempId) it.copy(id = sentMessage.id) else it
+                    }
+                    updateChatItems(updatedMessages)
+                    _uiEffect.emit(ChatUiEffect.NotifyMainMessageSent(sentMessage))
+                    _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
+                }
+            } catch (e: Exception) {
+                Log.e(
+                    "ChatVM",
+                    "Error sending message",
+                    e
+                )
+            }
+        }
+    }
+    
+    fun onJoinClicked() {
+        viewModelScope.launch {
+            val result = channelRepository.join(_uiState.value.chat.id)
+            if (result.isSuccess) {
+                _uiState.update { it.copy(isJoined = true) }
+                _uiEffect.emit(
+                    ChatUiEffect.NotifyMainNewChat(
+                        _uiState.value.chat,
+                        getRawMessages().lastOrNull()
+                    )
+                )
+            }
+        }
+    }
+    
+    fun onLeaveClicked() {
+        viewModelScope.launch {
+            val chatId = _uiState.value.chat.id
+            val success = when (ChatType.fromId(chatId)) {
+                ChatType.CHANNEL -> channelRepository.leave(chatId).isSuccess
+                ChatType.GROUP -> groupRepository.leave(chatId).isSuccess
+                else -> false
+            }
+            if (success) {
+                hideLeaveDialog()
+                _uiEffect.emit(ChatUiEffect.NotifyMainChatDeleted(chatId))
+                _uiEffect.emit(ChatUiEffect.NavigateToMain)
+            }
+        }
+    }
+    
+    fun onToggleMuteClicked() {
+        _uiState.update { it.copy(isMuted = !it.isMuted) }
+    }
+    
+    fun showDeleteChatDialog() = _uiState.update { it.copy(showDeleteChatDialog = true) }
+    fun hideDeleteChatDialog() = _uiState.update { it.copy(showDeleteChatDialog = false) }
+    fun showClearHistoryDialog() = _uiState.update { it.copy(showClearHistoryDialog = true) }
+    fun hideClearHistoryDialog() = _uiState.update { it.copy(showClearHistoryDialog = false) }
+    
+    fun showDeleteMessageDialog(messageId: Int) {
+        _selectedMessageId.value = messageId
+        _uiState.update { it.copy(showDeleteMessageDialog = true) }
+    }
+    
+    fun hideDeleteMessageDialog() {
+        _selectedMessageId.value = null
+        _uiState.update { it.copy(showDeleteMessageDialog = false) }
+    }
+    
+    fun showLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = true) }
+    fun hideLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = false) }
+    
+    fun onDeleteChatConfirmed(deleteForReceiver: Boolean) {
+        viewModelScope.launch {
+            if (chatRepository.deleteChat(_uiState.value.chat.id)) {
+                updateChatItems(emptyList())
+                hideDeleteChatDialog()
+                _uiEffect.emit(ChatUiEffect.NotifyMainChatDeleted(_uiState.value.chat.id))
+                _uiEffect.emit(ChatUiEffect.NavigateToMain)
+            }
+        }
+    }
+    
+    fun onDeleteMessagesConfirmed(deleteForReceiver: Boolean) {
+        viewModelScope.launch {
+            if (chatRepository.deleteChatMessages(
+                    _uiState.value.chat.id,
+                    deleteForReceiver
+                )
+            ) {
+                updateChatItems(emptyList())
+                hideClearHistoryDialog()
+            }
+        }
+    }
+    
+    fun onDeleteMessageConfirmed(deleteForAll: Boolean) {
+        viewModelScope.launch {
+            _uiState.value.selectedMessages.forEach { message ->
+                if (chatRepository.deleteMessage(
+                        _uiState.value.chat.id,
+                        message.id,
+                        deleteForAll
+                    )
+                ) {
+                    val messages = getRawMessages().filter { it.id != message.id }
+                    updateChatItems(messages)
+                }
+            }
+            _uiState.update { it.copy(selectedMessages = emptySet()) }
+            hideDeleteMessageDialog()
+        }
+    }
+    
+    fun selectMessage(message: Message) =
+        _uiState.update { it.copy(selectedMessages = it.selectedMessages + message) }
+    
+    fun unselectMessage(message: Message) =
+        _uiState.update { it.copy(selectedMessages = it.selectedMessages - message) }
+    
+    fun copyToClipboard(text: String?) = text?.let { clipboardService.copy(it) }
+    
+    fun onBackClicked() = viewModelScope.launch {
+        _uiEffect.emit(ChatUiEffect.NavigateBack)
+    }
+
+    fun cancelUpload(tempMessageId: Int) {
+        val uploadId = tempMessageId.toLong()
+        uploadJobs[uploadId]?.cancel()
+        uploadJobs.remove(uploadId)
+        downloaderManager.cancel(uploadId.toInt())
+        
+        val updatedMessages = getRawMessages().filter { it.id != tempMessageId }
+        updateChatItems(updatedMessages)
+    }
+    
+    fun onFileAction(message: Message, file: MessageFile, action: FileAction) {
+        when (action) {
+            FileAction.DOWNLOAD -> {
+                viewModelScope.launch {
+                    try {
+                        val response = chatRepository.getDownloadUrl(message.chatId, message.id, file.id)
+                        if (response != null) {
+                            downloaderManager.download(
+                                url = response.downloadUrl,
+                                fileName = file.name,
+                                chatId = message.chatId,
+                                messageId = message.id,
+                                fileId = file.id,
+                                size = file.size
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.e("ChatVM", "Error getting download URL", e)
+                    }
+                }
+            }
+            FileAction.PAUSE -> {
+                val download = downloaderManager.downloads.value.find { it.fileId == file.id }
+                download?.let { downloaderManager.pause(it.id) }
+            }
+            FileAction.RESUME -> {
+                val download = downloaderManager.downloads.value.find { it.fileId == file.id }
+                download?.let { downloaderManager.resume(it.id) }
+            }
+            FileAction.CANCEL -> {
+                val download = downloaderManager.downloads.value.find { it.fileId == file.id }
+                download?.let { downloaderManager.cancel(it.id) }
+            }
+        }
+    }
+
+    fun uploadFiles(uris: List<Uri>, context: Context) {
+        viewModelScope.launch {
+            uris.forEach { uri ->
+                val fileName = getFileName(context, uri) ?: "file"
+                val fileSize = getFileSize(context, uri)
+                val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
+                
+                // Create temp message
+                val tempId = Random.nextInt(1000000, Int.MAX_VALUE)
+                val tempMessage = Message(
+                    id = tempId,
+                    senderId = _uiState.value.currentUserId,
+                    chatId = _uiState.value.chat.id,
+                    sendTime = System.currentTimeMillis(),
+                    files = listOf(MessageFile(
+                        id = "temp_${tempId}",
+                        name = fileName,
+                        size = fileSize,
+                        extension = fileName.substringAfterLast('.', ""),
+                        status = DownloadStatus.UPLOADING,
+                        progress = 0
+                    ))
+                )
+                
+                updateChatItems(getRawMessages() + tempMessage)
+                
+                downloaderManager.registerUpload(tempId, fileName, fileSize, _uiState.value.chat.id)
+                
+                try {
+                    // 1. Init upload on server
+                    val initResponse = chatRepository.initFileUpload(
+                        _uiState.value.chat.id,
+                        FileInitRequestDto(
+                            name = fileName,
+                            size = fileSize,
+                            mimeType = mimeType
+                        )
+                    )
+                    
+                    if (initResponse != null) {
+                        // 2. Upload to S3 (manual for now as Ketch is for downloads)
+                        performUpload(uri, initResponse.signedUrl, tempId, context) {
+                            // 3. Confirm on server
+                            viewModelScope.launch {
+                                val confirmedMessage = chatRepository.confirmFileUpload(
+                                    _uiState.value.chat.id,
+                                    FileConfirmRequestDto(
+                                        fileId = initResponse.fileId,
+                                        text = null
+                                    )
+                                )
+                                if (confirmedMessage != null) {
+                                    downloaderManager.completeUpload(tempId)
+                                    val updated = getRawMessages().map { if (it.id == tempId) confirmedMessage else it }
+                                    updateChatItems(updated)
+                                }
+                            }
+                        }
+                    } else {
+                        handleUploadError(tempId)
+                    }
+                } catch (e: Exception) {
+                    handleUploadError(tempId)
+                }
+            }
+        }
+    }
+
+    private fun handleUploadError(id: Int) {
+        downloaderManager.failUpload(id)
+        vibrationManager.vibrate(VibrationPattern.Error)
+    }
+
+    private fun performUpload(uri: Uri, url: String, id: Int, context: Context, onSuccess: () -> Unit) {
+        val job = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri) ?: return@launch
+                val fileSize = getFileSize(context, uri)
+                val mimeType = context.contentResolver.getType(uri)?.toMediaTypeOrNull()
+                
+                val requestBody = ProgressRequestBody(inputStream, mimeType, fileSize) { progress ->
+                    downloaderManager.updateUploadProgress(id, progress)
+                }
+                
+                val request = Request.Builder()
+                    .url(url)
+                    .put(requestBody)
+                    .build()
+                
+                val response = okHttpClient.newCall(request).execute()
+                if (response.isSuccessful) {
+                    downloaderManager.completeUpload(id)
+                    onSuccess()
+                } else {
+                    withContext(Dispatchers.Main) {
+                        handleUploadError(id)
+                    }
+                }
+            } catch (e: Exception) {
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    withContext(Dispatchers.Main) {
+                        handleUploadError(id)
+                    }
+                }
+            } finally {
+                uploadJobs.remove(id.toLong())
+            }
+        }
+        uploadJobs[id.toLong()] = job
+    }
+
+    private fun getFileName(context: Context, uri: Uri): String? {
+        var name: String? = null
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                name = cursor.getString(cursor.getColumnIndexOrThrow(android.provider.OpenableColumns.DISPLAY_NAME))
+            }
+        }
+        return name
+    }
+
+    private fun getFileSize(context: Context, uri: Uri): Long {
+        var size: Long = 0
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                size = cursor.getLong(cursor.getColumnIndexOrThrow(android.provider.OpenableColumns.SIZE))
+            }
+        }
+        return size
+    }
+
+    fun markAsReadMessage(message: Message) {
+        if (message.senderId == _uiState.value.currentUserId || message.isRead) return
+        viewModelScope.launch {
+            if (chatRepository.makeAsRead(
+                    _uiState.value.chat.id,
+                    message.id
+                )
+            ) {
+                readMessage(message.id)
+            }
+        }
+    }
+    
+    fun loadUserName(userId: Long) {
+        if (_uiState.value.userNamesCache.containsKey(userId)) return
+        viewModelScope.launch {
+            try {
+                userRepository.getById(userId).collect { user ->
+                    val name = "${user.firstName} ${user.lastName}"
+                    _uiState.update { it.copy(userNamesCache = it.userNamesCache + (userId to name)) }
+                    updateChatItems(getRawMessages())
+                }
+            } catch (e: Exception) {
+                Log.e(
+                    "ChatVM",
+                    "Error loading user name",
+                    e
+                )
+            }
+        }
+    }
+    
+    private fun readMessage(id: Int) {
+        val messages = getRawMessages().map { if (it.id == id) it.copy(isRead = true) else it }
+        updateChatItems(messages)
+    }
+    
+    private fun deleteMessage(id: Int) {
+        val messages = getRawMessages().filter { it.id != id }
+        updateChatItems(messages)
+    }
+    
+    private fun isSingleEmoji(text: String): Boolean {
+        val emojiRegex =
+            Regex("^[\\p{So}\\p{Cntrl}\\p{InEmoticons}\\p{InMiscellaneousSymbolsAndPictographs}\\p{InSupplementalSymbolsAndPictographs}\\uD83C\\uDFF0-\\uD83D\\uDFFF]+$")
+        return emojiRegex.matches(text.trim())
+    }
+}

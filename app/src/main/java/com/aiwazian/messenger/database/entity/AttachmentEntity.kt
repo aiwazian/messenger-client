@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.database.entity
 
 import androidx.room.Entity
@@ -11,3 +15,4 @@ data class AttachmentEntity(
     val url: String,
     val size: Long
 )
+

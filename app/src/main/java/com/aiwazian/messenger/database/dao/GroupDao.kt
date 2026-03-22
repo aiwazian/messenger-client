@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.database.dao
 
 import androidx.room.Dao
@@ -7,6 +11,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.aiwazian.messenger.database.entity.GroupEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface GroupDao {
@@ -14,7 +19,7 @@ interface GroupDao {
     suspend fun insert(groupEntity: GroupEntity)
     
     @Query("SELECT * FROM 'group' WHERE id = :id")
-    suspend fun get(id: Long): GroupEntity?
+    fun get(id: Long): Flow<GroupEntity?>
     
     @Update
     suspend fun update(groupEntity: GroupEntity)

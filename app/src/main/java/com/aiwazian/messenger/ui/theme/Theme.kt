@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.ui.theme
 
 import android.app.Activity
@@ -67,9 +71,6 @@ fun ApplicationTheme(
             window,
             view
         )
-        
-        window.statusBarColor = Color.Transparent.toArgb()
-        window.navigationBarColor = Color.Transparent.toArgb()
         
         insetsController.isAppearanceLightStatusBars = !isDark
         insetsController.isAppearanceLightNavigationBars = !isDark

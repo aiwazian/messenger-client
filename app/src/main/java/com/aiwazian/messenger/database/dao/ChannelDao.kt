@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.database.dao
 
 import androidx.room.Dao
@@ -19,6 +23,9 @@ interface ChannelDao {
     
     @Query("SELECT * FROM channel WHERE id = :id")
     suspend fun get(id: Long): ChannelEntity?
+
+    @Query("SELECT * FROM channel WHERE id = :id")
+    fun getFlow(id: Long): kotlinx.coroutines.flow.Flow<ChannelEntity?>
     
     @Update
     suspend fun update(channelEntity: ChannelEntity)

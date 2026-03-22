@@ -1,12 +1,15 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -14,69 +17,68 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.aiwazian.messenger.database.repository.UserRepository
-import com.aiwazian.messenger.services.AppLockService
-import com.aiwazian.messenger.services.DataStoreManager
-import com.aiwazian.messenger.services.LanguageService
-import com.aiwazian.messenger.services.NotificationService
-import com.aiwazian.messenger.services.ThemeService
-import com.aiwazian.messenger.services.TokenManager
-import com.aiwazian.messenger.services.UserManager
-import com.aiwazian.messenger.ui.ChatScreen
-import com.aiwazian.messenger.ui.LockScreen
-import com.aiwazian.messenger.ui.MainScreen
-import com.aiwazian.messenger.ui.element.NavigationController
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.aiwazian.messenger.ui.components.navigation.AppNavHost
+import com.aiwazian.messenger.ui.screens.lock.LockScreen
 import com.aiwazian.messenger.ui.theme.ApplicationTheme
-import com.aiwazian.messenger.utils.ChatState
-import com.aiwazian.messenger.utils.WebSocketManager
-import com.aiwazian.messenger.viewModels.NavigationViewModel
+import com.aiwazian.messenger.utils.AppLockManager
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
+import com.aiwazian.messenger.utils.NotificationService
+import com.aiwazian.messenger.utils.SessionManager
+import com.aiwazian.messenger.utils.ThemeManager
+import com.aiwazian.messenger.socket.WebSocketClient
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     
     @Inject
-    lateinit var appLockService: AppLockService
+    lateinit var appLockManager: AppLockManager
     
     @Inject
-    lateinit var themeService: ThemeService
+    lateinit var themeManager: ThemeManager
     
     @Inject
-    lateinit var userRepository: UserRepository
+    lateinit var webSocketClient: WebSocketClient
     
-    lateinit var navViewModel: NavigationViewModel
-    
-    override fun attachBaseContext(newBase: Context) {
-        DataStoreManager.initialize(newBase)
-        val dataStoreManager = DataStoreManager.getInstance()
-        
-        val savedLanguageCode = runBlocking {
-            TokenManager.init()
-            dataStoreManager.getLanguage().first().lowercase()
-        }
-        
-        val languageService = LanguageService(newBase)
-        val context = languageService.selLanguage(savedLanguageCode)
-        
-        super.attachBaseContext(context)
-    }
+    private var startRoute by mutableStateOf<AppRoute>(AppRoute.Main)
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        val intent =
+            Intent(
+                this,
+                AuthActivity::class.java
+            ).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+        
+        val hasSession = runBlocking {
+            SessionManager.loadSession()
+            SessionManager.hasAnySession()
+        }
+        
+        if (!hasSession) {
+            startActivity(intent)
+            finish()
+            return
+        }
+        
+        installSplashScreen().setKeepOnScreenCondition {
+            false
+        }
+        
         enableEdgeToEdge()
         
-        TokenManager.setUnauthorizedCallback {
+        SessionManager.setUnauthorizedCallback {
             val intent = Intent(
                 this,
-                LoginActivity::class.java
+                AuthActivity::class.java
             ).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
@@ -84,41 +86,33 @@ class MainActivity : ComponentActivity() {
             this@MainActivity.finish()
         }
         
+        val chatId =
+            intent.getLongExtra(
+                "chatId",
+                -1L
+            )
+        if (chatId != -1L) {
+            startRoute = AppRoute.Chat(chatId)
+        }
+        
         setContent {
-            val isLockApp by appLockService.isLockApp.collectAsState()
-            val selectedTheme by themeService.currentTheme.collectAsState()
-            val selectedColor by themeService.primaryColor.collectAsState()
-            val isDynamicColorEnable by themeService.dynamicColor.collectAsState()
+            val isLockApp by appLockManager.isLockApp.collectAsState()
+            val selectedTheme by themeManager.currentTheme.collectAsState()
+            val selectedColor by themeManager.primaryColor.collectAsState()
+            val isDynamicColorEnable by themeManager.dynamicColor.collectAsState()
             
             LaunchedEffect(Unit) {
                 try {
-                    WebSocketManager.onConnect = {
-                        lifecycleScope.launch {
-                            UserManager.loadUserData(userRepository)
-                        }
-                    }
+                    webSocketClient.connectWithLifecycle(
+                        BuildConfig.WS_URL,
+                        this@MainActivity
+                    )
                     
-                    WebSocketManager.onClose = { code ->
+                    webSocketClient.setOnDisconnectedCallback { code, _ ->
                         if (code == 1008) {
-                            TokenManager.getUnauthorizedCallback()?.invoke()
-                        } else {
-                            lifecycleScope.launch {
-                                delay(1000)
-                                WebSocketManager.connect()
-                            }
+                            SessionManager.getUnauthorizedCallback()?.invoke()
                         }
                     }
-                    
-                    WebSocketManager.onFailure = {
-                        lifecycleScope.launch {
-                            delay(1000)
-                            WebSocketManager.connect()
-                        }
-                    }
-                    
-                    WebSocketManager.connect()
-                    
-                    UserManager.loadUserData(userRepository)
                 } catch (e: Exception) {
                     Log.e(
                         "MainActivity",
@@ -145,11 +139,7 @@ class MainActivity : ComponentActivity() {
                 dynamicColor = isDynamicColorEnable,
                 primaryColor = selectedColor.color
             ) {
-                navViewModel = viewModel<NavigationViewModel>()
-                
-                NavigationController {
-                    MainScreen()
-                }
+                AppNavHost(startRoute = startRoute)
                 
                 AnimatedVisibility(
                     visible = isLockApp,
@@ -158,31 +148,11 @@ class MainActivity : ComponentActivity() {
                 ) {
                     LockScreen()
                 }
-                
-                LaunchedEffect(Unit) {
-                    val chatId = intent.getStringExtra("chatId")?.toLongOrNull()
-
-                    if (chatId != null && !ChatState.isChatOpen(chatId)) {
-                        navViewModel.addScreenInStack {
-                            ChatScreen(chatId)
-                        }
-                    }
-                }
             }
         }
     }
     
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        
-        val chatId = intent.getStringExtra("chatId")?.toLongOrNull()
-        
-        if (chatId != null) {
-            if (!ChatState.isChatOpen(chatId)) {
-                navViewModel.addScreenInStack {
-                    ChatScreen(chatId)
-                }
-            }
-        }
     }
 }
