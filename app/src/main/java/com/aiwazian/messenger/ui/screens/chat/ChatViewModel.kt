@@ -26,6 +26,7 @@ import com.aiwazian.messenger.domain.MessageFile
 import com.aiwazian.messenger.domain.ReadMessagePayload
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
+import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.enums.WebSocketAction
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
@@ -37,7 +38,6 @@ import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
-import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.screens.profile.Profile
 import com.aiwazian.messenger.utils.ChatState
 import com.aiwazian.messenger.utils.ClipboardService
@@ -60,6 +60,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.File
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.TextStyle
@@ -179,7 +180,7 @@ class ChatViewModel @Inject constructor(
                             )
                             viewModelScope.launch {
                                 val messageToUpdate = item.message
-                                val finalFiles = messageToUpdate.files.map { 
+                                val finalFiles = messageToUpdate.files.map {
                                     if (it.id == updatedFile.id) updatedFile else it
                                 }
                                 chatRepository.saveMessage(messageToUpdate.copy(files = finalFiles))
@@ -188,18 +189,24 @@ class ChatViewModel @Inject constructor(
                         } else {
                             file.copy(
                                 status = download.status,
-                                progress = download.progress
+                                progress = download.progress,
+                                localUri = download.localUri ?: file.localUri
                             )
                         }
-                    } else if (downloaderManager.isDownloaded(file.id, file.extension)) {
+                    } else if (downloaderManager.isDownloaded(
+                            file.id,
+                            file.extension
+                        )
+                    ) {
                         file.copy(
                             status = DownloadStatus.COMPLETED,
                             progress = 100,
-                            localUri = downloaderManager.getFile(file.id, file.extension).absolutePath
+                            localUri = downloaderManager.getFile(
+                                file.id,
+                                file.extension
+                            ).absolutePath
                         )
-                    } else {
-                        file
-                    }
+                    } else file
                 }
                 item.copy(message = item.message.copy(files = updatedFiles))
             } else item
@@ -217,9 +224,6 @@ class ChatViewModel @Inject constructor(
         return _uiState.value.chatItems.filterIsInstance<ChatItem.MessageItem>().map { it.message }
     }
     
-    /**
-     * Загрузка данных чата с Flow: сначала Room, потом сервер
-     */
     private fun loadChatData(chatId: Long) {
         ChatState.openChat(chatId)
         _uiState.update {
@@ -317,7 +321,7 @@ class ChatViewModel @Inject constructor(
                 }
             }
         }
-
+        
         viewModelScope.launch {
             try {
                 val freshMessages = chatRepository.getMessages(chatId)
@@ -335,7 +339,8 @@ class ChatViewModel @Inject constructor(
             }
             updateUiContent()
         }
-        }    
+    }
+    
     private fun updateUiContent() {
         val state = _uiState.value
         val profile = state.profile
@@ -462,11 +467,10 @@ class ChatViewModel @Inject constructor(
                 .toLocalDate()
             
             if (lastDate == null || !messageDate.isEqual(lastDate)) {
-                val monthName =
-                    messageDate.month.getDisplayName(
-                        TextStyle.FULL,
-                        Locale.getDefault()
-                    )
+                val monthName = messageDate.month.getDisplayName(
+                    TextStyle.FULL,
+                    Locale.getDefault()
+                )
                 val capitalizedMonthName = monthName.replaceFirstChar {
                     if (it.isLowerCase()) it.titlecase() else it.toString()
                 }
@@ -478,16 +482,33 @@ class ChatViewModel @Inject constructor(
             val isSingleEmoji = isSingleEmoji(message.text ?: "")
             
             val updatedFiles = message.files.map { file ->
-                val localFile by lazy { downloaderManager.getFile(file.id, file.extension) }
-
-                if (file.localUri != null && java.io.File(file.localUri).exists()) {
-                    file.copy(status = DownloadStatus.COMPLETED, progress = 100)
+                val localFile by lazy {
+                    downloaderManager.getFile(
+                        file.id,
+                        file.extension
+                    )
+                }
+                
+                if (file.localUri != null && File(file.localUri).exists()) {
+                    file.copy(
+                        status = DownloadStatus.COMPLETED,
+                        progress = 100,
+                        localUri = file.localUri
+                    )
                 } else if (localFile.exists() && localFile.length() > 0) {
-                    file.copy(status = DownloadStatus.COMPLETED, progress = 100, localUri = localFile.absolutePath)
+                    file.copy(
+                        status = DownloadStatus.COMPLETED,
+                        progress = 100,
+                        localUri = localFile.absolutePath
+                    )
                 } else {
                     val download = downloaderManager.downloads.value.find { it.fileId == file.id }
                     if (download != null) {
-                        file.copy(status = download.status, progress = download.progress)
+                        file.copy(
+                            status = download.status,
+                            progress = download.progress,
+                            localUri = if (download.status == DownloadStatus.COMPLETED) download.localUri else file.localUri
+                        )
                     } else {
                         file
                     }
@@ -720,12 +741,11 @@ class ChatViewModel @Inject constructor(
             FileAction.DOWNLOAD -> {
                 viewModelScope.launch {
                     try {
-                        val response =
-                            chatRepository.getDownloadUrl(
-                                message.chatId,
-                                message.id,
-                                file.id
-                            )
+                        val response = chatRepository.getDownloadUrl(
+                            message.chatId,
+                            message.id,
+                            file.id
+                        )
                         if (response != null) {
                             downloaderManager.download(
                                 url = response.downloadUrl,

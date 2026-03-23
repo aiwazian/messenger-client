@@ -20,7 +20,8 @@ import javax.inject.Inject
 class ChatRepository @Inject constructor(
     private val chatApi: ChatApi,
     private val messageApi: MessageApi,
-    private val messageDao: com.aiwazian.messenger.database.dao.MessageDao
+    private val messageDao: com.aiwazian.messenger.database.dao.MessageDao,
+    private val attachmentDao: com.aiwazian.messenger.database.dao.AttachmentDao
 ) {
 
     fun getAllChats(): Flow<List<Chat>> = flow {
@@ -67,7 +68,7 @@ class ChatRepository @Inject constructor(
 
     fun getMessagesFlow(chatId: Long): Flow<List<Message>> =
         messageDao.getMessages(chatId).map { entities ->
-            entities.map { it.toDomain() }
+            entities.map { it.message.toDomain(it.messageAttachments.map { att -> att.toDomain() }) }
         }
 
     suspend fun getMessages(chatId: Long): List<Message> {
@@ -76,7 +77,7 @@ class ChatRepository @Inject constructor(
             if (response.isSuccessful) {
                 val dtos = response.body().orEmpty()
                 val domains = dtos.map { it.toDomain() }
-                messageDao.saveMessages(domains.map { it.toEntity() })
+                saveMessagesToDb(domains)
                 domains
             } else {
                 Log.e("ChatRepository", "Failed to get messages for chat $chatId: ${response.message()}")
@@ -94,7 +95,7 @@ class ChatRepository @Inject constructor(
             val response = messageApi.sendTextMessage(chatId, request)
             if (response.isSuccessful) {
                 val sentMessage = response.body()?.toDomain()
-                sentMessage?.let { messageDao.saveMessages(listOf(it.toEntity())) }
+                sentMessage?.let { saveMessagesToDb(listOf(it)) }
                 sentMessage
             } else {
                 Log.e("ChatRepository", "Failed to send message: ${response.message()}")
@@ -107,8 +108,17 @@ class ChatRepository @Inject constructor(
     }
 
     suspend fun saveMessage(message: Message) {
-        messageDao.saveMessages(listOf(message.toEntity()))
+        saveMessagesToDb(listOf(message))
     }
+
+    private suspend fun saveMessagesToDb(messages: List<Message>) {
+        messageDao.saveMessages(messages.map { it.toEntity() })
+        messages.forEach { msg ->
+            val attachments = msg.files.map { it.toEntity(msg.id.toLong(), com.aiwazian.messenger.enums.AttachmentType.MESSAGE, msg.chatId) }
+            attachmentDao.saveAttachments(attachments)
+        }
+    }
+
 
 
     suspend fun initFileUpload(chatId: Long, dto: FileInitRequestDto): FileInitResponseDto? {

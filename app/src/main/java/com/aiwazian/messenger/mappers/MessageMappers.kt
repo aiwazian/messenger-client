@@ -30,20 +30,14 @@ fun MessageFileDto.toDomain(): MessageFile = MessageFile(
     extension = this.name.substringAfterLast('.', "")
 )
 
-fun MessageEntity.toDomain(): Message = Message(
+fun MessageEntity.toDomain(files: List<MessageFile> = emptyList()): Message = Message(
     id = this.id,
     senderId = this.senderId,
     chatId = this.chatId,
     text = this.text,
     sendTime = this.sendTime,
     isRead = this.isRead,
-    files = this.filesJson?.let {
-        try {
-            RetrofitInstance.json.decodeFromString<List<MessageFile>>(it)
-        } catch (e: Exception) {
-            emptyList()
-        }
-    } ?: emptyList()
+    files = files
 )
 
 fun Message.toEntity(): MessageEntity {
@@ -53,7 +47,6 @@ fun Message.toEntity(): MessageEntity {
         chatId = this.chatId,
         text = this.text,
         sendTime = this.sendTime,
-        isRead = this.isRead,
-        filesJson = RetrofitInstance.json.encodeToString(this.files)
+        isRead = this.isRead
     )
 }

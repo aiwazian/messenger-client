@@ -14,6 +14,5 @@ data class MessageEntity(
     val chatId: Long,
     val text: String? = null,
     val sendTime: Long = 0,
-    var isRead: Boolean = false,
-    val filesJson: String? = null
+    var isRead: Boolean = false
 )

@@ -4,7 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
-import android.util.Log
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,13 +21,14 @@ import androidx.compose.material.icons.rounded.FilePresent
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Upload
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,13 +57,13 @@ fun MessageFile(
                     DownloadStatus.IDLE -> onAction(FileAction.DOWNLOAD)
                     DownloadStatus.UPLOADING -> onAction(FileAction.CANCEL)
                     DownloadStatus.COMPLETED -> onAction(FileAction.OPEN)
-                    else -> {}
+                    DownloadStatus.FAILED -> onAction(FileAction.DOWNLOAD)
+                    DownloadStatus.CANCELLED -> onAction(FileAction.DOWNLOAD)
                 }
             }
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
+        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(
             modifier = Modifier
                 .size(48.dp)
@@ -72,11 +73,21 @@ fun MessageFile(
         ) {
             StatusIcon(file.status)
             if (file.status == DownloadStatus.DOWNLOADING || file.status == DownloadStatus.UPLOADING) {
-                CircularWavyProgressIndicator(
-                    progress = { file.progress / 100f },
-                    modifier = Modifier.size(48.dp),
-                    color = MaterialTheme.colorScheme.primary
-                )
+                if (file.progress == 0) {
+                    CircularWavyProgressIndicator(
+                        modifier = Modifier.size(48.dp)
+                    )
+                } else {
+                    val animatedProgress by animateFloatAsState(
+                        targetValue = file.progress / 100f,
+                        animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+                    )
+                    
+                    CircularWavyProgressIndicator(
+                        progress = { animatedProgress },
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
             }
         }
         
@@ -92,7 +103,7 @@ fun MessageFile(
                 fontSize = 14.sp,
                 lineHeight = 14.sp
             )
-
+            
             Text(
                 text = "${formatFileSize(file.size)} • ${file.extension.uppercase()}",
                 fontSize = 10.sp,
@@ -125,14 +136,13 @@ private fun StatusIcon(
 
 private fun formatFileSize(size: Long): String {
     if (size <= 0) return "0 B"
-    val units =
-        arrayOf(
-            "B",
-            "KB",
-            "MB",
-            "GB",
-            "TB"
-        )
+    val units = arrayOf(
+        "B",
+        "KB",
+        "MB",
+        "GB",
+        "TB"
+    )
     val digitGroups = (log10(size.toDouble()) / log10(1024.0)).toInt()
     return String.format(
         "%.1f %s",

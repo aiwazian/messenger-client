@@ -23,7 +23,6 @@ class ProgressRequestBody(
 
     override fun writeTo(sink: BufferedSink) {
         val source = inputStream.source()
-        val buffer = ByteArray(8192)
         var totalBytesRead = 0L
         var read: Int
 

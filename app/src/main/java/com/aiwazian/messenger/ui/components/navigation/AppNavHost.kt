@@ -122,7 +122,7 @@ fun AppNavHost(startRoute: AppRoute = AppRoute.Main) {
                 slideInHorizontally { it } togetherWith slideOutHorizontally { -it / 4 }
             },
             popTransitionSpec = {
-                slideInHorizontally { -it / 4 } + fadeIn() togetherWith slideOutHorizontally { it } + fadeOut()
+                slideInHorizontally { -it / 4 } togetherWith slideOutHorizontally { it }
             },
             predictivePopTransitionSpec = {
                 slideInHorizontally { -it / 4 } togetherWith slideOutHorizontally { it }

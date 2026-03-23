@@ -28,6 +28,7 @@ import okhttp3.OkHttpClient
 import javax.inject.Inject
 import javax.inject.Singleton
 import androidx.core.net.toUri
+import java.io.File
 
 @Singleton
 class DownloaderManager @Inject constructor(
@@ -64,7 +65,8 @@ class DownloaderManager @Inject constructor(
         fileId: String,
         size: Long
     ): Int {
-        val path = context.getExternalFilesDir(null)?.absolutePath ?: context.filesDir.absolutePath
+        val folderName = getFolderNameForExtension(fileName.substringAfterLast('.', ""))
+        val path = File(context.getExternalFilesDir(null) ?: context.filesDir, folderName).absolutePath
         val extension = fileName.substringAfterLast('.', "")
         val finalFileName = if (extension.isNotEmpty()) "$fileId.$extension" else fileId
 
@@ -90,21 +92,29 @@ class DownloaderManager @Inject constructor(
         return id
     }
     
+    private fun getFolderNameForExtension(extension: String): String {
+        return when (extension.lowercase()) {
+            "jpg", "jpeg", "png", "webp", "gif", "bmp" -> "Images"
+            "mp4", "mkv", "avi", "mov", "3gp", "webm" -> "Video"
+            "pdf", "doc", "docx", "txt", "xls", "xlsx", "ppt", "pptx" -> "Documents"
+            else -> "Other"
+        }
+    }
+    
     private fun observeDownload(id: Int) {
         scope.launch {
             ketch.observeDownloadById(id).collect { model ->
                 if (model != null) {
                     _downloads.update { current ->
                         val existing = current[id] ?: return@update current
-                        
+
                         val finalStatus = mapKetchStatus(model.status)
                         val finalUri = if (finalStatus == DownloadStatus.COMPLETED) {
-                            // Assuming model.path is the directory and model.fileName is the file name
                             "${model.path}/${model.fileName}"
                         } else {
                             existing.localUri
                         }
-                        
+
                         current + (id to existing.copy(
                             progress = model.progress,
                             status = finalStatus,
@@ -185,14 +195,16 @@ class DownloaderManager @Inject constructor(
         return file.exists() && file.length() > 0
     }
 
-    fun getFile(fileId: String, extension: String): java.io.File {
-        val path = context.getExternalFilesDir(null) ?: context.filesDir
+    fun getFile(fileId: String, extension: String): File {
+        val folderName = getFolderNameForExtension(extension)
+        val path = File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
+        if (!path.exists()) path.mkdirs()
         val finalFileName = if (extension.isNotEmpty()) "$fileId.$extension" else fileId
-        return java.io.File(path, finalFileName)
+        return File(path, finalFileName)
     }
     
     fun openFile(path: String) {
-        val file = java.io.File(path)
+        val file = File(path)
         if (!file.exists()) {
             Log.e("DownloaderManager", "File does not exist at path: $path")
             return
@@ -205,7 +217,7 @@ class DownloaderManager @Inject constructor(
         }
     }
 
-    private fun openApkFile(file: java.io.File) {
+    private fun openApkFile(file: File) {
         val fileUri = FileProvider.getUriForFile(
             context,
             "${context.packageName}.fileprovider",

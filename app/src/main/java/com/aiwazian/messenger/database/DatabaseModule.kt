@@ -7,6 +7,7 @@ package com.aiwazian.messenger.database
 import android.content.Context
 import androidx.room.Room
 import com.aiwazian.messenger.database.dao.AccountDao
+import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.GroupDao
@@ -66,5 +67,10 @@ object DatabaseModule {
     @Provides
     fun provideMessageDao(database: AppDatabase): MessageDao {
         return database.messageDao()
+    }
+    
+    @Provides
+    fun provideAttachmentDao(database: AppDatabase): AttachmentDao {
+        return database.attachmentDao()
     }
 }
