@@ -76,35 +76,6 @@ class StorageViewModel @Inject constructor(
         }
     }
     
-    fun selectAllCategories() {
-        viewModelScope.launch {
-            val currentState = _uiState.value
-            val updatedCategories = currentState.categories.map { it.copy(isSelected = true) }
-            val selectedSize = currentState.totalCacheSize
-            
-            _uiState.update {
-                it.copy(
-                    categories = updatedCategories,
-                    selectedSize = selectedSize
-                )
-            }
-        }
-    }
-    
-    fun deselectAllCategories() {
-        viewModelScope.launch {
-            val currentState = _uiState.value
-            val updatedCategories = currentState.categories.map { it.copy(isSelected = false) }
-            
-            _uiState.update {
-                it.copy(
-                    categories = updatedCategories,
-                    selectedSize = 0
-                )
-            }
-        }
-    }
-    
     fun showConfirmDialog() {
         val state = _uiState.value
         if (state.selectedCategories.isNotEmpty()) {

@@ -125,4 +125,5 @@
     <string name="add_member">Add Members</string>
     <string name="delete_group">Delete Group</string>
     <string name="save_to_downloads">Save to Downloads</string>
+    <string name="copied">Copied</string>
 </resources>

@@ -277,7 +277,7 @@ private fun UserProfile(
     Scaffold(
         topBar = {
             TopBar(
-                title = "${user.firstName} ${user.lastName}",
+                title = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
                 actions = actions
             )
         },

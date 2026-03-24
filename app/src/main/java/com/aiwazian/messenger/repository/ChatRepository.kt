@@ -115,7 +115,7 @@ class ChatRepository @Inject constructor(
         messageDao.saveMessages(messages.map { it.toEntity() })
         messages.forEach { msg ->
             val attachments = msg.files.map { it.toEntity(msg.id.toLong(), com.aiwazian.messenger.enums.AttachmentType.MESSAGE, msg.chatId) }
-            attachmentDao.saveAttachments(attachments)
+            attachmentDao.upsertAttachments(attachments)
         }
     }
 

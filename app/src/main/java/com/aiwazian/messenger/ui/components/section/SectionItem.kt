@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.components.section
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,9 +40,15 @@ fun SectionItem(
 ) {
     TextButton(
         shape = RectangleShape,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = {},
+                onLongClick = onLongClick
+            ),
         onClick = onClick,
-        colors = colors ?: ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
+        colors = colors
+            ?: ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
     ) {
         Row(
             modifier = Modifier

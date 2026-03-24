@@ -27,6 +27,7 @@ fun SectionRadioItem(
     text: String,
     selected: Boolean = false,
     description: String? = null,
+    primaryText: String? = null,
     onClick: () -> Unit = {}
 ) {
     TextButton(
@@ -67,6 +68,13 @@ fun SectionRadioItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+            
+            if (!primaryText.isNullOrBlank()) {
+                Text(
+                    primaryText,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }

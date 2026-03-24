@@ -123,4 +123,5 @@
     <string name="add_member">Добавить участников</string>
     <string name="delete_group">Удалить группу</string>
     <string name="save_to_downloads">Сохранить в загрузки</string>
+    <string name="copied">Скопировано</string>
 </resources>
