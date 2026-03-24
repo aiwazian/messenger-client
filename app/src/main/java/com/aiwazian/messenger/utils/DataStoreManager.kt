@@ -8,6 +8,8 @@ import android.content.Context
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.aiwazian.messenger.enums.PrimaryColorOption
@@ -26,6 +28,8 @@ private object Keys {
     val PASSCODE = stringPreferencesKey("passcode")
     val IS_LOCK_APP = booleanPreferencesKey("is_lock_app")
     val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
+    val FAILED_ATTEMPTS = intPreferencesKey("failed_attempts")
+    val BLOCKED_UNTIL = longPreferencesKey("blocked_until")
 }
 
 @Singleton
@@ -61,6 +65,16 @@ class DataStoreManager @Inject constructor(
         isLock
     )
 
+    suspend fun saveFailedAttempts(attempts: Int) = setValue(
+        Keys.FAILED_ATTEMPTS,
+        attempts
+    )
+
+    suspend fun saveBlockedUntil(timestamp: Long) = setValue(
+        Keys.BLOCKED_UNTIL,
+        timestamp
+    )
+
     suspend fun savePrimaryColor(colorName: String) = setValue(
         Keys.PRIMARY_COLOR,
         colorName
@@ -84,6 +98,16 @@ class DataStoreManager @Inject constructor(
     fun getIsLockApp() = getValue(
         Keys.IS_LOCK_APP,
         false
+    )
+
+    fun getFailedAttempts() = getValue(
+        Keys.FAILED_ATTEMPTS,
+        0
+    )
+
+    fun getBlockedUntil() = getValue(
+        Keys.BLOCKED_UNTIL,
+        0L
     )
 
     fun getPrimaryColor() = getValue(

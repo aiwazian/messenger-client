@@ -15,7 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 
 @Composable
-fun InputField(placeholder: String, value: String, onValueChange: (String) -> Unit) {
+fun InputField(
+    placeholder: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    trailingIcon: @Composable (() -> Unit)? = null
+) {
     val selectionColor = TextSelectionColors(
         handleColor = MaterialTheme.colorScheme.primary,
         backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
@@ -27,6 +32,7 @@ fun InputField(placeholder: String, value: String, onValueChange: (String) -> Un
         singleLine = true,
         placeholder = { Text(placeholder) },
         onValueChange = onValueChange,
+        trailingIcon = trailingIcon,
         colors = TextFieldDefaults.colors(
             selectionColors = selectionColor,
             cursorColor = MaterialTheme.colorScheme.primary,

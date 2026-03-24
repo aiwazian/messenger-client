@@ -9,9 +9,10 @@ import com.aiwazian.messenger.domain.Session
 
 fun SessionResponseDto.toDomain(): Session = Session(
     id = id,
-    userId = userId,
+    userId = userId.toLong(),
     osName = osName,
     osVersion = osVersion,
     deviceModel = deviceModel,
-    createdAt = createdAt.toLong()
+    createdAt = createdAt.toLong(),
+    isCurrent = isCurrent ?: false
 )

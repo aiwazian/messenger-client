@@ -14,22 +14,23 @@ import androidx.compose.material.icons.automirrored.rounded.Backspace
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.ui.components.CodeBlocks
 import com.aiwazian.messenger.ui.components.CustomNumberBoard
-import com.aiwazian.messenger.ui.screens.settings.security.PasscodeLockViewModel
+import com.aiwazian.messenger.ui.screens.settings.security.passcode.PasscodeViewModel
 
 @Composable
-fun LockScreen(lockScreenViewModel: LockScreenViewModel = hiltViewModel()) {
-    Content(lockScreenViewModel)
-}
+fun LockScreen(lockViewModel: LockViewModel = hiltViewModel()) {
+    val uiState by lockViewModel.uiState.collectAsState()
 
-@Composable
-private fun Content(lockScreenViewModel: LockScreenViewModel) {
     Scaffold { innerPadding ->
         Column(
             modifier = Modifier
@@ -42,16 +43,28 @@ private fun Content(lockScreenViewModel: LockScreenViewModel) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(80.dp),
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Lock,
-                    contentDescription = "Lock",
-                    modifier = Modifier.size(40.dp),
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Lock,
+                        contentDescription = "Lock",
+                        modifier = Modifier.size(40.dp),
+                    )
+
+                    if (uiState.remainingSeconds > 0) {
+                        Text(
+                            text = "Попробуйте снова через ${uiState.remainingSeconds} сек.",
+                            fontSize = 16.sp
+                        )
+                    }
+                }
                 
                 CodeBlocks(
-                    count = PasscodeLockViewModel.MAX_LENGTH_PASSCODE,
+                    count = PasscodeViewModel.MAX_LENGTH_PASSCODE,
                     showInput = false,
-                    code = lockScreenViewModel.passcode
+                    code = uiState.passcode
                 )
                 
                 val boardButtons = listOf(
@@ -78,10 +91,10 @@ private fun Content(lockScreenViewModel: LockScreenViewModel) {
                 )
                 
                 CustomNumberBoard(
-                    value = lockScreenViewModel.passcode,
+                    value = uiState.passcode,
                     buttons = boardButtons,
-                    onChange = lockScreenViewModel::onPasscodeChanged,
-                    onVibrate = lockScreenViewModel::vibrate
+                    onChange = lockViewModel::onPasscodeChanged,
+                    onVibrate = lockViewModel::vibrate
                 )
             }
         }

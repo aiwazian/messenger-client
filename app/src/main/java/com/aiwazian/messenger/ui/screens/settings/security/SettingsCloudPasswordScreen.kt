@@ -23,7 +23,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,14 +35,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.VibrationPattern
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsChangeCloudPasswordScreen(cloudPasswordViewModel: CloudPasswordViewModel = hiltViewModel()) {
+fun SettingsCloudPasswordScreen(cloudPasswordViewModel: CloudPasswordViewModel = hiltViewModel()) {
     val navHost = LocalNavHost.current
     
     val newPassword by cloudPasswordViewModel.newPassword.collectAsState()
@@ -52,12 +51,6 @@ fun SettingsChangeCloudPasswordScreen(cloudPasswordViewModel: CloudPasswordViewM
     val scope = rememberCoroutineScope()
     
     var isLoading by remember { mutableStateOf(false) }
-    
-    DisposableEffect(Unit) {
-        onDispose {
-            cloudPasswordViewModel.cleanData()
-        }
-    }
     
     Scaffold(
         topBar = {
@@ -118,6 +111,7 @@ fun SettingsChangeCloudPasswordScreen(cloudPasswordViewModel: CloudPasswordViewM
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 40.dp),
+                shape = MaterialTheme.shapes.medium,
                 value = newPassword,
                 onValueChange = cloudPasswordViewModel::onInputNewPassword,
                 label = {

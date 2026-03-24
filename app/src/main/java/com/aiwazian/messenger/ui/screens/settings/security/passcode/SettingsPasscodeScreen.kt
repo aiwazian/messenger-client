@@ -2,7 +2,7 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.screens.settings.security
+package com.aiwazian.messenger.ui.screens.settings.security.passcode
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,9 +22,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -37,24 +37,25 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.AnimatedIntroScreen
 import com.aiwazian.messenger.ui.components.CodeBlocks
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomNumberBoard
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.navigation.AppRoute
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.screens.settings.security.SettingsSecurityViewModel
 import com.aiwazian.messenger.utils.LottieAnimation
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun SettingsPasscodeScreen() {
     val securityViewModel = hiltViewModel<SettingsSecurityViewModel>()
     val passcodeEnabled by securityViewModel.isEnablePasscode.collectAsState()
-
+    
     if (passcodeEnabled) {
         SettingsPasscodeLockScreen()
     } else {
@@ -63,16 +64,21 @@ fun SettingsPasscodeScreen() {
 }
 
 @Composable
-fun SettingsPasscodeCreateScreen() {
+fun SettingsPasscodeCreateScreen(
+    passcodeViewModel: PasscodeViewModel = hiltViewModel()
+) {
     val navHost = LocalNavHost.current
-    val passcodeLockViewModel = hiltViewModel<PasscodeLockViewModel>()
-
-    passcodeLockViewModel.onSaveNewPasscode = {
-        navHost.removeLastOrNull()
+    
+    val uiState by passcodeViewModel.uiState.collectAsState()
+    
+    LaunchedEffect(Unit) {
+        passcodeViewModel.uiEffect.collectLatest { effect ->
+            when (effect) {
+                PasscodeUiEffect.NavigateBack -> navHost.removeLastOrNull()
+            }
+        }
     }
-
-    val passcode by passcodeLockViewModel.passcode.collectAsState()
-
+    
     Scaffold(
         topBar = {
             TopBar()
@@ -99,7 +105,7 @@ fun SettingsPasscodeCreateScreen() {
                         text = "Создание код-пароля",
                         fontSize = 24.sp
                     )
-
+                    
                     Text(
                         text = "Введите 4 цифры, которые хотите использовать для разблокировки приложения.",
                         textAlign = TextAlign.Center,
@@ -107,14 +113,14 @@ fun SettingsPasscodeCreateScreen() {
                         lineHeight = 16.sp
                     )
                 }
-
+                
                 CodeBlocks(
-                    count = PasscodeLockViewModel.MAX_LENGTH_PASSCODE,
+                    count = PasscodeViewModel.MAX_LENGTH_PASSCODE,
                     showInput = false,
-                    code = passcode
+                    code = uiState.passcode
                 )
             }
-
+            
             val boardButtons = listOf(
                 listOf(
                     "1",
@@ -137,28 +143,33 @@ fun SettingsPasscodeCreateScreen() {
                     Icons.AutoMirrored.Rounded.Backspace
                 ),
             )
-
+            
             CustomNumberBoard(
-                value = passcode,
+                value = uiState.passcode,
                 buttons = boardButtons,
-                onChange = passcodeLockViewModel::onPasscodeChanged,
-                onVibrate = passcodeLockViewModel::vibrate
+                onChange = passcodeViewModel::onPasscodeChanged,
+                onVibrate = passcodeViewModel::vibrate
             )
         }
     }
 }
 
 @Composable
-fun SettingsPasscodeChangeScreen() {
+fun SettingsPasscodeChangeScreen(
+    passcodeViewModel: PasscodeViewModel = hiltViewModel()
+) {
     val navHost = LocalNavHost.current
-    val passcodeLockViewModel = hiltViewModel<PasscodeLockViewModel>()
-
-    passcodeLockViewModel.onSaveNewPasscode = {
-        navHost.removeLastOrNull()
+    
+    val uiState by passcodeViewModel.uiState.collectAsState()
+    
+    LaunchedEffect(Unit) {
+        passcodeViewModel.uiEffect.collectLatest { effect ->
+            when (effect) {
+                PasscodeUiEffect.NavigateBack -> navHost.removeLastOrNull()
+            }
+        }
     }
-
-    val passcode by passcodeLockViewModel.passcode.collectAsState()
-
+    
     Scaffold(
         topBar = {
             PageTopBar(
@@ -186,12 +197,12 @@ fun SettingsPasscodeChangeScreen() {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-
+                    
                     Text(
                         text = "Введите новый код-пароль",
                         fontSize = 24.sp
                     )
-
+                    
                     Text(
                         text = "Введите 4 цифры, которые хотите использовать для разблокировки приложения.",
                         textAlign = TextAlign.Center,
@@ -199,13 +210,13 @@ fun SettingsPasscodeChangeScreen() {
                         lineHeight = 16.sp
                     )
                 }
-
+                
                 CodeBlocks(
-                    count = PasscodeLockViewModel.MAX_LENGTH_PASSCODE,
-                    code = passcode
+                    count = PasscodeViewModel.MAX_LENGTH_PASSCODE,
+                    code = uiState.passcode
                 )
             }
-
+            
             val boardButtons = listOf(
                 listOf(
                     "1",
@@ -228,12 +239,12 @@ fun SettingsPasscodeChangeScreen() {
                     Icons.AutoMirrored.Rounded.Backspace
                 ),
             )
-
+            
             CustomNumberBoard(
-                value = passcode,
+                value = uiState.passcode,
                 buttons = boardButtons,
-                onChange = passcodeLockViewModel::onPasscodeChanged,
-                onVibrate = passcodeLockViewModel::vibrate
+                onChange = passcodeViewModel::onPasscodeChanged,
+                onVibrate = passcodeViewModel::vibrate
             )
         }
     }
@@ -242,7 +253,7 @@ fun SettingsPasscodeChangeScreen() {
 @Composable
 private fun PasscodeLockMainScreen() {
     val navHost = LocalNavHost.current
-
+    
     Scaffold(
         topBar = {
             TopBarMain()
@@ -275,14 +286,23 @@ private fun TopBar() {
 }
 
 @Composable
-private fun SettingsPasscodeLockScreen() {
+private fun SettingsPasscodeLockScreen(
+    passcodeViewModel: PasscodeViewModel = hiltViewModel()
+) {
     val navHost = LocalNavHost.current
-    val passcodeLockViewModel = hiltViewModel<PasscodeLockViewModel>()
-
-    val disablePasscodeDialog = passcodeLockViewModel.disablePasscodeDialog
-
+    
+    val disablePasscodeDialog = passcodeViewModel.disablePasscodeDialog
+    
     val scrollState = rememberScrollState()
-
+    
+    LaunchedEffect(Unit) {
+        passcodeViewModel.uiEffect.collectLatest { effect ->
+            when (effect) {
+                PasscodeUiEffect.NavigateBack -> navHost.removeLastOrNull()
+            }
+        }
+    }
+    
     Scaffold(
         topBar = {
             TopBar()
@@ -303,14 +323,14 @@ private fun SettingsPasscodeLockScreen() {
                 val composition by rememberLottieComposition(
                     spec = LottieCompositionSpec.Asset(LottieAnimation.KEY_LOCK)
                 )
-
+                
                 LottieAnimation(
                     composition = composition,
                     modifier = Modifier.size(100.dp),
                     iterations = LottieConstants.IterateForever,
                     isPlaying = true
                 )
-
+                
                 Text(
                     text = "Для блокировки и разблокировки приложения нажмите на значок замка над списком чатов.",
                     fontSize = 14.sp,
@@ -318,9 +338,9 @@ private fun SettingsPasscodeLockScreen() {
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-
+                
             }
-
+            
             SectionContainer {
                 SectionItem(
                     text = stringResource(R.string.change_passcode),
@@ -328,7 +348,7 @@ private fun SettingsPasscodeLockScreen() {
                         navHost.add(AppRoute.SettingsPasscodeChange)
                     })
             }
-
+            
             SectionContainer {
                 SectionItem(
                     text = stringResource(R.string.turn_passcode_off),
@@ -338,18 +358,13 @@ private fun SettingsPasscodeLockScreen() {
                     onClick = disablePasscodeDialog::show
                 )
             }
-
-            val scope = rememberCoroutineScope()
-
+            
             if (disablePasscodeDialog.isVisible) {
                 DisablePasscodeDialog(
                     onDismiss = disablePasscodeDialog::hide,
                     onConfirm = {
-                        scope.launch {
-                            passcodeLockViewModel.disablePasscode()
-                            disablePasscodeDialog.hide()
-                            navHost.removeLastOrNull()
-                        }
+                        passcodeViewModel.disablePasscode()
+                        disablePasscodeDialog.hide()
                     })
             }
         }
@@ -395,5 +410,3 @@ private fun TopBarMain() {
         )
     )
 }
-
-

@@ -4,8 +4,6 @@
 
 package com.aiwazian.messenger.ui.components.navigation
 
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -51,15 +49,13 @@ import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsPrivacyScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileColorScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsUsernameScreen
-import com.aiwazian.messenger.ui.screens.settings.security.SettingsChangeCloudPasswordScreen
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsCloudPasswordScreen
-import com.aiwazian.messenger.ui.screens.settings.security.SettingsDevicesScreen
-import com.aiwazian.messenger.ui.screens.settings.security.SettingsPasscodeChangeScreen
-import com.aiwazian.messenger.ui.screens.settings.security.SettingsPasscodeCreateScreen
-import com.aiwazian.messenger.ui.screens.settings.security.SettingsPasscodeScreen
+import com.aiwazian.messenger.ui.screens.settings.security.devices.SettingsDevicesScreen
+import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeChangeScreen
+import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeCreateScreen
+import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeScreen
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsSecurityScreen
 import com.aiwazian.messenger.ui.screens.settings.storage.StorageScreen
-import com.aiwazian.messenger.ui.components.navigation.AppRoute
 
 val LocalNavHost = staticCompositionLocalOf<NavBackStack<NavKey>> {
     error("No NavHost provided")
@@ -95,7 +91,6 @@ fun AppNavHost(startRoute: AppRoute = AppRoute.Main) {
                 entry<AppRoute.SettingsPasscodeCreate> { SettingsPasscodeCreateScreen() }
                 entry<AppRoute.SettingsPasscodeChange> { SettingsPasscodeChangeScreen() }
                 entry<AppRoute.SettingsCloudPassword> { SettingsCloudPasswordScreen() }
-                entry<AppRoute.SettingsChangeCloudPassword> { SettingsChangeCloudPasswordScreen() }
                 entry<AppRoute.SettingsNotifications> { SettingsNotificationsScreen() }
                 entry<AppRoute.SettingsDataAndStorage> { StorageScreen() }
                 entry<AppRoute.SettingsProfileColor> { SettingsProfileColorScreen() }

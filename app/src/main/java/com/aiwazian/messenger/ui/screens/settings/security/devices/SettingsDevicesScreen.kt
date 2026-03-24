@@ -1,0 +1,359 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
+package com.aiwazian.messenger.ui.screens.settings.security.devices
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.BackHand
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxDefaults
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.Session
+import com.aiwazian.messenger.extensions.toInstance
+import com.aiwazian.messenger.extensions.toPrettyDateTime
+import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.section.SectionContainer
+import com.aiwazian.messenger.ui.components.section.SectionDescription
+import com.aiwazian.messenger.ui.components.section.SectionHeader
+import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+
+@Composable
+fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) {
+    val navHost = LocalNavHost.current
+    val uiState by devicesViewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    LaunchedEffect(Unit) {
+        devicesViewModel.sideEffect.collect { effect ->
+            when (effect) {
+                is DevicesSideEffect.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(effect.message)
+                }
+                
+                is DevicesSideEffect.VibrateError -> {
+                    // Handled in ViewModel via vibrationManager
+                }
+            }
+        }
+    }
+    
+    val currentSession = uiState.sessions.find { it.isCurrent }
+    val otherSessions = uiState.sessions.filter { !it.isCurrent }
+    
+    Scaffold(
+        topBar = {
+            PageTopBar(
+                title = { Text(stringResource(R.string.devices)) },
+                navigationIcon = NavigationIcon(
+                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                    onClick = navHost::removeLastOrNull
+                )
+            )
+        },
+        snackbarHost = {
+            SwipeDismissSnackbarHost(snackbarHostState)
+        }) { paddingValues ->
+        
+        Column(
+            Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            
+            if (currentSession != null) {
+                SectionContainer(header = {
+                    SectionHeader(stringResource(R.string.this_device))
+                }, footer = {
+                    SectionDescription(text = stringResource(R.string.terminate_all_other_sessions_description))
+                }) {
+                    DeviceCard(
+                        session = currentSession,
+                        onClick = { devicesViewModel.openSession(currentSession) }
+                    )
+                    SectionItem(
+                        icon = Icons.Outlined.BackHand,
+                        text = stringResource(R.string.terminate_all_other_sessions),
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        onClick = devicesViewModel::showTerminateAllOtherSessionsDialog
+                    )
+                }
+            }
+            
+            if (otherSessions.isNotEmpty()) {
+                SectionContainer(header = {
+                    SectionHeader(title = stringResource(R.string.active_sessions))
+                }, footer = {
+                    SectionDescription(text = "Официальное приложение доступно только для Android устройств.")
+                }) {
+                    otherSessions.forEach { session ->
+                        DeviceCard(
+                            session = session,
+                            onClick = { devicesViewModel.openSession(session) }
+                        )
+                    }
+                }
+            }
+        }
+        
+        if (uiState.showTerminateSessionDialog) {
+            TerminateSessionDialog(
+                title = stringResource(R.string.terminate_session),
+                message = "Вы точно хотите завершить сеанс?",
+                onDismiss = devicesViewModel::hideTerminateSessionDialog,
+                onConfirm = devicesViewModel::terminateSession
+            )
+        }
+        
+        if (uiState.showTerminateAllOtherSessionsDialog) {
+            TerminateSessionDialog(
+                title = stringResource(R.string.terminate_all_other_sessions),
+                message = "Вы точно хотите завершить все остальные сеансы?",
+                onDismiss = devicesViewModel::hideTerminateAllOtherSessionsDialog,
+                onConfirm = devicesViewModel::terminateAllOtherSessions
+            )
+        }
+        
+        if (uiState.showSessionInfoBottomSheet && uiState.openedSession != null) {
+            SessionInfoBottomSheet(
+                session = uiState.openedSession!!,
+                onDismissRequest = devicesViewModel::closeSessionInfo,
+                onTerminateClick = devicesViewModel::showTerminateSessionDialog
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SessionInfoBottomSheet(
+    session: Session,
+    onDismissRequest: () -> Unit,
+    onTerminateClick: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        dragHandle = null
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(24.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = session.deviceModel,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                InfoRow(label = "OC:", value = "${session.osName} ${session.osVersion}")
+                InfoRow(
+                    label = "Создана:",
+                    value = session.createdAt.toInstance().toPrettyDateTime()
+                )
+            }
+            
+            if (!session.isCurrent) {
+                Button(
+                    onClick = onTerminateClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                ) {
+                    Text(
+                        text = stringResource(R.string.terminate_session),
+                        modifier = Modifier.padding(4.dp),
+                        fontSize = 16.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = value,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun DeviceCard(
+    session: Session,
+    onClick: () -> Unit
+) {
+    Card(
+        shape = RectangleShape,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        ),
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_launcher_background),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Image(
+                    painter = painterResource(R.drawable.ic_launcher_foreground),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            Column(modifier = Modifier.padding(start = 16.dp)) {
+                Text(
+                    text = session.deviceModel,
+                    fontWeight = if (session.isCurrent) FontWeight.Bold else FontWeight.Normal
+                )
+                Text(
+                    text = "${session.osName} ${session.osVersion}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TerminateSessionDialog(
+    title: String,
+    message: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    CustomDialog(
+        title = title,
+        onDismissRequest = onDismiss,
+        content = {
+            Text(message)
+        },
+        buttons = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text(stringResource(R.string.terminate))
+            }
+        })
+}
+
+@Composable
+private fun SwipeDismissSnackbarHost(snackbarHostState: SnackbarHostState) {
+    SnackbarHost(hostState = snackbarHostState) { data ->
+        var dismissed by remember { mutableStateOf(false) }
+        
+        if (!dismissed) {
+            val swipeToDismissBoxState = rememberSwipeToDismissBoxState(
+                SwipeToDismissBoxValue.Settled,
+                SwipeToDismissBoxDefaults.positionalThreshold
+            )
+            
+            SwipeToDismissBox(
+                state = swipeToDismissBoxState,
+                enableDismissFromEndToStart = true,
+                enableDismissFromStartToEnd = true,
+                backgroundContent = { }) {
+                Snackbar(
+                    modifier = Modifier
+                        .padding(12.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ) {
+                    Text(data.visuals.message)
+                }
+            }
+        }
+    }
+}

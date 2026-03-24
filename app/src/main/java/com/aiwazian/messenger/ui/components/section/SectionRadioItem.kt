@@ -17,6 +17,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,6 +29,7 @@ fun SectionRadioItem(
     selected: Boolean = false,
     description: String? = null,
     primaryText: String? = null,
+    radioColor: Color = MaterialTheme.colorScheme.primary,
     onClick: () -> Unit = {}
 ) {
     TextButton(
@@ -47,7 +49,8 @@ fun SectionRadioItem(
                 selected = selected,
                 modifier = Modifier.padding(end = 16.dp),
                 colors = RadioButtonDefaults.colors(
-                    selectedColor = MaterialTheme.colorScheme.primary
+                    selectedColor = radioColor,
+                    unselectedColor = radioColor
                 )
             )
             

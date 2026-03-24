@@ -32,12 +32,16 @@ class CloudPasswordViewModel @Inject constructor(
     }
 
     fun onInputNewPassword(newPassword: String) {
-        _newPassword.update { newPassword }
+        val filtered = newPassword.filter { char ->
+            (char in 'a'..'z') || (char in 'A'..'Z') || (char in '0'..'9') ||
+                    "_!@#$%^&*()-+=[]{}|;:',.<>?/`\"~".contains(char)
+        }.take(32)
+        _newPassword.update { filtered }
         _errorMessage.update { null }
     }
 
     fun checkValidPassword(): Boolean {
-        if (_newPassword.value.isBlank()) {
+        if (_newPassword.value.isEmpty()) {
             _errorMessage.update { "Введите пароль" }
             return false
         }
@@ -60,11 +64,6 @@ class CloudPasswordViewModel @Inject constructor(
             Log.e("CloudPasswordViewModel", e.message.toString())
             false
         }
-    }
-
-    fun cleanData() {
-        _newPassword.update { "" }
-        _errorMessage.update { null }
     }
 }
 

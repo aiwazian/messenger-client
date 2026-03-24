@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.Button
@@ -34,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.enums.PrimaryColorOption
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -111,70 +110,69 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                     CircularProgressIndicator()
                 }
             } else {
-                SectionContainer(footer = { SectionDescription("Все медиа останутся в облаке, при необходимости вы сможете загрузить их.") }) {
-                    LazyColumn {
-                        items(uiState.categories) { category ->
-                            val sizeMb = category.totalSize / (1024.0 * 1024.0)
-                            val sizeMbRounded = BigDecimal(sizeMb).setScale(
-                                2,
-                                RoundingMode.HALF_UP
-                            ).toDouble()
-                            SectionRadioItem(
-                                text = category.category.title,
-                                selected = category.isSelected,
-                                primaryText = "$sizeMbRounded MB",
-                                onClick = { storageViewModel.toggleCategory(category.category) })
-                        }
+                SectionContainer(footer = { SectionDescription("Все медиа останутся в облаке, при необходимости Вы сможете загрузить их.") }) {
+                    uiState.categories.forEachIndexed { index, category ->
+                        val sizeMb = category.totalSize / (1024.0 * 1024.0)
+                        val sizeMbRounded = BigDecimal(sizeMb).setScale(
+                            2,
+                            RoundingMode.HALF_UP
+                        ).toDouble()
                         
-                        item {
-                            val selectedSize = uiState.selectedSize
-                            val selectedSizeMb = selectedSize / (1024.0 * 1024.0)
-                            val selectedSizeMbRounded = BigDecimal(selectedSizeMb)
-                                .setScale(
-                                    2,
-                                    RoundingMode.HALF_UP
-                                )
-                                .toDouble()
-                            
-                            val hasSelection = uiState.selectedCategories.isNotEmpty()
-                            
-                            Button(
-                                onClick = storageViewModel::showConfirmDialog,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(10.dp),
-                                shape = MaterialTheme.shapes.medium,
-                                colors = ButtonDefaults.buttonColors(
-                                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                                    containerColor = if (hasSelection) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                    }
-                                ),
-                                enabled = hasSelection
-                            ) {
-                                Text(
-                                    text = "Очистить кеш ($selectedSizeMbRounded MB)",
-                                    modifier = Modifier.padding(8.dp),
-                                    fontSize = 16.sp,
-                                    lineHeight = 18.sp
-                                )
+                        SectionRadioItem(
+                            text = category.category.title,
+                            selected = category.isSelected,
+                            primaryText = "$sizeMbRounded MB",
+                            radioColor = PrimaryColorOption.entries[index].color,
+                            onClick = { storageViewModel.toggleCategory(category.category) })
+                        
+                    }
+                    
+                    val selectedSize = uiState.selectedSize
+                    val selectedSizeMb = selectedSize / (1024.0 * 1024.0)
+                    val selectedSizeMbRounded = BigDecimal(selectedSizeMb)
+                        .setScale(
+                            2,
+                            RoundingMode.HALF_UP
+                        )
+                        .toDouble()
+                    
+                    val hasSelection = uiState.selectedCategories.isNotEmpty()
+                    
+                    Button(
+                        onClick = storageViewModel::showConfirmDialog,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
+                        shape = MaterialTheme.shapes.medium,
+                        colors = ButtonDefaults.buttonColors(
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = if (hasSelection) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                             }
-                        }
+                        ),
+                        enabled = hasSelection
+                    ) {
+                        Text(
+                            text = "Очистить кеш ($selectedSizeMbRounded MB)",
+                            modifier = Modifier.padding(8.dp),
+                            fontSize = 16.sp,
+                            lineHeight = 18.sp
+                        )
                     }
                 }
             }
         }
-        
-        if (uiState.showConfirmDialog) {
-            ClearCacheConfirmationDialog(
-                onConfirm = {
-                    storageViewModel.clearSelectedCache(context)
-                },
-                onDismiss = storageViewModel::hideConfirmDialog
-            )
-        }
+    }
+    
+    if (uiState.showConfirmDialog) {
+        ClearCacheConfirmationDialog(
+            onConfirm = {
+                storageViewModel.clearSelectedCache(context)
+            },
+            onDismiss = storageViewModel::hideConfirmDialog
+        )
     }
 }
 

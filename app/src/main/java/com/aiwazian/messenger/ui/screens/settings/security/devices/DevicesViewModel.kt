@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
+package com.aiwazian.messenger.ui.screens.settings.security.devices
+
+import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.domain.Session
+import com.aiwazian.messenger.repository.SessionRepository
+import com.aiwazian.messenger.utils.VibrationManager
+import com.aiwazian.messenger.utils.VibrationPattern
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class DevicesViewModel @Inject constructor(
+    private val sessionRepository: SessionRepository,
+    private val vibrationManager: VibrationManager
+) : ViewModel() {
+    
+    private val _uiState = MutableStateFlow(DevicesUiState())
+    val uiState = _uiState.asStateFlow()
+    
+    private val _sideEffect = Channel<DevicesSideEffect>(Channel.BUFFERED)
+    val sideEffect = _sideEffect.receiveAsFlow()
+    
+    init {
+        getSessions()
+    }
+    
+    fun getSessions() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val sessions = sessionRepository.getAllSessions()
+                _uiState.update { it.copy(sessions = sessions, isLoading = false) }
+            } catch (e: Exception) {
+                Log.e("DevicesViewModel", "Error getting sessions", e)
+                _uiState.update { it.copy(isLoading = false) }
+            }
+        }
+    }
+    
+    fun openSession(session: Session) {
+        _uiState.update { 
+            it.copy(
+                openedSession = session,
+                showSessionInfoBottomSheet = true
+            )
+        }
+    }
+    
+    fun closeSessionInfo() {
+        _uiState.update { it.copy(showSessionInfoBottomSheet = false) }
+    }
+    
+    fun showTerminateSessionDialog() {
+        _uiState.update { it.copy(showTerminateSessionDialog = true) }
+    }
+    
+    fun hideTerminateSessionDialog() {
+        _uiState.update { it.copy(showTerminateSessionDialog = false) }
+    }
+    
+    fun showTerminateAllOtherSessionsDialog() {
+        _uiState.update { it.copy(showTerminateAllOtherSessionsDialog = true) }
+    }
+    
+    fun hideTerminateAllOtherSessionsDialog() {
+        _uiState.update { it.copy(showTerminateAllOtherSessionsDialog = false) }
+    }
+    
+    fun terminateSession() {
+        val sessionId = _uiState.value.openedSession?.id ?: return
+        viewModelScope.launch {
+            hideTerminateSessionDialog()
+            closeSessionInfo()
+            try {
+                val success = sessionRepository.deleteSession(sessionId)
+                if (success) {
+                    _uiState.update { state ->
+                        state.copy(sessions = state.sessions.filter { it.id != sessionId })
+                    }
+                    _sideEffect.send(DevicesSideEffect.ShowSnackbar("Сессия завершена"))
+                } else {
+                    handleError("Не удалось завершить сессию")
+                }
+            } catch (e: Exception) {
+                handleError("Не удалось завершить сессию")
+            }
+        }
+    }
+    
+    fun terminateAllOtherSessions() {
+        viewModelScope.launch {
+            hideTerminateAllOtherSessionsDialog()
+            try {
+                val success = sessionRepository.deleteAllSessions()
+                if (success) {
+                    _uiState.update { state ->
+                        state.copy(sessions = state.sessions.filter { it.isCurrent })
+                    }
+                    _sideEffect.send(DevicesSideEffect.ShowSnackbar("Сессии завершены"))
+                } else {
+                    handleError("Не удалось завершить сессии")
+                }
+            } catch (e: Exception) {
+                handleError("Не удалось завершить сессии")
+            }
+        }
+    }
+    
+    private suspend fun handleError(message: String) {
+        vibrationManager.vibrate(VibrationPattern.Error)
+        _sideEffect.send(DevicesSideEffect.ShowSnackbar(message))
+    }
+}

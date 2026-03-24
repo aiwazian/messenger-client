@@ -75,7 +75,7 @@ fun AnimatedIntroScreen(
             onClick = buttonClick,
             modifier = Modifier
                 .fillMaxWidth(),
-            shape = RoundedCornerShape(10.dp)
+            shape = MaterialTheme.shapes.medium
         ) {
             Text(
                 text = buttonText,

@@ -35,8 +35,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Reply
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Reply
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.rounded.AccountCircle
@@ -44,7 +44,6 @@ import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AppBarWithSearch
 import androidx.compose.material3.Button
@@ -105,10 +104,9 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.ui.components.ChatCard
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.SwipeableChatCard
-import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
+import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.yandex.mobile.ads.nativeads.MediaView
 import com.yandex.mobile.ads.nativeads.NativeAdView
 import com.yandex.mobile.ads.nativeads.NativeAdViewBinder
@@ -338,47 +336,6 @@ private fun Content(
 }
 
 @Composable
-private fun ChatListSection(
-    chatList: List<Chat>,
-    selectedChats: List<Long>,
-    enableSwipeable: Boolean,
-    onChatClick: (Chat) -> Unit,
-    onChatLongClick: (Chat) -> Unit,
-    onChatSwipe: (Chat) -> Unit,
-    onVibrate: (LongArray) -> Unit
-) {
-    LazyColumn {
-        items(
-            chatList,
-            { it.lastMessage?.sendTime ?: it.id }) { chat ->
-            var chatInfo = chat
-            
-            if (enableSwipeable) {
-                SwipeableChatCard(
-                    chat = chatInfo,
-                    selected = chatInfo.id in selectedChats,
-                    pinned = chatInfo.isPinned,
-                    enableSwipeable = selectedChats.isEmpty(),
-                    onClick = { onChatClick(chatInfo) },
-                    onLongClick = { onChatLongClick(chatInfo) },
-                    backgroundIcon = Icons.Rounded.Archive,
-                    onDismiss = { onChatSwipe(chatInfo) },
-                    onVibrate = onVibrate
-                )
-            } else {
-                ChatCard(
-                    chat = chatInfo,
-                    selected = chatInfo.id in selectedChats,
-                    pinned = chatInfo.isPinned,
-                    onClickChat = { onChatClick(chatInfo) },
-                    onLongClickChat = { onChatLongClick(chatInfo) },
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun EmptyChatPlaceholder(
     text: String,
     animation: String? = null
@@ -509,31 +466,7 @@ private fun DefaultTopBar(
     onLockClick: () -> Unit,
     isConnected: Boolean
 ) {
-    val navHost = LocalNavHost.current
-    
     val scope = rememberCoroutineScope()
-    
-    val actions = if (isLockApp) {
-        listOf(
-            TopBarAction(
-                icon = Icons.Rounded.LockOpen,
-                onClick = onLockClick
-            ),
-            TopBarAction(
-                icon = Icons.Rounded.Search,
-                onClick = {
-                    navHost.add(AppRoute.Search)
-                })
-        )
-    } else {
-        listOf(
-            TopBarAction(
-                icon = Icons.Rounded.Search,
-                onClick = {
-                    navHost.add(AppRoute.Search)
-                })
-        )
-    }
     var value by remember { mutableStateOf("") }
     val state = rememberSearchBarState()
     
@@ -546,9 +479,7 @@ private fun DefaultTopBar(
     val field: @Composable () -> Unit = {
         SearchBarDefaults.InputField(
             query = value,
-            onSearch = {
-            
-            },
+            onSearch = {},
             onQueryChange = {
                 value = it
                 scope.launch {
@@ -595,7 +526,17 @@ private fun DefaultTopBar(
                         }
                     }
                 }
-            }
+            },
+            trailingIcon = if (isLockApp) {
+                {
+                    IconButton(onClick = onLockClick) {
+                        Icon(
+                            imageVector = Icons.Rounded.LockOpen,
+                            contentDescription = "Lock"
+                        )
+                    }
+                }
+            } else null
         )
     }
     
@@ -619,8 +560,6 @@ private fun DrawerContent(
     
     val navHost = LocalNavHost.current
     
-    val scope = rememberCoroutineScope()
-    
     ModalDrawerSheet(
         modifier = Modifier
             .width(300.dp)
@@ -634,7 +573,7 @@ private fun DrawerContent(
             )
         ) {
             Text(
-                text = "${user.firstName.orEmpty()} ${user.lastName.orEmpty()}".trim(),
+                text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
                 modifier = Modifier.padding(
                     start = 20.dp,
                     end = 20.dp,
@@ -751,6 +690,3 @@ private fun DrawerItem(
         onClick = onClick
     )
 }
-
-
-

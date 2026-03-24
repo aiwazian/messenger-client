@@ -5,9 +5,6 @@
 package com.aiwazian.messenger.ui.screens.settings.storage
 
 
-/**
- * Категория файлов для управления хранилищем
- */
 enum class FileCategory(val title: String, val extensions: Set<String>) {
     PHOTOS(
         title = "Фото",
@@ -38,9 +35,6 @@ enum class FileCategory(val title: String, val extensions: Set<String>) {
     }
 }
 
-/**
- * Данные о файле в категории
- */
 data class StorageFile(
     val id: String,
     val name: String,
@@ -52,9 +46,6 @@ data class StorageFile(
     val chatId: Long
 )
 
-/**
- * Статистика по категории файлов
- */
 data class CategoryStats(
     val category: FileCategory,
     val fileCount: Int,
@@ -62,17 +53,11 @@ data class CategoryStats(
     val isSelected: Boolean = false
 )
 
-/**
- * События UI для StorageScreen
- */
 sealed class StorageUiEvent {
     data object CacheCleared : StorageUiEvent()
     data class Error(val message: String) : StorageUiEvent()
 }
 
-/**
- * Состояние UI для StorageScreen
- */
 data class StorageUiState(
     val categories: List<CategoryStats> = emptyList(),
     val totalCacheSize: Long = 0,

@@ -71,9 +71,6 @@ sealed interface AppRoute : NavKey {
     data object SettingsCloudPassword : AppRoute
     
     @Serializable
-    data object SettingsChangeCloudPassword : AppRoute
-    
-    @Serializable
     data object SettingsNotifications : AppRoute
     
     @Serializable

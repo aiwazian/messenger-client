@@ -26,34 +26,64 @@ class AppLockManager @Inject constructor(
     
     private val _hasPasscode = MutableStateFlow(false)
     val hasPasscode = _hasPasscode.asStateFlow()
-    
+
+    private val _failedAttempts = MutableStateFlow(0)
+    val failedAttempts = _failedAttempts.asStateFlow()
+
+    private val _blockedUntil = MutableStateFlow(0L)
+    val blockedUntil = _blockedUntil.asStateFlow()
+
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
-    
+
     init {
         coroutineScope.launch {
             val passcode = dataStoreManager.getPasscode().first()
             _passcode.update { passcode }
-            
+
             _hasPasscode.update { _passcode.value.isNotBlank() }
-            
+
             val isLock = dataStoreManager.getIsLockApp().first()
             _isLockApp.update { isLock }
+
+            _failedAttempts.update { dataStoreManager.getFailedAttempts().first() }
+            _blockedUntil.update { dataStoreManager.getBlockedUntil().first() }
         }
     }
-    
+
     suspend fun lock() {
         _isLockApp.update { true }
         dataStoreManager.saveIsLockApp(true)
     }
-    
+
     suspend fun unlock() {
         _isLockApp.update { false }
         dataStoreManager.saveIsLockApp(false)
+        resetFailedAttempts()
     }
-    
+
+    suspend fun incrementFailedAttempts() {
+        val newAttempts = _failedAttempts.value + 1
+        _failedAttempts.update { newAttempts }
+        dataStoreManager.saveFailedAttempts(newAttempts)
+
+        if (newAttempts >= 5) {
+            val blockTime = System.currentTimeMillis() + 30_000
+            _blockedUntil.update { blockTime }
+            dataStoreManager.saveBlockedUntil(blockTime)
+        }
+    }
+
+    suspend fun resetFailedAttempts() {
+        _failedAttempts.update { 0 }
+        _blockedUntil.update { 0L }
+        dataStoreManager.saveFailedAttempts(0)
+        dataStoreManager.saveBlockedUntil(0L)
+    }
+
     suspend fun disablePasscode() {
         _hasPasscode.update { false }
         dataStoreManager.savePasscode("")
+        resetFailedAttempts()
     }
     
     suspend fun changePasscode(newPasscode: String) {
