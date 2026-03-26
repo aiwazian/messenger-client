@@ -22,23 +22,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
-import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.enums.PrivacyLevel
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.utils.VibrationPattern
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsBioScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewModel()) {
+fun SettingsBioScreen(
+    level: PrivacyLevel,
+    privacyViewModel: SettingsPrivacyViewModel = hiltViewModel()
+) {
     val navHost = LocalNavHost.current
     
     val settingsBioViewModel = hiltViewModel<SettingsBioViewModel>()
-    val privacy by privacyViewModel.privacySettings.collectAsState()
     
     val currentValue by settingsBioViewModel.currentLevel.collectAsState()
     val showSaveButton by settingsBioViewModel.showSaveButton.collectAsState()
@@ -54,12 +56,11 @@ fun SettingsBioScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewModel
                 onClick = {
                     scope.launch {
                         val isSaved = settingsBioViewModel.trySave()
-
+                        
                         if (isSaved) {
-                            privacyViewModel.updateBioValue(currentValue.ordinal)
+                            privacyViewModel.updateBioValue(currentValue)
                             navHost.removeLastOrNull()
                         } else {
-                            settingsBioViewModel.vibrate(VibrationPattern.Error)
                             settingsBioViewModel.vibrate(VibrationPattern.Error)
                         }
                     }
@@ -69,8 +70,8 @@ fun SettingsBioScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewModel
         emptyList()
     }
     
-    LaunchedEffect(privacy.bio) {
-        settingsBioViewModel.init(PrivacyLevel.fromId(privacy.bio))
+    LaunchedEffect(level) {
+        settingsBioViewModel.init(level)
     }
     
     Scaffold(
@@ -91,9 +92,9 @@ fun SettingsBioScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewModel
                 .padding(it)
                 .verticalScroll(scrollState)
         ) {
-            SectionHeader("Кто видит мой раздел \"О себе\"?")
-            
-            SectionContainer {
+            SectionContainer(header = {
+                SectionHeader("Кто видит мой раздел \"О себе\"?")
+            }) {
                 SectionRadioItem(
                     text = stringResource(R.string.everybody),
                     selected = currentValue == PrivacyLevel.Everybody,
@@ -110,6 +111,3 @@ fun SettingsBioScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewModel
         }
     }
 }
-
-
-

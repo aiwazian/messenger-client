@@ -7,9 +7,9 @@ package com.aiwazian.messenger.domain
 import com.aiwazian.messenger.enums.PrivacyLevel
 
 data class PrivacySettings(
-    val bio: Int = PrivacyLevel.Everybody.ordinal,
-    val dateOfBirth: Int = PrivacyLevel.Everybody.ordinal,
-    val lastSeen: Int = PrivacyLevel.Everybody.ordinal,
-    val messages: Int = PrivacyLevel.Everybody.ordinal,
-    val invites: Int = PrivacyLevel.Everybody.ordinal
+    val bio: PrivacyLevel = PrivacyLevel.Everybody,
+    val dateOfBirth: PrivacyLevel = PrivacyLevel.Everybody,
+    val lastSeen: PrivacyLevel = PrivacyLevel.Everybody,
+    val messages: PrivacyLevel = PrivacyLevel.Everybody,
+    val invites: PrivacyLevel = PrivacyLevel.Everybody
 )

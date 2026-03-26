@@ -39,8 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.domain.DownloadStatus
 import com.aiwazian.messenger.domain.MessageFile
 import com.aiwazian.messenger.enums.FileAction
-import kotlin.math.log10
-import kotlin.math.pow
+import com.aiwazian.messenger.extensions.formatFileSize
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -105,7 +104,7 @@ fun MessageFile(
             )
             
             Text(
-                text = "${formatFileSize(file.size)} • ${file.extension.uppercase()}",
+                text = "${file.size.formatFileSize()} • ${file.extension.uppercase()}",
                 fontSize = 10.sp,
                 lineHeight = 10.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -131,22 +130,5 @@ private fun StatusIcon(
         imageVector = icon,
         contentDescription = status.name,
         tint = MaterialTheme.colorScheme.primary
-    )
-}
-
-private fun formatFileSize(size: Long): String {
-    if (size <= 0) return "0 B"
-    val units = arrayOf(
-        "B",
-        "KB",
-        "MB",
-        "GB",
-        "TB"
-    )
-    val digitGroups = (log10(size.toDouble()) / log10(1024.0)).toInt()
-    return String.format(
-        "%.1f %s",
-        size / 1024.0.pow(digitGroups.toDouble()),
-        units[digitGroups]
     )
 }

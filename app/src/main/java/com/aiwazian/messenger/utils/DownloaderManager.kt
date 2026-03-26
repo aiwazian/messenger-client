@@ -70,6 +70,12 @@ class DownloaderManager @Inject constructor(
         val extension = fileName.substringAfterLast('.', "")
         val finalFileName = if (extension.isNotEmpty()) "$fileId.$extension" else fileId
 
+        // Remove existing download for this fileId if it exists
+        _downloads.value.values.find { it.fileId == fileId }?.let { existing ->
+            ketch.cancel(existing.id)
+            _downloads.update { it - existing.id }
+        }
+
         val id = ketch.download(
             url = url,
             fileName = finalFileName,

@@ -10,5 +10,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 data class DropdownMenuAction(
     val icon: ImageVector,
     @param:StringRes val textResId: Int,
-    val onClick: () -> Unit
+    val onClick: () -> Unit,
+    val isDestructive: Boolean = false
 )

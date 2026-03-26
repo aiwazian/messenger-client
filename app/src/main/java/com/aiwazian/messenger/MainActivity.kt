@@ -20,15 +20,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.navigation.AppNavHost
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.screens.lock.LockScreen
 import com.aiwazian.messenger.ui.theme.ApplicationTheme
 import com.aiwazian.messenger.utils.AppLockManager
-import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.utils.NotificationService
 import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.ThemeManager
-import com.aiwazian.messenger.socket.WebSocketClient
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
@@ -50,20 +50,18 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        val intent =
-            Intent(
-                this,
-                AuthActivity::class.java
-            ).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            }
-        
         val hasSession = runBlocking {
             SessionManager.loadSession()
             SessionManager.hasAnySession()
         }
         
         if (!hasSession) {
+            val intent = Intent(
+                this,
+                AuthActivity::class.java
+            ).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
             startActivity(intent)
             finish()
             return
@@ -86,11 +84,10 @@ class MainActivity : AppCompatActivity() {
             this@MainActivity.finish()
         }
         
-        val chatId =
-            intent.getLongExtra(
-                "chatId",
-                -1L
-            )
+        val chatId = intent.getLongExtra(
+            "chatId",
+            -1L
+        )
         if (chatId != -1L) {
             startRoute = AppRoute.Chat(chatId)
         }
@@ -143,8 +140,8 @@ class MainActivity : AppCompatActivity() {
                 
                 AnimatedVisibility(
                     visible = isLockApp,
-                    enter = fadeIn(tween(100)),
-                    exit = fadeOut(tween(100))
+                    enter = fadeIn(tween(200)),
+                    exit = fadeOut(tween(200))
                 ) {
                     LockScreen()
                 }

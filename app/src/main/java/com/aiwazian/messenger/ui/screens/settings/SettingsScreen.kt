@@ -12,10 +12,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.Language
-import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.DropdownMenuAction
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
@@ -33,7 +34,6 @@ import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
-import com.aiwazian.messenger.ui.components.navigation.AppRoute
 
 @Composable
 fun SettingsScreen() {
@@ -98,7 +98,7 @@ fun SettingsScreen() {
                     })
                 
                 SectionItem(
-                    icon = Icons.Rounded.Lock,
+                    icon = Icons.Outlined.Lock,
                     text = stringResource(R.string.confidentiality),
                     onClick = {
                         navHost.add(AppRoute.SettingsPrivacy)
@@ -148,6 +148,3 @@ private fun TopBar() {
         actions = actions
     )
 }
-
-
-

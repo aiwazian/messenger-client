@@ -21,14 +21,15 @@ class UserManager @Inject constructor(
     val user = _user.asStateFlow()
     
     fun updateUserInfo(updatedUser: User) {
-        val newUserInfo = _user.value.copy(
-            firstName = updatedUser.firstName,
-            lastName = updatedUser.lastName,
-            bio = updatedUser.bio,
-            username = updatedUser.username,
-            dateOfBirth = updatedUser.dateOfBirth,
-        )
-        _user.update { newUserInfo }
+        _user.update {
+            it.copy(
+                firstName = updatedUser.firstName,
+                lastName = updatedUser.lastName,
+                bio = updatedUser.bio,
+                username = updatedUser.username,
+                dateOfBirth = updatedUser.dateOfBirth,
+            )
+        }
     }
     
     suspend fun loadUserData() {

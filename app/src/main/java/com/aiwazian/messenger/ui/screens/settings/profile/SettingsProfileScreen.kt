@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.settings.profile
 
-import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,7 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -26,10 +25,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
@@ -37,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.InputField
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
@@ -45,58 +44,39 @@ import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
-import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 
 @Composable
-fun SettingsProfileScreen() {
-    Content()
-}
-
-@Composable
-private fun TopBar(onBack: () -> Unit) {
-    PageTopBar(
-        title = { Text(stringResource(R.string.profile)) },
-        navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = onBack::invoke
-        )
-    )
-}
-
-@SuppressLint("NonObservableLocale")
-@Composable
-private fun Content() {
+fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel()) {
     val navHost = LocalNavHost.current
-    
-    val settingsProfileViewModel = hiltViewModel<SettingsProfileViewModel>()
-    
-    val isVisibleDatePicker = settingsProfileViewModel.dataOfBirthDialog
-    
-    val user by settingsProfileViewModel.user.collectAsState()
-    
-    val scope = rememberCoroutineScope()
-    
-    val scrollState = rememberScrollState()
-    
-    DisposableEffect(Unit) {
-        onDispose {
-            scope.launch {
-                settingsProfileViewModel.save()
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.sideEffect.collect { effect ->
+            when (effect) {
+                is SettingsProfileSideEffect.NavigateBack -> navHost.removeLastOrNull()
+                else -> {}
             }
         }
     }
     
+    val scrollState = rememberScrollState()
+    
     Scaffold(
         topBar = {
-            TopBar(
-                onBack = {
-                    scope.launch {
-                        settingsProfileViewModel.save()
-                        navHost.removeLastOrNull()
-                    }
-                })
+            PageTopBar(
+                title = { Text(stringResource(R.string.profile)) },
+                navigationIcon = NavigationIcon(
+                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                    onClick = navHost::removeLastOrNull
+                ),
+                actions = listOf(
+                    TopBarAction(
+                        icon = Icons.Rounded.Check,
+                        onClick = viewModel::onSaveAndBack
+                    )
+                )
+            )
         },
         modifier = Modifier.imePadding()
     ) { innerPadding ->
@@ -106,15 +86,13 @@ private fun Content() {
                     .fillMaxSize()
                     .verticalScroll(scrollState)
             ) {
-                
-                
                 SectionContainer(header = {
                     SectionHeader("Ваше имя")
                 }) {
                     InputField(
                         placeholder = stringResource(R.string.first_name),
-                        value = user.firstName,
-                        onValueChange = settingsProfileViewModel::onChangeFirstName
+                        value = uiState.user.firstName,
+                        onValueChange = viewModel::onChangeFirstName
                     )
                     
                     HorizontalDivider(
@@ -124,11 +102,10 @@ private fun Content() {
                     
                     InputField(
                         placeholder = stringResource(R.string.last_name),
-                        value = user.lastName.orEmpty(),
-                        onValueChange = settingsProfileViewModel::onChangeLastName
+                        value = uiState.user.lastName.orEmpty(),
+                        onValueChange = viewModel::onChangeLastName
                     )
                 }
-                
                 
                 SectionContainer(
                     header = {
@@ -139,11 +116,10 @@ private fun Content() {
                     }) {
                     InputField(
                         placeholder = "Напишите что-нибудь о себе",
-                        value = user.bio.orEmpty(),
-                        onValueChange = settingsProfileViewModel::onChangeBio
+                        value = uiState.user.bio.orEmpty(),
+                        onValueChange = viewModel::onChangeBio
                     )
                 }
-                
                 
                 SectionContainer(
                     header = {
@@ -153,20 +129,16 @@ private fun Content() {
                         SectionDescription("Другие пользователи смогут найти Вас по такому имени и связаться.")
                     }) {
                     SectionItem(
-                        text = if (user.username != null) {
-                            "@${user.username}"
+                        text = if (uiState.user.username != null) {
+                            "@${uiState.user.username}"
                         } else {
                             "Задать имя пользователя"
                         },
                         onClick = {
-                            scope.launch {
-                                navHost.add(AppRoute.SettingsUsername)
-                                settingsProfileViewModel.save()
-                            }
+                            navHost.add(AppRoute.SettingsUsername(uiState.user.username))
                         }
                     )
                 }
-                
                 
                 val locale = LocalLocale.current.platformLocale
                 
@@ -175,23 +147,23 @@ private fun Content() {
                 }) {
                     SectionItem(
                         text = "Дата Вашего рождения",
-                        primaryText = if (user.dateOfBirth != null) {
+                        primaryText = if (uiState.user.dateOfBirth != null) {
                             SimpleDateFormat(
                                 "d MMM yyyy",
                                 locale
-                            ).format(user.dateOfBirth)
+                            ).format(uiState.user.dateOfBirth)
                         } else {
                             "Указать"
                         },
-                        onClick = isVisibleDatePicker::show
+                        onClick = viewModel::showDatePicker
                     )
                     
-                    AnimatedContent(targetState = user.dateOfBirth) { dateOfBirth ->
+                    AnimatedContent(targetState = uiState.user.dateOfBirth) { dateOfBirth ->
                         if (dateOfBirth != null) {
                             SectionItem(
                                 text = stringResource(R.string.remove_date_of_birth),
                                 onClick = {
-                                    settingsProfileViewModel.onChangeDateOfBirth(null)
+                                    viewModel.onChangeDateOfBirth(null)
                                 },
                                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary),
                             )
@@ -199,19 +171,15 @@ private fun Content() {
                     }
                 }
                 
-                val datePickerState = rememberDatePickerState(user.dateOfBirth)
-                
-                if (isVisibleDatePicker.isVisible) {
+                if (uiState.showDatePicker) {
+                    val datePickerState = rememberDatePickerState(uiState.user.dateOfBirth)
                     DatePickerDialog(
-                        onDismissRequest = isVisibleDatePicker::hide,
+                        onDismissRequest = viewModel::hideDatePicker,
                         confirmButton = {
                             TextButton(
                                 onClick = {
                                     val selected = datePickerState.selectedDateMillis
-                                    if (selected != null) {
-                                        settingsProfileViewModel.onChangeDateOfBirth(selected)
-                                    }
-                                    isVisibleDatePicker.hide()
+                                    viewModel.onChangeDateOfBirth(selected)
                                 },
                                 modifier = Modifier.padding(end = 4.dp),
                                 colors = ButtonDefaults.textButtonColors(
@@ -223,7 +191,7 @@ private fun Content() {
                         },
                         dismissButton = {
                             TextButton(
-                                onClick = isVisibleDatePicker::hide,
+                                onClick = viewModel::hideDatePicker,
                                 colors = ButtonDefaults.textButtonColors(
                                     contentColor = MaterialTheme.colorScheme.primary
                                 )

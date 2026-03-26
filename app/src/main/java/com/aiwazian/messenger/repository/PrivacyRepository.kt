@@ -23,18 +23,6 @@ class PrivacyRepository @Inject constructor(
         }
     }
 
-    suspend fun updatePrivacySettings(settings: PrivacySettings): Boolean {
-        val request = UpdatePrivacySettingsRequestDto(
-            lastSeen = settings.lastSeen,
-            messages = settings.messages,
-            bio = settings.bio,
-            dateOfBirth = settings.dateOfBirth,
-            invites = settings.invites
-        )
-        val response = privacyApi.updatePrivacySettings(request)
-        return response.isSuccessful
-    }
-
     suspend fun updateBioPrivacy(bio: Int): Boolean {
         val request = UpdatePrivacySettingsRequestDto(bio = bio)
         val response = privacyApi.updatePrivacySettings(request)

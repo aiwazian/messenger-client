@@ -147,8 +147,7 @@ fun SettingsPasscodeCreateScreen(
             CustomNumberBoard(
                 value = uiState.passcode,
                 buttons = boardButtons,
-                onChange = passcodeViewModel::onPasscodeChanged,
-                onVibrate = passcodeViewModel::vibrate
+                onChange = passcodeViewModel::onPasscodeChanged
             )
         }
     }
@@ -243,8 +242,7 @@ fun SettingsPasscodeChangeScreen(
             CustomNumberBoard(
                 value = uiState.passcode,
                 buttons = boardButtons,
-                onChange = passcodeViewModel::onPasscodeChanged,
-                onVibrate = passcodeViewModel::vibrate
+                onChange = passcodeViewModel::onPasscodeChanged
             )
         }
     }

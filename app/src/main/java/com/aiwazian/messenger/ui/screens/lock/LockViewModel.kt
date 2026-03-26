@@ -56,12 +56,10 @@ class LockViewModel @Inject constructor(
             appLockManager.resetFailedAttempts()
         }
     }
-
-    fun vibrate(pattern: LongArray) {
-        vibrationManager.vibrate(pattern)
-    }
     
     fun onPasscodeChanged(newPasscode: String) {
+        vibrationManager.vibrate(VibrationPattern.TactileResponse)
+        
         if (_uiState.value.blockedUntil > System.currentTimeMillis()) return
 
         if (newPasscode.length <= PasscodeViewModel.MAX_LENGTH_PASSCODE) {
@@ -87,7 +85,7 @@ class LockViewModel @Inject constructor(
                 appLockManager.unlock()
             }
         } else {
-            vibrate(VibrationPattern.Error)
+            vibrationManager.vibrate(VibrationPattern.Error)
             clearPasscode()
             viewModelScope.launch {
                 appLockManager.incrementFailedAttempts()

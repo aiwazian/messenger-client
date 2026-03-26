@@ -20,12 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.enums.AppLanguage
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
 fun SettingsLanguageScreen(languageViewModel: LanguageViewModel = hiltViewModel()) {
@@ -46,8 +46,9 @@ fun SettingsLanguageScreen(languageViewModel: LanguageViewModel = hiltViewModel(
             SectionContainer {
                 AppLanguage.entries.forEach { language ->
                     SectionRadioItem(
-                        text = language.title,
+                        text = language.nativeName,
                         selected = currentLanguage == language,
+                        description = language.displayName,
                         onClick = {
                             languageViewModel.selectLanguage(language)
                         })

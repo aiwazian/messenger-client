@@ -17,7 +17,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,9 +29,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -42,6 +44,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material.icons.rounded.BookmarkBorder
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.Settings
@@ -50,7 +53,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.ExpandedFullScreenContainedSearchBar
+import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
@@ -61,16 +64,18 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBarValue
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberContainedSearchBarState
 import androidx.compose.material3.rememberDrawerState
-import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -83,6 +88,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -101,10 +107,8 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.ui.components.ChatCard
-import com.aiwazian.messenger.ui.components.SwipeableChatCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.yandex.mobile.ads.nativeads.MediaView
@@ -207,8 +211,7 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun NotificationBottomModal(
-    enable: () -> Unit,
-    disable: () -> Unit
+    enable: () -> Unit, disable: () -> Unit
 ) {
     ModalBottomSheet(
         onDismissRequest = disable,
@@ -280,8 +283,7 @@ private fun NotificationBottomModal(
 
 @Composable
 private fun Content(
-    drawerState: DrawerState,
-    mainViewModel: MainViewModel
+    drawerState: DrawerState, mainViewModel: MainViewModel
 ) {
     val navHost = LocalNavHost.current
     
@@ -337,8 +339,7 @@ private fun Content(
 
 @Composable
 private fun EmptyChatPlaceholder(
-    text: String,
-    animation: String? = null
+    text: String, animation: String? = null
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -461,47 +462,22 @@ private fun SwipeDismissSnackbarHost(snackbarHostState: SnackbarHostState) {
 )
 @Composable
 private fun DefaultTopBar(
-    drawerState: DrawerState,
-    isLockApp: Boolean,
-    onLockClick: () -> Unit,
-    isConnected: Boolean
+    drawerState: DrawerState, isLockApp: Boolean, onLockClick: () -> Unit, isConnected: Boolean
 ) {
+    val textFieldState = rememberTextFieldState()
+    val searchBarState = rememberContainedSearchBarState()
     val scope = rememberCoroutineScope()
-    var value by remember { mutableStateOf("") }
-    val state = rememberSearchBarState()
     
-    BackHandler(state.currentValue == SearchBarValue.Expanded) {
-        scope.launch {
-            state.animateToCollapsed()
-        }
-    }
-    
-    val field: @Composable () -> Unit = {
+    val inputField = @Composable {
         SearchBarDefaults.InputField(
-            query = value,
+            textFieldState = textFieldState,
+            searchBarState = searchBarState,
             onSearch = {},
-            onQueryChange = {
-                value = it
-                scope.launch {
-                    state.animateToExpanded()
-                }
-            },
-            expanded = state.currentValue == SearchBarValue.Expanded,
-            onExpandedChange = {
-                scope.launch {
-                    if (it) state.animateToExpanded() else state.animateToCollapsed()
-                }
-            },
             placeholder = { Text(stringResource(R.string.search)) },
             modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    scope.launch {
-                        state.animateToExpanded()
-                    }
-                },
+                .fillMaxWidth(),
             leadingIcon = {
-                AnimatedContent(state.currentValue) {
+                AnimatedContent(searchBarState.currentValue) {
                     if (it == SearchBarValue.Collapsed) {
                         IconButton(onClick = {
                             scope.launch {
@@ -516,7 +492,7 @@ private fun DefaultTopBar(
                     } else {
                         IconButton(onClick = {
                             scope.launch {
-                                state.animateToCollapsed()
+                                searchBarState.animateToCollapsed()
                             }
                         }) {
                             Icon(
@@ -529,32 +505,91 @@ private fun DefaultTopBar(
             },
             trailingIcon = if (isLockApp) {
                 {
-                    IconButton(onClick = onLockClick) {
-                        Icon(
-                            imageVector = Icons.Rounded.LockOpen,
-                            contentDescription = "Lock"
-                        )
+                    AnimatedContent(searchBarState.currentValue) {
+                        if (it == SearchBarValue.Collapsed) {
+                            IconButton(onClick = onLockClick) {
+                                Icon(
+                                    imageVector = Icons.Rounded.LockOpen,
+                                    contentDescription = "Lock"
+                                )
+                            }
+                        } else {
+                            IconButton(onClick = { scope.launch { searchBarState.animateToCollapsed() } }) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Close,
+                                    contentDescription = null
+                                )
+                            }
+                        }
                     }
                 }
-            } else null
-        )
+            } else null)
     }
     
     AppBarWithSearch(
-        state = state,
-        inputField = field
+        state = searchBarState,
+        inputField = inputField
     )
     
-    ExpandedFullScreenContainedSearchBar(
-        state = state,
-        inputField = field
-    ) { }
+    ExpandedFullScreenSearchBar(
+        state = searchBarState,
+        inputField = inputField,
+        colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
+    ) {
+        var selectedIndex by remember { mutableStateOf(0) }
+        val pagerState = rememberPagerState(pageCount = { 2 })
+        
+        LaunchedEffect(selectedIndex) {
+            pagerState.animateScrollToPage(selectedIndex)
+        }
+        
+        LaunchedEffect(pagerState.currentPage) {
+            selectedIndex = pagerState.currentPage
+        }
+        
+        PrimaryScrollableTabRow(
+            selectedTabIndex = selectedIndex,
+            containerColor = Color.Transparent,
+            edgePadding = 0.dp,
+            divider = {},
+        ) {
+            Tab(
+                selected = selectedIndex == 0,
+                onClick = { selectedIndex = 0 },
+                modifier = Modifier.clip(MaterialTheme.shapes.medium),
+                selectedContentColor = MaterialTheme.colorScheme.primary,
+                unselectedContentColor = MaterialTheme.colorScheme.onSurface
+            ) {
+                Text("Чаты", modifier = Modifier.padding(6.dp))
+            }
+            Tab(
+                selected = selectedIndex == 1,
+                onClick = { selectedIndex = 1 },
+                modifier = Modifier.clip(MaterialTheme.shapes.medium),
+                selectedContentColor = MaterialTheme.colorScheme.primary,
+                unselectedContentColor = MaterialTheme.colorScheme.onSurface
+            ) {
+                Text("Файлы")
+            }
+        }
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxSize(),
+            verticalAlignment = Alignment.Top,
+        ) { page ->
+            LazyColumn() {
+                items(30) {
+                    Text(it.toString())
+                }
+            }
+        }
+    }
 }
 
 @Composable
 private fun DrawerContent(
-    onClose: () -> Unit,
-    user: User
+    onClose: () -> Unit, user: User
 ) {
     val context = LocalContext.current
     
@@ -650,17 +685,18 @@ private fun DrawerContent(
                         
                         val nativeAdView = findViewById<NativeAdView>(R.id.native_ad_container)
                         
-                        val viewBinder = NativeAdViewBinder.Builder(nativeAdView)
-                            .setTitleView(title)
-                            .setDomainView(domain)
-                            .setWarningView(warning)
-                            .setSponsoredView(sponsored)
-                            .setFeedbackView(feedback)
-                            .setMediaView(media)
-                            .setIconView(appIcon)
-                            .setPriceView(price)
-                            .setFaviconView(favicon)
-                            .build()
+                        val viewBinder =
+                            NativeAdViewBinder.Builder(nativeAdView)
+                                .setTitleView(title)
+                                .setDomainView(domain)
+                                .setWarningView(warning)
+                                .setSponsoredView(sponsored)
+                                .setFeedbackView(feedback)
+                                .setMediaView(media)
+                                .setIconView(appIcon)
+                                .setPriceView(price)
+                                .setFaviconView(favicon)
+                                .build()
                         
                         nativeAd?.bindNativeAd(viewBinder)
                     }
@@ -671,9 +707,7 @@ private fun DrawerContent(
 
 @Composable
 private fun DrawerItem(
-    label: String,
-    icon: ImageVector,
-    onClick: () -> Unit
+    label: String, icon: ImageVector, onClick: () -> Unit
 ) {
     NavigationDrawerItem(
         shape = RectangleShape,

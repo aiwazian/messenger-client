@@ -8,12 +8,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.repository.UserRepository
-import com.aiwazian.messenger.utils.DialogController
 import com.aiwazian.messenger.utils.UserManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -22,42 +22,53 @@ import javax.inject.Inject
 class SettingsProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val userManager: UserManager
-) :
-    ViewModel() {
-    
-    private val _user = MutableStateFlow(User())
-    val user = _user.asStateFlow()
-    
-    val dataOfBirthDialog = DialogController()
-    
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(SettingsProfileUiState())
+    val uiState = _uiState.asStateFlow()
+
+    private val _sideEffect = Channel<SettingsProfileSideEffect>(Channel.BUFFERED)
+    val sideEffect = _sideEffect.receiveAsFlow()
+
     init {
         viewModelScope.launch {
-            userManager.user.collectLatest { collect ->
-                _user.update { collect }
+            userManager.user.collect { user ->
+                _uiState.update { it.copy(user = user) }
             }
         }
     }
-    
+
     fun onChangeFirstName(newName: String) {
-        _user.update { it.copy(firstName = newName) }
+        _uiState.update { it.copy(user = it.user.copy(firstName = newName)) }
     }
-    
+
     fun onChangeLastName(newName: String) {
-        _user.update { it.copy(lastName = newName) }
+        _uiState.update { it.copy(user = it.user.copy(lastName = newName)) }
     }
-    
+
     fun onChangeBio(newBio: String) {
-        _user.update { it.copy(bio = newBio) }
+        _uiState.update { it.copy(user = it.user.copy(bio = newBio)) }
     }
-    
+
     fun onChangeDateOfBirth(newDate: Long?) {
-        _user.update { it.copy(dateOfBirth = newDate) }
+        _uiState.update { it.copy(user = it.user.copy(dateOfBirth = newDate), showDatePicker = false) }
     }
-    
-    suspend fun save() {
-        userManager.updateUserInfo(_user.value)
-        userRepository.updateProfile(_user.value)
+
+    fun showDatePicker() {
+        _uiState.update { it.copy(showDatePicker = true) }
+    }
+
+    fun hideDatePicker() {
+        _uiState.update { it.copy(showDatePicker = false) }
+    }
+
+    fun onSaveAndBack() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true) }
+            val user = _uiState.value.user
+            userManager.updateUserInfo(user)
+            userRepository.updateProfile(user)
+            _sideEffect.send(SettingsProfileSideEffect.NavigateBack)
+        }
     }
 }
-
-

@@ -22,23 +22,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
-import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.enums.PrivacyLevel
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.utils.VibrationPattern
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsDateOfBirthScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewModel()) {
+fun SettingsDateOfBirthScreen(
+    level: PrivacyLevel,
+    privacyViewModel: SettingsPrivacyViewModel = hiltViewModel()
+) {
     val navHost = LocalNavHost.current
     
     val settingsDateOfBirthViewModel = hiltViewModel<SettingsDateOfBirthViewModel>()
-    val privacy by privacyViewModel.privacySettings.collectAsState()
     
     val currentValue by settingsDateOfBirthViewModel.currentLevel.collectAsState()
     val showSaveButton by settingsDateOfBirthViewModel.showSaveButton.collectAsState()
@@ -54,12 +56,11 @@ fun SettingsDateOfBirthScreen(privacyViewModel: SettingsPrivacyViewModel = hiltV
                 onClick = {
                     scope.launch {
                         val isSaved = settingsDateOfBirthViewModel.trySave()
-
+                        
                         if (isSaved) {
-                            privacyViewModel.updateDateOfBirthValue(currentValue.ordinal)
+                            privacyViewModel.updateDateOfBirthValue(currentValue)
                             navHost.removeLastOrNull()
                         } else {
-                            settingsDateOfBirthViewModel.vibrate(VibrationPattern.Error)
                             settingsDateOfBirthViewModel.vibrate(VibrationPattern.Error)
                         }
                     }
@@ -69,8 +70,8 @@ fun SettingsDateOfBirthScreen(privacyViewModel: SettingsPrivacyViewModel = hiltV
         emptyList()
     }
     
-    LaunchedEffect(privacy.dateOfBirth) {
-        settingsDateOfBirthViewModel.init(PrivacyLevel.fromId(privacy.dateOfBirth))
+    LaunchedEffect(level) {
+        settingsDateOfBirthViewModel.init(level)
     }
     
     Scaffold(
@@ -91,9 +92,9 @@ fun SettingsDateOfBirthScreen(privacyViewModel: SettingsPrivacyViewModel = hiltV
                 .padding(it)
                 .verticalScroll(scrollState)
         ) {
-            SectionHeader("Кто видит дату моего рождения?")
-            
-            SectionContainer {
+            SectionContainer(header = {
+                SectionHeader("Кто видит дату моего рождения?")
+            }) {
                 SectionRadioItem(
                     text = stringResource(R.string.everybody),
                     selected = currentValue == PrivacyLevel.Everybody,

@@ -77,49 +77,6 @@ class UserRepository @Inject constructor(
         }
     }
 
-    suspend fun changePassword(oldPassword: String, newPassword: String): Result<Unit> {
-        return try {
-            val request = ChangePasswordRequestDto(password = newPassword)
-            val response = userApi.changePassword(request)
-            if (response.isSuccessful) {
-                Result.success(Unit)
-            } else {
-                Result.failure(Exception("Change password failed"))
-            }
-        } catch (e: Exception) {
-            Log.e("UserRepository", "Ошибка при смене пароля", e)
-            Result.failure(e)
-        }
-    }
-
-    fun getPrivacySettings(): Flow<PrivacySettings> = flow {
-        try {
-            val response = userApi.getPrivacySettings()
-            if (response.isSuccessful) {
-                response.body()?.let { dto ->
-                    emit(dto.toDomain())
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("UserRepository", "Ошибка при получении настроек приватности", e)
-        }
-    }
-
-    suspend fun updatePrivacySettings(settings: PrivacySettings): Result<Unit> {
-        return try {
-            val request = settings.toUpdateRequest()
-            val response = userApi.updatePrivacySettings(request)
-            if (response.isSuccessful) {
-                Result.success(Unit)
-            } else {
-                Result.failure(Exception("Update failed"))
-            }
-        } catch (e: Exception) {
-            Log.e("UserRepository", "Ошибка при обновлении настроек приватности", e)
-            Result.failure(e)
-        }
-    }
-
     suspend fun saveUsername(username: String): Boolean {
         return try {
             val currentUser = userDao.getMe() ?: return false

@@ -23,53 +23,48 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
-import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.components.InputField
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.utils.VibrationPattern
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsUsernameScreen() {
-    Content()
-}
-
-@Composable
-private fun Content() {
+fun SettingsUsernameScreen(
+    username: String?,
+    viewModel: SettingsUsernameViewModel = hiltViewModel()
+) {
     val navHost = LocalNavHost.current
     
-    val viewModel = hiltViewModel<SettingsUsernameViewModel>()
-    
-    val username by viewModel.username.collectAsState()
-    
-    val errorText = viewModel.errorText
-    
+    val uiState by viewModel.uiState.collectAsState()
+
     LaunchedEffect(Unit) {
-        viewModel.init()
+        viewModel.initUsername(username)
     }
     
     Scaffold(topBar = {
         TopBar(
-            navHost::removeLastOrNull,
-            viewModel
+            onBack = navHost::removeLastOrNull,
+            viewModel = viewModel,
+            uiState = uiState
         )
     }) {
         Column(modifier = Modifier.padding(it)) {
             SectionContainer {
                 InputField(
                     placeholder = stringResource(R.string.username),
-                    value = username,
+                    value = uiState.username,
                     onValueChange = viewModel::onChangeUsername
                 )
             }
             
-            AnimatedContent(targetState = errorText) { text ->
+            AnimatedContent(targetState = uiState.messageText) { text ->
                 if (text != null) {
                     Text(
                         text = text,
+                        color = uiState.messageColor,
                         modifier = Modifier.padding(
                             start = 16.dp,
                             end = 16.dp,
@@ -86,26 +81,21 @@ private fun Content() {
 @Composable
 private fun TopBar(
     onBack: () -> Unit,
-    viewModel: SettingsUsernameViewModel
+    viewModel: SettingsUsernameViewModel,
+    uiState: UsernameScreenUiState
 ) {
     val navHost = LocalNavHost.current
     
-    val canSave by viewModel.canSave.collectAsState()
-    
     val scope = rememberCoroutineScope()
     
-    val actions = if (canSave) {
+    val actions = if (uiState.isAvailable) {
         listOf(
             TopBarAction(
                 icon = Icons.Rounded.Check,
                 onClick = {
                     scope.launch {
-                        val isSaved = viewModel.trySave()
-                        
-                        if (isSaved) {
+                        if (viewModel.save()) {
                             navHost.removeLastOrNull()
-                        } else {
-                            viewModel.vibrate(VibrationPattern.Error)
                         }
                     }
                 })
@@ -123,6 +113,3 @@ private fun TopBar(
         actions = actions
     )
 }
-
-
-

@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.rounded.AddHome
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
@@ -382,7 +383,7 @@ class ProfileViewModel @Inject constructor(
     }
     
     private fun createDropdownAction(
-        icon: androidx.compose.ui.graphics.vector.ImageVector,
+        icon: ImageVector,
         @StringRes
         textResId: Int,
         onClick: () -> Unit

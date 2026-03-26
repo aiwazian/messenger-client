@@ -26,14 +26,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.navigation.AppRoute
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.launch
 
 @Composable
@@ -52,9 +52,9 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
                 .padding(it)
                 .verticalScroll(scrollState)
         ) {
-            SectionHeader(title = stringResource(R.string.alternative_options))
-
-            SectionContainer {
+            SectionContainer(header = {
+                SectionHeader(title = stringResource(R.string.alternative_options))
+            }) {
                 SectionItem(
                     icon = Icons.Rounded.Delete,
                     text = stringResource(R.string.clear_cache),
@@ -63,7 +63,7 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
                         navHost.add(AppRoute.SettingsDataAndStorage)
                     })
             }
-
+            
             SectionContainer {
                 SectionItem(
                     text = stringResource(R.string.log_out),
@@ -71,11 +71,11 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
                     onClick = viewModel::showLogoutDialog
                 )
             }
-
+            
             if (uiState.isLogoutDialogVisible) {
                 val context = LocalContext.current
                 val scope = rememberCoroutineScope()
-
+                
                 LogoutModal(
                     onConfirm = {
                         scope.launch {
@@ -113,7 +113,7 @@ private fun LogoutModal(
 @Composable
 private fun TopBar() {
     val navHost = LocalNavHost.current
-
+    
     PageTopBar(
         title = { Text(stringResource(R.string.log_out)) },
         navigationIcon = NavigationIcon(

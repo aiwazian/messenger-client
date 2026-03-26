@@ -28,8 +28,7 @@ import com.aiwazian.messenger.utils.VibrationPattern
 fun CustomNumberBoard(
     value: String = "",
     buttons: List<List<Any?>>,
-    onChange: (String) -> Unit,
-    onVibrate: (LongArray) -> Unit
+    onChange: (String) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -52,8 +51,6 @@ fun CustomNumberBoard(
                             } else {
                                 onChange(value + key)
                             }
-                            
-                            onVibrate(VibrationPattern.TactileResponse)
                         },
                         modifier = Modifier
                             .weight(1f)

@@ -4,8 +4,17 @@
 
 package com.aiwazian.messenger.ui.screens.settings.storage
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -57,12 +66,10 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
     LaunchedEffect(Unit) {
         storageViewModel.uiEvent.collectLatest { event ->
             when (event) {
-                is StorageUiEvent.CacheCleared -> {
-                    // Кеш успешно очищен
+                is StorageUiEvent.CacheCleared -> { // Кеш успешно очищен
                 }
                 
-                is StorageUiEvent.Error -> {
-                    // Показать ошибку
+                is StorageUiEvent.Error -> { // Показать ошибку
                 }
             }
         }
@@ -70,15 +77,13 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
     
     val sizeBytes = storageViewModel.appSize
     val sizeMb = sizeBytes / (1024.0 * 1024.0)
-    val sizeMbRounded =
-        BigDecimal(sizeMb).setScale(
-            2,
-            RoundingMode.HALF_UP
-        ).toDouble()
+    val sizeMbRounded = BigDecimal(sizeMb).setScale(
+        2,
+        RoundingMode.HALF_UP
+    ).toDouble()
     
     Scaffold(
-        topBar = { TopBar() }
-    ) { padding ->
+        topBar = { TopBar() }) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -129,12 +134,10 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                     
                     val selectedSize = uiState.selectedSize
                     val selectedSizeMb = selectedSize / (1024.0 * 1024.0)
-                    val selectedSizeMbRounded = BigDecimal(selectedSizeMb)
-                        .setScale(
-                            2,
-                            RoundingMode.HALF_UP
-                        )
-                        .toDouble()
+                    val selectedSizeMbRounded = BigDecimal(selectedSizeMb).setScale(
+                        2,
+                        RoundingMode.HALF_UP
+                    ).toDouble()
                     
                     val hasSelection = uiState.selectedCategories.isNotEmpty()
                     
@@ -146,20 +149,39 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                         shape = MaterialTheme.shapes.medium,
                         colors = ButtonDefaults.buttonColors(
                             contentColor = MaterialTheme.colorScheme.onPrimary,
-                            containerColor = if (hasSelection) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                            }
+                            containerColor = MaterialTheme.colorScheme.primary
                         ),
                         enabled = hasSelection
                     ) {
-                        Text(
-                            text = "Очистить кеш ($selectedSizeMbRounded MB)",
+                        Row(
                             modifier = Modifier.padding(8.dp),
-                            fontSize = 16.sp,
-                            lineHeight = 18.sp
-                        )
+                        ) {
+                            Text(
+                                text = "Очистить кеш (",
+                                fontSize = 16.sp,
+                                lineHeight = 18.sp
+                            )
+                            AnimatedContent(
+                                targetState = selectedSizeMbRounded,
+                                transitionSpec = {
+                                    if (targetState > initialState) {
+                                        slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
+                                    } else {
+                                        slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
+                                    }
+                                }) { size ->
+                                Text(
+                                    text = "$size",
+                                    fontSize = 16.sp,
+                                    lineHeight = 18.sp
+                                )
+                            }
+                            Text(
+                                text = "MB)",
+                                fontSize = 16.sp,
+                                lineHeight = 18.sp
+                            )
+                        }
                     }
                 }
             }
@@ -178,8 +200,7 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
 
 @Composable
 private fun ClearCacheConfirmationDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onConfirm: () -> Unit, onDismiss: () -> Unit
 ) {
     CustomDialog(
         title = "Очистка кеша",
@@ -205,8 +226,7 @@ private fun ClearCacheConfirmationDialog(
             ) {
                 Text("Удалить")
             }
-        }
-    )
+        })
 }
 
 @Composable

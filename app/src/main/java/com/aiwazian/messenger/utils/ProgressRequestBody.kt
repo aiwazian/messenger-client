@@ -25,15 +25,13 @@ class ProgressRequestBody(
         val source = inputStream.source()
         var totalBytesRead = 0L
         var read: Int
-
-        try {
+        
+        source.use { source ->
             while (source.read(sink.buffer, 8192).also { read = it.toInt() } != -1L) {
                 totalBytesRead += read
                 val progress = ((totalBytesRead * 100) / contentLength).toInt()
                 onProgress(progress)
             }
-        } finally {
-            source.close()
         }
     }
 }

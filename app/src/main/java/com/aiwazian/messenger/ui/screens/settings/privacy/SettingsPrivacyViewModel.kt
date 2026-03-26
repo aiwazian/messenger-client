@@ -8,8 +8,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.PrivacySettings
+import com.aiwazian.messenger.enums.PrivacyLevel
 import com.aiwazian.messenger.repository.PrivacyRepository
-import com.aiwazian.messenger.utils.DialogController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,23 +25,19 @@ class SettingsPrivacyViewModel @Inject constructor(
     private val _privacySettings = MutableStateFlow(PrivacySettings())
     val privacySettings = _privacySettings.asStateFlow()
 
-    val deleteAccountDialog = DialogController()
-
     init {
-        tryLoadValues()
+        loadValues()
     }
 
-    fun updateBioValue(privacyLevel: Int) {
-        val newValue = _privacySettings.value.copy(bio = privacyLevel)
-        _privacySettings.update { newValue }
+    fun updateBioValue(privacyLevel: PrivacyLevel) {
+        _privacySettings.update { it.copy(bio = privacyLevel) }
     }
 
-    fun updateDateOfBirthValue(privacyLevel: Int) {
-        val newValue = _privacySettings.value.copy(dateOfBirth = privacyLevel)
-        _privacySettings.update { newValue }
+    fun updateDateOfBirthValue(privacyLevel: PrivacyLevel) {
+        _privacySettings.update { it.copy(dateOfBirth = privacyLevel) }
     }
 
-    fun tryLoadValues() {
+    fun loadValues() {
         viewModelScope.launch {
             try {
                 val myPrivacy = privacyRepository.getPrivacySettings()
@@ -59,6 +55,3 @@ class SettingsPrivacyViewModel @Inject constructor(
         }
     }
 }
-
-
-

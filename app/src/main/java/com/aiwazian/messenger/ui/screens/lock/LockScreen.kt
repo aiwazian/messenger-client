@@ -93,8 +93,7 @@ fun LockScreen(lockViewModel: LockViewModel = hiltViewModel()) {
                 CustomNumberBoard(
                     value = uiState.passcode,
                     buttons = boardButtons,
-                    onChange = lockViewModel::onPasscodeChanged,
-                    onVibrate = lockViewModel::vibrate
+                    onChange = lockViewModel::onPasscodeChanged
                 )
             }
         }

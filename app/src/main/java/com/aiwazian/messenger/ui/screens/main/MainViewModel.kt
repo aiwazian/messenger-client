@@ -11,13 +11,14 @@ import com.aiwazian.messenger.domain.DeleteChatPayload
 import com.aiwazian.messenger.domain.DeleteMessagePayload
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.ReadMessagePayload
-import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.WebSocketAction
+import com.aiwazian.messenger.repository.ChatRepository
+import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.utils.AppLockManager
+import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.UserManager
 import com.aiwazian.messenger.utils.VibrationManager
-import com.aiwazian.messenger.socket.WebSocketClient
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -75,31 +76,36 @@ class MainViewModel @Inject constructor(
     
     init {
         viewModelScope.launch {
-            userManager.loadUserData()
+            webSocketClient.connectionState.collectLatest {
+                if (it == ConnectionState.CONNECTED) {
+                    SessionManager.loadSession()
+                    userManager.loadUserData()
+                }
+            }
         }
-
+        
         webSocketClient.subscribeToTypedMessages<Message>(WebSocketAction.NEW_MESSAGE) { message ->
             onReceivingMessage(message)
         }
-
+        
         webSocketClient.subscribeToTypedMessages<DeleteMessagePayload>(WebSocketAction.DELETE_MESSAGE) { message ->
             onMessageDeleted(
                 message.messageId,
                 message.chatId
             )
         }
-
+        
         webSocketClient.subscribeToTypedMessages<ReadMessagePayload>(WebSocketAction.READ_MESSAGE) { message ->
             onReadMessage(
                 message.chatId,
                 message.messageId
             )
         }
-
+        
         webSocketClient.subscribeToTypedMessages<Chat>(WebSocketAction.NEW_CHAT) { chatInfo ->
             showNewChat(chatInfo)
         }
-
+        
         webSocketClient.subscribeToTypedMessages<DeleteChatPayload>(WebSocketAction.DELETE_CHAT) { payload ->
             deleteChat(payload.chatId)
         }

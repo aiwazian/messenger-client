@@ -10,6 +10,7 @@ import com.aiwazian.messenger.network.dto.PrivacySettingsResponseDto
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.domain.PrivacySettings
 import com.aiwazian.messenger.database.entity.UserEntity
+import com.aiwazian.messenger.enums.PrivacyLevel
 import com.aiwazian.messenger.network.dto.UpdatePrivacySettingsRequestDto
 
 fun UserResponseDto.toDomain(): User = User(
@@ -30,21 +31,12 @@ fun User.toUpdateRequest(): UpdateUserRequestDto = UpdateUserRequestDto(
 )
 
 fun PrivacySettingsResponseDto.toDomain(): PrivacySettings = PrivacySettings(
-    lastSeen = this.lastSeen,
-    messages = this.messages,
-    bio = this.bio,
-    dateOfBirth = this.dateOfBirth,
-    invites = this.invites
+    lastSeen = PrivacyLevel.fromId(lastSeen),
+    messages = PrivacyLevel.fromId(messages),
+    bio = PrivacyLevel.fromId(bio),
+    dateOfBirth = PrivacyLevel.fromId(dateOfBirth),
+    invites = PrivacyLevel.fromId(invites)
 )
-
-fun PrivacySettings.toUpdateRequest(): UpdatePrivacySettingsRequestDto =
-    UpdatePrivacySettingsRequestDto(
-        lastSeen = this.lastSeen,
-        messages = this.messages,
-        bio = this.bio,
-        dateOfBirth = this.dateOfBirth,
-        invites = this.invites
-    )
 
 fun UserEntity.toDomain(): User = User(
     id = this.id,

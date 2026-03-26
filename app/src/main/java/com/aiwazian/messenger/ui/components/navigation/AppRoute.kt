@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.components.navigation
 
 import androidx.navigation3.runtime.NavKey
+import com.aiwazian.messenger.enums.PrivacyLevel
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -47,13 +48,13 @@ sealed interface AppRoute : NavKey {
     data object SettingsProfile : AppRoute
     
     @Serializable
-    data object SettingsUsername : AppRoute
+    data class SettingsUsername(val username: String?) : AppRoute
     
     @Serializable
-    data object SettingsBio : AppRoute
+    data class SettingsBio(val level: PrivacyLevel) : AppRoute
     
     @Serializable
-    data object SettingsDateOfBirth : AppRoute
+    data class SettingsDateOfBirth(val level: PrivacyLevel) : AppRoute
     
     @Serializable
     data object SettingsDevices : AppRoute

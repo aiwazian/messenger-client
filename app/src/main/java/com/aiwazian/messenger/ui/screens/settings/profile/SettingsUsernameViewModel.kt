@@ -4,19 +4,16 @@
 
 package com.aiwazian.messenger.ui.screens.settings.profile
 
-import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
-import com.aiwazian.messenger.utils.VibrationManager
+import com.aiwazian.messenger.utils.UserManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -25,88 +22,60 @@ import javax.inject.Inject
 class SettingsUsernameViewModel @Inject constructor(
     private val searchRepository: SearchRepository,
     private val userRepository: UserRepository,
-    private val vibrationManager: VibrationManager
+    private val userManager: UserManager
 ) : ViewModel() {
-
-    private val _username = MutableStateFlow("")
-    val username = _username.asStateFlow()
-
-    private val _canSave = MutableStateFlow(false)
-    val canSave = _canSave.asStateFlow()
-
-    var errorText by mutableStateOf<String?>(null)
-        private set
-
-    fun vibrate(pattern: LongArray) {
-        vibrationManager.vibrate(pattern)
-    }
-
-    fun init() {
-        viewModelScope.launch {
-            userRepository.getMe().collectLatest { user ->
-                _username.update { user.username.orEmpty() }
-            }
+    
+    private val _uiState = MutableStateFlow(UsernameScreenUiState())
+    val uiState = _uiState.asStateFlow()
+    
+    private var checkJob: Job? = null
+    private val usernameRegex = Regex("^[a-zA-Z0-9_]*$")
+    
+    fun initUsername(initialUsername: String?) {
+        if (initialUsername != null) {
+            _uiState.update { it.copy(username = initialUsername) }
         }
-
-        updateErrorMessage(null)
     }
-
+    
     fun onChangeUsername(newUsername: String) {
-        val validUsername = newUsername.trim()
-
-        _username.update { validUsername }
-
-        if (validUsername.isEmpty()) {
-            updateErrorMessage(null)
-            _canSave.update { true }
+        val filteredUsername = newUsername.filter { it.toString().matches(usernameRegex) }
+        
+        _uiState.update { it.copy(username = filteredUsername, status = UsernameUiState.Idle) }
+        
+        if (filteredUsername.isEmpty()) {
+            _uiState.update { it.copy(status = UsernameUiState.Available) }
             return
         }
-
-        if (validUsername.isNotEmpty() && validUsername.length < 5) {
-            updateErrorMessage("Минимальная длина 5 символов")
-            _canSave.update { false }
+        
+        if (filteredUsername.length < 5) {
+            _uiState.update { it.copy(status = UsernameUiState.Invalid("Минимальная длина 5 символов")) }
             return
         }
-
-        if (validUsername.length > 20) {
-            updateErrorMessage("Максимальная длина 20 символов")
-            _canSave.update { false }
-            return
-        }
-
-        updateErrorMessage("Проверка имени")
-
-        viewModelScope.launch {
+        
+        checkJob?.cancel()
+        checkJob = viewModelScope.launch {
+            _uiState.update { it.copy(status = UsernameUiState.Checking) }
+            delay(500)
             try {
-                val isAvailable = searchRepository.checkUsernameAvailable(_username.value)
-
-                updateErrorMessage(
-                    if (!isAvailable) {
-                        "Имя пользователя занято"
-                    } else {
-                        "Имя пользователя свободно"
-                    }
-                )
-
-                _canSave.update { isAvailable }
-            } catch (e: Exception) {
-                _canSave.update { false }
-                Log.e("SettingsUsernameVM", e.toString())
+                val isAvailable = searchRepository.checkUsernameAvailable(filteredUsername)
+                _uiState.update {
+                    it.copy(
+                        status = if (isAvailable) UsernameUiState.Available else UsernameUiState.Unavailable(
+                            "Имя пользователя занято"
+                        )
+                    )
+                }
+            } catch (_: Exception) {
+                _uiState.update { it.copy(status = UsernameUiState.Invalid("Ошибка проверки")) }
             }
         }
     }
-
-    suspend fun trySave(): Boolean {
-        val username = _username.value.ifEmpty { null }
-
-        val isSaved = userRepository.saveUsername(username ?: "")
-
+    
+    suspend fun save(): Boolean {
+        val isSaved = userRepository.saveUsername(_uiState.value.username)
+        if (isSaved) {
+            userManager.updateUserInfo(userManager.user.value.copy(username = _uiState.value.username))
+        }
         return isSaved
     }
-
-    private fun updateErrorMessage(newMessage: String?) {
-        errorText = newMessage
-    }
 }
-
-
