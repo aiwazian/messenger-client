@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
@@ -42,9 +43,9 @@ fun GroupMembersScreen(groupViewModel: GroupViewModel = hiltViewModel()) {
                 SectionItem(
                     icon = Icons.Rounded.PersonAdd,
                     text = stringResource(R.string.add_member),
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                    color = MaterialTheme.colorScheme.primary,
                     onClick = {
-//                        navHost.add(AppRoute.AddMember.create(groupId))
+//                        navHost.add(AppRoute.AddMember())
                     }
                 )
             }

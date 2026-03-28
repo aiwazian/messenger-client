@@ -41,6 +41,8 @@ class MainViewModel @Inject constructor(
     private val _uiEffect = MutableSharedFlow<MainUiEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
     
+    val socketState = webSocketClient.connectionState
+    
     val hasPasscode = appLockManager.hasPasscode
     
     val user = userManager.user

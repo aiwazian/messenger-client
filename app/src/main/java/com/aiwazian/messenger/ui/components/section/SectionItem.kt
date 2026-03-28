@@ -10,16 +10,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -32,9 +31,7 @@ fun SectionItem(
     icon: ImageVector? = null,
     description: String? = null,
     primaryText: String? = null,
-    primaryIcon: ImageVector? = null,
-    primaryIconClick: () -> Unit = {},
-    colors: ButtonColors? = null,
+    color: Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
 ) {
@@ -47,8 +44,9 @@ fun SectionItem(
                 onLongClick = onLongClick
             ),
         onClick = onClick,
-        colors = colors
-            ?: ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
+        colors = ButtonDefaults.textButtonColors(
+            contentColor = color
+        )
     ) {
         Row(
             modifier = Modifier
@@ -61,7 +59,7 @@ fun SectionItem(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = colors?.contentColor ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = color,
                     modifier = Modifier.padding(end = 16.dp)
                 )
             }
@@ -69,7 +67,7 @@ fun SectionItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = text,
-                    color = colors?.contentColor ?: MaterialTheme.colorScheme.onSurface,
+                    color = color,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Normal
                 )
@@ -92,14 +90,6 @@ fun SectionItem(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Normal
                 )
-            } else if (primaryIcon != null) {
-                IconButton(onClick = primaryIconClick) {
-                    Icon(
-                        imageVector = primaryIcon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
             }
         }
     }

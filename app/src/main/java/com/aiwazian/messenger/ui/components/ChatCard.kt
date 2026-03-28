@@ -52,12 +52,9 @@ fun ChatCard(
 ) {
     ListItem(
         modifier = Modifier.combinedClickable(
-            onClick = {
-                onClickChat()
-            },
-            onLongClick = {
-                onLongClickChat()
-            }),
+            onClick = onClickChat,
+            onLongClick = onLongClickChat
+        ),
         headlineContent = {
             Text(
                 text = chat.chatName,
@@ -66,12 +63,16 @@ fun ChatCard(
             )
         },
         supportingContent = {
-            if (chat.lastMessage != null && !chat.lastMessage.text.isNullOrBlank()) {
-                Text(
-                    text = chat.lastMessage.text,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+            if (chat.lastMessage != null) {
+                if (chat.lastMessage.files.isNotEmpty()) {
+                    Text(text = chat.lastMessage.files.first().name)
+                } else if (!chat.lastMessage.text.isNullOrBlank()) {
+                    Text(
+                        text = chat.lastMessage.text,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         },
         leadingContent = {

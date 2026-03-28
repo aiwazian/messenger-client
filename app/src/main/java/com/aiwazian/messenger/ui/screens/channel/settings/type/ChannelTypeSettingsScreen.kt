@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -159,20 +158,19 @@ fun ChannelTypeSettingsScreen(
                     Column {
                         SectionContainer(
                             header = {
-                                SectionHeader(title = "Пригласительная ссылка")
+                                SectionHeader(title = stringResource(R.string.invite_link))
                             },
                             footer = {
                                 SectionDescription(text = "Любой, у кого есть эта ссылка, сможет вступить в канал.")
                             }) {
                             SectionItem(
                                 text = uiState.inviteLink ?: "Генерация...",
-                                primaryText = "Нажмите, чтобы скопировать",
                                 onClick = { /* Копирование в буфер обмена */ }
                             )
                             SectionItem(
                                 text = "Сбросить ссылку",
-                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                                onClick = { viewModel.resetInviteLink() }
+                                color = MaterialTheme.colorScheme.error,
+                                onClick = viewModel::resetInviteLink
                             )
                         }
                     }

@@ -20,32 +20,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import com.aiwazian.messenger.enums.PrimaryColorOption
+import com.aiwazian.messenger.enums.PrimaryColor
 import com.aiwazian.messenger.enums.ThemeOption
 
-private fun darkColorSchemeMaterial(customPrimaryColor: Color) = darkColorScheme(
-    primary = customPrimaryColor,
-    onPrimary = Color.Black,
-    background = Color.Black,
-    onBackground = Color.White,
-    surface = Color.Black,
-    error = Color(0xFFFF6464),
-)
+private fun darkColorSchemeMaterial(customPrimaryColor: Color) =
+    darkColorScheme(
+        primary = customPrimaryColor,
+    )
 
-private fun lightColorSchemeMaterial(customPrimaryColor: Color) = lightColorScheme(
-    primary = customPrimaryColor,
-    onPrimary = Color.White,
-    background = Color.White,
-    onBackground = Color.Black,
-    surface = Color.White,
-    error = Color(0xFFFF6464),
-)
+private fun lightColorSchemeMaterial(customPrimaryColor: Color) =
+    lightColorScheme(
+        primary = customPrimaryColor
+    )
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ApplicationTheme(
     theme: ThemeOption = ThemeOption.SYSTEM,
-    primaryColor: Color = PrimaryColorOption.Blue.color,
+    primaryColor: Color = PrimaryColor.Blue.color,
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit,
 ) {

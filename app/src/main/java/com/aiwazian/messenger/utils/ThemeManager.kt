@@ -4,7 +4,7 @@
 
 package com.aiwazian.messenger.utils
 
-import com.aiwazian.messenger.enums.PrimaryColorOption
+import com.aiwazian.messenger.enums.PrimaryColor
 import com.aiwazian.messenger.enums.ThemeOption
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +24,7 @@ class ThemeManager @Inject constructor(
     private val _currentTheme = MutableStateFlow(ThemeOption.SYSTEM)
     val currentTheme = _currentTheme.asStateFlow()
     
-    private val _primaryColor = MutableStateFlow(PrimaryColorOption.Blue)
+    private val _primaryColor = MutableStateFlow(PrimaryColor.Blue)
     val primaryColor = _primaryColor.asStateFlow()
     
     private val _dynamicColor = MutableStateFlow(false)
@@ -40,7 +40,7 @@ class ThemeManager @Inject constructor(
         
         coroutineScope.launch {
             val primaryColor = dataStorage.getPrimaryColor().first()
-            _primaryColor.update { PrimaryColorOption.fromString(primaryColor) }
+            _primaryColor.update { PrimaryColor.fromString(primaryColor) }
         }
         
         coroutineScope.launch {
@@ -59,7 +59,7 @@ class ThemeManager @Inject constructor(
         dataStorage.saveTheme(theme)
     }
     
-    suspend fun setPrimaryColor(color: PrimaryColorOption) {
+    suspend fun setPrimaryColor(color: PrimaryColor) {
         _primaryColor.update { color }
         dataStorage.savePrimaryColor(color.name)
     }

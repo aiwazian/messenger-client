@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.Button
@@ -41,7 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.enums.PrimaryColorOption
+import com.aiwazian.messenger.enums.PrimaryColor
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -86,8 +88,9 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
         topBar = { TopBar() }) { padding ->
         Column(
             modifier = Modifier
-                .padding(padding)
                 .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
         ) {
             Column(
                 modifier = Modifier
@@ -127,7 +130,7 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                             text = category.category.title,
                             selected = category.isSelected,
                             primaryText = "$sizeMbRounded MB",
-                            radioColor = PrimaryColorOption.entries[index].color,
+                            radioColor = PrimaryColor.entries[index].color,
                             onClick = { storageViewModel.toggleCategory(category.category) })
                         
                     }
@@ -157,7 +160,7 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                             modifier = Modifier.padding(8.dp),
                         ) {
                             Text(
-                                text = "Очистить кеш (",
+                                text = "${stringResource(R.string.clear_cache)} (",
                                 fontSize = 16.sp,
                                 lineHeight = 18.sp
                             )

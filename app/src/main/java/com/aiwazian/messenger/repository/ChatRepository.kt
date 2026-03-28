@@ -66,14 +66,14 @@ class ChatRepository @Inject constructor(
         return null
     }
 
-    fun getMessagesFlow(chatId: Long): Flow<List<Message>> =
-        messageDao.getMessages(chatId).map { entities ->
+    fun getMessagesFlow(chatId: Long, limit: Int, offset: Int): Flow<List<Message>> =
+        messageDao.getMessages(chatId, limit, offset).map { entities ->
             entities.map { it.message.toDomain(it.messageAttachments.map { att -> att.toDomain() }) }
         }
 
-    suspend fun getMessages(chatId: Long): List<Message> {
+    suspend fun getMessages(chatId: Long, limit: Int? = null, offset: Int? = null): List<Message> {
         return try {
-            val response = messageApi.getMessages(chatId)
+            val response = messageApi.getMessages(chatId, limit, offset)
             if (response.isSuccessful) {
                 val dtos = response.body().orEmpty()
                 val domains = dtos.map { it.toDomain() }
@@ -118,8 +118,6 @@ class ChatRepository @Inject constructor(
             attachmentDao.upsertAttachments(attachments)
         }
     }
-
-
 
     suspend fun initFileUpload(chatId: Long, dto: FileInitRequestDto): FileInitResponseDto? {
         return try {

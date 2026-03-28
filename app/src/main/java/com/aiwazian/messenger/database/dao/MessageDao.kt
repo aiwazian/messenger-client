@@ -19,6 +19,10 @@ interface MessageDao {
     suspend fun saveMessages(messages: List<MessageEntity>)
 
     @androidx.room.Transaction
+    @Query("SELECT * FROM (SELECT * FROM message WHERE chatId = :chatId ORDER BY sendTime DESC LIMIT :limit OFFSET :offset) ORDER BY sendTime ASC")
+    fun getMessages(chatId: Long, limit: Int, offset: Int): Flow<List<MessageWithAttachments>>
+
+    @androidx.room.Transaction
     @Query("SELECT * FROM message WHERE chatId = :chatId ORDER BY sendTime ASC")
     fun getMessages(chatId: Long): Flow<List<MessageWithAttachments>>
 

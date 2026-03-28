@@ -16,6 +16,7 @@ import com.yandex.mobile.ads.nativeads.NativeAdLoadListener
 import com.yandex.mobile.ads.nativeads.NativeAdLoader
 import com.yandex.mobile.ads.nativeads.NativeAdRequestConfiguration
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,17 +25,50 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class AdViewModel @Inject constructor() : ViewModel() {
+class NativeAdViewModel @Inject constructor(
+    @ApplicationContext
+    context: Context
+) : ViewModel() {
     
     private val reloadInterval = 60_000L
     
-    private var nativeAdLoader: NativeAdLoader? = null
+    var nativeAd: NativeAd? = null
+        private set
+    
+    private val nativeAdLoader: NativeAdLoader = NativeAdLoader(context).apply {
+        setNativeAdLoadListener(object : NativeAdLoadListener {
+            override fun onAdLoaded(nativeAd: NativeAd) {
+                nativeAd.setNativeAdEventListener(
+                    NativeAdEventLogger(onImpressed = {
+                        _isImpressed = true
+                    })
+                )
+                
+                this@NativeAdViewModel.nativeAd = nativeAd
+                
+                _isAdLoaded.update { true }
+                
+                loadStartTime = System.currentTimeMillis()
+                
+                Log.d(
+                    "YandexAds",
+                    "Ad loaded"
+                )
+            }
+            
+            override fun onAdFailedToLoad(error: AdRequestError) {
+                loadAd()
+                
+                Log.e(
+                    "YandexAds",
+                    "Ad failed to load: ${error.description}"
+                )
+            }
+        })
+    }
     
     private val _isAdLoaded = MutableStateFlow(false)
     val isAdLoaded = _isAdLoaded.asStateFlow()
-    
-    var nativeAd: NativeAd? = null
-        private set
     
     private var _isImpressed = false
     
@@ -55,42 +89,8 @@ class AdViewModel @Inject constructor() : ViewModel() {
         }
     }
     
-    fun initialize(context: Context) {
-        if (nativeAdLoader == null) {
-            nativeAdLoader = createNativeAdLoader(context)
-            loadAd()
-        }
-    }
-    
-    private fun createNativeAdLoader(context: Context): NativeAdLoader {
-        return NativeAdLoader(context).apply {
-            setNativeAdLoadListener(object : NativeAdLoadListener {
-                override fun onAdLoaded(nativeAd: NativeAd) {
-                    this@AdViewModel.nativeAd = nativeAd
-                    this@AdViewModel.nativeAd?.setNativeAdEventListener(
-                        NativeAdEventLogger(onImpressed = {
-                            _isImpressed = true
-                        })
-                    )
-                    
-                    _isAdLoaded.update { true }
-                    
-                    loadStartTime = System.currentTimeMillis()
-                    
-                    Log.d("YandexAds", "Ad loaded")
-                }
-                
-                override fun onAdFailedToLoad(error: AdRequestError) {
-                    loadAd()
-                    
-                    Log.e("YandexAds", "Ad failed to load: ${error.description}")
-                }
-            })
-        }
-    }
-    
     private fun loadAd() {
-        nativeAdLoader?.loadAd(NativeAdRequestConfiguration.Builder("R-M-15520718-2").build())
+        nativeAdLoader.loadAd(NativeAdRequestConfiguration.Builder("R-M-15520718-2").build())
         _isAdLoaded.update { false }
         _isImpressed = false
         loadStartTime = 0
@@ -103,27 +103,39 @@ class AdViewModel @Inject constructor() : ViewModel() {
     
     override fun onCleared() {
         super.onCleared()
-        nativeAdLoader?.cancelLoading()
+        nativeAdLoader.cancelLoading()
     }
 }
 
 private class NativeAdEventLogger(private val onImpressed: (() -> Unit)? = null) :
     NativeAdEventListener {
     override fun onAdClicked() {
-        Log.d("YandexAds", "Ad clicked")
+        Log.d(
+            "YandexAds",
+            "Ad clicked"
+        )
     }
     
     override fun onLeftApplication() {
-        Log.d("YandexAds", "Left application")
+        Log.d(
+            "YandexAds",
+            "Left application"
+        )
     }
     
     override fun onReturnedToApplication() {
-        Log.d("YandexAds", "Returned to application")
+        Log.d(
+            "YandexAds",
+            "Returned to application"
+        )
     }
     
     override fun onImpression(impressionData: ImpressionData?) {
         onImpressed?.invoke()
-        Log.d("YandexAds", "Impression, ${impressionData?.rawData}")
+        Log.d(
+            "YandexAds",
+            "Impression, ${impressionData?.rawData}"
+        )
     }
 }
 

@@ -83,14 +83,16 @@
             android:configChanges="locale|layoutDirection"
             android:exported="false"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.MessengerSplashScreen" />
+            android:theme="@style/Theme.MessengerSplashScreen"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".MainActivity"
             android:configChanges="locale|layoutDirection"
             android:exported="true"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.MessengerSplashScreen">
+            android:theme="@style/Theme.MessengerSplashScreen"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

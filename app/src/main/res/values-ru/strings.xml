@@ -124,4 +124,13 @@
     <string name="delete_group">Удалить группу</string>
     <string name="save_to_downloads">Сохранить в загрузки</string>
     <string name="copied">Скопировано</string>
+    <string name="internal_storage">Внутреннее хранилище</string>
+    <string name="file_system_search">Поиск в файловой системе</string>
+    <string name="system_default">Как в системе</string>
+    <string name="disabled">Выключено</string>
+    <string name="enabled">Включено</string>
+    <string name="photos">Фото</string>
+    <string name="videos">Видео</string>
+    <string name="documents">Документы</string>
+    <string name="other">Другое</string>
 </resources>

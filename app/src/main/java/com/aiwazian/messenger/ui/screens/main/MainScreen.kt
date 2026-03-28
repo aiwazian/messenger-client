@@ -16,6 +16,11 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -74,13 +79,14 @@ import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberContainedSearchBarState
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -97,6 +103,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -108,6 +115,8 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
+import com.aiwazian.messenger.enums.ConnectionState
+import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
@@ -306,7 +315,7 @@ private fun Content(
                         mainViewModel.lockApp()
                     }
                 },
-                isConnected = true
+                socketState = mainViewModel.socketState.collectAsState().value
             )
         },
         snackbarHost = {
@@ -462,10 +471,13 @@ private fun SwipeDismissSnackbarHost(snackbarHostState: SnackbarHostState) {
 )
 @Composable
 private fun DefaultTopBar(
-    drawerState: DrawerState, isLockApp: Boolean, onLockClick: () -> Unit, isConnected: Boolean
+    drawerState: DrawerState,
+    isLockApp: Boolean,
+    onLockClick: () -> Unit,
+    socketState: ConnectionState
 ) {
     val textFieldState = rememberTextFieldState()
-    val searchBarState = rememberContainedSearchBarState()
+    val searchBarState = rememberSearchBarState()
     val scope = rememberCoroutineScope()
     
     val inputField = @Composable {
@@ -473,7 +485,22 @@ private fun DefaultTopBar(
             textFieldState = textFieldState,
             searchBarState = searchBarState,
             onSearch = {},
-            placeholder = { Text(stringResource(R.string.search)) },
+            placeholder = {
+                AnimatedContent(
+                    targetState = socketState,
+                    contentKey = { it },
+                    transitionSpec = {
+                        slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
+                    },
+                    label = "connection_state_animation"
+                ) { state ->
+                    when (state) {
+                        ConnectionState.CONNECTED -> Text(stringResource(R.string.search))
+                        ConnectionState.DISCONNECTED -> AnimatedDotsText("Ожидание сети")
+                        ConnectionState.CONNECTING, ConnectionState.RECONNECTING -> AnimatedDotsText("Подключение")
+                    }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth(),
             leadingIcon = {
@@ -517,7 +544,7 @@ private fun DefaultTopBar(
                             IconButton(onClick = { scope.launch { searchBarState.animateToCollapsed() } }) {
                                 Icon(
                                     imageVector = Icons.Rounded.Close,
-                                    contentDescription = null
+                                    contentDescription = "Close search"
                                 )
                             }
                         }
@@ -536,7 +563,7 @@ private fun DefaultTopBar(
         inputField = inputField,
         colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
     ) {
-        var selectedIndex by remember { mutableStateOf(0) }
+        var selectedIndex by remember { mutableIntStateOf(0) }
         val pagerState = rememberPagerState(pageCount = { 2 })
         
         LaunchedEffect(selectedIndex) {
@@ -560,7 +587,10 @@ private fun DefaultTopBar(
                 selectedContentColor = MaterialTheme.colorScheme.primary,
                 unselectedContentColor = MaterialTheme.colorScheme.onSurface
             ) {
-                Text("Чаты", modifier = Modifier.padding(6.dp))
+                Text(
+                    "Чаты",
+                    modifier = Modifier.padding(6.dp)
+                )
             }
             Tab(
                 selected = selectedIndex == 1,
@@ -589,10 +619,8 @@ private fun DefaultTopBar(
 
 @Composable
 private fun DrawerContent(
-    onClose: () -> Unit, user: User
+    onClose: () -> Unit, user: User, nativeAdViewModel: NativeAdViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    
     val navHost = LocalNavHost.current
     
     ModalDrawerSheet(
@@ -647,14 +675,8 @@ private fun DrawerContent(
         
         Box(Modifier.weight(1f))
         
-        val adViewModel = hiltViewModel<AdViewModel>()
-        
-        LaunchedEffect(Unit) {
-            adViewModel.initialize(context)
-        }
-        
-        val isAdLoaded by adViewModel.isAdLoaded.collectAsState()
-        val nativeAd = adViewModel.nativeAd
+        val isAdLoaded by nativeAdViewModel.isAdLoaded.collectAsState()
+        val nativeAd = nativeAdViewModel.nativeAd
         
         if (isAdLoaded) {
             val textColor = MaterialTheme.colorScheme.onSurface

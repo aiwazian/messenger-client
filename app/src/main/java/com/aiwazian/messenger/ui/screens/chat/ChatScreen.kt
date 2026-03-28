@@ -29,6 +29,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -108,6 +110,15 @@ fun ChatScreen(
     val uiState by chatViewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
     
+    val firstVisibleItemIndex =
+        remember { androidx.compose.runtime.derivedStateOf { listState.firstVisibleItemIndex } }
+    
+    LaunchedEffect(firstVisibleItemIndex.value) {
+        if (firstVisibleItemIndex.value < 10 && uiState.hasMoreMessages && !uiState.isLoadingMore && !uiState.isLoading) {
+            chatViewModel.loadMoreMessages()
+        }
+    }
+    
     var fileToCancelId by remember { mutableStateOf<Int?>(null) }
     
     LaunchedEffect(chatId) {
@@ -134,7 +145,8 @@ fun ChatScreen(
                 is ChatUiEffect.NotifyMainMessageSent -> mainViewModel.onSendMessage(effect.message)
                 is ChatUiEffect.NotifyMainChatDeleted -> mainViewModel.deleteChat(effect.chatId)
                 is ChatUiEffect.NotifyMainNewChat -> mainViewModel.showNewChat(
-                    effect.chat, effect.lastMessage
+                    effect.chat,
+                    effect.lastMessage
                 )
             }
         }
@@ -146,41 +158,62 @@ fun ChatScreen(
         }
     }
     
-    Scaffold(topBar = {
-        TopBar(
-            title = if (uiState.isSavedMessages) stringResource(R.string.saved_messages) else uiState.topBarTitle,
-            subTitle = getLocalizedSubTitle(uiState),
-            dropdownActions = uiState.topBarActions,
-            isConnected = uiState.isConnected,
-            onBackClicked = chatViewModel::onBackClicked,
-            chatId = uiState.chat.id
-        )
-    }, bottomBar = {
-        BottomSection(
-            uiState = uiState,
-            onTextChanged = chatViewModel::changeText,
-            onSendClicked = chatViewModel::onSendMessageClicked,
-            onJoinClicked = chatViewModel::onJoinClicked,
-            onToggleMuteClicked = chatViewModel::onToggleMuteClicked,
-            onFilesSelected = { uris ->
-                chatViewModel.uploadFiles(
-                    uris, context
-                )
-            })
-    }) { innerPadding ->
+    Scaffold(
+        topBar = {
+            TopBar(
+                title = if (uiState.isSavedMessages) stringResource(R.string.saved_messages) else uiState.topBarTitle,
+                subTitle = getLocalizedSubTitle(uiState),
+                dropdownActions = uiState.topBarActions,
+                isConnected = uiState.isConnected,
+                onBackClicked = chatViewModel::onBackClicked,
+                chatId = uiState.chat.id
+            )
+        },
+        bottomBar = {
+            BottomSection(
+                uiState = uiState,
+                onTextChanged = chatViewModel::changeText,
+                onSendClicked = chatViewModel::onSendMessageClicked,
+                onJoinClicked = chatViewModel::onJoinClicked,
+                onToggleMuteClicked = chatViewModel::onToggleMuteClicked,
+                onFilesSelected = { uris ->
+                    chatViewModel.uploadFiles(
+                        uris,
+                        context
+                    )
+                })
+        },
+    ) { innerPadding ->
         Box(
             modifier = Modifier
-                .padding(innerPadding)
                 .fillMaxSize()
+                .padding(innerPadding)
         ) {
-            Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Bottom
+            ) {
                 LazyColumn(
                     state = listState,
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                     overscrollEffect = rememberOverscrollEffect()
                 ) {
+                    if (uiState.isLoadingMore) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularWavyProgressIndicator()
+                            }
+                        }
+                    }
+                    
                     items(
-                        items = uiState.chatItems, key = { item ->
+                        items = uiState.chatItems,
+                        key = { item ->
                             when (item) {
                                 is ChatItem.DateSeparator -> "date_${item.text}"
                                 is ChatItem.MessageItem -> "msg_${item.message.id}"
@@ -190,13 +223,17 @@ fun ChatScreen(
                             is ChatItem.DateSeparator -> DateSeparator(item.text)
                             is ChatItem.MessageItem -> MessageBubble(
                                 item = item,
-                                onSeen = { chatViewModel.markAsReadMessage(item.message) },
+                                onSeen = {
+                                    chatViewModel.markAsReadMessage(item.message)
+                                },
                                 onFileAction = { file, action ->
                                     if (action == FileAction.CANCEL) {
                                         fileToCancelId = item.message.id
                                     } else {
                                         chatViewModel.onFileAction(
-                                            item.message, file, action
+                                            item.message,
+                                            file,
+                                            action
                                         )
                                     }
                                 })
@@ -211,7 +248,8 @@ fun ChatScreen(
             
             if (uiState.isLoading) {
                 Box(
-                    modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
                     CircularWavyProgressIndicator()
                 }
@@ -219,7 +257,8 @@ fun ChatScreen(
         }
         
         Dialogs(
-            uiState = uiState, chatViewModel = chatViewModel
+            uiState = uiState,
+            chatViewModel = chatViewModel
         )
         
         if (fileToCancelId != null) {
@@ -268,7 +307,8 @@ private fun DateSeparator(text: String) {
     ) {
         Box(modifier = Modifier.clip(CircleShape)) {
             Text(
-                text = text, textAlign = TextAlign.Center
+                text = text,
+                textAlign = TextAlign.Center
             )
         }
     }
@@ -298,7 +338,8 @@ private fun BottomSection(
             } else {
                 if (uiState.isJoined) {
                     MuteButton(
-                        isMuted = uiState.isMuted, onClick = onToggleMuteClicked
+                        isMuted = uiState.isMuted,
+                        onClick = onToggleMuteClicked
                     )
                 } else {
                     JoinButton(onClick = onJoinClicked)
@@ -324,10 +365,13 @@ private fun MuteButton(
     isMuted: Boolean, onClick: () -> Unit
 ) {
     TextButton(
-        shape = RoundedCornerShape(0), modifier = Modifier.fillMaxWidth(), onClick = onClick
+        shape = RoundedCornerShape(0),
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
     ) {
         AnimatedContent(
-            targetState = isMuted, transitionSpec = {
+            targetState = isMuted,
+            transitionSpec = {
                 slideInVertically(tween(200)) { height -> height } + fadeIn(tween(200)) + scaleIn(
                     tween(200)
                 ) togetherWith slideOutVertically(tween(200)) { height -> -height } + fadeOut(
@@ -337,7 +381,8 @@ private fun MuteButton(
                 ) + scaleOut(
                     tween(200)
                 )
-            }, label = "mute_animation"
+            },
+            label = "mute_animation"
         ) { isMute ->
             Text(
                 text = if (isMute) stringResource(R.string.mute).uppercase() else stringResource(R.string.unmute).uppercase(),
@@ -354,7 +399,9 @@ private fun MuteButton(
 @Composable
 private fun JoinButton(onClick: () -> Unit) {
     TextButton(
-        shape = RoundedCornerShape(0), modifier = Modifier.fillMaxWidth(), onClick = onClick
+        shape = RoundedCornerShape(0),
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
     ) {
         Text(
             text = stringResource(R.string.join).uppercase(),
@@ -432,7 +479,8 @@ private fun TopBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .graphicsLayer(
-                        scaleX = scale, scaleY = scale
+                        scaleX = scale,
+                        scaleY = scale
                     )
                     .clickable(
                         interactionSource = interactionSource,
@@ -445,11 +493,13 @@ private fun TopBar(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.AccountCircle, contentDescription = null
+                        imageVector = Icons.Rounded.AccountCircle,
+                        contentDescription = null
                     )
                     
                     Column(
-                        modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.Center
                     ) {
                         Text(
                             text = title,
@@ -480,9 +530,12 @@ private fun TopBar(
                     }
                 }
             }
-        }, navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = onBackClicked
-        ), actions = dropdownActions
+        },
+        navigationIcon = NavigationIcon(
+            icon = Icons.AutoMirrored.Rounded.ArrowBack,
+            onClick = onBackClicked
+        ),
+        actions = dropdownActions
     )
 }
 
@@ -498,7 +551,8 @@ private fun DeleteChatDialog(
         content = {
             val suffix = if (!isSelf) " c " + chatName.trimEnd() else ""
             Text(
-                text = "Удалить чат$suffix без возможности восстановления?", lineHeight = 16.sp
+                text = "Удалить чат$suffix без возможности восстановления?",
+                lineHeight = 16.sp
             )
             
             if (!isSelf) {
@@ -596,7 +650,8 @@ private fun DeleteMessageDialog(
         onDismissRequest = onDismissRequest,
         content = {
             Text(
-                text = stringResource(R.string.delete_message_description), lineHeight = 16.sp
+                text = stringResource(R.string.delete_message_description),
+                lineHeight = 16.sp
             )
             
             if (!isSelf) {
@@ -663,15 +718,19 @@ private fun LeaveDialog(
         }
     }
     
-    CustomDialog(title = title, onDismissRequest = onDismiss, content = {
-        Text(text = message)
-    }, buttons = {
-        TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-        TextButton(
-            onClick = onConfirm,
-            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-        ) { Text(title) }
-    })
+    CustomDialog(
+        title = title,
+        onDismissRequest = onDismiss,
+        content = {
+            Text(text = message)
+        },
+        buttons = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) { Text(title) }
+        })
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -685,7 +744,8 @@ private fun InputMessage(
     var attachmentModal by remember { mutableStateOf(false) }
     
     val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments(), onResult = { uris: List<Uri> ->
+        contract = ActivityResultContracts.OpenMultipleDocuments(),
+        onResult = { uris: List<Uri> ->
             if (uris.isNotEmpty()) {
                 attachmentModal = false
                 onFilesSelected(uris)
@@ -697,7 +757,10 @@ private fun InputMessage(
         value = value,
         onValueChange = onValueChange,
         maxLines = 5,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .imePadding(),
         placeholder = { Text(stringResource(R.string.message)) },
         colors = TextFieldDefaults.colors(
             focusedIndicatorColor = Color.Transparent,
@@ -714,7 +777,8 @@ private fun InputMessage(
                 }
                 IconButton(onClick = onSendMessage) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.Send, contentDescription = null
+                        imageVector = Icons.AutoMirrored.Rounded.Send,
+                        contentDescription = null
                     )
                 }
             }
@@ -753,17 +817,18 @@ private fun AttachmentBottomSheet(
                         Icon(
                             modifier = Modifier.padding(10.dp),
                             imageVector = Icons.Rounded.Storage,
-                            contentDescription = null
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                     
                     Column {
                         Text(
-                            text = "Внутреннее хранилище",
+                            text = stringResource(R.string.internal_storage),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Поиск в файловой системе",
+                            text = stringResource(R.string.file_system_search),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             lineHeight = 12.sp
@@ -780,6 +845,8 @@ private fun Checkbox(
     checked: Boolean, onCheckedChange: ((Boolean) -> Unit)?, modifier: Modifier = Modifier
 ) {
     androidx.compose.material3.Checkbox(
-        checked = checked, onCheckedChange = onCheckedChange, modifier = modifier
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        modifier = modifier
     )
 }

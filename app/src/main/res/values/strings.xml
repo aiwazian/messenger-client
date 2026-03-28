@@ -28,7 +28,7 @@
     <string name="data_and_storage">Data and Storage</string>
     <string name="chat_folders">Chat Folders</string>
     <string name="faq">Messenger FAQ</string>
-    <string name="color_theme">Color theme</string>
+    <string name="color_theme">Color Theme</string>
     <string name="write_about_me">Add a few words about yourself</string>
     <string name="protect_your_account">Protect your account</string>
     <string name="privacy_policy">Privacy Policy</string>
@@ -126,4 +126,13 @@
     <string name="delete_group">Delete Group</string>
     <string name="save_to_downloads">Save to Downloads</string>
     <string name="copied">Copied</string>
+    <string name="internal_storage">Internal Storage</string>
+    <string name="file_system_search">File System Search</string>
+    <string name="system_default">System Default</string>
+    <string name="disabled">Disabled</string>
+    <string name="enabled">Enabled</string>
+    <string name="photos">Photos</string>
+    <string name="videos">Videos</string>
+    <string name="documents">Documents</string>
+    <string name="other">Other</string>
 </resources>

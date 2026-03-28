@@ -92,7 +92,10 @@ class ChatViewModel @Inject constructor(
     private val _selectedMessageId = MutableStateFlow<Int?>(null)
     
     private var profileCollectionJob: Job? = null
+    private var messagesCollectionJob: Job? = null
     private var isInitialized = false
+    private var isFirstLoadDone = false
+    private val limitFlow = MutableStateFlow(50)
     
     private val uploadJobs = mutableMapOf<Long, Job>()
     
@@ -100,6 +103,8 @@ class ChatViewModel @Inject constructor(
         if (isInitialized) return
         isInitialized = true
         _chatId = chatId
+        isFirstLoadDone = false
+        limitFlow.value = 50
         
         setupUserObserver()
         setupWebSocketListeners()
@@ -121,6 +126,7 @@ class ChatViewModel @Inject constructor(
                 viewModelScope.launch {
                     val messages = getRawMessages() + message
                     updateChatItems(messages)
+                    _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
                 }
             }
         }
@@ -214,6 +220,7 @@ class ChatViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         profileCollectionJob?.cancel()
+        messagesCollectionJob?.cancel()
         close()
     }
     
@@ -307,19 +314,26 @@ class ChatViewModel @Inject constructor(
             else -> null
         }
         
-        viewModelScope.launch {
-            chatRepository.getMessagesFlow(chatId).collect { messages ->
-                if (messages.isNotEmpty()) {
+        messagesCollectionJob = viewModelScope.launch {
+            limitFlow.collectLatest { limit ->
+                chatRepository.getMessagesFlow(chatId, limit, 0).collect { messages ->
                     updateChatItems(messages)
-                    _uiState.update { it.copy(isLoading = false) }
+                    _uiState.update { it.copy(isLoading = false, isLoadingMore = false) }
+                    if (messages.isNotEmpty() && !isFirstLoadDone) {
+                        isFirstLoadDone = true
+                        _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
+                    } else if (messages.isEmpty() && !isFirstLoadDone) {
+                         isFirstLoadDone = true
+                    }
                 }
             }
         }
         
         viewModelScope.launch {
             try {
-                val freshMessages = chatRepository.getMessages(chatId)
-                if (freshMessages.isNotEmpty()) { // This will trigger the flow and update the UI
+                val freshMessages = chatRepository.getMessages(chatId, limit = 50, offset = 0)
+                if (freshMessages.size < 50) {
+                    _uiState.update { it.copy(hasMoreMessages = false) }
                 }
             } catch (e: Exception) {
                 Log.e(
@@ -329,6 +343,32 @@ class ChatViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = false) }
             }
             updateUiContent()
+        }
+    }
+    
+    fun loadMoreMessages() {
+        val state = _uiState.value
+        if (state.isLoadingMore || !state.hasMoreMessages || state.isLoading) return
+        
+        _uiState.update { it.copy(isLoadingMore = true) }
+        
+        viewModelScope.launch {
+            try {
+                val offset = limitFlow.value
+                val moreMessages = chatRepository.getMessages(_chatId, limit = 50, offset = offset)
+                
+                if (moreMessages.isEmpty()) {
+                    _uiState.update { it.copy(isLoadingMore = false, hasMoreMessages = false) }
+                } else {
+                    if (moreMessages.size < 50) {
+                        _uiState.update { it.copy(hasMoreMessages = false) }
+                    }
+                    limitFlow.value += moreMessages.size
+                }
+            } catch (e: Exception) {
+                Log.e("ChatVM", "Error loading more messages", e)
+                _uiState.update { it.copy(isLoadingMore = false) }
+            }
         }
     }
     

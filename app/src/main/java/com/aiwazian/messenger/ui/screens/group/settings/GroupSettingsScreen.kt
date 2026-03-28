@@ -5,7 +5,6 @@
 package com.aiwazian.messenger.ui.screens.group.settings
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -16,7 +15,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,6 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.components.InputField
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -55,6 +54,7 @@ fun GroupSettingsScreen(
                 is UpdateGroupEffect.NavigateBack -> {
                     navHost.removeLastOrNull()
                 }
+                
                 is UpdateGroupEffect.NavigateToMain -> {
                     navHost.clear()
                     navHost.add(AppRoute.Main)
@@ -85,19 +85,16 @@ fun GroupSettingsScreen(
     }) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
             SectionContainer {
-                TextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
+                InputField(
                     value = groupInfo.name,
                     onValueChange = groupViewModel::changeGroupName,
-                    placeholder = { Text("Название группы") }
+                    placeholder = "Название группы"
                 )
                 
-                TextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = groupInfo.bio ?: "",
+                InputField(
+                    value = groupInfo.bio.orEmpty(),
                     onValueChange = groupViewModel::changeGroupBio,
-                    placeholder = { Text("Описание (необязательно)") }
+                    placeholder = "Описание (необязательно)"
                 )
             }
             
@@ -115,7 +112,7 @@ fun GroupSettingsScreen(
             SectionContainer {
                 SectionItem(
                     text = stringResource(R.string.delete_group),
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    color = MaterialTheme.colorScheme.error,
                     onClick = deleteGroupDialog::show
                 )
             }

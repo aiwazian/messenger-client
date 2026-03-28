@@ -12,6 +12,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Css
+import androidx.compose.material.icons.rounded.Javascript
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -153,24 +155,21 @@ fun ProfileScreen(
         uiState.profile is Profile.User -> {
             UserProfile(
                 user = uiState.profile as Profile.User,
-                actions = uiState.actions,
-                profileViewModel = profileViewModel
+                actions = uiState.actions
             )
         }
         
         uiState.profile is Profile.Channel -> {
             ChannelProfile(
                 channel = uiState.profile as Profile.Channel,
-                actions = uiState.actions,
-                profileViewModel = profileViewModel,
+                actions = uiState.actions
             )
         }
         
         uiState.profile is Profile.Group -> {
             GroupProfile(
                 group = uiState.profile as Profile.Group,
-                actions = uiState.actions,
-                profileViewModel = profileViewModel,
+                actions = uiState.actions
             )
         }
         
@@ -196,7 +195,6 @@ fun ProfileScreen(
         }
     }
     
-    // Диалог подтверждения выхода
     if (showLeaveDialog && leaveDialogData != null) {
         LeaveProfileDialog(
             onDismiss = {
@@ -215,8 +213,7 @@ fun ProfileScreen(
 @Composable
 private fun GroupProfile(
     group: Profile.Group,
-    actions: List<TopBarAction>,
-    profileViewModel: ProfileViewModel
+    actions: List<TopBarAction>
 ) {
     Scaffold(topBar = {
         TopBar(
@@ -227,7 +224,10 @@ private fun GroupProfile(
         Column(modifier = Modifier.padding(innerPadding)) {
             SectionContainer {
                 if (!group.bio.isNullOrBlank()) {
-                    SectionItem(text = group.bio)
+                    SectionItem(
+                        text = group.bio,
+                        description = stringResource(R.string.description)
+                    )
                 }
             }
         }
@@ -237,8 +237,7 @@ private fun GroupProfile(
 @Composable
 private fun ChannelProfile(
     channel: Profile.Channel,
-    actions: List<TopBarAction>,
-    profileViewModel: ProfileViewModel,
+    actions: List<TopBarAction>
 ) {
     Scaffold(topBar = {
         TopBar(
@@ -269,8 +268,7 @@ private fun ChannelProfile(
 @Composable
 private fun UserProfile(
     user: Profile.User,
-    actions: List<TopBarAction>,
-    profileViewModel: ProfileViewModel
+    actions: List<TopBarAction>
 ) {
     val scrollState = rememberScrollState()
     
@@ -294,10 +292,8 @@ private fun UserProfile(
                 if (!userBio.isNullOrBlank()) {
                     SectionItem(
                         text = userBio,
-                        description = stringResource(R.string.bio),
-                        onLongClick = {
-                            profileViewModel.copyToClipboard(userBio)
-                        })
+                        description = stringResource(R.string.bio)
+                    )
                 }
                 
                 val username = user.username
@@ -305,10 +301,8 @@ private fun UserProfile(
                 if (!username.isNullOrBlank()) {
                     SectionItem(
                         text = ("@$username"),
-                        description = stringResource(R.string.username),
-                        onLongClick = {
-                            profileViewModel.copyToClipboard(username)
-                        })
+                        description = stringResource(R.string.username)
+                    )
                 }
                 
                 val dateOfBirth = user.dateOfBirth

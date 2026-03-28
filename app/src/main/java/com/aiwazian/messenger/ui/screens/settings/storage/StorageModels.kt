@@ -23,7 +23,7 @@ enum class FileCategory(val title: String, val extensions: Set<String>) {
         extensions = setOf("mp3", "wav", "ogg", "flac", "aac", "m4a", "wma", "opus")
     ),
     OTHER(
-        title = "Другие файлы",
+        title = "Другое",
         extensions = setOf("apk", "zip", "rar", "7z", "tar", "gz", "exe", "dmg", "iso")
     );
 

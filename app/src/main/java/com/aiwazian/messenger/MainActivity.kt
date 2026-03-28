@@ -11,6 +11,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -95,7 +96,7 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val isLockApp by appLockManager.isLockApp.collectAsState()
             val selectedTheme by themeManager.currentTheme.collectAsState()
-            val selectedColor by themeManager.primaryColor.collectAsState()
+            val primaryColor by themeManager.primaryColor.collectAsState()
             val isDynamicColorEnable by themeManager.dynamicColor.collectAsState()
             
             LaunchedEffect(Unit) {
@@ -134,7 +135,7 @@ class MainActivity : AppCompatActivity() {
             ApplicationTheme(
                 theme = selectedTheme,
                 dynamicColor = isDynamicColorEnable,
-                primaryColor = selectedColor.color
+                primaryColor = primaryColor.color
             ) {
                 AppNavHost(startRoute = startRoute)
                 

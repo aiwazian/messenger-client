@@ -30,6 +30,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.InputField
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
@@ -37,7 +38,6 @@ import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.main.MainViewModel
-import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.utils.VibrationPattern
 import kotlinx.coroutines.launch
 
@@ -126,7 +126,7 @@ fun ChannelSettingsScreen(
             SectionContainer {
                 SectionItem(
                     text = stringResource(R.string.delete_channel),
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    color = MaterialTheme.colorScheme.error,
                     onClick = channelViewModel.deleteDialog::show
                 )
             }

@@ -12,7 +12,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.aiwazian.messenger.enums.PrimaryColorOption
+import com.aiwazian.messenger.enums.PrimaryColor
 import com.aiwazian.messenger.enums.ThemeOption
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -112,7 +112,7 @@ class DataStoreManager @Inject constructor(
 
     fun getPrimaryColor() = getValue(
         Keys.PRIMARY_COLOR,
-        PrimaryColorOption.Blue.name
+        PrimaryColor.Blue.name
     )
 
     fun getTheme() = getValue(

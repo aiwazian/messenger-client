@@ -31,5 +31,7 @@ data class ChatUiState(
     val userNamesCache: Map<Long, String> = emptyMap(),
     val currentUserId: Long = -1L,
     val isOwner: Boolean = false,
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val isLoadingMore: Boolean = false,
+    val hasMoreMessages: Boolean = true
 )

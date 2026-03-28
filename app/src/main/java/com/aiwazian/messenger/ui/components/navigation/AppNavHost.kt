@@ -39,11 +39,11 @@ import com.aiwazian.messenger.ui.screens.profile.ProfileScreen
 import com.aiwazian.messenger.ui.screens.search.SearchScreen
 import com.aiwazian.messenger.ui.screens.settings.SettingsNotificationsScreen
 import com.aiwazian.messenger.ui.screens.settings.SettingsScreen
-import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsChatScreen
+import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsAppearanceScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsDarkThemeScreen
 import com.aiwazian.messenger.ui.screens.settings.language.SettingsLanguageScreen
-import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsBioScreen
-import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsDateOfBirthScreen
+import com.aiwazian.messenger.ui.screens.settings.privacy.bio.SettingsBioScreen
+import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsLastSeenScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsPrivacyScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileColorScreen
@@ -78,7 +78,7 @@ fun AppNavHost(startRoute: AppRoute = AppRoute.Main) {
                 entry<AppRoute.Settings> { SettingsScreen() }
                 entry<AppRoute.SettingsLanguage> { SettingsLanguageScreen() }
                 entry<AppRoute.SettingsDesign> { SettingsDarkThemeScreen() }
-                entry<AppRoute.SettingsChat> { SettingsChatScreen() }
+                entry<AppRoute.SettingsChat> { SettingsAppearanceScreen() }
                 entry<AppRoute.SettingsPrivacy> { SettingsPrivacyScreen() }
                 entry<AppRoute.SettingsLastSeen> { SettingsLastSeenScreen() }
                 entry<AppRoute.SettingsSecurity> { SettingsSecurityScreen() }

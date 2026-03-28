@@ -67,7 +67,7 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
             SectionContainer {
                 SectionItem(
                     text = stringResource(R.string.log_out),
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    color = MaterialTheme.colorScheme.error,
                     onClick = viewModel::showLogoutDialog
                 )
             }

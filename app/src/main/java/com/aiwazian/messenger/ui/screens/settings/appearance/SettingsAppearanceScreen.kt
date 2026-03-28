@@ -6,6 +6,9 @@ package com.aiwazian.messenger.ui.screens.settings.appearance
 
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,8 +33,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.enums.PrimaryColorOption
+import com.aiwazian.messenger.enums.PrimaryColor
 import com.aiwazian.messenger.enums.ThemeOption
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
@@ -39,12 +43,11 @@ import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.section.SectionToggleItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun SettingsChatScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
+fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
     val navHost = LocalNavHost.current
     
     val primaryColor by viewModel.primaryColor.collectAsState()
@@ -60,14 +63,14 @@ fun SettingsChatScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
     ) { innerPadding ->
         Column(
             modifier = Modifier
-                .padding(innerPadding)
                 .fillMaxSize()
+                .padding(innerPadding)
                 .verticalScroll(scrollState)
         ) {
             val theme = when (viewModel.currentTheme.collectAsState().value) {
-                ThemeOption.DARK -> "Включена"
-                ThemeOption.LIGHT -> "Отключена"
-                else -> "Как в системе"
+                ThemeOption.DARK -> stringResource(R.string.enabled)
+                ThemeOption.LIGHT -> stringResource(R.string.disabled)
+                else -> stringResource(R.string.system_default)
             }
             
             SectionContainer(header = {
@@ -84,14 +87,16 @@ fun SettingsChatScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
                         })
                 }
                 
-                AnimatedContent(targetState = isDynamicColorEnable) { enableDynamicColor ->
+                AnimatedContent(
+                    targetState = isDynamicColorEnable,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() }) { enableDynamicColor ->
                     if (!enableDynamicColor) {
                         Row(
                             modifier = Modifier
                                 .horizontalScroll(rememberScrollState())
                                 .padding(8.dp)
                         ) {
-                            PrimaryColorOption.entries.forEach { option ->
+                            PrimaryColor.entries.forEach { option ->
                                 RadioButton(
                                     enabled = !isDynamicColorEnable,
                                     modifier = Modifier.scale(1.5f),

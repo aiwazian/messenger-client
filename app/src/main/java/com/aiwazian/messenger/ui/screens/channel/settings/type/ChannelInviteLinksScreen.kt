@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AddLink
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -17,11 +16,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
 fun ChannelInviteLinksScreen() {
@@ -43,7 +42,7 @@ fun ChannelInviteLinksScreen() {
                 SectionItem(
                     text = "Создать ссылку-приглашение",
                     icon = Icons.Rounded.AddLink,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }

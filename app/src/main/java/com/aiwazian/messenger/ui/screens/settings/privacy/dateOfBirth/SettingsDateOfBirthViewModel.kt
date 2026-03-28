@@ -2,21 +2,26 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.screens.settings.privacy
+package com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.aiwazian.messenger.repository.PrivacyRepository
+import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.enums.PrivacyLevel
+import com.aiwazian.messenger.repository.PrivacyRepository
 import com.aiwazian.messenger.utils.VibrationManager
+import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class SettingsBioViewModel @Inject constructor(
+class SettingsDateOfBirthViewModel @Inject constructor(
     private val vibrationManager: VibrationManager,
     private val privacyRepository: PrivacyRepository
 ) : ViewModel() {
@@ -28,6 +33,9 @@ class SettingsBioViewModel @Inject constructor(
 
     private val _showSaveButton = MutableStateFlow(false)
     val showSaveButton = _showSaveButton.asStateFlow()
+
+    private val _effect = Channel<SettingsDateOfBirthEffect>()
+    val effect = _effect.receiveAsFlow()
 
     fun vibrate(pattern: LongArray) {
         vibrationManager.vibrate(pattern)
@@ -49,19 +57,24 @@ class SettingsBioViewModel @Inject constructor(
         }
     }
 
-    suspend fun trySave(): Boolean {
-        try {
-            val success = privacyRepository.updateBioPrivacy(_currentLevel.value.ordinal)
+    fun onSaveClick() {
+        viewModelScope.launch {
+            try {
+                val success = privacyRepository.updateDateOfBirthPrivacy(_currentLevel.value.ordinal)
 
-            return success
-        } catch (e: Exception) {
-            Log.e(
-                "SettingsBioViewModel",
-                "Ошибка при отправке настроек конфиденциальности для раздела о себе",
-                e
-            )
-
-            return false
+                if (success) {
+                    _effect.send(SettingsDateOfBirthEffect.Back)
+                } else {
+                    vibrate(VibrationPattern.Error)
+                }
+            } catch (e: Exception) {
+                Log.e(
+                    "SettingsDateOfBirthViewModel",
+                    "Ошибка при отправке настроек конфиденциальности для раздела даты рождения",
+                    e
+                )
+                vibrate(VibrationPattern.Error)
+            }
         }
     }
 
@@ -73,5 +86,3 @@ class SettingsBioViewModel @Inject constructor(
         _showSaveButton.update { false }
     }
 }
-
-

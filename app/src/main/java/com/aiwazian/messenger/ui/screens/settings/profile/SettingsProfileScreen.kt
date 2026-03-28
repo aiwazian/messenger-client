@@ -165,7 +165,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                                 onClick = {
                                     viewModel.onChangeDateOfBirth(null)
                                 },
-                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                                color = MaterialTheme.colorScheme.primary,
                             )
                         }
                     }

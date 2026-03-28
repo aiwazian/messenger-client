@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
+package com.aiwazian.messenger.enums
+
+import androidx.compose.ui.graphics.Color
+
+enum class PrimaryColor(val color: Color) {
+    Blue(Color(0xFF60A8E7)),
+    Green(Color(0xFF4E9C57)),
+    Lime(Color(0xFF3FC1B0)),
+    Pink(Color(0xFFCA7896)),
+    Orange(Color(0xFFFF5722)),
+    Purple(Color(0xFFA58ED2)),
+    Coral(Color(0xFFD27570)),
+    Gray(Color(0xFF7B8799)),
+    Yellow(Color(0xFFCBAC67));
+    
+    companion object {
+        fun fromString(value: String): PrimaryColor {
+            return entries.firstOrNull {
+                it.name.equals(
+                    value,
+                    ignoreCase = true
+                )
+            } ?: Blue
+        }
+    }
+}

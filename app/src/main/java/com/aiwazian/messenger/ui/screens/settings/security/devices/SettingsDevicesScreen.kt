@@ -124,9 +124,7 @@ fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) 
                     SectionItem(
                         icon = Icons.Outlined.BackHand,
                         text = stringResource(R.string.terminate_all_other_sessions),
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        ),
+                        color = MaterialTheme.colorScheme.error,
                         onClick = devicesViewModel::showTerminateAllOtherSessionsDialog
                     )
                 }

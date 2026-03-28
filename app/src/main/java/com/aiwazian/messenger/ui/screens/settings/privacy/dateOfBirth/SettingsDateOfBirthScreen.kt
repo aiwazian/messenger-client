@@ -2,7 +2,7 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.screens.settings.privacy
+package com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -30,40 +29,37 @@ import com.aiwazian.messenger.ui.components.section.SectionRadioItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
-import com.aiwazian.messenger.utils.VibrationPattern
-import kotlinx.coroutines.launch
+import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthViewModel
 
 @Composable
-fun SettingsBioScreen(
-    level: PrivacyLevel,
-    privacyViewModel: SettingsPrivacyViewModel = hiltViewModel()
+fun SettingsDateOfBirthScreen(
+    level: PrivacyLevel
 ) {
     val navHost = LocalNavHost.current
     
-    val settingsBioViewModel = hiltViewModel<SettingsBioViewModel>()
+    val settingsDateOfBirthViewModel = hiltViewModel<SettingsDateOfBirthViewModel>()
     
-    val currentValue by settingsBioViewModel.currentLevel.collectAsState()
-    val showSaveButton by settingsBioViewModel.showSaveButton.collectAsState()
-    
-    val scope = rememberCoroutineScope()
+    val currentValue by settingsDateOfBirthViewModel.currentLevel.collectAsState()
+    val showSaveButton by settingsDateOfBirthViewModel.showSaveButton.collectAsState()
     
     val scrollState = rememberScrollState()
+    
+    LaunchedEffect(Unit) {
+        settingsDateOfBirthViewModel.effect.collect { effect ->
+            when (effect) {
+                is SettingsDateOfBirthEffect.Back -> {
+                    navHost.removeLastOrNull()
+                }
+            }
+        }
+    }
     
     val actions = if (showSaveButton) {
         listOf(
             TopBarAction(
                 icon = Icons.Rounded.Check,
                 onClick = {
-                    scope.launch {
-                        val isSaved = settingsBioViewModel.trySave()
-                        
-                        if (isSaved) {
-                            privacyViewModel.updateBioValue(currentValue)
-                            navHost.removeLastOrNull()
-                        } else {
-                            settingsBioViewModel.vibrate(VibrationPattern.Error)
-                        }
-                    }
+                    settingsDateOfBirthViewModel.onSaveClick()
                 })
         )
     } else {
@@ -71,14 +67,14 @@ fun SettingsBioScreen(
     }
     
     LaunchedEffect(level) {
-        settingsBioViewModel.init(level)
+        settingsDateOfBirthViewModel.init(level)
     }
     
     Scaffold(
         topBar = {
             PageTopBar(
                 title = {
-                    Text(stringResource(R.string.bio))
+                    Text(stringResource(R.string.date_of_birth))
                 },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
@@ -93,21 +89,24 @@ fun SettingsBioScreen(
                 .verticalScroll(scrollState)
         ) {
             SectionContainer(header = {
-                SectionHeader("Кто видит мой раздел \"О себе\"?")
+                SectionHeader("Кто видит дату моего рождения?")
             }) {
                 SectionRadioItem(
                     text = stringResource(R.string.everybody),
                     selected = currentValue == PrivacyLevel.Everybody,
                     onClick = {
-                        settingsBioViewModel.selectValue(PrivacyLevel.Everybody)
+                        settingsDateOfBirthViewModel.selectValue(PrivacyLevel.Everybody)
                     })
                 SectionRadioItem(
                     text = stringResource(R.string.nobody),
                     selected = currentValue == PrivacyLevel.Nobody,
                     onClick = {
-                        settingsBioViewModel.selectValue(PrivacyLevel.Nobody)
+                        settingsDateOfBirthViewModel.selectValue(PrivacyLevel.Nobody)
                     })
             }
         }
     }
 }
+
+
+

@@ -21,12 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.enums.ThemeOption
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.launch
 
 private data class ThemeItem(
@@ -35,14 +35,7 @@ private data class ThemeItem(
 )
 
 @Composable
-fun SettingsDarkThemeScreen() {
-    Content()
-}
-
-@Composable
-private fun Content() {
-    val viewModel = hiltViewModel<AppearanceViewModel>()
-    
+fun SettingsDarkThemeScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
     val coroutine = rememberCoroutineScope()
     
     val scrollState = rememberScrollState()
@@ -62,15 +55,15 @@ private fun Content() {
             
             val themes = listOf(
                 ThemeItem(
-                    "Как в системе",
+                    stringResource(R.string.system_default),
                     ThemeOption.SYSTEM
                 ),
                 ThemeItem(
-                    "Включена",
+                    stringResource(R.string.enabled),
                     ThemeOption.DARK
                 ),
                 ThemeItem(
-                    "Отключена",
+                    stringResource(R.string.disabled),
                     ThemeOption.LIGHT
                 )
             )
@@ -103,6 +96,3 @@ private fun TopBar() {
         )
     )
 }
-
-
-

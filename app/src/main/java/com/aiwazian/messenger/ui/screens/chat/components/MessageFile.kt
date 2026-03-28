@@ -40,6 +40,7 @@ import com.aiwazian.messenger.domain.DownloadStatus
 import com.aiwazian.messenger.domain.MessageFile
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.extensions.formatFileSize
+import com.aiwazian.messenger.extensions.getFileIcon
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -70,7 +71,7 @@ fun MessageFile(
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
-            StatusIcon(file.status)
+            StatusIcon(file)
             if (file.status == DownloadStatus.DOWNLOADING || file.status == DownloadStatus.UPLOADING) {
                 if (file.progress == 0) {
                     CircularWavyProgressIndicator(
@@ -115,20 +116,20 @@ fun MessageFile(
 
 @Composable
 private fun StatusIcon(
-    status: DownloadStatus
+    file: MessageFile
 ) {
-    val icon = when (status) {
+    val icon = when (file.status) {
         DownloadStatus.IDLE -> Icons.Rounded.Download
         DownloadStatus.DOWNLOADING -> Icons.Rounded.Pause
         DownloadStatus.UPLOADING -> Icons.Rounded.Upload
         DownloadStatus.PAUSED -> Icons.Rounded.Downloading
-        DownloadStatus.COMPLETED -> Icons.Rounded.FilePresent
+        DownloadStatus.COMPLETED -> file.extension.getFileIcon()
         DownloadStatus.FAILED -> Icons.Rounded.Refresh
         DownloadStatus.CANCELLED -> Icons.Rounded.Download
     }
     Icon(
         imageVector = icon,
-        contentDescription = status.name,
+        contentDescription = file.status.name,
         tint = MaterialTheme.colorScheme.primary
     )
 }
