@@ -11,7 +11,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -51,12 +50,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        val hasSession = runBlocking {
-            SessionManager.loadSession()
-            SessionManager.hasAnySession()
-        }
-        
-        if (!hasSession) {
+        SessionManager.setUnauthorizedCallback {
             val intent = Intent(
                 this,
                 AuthActivity::class.java
@@ -65,6 +59,15 @@ class MainActivity : AppCompatActivity() {
             }
             startActivity(intent)
             finish()
+        }
+        
+        val hasSession = runBlocking {
+            SessionManager.loadSession()
+            SessionManager.hasAnySession()
+        }
+        
+        if (!hasSession) {
+            SessionManager.getUnauthorizedCallback()?.invoke()
             return
         }
         
@@ -73,17 +76,6 @@ class MainActivity : AppCompatActivity() {
         }
         
         enableEdgeToEdge()
-        
-        SessionManager.setUnauthorizedCallback {
-            val intent = Intent(
-                this,
-                AuthActivity::class.java
-            ).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            }
-            this@MainActivity.startActivity(intent)
-            this@MainActivity.finish()
-        }
         
         val chatId = intent.getLongExtra(
             "chatId",
@@ -101,16 +93,7 @@ class MainActivity : AppCompatActivity() {
             
             LaunchedEffect(Unit) {
                 try {
-                    webSocketClient.connectWithLifecycle(
-                        BuildConfig.WS_URL,
-                        this@MainActivity
-                    )
-                    
-                    webSocketClient.setOnDisconnectedCallback { code, _ ->
-                        if (code == 1008) {
-                            SessionManager.getUnauthorizedCallback()?.invoke()
-                        }
-                    }
+                    webSocketClient.connect()
                 } catch (e: Exception) {
                     Log.e(
                         "MainActivity",

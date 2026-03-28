@@ -5,45 +5,57 @@
 package com.aiwazian.messenger.repository
 
 import android.util.Log
+import com.aiwazian.messenger.database.AppDatabase
+import com.aiwazian.messenger.database.dao.AccountDao
+import com.aiwazian.messenger.database.entity.AccountEntity
 import com.aiwazian.messenger.domain.ChangePasswordRequest
 import com.aiwazian.messenger.domain.SignInRequest
 import com.aiwazian.messenger.domain.SignInResponse
 import com.aiwazian.messenger.domain.SignUpRequest
-import com.aiwazian.messenger.database.dao.AccountDao
-import com.aiwazian.messenger.database.entity.AccountEntity
+import com.aiwazian.messenger.mappers.toDto
 import com.aiwazian.messenger.network.api.AuthApi
 import com.aiwazian.messenger.network.api.UserApi
-import com.aiwazian.messenger.mappers.toDto
+import com.aiwazian.messenger.utils.DataStoreManager
+import com.aiwazian.messenger.utils.SessionManager
 import javax.inject.Inject
 
 class AuthRepository @Inject constructor(
     private val authApi: AuthApi,
     private val userApi: UserApi,
-    private val accountDao: AccountDao
+    private val accountDao: AccountDao,
+    private val database: AppDatabase,
+    private val dataStoreManager: DataStoreManager
 ) {
+    
+    suspend fun deleteMe(): Result<Unit> {
+        return try {
+            val response = userApi.deleteMe()
+            if (response.isSuccessful) {
+                database.clearAllTables()
+                dataStoreManager.clear()
+                SessionManager.logout()
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Ошибка удаления аккаунта: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Log.e(
+                "AuthRepository",
+                "Ошибка при удалении аккаунта",
+                e
+            )
+            Result.failure(e)
+        }
+    }
     
     suspend fun getCurrentToken(): String? {
         return try {
             val token = accountDao.getCurrentToken()
-            Log.d("AuthRepository", "getCurrentToken: token=${if (token?.isNotEmpty() == true) "present" else "empty"}")
             token
         } catch (e: Exception) {
             Log.e(
                 "AuthRepository",
                 "Ошибка при получении токена: ${e.message}",
-                e
-            )
-            null
-        }
-    }
-    
-    suspend fun getCurrentAccount(): AccountEntity? {
-        return try {
-            accountDao.getMe()
-        } catch (e: Exception) {
-            Log.e(
-                "AuthRepository",
-                "Ошибка при получении текущего аккаунта",
                 e
             )
             null
@@ -66,17 +78,26 @@ class AuthRepository @Inject constructor(
     suspend fun saveAccount(account: AccountEntity) {
         try {
             val existingAccount = accountDao.getById(account.id)
-            Log.d("AuthRepository", "saveAccount: id=${account.id}, isCurrent=${account.isCurrent}, token=${if (account.token.isNotEmpty()) "present" else "empty"}, existing=${existingAccount != null}")
-
+            Log.d(
+                "AuthRepository",
+                "saveAccount: id=${account.id}, isCurrent=${account.isCurrent}, token=${if (account.token.isNotEmpty()) "present" else "empty"}, existing=${existingAccount != null}"
+            )
+            
             if (existingAccount == null) {
                 if (account.isCurrent) {
                     accountDao.resetCurrent()
                 }
                 accountDao.add(account)
-                Log.d("AuthRepository", "saveAccount: ADDED new account")
+                Log.d(
+                    "AuthRepository",
+                    "saveAccount: ADDED new account"
+                )
             } else {
                 accountDao.update(account)
-                Log.d("AuthRepository", "saveAccount: UPDATED existing account")
+                Log.d(
+                    "AuthRepository",
+                    "saveAccount: UPDATED existing account"
+                )
             }
         } catch (e: Exception) {
             Log.e(
@@ -107,18 +128,6 @@ class AuthRepository @Inject constructor(
             Log.e(
                 "AuthRepository",
                 "Ошибка при очистке токена",
-                e
-            )
-        }
-    }
-    
-    suspend fun deleteAccount(id: Long) {
-        try {
-            accountDao.delete(id)
-        } catch (e: Exception) {
-            Log.e(
-                "AuthRepository",
-                "Ошибка при удалении аккаунта",
                 e
             )
         }

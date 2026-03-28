@@ -2,9 +2,10 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.network.api
+package com.aiwazian.messenger.network
 
 import com.aiwazian.messenger.utils.SessionManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Protocol
@@ -23,11 +24,10 @@ class AuthInterceptor(
             return chain.proceed(request)
         }
 
-        // Ждём инициализации SessionManager перед выполнением запроса
         if (!SessionManager.isInit) {
             runBlocking {
                 while (!SessionManager.isInit) {
-                    kotlinx.coroutines.delay(100)
+                    delay(100)
                 }
             }
         }
@@ -52,7 +52,7 @@ class AuthInterceptor(
 
         val response = chain.proceed(authRequest)
 
-        if (response.code == 401 && SessionManager.isAuthorized()) {
+        if (response.code == 401) {
             SessionManager.setAuthorized(false)
             SessionManager.getUnauthorizedCallback()?.invoke()
         }

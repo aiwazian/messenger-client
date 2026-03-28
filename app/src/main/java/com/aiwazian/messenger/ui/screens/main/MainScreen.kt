@@ -607,12 +607,8 @@ private fun DefaultTopBar(
             modifier = Modifier
                 .fillMaxSize(),
             verticalAlignment = Alignment.Top,
-        ) { page ->
-            LazyColumn() {
-                items(30) {
-                    Text(it.toString())
-                }
-            }
+        ) {
+        
         }
     }
 }

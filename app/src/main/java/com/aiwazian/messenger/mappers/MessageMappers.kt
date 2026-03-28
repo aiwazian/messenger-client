@@ -8,10 +8,7 @@ import com.aiwazian.messenger.network.dto.MessageResponseDto
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageFile
 import com.aiwazian.messenger.database.entity.MessageEntity
-import com.aiwazian.messenger.network.api.RetrofitInstance
 import com.aiwazian.messenger.network.dto.MessageFileDto
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
 
 fun MessageResponseDto.toDomain(): Message = Message(
     id = this.id,

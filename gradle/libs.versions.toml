@@ -3,7 +3,6 @@ accompanistNavigationMaterial = "0.36.0"
 accompanistSystemuicontroller = "0.36.0"
 agp = "9.1.0"
 animation = "1.10.6"
-coilCompose = "2.7.0"
 coreSplashscreen = "1.2.0"
 datastorePreferences = "1.2.1"
 firebaseBom = "34.11.0"
@@ -17,8 +16,6 @@ ketch = "2.0.6"
 kotlin = "2.3.20"
 coreKtx = "1.18.0"
 kotlinxSerializationJson = "1.10.0"
-ktorClientCore = "3.4.1"
-ktorClientOkhttp = "3.2.3"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
 appcompat = "1.7.1"
@@ -74,8 +71,6 @@ accompanist-navigation-animation = { module = "com.google.accompanist:accompanis
 accompanist-navigation-material = { module = "com.google.accompanist:accompanist-navigation-material", version.ref = "accompanistNavigationMaterial" }
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanistSystemuicontroller" }
 
-coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
-
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltCompiler" }
 ketch = { module = "com.github.khushpanchal:Ketch", version.ref = "ketch" }
@@ -84,9 +79,6 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging", version.ref = "firebaseMessaging" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics", version.ref = "firebaseAnalytics" }
-
-ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientCore" }
-ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktorClientOkhttp" }
 
 socketio-client = { module = "io.socket:socket.io-client", version.ref = "socketio" }
 

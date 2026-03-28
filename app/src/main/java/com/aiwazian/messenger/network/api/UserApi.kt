@@ -11,6 +11,7 @@ import com.aiwazian.messenger.network.dto.UpdateUserRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.Path
@@ -23,15 +24,12 @@ interface UserApi {
     @PATCH("users/me")
     suspend fun updateMe(@Body request: UpdateUserRequestDto): Response<UserResponseDto>
 
-    @GET("users/me/privacy")
-    suspend fun getPrivacySettings(): Response<PrivacySettingsResponseDto>
-
-    @PATCH("users/me/privacy")
-    suspend fun updatePrivacySettings(@Body request: UpdatePrivacySettingsRequestDto): Response<PrivacySettingsResponseDto>
-
     @PATCH("users/me/password")
     suspend fun changePassword(@Body request: ChangePasswordRequestDto): Response<Unit>
 
     @GET("users/{userId}")
     suspend fun getUserById(@Path("userId") userId: Long): Response<UserResponseDto>
+
+    @DELETE("users/me")
+    suspend fun deleteMe(): Response<Unit>
 }

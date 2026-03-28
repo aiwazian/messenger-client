@@ -124,4 +124,8 @@ class DataStoreManager @Inject constructor(
         Keys.DYNAMIC_COLOR,
         false
     )
+
+    suspend fun clear() {
+        context.dataStore.edit { it.clear() }
+    }
 }

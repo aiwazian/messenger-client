@@ -26,14 +26,11 @@ object SessionManager {
     fun init(repository: AuthRepository) {
         authRepository = repository
         isInit = true
-        Log.d("SessionManager", "Initialized with repository")
     }
 
     fun getToken(): String {
         return _token.value
     }
-
-    fun isAuthorized(): Boolean = _isAuthorized
 
     fun setAuthorized(value: Boolean) {
         _isAuthorized = value

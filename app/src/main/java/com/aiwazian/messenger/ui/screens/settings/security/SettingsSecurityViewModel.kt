@@ -38,5 +38,3 @@ class SettingsSecurityViewModel @Inject constructor(
         }
     }
 }
-
-

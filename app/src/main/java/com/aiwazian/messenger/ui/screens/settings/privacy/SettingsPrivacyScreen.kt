@@ -4,46 +4,58 @@
 
 package com.aiwazian.messenger.ui.screens.settings.privacy
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.PrivacyLevel
+import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import kotlinx.coroutines.launch
+import com.aiwazian.messenger.utils.SessionManager
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,8 +66,15 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
     
     val scrollState = rememberScrollState()
     
+    var showDeleteBottomSheet by remember { mutableStateOf(false) }
+    
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    
     LaunchedEffect(Unit) {
         privacyViewModel.loadValues()
+        privacyViewModel.deleteSuccess.collect {
+            SessionManager.getUnauthorizedCallback()?.invoke()
+        }
     }
     
     Scaffold(
@@ -63,8 +82,8 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
     ) {
         Column(
             modifier = Modifier
-                .padding(it)
                 .fillMaxSize()
+                .padding(it)
                 .verticalScroll(scrollState)
         ) {
             SectionContainer(header = {
@@ -93,57 +112,139 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                     })
             }
             
-            val sheetState = rememberModalBottomSheetState()
-            val scope = rememberCoroutineScope()
-            var showBottomSheet by remember { mutableStateOf(false) }
-            
-            SectionContainer(
-                header = {
-                    SectionHeader(title = "Delete my account")
-                },
-                footer = {
-                    SectionDescription(text = "Если вы не зайдете...")
-                }) {
-                SectionItem(text = "If away for")
-            }
-            
             SectionContainer {
                 SectionItem(
-                    text = "Удалить аккаунт прямо сейчас",
+                    text = stringResource(R.string.delete_account),
                     color = MaterialTheme.colorScheme.error,
                     onClick = {
-                        showBottomSheet = true
+                        showDeleteBottomSheet = true
                     })
             }
-            
-            if (showBottomSheet) {
-                ModalBottomSheet(
-                    onDismissRequest = {
-                        showBottomSheet = false
-                    },
-                    sheetState = sheetState,
-                    dragHandle = null
+        }
+    }
+    
+    if (showDeleteBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showDeleteBottomSheet = false
+            },
+            dragHandle = null
+        ) {
+            Column(
+                modifier = Modifier.padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Все чаты, каналы, группы, сообщения и все,что связанно с вашим аккаунтом будут безвозвратно удалено, это действие нельзя будет отменить")
-                        TextButton(
-                            onClick = {
-                                scope.launch {
-                                    sheetState.hide()
-                                }.invokeOnCompletion { showBottomSheet = false }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(10.dp),
-                            shape = MaterialTheme.shapes.medium,
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Text("Все равно удалить")
+                    Icon(
+                        imageVector = Icons.Rounded.WarningAmber,
+                        contentDescription = null,
+                        modifier = Modifier.size(30.dp)
+                    )
+                    Text(
+                        text = "Всё, что связанно с вашим аккаунтом будет безвозвратно удалено.",
+                        lineHeight = 18.sp
+                    )
+                }
+                
+                var waitSeconds by remember { mutableIntStateOf(10) }
+                
+                TextButton(
+                    onClick = {
+                        if (waitSeconds <= 0) {
+                            showDeleteDialog = true
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Row(modifier = Modifier.padding(8.dp)) {
+                        Text(
+                            text = "Все равно удалить",
+                            fontSize = 16.sp
+                        )
+                        
+                        LaunchedEffect(Unit) {
+                            while (waitSeconds > 0) {
+                                delay(1000)
+                                waitSeconds--
+                            }
+                        }
+                        
+                        AnimatedContent(
+                            targetState = waitSeconds,
+                            transitionSpec = {
+                                slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
+                            }) { second ->
+                            if (second > 0) {
+                                Text(
+                                    text = " $second",
+                                    fontSize = 16.sp,
+                                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                                )
+                            }
                         }
                     }
                 }
             }
         }
+    }
+    
+    if (showDeleteDialog) {
+        CustomDialog(
+            title = stringResource(R.string.delete_account),
+            onDismissRequest = {
+                showDeleteDialog = false
+            },
+            content = {
+                Text(
+                    text = stringResource(R.string.delete_account_confirm),
+                    lineHeight = 18.sp
+                )
+            },
+            buttons = {
+                TextButton(onClick = {
+                    showDeleteDialog = false
+                }) {
+                    Text(stringResource(R.string.no))
+                }
+                
+                var waitSeconds by remember { mutableIntStateOf(10) }
+                LaunchedEffect(Unit) {
+                    while (waitSeconds > 0) {
+                        delay(1000)
+                        waitSeconds--
+                    }
+                }
+                TextButton(
+                    onClick = {
+                        if (waitSeconds <= 0) {
+                            showDeleteDialog = false
+                            privacyViewModel.deleteAccount()
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(stringResource(R.string.yes))
+                    AnimatedContent(
+                        targetState = waitSeconds,
+                        transitionSpec = {
+                            slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
+                        }) { second ->
+                        if (second > 0) {
+                            Text(
+                                text = " $second",
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+                }
+            })
     }
 }
 
