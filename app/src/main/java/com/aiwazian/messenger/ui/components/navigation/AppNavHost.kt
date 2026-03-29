@@ -10,11 +10,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.runtime.NavBackStack
-import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
@@ -41,10 +38,10 @@ import com.aiwazian.messenger.ui.screens.settings.SettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsAppearanceScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsDarkThemeScreen
 import com.aiwazian.messenger.ui.screens.settings.language.SettingsLanguageScreen
-import com.aiwazian.messenger.ui.screens.settings.privacy.bio.SettingsBioScreen
-import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsLastSeenScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsPrivacyScreen
+import com.aiwazian.messenger.ui.screens.settings.privacy.bio.SettingsBioScreen
+import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileColorScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsUsernameScreen
@@ -56,10 +53,6 @@ import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPass
 import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeScreen
 import com.aiwazian.messenger.ui.screens.settings.storage.StorageScreen
 
-val LocalNavHost = staticCompositionLocalOf<NavBackStack<NavKey>> {
-    error("No NavHost provided")
-}
-
 @Composable
 fun AppNavHost(startRoute: AppRoute = AppRoute.Main) {
     val backStack = rememberNavBackStack(startRoute)
@@ -68,7 +61,7 @@ fun AppNavHost(startRoute: AppRoute = AppRoute.Main) {
         NavDisplay(
             backStack = backStack,
             modifier = Modifier.fillMaxSize(),
-            onBack = { backStack.removeLastOrNull() },
+            onBack = backStack::removeLastOrNull,
             entryProvider = entryProvider {
                 entry<AppRoute.Main> { MainScreen() }
                 entry<AppRoute.Chat> { ChatScreen(chatId = it.chatId) }

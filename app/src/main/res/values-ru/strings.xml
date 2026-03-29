@@ -137,4 +137,7 @@
     <string name="other">Другое</string>
     <string name="files">Файлы</string>
     <string name="chats">Чаты</string>
+    <string name="audio">Аудио</string>
+    <string name="storage_usage">Использование хранилища</string>
+    <string name="group_name">Название группы</string>
 </resources>

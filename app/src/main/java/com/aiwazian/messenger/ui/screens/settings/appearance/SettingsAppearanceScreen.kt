@@ -33,7 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.enums.PrimaryColor
+import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.enums.ThemeOption
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
@@ -96,7 +96,7 @@ fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
                                 .horizontalScroll(rememberScrollState())
                                 .padding(8.dp)
                         ) {
-                            PrimaryColor.entries.forEach { option ->
+                            AppPrimaryColor.entries.forEach { option ->
                                 RadioButton(
                                     enabled = !isDynamicColorEnable,
                                     modifier = Modifier.scale(1.5f),

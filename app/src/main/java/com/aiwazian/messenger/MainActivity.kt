@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity() {
             ApplicationTheme(
                 theme = selectedTheme,
                 dynamicColor = isDynamicColorEnable,
-                primaryColor = primaryColor.color
+                appPrimaryColor = primaryColor.color
             ) {
                 AppNavHost(startRoute = startRoute)
                 

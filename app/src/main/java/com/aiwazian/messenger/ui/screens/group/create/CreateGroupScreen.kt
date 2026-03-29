@@ -34,11 +34,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Chat
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
+import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.section.SectionContainer
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -108,7 +108,7 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
                     singleLine = true,
                     value = groupInfo.name,
                     onValueChange = viewModel::changeGroupName,
-                    placeholder = { Text("Название группы") },
+                    placeholder = { Text(stringResource(R.string.group_name)) },
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,

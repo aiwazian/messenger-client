@@ -119,6 +119,11 @@ import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.screens.main.search.ChatResultsList
+import com.aiwazian.messenger.ui.screens.main.search.EmptySearchResultsPlaceholder
+import com.aiwazian.messenger.ui.screens.main.search.FileResultsList
+import com.aiwazian.messenger.ui.screens.main.search.LoadingPlaceholder
+import com.aiwazian.messenger.ui.screens.main.search.SearchViewModel
 import com.yandex.mobile.ads.nativeads.MediaView
 import com.yandex.mobile.ads.nativeads.NativeAdView
 import com.yandex.mobile.ads.nativeads.NativeAdViewBinder
@@ -153,8 +158,7 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
             is MainUiEffect.OpenNotificationSettings -> {
                 val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
                     putExtra(
-                        Settings.EXTRA_APP_PACKAGE,
-                        context.packageName
+                        Settings.EXTRA_APP_PACKAGE, context.packageName
                     )
                 }
                 context.startActivity(intent)
@@ -165,21 +169,18 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
     }
     
     if (showPermissionRationale) {
-        NotificationBottomModal(
-            enable = {
-                viewModel.hidePermissionRationale()
-                viewModel.openNotificationSettings()
-            },
-            disable = {
-                viewModel.hidePermissionRationale()
-            })
+        NotificationBottomModal(enable = {
+            viewModel.hidePermissionRationale()
+            viewModel.openNotificationSettings()
+        }, disable = {
+            viewModel.hidePermissionRationale()
+        })
     }
     
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
-                    context,
-                    POST_NOTIFICATIONS
+                    context, POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 requestPermissionLauncher.launch(POST_NOTIFICATIONS)
@@ -204,14 +205,12 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
                     scope.launch {
                         drawerState.close()
                     }
-                },
-                viewModel.user.collectAsState().value
+                }, viewModel.user.collectAsState().value
             )
         },
     ) {
         Content(
-            drawerState,
-            viewModel
+            drawerState, viewModel
         )
     }
 }
@@ -282,8 +281,7 @@ private fun NotificationBottomModal(
             )
         ) {
             Text(
-                text = "Открыть настройки",
-                modifier = Modifier.padding(8.dp)
+                text = "Открыть настройки", modifier = Modifier.padding(8.dp)
             )
         }
     }
@@ -303,28 +301,21 @@ private fun Content(
     
     val scope = rememberCoroutineScope()
     
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            DefaultTopBar(
-                drawerState = drawerState,
-                isLockApp = hasPasscode,
-                onLockClick = {
-                    scope.launch {
-                        mainViewModel.lockApp()
-                    }
-                },
-                socketState = mainViewModel.socketState.collectAsState().value
-            )
-        },
-        snackbarHost = {
-            SwipeDismissSnackbarHost(snackbarHostState)
-        },
-        floatingActionButton = {
-            FloatingButton(onClick = {
-                navHost.add(AppRoute.NewMessage)
-            })
-        }) { innerPadding ->
+    Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
+        DefaultTopBar(
+            drawerState = drawerState, isLockApp = hasPasscode, onLockClick = {
+                scope.launch {
+                    mainViewModel.lockApp()
+                }
+            }, socketState = mainViewModel.socketState.collectAsState().value
+        )
+    }, snackbarHost = {
+        SwipeDismissSnackbarHost(snackbarHostState)
+    }, floatingActionButton = {
+        FloatingButton(onClick = {
+            navHost.add(AppRoute.NewMessage)
+        })
+    }) { innerPadding ->
         Column(
             modifier = Modifier.padding(innerPadding),
         ) {
@@ -333,11 +324,9 @@ private fun Content(
             } else {
                 LazyColumn {
                     items(chats) { chat ->
-                        ChatCard(
-                            chat = chat,
-                            onClickChat = {
-                                navHost.add(AppRoute.Chat(chat.id))
-                            })
+                        ChatCard(chat = chat, onClickChat = {
+                            navHost.add(AppRoute.Chat(chat.id))
+                        })
                     }
                 }
             }
@@ -379,13 +368,10 @@ private fun EmptyChatPlaceholder(
 @Composable
 private fun FloatingButton(onClick: () -> Unit) {
     FloatingActionButton(
-        shape = CircleShape,
-        onClick = onClick,
-        containerColor = MaterialTheme.colorScheme.primary
+        shape = CircleShape, onClick = onClick, containerColor = MaterialTheme.colorScheme.primary
     ) {
         Icon(
-            imageVector = Icons.Default.Create,
-            contentDescription = null
+            imageVector = Icons.Default.Create, contentDescription = null
         )
     }
 }
@@ -393,8 +379,7 @@ private fun FloatingButton(onClick: () -> Unit) {
 @Composable
 private fun SwipeDismissSnackbarHost(snackbarHostState: SnackbarHostState) {
     SnackbarHost(
-        hostState = snackbarHostState,
-        modifier = Modifier.fillMaxWidth()
+        hostState = snackbarHostState, modifier = Modifier.fillMaxWidth()
     ) { data ->
         var dismissed by remember { mutableStateOf(false) }
         
@@ -450,8 +435,7 @@ private fun SwipeDismissSnackbarHost(snackbarHostState: SnackbarHostState) {
                             
                             data.visuals.actionLabel?.let {
                                 Text(
-                                    text = it,
-                                    color = MaterialTheme.colorScheme.primary
+                                    text = it, color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
@@ -465,8 +449,7 @@ private fun SwipeDismissSnackbarHost(snackbarHostState: SnackbarHostState) {
 }
 
 @OptIn(
-    ExperimentalMaterial3Api::class,
-    ExperimentalMaterial3ExpressiveApi::class
+    ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class
 )
 @Composable
 private fun DefaultTopBar(
@@ -503,7 +486,9 @@ private fun DefaultTopBar(
                     when (state) {
                         ConnectionState.CONNECTED -> Text(stringResource(R.string.search))
                         ConnectionState.DISCONNECTED -> AnimatedDotsText("Ожидание сети")
-                        ConnectionState.CONNECTING, ConnectionState.RECONNECTING -> AnimatedDotsText("Подключение")
+                        ConnectionState.CONNECTING, ConnectionState.RECONNECTING -> AnimatedDotsText(
+                            "Подключение"
+                        )
                     }
                 }
             },
@@ -517,8 +502,7 @@ private fun DefaultTopBar(
                             }
                         }) {
                             Icon(
-                                Icons.Rounded.Menu,
-                                null
+                                Icons.Rounded.Menu, null
                             )
                         }
                     } else {
@@ -528,8 +512,7 @@ private fun DefaultTopBar(
                             }
                         }) {
                             Icon(
-                                Icons.AutoMirrored.Rounded.ArrowBack,
-                                null
+                                Icons.AutoMirrored.Rounded.ArrowBack, null
                             )
                         }
                     }
@@ -550,9 +533,7 @@ private fun DefaultTopBar(
                                 scope.launch { searchBarState.animateToCollapsed() }
                                 textFieldState.edit {
                                     replace(
-                                        0,
-                                        length,
-                                        ""
+                                        0, length, ""
                                     )
                                 }
                             }) {
@@ -568,8 +549,7 @@ private fun DefaultTopBar(
     }
     
     AppBarWithSearch(
-        state = searchBarState,
-        inputField = inputField
+        state = searchBarState, inputField = inputField
     )
     
     ExpandedFullScreenSearchBar(
@@ -603,8 +583,7 @@ private fun DefaultTopBar(
                 unselectedContentColor = MaterialTheme.colorScheme.onSurface
             ) {
                 Text(
-                    text = stringResource(R.string.chats),
-                    modifier = Modifier.padding(6.dp)
+                    text = stringResource(R.string.chats), modifier = Modifier.padding(6.dp)
                 )
             }
             Tab(
@@ -615,15 +594,13 @@ private fun DefaultTopBar(
                 unselectedContentColor = MaterialTheme.colorScheme.onSurface
             ) {
                 Text(
-                    text = stringResource(R.string.files),
-                    modifier = Modifier.padding(6.dp)
+                    text = stringResource(R.string.files), modifier = Modifier.padding(6.dp)
                 )
             }
         }
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier
-                .fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.Top,
         ) { page ->
             when (page) {
@@ -642,8 +619,7 @@ private fun DefaultTopBar(
                                     searchBarState.animateToCollapsed()
                                     navHost.add(AppRoute.Chat(chatId))
                                 }
-                            }
-                        )
+                            })
                     }
                 }
                 
@@ -663,17 +639,6 @@ private fun DefaultTopBar(
                     }
                 }
             }
-//            SearchContent(
-//                state = searchUiState,
-//                onLoadMore = searchViewModel::loadMore,
-//                onChatClick = { chatId ->
-//                    scope.launch {
-//                        searchBarState.animateToCollapsed()
-//                        navHost.add(AppRoute.Chat(chatId))
-//                    }
-//                },
-//                onFileClick = searchViewModel::onFileClicked
-//            )
         }
     }
 }
@@ -692,16 +657,13 @@ private fun DrawerContent(
     ) {
         Column(
             modifier = Modifier.padding(
-                top = 80.dp,
-                bottom = 40.dp
+                top = 80.dp, bottom = 40.dp
             )
         ) {
             Text(
                 text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
                 modifier = Modifier.padding(
-                    start = 20.dp,
-                    end = 20.dp,
-                    bottom = 40.dp
+                    start = 20.dp, end = 20.dp, bottom = 40.dp
                 ),
                 fontSize = 24.sp,
                 maxLines = 1,
@@ -710,24 +672,21 @@ private fun DrawerContent(
             )
             
             DrawerItem(
-                label = stringResource(R.string.profile),
-                icon = Icons.Rounded.AccountCircle
+                label = stringResource(R.string.profile), icon = Icons.Rounded.AccountCircle
             ) {
                 onClose.invoke()
                 navHost.add(AppRoute.Profile(user.id))
             }
             
             DrawerItem(
-                label = stringResource(R.string.saved_messages),
-                icon = Icons.Rounded.BookmarkBorder
+                label = stringResource(R.string.saved_messages), icon = Icons.Rounded.BookmarkBorder
             ) {
                 onClose.invoke()
                 navHost.add(AppRoute.Chat(user.id))
             }
             
             DrawerItem(
-                label = stringResource(R.string.settings),
-                icon = Icons.Rounded.Settings
+                label = stringResource(R.string.settings), icon = Icons.Rounded.Settings
             ) {
                 onClose.invoke()
                 navHost.add(AppRoute.Settings)
@@ -743,12 +702,9 @@ private fun DrawerContent(
             val textColor = MaterialTheme.colorScheme.onSurface
             
             AndroidView(
-                modifier = Modifier.fillMaxWidth(),
-                factory = { context ->
+                modifier = Modifier.fillMaxWidth(), factory = { context ->
                     LayoutInflater.from(context).inflate(
-                        R.layout.fragment_ad_mob,
-                        null,
-                        false
+                        R.layout.fragment_ad_mob, null, false
                     ).apply {
                         val title = findViewById<TextView>(R.id.title)
                         val domain = findViewById<TextView>(R.id.domain)
@@ -769,17 +725,11 @@ private fun DrawerContent(
                         val nativeAdView = findViewById<NativeAdView>(R.id.native_ad_container)
                         
                         val viewBinder =
-                            NativeAdViewBinder.Builder(nativeAdView)
-                                .setTitleView(title)
-                                .setDomainView(domain)
-                                .setWarningView(warning)
-                                .setSponsoredView(sponsored)
-                                .setFeedbackView(feedback)
-                                .setMediaView(media)
-                                .setIconView(appIcon)
-                                .setPriceView(price)
-                                .setFaviconView(favicon)
-                                .build()
+                            NativeAdViewBinder.Builder(nativeAdView).setTitleView(title)
+                                .setDomainView(domain).setWarningView(warning)
+                                .setSponsoredView(sponsored).setFeedbackView(feedback)
+                                .setMediaView(media).setIconView(appIcon).setPriceView(price)
+                                .setFaviconView(favicon).build()
                         
                         nativeAd?.bindNativeAd(viewBinder)
                     }
@@ -793,17 +743,12 @@ private fun DrawerItem(
     label: String, icon: ImageVector, onClick: () -> Unit
 ) {
     NavigationDrawerItem(
-        shape = RectangleShape,
-        label = {
+        shape = RectangleShape, label = {
             Text(text = label)
-        },
-        icon = {
+        }, icon = {
             Icon(
-                imageVector = icon,
-                contentDescription = null
+                imageVector = icon, contentDescription = null
             )
-        },
-        selected = false,
-        onClick = onClick
+        }, selected = false, onClick = onClick
     )
 }

@@ -5,7 +5,7 @@
 package com.aiwazian.messenger.ui.screens.settings.appearance
 
 import androidx.lifecycle.ViewModel
-import com.aiwazian.messenger.enums.PrimaryColor
+import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.enums.ThemeOption
 import com.aiwazian.messenger.utils.ThemeManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,7 +25,7 @@ class AppearanceViewModel @Inject constructor(private val themeManager: ThemeMan
         themeManager.setDynamicColor(isEnable)
     }
     
-    suspend fun setPrimaryColor(color: PrimaryColor) {
+    suspend fun setPrimaryColor(color: AppPrimaryColor) {
         themeManager.setPrimaryColor(color)
     }
     

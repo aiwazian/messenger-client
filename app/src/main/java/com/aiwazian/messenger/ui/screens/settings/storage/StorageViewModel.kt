@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.repository.StorageRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -21,6 +22,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class StorageViewModel @Inject constructor(
+    @ApplicationContext
+    private val context: Context,
     private val storageRepository: StorageRepository,
 ) : ViewModel() {
     
@@ -33,7 +36,11 @@ class StorageViewModel @Inject constructor(
     var appSize: Long = 0
         private set
     
-    fun loadStorageInfo(context: Context) {
+    init {
+        loadStorageInfo()
+    }
+    
+    fun loadStorageInfo() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             
@@ -87,7 +94,7 @@ class StorageViewModel @Inject constructor(
         _uiState.update { it.copy(showConfirmDialog = false) }
     }
     
-    fun clearSelectedCache(context: Context) {
+    fun clearSelectedCache() {
         viewModelScope.launch {
             val state = _uiState.value
             val selectedCategories = state.selectedCategories.map { it.category }
@@ -101,8 +108,7 @@ class StorageViewModel @Inject constructor(
             
             storageRepository.clearFiles(filesToDelete)
             
-            // Перезагружаем информацию о хранилище
-            loadStorageInfo(context)
+            loadStorageInfo()
             
             hideConfirmDialog()
             _uiEvent.emit(StorageUiEvent.CacheCleared)

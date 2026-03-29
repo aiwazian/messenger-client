@@ -2,7 +2,7 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.screens.main
+package com.aiwazian.messenger.ui.screens.main.search
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -35,47 +34,8 @@ import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.domain.DownloadStatus
 import com.aiwazian.messenger.domain.Search
 import com.aiwazian.messenger.enums.ChatType
-
-@Composable
-fun SearchContent(
-    state: SearchUiState,
-    onLoadMore: () -> Unit,
-    onChatClick: (Long) -> Unit,
-    onFileClick: (Search) -> Unit
-) {
-    when (state.activeTab) {
-        0 -> {
-            if (state.isChatLoading && state.chatResults.isEmpty()) {
-                LoadingPlaceholder()
-            } else if (state.chatResults.isEmpty() && state.query.isNotBlank()) {
-                EmptySearchResultsPlaceholder()
-            } else {
-                ChatResultsList(
-                    results = state.chatResults,
-                    isLoading = state.isChatLoading,
-                    onLoadMore = onLoadMore,
-                    onChatClick = onChatClick
-                )
-            }
-        }
-        
-        1 -> {
-            if (state.isFileLoading && state.fileResults.isEmpty()) {
-                LoadingPlaceholder()
-            } else if (state.fileResults.isEmpty() && state.query.isNotBlank()) {
-                EmptySearchResultsPlaceholder()
-            } else {
-                FileResultsList(
-                    results = state.fileResults,
-                    state = state,
-                    isLoading = state.isFileLoading,
-                    onLoadMore = onLoadMore,
-                    onFileClick = onFileClick
-                )
-            }
-        }
-    }
-}
+import com.aiwazian.messenger.extensions.formatFileSize
+import com.aiwazian.messenger.extensions.getFileIcon
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -124,7 +84,12 @@ fun ChatResultsList(
         
         if (isLoading) {
             item {
-                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 }
             }
@@ -154,10 +119,15 @@ fun FileResultsList(
                 onClick = { onFileClick(file) }
             )
         }
-
+        
         if (isLoading) {
             item {
-                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 }
             }
@@ -192,7 +162,9 @@ private fun SearchChatItem(chat: Search, onClick: () -> Unit) {
             Text(
                 text = chat.name,
                 fontSize = 16.sp,
-                lineHeight = 16.sp
+                lineHeight = 16.sp,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1
             )
             Text(
                 text = when (ChatType.fromId(chat.chatId)) {
@@ -227,7 +199,7 @@ private fun SearchFileItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = Icons.Rounded.Description,
+            imageVector = file.name.getFileIcon(),
             contentDescription = null,
             modifier = Modifier.size(32.dp),
             tint = MaterialTheme.colorScheme.primary
@@ -240,15 +212,16 @@ private fun SearchFileItem(
         ) {
             Text(
                 text = file.name,
-                fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
+                lineHeight = 16.sp,
+                overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = file.senderName ?: "Unknown",
+                text = (file.size?.formatFileSize() + " • " + file.senderName).trim(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                lineHeight = 12.sp
             )
         }
         

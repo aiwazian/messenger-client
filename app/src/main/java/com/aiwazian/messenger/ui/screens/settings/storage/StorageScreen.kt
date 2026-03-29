@@ -36,14 +36,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.enums.PrimaryColor
+import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -58,21 +57,14 @@ import java.math.RoundingMode
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
-    val context = LocalContext.current
     val uiState by storageViewModel.uiState.collectAsState()
-    
-    LaunchedEffect(Unit) {
-        storageViewModel.loadStorageInfo(context)
-    }
     
     LaunchedEffect(Unit) {
         storageViewModel.uiEvent.collectLatest { event ->
             when (event) {
-                is StorageUiEvent.CacheCleared -> { // Кеш успешно очищен
-                }
+                is StorageUiEvent.CacheCleared -> {}
                 
-                is StorageUiEvent.Error -> { // Показать ошибку
-                }
+                is StorageUiEvent.Error -> {}
             }
         }
     }
@@ -99,13 +91,13 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Использование памяти",
+                    text = stringResource(R.string.storage_usage),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.W500
                 )
                 Text(
                     text = "$sizeMbRounded MB",
-                    fontSize = 14.sp,
+                    fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -127,10 +119,10 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                         ).toDouble()
                         
                         SectionRadioItem(
-                            text = category.category.title,
+                            text = stringResource(category.category.title),
                             selected = category.isSelected,
                             primaryText = "$sizeMbRounded MB",
-                            radioColor = PrimaryColor.entries[index].color,
+                            radioColor = AppPrimaryColor.entries[index].color,
                             onClick = { storageViewModel.toggleCategory(category.category) })
                         
                     }
@@ -194,7 +186,7 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
     if (uiState.showConfirmDialog) {
         ClearCacheConfirmationDialog(
             onConfirm = {
-                storageViewModel.clearSelectedCache(context)
+                storageViewModel.clearSelectedCache()
             },
             onDismiss = storageViewModel::hideConfirmDialog
         )
@@ -206,7 +198,7 @@ private fun ClearCacheConfirmationDialog(
     onConfirm: () -> Unit, onDismiss: () -> Unit
 ) {
     CustomDialog(
-        title = "Очистка кеша",
+        title = stringResource(R.string.clear_cache),
         onDismissRequest = onDismiss,
         content = {
             Column {
@@ -227,7 +219,7 @@ private fun ClearCacheConfirmationDialog(
                     contentColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Text("Удалить")
+                Text(stringResource(R.string.clear_cache))
             }
         })
 }

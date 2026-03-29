@@ -137,4 +137,7 @@
     <string name="other">Այլ</string>
     <string name="files">Ֆայլեր</string>
     <string name="chats">Կատուներ</string>
+    <string name="audio">Աուդիո</string>
+    <string name="storage_usage">Պահպանման օգտագործումը</string>
+    <string name="group_name">Խմբի անվանումը</string>
 </resources>

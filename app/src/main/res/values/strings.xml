@@ -141,4 +141,7 @@
     <string name="other">Other</string>
     <string name="files">Files</string>
     <string name="chats">Chats</string>
+    <string name="audio">Audio</string>
+    <string name="storage_usage">Storage Usage</string>
+    <string name="group_name">Group name</string>
 </resources>

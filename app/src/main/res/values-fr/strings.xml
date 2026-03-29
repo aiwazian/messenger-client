@@ -137,4 +137,7 @@
     <string name="other">Autres</string>
     <string name="files">Dossiers</string>
     <string name="chats">Chats</string>
+    <string name="audio">Audio</string>
+    <string name="storage_usage">Utilisation du stockage</string>
+    <string name="group_name">Nom du groupe</string>
 </resources>

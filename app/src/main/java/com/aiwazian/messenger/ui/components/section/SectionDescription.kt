@@ -20,8 +20,8 @@ fun SectionDescription(text: String) {
             start = 10.dp,
             end = 10.dp
         ),
-        fontSize = 12.sp,
-        lineHeight = 12.sp,
+        fontSize = 13.sp,
+        lineHeight = 16.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }

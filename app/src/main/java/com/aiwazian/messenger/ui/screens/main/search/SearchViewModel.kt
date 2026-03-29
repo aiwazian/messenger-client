@@ -2,11 +2,10 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.screens.main
+package com.aiwazian.messenger.ui.screens.main.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.domain.Search
 import com.aiwazian.messenger.domain.SearchResultType
 import com.aiwazian.messenger.repository.SearchRepository
@@ -20,20 +19,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-
-data class SearchUiState(
-    val query: String = "",
-    val activeTab: Int = 0,
-    val chatResults: List<Search> = emptyList(),
-    val fileResults: List<Search> = emptyList(),
-    val isChatLoading: Boolean = false,
-    val isFileLoading: Boolean = false,
-    val hasMoreChats: Boolean = true,
-    val hasMoreFiles: Boolean = true,
-    val downloads: List<DownloadItem> = emptyList()
-)
-
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
@@ -79,14 +64,12 @@ class SearchViewModel @Inject constructor(
         }
         
         searchJob = viewModelScope.launch {
-            delay(300) // Debounce
+            delay(300)
             
-            // Запускаем поиск чатов (только если запрос не пустой)
             launch {
                 loadMoreForTab(0)
             }
             
-            // Запускаем поиск файлов (даже если запрос пустой — для отображения последних файлов)
             launch {
                 loadMoreForTab(1)
             }

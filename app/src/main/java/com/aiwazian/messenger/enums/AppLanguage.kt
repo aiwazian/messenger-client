@@ -5,21 +5,14 @@
 package com.aiwazian.messenger.enums
 
 enum class AppLanguage(val code: String, val nativeName: String, val displayName: String) {
-    RU(
-        "ru",
-        "Русский",
-        "Russian"
-    ),
-    De(
-        "de",
-        "Deutsch",
-        "German"
-    ),
-    EN(
-        "en",
-        "English",
-        "English"
-    );
+    De("de", "Deutsch", "German"),
+    EN("en", "English", "English"),
+    ES("es", "Español", "Spanish"),
+    FR("fr", "Français", "French"),
+    HY("hy", "Հայերեն", "Armenian"),
+    IT("it", "Italian", "Italiano"),
+    KO("ko", "한국어", "Korean"),
+    RU("ru", "Русский", "Russian");
     
     companion object {
         fun fromString(value: String): AppLanguage {
