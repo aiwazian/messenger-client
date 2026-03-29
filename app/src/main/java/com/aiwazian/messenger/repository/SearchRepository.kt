@@ -28,9 +28,9 @@ class SearchRepository @Inject constructor(
         }
     }
 
-    suspend fun search(query: String): List<Search> {
+    suspend fun search(query: String, type: String = "chats", limit: Int = 20, offset: Int = 0): List<Search> {
         return try {
-            val response = searchApi.search(query)
+            val response = searchApi.search(query, type, limit, offset)
             if (response.isSuccessful) {
                 val dtos = response.body().orEmpty()
                 dtos.map { it.toDomain() }

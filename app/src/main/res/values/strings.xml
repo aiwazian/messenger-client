@@ -22,10 +22,10 @@
     <string name="information">Info</string>
     <string name="dark_theme">Dark Theme</string>
     <string name="security">Security</string>
-    <string name="delete_account">Удалить аккаунт</string>
-    <string name="delete_account_confirm">Вы уверены, что хотите удалить аккаунт?</string>
-    <string name="yes">Да</string>
-    <string name="no">Нет</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="delete_account_confirm">Are you sure you want to delete your account?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
     <string name="devices">Devices</string>
     <string name="create_group">New Group</string>
     <string name="create_channel">New Channel</string>
@@ -139,4 +139,6 @@
     <string name="videos">Videos</string>
     <string name="documents">Documents</string>
     <string name="other">Other</string>
+    <string name="files">Files</string>
+    <string name="chats">Chats</string>
 </resources>

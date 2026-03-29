@@ -1,9 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
+    
     <string name="search">Поиск</string>
     <string name="message">Сообщение</string>
     <string name="settings">Настройки</string>
@@ -11,6 +7,8 @@
     <string name="notifications">Уведомления</string>
     <string name="language">Язык</string>
     <string name="log_out">Выйти</string>
+    
+    
     <string name="help">Помощь</string>
     <string name="confidentiality">Конфиденциальность</string>
     <string name="account">Аккаунт</string>
@@ -20,6 +18,10 @@
     <string name="information">Информация</string>
     <string name="dark_theme">Тёмная тема</string>
     <string name="security">Безопасность</string>
+    <string name="delete_account">Удалить аккаунт</string>
+    <string name="delete_account_confirm">Вы уверены, что хотите удалить аккаунт?</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
     <string name="devices">Устройства</string>
     <string name="create_group">Создать группу</string>
     <string name="create_channel">Создать канал</string>
@@ -133,4 +135,6 @@
     <string name="videos">Видео</string>
     <string name="documents">Документы</string>
     <string name="other">Другое</string>
+    <string name="files">Файлы</string>
+    <string name="chats">Чаты</string>
 </resources>

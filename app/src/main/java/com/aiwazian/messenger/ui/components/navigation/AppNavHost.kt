@@ -36,7 +36,6 @@ import com.aiwazian.messenger.ui.screens.logout.LogoutScreen
 import com.aiwazian.messenger.ui.screens.main.MainScreen
 import com.aiwazian.messenger.ui.screens.newmessage.NewMessageScreen
 import com.aiwazian.messenger.ui.screens.profile.ProfileScreen
-import com.aiwazian.messenger.ui.screens.search.SearchScreen
 import com.aiwazian.messenger.ui.screens.settings.SettingsNotificationsScreen
 import com.aiwazian.messenger.ui.screens.settings.SettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsAppearanceScreen
@@ -72,7 +71,6 @@ fun AppNavHost(startRoute: AppRoute = AppRoute.Main) {
             onBack = { backStack.removeLastOrNull() },
             entryProvider = entryProvider {
                 entry<AppRoute.Main> { MainScreen() }
-                entry<AppRoute.Search> { SearchScreen() }
                 entry<AppRoute.Chat> { ChatScreen(chatId = it.chatId) }
                 entry<AppRoute.Profile> { ProfileScreen(profileId = it.profileId) }
                 entry<AppRoute.Settings> { SettingsScreen() }

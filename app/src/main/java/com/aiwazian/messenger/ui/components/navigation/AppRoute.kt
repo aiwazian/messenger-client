@@ -13,10 +13,7 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data object Main : AppRoute
-    
-    @Serializable
-    data object Search : AppRoute
-    
+
     @Serializable
     data class Chat(val chatId: Long) : AppRoute
     

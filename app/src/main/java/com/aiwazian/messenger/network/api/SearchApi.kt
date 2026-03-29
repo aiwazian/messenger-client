@@ -17,5 +17,10 @@ interface SearchApi {
     suspend fun checkUsernameAvailable(@Path("username") username: String): Response<UsernameAvailableResponseDto>
 
     @GET("search")
-    suspend fun search(@Query("search") query: String): Response<List<SearchResponseDto>>
+    suspend fun search(
+        @Query("q") query: String,
+        @Query("type") type: String,
+        @Query("limit") limit: Int,
+        @Query("offset") offset: Int
+    ): Response<List<SearchResponseDto>>
 }

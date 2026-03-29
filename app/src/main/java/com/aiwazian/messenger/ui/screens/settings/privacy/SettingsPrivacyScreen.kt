@@ -131,11 +131,10 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
             dragHandle = null
         ) {
             Column(
-                modifier = Modifier.padding(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(10.dp),
                     horizontalArrangement = Arrangement.spacedBy(20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {

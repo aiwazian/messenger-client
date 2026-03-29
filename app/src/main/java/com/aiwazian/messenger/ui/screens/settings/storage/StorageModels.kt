@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.settings.storage
 
-
 enum class FileCategory(val title: String, val extensions: Set<String>) {
     PHOTOS(
         title = "Фото",

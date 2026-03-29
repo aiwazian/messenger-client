@@ -103,7 +103,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -474,11 +473,18 @@ private fun DefaultTopBar(
     drawerState: DrawerState,
     isLockApp: Boolean,
     onLockClick: () -> Unit,
-    socketState: ConnectionState
+    socketState: ConnectionState,
+    searchViewModel: SearchViewModel = hiltViewModel()
 ) {
-    val textFieldState = rememberTextFieldState()
+    val searchUiState by searchViewModel.uiState.collectAsState()
+    val textFieldState = rememberTextFieldState(searchUiState.query)
     val searchBarState = rememberSearchBarState()
     val scope = rememberCoroutineScope()
+    val navHost = LocalNavHost.current
+    
+    LaunchedEffect(textFieldState.text) {
+        searchViewModel.onQueryChange(textFieldState.text.toString())
+    }
     
     val inputField = @Composable {
         SearchBarDefaults.InputField(
@@ -501,8 +507,7 @@ private fun DefaultTopBar(
                     }
                 }
             },
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             leadingIcon = {
                 AnimatedContent(searchBarState.currentValue) {
                     if (it == SearchBarValue.Collapsed) {
@@ -541,7 +546,16 @@ private fun DefaultTopBar(
                                 )
                             }
                         } else {
-                            IconButton(onClick = { scope.launch { searchBarState.animateToCollapsed() } }) {
+                            IconButton(onClick = {
+                                scope.launch { searchBarState.animateToCollapsed() }
+                                textFieldState.edit {
+                                    replace(
+                                        0,
+                                        length,
+                                        ""
+                                    )
+                                }
+                            }) {
                                 Icon(
                                     imageVector = Icons.Rounded.Close,
                                     contentDescription = "Close search"
@@ -563,11 +577,12 @@ private fun DefaultTopBar(
         inputField = inputField,
         colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
     ) {
-        var selectedIndex by remember { mutableIntStateOf(0) }
+        var selectedIndex by remember { mutableIntStateOf(searchUiState.activeTab) }
         val pagerState = rememberPagerState(pageCount = { 2 })
         
         LaunchedEffect(selectedIndex) {
             pagerState.animateScrollToPage(selectedIndex)
+            searchViewModel.onTabChange(selectedIndex)
         }
         
         LaunchedEffect(pagerState.currentPage) {
@@ -588,7 +603,7 @@ private fun DefaultTopBar(
                 unselectedContentColor = MaterialTheme.colorScheme.onSurface
             ) {
                 Text(
-                    "Чаты",
+                    text = stringResource(R.string.chats),
                     modifier = Modifier.padding(6.dp)
                 )
             }
@@ -599,7 +614,10 @@ private fun DefaultTopBar(
                 selectedContentColor = MaterialTheme.colorScheme.primary,
                 unselectedContentColor = MaterialTheme.colorScheme.onSurface
             ) {
-                Text("Файлы")
+                Text(
+                    text = stringResource(R.string.files),
+                    modifier = Modifier.padding(6.dp)
+                )
             }
         }
         HorizontalPager(
@@ -607,8 +625,55 @@ private fun DefaultTopBar(
             modifier = Modifier
                 .fillMaxSize(),
             verticalAlignment = Alignment.Top,
-        ) {
-        
+        ) { page ->
+            when (page) {
+                0 -> {
+                    if (searchUiState.isChatLoading && searchUiState.chatResults.isEmpty()) {
+                        LoadingPlaceholder()
+                    } else if (searchUiState.chatResults.isEmpty() && searchUiState.query.isNotBlank()) {
+                        EmptySearchResultsPlaceholder()
+                    } else {
+                        ChatResultsList(
+                            results = searchUiState.chatResults,
+                            isLoading = searchUiState.isChatLoading,
+                            onLoadMore = searchViewModel::loadMore,
+                            onChatClick = { chatId ->
+                                scope.launch {
+                                    searchBarState.animateToCollapsed()
+                                    navHost.add(AppRoute.Chat(chatId))
+                                }
+                            }
+                        )
+                    }
+                }
+                
+                1 -> {
+                    if (searchUiState.isFileLoading && searchUiState.fileResults.isEmpty()) {
+                        LoadingPlaceholder()
+                    } else if (searchUiState.fileResults.isEmpty() && searchUiState.query.isNotBlank()) {
+                        EmptySearchResultsPlaceholder()
+                    } else {
+                        FileResultsList(
+                            results = searchUiState.fileResults,
+                            state = searchUiState,
+                            isLoading = searchUiState.isFileLoading,
+                            onLoadMore = searchViewModel::loadMore,
+                            onFileClick = searchViewModel::onFileClicked
+                        )
+                    }
+                }
+            }
+//            SearchContent(
+//                state = searchUiState,
+//                onLoadMore = searchViewModel::loadMore,
+//                onChatClick = { chatId ->
+//                    scope.launch {
+//                        searchBarState.animateToCollapsed()
+//                        navHost.add(AppRoute.Chat(chatId))
+//                    }
+//                },
+//                onFileClick = searchViewModel::onFileClicked
+//            )
         }
     }
 }

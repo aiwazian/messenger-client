@@ -11,9 +11,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.Key
-import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,13 +24,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import com.aiwazian.messenger.ui.components.navigation.AppRoute
 
 @Composable
 fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel()) {
@@ -78,7 +78,7 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
                     }
                     
                     SectionItem(
-                        icon = Icons.Rounded.Lock,
+                        icon = Icons.Outlined.Lock,
                         text = stringResource(R.string.passcode_lock),
                         primaryText = passcodeEnabledText,
                         onClick = {
