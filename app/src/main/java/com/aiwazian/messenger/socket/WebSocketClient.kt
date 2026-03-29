@@ -15,13 +15,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -54,9 +50,6 @@ class WebSocketClient @Inject constructor(
     private var _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
     val connectionState = _connectionState.asStateFlow()
     
-    private var _connectionEvents = MutableSharedFlow<ConnectionEvent>(replay = 1)
-    val connectionEvents: SharedFlow<ConnectionEvent> = _connectionEvents.asSharedFlow()
-    
     private val messageHandlers = mutableMapOf<WebSocketAction, MutableList<(JsonObject) -> Unit>>()
     
     fun connect() {
@@ -65,11 +58,6 @@ class WebSocketClient @Inject constructor(
         ) return
         
         establishConnection()
-    }
-    
-    fun disconnect() {
-        socket?.disconnect()
-        _connectionState.value = ConnectionState.DISCONNECTED
     }
     
     fun emit(event: String, data: Any?): Boolean {
@@ -127,7 +115,6 @@ class WebSocketClient @Inject constructor(
                     SessionManager.getUnauthorizedCallback()?.invoke()
                 }
                 
-                // Register all pending handlers
                 messageHandlers.keys.forEach { action ->
                     on(action.name) { args -> handleIncomingEvent(action, args) }
                 }
@@ -140,7 +127,6 @@ class WebSocketClient @Inject constructor(
     private fun onConnect() {
         Log.d(TAG, "Connected")
         _connectionState.value = ConnectionState.CONNECTED
-        scope.launch { _connectionEvents.emit(ConnectionEvent.Connected) }
     }
     
     private fun onConnectError(e: Exception?) {
