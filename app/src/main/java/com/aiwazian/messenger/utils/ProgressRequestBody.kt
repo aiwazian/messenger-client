@@ -11,26 +11,27 @@ import okio.source
 import java.io.InputStream
 
 class ProgressRequestBody(
-    private val inputStream: InputStream,
     private val contentType: MediaType?,
     private val contentLength: Long,
-    private val onProgress: (Int) -> Unit
+    private val onProgress: (Int) -> Unit,
+    private val streamProvider: () -> InputStream
 ) : RequestBody() {
 
     override fun contentType() = contentType
 
     override fun contentLength() = contentLength
 
+    override fun isOneShot(): Boolean = true
+
     override fun writeTo(sink: BufferedSink) {
-        val source = inputStream.source()
         var totalBytesRead = 0L
         var read: Int
         
-        source.use { source ->
+        streamProvider().source().use { source ->
             while (source.read(sink.buffer, 8192).also { read = it.toInt() } != -1L) {
                 totalBytesRead += read
-                val progress = ((totalBytesRead * 100) / contentLength).toInt()
-                onProgress(progress)
+                val progress = ((totalBytesRead * 100).coerceAtLeast(0) / contentLength.coerceAtLeast(1)).toInt()
+                onProgress(progress.coerceIn(0, 100))
             }
         }
     }
