@@ -485,9 +485,9 @@ private fun DefaultTopBar(
                 ) { state ->
                     when (state) {
                         ConnectionState.CONNECTED -> Text(stringResource(R.string.search))
-                        ConnectionState.DISCONNECTED -> AnimatedDotsText("Ожидание сети")
+                        ConnectionState.DISCONNECTED -> AnimatedDotsText(stringResource(R.string.waiting_for_network))
                         ConnectionState.CONNECTING, ConnectionState.RECONNECTING -> AnimatedDotsText(
-                            "Подключение"
+                            stringResource(R.string.connecting)
                         )
                     }
                 }

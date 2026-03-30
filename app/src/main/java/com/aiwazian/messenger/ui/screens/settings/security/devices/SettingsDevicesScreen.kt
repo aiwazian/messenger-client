@@ -19,11 +19,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.BackHand
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -48,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -79,10 +82,6 @@ fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) 
                 is DevicesSideEffect.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(effect.message)
                 }
-                
-                is DevicesSideEffect.VibrateError -> {
-                    // Handled in ViewModel via vibrationManager
-                }
             }
         }
     }
@@ -106,8 +105,8 @@ fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) 
         
         Column(
             Modifier
-                .padding(paddingValues)
                 .fillMaxSize()
+                .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
             
@@ -134,7 +133,7 @@ fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) 
                 SectionContainer(header = {
                     SectionHeader(title = stringResource(R.string.active_sessions))
                 }, footer = {
-                    SectionDescription(text = "Официальное приложение доступно только для Android устройств.")
+                    SectionDescription(text = stringResource(R.string.sessions_android_only_message))
                 }) {
                     otherSessions.forEach { session ->
                         DeviceCard(
@@ -149,7 +148,7 @@ fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) 
         if (uiState.showTerminateSessionDialog) {
             TerminateSessionDialog(
                 title = stringResource(R.string.terminate_session),
-                message = "Вы точно хотите завершить сеанс?",
+                message = stringResource(R.string.terminate_session_confirm_message),
                 onDismiss = devicesViewModel::hideTerminateSessionDialog,
                 onConfirm = devicesViewModel::terminateSession
             )
@@ -158,7 +157,7 @@ fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) 
         if (uiState.showTerminateAllOtherSessionsDialog) {
             TerminateSessionDialog(
                 title = stringResource(R.string.terminate_all_other_sessions),
-                message = "Вы точно хотите завершить все остальные сеансы?",
+                message = stringResource(R.string.terminate_all_other_sessions_confirm_message),
                 onDismiss = devicesViewModel::hideTerminateAllOtherSessionsDialog,
                 onConfirm = devicesViewModel::terminateAllOtherSessions
             )
@@ -187,8 +186,8 @@ private fun SessionInfoBottomSheet(
     ) {
         Column(
             modifier = Modifier
-                .padding(24.dp)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -203,23 +202,25 @@ private fun SessionInfoBottomSheet(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                InfoRow(label = "OC:", value = "${session.osName} ${session.osVersion}")
                 InfoRow(
-                    label = "Создана:",
+                    icon = Icons.Outlined.PhoneAndroid,
+                    value = "${session.osName} ${session.osVersion}"
+                )
+                InfoRow(
+                    icon = Icons.Outlined.DateRange,
                     value = session.createdAt.toInstance().toPrettyDateTime()
                 )
             }
             
             if (!session.isCurrent) {
-                Button(
+                TextButton(
                     onClick = onTerminateClick,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
                     shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
                     Text(
@@ -234,16 +235,21 @@ private fun SessionInfoBottomSheet(
 }
 
 @Composable
-private fun InfoRow(label: String, value: String) {
+private fun InfoRow(icon: ImageVector, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         Text(
             text = value,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.Medium
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

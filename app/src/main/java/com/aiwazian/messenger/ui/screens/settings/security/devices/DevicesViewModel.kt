@@ -36,7 +36,7 @@ class DevicesViewModel @Inject constructor(
         getSessions()
     }
     
-    fun getSessions() {
+    private fun getSessions() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
@@ -93,7 +93,7 @@ class DevicesViewModel @Inject constructor(
                 } else {
                     handleError("Не удалось завершить сессию")
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 handleError("Не удалось завершить сессию")
             }
         }

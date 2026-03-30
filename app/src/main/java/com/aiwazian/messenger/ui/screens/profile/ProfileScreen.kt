@@ -12,8 +12,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Css
-import androidx.compose.material.icons.rounded.Javascript
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -357,7 +355,7 @@ private fun LeaveProfileDialog(
     
     val message = when (chatType) {
         ChatType.CHANNEL -> buildAnnotatedString {
-            append(stringResource(R.string.leave_channel_confirm))
+            append(stringResource(R.string.leave_channel_confirm_message))
             withStyle(style = SpanStyle(fontWeight = FontWeight.W500)) { append(" $profileName") }
             append("?")
         }

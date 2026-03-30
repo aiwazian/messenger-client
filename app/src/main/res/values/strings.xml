@@ -10,7 +10,7 @@
     <string name="delete_chat">Delete chat</string>
     <string name="notifications">Notifications</string>
     <string name="language">Language</string>
-    <string name="log_out">Log Out</string>
+    <string name="logout">Log Out</string>
     <string name="russian_untranslatable" translatable="false">Русский</string>
     <string name="english_untranslatable" translatable="false">English</string>
     <string name="help">Help</string>
@@ -95,18 +95,18 @@
     <string name="block_user">Block user</string>
     <string name="start_secret_chat">Start Secret Chat</string>
     <string name="add_to_home_screen">Add to Home Screen</string>
-    <string name="block_user_confirm">Are you sure you want to block</string>
+    <string name="block_user_confirm_message">Are you sure you want to block</string>
     <string name="secret_chat">Secret chat</string>
-    <string name="secret_chat_confirm">Are you sure you want to start a secret chat?</string>
+    <string name="secret_chat_confirm_message">Are you sure you want to start a secret chat?</string>
     <string name="start">Start</string>
     <string name="edit_info">Edit Info</string>
     <string name="change_profile_color">Change profile color</string>
-    <string name="change_username">Change username</string>
+    <string name="change_username">Change Username</string>
     <string name="mute">Mute</string>
     <string name="unmute">Unmute</string>
     <string name="join">Join</string>
-    <string name="leave_channel">Leave channel</string>
-    <string name="leave_channel_confirm">Are you sure you want to leave</string>
+    <string name="leave_channel">Leave Channel</string>
+    <string name="leave_channel_confirm_message">Are you sure you want to leave</string>
     <string name="removed_user">Removed User</string>
     <string name="subscribers">Subscribers</string>
     <string name="invite_links">Invite Links</string>
@@ -144,4 +144,11 @@
     <string name="audio">Audio</string>
     <string name="storage_usage">Storage Usage</string>
     <string name="group_name">Group name</string>
+    <string name="logout_confirm_message">Are you sure you want to log out?</string>
+    <string name="delete_account_confirm_message">Are you sure you want to delete your account?</string>
+    <string name="delete_account_message">Everything related to your account will be permanently deleted.</string>
+    <string name="sessions_android_only_message">The official app is only available for Android devices.</string>
+    <string name="terminate_session_confirm_message">Are you sure you want to terminate this session?</string>
+    <string name="terminate_all_other_sessions_confirm_message">Are you sure you want to terminate all other sessions?</string>
+    <string name="waiting_for_network">Waiting for network</string>
 </resources>

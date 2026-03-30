@@ -121,6 +121,21 @@ class AuthRepository @Inject constructor(
         }
     }
     
+    suspend fun getCurrentAccountCreatedAt(): Long {
+        return try {
+            val accounts = accountDao.getAllAccounts()
+            val currentAccount = accounts.find { it.isCurrent }
+            currentAccount?.createdAt ?: 0L
+        } catch (e: Exception) {
+            Log.e(
+                "AuthRepository",
+                "Ошибка при получении времени создания сессии",
+                e
+            )
+            0L
+        }
+    }
+    
     suspend fun clearCurrentToken() {
         try {
             accountDao.updateToken("")
@@ -167,10 +182,12 @@ class AuthRepository @Inject constructor(
                     Result.success(
                         SignInResponse(
                             userId = apiResponse.userId.toLong(),
-                            token = apiResponse.token
+                            token = apiResponse.token,
+                            createdAt = apiResponse.createdAt.toLong()
                         )
                     )
-                } else {
+                }
+ else {
                     Result.failure(Exception("Пустой токен в ответе"))
                 }
             } else {

@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Поиск</string>
@@ -10,7 +6,7 @@
     <string name="delete_chat">Удалить чат</string>
     <string name="notifications">Уведомления</string>
     <string name="language">Язык</string>
-    <string name="log_out">Выйти</string>
+    <string name="logout">Выйти</string>
     
     
     <string name="help">Помощь</string>
@@ -95,9 +91,9 @@
     <string name="block_user">Заблокировать</string>
     <string name="start_secret_chat">Начать секретный чат</string>
     <string name="add_to_home_screen">Создать ярлык</string>
-    <string name="block_user_confirm">Вы точно хотите заблокировать</string>
+    <string name="block_user_confirm_message">Вы точно хотите заблокировать</string>
     <string name="secret_chat">Секретный чат</string>
-    <string name="secret_chat_confirm">Хотите начать секретный чат?</string>
+    <string name="secret_chat_confirm_message">Хотите начать секретный чат?</string>
     <string name="start">Начать</string>
     <string name="edit_info">Изменить информацию</string>
     <string name="change_profile_color">Изменить цвет профиля</string>
@@ -106,7 +102,7 @@
     <string name="unmute">Вкл. звук</string>
     <string name="join">Присоединиться</string>
     <string name="leave_channel">Покинуть канал</string>
-    <string name="leave_channel_confirm">Вы точно хотите покинуть</string>
+    <string name="leave_channel_confirm_message">Вы точно хотите покинуть</string>
     <string name="removed_user">Черный список</string>
     <string name="subscribers">Подписчики</string>
     <string name="invite_links">Пригласительные ссылки</string>
@@ -144,4 +140,11 @@
     <string name="audio">Аудио</string>
     <string name="storage_usage">Использование хранилища</string>
     <string name="group_name">Название группы</string>
+    <string name="logout_confirm_message">Вы точно хотите выйти?</string>
+    <string name="delete_account_confirm_message">Вы уверены, что хотите удалить свою учетную запись\?</string>
+    <string name="delete_account_message">Все, что связано с вашей учетной записью, будет удалено без возможности восстановления.</string>
+    <string name="sessions_android_only_message">Официальное приложение доступно только для устройств Android.</string>
+    <string name="terminate_session_confirm_message">Вы уверены, что хотите завершить этот сеанс\?</string>
+    <string name="terminate_all_other_sessions_confirm_message">Вы уверены, что хотите завершить все остальные сеансы\?</string>
+    <string name="waiting_for_network">Ожидание сети</string>
 </resources>

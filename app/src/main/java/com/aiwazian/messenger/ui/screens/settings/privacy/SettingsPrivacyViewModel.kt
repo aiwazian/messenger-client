@@ -8,7 +8,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.PrivacySettings
-import com.aiwazian.messenger.enums.PrivacyLevel
 import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.repository.PrivacyRepository
 import com.aiwazian.messenger.utils.VibrationManager
@@ -28,23 +27,15 @@ class SettingsPrivacyViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
-
+    
     private val _privacySettings = MutableStateFlow(PrivacySettings())
     val privacySettings = _privacySettings.asStateFlow()
 
-    private val _deleteSuccess = MutableSharedFlow<Unit>()
-    val deleteSuccess = _deleteSuccess.asSharedFlow()
+    private val _sideEffect = MutableSharedFlow<SettingsPrivacySideEffect>()
+    val sideEffect = _sideEffect.asSharedFlow()
 
     init {
         loadValues()
-    }
-
-    fun updateBioValue(privacyLevel: PrivacyLevel) {
-        _privacySettings.update { it.copy(bio = privacyLevel) }
-    }
-
-    fun updateDateOfBirthValue(privacyLevel: PrivacyLevel) {
-        _privacySettings.update { it.copy(dateOfBirth = privacyLevel) }
     }
 
     fun loadValues() {
@@ -65,11 +56,32 @@ class SettingsPrivacyViewModel @Inject constructor(
         }
     }
 
+    fun onDeleteAccountClick() {
+        viewModelScope.launch {
+            val createdAt = authRepository.getCurrentAccountCreatedAt()
+            val currentTime = System.currentTimeMillis()
+            val twentyFourHoursInMs = 24 * 60 * 60 * 1000L
+
+            if (currentTime - createdAt < twentyFourHoursInMs) {
+                vibrationManager.vibrate(VibrationPattern.Error)
+                _sideEffect.emit(SettingsPrivacySideEffect.ShowSnackbar("Удаление аккаунта будет доступно через 24 часа с начала текущей сессии"))
+            } else {
+                _sideEffect.emit(SettingsPrivacySideEffect.ShowDeleteBottomSheet)
+            }
+        }
+    }
+
+    fun onDeleteConfirmClick() {
+        viewModelScope.launch {
+            _sideEffect.emit(SettingsPrivacySideEffect.ShowDeleteDialog)
+        }
+    }
+
     fun deleteAccount() {
         viewModelScope.launch {
             val result = authRepository.deleteMe()
             if (result.isSuccess) {
-                _deleteSuccess.emit(Unit)
+                _sideEffect.emit(SettingsPrivacySideEffect.NavigateToLogin)
             } else {
                 vibrationManager.vibrate(VibrationPattern.Error)
             }

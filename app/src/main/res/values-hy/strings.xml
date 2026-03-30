@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Որոնում</string>
@@ -10,7 +6,7 @@
     <string name="delete_chat">Ջնջել զրույցը</string>
     <string name="notifications">Ծանուցումներ</string>
     <string name="language">Լեզու</string>
-    <string name="log_out">Log Out</string>
+    <string name="logout">Log Out</string>
     
     
     <string name="help">Օգնություն</string>
@@ -95,9 +91,9 @@
     <string name="block_user">Արգելափակել օգտվողին</string>
     <string name="start_secret_chat">Սկսել գաղտնի զրույցը</string>
     <string name="add_to_home_screen">Ավելացնել գլխավոր էկրանին</string>
-    <string name="block_user_confirm">Իրո՞ք ցանկանում եք արգելափակել</string>
+    <string name="block_user_confirm_message">Իրո՞ք ցանկանում եք արգելափակել</string>
     <string name="secret_chat">Գաղտնի զրույց</string>
-    <string name="secret_chat_confirm">Համոզվա՞ծ եք, որ ցանկանում եք գաղտնի զրույց սկսել:</string>
+    <string name="secret_chat_confirm_message">Համոզվա՞ծ եք, որ ցանկանում եք գաղտնի զրույց սկսել:</string>
     <string name="start">Սկիզբ</string>
     <string name="edit_info">ԻնֆոԽմբագրել</string>
     <string name="change_profile_color">Փոխել պրոֆիլի գույնը</string>
@@ -106,7 +102,7 @@
     <string name="unmute">Unmute</string>
     <string name="join">Միանալ</string>
     <string name="leave_channel">Հեռանալ ալիքից</string>
-    <string name="leave_channel_confirm">Վստա՞հ եք, որ ուզում եք հեռանալ</string>
+    <string name="leave_channel_confirm_message">Վստա՞հ եք, որ ուզում եք հեռանալ</string>
     <string name="removed_user">Հեռացված օգտվողը</string>
     <string name="subscribers">Բաժանորդներ</string>
     <string name="invite_links">Հրավիրել հղումներ</string>
@@ -144,4 +140,11 @@
     <string name="audio">Աուդիո</string>
     <string name="storage_usage">Պահպանման օգտագործումը</string>
     <string name="group_name">Խմբի անվանումը</string>
+    <string name="logout_confirm_message">Իսկապե՞ս ուզում եք դուրս գալ:</string>
+    <string name="delete_account_confirm_message">Իսկապե՞ս ուզում եք ջնջել ձեր հաշիվը:</string>
+    <string name="delete_account_message">Ձեր հաշվի հետ կապված ամեն ինչ ընդմիշտ կջնջվի:</string>
+    <string name="sessions_android_only_message">Պաշտոնական հավելվածը հասանելի է միայն Android սարքերի համար:</string>
+    <string name="terminate_session_confirm_message">Իսկապե՞ս ուզում եք դադարեցնել այս նստաշրջանը:</string>
+    <string name="terminate_all_other_sessions_confirm_message">Վստա՞հ եք, որ ցանկանում եք դադարեցնել մնացած բոլոր նիստերը:</string>
+    <string name="waiting_for_network">Սպասում է ցանցին</string>
 </resources>

@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Recherche</string>
@@ -10,7 +6,7 @@
     <string name="delete_chat">Supprimer le chat</string>
     <string name="notifications">Notifications</string>
     <string name="language">Langue</string>
-    <string name="log_out">Déconnexion</string>
+    <string name="logout">Déconnexion</string>
     
     
     <string name="help">À l’aide</string>
@@ -95,9 +91,9 @@
     <string name="block_user">Bloquer l’utilisateur</string>
     <string name="start_secret_chat">Lancer un chat secret</string>
     <string name="add_to_home_screen">Ajouter à l’écran d’accueil</string>
-    <string name="block_user_confirm">Es-tu sûr de vouloir bloquer \?</string>
+    <string name="block_user_confirm_message">Es-tu sûr de vouloir bloquer \?</string>
     <string name="secret_chat">Chat secret</string>
-    <string name="secret_chat_confirm">Tu es sûr de vouloir lancer une discussion secrète \?</string>
+    <string name="secret_chat_confirm_message">Tu es sûr de vouloir lancer une discussion secrète \?</string>
     <string name="start">Début</string>
     <string name="edit_info">Info à modifier</string>
     <string name="change_profile_color">Changer la couleur du profil</string>
@@ -106,7 +102,7 @@
     <string name="unmute">Réactivez le son</string>
     <string name="join">Rejoignez</string>
     <string name="leave_channel">Quitter le canal</string>
-    <string name="leave_channel_confirm">Tu es sûr de vouloir partir</string>
+    <string name="leave_channel_confirm_message">Tu es sûr de vouloir partir</string>
     <string name="removed_user">Utilisateur supprimé</string>
     <string name="subscribers">Abonnés</string>
     <string name="invite_links">Liens d’invitation</string>
@@ -144,4 +140,11 @@
     <string name="audio">Audio</string>
     <string name="storage_usage">Utilisation du stockage</string>
     <string name="group_name">Nom du groupe</string>
+    <string name="logout_confirm_message">Êtes-vous sûr de vouloir vous déconnecter?</string>
+    <string name="delete_account_confirm_message">Êtes-vous sûr de vouloir supprimer votre compte?</string>
+    <string name="delete_account_message">Tout ce qui concerne votre compte sera définitivement supprimé.</string>
+    <string name="sessions_android_only_message">L\'application officielle n\'est disponible que pour les appareils Android.</string>
+    <string name="terminate_session_confirm_message"><![CDATA[Êtes-vous sûr de vouloir mettre fin à cette session \?]]></string>
+    <string name="terminate_all_other_sessions_confirm_message"><![CDATA[Êtes-vous sûr de vouloir mettre fin à toutes les autres sessions \?]]></string>
+    <string name="waiting_for_network">En attente du réseau</string>
 </resources>

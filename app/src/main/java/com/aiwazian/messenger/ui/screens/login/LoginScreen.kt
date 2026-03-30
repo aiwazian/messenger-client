@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.login
 
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,19 +34,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
+import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 
 @Composable
 fun LoginScreen(
-    authViewModel: AuthViewModel = hiltViewModel<AuthViewModel>(LocalContext.current as ComponentActivity)
+    authViewModel: AuthViewModel = hiltViewModel(LocalActivity.current as ComponentActivity)
 ) {
     val navHost = LocalNavHost.current
     
@@ -148,7 +147,7 @@ fun LoginScreen(
                         },
                         buttons = {
                             TextButton(onClick = authViewModel::hideLoginDialog) {
-                                Text("ОК")
+                                Text(stringResource(R.string.ok))
                             }
                         }
                     )
@@ -166,13 +165,13 @@ fun LoginScreen(
                         },
                         buttons = {
                             TextButton(onClick = authViewModel::hideLoginDialog) {
-                                Text("Нет")
+                                Text(stringResource(R.string.no))
                             }
                             TextButton(onClick = {
                                 authViewModel.hideLoginDialog()
                                 authViewModel.navigateToPassword()
                             }) {
-                                Text("Да")
+                                Text(stringResource(R.string.yes))
                             }
                         }
                     )
@@ -190,13 +189,13 @@ fun LoginScreen(
                         },
                         buttons = {
                             TextButton(onClick = authViewModel::hideLoginDialog) {
-                                Text("Нет")
+                                Text(stringResource(R.string.no))
                             }
                             TextButton(onClick = {
                                 authViewModel.hideLoginDialog()
                                 authViewModel.navigateToPassword()
                             }) {
-                                Text("Да")
+                                Text(stringResource(R.string.yes))
                             }
                         }
                     )

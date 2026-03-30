@@ -700,7 +700,7 @@ private fun LeaveDialog(
     
     val message = when (chatType) {
         ChatType.CHANNEL -> buildAnnotatedString {
-            append(stringResource(R.string.leave_channel_confirm))
+            append(stringResource(R.string.leave_channel_confirm_message))
             withStyle(style = SpanStyle(fontWeight = FontWeight.W500)) { append(" $chatName") }
             append("?")
         }

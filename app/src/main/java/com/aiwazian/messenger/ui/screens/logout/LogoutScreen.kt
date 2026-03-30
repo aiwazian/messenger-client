@@ -12,7 +12,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -66,7 +65,7 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
             
             SectionContainer {
                 SectionItem(
-                    text = stringResource(R.string.log_out),
+                    text = stringResource(R.string.logout),
                     color = MaterialTheme.colorScheme.error,
                     onClick = viewModel::showLogoutDialog
                 )
@@ -95,17 +94,17 @@ private fun LogoutModal(
     onDismiss: () -> Unit
 ) {
     CustomDialog(
-        title = stringResource(R.string.log_out),
+        title = stringResource(R.string.logout),
         onDismissRequest = onDismiss,
         content = {
-            Text(text = "Вы точно хотите выйти?")
+            Text(text = stringResource(R.string.logout_confirm_message))
         },
         buttons = {
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.cancel))
             }
             TextButton(onClick = onConfirm) {
-                Text(stringResource(R.string.log_out))
+                Text(stringResource(R.string.logout))
             }
         })
 }
@@ -115,7 +114,7 @@ private fun TopBar() {
     val navHost = LocalNavHost.current
     
     PageTopBar(
-        title = { Text(stringResource(R.string.log_out)) },
+        title = { Text(stringResource(R.string.logout)) },
         navigationIcon = NavigationIcon(
             icon = Icons.AutoMirrored.Rounded.ArrowBack,
             onClick = navHost::removeLastOrNull

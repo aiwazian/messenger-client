@@ -132,7 +132,7 @@ private fun TopBar() {
             dropdownActions = listOf(
                 DropdownMenuAction(
                     icon = Icons.AutoMirrored.Rounded.Logout,
-                    textResId = R.string.log_out,
+                    textResId = R.string.logout,
                     onClick = {
                         navHost.add(AppRoute.Logout)
                     })

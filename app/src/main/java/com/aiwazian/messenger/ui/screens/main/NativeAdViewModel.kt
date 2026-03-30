@@ -75,6 +75,7 @@ class NativeAdViewModel @Inject constructor(
     private var loadStartTime: Long = 0
     
     init {
+        loadAd()
         viewModelScope.launch {
             while (true) {
                 while (!(elapsedTime() >= reloadInterval && _isImpressed)) {

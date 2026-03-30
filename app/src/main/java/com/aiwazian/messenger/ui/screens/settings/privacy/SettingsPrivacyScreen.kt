@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,8 +29,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,8 +61,11 @@ import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.utils.DialogController
 import com.aiwazian.messenger.utils.SessionManager
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,20 +75,70 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
     val privacy by privacyViewModel.privacySettings.collectAsState()
     
     val scrollState = rememberScrollState()
+    val snackbarHostState = remember { SnackbarHostState() }
     
-    var showDeleteBottomSheet by remember { mutableStateOf(false) }
+    var showDeleteBottomSheet by remember { mutableStateOf(DialogController()) }
     
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(DialogController()) }
+    
+    var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     LaunchedEffect(Unit) {
         privacyViewModel.loadValues()
-        privacyViewModel.deleteSuccess.collect {
-            SessionManager.getUnauthorizedCallback()?.invoke()
+        privacyViewModel.sideEffect.collect { effect ->
+            when (effect) {
+                SettingsPrivacySideEffect.ShowDeleteBottomSheet -> {
+                    showDeleteBottomSheet.show()
+                }
+                
+                SettingsPrivacySideEffect.ShowDeleteDialog -> {
+                    showDeleteDialog.show()
+                }
+                
+                is SettingsPrivacySideEffect.ShowSnackbar -> {
+                    snackbarJob?.cancel()
+                    
+                    snackbarJob = launch {
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                        snackbarHostState.showSnackbar(
+                            message = effect.message,
+                            duration = SnackbarDuration.Long
+                        )
+                    }
+                }
+                
+                SettingsPrivacySideEffect.NavigateToLogin -> {
+                    SessionManager.getUnauthorizedCallback()?.invoke()
+                }
+            }
         }
     }
     
     Scaffold(
         topBar = { TopBar() },
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                val state = rememberSwipeToDismissBoxState()
+                SwipeToDismissBox(
+                    state = state,
+                    backgroundContent = {},
+                    onDismiss = { data.dismiss() }) {
+                    Row(
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .clip(MaterialTheme.shapes.large)
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
+                    ) {
+                        Text(
+                            text = data.visuals.message,
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+            }
+        }
     ) {
         Column(
             modifier = Modifier
@@ -117,17 +177,15 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                     text = stringResource(R.string.delete_account),
                     color = MaterialTheme.colorScheme.error,
                     onClick = {
-                        showDeleteBottomSheet = true
+                        privacyViewModel.onDeleteAccountClick()
                     })
             }
         }
     }
     
-    if (showDeleteBottomSheet) {
+    if (showDeleteBottomSheet.isVisible) {
         ModalBottomSheet(
-            onDismissRequest = {
-                showDeleteBottomSheet = false
-            },
+            onDismissRequest = showDeleteBottomSheet::hide,
             dragHandle = null
         ) {
             Column(
@@ -144,7 +202,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                         modifier = Modifier.size(30.dp)
                     )
                     Text(
-                        text = "Всё, что связанно с вашим аккаунтом будет безвозвратно удалено.",
+                        text = stringResource(R.string.delete_account_message),
                         lineHeight = 18.sp
                     )
                 }
@@ -154,7 +212,8 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                 TextButton(
                     onClick = {
                         if (waitSeconds <= 0) {
-                            showDeleteDialog = true
+                            showDeleteBottomSheet.hide()
+                            privacyViewModel.onDeleteConfirmClick()
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -193,12 +252,10 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
         }
     }
     
-    if (showDeleteDialog) {
+    if (showDeleteDialog.isVisible) {
         CustomDialog(
             title = stringResource(R.string.delete_account),
-            onDismissRequest = {
-                showDeleteDialog = false
-            },
+            onDismissRequest = showDeleteDialog::hide,
             content = {
                 Text(
                     text = stringResource(R.string.delete_account_confirm),
@@ -206,9 +263,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                 )
             },
             buttons = {
-                TextButton(onClick = {
-                    showDeleteDialog = false
-                }) {
+                TextButton(onClick = showDeleteDialog::hide) {
                     Text(stringResource(R.string.no))
                 }
                 
@@ -222,7 +277,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                 TextButton(
                     onClick = {
                         if (waitSeconds <= 0) {
-                            showDeleteDialog = false
+                            showDeleteDialog.javaClass
                             privacyViewModel.deleteAccount()
                         }
                     },

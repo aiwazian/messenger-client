@@ -273,10 +273,11 @@ class AuthViewModel @Inject constructor(
         val data = result.getOrNull() ?: return false
         
         SessionManager.setAuthorized(true)
-        
-        SessionManager.saveSession(data.userId, data.token)
-        
+
+        SessionManager.saveSession(data.userId, data.token, data.createdAt)
+
         return true
+
     }
     
     private suspend fun signUp(): Boolean {

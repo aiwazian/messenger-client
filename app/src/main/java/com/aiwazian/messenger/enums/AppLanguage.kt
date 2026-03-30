@@ -5,7 +5,8 @@
 package com.aiwazian.messenger.enums
 
 enum class AppLanguage(val code: String, val nativeName: String, val displayName: String) {
-    De("de", "Deutsch", "German"),
+    BE("be", "Беларускі", "Belarusian"),
+    DE("de", "Deutsch", "German"),
     EN("en", "English", "English"),
     ES("es", "Español", "Spanish"),
     FR("fr", "Français", "French"),

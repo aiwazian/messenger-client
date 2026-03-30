@@ -6,5 +6,6 @@ package com.aiwazian.messenger.domain
 
 data class SignInResponse(
     val userId: Long,
-    val token: String
+    val token: String,
+    val createdAt: Long = 0
 )

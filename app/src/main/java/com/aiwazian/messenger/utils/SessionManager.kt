@@ -45,7 +45,8 @@ object SessionManager {
 
     suspend fun saveSession(
         userId: Long,
-        token: String
+        token: String,
+        createdAt: Long
     ) {
         _token.update { token }
         _isAuthorized = token.isNotEmpty()
@@ -57,7 +58,8 @@ object SessionManager {
             AccountEntity(
                 id = userId,
                 isCurrent = true,
-                token = token
+                token = token,
+                createdAt = createdAt
             )
         )
         Log.d("SessionManager", "Saved session: userId=$userId, token=${if (token.isNotEmpty()) "present" else "empty"}")

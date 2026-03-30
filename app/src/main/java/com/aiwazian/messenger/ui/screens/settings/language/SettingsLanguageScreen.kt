@@ -39,8 +39,8 @@ fun SettingsLanguageScreen(languageViewModel: LanguageViewModel = hiltViewModel(
     ) { innerPadding ->
         Column(
             modifier = Modifier
-                .padding(innerPadding)
                 .fillMaxSize()
+                .padding(innerPadding)
                 .verticalScroll(scrollState)
         ) {
             SectionContainer {

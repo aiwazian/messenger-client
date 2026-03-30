@@ -11,5 +11,6 @@ import androidx.room.PrimaryKey
 data class AccountEntity(
     @PrimaryKey val id: Long,
     val isCurrent: Boolean,
-    val token: String = ""
+    val token: String = "",
+    val createdAt: Long = 0
 )

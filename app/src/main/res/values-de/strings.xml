@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Suchen</string>
@@ -10,7 +6,7 @@
     <string name="delete_chat">Chat löschen</string>
     <string name="notifications">Benachrichtigungen</string>
     <string name="language">Sprache</string>
-    <string name="log_out">Abmelden</string>
+    <string name="logout">Abmelden</string>
     
     
     <string name="help">Helfen</string>
@@ -95,9 +91,9 @@
     <string name="block_user">Benutzer blockieren</string>
     <string name="start_secret_chat">Starten Sie den geheimen Chat</string>
     <string name="add_to_home_screen">Zum Startbildschirm hinzufügen</string>
-    <string name="block_user_confirm">Sind Sie sicher, dass Sie blockieren möchten\?</string>
+    <string name="block_user_confirm_message">Sind Sie sicher, dass Sie blockieren möchten\?</string>
     <string name="secret_chat">Geheimer Chat</string>
-    <string name="secret_chat_confirm">Sind Sie sicher, dass Sie einen geheimen Chat starten möchten\?</string>
+    <string name="secret_chat_confirm_message">Sind Sie sicher, dass Sie einen geheimen Chat starten möchten\?</string>
     <string name="start">Start</string>
     <string name="edit_info">Informationen bearbeiten</string>
     <string name="change_profile_color">Profilfarbe ändern</string>
@@ -106,7 +102,7 @@
     <string name="unmute">Unmute</string>
     <string name="join">Verbinden</string>
     <string name="leave_channel">Kanal verlassen</string>
-    <string name="leave_channel_confirm">Sind Sie sicher, dass Sie gehen möchten\?</string>
+    <string name="leave_channel_confirm_message">Sind Sie sicher, dass Sie gehen möchten\?</string>
     <string name="removed_user">Benutzer entfernt</string>
     <string name="subscribers">Abonnenten</string>
     <string name="invite_links">Einladungslinks</string>
@@ -144,4 +140,11 @@
     <string name="audio">Audio</string>
     <string name="storage_usage">Speichernutzung</string>
     <string name="group_name">Gruppenname</string>
+    <string name="logout_confirm_message">Möchten Sie sich wirklich abmelden\?</string>
+    <string name="delete_account_confirm_message">Sind Sie sicher, dass Sie Ihr Konto löschen möchten\?</string>
+    <string name="delete_account_message">Alles, was mit Ihrem Konto zusammenhängt, wird dauerhaft gelöscht.</string>
+    <string name="sessions_android_only_message">Die offizielle App ist nur für Android-Geräte verfügbar.</string>
+    <string name="terminate_session_confirm_message">Möchten Sie diese Sitzung wirklich beenden\?</string>
+    <string name="terminate_all_other_sessions_confirm_message">Sind Sie sicher, dass Sie alle anderen Sitzungen beenden möchten\?</string>
+    <string name="waiting_for_network">Warten auf Netzwerk</string>
 </resources>

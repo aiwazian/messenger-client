@@ -6,6 +6,13 @@ package com.aiwazian.messenger.ui.screens.login
 
 import android.app.Activity
 import android.content.Intent
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,9 +21,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -36,9 +44,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.activity.ComponentActivity
-import androidx.compose.material.icons.rounded.Visibility
-import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -52,7 +57,7 @@ import com.aiwazian.messenger.ui.components.CustomDialog
 
 @Composable
 fun PasswordScreen(
-    authViewModel: AuthViewModel = hiltViewModel<AuthViewModel>(LocalContext.current as ComponentActivity)
+    authViewModel: AuthViewModel = hiltViewModel(LocalActivity.current as ComponentActivity)
 ) {
     val context = LocalContext.current
     
@@ -62,9 +67,9 @@ fun PasswordScreen(
     var showPasswordDialog by remember { mutableStateOf(false) }
     var passwordDialogType by remember { mutableStateOf<String?>(null) }
     var passwordDialogError by remember { mutableStateOf<String?>(null) }
-
+    
     val uiEffect by authViewModel.uiEffect.collectAsState(null)
-
+    
     LaunchedEffect(uiEffect) {
         when (uiEffect) {
             is AuthUiEffect.ShowPasswordDialog -> {
@@ -73,9 +78,11 @@ fun PasswordScreen(
                 passwordDialogError = effect.errorMessage
                 showPasswordDialog = true
             }
+            
             is AuthUiEffect.HidePasswordDialog -> {
                 showPasswordDialog = false
             }
+            
             is AuthUiEffect.NavigateToMain -> {
                 val intent = Intent(context, MainActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -83,13 +90,13 @@ fun PasswordScreen(
                 context.startActivity(intent)
                 (context as Activity).finish()
             }
+            
             else -> {}
         }
     }
     
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        floatingActionButton = {
+        modifier = Modifier.fillMaxSize(), floatingActionButton = {
             FloatingActionButton(
                 onClick = authViewModel::onPasswordNextClicked,
                 modifier = Modifier.imePadding(),
@@ -143,30 +150,32 @@ fun PasswordScreen(
                         onDismissRequest = authViewModel::hidePasswordDialog,
                         content = {
                             Text(
-                                text = passwordDialogError ?: "Не удалось войти в аккаунт. Попробуйте ещё раз.",
+                                text = passwordDialogError
+                                    ?: "Не удалось войти в аккаунт. Попробуйте ещё раз.",
                                 lineHeight = 18.sp
                             )
                         },
                         buttons = {
                             TextButton(onClick = authViewModel::hidePasswordDialog) {
-                                Text("Ок")
+                                Text(stringResource(R.string.ok))
                             }
                         })
                 }
-
+                
                 "register" -> {
                     CustomDialog(
                         title = stringResource(R.string.app_name),
                         onDismissRequest = authViewModel::hidePasswordDialog,
                         content = {
                             Text(
-                                text = passwordDialogError ?: "Не удалось создать пользователя. Попробуйте ещё раз.",
+                                text = passwordDialogError
+                                    ?: "Не удалось создать пользователя. Попробуйте ещё раз.",
                                 lineHeight = 18.sp
                             )
                         },
                         buttons = {
                             TextButton(onClick = authViewModel::hidePasswordDialog) {
-                                Text("Ок")
+                                Text(stringResource(R.string.ok))
                             }
                         })
                 }
@@ -205,14 +214,23 @@ private fun PasswordField(
             IconButton(onClick = {
                 passwordVisible = !passwordVisible
             }) {
-                Icon(
-                    imageVector = if (passwordVisible) Icons.Rounded.Visibility else Icons.Rounded.VisibilityOff,
-                    contentDescription = null,
-                    tint = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                AnimatedContent(
+                    targetState = passwordVisible,
+                    transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(200)) }) { isVisible ->
+                    if (isVisible) {
+                        Icon(
+                            imageVector = Icons.Outlined.Visibility,
+                            contentDescription = null,
+                            tint = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Outlined.VisibilityOff,
+                            contentDescription = null,
+                            tint = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         })
 }
-
-
-
