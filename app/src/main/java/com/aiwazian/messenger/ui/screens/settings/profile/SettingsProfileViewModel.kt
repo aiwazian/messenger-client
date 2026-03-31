@@ -6,7 +6,6 @@ package com.aiwazian.messenger.ui.screens.settings.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.UserManager
 import dagger.hilt.android.lifecycle.HiltViewModel

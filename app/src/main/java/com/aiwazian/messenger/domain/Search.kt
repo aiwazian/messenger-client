@@ -5,7 +5,8 @@
 package com.aiwazian.messenger.domain
 
 enum class SearchResultType {
-    CHAT, FILE
+    CHAT,
+    FILE
 }
 
 data class Search(

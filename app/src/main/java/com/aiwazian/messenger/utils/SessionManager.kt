@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.utils
 
-import android.util.Log
 import com.aiwazian.messenger.database.entity.AccountEntity
 import com.aiwazian.messenger.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,18 +50,17 @@ object SessionManager {
         _token.update { token }
         _isAuthorized = token.isNotEmpty()
 
-        val repo = authRepository
+        val repository = authRepository
             ?: throw IllegalStateException("AuthRepository not initialized. Call init() first.")
         
-        repo.saveAccount(
+        repository.saveAccount(
             AccountEntity(
-                id = userId,
+                userId = userId,
                 isCurrent = true,
                 token = token,
                 createdAt = createdAt
             )
         )
-        Log.d("SessionManager", "Saved session: userId=$userId, token=${if (token.isNotEmpty()) "present" else "empty"}")
     }
     
     suspend fun logout() {

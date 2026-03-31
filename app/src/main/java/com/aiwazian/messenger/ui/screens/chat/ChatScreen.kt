@@ -326,37 +326,43 @@ private fun BottomSection(
     val chatId = uiState.chat.id
     val chatType = ChatType.fromId(chatId)
     
-    when (chatType) {
-        ChatType.CHANNEL -> {
-            if (uiState.isOwner) {
+    Box(
+        modifier = Modifier
+            .navigationBarsPadding()
+            .imePadding()
+    ) {
+        when (chatType) {
+            ChatType.CHANNEL -> {
+                if (uiState.isOwner) {
+                    InputMessage(
+                        value = uiState.messageText,
+                        onValueChange = onTextChanged,
+                        onSendMessage = onSendClicked,
+                        onFilesSelected = onFilesSelected
+                    )
+                } else {
+                    if (uiState.isJoined) {
+                        MuteButton(
+                            isMuted = uiState.isMuted,
+                            onClick = onToggleMuteClicked
+                        )
+                    } else {
+                        JoinButton(onClick = onJoinClicked)
+                    }
+                }
+            }
+            
+            ChatType.GROUP, ChatType.PRIVATE -> {
                 InputMessage(
                     value = uiState.messageText,
                     onValueChange = onTextChanged,
                     onSendMessage = onSendClicked,
                     onFilesSelected = onFilesSelected
                 )
-            } else {
-                if (uiState.isJoined) {
-                    MuteButton(
-                        isMuted = uiState.isMuted,
-                        onClick = onToggleMuteClicked
-                    )
-                } else {
-                    JoinButton(onClick = onJoinClicked)
-                }
             }
+            
+            else -> {}
         }
-        
-        ChatType.GROUP, ChatType.PRIVATE -> {
-            InputMessage(
-                value = uiState.messageText,
-                onValueChange = onTextChanged,
-                onSendMessage = onSendClicked,
-                onFilesSelected = onFilesSelected
-            )
-        }
-        
-        else -> {}
     }
 }
 
@@ -372,15 +378,11 @@ private fun MuteButton(
         AnimatedContent(
             targetState = isMuted,
             transitionSpec = {
-                slideInVertically(tween(200)) { height -> height } + fadeIn(tween(200)) + scaleIn(
-                    tween(200)
-                ) togetherWith slideOutVertically(tween(200)) { height -> -height } + fadeOut(
-                    tween(
-                        200
-                    )
-                ) + scaleOut(
-                    tween(200)
-                )
+                if (targetState > initialState) {
+                    slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
+                } else {
+                    slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
+                }
             },
             label = "mute_animation"
         ) { isMute ->
@@ -757,10 +759,7 @@ private fun InputMessage(
         value = value,
         onValueChange = onValueChange,
         maxLines = 5,
-        modifier = Modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .imePadding(),
+        modifier = Modifier.fillMaxWidth(),
         placeholder = { Text(stringResource(R.string.message)) },
         colors = TextFieldDefaults.colors(
             focusedIndicatorColor = Color.Transparent,

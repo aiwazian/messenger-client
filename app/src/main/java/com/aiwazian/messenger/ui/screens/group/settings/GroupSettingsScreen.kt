@@ -88,13 +88,13 @@ fun GroupSettingsScreen(
                 InputField(
                     value = groupInfo.name,
                     onValueChange = groupViewModel::changeGroupName,
-                    placeholder = "Название группы"
+                    placeholder = stringResource(R.string.group_name)
                 )
                 
                 InputField(
                     value = groupInfo.bio.orEmpty(),
                     onValueChange = groupViewModel::changeGroupBio,
-                    placeholder = "Описание (необязательно)"
+                    placeholder = stringResource(R.string.description)
                 )
             }
             

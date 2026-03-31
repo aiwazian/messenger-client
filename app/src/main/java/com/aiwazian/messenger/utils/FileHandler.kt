@@ -5,7 +5,7 @@
 package com.aiwazian.messenger.utils
 
 import android.util.Log
-import com.aiwazian.messenger.domain.DownloadStatus
+import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.repository.ChatRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,12 +23,17 @@ class FileHandler @Inject constructor(
         fileSize: Long,
         localUri: String?
     ) {
-        if (localUri != null && downloaderManager.isDownloaded(fileId, fileName.substringAfterLast('.', ""))) {
+        if (localUri != null && downloaderManager.isDownloaded(
+                fileId,
+                fileName.substringAfterLast('.', "")
+            )
+        ) {
             downloaderManager.openFile(localUri)
         } else {
-            val isDownloading = downloaderManager.downloads.value.any { it.fileId == fileId && it.status == DownloadStatus.DOWNLOADING }
+            val isDownloading =
+                downloaderManager.downloads.value.any { it.fileId == fileId && it.status == DownloadStatus.DOWNLOADING }
             if (isDownloading) return
-
+            
             try {
                 val response = chatRepository.getDownloadUrl(chatId, messageId, fileId)
                 if (response != null) {

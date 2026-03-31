@@ -6,11 +6,9 @@ package com.aiwazian.messenger.repository
 
 import android.util.Log
 import com.aiwazian.messenger.network.api.UserApi
-import com.aiwazian.messenger.network.dto.ChangePasswordRequestDto
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.mappers.toUpdateRequest
-import com.aiwazian.messenger.domain.PrivacySettings
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.database.dao.UserDao
 import kotlinx.coroutines.flow.Flow

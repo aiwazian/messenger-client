@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.settings.profile
 
-import androidx.compose.ui.graphics.Color
 import com.aiwazian.messenger.domain.User
 
 sealed interface SettingsProfileSideEffect {

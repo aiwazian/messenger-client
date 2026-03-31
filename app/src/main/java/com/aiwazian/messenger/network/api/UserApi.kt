@@ -5,8 +5,6 @@
 package com.aiwazian.messenger.network.api
 
 import com.aiwazian.messenger.network.dto.ChangePasswordRequestDto
-import com.aiwazian.messenger.network.dto.PrivacySettingsResponseDto
-import com.aiwazian.messenger.network.dto.UpdatePrivacySettingsRequestDto
 import com.aiwazian.messenger.network.dto.UpdateUserRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
 import retrofit2.Response

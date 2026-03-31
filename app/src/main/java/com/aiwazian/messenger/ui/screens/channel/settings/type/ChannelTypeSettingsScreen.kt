@@ -116,16 +116,21 @@ fun ChannelTypeSettingsScreen(
             AnimatedContent(
                 targetState = uiState.channelType,
                 transitionSpec = {
-                    scaleIn(tween(200)) + fadeIn(tween(200)) togetherWith scaleOut(tween(200)) + fadeOut(tween(200))
+                    scaleIn(tween(200)) + fadeIn(tween(200)) togetherWith scaleOut(tween(200)) + fadeOut(
+                        tween(200)
+                    )
                 },
                 label = "channel_type_animation"
             ) { type ->
                 if (type == ChannelType.PUBLIC) {
                     Column {
-                        SectionHeader(title = "Публичная ссылка")
-                        SectionContainer {
+                        SectionContainer(header = {
+                            SectionHeader(title = stringResource(R.string.public_link))
+                        }, footer = {
+                            SectionDescription(text = "Если у канала будет постоянная публичная ссылка, другие пользователи смогут найти его и подписаться.")
+                        }) {
                             InputField(
-                                placeholder = "Username",
+                                placeholder = stringResource(R.string.username),
                                 value = uiState.publicLink,
                                 onValueChange = { viewModel.changePublicLink(it) }
                             )
@@ -133,7 +138,10 @@ fun ChannelTypeSettingsScreen(
                         
                         val (message, color) = when (val status = uiState.linkCheckStatus) {
                             LinkCheckStatus.Idle -> null to null
-                            LinkCheckStatus.Checking -> "Проверка..." to MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            LinkCheckStatus.Checking -> "Проверка..." to MaterialTheme.colorScheme.onSurface.copy(
+                                alpha = 0.6f
+                            )
+                            
                             LinkCheckStatus.Available -> "Публичное имя доступно" to MaterialTheme.colorScheme.primary
                             LinkCheckStatus.Busy -> "Публичная ссылка занята" to MaterialTheme.colorScheme.error
                             is LinkCheckStatus.Error -> status.message to MaterialTheme.colorScheme.error
@@ -151,8 +159,6 @@ fun ChannelTypeSettingsScreen(
                                 color = color
                             )
                         }
-                        
-                        SectionDescription(text = "Если у канала будет постоянная публичная ссылка, другие пользователи смогут найти его и подписаться.")
                     }
                 } else {
                     Column {

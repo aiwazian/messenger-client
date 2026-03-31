@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Downloading
-import androidx.compose.material.icons.rounded.FilePresent
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Upload
@@ -36,8 +35,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.aiwazian.messenger.domain.DownloadStatus
 import com.aiwazian.messenger.domain.MessageFile
+import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.extensions.getFileIcon

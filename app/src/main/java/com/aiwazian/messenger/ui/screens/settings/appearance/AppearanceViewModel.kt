@@ -17,7 +17,7 @@ class AppearanceViewModel @Inject constructor(private val themeManager: ThemeMan
     
     val dynamicColor = themeManager.dynamicColor
     
-    val primaryColor = themeManager.primaryColor
+    val primaryColor = themeManager.appPrimaryColor
     
     val currentTheme = themeManager.currentTheme
     

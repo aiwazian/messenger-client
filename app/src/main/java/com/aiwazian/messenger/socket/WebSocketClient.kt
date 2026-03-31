@@ -7,18 +7,14 @@ package com.aiwazian.messenger.socket
 import android.util.Log
 import com.aiwazian.messenger.BuildConfig
 import com.aiwazian.messenger.enums.ConnectionState
-import com.aiwazian.messenger.enums.WebSocketAction
+import com.aiwazian.messenger.socket.WebSocketAction
 import com.aiwazian.messenger.utils.SessionManager
 import io.socket.client.IO
 import io.socket.client.Socket
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -45,7 +41,6 @@ class WebSocketClient @Inject constructor(
     }
     
     private var socket: Socket? = null
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     
     private var _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
     val connectionState = _connectionState.asStateFlow()
@@ -67,60 +62,46 @@ class WebSocketClient @Inject constructor(
         return true
     }
     
-    fun on(action: WebSocketAction, handler: (JsonObject) -> Unit) {
-        messageHandlers.getOrPut(action) { mutableListOf() }.add(handler)
-        socket?.on(action.name) { args -> handleIncomingEvent(action, args) }
-    }
-
-    inline fun <reified T> subscribeToTypedMessages(
+    internal inline fun <reified T> subscribeToTypedMessages(
         action: WebSocketAction,
         crossinline handler: (T) -> Unit
     ) {
-        on(action) { jsonObject ->
-            val data = parseEventData<T>(jsonObject)
-            data?.let { handler(it) }
-        }
-    }
-
-    inline fun <reified T> parseEventData(message: JsonObject): T? {
-        return try {
-            val jsonString = defaultJson.encodeToString(message)
-            defaultJson.decodeFromString<T>(jsonString)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error parsing event data: ${e.message}")
-            null
+        messageHandlers.getOrPut(action) { mutableListOf() }.add { jsonObject ->
+            val jsonString = defaultJson.encodeToString(jsonObject)
+            val data = defaultJson.decodeFromString<T>(jsonString)
+            data?.let(handler)
         }
     }
     
     private fun establishConnection() {
         _connectionState.value = ConnectionState.CONNECTING
         
-        scope.launch {
-            while (!SessionManager.isInit) delay(100)
-            
-            val opts = IO.Options.builder()
-                .setAuth(mapOf("token" to sessionManager.getToken()))
-                .setTransports(arrayOf("websocket"))
-                .setReconnection(true)
-                .setReconnectionDelay(RECONNECTION_DELAY_MS)
-                .setReconnectionDelayMax(MAX_RECONNECT_DELAY_MS)
-                .build()
-            
-            socket = IO.socket(BuildConfig.WS_URL, opts).apply {
-                on(Socket.EVENT_CONNECT) { onConnect() }
-                on(Socket.EVENT_CONNECT_ERROR) { onConnectError(it.firstOrNull() as? Exception) }
-                on(Socket.EVENT_DISCONNECT) { onDisconnect() }
-                on("Unauthorized") {
-                    Log.e(TAG, "Received Unauthorized event from server")
-                    SessionManager.getUnauthorizedCallback()?.invoke()
-                }
-                
-                messageHandlers.keys.forEach { action ->
-                    on(action.name) { args -> handleIncomingEvent(action, args) }
-                }
-                
-                connect()
+        val opts = IO.Options.builder()
+            .setAuth(mapOf("token" to sessionManager.getToken()))
+            .setTransports(arrayOf("websocket"))
+            .setReconnection(true)
+            .setReconnectionDelay(RECONNECTION_DELAY_MS)
+            .setReconnectionDelayMax(MAX_RECONNECT_DELAY_MS)
+            .build()
+        
+        socket = IO.socket(BuildConfig.WS_URL, opts).apply {
+            on(Socket.EVENT_CONNECT) { onConnect() }
+            on(Socket.EVENT_CONNECT_ERROR) { onConnectError(it.firstOrNull() as? Exception) }
+            on(Socket.EVENT_DISCONNECT) { onDisconnect() }
+            on("Unauthorized") {
+                Log.e(TAG, "Received Unauthorized event from server")
+                SessionManager.getUnauthorizedCallback()?.invoke()
             }
+            
+            onAnyIncoming { args ->
+                val eventName = args.getOrNull(0) as? String ?: return@onAnyIncoming
+                val data = args.getOrNull(1) as? JSONObject ?: return@onAnyIncoming
+                val event = WebSocketAction.from(eventName) ?: return@onAnyIncoming
+                handleIncomingEvent(event, data.toJsonObject())
+                Log.d(TAG, "Received incoming event: $event $data")
+            }
+            
+            connect()
         }
     }
     
@@ -139,16 +120,8 @@ class WebSocketClient @Inject constructor(
         _connectionState.value = ConnectionState.DISCONNECTED
     }
     
-    private fun handleIncomingEvent(action: WebSocketAction, args: Array<out Any?>) {
-        scope.launch {
-            val data = args.firstOrNull() ?: return@launch
-            val jsonObject = when (data) {
-                is JSONObject -> data.toJsonObject()
-                is Map<*, *> -> mapToJsonObject(data)
-                else -> return@launch
-            }
-            messageHandlers[action]?.forEach { it(jsonObject) }
-        }
+    private fun handleIncomingEvent(action: WebSocketAction, jsonObject: JsonObject) {
+        messageHandlers[action]?.forEach { it(jsonObject) }
     }
     
     private fun JSONObject.toJsonObject(): JsonObject {
@@ -170,32 +143,14 @@ class WebSocketClient @Inject constructor(
         return JsonObject(map)
     }
     
-    private fun JSONArray.toJsonArray(): kotlinx.serialization.json.JsonArray {
+    private fun JSONArray.toJsonArray(): JsonArray {
         val list = mutableListOf<JsonElement>()
         for (i in 0 until length()) {
             val value = get(i)
-            list.add(when (value) {
-                is JSONObject -> value.toJsonObject()
-                is JSONArray -> value.toJsonArray()
-                is String -> JsonPrimitive(value)
-                is Int -> JsonPrimitive(value)
-                is Long -> JsonPrimitive(value)
-                is Double -> JsonPrimitive(value)
-                is Boolean -> JsonPrimitive(value)
-                null -> JsonPrimitive("")
-                else -> JsonPrimitive(value.toString())
-            })
-        }
-        return kotlinx.serialization.json.JsonArray(list)
-    }
-    
-    private fun mapToJsonObject(map: Map<*, *>): JsonObject {
-        val result = mutableMapOf<String, JsonElement>()
-        map.forEach { (key, value) ->
-            if (key is String) {
-                result[key] = when (value) {
-                    is Map<*, *> -> mapToJsonObject(value)
-                    is List<*> -> listToJsonArray(value)
+            list.add(
+                when (value) {
+                    is JSONObject -> value.toJsonObject()
+                    is JSONArray -> value.toJsonArray()
                     is String -> JsonPrimitive(value)
                     is Int -> JsonPrimitive(value)
                     is Long -> JsonPrimitive(value)
@@ -204,24 +159,8 @@ class WebSocketClient @Inject constructor(
                     null -> JsonPrimitive("")
                     else -> JsonPrimitive(value.toString())
                 }
-            }
+            )
         }
-        return JsonObject(result)
-    }
-    
-    private fun listToJsonArray(list: List<*>): kotlinx.serialization.json.JsonArray {
-        return kotlinx.serialization.json.JsonArray(list.map { value ->
-            when (value) {
-                is Map<*, *> -> mapToJsonObject(value)
-                is List<*> -> listToJsonArray(value)
-                is String -> JsonPrimitive(value)
-                is Int -> JsonPrimitive(value)
-                is Long -> JsonPrimitive(value)
-                is Double -> JsonPrimitive(value)
-                is Boolean -> JsonPrimitive(value)
-                null -> JsonPrimitive("")
-                else -> JsonPrimitive(value.toString())
-            }
-        })
+        return JsonArray(list)
     }
 }

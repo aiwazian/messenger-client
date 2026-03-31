@@ -19,15 +19,15 @@ import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.DeleteChatPayload
 import com.aiwazian.messenger.domain.DeleteMessagePayload
 import com.aiwazian.messenger.domain.DownloadItem
-import com.aiwazian.messenger.domain.DownloadStatus
 import com.aiwazian.messenger.domain.DropdownMenuAction
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageFile
 import com.aiwazian.messenger.domain.ReadMessagePayload
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
+import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
-import com.aiwazian.messenger.enums.WebSocketAction
+import com.aiwazian.messenger.socket.WebSocketAction
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
@@ -61,7 +61,6 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
-import java.time.Instant
 import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
@@ -125,7 +124,7 @@ class ChatViewModel @Inject constructor(
     
     private fun setupWebSocketListeners() {
         webSocketClient.subscribeToTypedMessages<Message>(WebSocketAction.NEW_MESSAGE) { message ->
-            if (message.chatId == _uiState.value.chat.id && message.senderId != _uiState.value.currentUserId) {
+            if (message.senderId == _uiState.value.chat.id && message.senderId != _uiState.value.currentUserId || message.chatId == _uiState.value.chat.id) {
                 viewModelScope.launch {
                     val messages = getRawMessages() + message
                     updateChatItems(messages)
@@ -532,7 +531,7 @@ class ChatViewModel @Inject constructor(
         
         messages.forEach { message ->
             val messageDate =
-                Instant.ofEpochMilli(message.sendTime).atZone(ZoneId.systemDefault()).toLocalDate()
+                message.sendTime.toInstance().atZone(ZoneId.systemDefault()).toLocalDate()
             
             if (lastDate == null || !messageDate.isEqual(lastDate)) {
                 val monthName = messageDate.month.getDisplayName(

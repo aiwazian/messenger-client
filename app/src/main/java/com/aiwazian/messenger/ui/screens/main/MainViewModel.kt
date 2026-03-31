@@ -12,7 +12,7 @@ import com.aiwazian.messenger.domain.DeleteMessagePayload
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.ReadMessagePayload
 import com.aiwazian.messenger.enums.ConnectionState
-import com.aiwazian.messenger.enums.WebSocketAction
+import com.aiwazian.messenger.socket.WebSocketAction
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.utils.AppLockManager

@@ -11,7 +11,6 @@ import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.domain.PrivacySettings
 import com.aiwazian.messenger.database.entity.UserEntity
 import com.aiwazian.messenger.enums.PrivacyLevel
-import com.aiwazian.messenger.network.dto.UpdatePrivacySettingsRequestDto
 
 fun UserResponseDto.toDomain(): User = User(
     id = this.id,

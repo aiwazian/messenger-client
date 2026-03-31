@@ -8,14 +8,14 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class SigninResponseDto(
+data class SignInResponseDto(
     @SerialName("userId") val userId: String,
     @SerialName("token") val token: String,
     @SerialName("createdAt") val createdAt: String
 )
 
 @Serializable
-data class SigninRequestDto(
+data class SignInRequestDto(
     @SerialName("login") val login: String,
     @SerialName("password") val password: String,
     @SerialName("deviceModel") val deviceModel: String,

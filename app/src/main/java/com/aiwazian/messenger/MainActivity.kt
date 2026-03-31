@@ -88,7 +88,7 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val isLockApp by appLockManager.isLockApp.collectAsState()
             val selectedTheme by themeManager.currentTheme.collectAsState()
-            val primaryColor by themeManager.primaryColor.collectAsState()
+            val primaryColor by themeManager.appPrimaryColor.collectAsState()
             val isDynamicColorEnable by themeManager.dynamicColor.collectAsState()
             
             LaunchedEffect(Unit) {

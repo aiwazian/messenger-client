@@ -6,10 +6,8 @@ package com.aiwazian.messenger.repository
 
 import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.MessageDao
-import com.aiwazian.messenger.database.entity.AttachmentEntity
-import com.aiwazian.messenger.domain.DownloadStatus
 import com.aiwazian.messenger.enums.AttachmentType
-import com.aiwazian.messenger.mappers.toDomain
+import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.ui.screens.settings.storage.CategoryStats
 import com.aiwazian.messenger.ui.screens.settings.storage.FileCategory
 import com.aiwazian.messenger.ui.screens.settings.storage.StorageFile
@@ -79,7 +77,7 @@ class StorageRepository @Inject constructor(
             if (file.exists()) {
                 file.delete()
             }
-            // Обновляем статус в базе
+
             attachmentDao.updateAttachmentStatus(
                 id = storageFile.id,
                 status = DownloadStatus.IDLE,

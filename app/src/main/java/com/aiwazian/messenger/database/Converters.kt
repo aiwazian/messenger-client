@@ -5,8 +5,8 @@
 package com.aiwazian.messenger.database
 
 import androidx.room.TypeConverter
-import com.aiwazian.messenger.domain.DownloadStatus
 import com.aiwazian.messenger.enums.AttachmentType
+import com.aiwazian.messenger.enums.DownloadStatus
 
 class Converters {
     @TypeConverter

@@ -4,6 +4,8 @@
 
 package com.aiwazian.messenger.domain
 
+import com.aiwazian.messenger.enums.DownloadStatus
+
 data class DownloadItem(
     val id: Int,
     val messageId: Int? = null,

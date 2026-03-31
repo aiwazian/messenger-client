@@ -18,8 +18,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
-import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

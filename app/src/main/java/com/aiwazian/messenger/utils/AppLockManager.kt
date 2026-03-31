@@ -28,7 +28,6 @@ class AppLockManager @Inject constructor(
     val hasPasscode = _hasPasscode.asStateFlow()
 
     private val _failedAttempts = MutableStateFlow(0)
-    val failedAttempts = _failedAttempts.asStateFlow()
 
     private val _blockedUntil = MutableStateFlow(0L)
     val blockedUntil = _blockedUntil.asStateFlow()

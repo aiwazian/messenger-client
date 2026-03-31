@@ -5,13 +5,11 @@
 package com.aiwazian.messenger.database.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.aiwazian.messenger.database.entity.ChannelEntity
-import com.aiwazian.messenger.types.EntityId
 
 @Dao
 interface ChannelDao {
@@ -23,7 +21,7 @@ interface ChannelDao {
     
     @Query("SELECT * FROM channel WHERE id = :id")
     suspend fun get(id: Long): ChannelEntity?
-
+    
     @Query("SELECT * FROM channel WHERE id = :id")
     fun getFlow(id: Long): kotlinx.coroutines.flow.Flow<ChannelEntity?>
     

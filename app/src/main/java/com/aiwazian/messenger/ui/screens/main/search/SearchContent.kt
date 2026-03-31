@@ -31,9 +31,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.aiwazian.messenger.domain.DownloadStatus
 import com.aiwazian.messenger.domain.Search
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.extensions.getFileIcon
 

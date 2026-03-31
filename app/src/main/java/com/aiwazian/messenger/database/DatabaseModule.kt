@@ -40,37 +40,23 @@ object DatabaseModule {
     }
     
     @Provides
-    fun provideUserDao(database: AppDatabase): UserDao {
-        return database.userDao()
-    }
+    fun provideUserDao(database: AppDatabase): UserDao = database.userDao()
     
     @Provides
-    fun provideChannelDao(database: AppDatabase): ChannelDao {
-        return database.channelDao()
-    }
+    fun provideChannelDao(database: AppDatabase): ChannelDao = database.channelDao()
     
     @Provides
-    fun provideGroup(database: AppDatabase): GroupDao {
-        return database.groupDao()
-    }
+    fun provideGroup(database: AppDatabase): GroupDao = database.groupDao()
     
     @Provides
-    fun provideChat(database: AppDatabase): ChatDao {
-        return database.chatDao()
-    }
+    fun provideChat(database: AppDatabase): ChatDao = database.chatDao()
     
     @Provides
-    fun provideAccountDao(database: AppDatabase): AccountDao {
-        return database.accountDao()
-    }
+    fun provideAccountDao(database: AppDatabase): AccountDao = database.accountDao()
     
     @Provides
-    fun provideMessageDao(database: AppDatabase): MessageDao {
-        return database.messageDao()
-    }
+    fun provideMessageDao(database: AppDatabase): MessageDao = database.messageDao()
     
     @Provides
-    fun provideAttachmentDao(database: AppDatabase): AttachmentDao {
-        return database.attachmentDao()
-    }
+    fun provideAttachmentDao(database: AppDatabase): AttachmentDao = database.attachmentDao()
 }

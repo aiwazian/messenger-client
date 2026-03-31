@@ -77,11 +77,7 @@ class AuthRepository @Inject constructor(
     
     suspend fun saveAccount(account: AccountEntity) {
         try {
-            val existingAccount = accountDao.getById(account.id)
-            Log.d(
-                "AuthRepository",
-                "saveAccount: id=${account.id}, isCurrent=${account.isCurrent}, token=${if (account.token.isNotEmpty()) "present" else "empty"}, existing=${existingAccount != null}"
-            )
+            val existingAccount = accountDao.getById(account.userId)
             
             if (existingAccount == null) {
                 if (account.isCurrent) {
@@ -138,7 +134,7 @@ class AuthRepository @Inject constructor(
     
     suspend fun clearCurrentToken() {
         try {
-            accountDao.updateToken("")
+            accountDao.deleteCurrent()
         } catch (e: Exception) {
             Log.e(
                 "AuthRepository",

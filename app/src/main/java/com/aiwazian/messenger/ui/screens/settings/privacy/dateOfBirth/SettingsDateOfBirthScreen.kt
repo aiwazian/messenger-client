@@ -29,7 +29,6 @@ import com.aiwazian.messenger.ui.components.section.SectionRadioItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
-import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthViewModel
 
 @Composable
 fun SettingsDateOfBirthScreen(

@@ -24,8 +24,8 @@ class ThemeManager @Inject constructor(
     private val _currentTheme = MutableStateFlow(ThemeOption.SYSTEM)
     val currentTheme = _currentTheme.asStateFlow()
     
-    private val _App_primaryColor = MutableStateFlow(AppPrimaryColor.Blue)
-    val primaryColor = _App_primaryColor.asStateFlow()
+    private val _appPrimaryColor = MutableStateFlow(AppPrimaryColor.Blue)
+    val appPrimaryColor = _appPrimaryColor.asStateFlow()
     
     private val _dynamicColor = MutableStateFlow(false)
     val dynamicColor = _dynamicColor.asStateFlow()
@@ -40,7 +40,7 @@ class ThemeManager @Inject constructor(
         
         coroutineScope.launch {
             val primaryColor = dataStorage.getPrimaryColor().first()
-            _App_primaryColor.update { AppPrimaryColor.fromString(primaryColor) }
+            _appPrimaryColor.update { AppPrimaryColor.fromString(primaryColor) }
         }
         
         coroutineScope.launch {
@@ -60,7 +60,7 @@ class ThemeManager @Inject constructor(
     }
     
     suspend fun setPrimaryColor(color: AppPrimaryColor) {
-        _App_primaryColor.update { color }
+        _appPrimaryColor.update { color }
         dataStorage.savePrimaryColor(color.name)
     }
 }

@@ -22,7 +22,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class StorageViewModel @Inject constructor(
-    @ApplicationContext
+    @param:ApplicationContext
     private val context: Context,
     private val storageRepository: StorageRepository,
 ) : ViewModel() {

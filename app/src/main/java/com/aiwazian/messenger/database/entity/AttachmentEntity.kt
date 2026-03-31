@@ -6,8 +6,8 @@ package com.aiwazian.messenger.database.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.aiwazian.messenger.domain.DownloadStatus
 import com.aiwazian.messenger.enums.AttachmentType
+import com.aiwazian.messenger.enums.DownloadStatus
 
 @Entity("attachment")
 data class AttachmentEntity(
