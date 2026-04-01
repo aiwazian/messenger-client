@@ -142,7 +142,7 @@ class MainViewModel @Inject constructor(
         val newChatInfo = chat.copy(lastMessage = lastMessage)
         
         _chats.update { currentChats ->
-            (currentChats + newChatInfo).distinctBy { it.id }
+            (currentChats + newChatInfo).distinctBy { it.id }.sortedByLastMessage()
         }
     }
     
@@ -185,7 +185,7 @@ class MainViewModel @Inject constructor(
                     } else {
                         chat
                     }
-                }
+                }.sortedByLastMessage()
             }
         }
     }
@@ -226,16 +226,17 @@ class MainViewModel @Inject constructor(
                 } else {
                     chat
                 }
-            }
+            }.sortedByLastMessage()
         }
     }
     
     private suspend fun loadChats() {
         chatRepository.getAllChats().collectLatest { chats ->
-            _chats.update { chats }
+            _chats.update { chats.sortedByLastMessage() }
         }
     }
+
+    private fun List<Chat>.sortedByLastMessage(): List<Chat> {
+        return this.sortedByDescending { it.lastMessage?.sendTime ?: 0L }
+    }
 }
-
-
-
