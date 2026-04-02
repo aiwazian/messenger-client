@@ -23,8 +23,8 @@ fun SectionContainer(
     Column(
         modifier = Modifier.padding(
             start = 10.dp,
-            top = 10.dp,
-            end = 10.dp
+            end = 10.dp,
+            bottom = 10.dp
         ),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {

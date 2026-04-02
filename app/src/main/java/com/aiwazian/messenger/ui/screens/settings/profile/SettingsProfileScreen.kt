@@ -29,11 +29,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.extensions.toInstance
+import com.aiwazian.messenger.extensions.toPrettyDateWithYear
 import com.aiwazian.messenger.ui.components.InputField
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
@@ -44,13 +45,12 @@ import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
-import java.text.SimpleDateFormat
 
 @Composable
 fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel()) {
     val navHost = LocalNavHost.current
     val uiState by viewModel.uiState.collectAsState()
-
+    
     LaunchedEffect(Unit) {
         viewModel.sideEffect.collect { effect ->
             when (effect) {
@@ -87,7 +87,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                     .verticalScroll(scrollState)
             ) {
                 SectionContainer(header = {
-                    SectionHeader("Ваше имя")
+                    SectionHeader(title = stringResource(R.string.your_name))
                 }) {
                     InputField(
                         placeholder = stringResource(R.string.first_name),
@@ -112,10 +112,10 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                         SectionHeader(title = stringResource(R.string.bio))
                     },
                     footer = {
-                        SectionDescription("В настройках можно выбрать, кому они будут видны.")
+                        SectionDescription(text = "В настройках можно выбрать, кому они будут видны.")
                     }) {
                     InputField(
-                        placeholder = "Напишите что-нибудь о себе",
+                        placeholder = stringResource(R.string.write_about_me),
                         value = uiState.user.bio.orEmpty(),
                         onValueChange = viewModel::onChangeBio
                     )
@@ -140,18 +140,13 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                     )
                 }
                 
-                val locale = LocalLocale.current.platformLocale
-                
                 SectionContainer(header = {
                     SectionHeader(title = stringResource(R.string.date_of_birth))
                 }) {
                     SectionItem(
                         text = "Дата Вашего рождения",
                         primaryText = if (uiState.user.dateOfBirth != null) {
-                            SimpleDateFormat(
-                                "d MMM yyyy",
-                                locale
-                            ).format(uiState.user.dateOfBirth)
+                            uiState.user.dateOfBirth!!.toInstance().toPrettyDateWithYear()
                         } else {
                             "Указать"
                         },

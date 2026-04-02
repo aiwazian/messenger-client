@@ -3,6 +3,7 @@ accompanistNavigationMaterial = "0.36.0"
 accompanistSystemuicontroller = "0.36.0"
 agp = "9.1.0"
 animation = "1.10.6"
+browser = "1.10.0"
 coreSplashscreen = "1.2.0"
 datastorePreferences = "1.2.1"
 firebaseBom = "34.11.0"
@@ -46,6 +47,7 @@ ksp = "2.3.5"
 androidx-animation = { module = "androidx.compose.animation:animation", version.ref = "animation" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }

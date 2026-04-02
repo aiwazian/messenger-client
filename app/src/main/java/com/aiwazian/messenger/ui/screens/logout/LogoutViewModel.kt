@@ -4,26 +4,32 @@
 
 package com.aiwazian.messenger.ui.screens.logout
 
-import android.app.Activity
-import android.content.Context
-import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.aiwazian.messenger.AuthActivity
+import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.repository.AuthRepository
+import com.aiwazian.messenger.utils.VibrationManager
+import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class LogoutViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val vibrateManager: VibrationManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(LogoutUiState())
     val uiState = _uiState.asStateFlow()
+    
+    private val _sideEffect = MutableSharedFlow<LogoutSideEffect>()
+    val sideEffect = _sideEffect.asSharedFlow()
     
     fun showLogoutDialog() {
         _uiState.update { it.copy(isLogoutDialogVisible = true) }
@@ -33,23 +39,17 @@ class LogoutViewModel @Inject constructor(
         _uiState.update { it.copy(isLogoutDialogVisible = false) }
     }
     
-    suspend fun logout(context: Context) {
-        try {
-            authRepository.logout()
-        } catch (e: Exception) {
-            Log.e(
-                "AuthManager",
-                "Ошибка при выходе: ${e.message}"
-            )
+    fun logout() {
+        viewModelScope.launch {
+            authRepository.logout().onSuccess {
+                _sideEffect.emit(LogoutSideEffect.LogoutSuccess)
+            }.onFailure { e ->
+                vibrateManager.vibrate(VibrationPattern.Error)
+                Log.e(
+                    "AuthManager",
+                    "Ошибка при выходе: ${e.message}"
+                )
+            }
         }
-        
-        val intent = Intent(
-            context,
-            AuthActivity::class.java
-        ).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        context.startActivity(intent)
-        (context as Activity).finish()
     }
 }

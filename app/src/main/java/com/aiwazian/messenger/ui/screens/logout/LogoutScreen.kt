@@ -4,6 +4,8 @@
 
 package com.aiwazian.messenger.ui.screens.logout
 
+import android.app.Activity
+import android.content.Intent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -17,13 +19,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.aiwazian.messenger.AuthActivity
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -33,14 +36,32 @@ import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
     val navHost = LocalNavHost.current
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
     
     val uiState by viewModel.uiState.collectAsState()
+    
+    LaunchedEffect(Unit) {
+        viewModel.sideEffect.collectLatest { sideEffect ->
+            when (sideEffect) {
+                is LogoutSideEffect.LogoutSuccess -> {
+                    val intent = Intent(
+                        context,
+                        AuthActivity::class.java
+                    ).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+                    context.startActivity(intent)
+                    (context as? Activity)?.finish()
+                }
+            }
+        }
+    }
     
     Scaffold(
         topBar = { TopBar() },
@@ -72,15 +93,8 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
             }
             
             if (uiState.isLogoutDialogVisible) {
-                val context = LocalContext.current
-                val scope = rememberCoroutineScope()
-                
                 LogoutModal(
-                    onConfirm = {
-                        scope.launch {
-                            viewModel.logout(context)
-                        }
-                    },
+                    onConfirm = viewModel::logout,
                     onDismiss = viewModel::hideLogoutDialog
                 )
             }

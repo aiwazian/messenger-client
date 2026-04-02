@@ -147,4 +147,5 @@
     <string name="terminate_session_confirm_message"><![CDATA[Êtes-vous sûr de vouloir mettre fin à cette session \?]]></string>
     <string name="terminate_all_other_sessions_confirm_message"><![CDATA[Êtes-vous sûr de vouloir mettre fin à toutes les autres sessions \?]]></string>
     <string name="waiting_for_network">En attente du réseau</string>
+    <string name="your_name">Votre nom</string>
 </resources>

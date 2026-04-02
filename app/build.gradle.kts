@@ -144,4 +144,6 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     
     implementation(libs.ketch)
+    
+    implementation(libs.androidx.browser)
 }

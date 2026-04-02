@@ -7,7 +7,7 @@ package com.aiwazian.messenger.ui.screens.main.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.Search
-import com.aiwazian.messenger.domain.SearchResultType
+import com.aiwazian.messenger.enums.SearchResultType
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.FileHandler

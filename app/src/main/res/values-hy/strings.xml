@@ -6,7 +6,7 @@
     <string name="delete_chat">Ջնջել զրույցը</string>
     <string name="notifications">Ծանուցումներ</string>
     <string name="language">Լեզու</string>
-    <string name="logout">Log Out</string>
+    <string name="logout">Դուրս գալ</string>
     
     
     <string name="help">Օգնություն</string>
@@ -14,7 +14,7 @@
     <string name="account">Հաշիվ</string>
     <string name="profile">Պրոֆիլ</string>
     <string name="saved_messages">Պահված ուղերձներ</string>
-    <string name="new_message">New Message</string>
+    <string name="new_message">Նոր Հաղորդագրություն</string>
     <string name="information">Ինֆո</string>
     <string name="dark_theme">Մութ թեմա</string>
     <string name="security">Անվտանգություն</string>
@@ -38,11 +38,11 @@
     <string name="share">Կիսվել</string>
     <string name="cloud_password">Ամպային գաղտնաբառ</string>
     <string name="on">On</string>
-    <string name="off">Անջատված</string>
+    <string name="off">Off</string>
     <string name="everybody">Բոլորը</string>
     <string name="nobody">Ոչ ոք</string>
     <string name="messages">Հաղորդագրություններ</string>
-    <string name="last_seen">Last Seen</string>
+    <string name="last_seen">Վերջին տեսածը</string>
     <string name="this_device">Այս սարքը</string>
     <string name="members">Անդամներ</string>
     <string name="first_name">Անուն</string>
@@ -58,14 +58,14 @@
     <string name="invites">Հրավիրում է</string>
     <string name="dynamic_color">Դինամիկ գույն</string>
     <string name="create_new_folder">Ստեղծել նոր պանակ</string>
-    <string name="all_chats">All Chats</string>
+    <string name="all_chats">Բոլոր զրույցները</string>
     <string name="save">Պահպանել</string>
     <string name="remove_folder">Հեռացնել պանակը</string>
     <string name="pin">Փին</string>
     <string name="unpin">Unpin</string>
     <string name="folder_name">Պանակի անուն</string>
     <string name="included_chats">Ներառված Chats</string>
-    <string name="add_chats">Add Chats</string>
+    <string name="add_chats">Ավելացնել զրույցներ</string>
     <string name="cloud_password_description">Կարող եք սահմանել գաղտնաբառ, որը կպահանջվի նոր սարք մուտք գործելիս:</string>
     <string name="enter_password">Մուտքագրեք գաղտնաբառը</string>
     <string name="passcode_lock_description">Երբ ծածկագիրը սահմանված է, ձեր զրույցի ցուցակի վերեւում հայտնվում է կողպեքի պատկերակը: Սեղմեք այն՝ ձեր հավելվածը կողպելու համար:</string>
@@ -122,7 +122,7 @@
     <string name="leave_group_confirm">Վստա՞հ եք, որ ուզում եք հեռանալ</string>
     <string name="leave">Հեռանալ</string>
     <string name="leave_confirm">Վստա՞հ եք, որ ուզում եք հեռանալ</string>
-    <string name="add_member">Add Members</string>
+    <string name="add_member">Ավելացնել անդամներ</string>
     <string name="delete_group">Ջնջել խումբը</string>
     <string name="save_to_downloads">Պահպանել ներբեռնումների մեջ</string>
     <string name="copied">Պատճենված</string>
@@ -147,4 +147,5 @@
     <string name="terminate_session_confirm_message">Իսկապե՞ս ուզում եք դադարեցնել այս նստաշրջանը:</string>
     <string name="terminate_all_other_sessions_confirm_message">Վստա՞հ եք, որ ցանկանում եք դադարեցնել մնացած բոլոր նիստերը:</string>
     <string name="waiting_for_network">Սպասում է ցանցին</string>
+    <string name="your_name">Ձեր անունը</string>
 </resources>

@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.settings
 
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.Language
@@ -23,17 +25,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.domain.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import java.util.Locale
 
 @Composable
 fun SettingsScreen() {
@@ -74,21 +78,6 @@ fun SettingsScreen() {
             SectionContainer(
                 header = {
                     SectionHeader(stringResource(R.string.settings))
-                },
-                footer = {
-                    val context = LocalContext.current
-                    
-                    val packageInfo = remember {
-                        context.packageManager.getPackageInfo(
-                            context.packageName,
-                            0
-                        )
-                    }
-                    
-                    val versionName = packageInfo.versionName
-                    val versionCode = packageInfo.longVersionCode
-                    
-                    SectionDescription(text = "${stringResource(R.string.app_name)} v${versionName} (${versionCode})")
                 }) {
                 SectionItem(
                     icon = Icons.Rounded.ChatBubbleOutline,
@@ -116,6 +105,37 @@ fun SettingsScreen() {
                     text = stringResource(R.string.language),
                     onClick = {
                         navHost.add(AppRoute.SettingsLanguage)
+                    })
+            }
+            SectionContainer(header = {
+                SectionHeader(title = stringResource(R.string.help))
+            }, footer = {
+                val context = LocalContext.current
+                
+                val packageInfo = remember {
+                    context.packageManager.getPackageInfo(
+                        context.packageName,
+                        0
+                    )
+                }
+                
+                val versionName = packageInfo.versionName
+                val versionCode = packageInfo.longVersionCode
+                
+                SectionDescription(text = "${stringResource(R.string.app_name)} v${versionName} (${versionCode})")
+            }) {
+                val context = LocalContext.current
+                
+                SectionItem(
+                    icon = Icons.Outlined.PrivacyTip,
+                    text = stringResource(R.string.privacy_policy),
+                    onClick = {
+                        val intent =
+                            CustomTabsIntent.Builder()
+                                .setShowTitle(true)
+                                .setTranslateLocale(Locale.getDefault())
+                                .build()
+                        intent.launchUrl(context, "https://aiwazian.ru/privacy".toUri())
                     })
             }
         }

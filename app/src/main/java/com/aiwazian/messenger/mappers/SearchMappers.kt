@@ -4,9 +4,9 @@
 
 package com.aiwazian.messenger.mappers
 
-import com.aiwazian.messenger.network.dto.SearchResponseDto
 import com.aiwazian.messenger.domain.Search
-import com.aiwazian.messenger.domain.SearchResultType
+import com.aiwazian.messenger.enums.SearchResultType
+import com.aiwazian.messenger.network.dto.SearchResponseDto
 
 fun SearchResponseDto.toDomain(): Search = Search(
     type = if (this.type == "file") SearchResultType.FILE else SearchResultType.CHAT,

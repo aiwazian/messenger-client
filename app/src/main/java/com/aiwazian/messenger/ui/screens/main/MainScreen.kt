@@ -320,7 +320,7 @@ private fun Content(
             modifier = Modifier.padding(innerPadding),
         ) {
             if (chats.isEmpty()) {
-                EmptyChatPlaceholder(text = "Чтобы начать общение нажмите на значок поиска в правом верхнем углу и найдите пользователя по его @username")
+                EmptyChatPlaceholder(text = "Чтобы начать общение нажмите на поле поиска сверху экрана и найдите пользователя по его @username")
             } else {
                 LazyColumn {
                     items(chats) { chat ->
@@ -339,7 +339,7 @@ private fun EmptyChatPlaceholder(
     text: String, animation: String? = null
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -361,6 +361,7 @@ private fun EmptyChatPlaceholder(
         Text(
             text = text,
             textAlign = TextAlign.Center,
+            lineHeight = 16.sp
         )
     }
 }

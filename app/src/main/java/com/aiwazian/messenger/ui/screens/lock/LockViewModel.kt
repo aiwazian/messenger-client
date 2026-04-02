@@ -19,12 +19,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class LockUiState(
-    val passcode: String = "",
-    val blockedUntil: Long = 0L,
-    val remainingSeconds: Int = 0
-)
-
 @HiltViewModel
 class LockViewModel @Inject constructor(
     private val appLockManager: AppLockManager,

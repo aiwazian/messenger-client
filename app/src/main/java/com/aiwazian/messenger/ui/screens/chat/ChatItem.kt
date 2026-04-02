@@ -4,8 +4,8 @@
 
 package com.aiwazian.messenger.ui.screens.chat
 
-import com.aiwazian.messenger.domain.DropdownMenuAction
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 
 sealed class ChatItem {
     data class DateSeparator(val text: String) : ChatItem()

@@ -147,4 +147,5 @@
     <string name="terminate_session_confirm_message">Sei sicuro di voler terminare questa sessione\?</string>
     <string name="terminate_all_other_sessions_confirm_message">Sei sicuro di voler terminare tutte le altre sessioni\?</string>
     <string name="waiting_for_network">In attesa della rete</string>
+    <string name="your_name">Il tuo nome</string>
 </resources>

@@ -14,11 +14,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.domain.DropdownMenuAction
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.UserRepository
+import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.ShortcutManager

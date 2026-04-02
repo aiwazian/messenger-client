@@ -151,4 +151,5 @@
     <string name="terminate_session_confirm_message">Are you sure you want to terminate this session?</string>
     <string name="terminate_all_other_sessions_confirm_message">Are you sure you want to terminate all other sessions?</string>
     <string name="waiting_for_network">Waiting for network</string>
+    <string name="your_name">Your name</string>
 </resources>

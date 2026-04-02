@@ -125,6 +125,15 @@ fun ChannelSettingsScreen(
             
             SectionContainer {
                 SectionItem(
+                    icon = Icons.Rounded.PeopleAlt,
+                    text = stringResource(R.string.invite_links),
+                    onClick = {
+                        navHost.add(AppRoute.ChannelInviteLinks(channelInfo.id))
+                    })
+            }
+            
+            SectionContainer {
+                SectionItem(
                     text = stringResource(R.string.delete_channel),
                     color = MaterialTheme.colorScheme.error,
                     onClick = channelViewModel.deleteDialog::show

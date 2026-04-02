@@ -6,14 +6,16 @@ package com.aiwazian.messenger.network.api
 
 import com.aiwazian.messenger.network.dto.ChannelResponseDto
 import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
+import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
+import com.aiwazian.messenger.network.dto.InviteLinkResponseDto
 import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
-import retrofit2.http.POST
 import retrofit2.http.PATCH
+import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -58,5 +60,20 @@ interface ChannelApi {
     suspend fun banUser(
         @Path("channelId") channelId: Long,
         @Path("userId") userId: Long
+    ): Response<Unit>
+
+    @GET("channels/{channelId}/invite-links")
+    suspend fun getInviteLinks(@Path("channelId") channelId: Long): Response<List<InviteLinkResponseDto>>
+
+    @POST("channels/{channelId}/invite-links")
+    suspend fun createInviteLink(
+        @Path("channelId") channelId: Long,
+        @Body request: CreateInviteLinkRequestDto
+    ): Response<InviteLinkResponseDto>
+
+    @DELETE("channels/{channelId}/invite-links/{inviteLinkId}")
+    suspend fun deleteInviteLink(
+        @Path("channelId") channelId: Long,
+        @Path("inviteLinkId") inviteLinkId: Long
     ): Response<Unit>
 }

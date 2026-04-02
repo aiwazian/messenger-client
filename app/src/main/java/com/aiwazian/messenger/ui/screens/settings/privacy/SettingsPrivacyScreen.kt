@@ -170,6 +170,17 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                     onClick = {
                         navHost.add(AppRoute.SettingsDateOfBirth(privacy.dateOfBirth))
                     })
+
+                SectionItem(
+                    text = stringResource(R.string.invites),
+                    primaryText = if (privacy.invites == PrivacyLevel.Everybody) {
+                        stringResource(R.string.everybody)
+                    } else {
+                        stringResource(R.string.nobody)
+                    },
+                    onClick = {
+                        navHost.add(AppRoute.SettingsInvites(privacy.invites))
+                    })
             }
             
             SectionContainer {

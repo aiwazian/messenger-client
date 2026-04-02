@@ -4,10 +4,7 @@
 
 package com.aiwazian.messenger.domain
 
-enum class SearchResultType {
-    CHAT,
-    FILE
-}
+import com.aiwazian.messenger.enums.SearchResultType
 
 data class Search(
     val type: SearchResultType,

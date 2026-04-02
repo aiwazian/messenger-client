@@ -42,6 +42,7 @@ import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsLastSeenScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsPrivacyScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.bio.SettingsBioScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthScreen
+import com.aiwazian.messenger.ui.screens.settings.privacy.invites.SettingsInvitesScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileColorScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsUsernameScreen
@@ -77,6 +78,7 @@ fun AppNavHost(startRoute: AppRoute = AppRoute.Main) {
                 entry<AppRoute.SettingsUsername> { SettingsUsernameScreen(username = it.username) }
                 entry<AppRoute.SettingsBio> { SettingsBioScreen(level = it.level) }
                 entry<AppRoute.SettingsDateOfBirth> { SettingsDateOfBirthScreen(level = it.level) }
+                entry<AppRoute.SettingsInvites> { SettingsInvitesScreen(level = it.level) }
                 entry<AppRoute.SettingsDevices> { SettingsDevicesScreen() }
                 entry<AppRoute.SettingsPasscode> { SettingsPasscodeScreen() }
                 entry<AppRoute.SettingsPasscodeCreate> { SettingsPasscodeCreateScreen() }

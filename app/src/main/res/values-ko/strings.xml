@@ -147,4 +147,5 @@
     <string name="terminate_session_confirm_message">이 세션을 종료하시겠습니까\?</string>
     <string name="terminate_all_other_sessions_confirm_message">다른 모든 세션을 종료하시겠습니까\?</string>
     <string name="waiting_for_network">네트워크를 기다리는 중</string>
+    <string name="your_name">당신의 이름</string>
 </resources>
