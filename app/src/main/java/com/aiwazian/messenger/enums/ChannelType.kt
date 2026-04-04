@@ -9,7 +9,7 @@ enum class ChannelType {
     PRIVATE;
     
     companion object {
-        fun fromInt(value: Int): ChannelType {
+        fun fromOrdinal(value: Int): ChannelType {
             return entries.first { it.ordinal == value }
         }
     }

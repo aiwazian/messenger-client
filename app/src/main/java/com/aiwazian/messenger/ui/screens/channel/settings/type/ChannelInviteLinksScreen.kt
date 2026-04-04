@@ -40,9 +40,9 @@ fun ChannelInviteLinksScreen() {
         Column(modifier = Modifier.padding(innerPadding)) {
             SectionContainer {
                 SectionItem(
-                    text = "Создать ссылку-приглашение",
-                    icon = Icons.Rounded.AddLink,
-                    color = MaterialTheme.colorScheme.primary
+                    headlineText = "Создать ссылку-приглашение",
+                    leadingIcon = Icons.Rounded.AddLink,
+                    contentColor = MaterialTheme.colorScheme.primary
                 )
             }
         }

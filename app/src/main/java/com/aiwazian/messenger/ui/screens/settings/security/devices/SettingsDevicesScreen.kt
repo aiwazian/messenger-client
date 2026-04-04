@@ -29,22 +29,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxDefaults
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,6 +55,7 @@ import com.aiwazian.messenger.domain.Session
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateTime
 import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
@@ -100,9 +94,10 @@ fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) 
             )
         },
         snackbarHost = {
-            SwipeDismissSnackbarHost(snackbarHostState)
+            SnackbarHost(hostState = snackbarHostState) { data ->
+                CustomSnackbar(text = data.visuals.message, onDismiss = data::dismiss)
+            }
         }) { paddingValues ->
-        
         Column(
             Modifier
                 .fillMaxSize()
@@ -121,9 +116,9 @@ fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) 
                         onClick = { devicesViewModel.openSession(currentSession) }
                     )
                     SectionItem(
-                        icon = Icons.Outlined.BackHand,
-                        text = stringResource(R.string.terminate_all_other_sessions),
-                        color = MaterialTheme.colorScheme.error,
+                        leadingIcon = Icons.Outlined.BackHand,
+                        headlineText = stringResource(R.string.terminate_all_other_sessions),
+                        contentColor = MaterialTheme.colorScheme.error,
                         onClick = devicesViewModel::showTerminateAllOtherSessionsDialog
                     )
                 }
@@ -330,34 +325,4 @@ private fun TerminateSessionDialog(
                 Text(stringResource(R.string.terminate))
             }
         })
-}
-
-@Composable
-private fun SwipeDismissSnackbarHost(snackbarHostState: SnackbarHostState) {
-    SnackbarHost(hostState = snackbarHostState) { data ->
-        var dismissed by remember { mutableStateOf(false) }
-        
-        if (!dismissed) {
-            val swipeToDismissBoxState = rememberSwipeToDismissBoxState(
-                SwipeToDismissBoxValue.Settled,
-                SwipeToDismissBoxDefaults.positionalThreshold
-            )
-            
-            SwipeToDismissBox(
-                state = swipeToDismissBoxState,
-                enableDismissFromEndToStart = true,
-                enableDismissFromStartToEnd = true,
-                backgroundContent = { }) {
-                Snackbar(
-                    modifier = Modifier
-                        .padding(12.dp),
-                    shape = MaterialTheme.shapes.medium,
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                ) {
-                    Text(data.visuals.message)
-                }
-            }
-        }
-    }
 }

@@ -5,7 +5,6 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
+import com.aiwazian.messenger.ui.components.DropdownMenu
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 
 @Composable
@@ -26,7 +26,6 @@ fun MessageDropdownMenu(
     actions: List<DropdownMenuAction>
 ) {
     DropdownMenu(
-        shape = MaterialTheme.shapes.large,
         expanded = expanded,
         onDismissRequest = onDismissRequest,
         properties = PopupProperties(focusable = true),

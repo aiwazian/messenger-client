@@ -5,13 +5,20 @@
 package com.aiwazian.messenger.repository
 
 import android.util.Log
-import com.aiwazian.messenger.network.api.ChatApi
-import com.aiwazian.messenger.network.api.MessageApi
-import com.aiwazian.messenger.network.dto.*
-import com.aiwazian.messenger.mappers.toDomain
-import com.aiwazian.messenger.mappers.toEntity
+import com.aiwazian.messenger.database.dao.AttachmentDao
+import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.mappers.toDomain
+import com.aiwazian.messenger.mappers.toEntity
+import com.aiwazian.messenger.network.api.ChatApi
+import com.aiwazian.messenger.network.api.MessageApi
+import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
+import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
+import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
+import com.aiwazian.messenger.network.dto.FileInitRequestDto
+import com.aiwazian.messenger.network.dto.FileInitResponseDto
+import com.aiwazian.messenger.network.dto.TextMessageRequestDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -20,8 +27,8 @@ import javax.inject.Inject
 class ChatRepository @Inject constructor(
     private val chatApi: ChatApi,
     private val messageApi: MessageApi,
-    private val messageDao: com.aiwazian.messenger.database.dao.MessageDao,
-    private val attachmentDao: com.aiwazian.messenger.database.dao.AttachmentDao
+    private val messageDao: MessageDao,
+    private val attachmentDao: AttachmentDao
 ) {
 
     fun getAllChats(): Flow<List<Chat>> = flow {

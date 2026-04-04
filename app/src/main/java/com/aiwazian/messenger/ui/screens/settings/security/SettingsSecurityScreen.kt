@@ -63,9 +63,9 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
                     )
                 }) {
                     SectionItem(
-                        icon = Icons.Rounded.Key,
-                        text = stringResource(R.string.cloud_password),
-                        primaryText = stringResource(R.string.on),
+                        leadingIcon = Icons.Rounded.Key,
+                        headlineText = stringResource(R.string.cloud_password),
+                        trailingText = stringResource(R.string.on),
                         onClick = {
                             navHost.add(AppRoute.SettingsCloudPassword)
                         }
@@ -78,18 +78,18 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
                     }
                     
                     SectionItem(
-                        icon = Icons.Outlined.Lock,
-                        text = stringResource(R.string.passcode_lock),
-                        primaryText = passcodeEnabledText,
+                        leadingIcon = Icons.Outlined.Lock,
+                        headlineText = stringResource(R.string.passcode_lock),
+                        trailingText = passcodeEnabledText,
                         onClick = {
                             navHost.add(AppRoute.SettingsPasscode)
                         }
                     )
                     
                     SectionItem(
-                        icon = Icons.Rounded.Devices,
-                        text = stringResource(R.string.devices),
-                        primaryText = deviceCount.toString(),
+                        leadingIcon = Icons.Rounded.Devices,
+                        headlineText = stringResource(R.string.devices),
+                        trailingText = deviceCount.toString(),
                         onClick = {
                             navHost.add(AppRoute.SettingsDevices)
                         }

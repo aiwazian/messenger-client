@@ -19,12 +19,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.navigation.AppRoute
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
 fun NewMessageScreen() {
@@ -43,14 +43,14 @@ fun NewMessageScreen() {
         ) {
             SectionContainer {
                 SectionItem(
-                    icon = Icons.Rounded.Group,
-                    text = stringResource(R.string.create_channel),
+                    leadingIcon = Icons.Rounded.Group,
+                    headlineText = stringResource(R.string.create_channel),
                     onClick = {
                         navHost.add(AppRoute.CreateChannel)
                     })
                 SectionItem(
-                    icon = Icons.Rounded.Groups,
-                    text = stringResource(R.string.create_group),
+                    leadingIcon = Icons.Rounded.Groups,
+                    headlineText = stringResource(R.string.create_group),
                     onClick = {
                         navHost.add(AppRoute.CreateGroup)
                     })

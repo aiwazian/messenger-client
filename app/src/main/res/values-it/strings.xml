@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Ricerca</string>
@@ -7,8 +11,6 @@
     <string name="notifications">Notifiche</string>
     <string name="language">Lingua</string>
     <string name="logout">Disconnettiti</string>
-    
-    
     <string name="help">Aiuto</string>
     <string name="confidentiality">Privacy</string>
     <string name="account">Account</string>
@@ -148,4 +150,9 @@
     <string name="terminate_all_other_sessions_confirm_message">Sei sicuro di voler terminare tutte le altre sessioni\?</string>
     <string name="waiting_for_network">In attesa della rete</string>
     <string name="your_name">Il tuo nome</string>
+    <string name="kick">Calcio</string>
+    <string name="active_links">Collegamenti attivi</string>
+    <string name="inactive_links">Collegamenti inattivi</string>
+    <string name="new_link">Nuovo collegamento</string>
+    <string name="send">Inviare</string>
 </resources>

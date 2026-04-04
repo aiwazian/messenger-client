@@ -23,7 +23,7 @@ fun AnimatedDotsText(text: String, dots: Int = 3) {
     
     LaunchedEffect(Unit) {
         while (true) {
-            delay(1000)
+            delay(500)
             dotsCount = (dotsCount + 1) % 4
         }
     }

@@ -11,8 +11,6 @@
     <string name="notifications">Notifications</string>
     <string name="language">Language</string>
     <string name="logout">Log Out</string>
-    <string name="russian_untranslatable" translatable="false">Русский</string>
-    <string name="english_untranslatable" translatable="false">English</string>
     <string name="help">Help</string>
     <string name="confidentiality">Privacy</string>
     <string name="account">Account</string>
@@ -152,4 +150,9 @@
     <string name="terminate_all_other_sessions_confirm_message">Are you sure you want to terminate all other sessions?</string>
     <string name="waiting_for_network">Waiting for network</string>
     <string name="your_name">Your name</string>
+    <string name="kick">Kick</string>
+    <string name="active_links">Active Links</string>
+    <string name="inactive_links">Inactive Links</string>
+    <string name="new_link">New Link</string>
+    <string name="send">Send</string>
 </resources>

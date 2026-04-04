@@ -13,7 +13,7 @@ data class Channel(
     val bio: String? = null,
     val subscribers: Int = 0,
     val removedUser: Int? = null,
-    val channelType: Int = ChannelType.PRIVATE.ordinal,
+    val channelType: ChannelType = ChannelType.PRIVATE,
     val username: String? = null,
     val inviteLink: String? = null,
     val isSubscribed: Boolean = false

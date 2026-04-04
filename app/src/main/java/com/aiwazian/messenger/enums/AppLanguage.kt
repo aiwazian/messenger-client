@@ -12,6 +12,7 @@ enum class AppLanguage(val code: String, val nativeName: String, val displayName
     FR("fr", "Français", "French"),
     HY("hy", "Հայերեն", "Armenian"),
     IT("it", "Italian", "Italiano"),
+    KK("kk", "Қазақстан", "Kazakh"),
     KO("ko", "한국어", "Korean"),
     RU("ru", "Русский", "Russian");
     

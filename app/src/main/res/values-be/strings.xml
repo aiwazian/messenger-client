@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Пошук</string>
@@ -7,8 +11,6 @@
     <string name="notifications">Апавяшчэнні</string>
     <string name="language">мова</string>
     <string name="logout">Выйсці</string>
-    
-    
     <string name="help">Дапамога</string>
     <string name="confidentiality">Прыватнасць</string>
     <string name="account">Рахунак</string>
@@ -148,4 +150,9 @@
     <string name="terminate_all_other_sessions_confirm_message">Вы ўпэўнены, што жадаеце спыніць усе іншыя сеансы\?</string>
     <string name="waiting_for_network">Чаканне сеткі</string>
     <string name="your_name">Ваша імя</string>
+    <string name="kick">Удар нагамі</string>
+    <string name="active_links">Актыўныя спасылкі</string>
+    <string name="inactive_links">Неактыўныя спасылкі</string>
+    <string name="new_link">Новая спасылка</string>
+    <string name="send">Адправіць</string>
 </resources>

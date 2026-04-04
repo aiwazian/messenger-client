@@ -76,9 +76,9 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
                 SectionHeader(title = stringResource(R.string.alternative_options))
             }) {
                 SectionItem(
-                    icon = Icons.Rounded.Delete,
-                    text = stringResource(R.string.clear_cache),
-                    description = "Освободите память устройства, файлы останутся в облаке.",
+                    leadingIcon = Icons.Rounded.Delete,
+                    headlineText = stringResource(R.string.clear_cache),
+                    supportingText = "Освободите память устройства, файлы останутся в облаке.",
                     onClick = {
                         navHost.add(AppRoute.SettingsDataAndStorage)
                     })
@@ -86,8 +86,8 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
             
             SectionContainer {
                 SectionItem(
-                    text = stringResource(R.string.logout),
-                    color = MaterialTheme.colorScheme.error,
+                    headlineText = stringResource(R.string.logout),
+                    contentColor = MaterialTheme.colorScheme.error,
                     onClick = viewModel::showLogoutDialog
                 )
             }

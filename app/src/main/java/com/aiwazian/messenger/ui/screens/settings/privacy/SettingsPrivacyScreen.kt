@@ -10,7 +10,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,10 +31,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,7 +43,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,6 +50,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.PrivacyLevel
 import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -101,8 +98,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                     snackbarJob = launch {
                         snackbarHostState.currentSnackbarData?.dismiss()
                         snackbarHostState.showSnackbar(
-                            message = effect.message,
-                            duration = SnackbarDuration.Long
+                            message = effect.message, duration = SnackbarDuration.Long
                         )
                     }
                 }
@@ -114,32 +110,11 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
         }
     }
     
-    Scaffold(
-        topBar = { TopBar() },
-        snackbarHost = {
-            SnackbarHost(snackbarHostState) { data ->
-                val state = rememberSwipeToDismissBoxState()
-                SwipeToDismissBox(
-                    state = state,
-                    backgroundContent = {},
-                    onDismiss = { data.dismiss() }) {
-                    Row(
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .clip(MaterialTheme.shapes.large)
-                            .background(MaterialTheme.colorScheme.surfaceContainer)
-                    ) {
-                        Text(
-                            text = data.visuals.message,
-                            fontSize = 14.sp,
-                            lineHeight = 14.sp,
-                            modifier = Modifier.padding(12.dp)
-                        )
-                    }
-                }
-            }
+    Scaffold(topBar = { TopBar() }, snackbarHost = {
+        SnackbarHost(snackbarHostState) { data ->
+            CustomSnackbar(text = data.visuals.message, onDismiss = data::dismiss)
         }
-    ) {
+    }) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -150,8 +125,8 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                 SectionHeader(stringResource(R.string.confidentiality))
             }) {
                 SectionItem(
-                    text = stringResource(R.string.bio),
-                    primaryText = if (privacy.bio == PrivacyLevel.Everybody) {
+                    headlineText = stringResource(R.string.bio),
+                    trailingText = if (privacy.bio == PrivacyLevel.Everybody) {
                         stringResource(R.string.everybody)
                     } else {
                         stringResource(R.string.nobody)
@@ -161,8 +136,8 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                     })
                 
                 SectionItem(
-                    text = stringResource(R.string.date_of_birth),
-                    primaryText = if (privacy.dateOfBirth == PrivacyLevel.Everybody) {
+                    headlineText = stringResource(R.string.date_of_birth),
+                    trailingText = if (privacy.dateOfBirth == PrivacyLevel.Everybody) {
                         stringResource(R.string.everybody)
                     } else {
                         stringResource(R.string.nobody)
@@ -170,10 +145,10 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                     onClick = {
                         navHost.add(AppRoute.SettingsDateOfBirth(privacy.dateOfBirth))
                     })
-
+                
                 SectionItem(
-                    text = stringResource(R.string.invites),
-                    primaryText = if (privacy.invites == PrivacyLevel.Everybody) {
+                    headlineText = stringResource(R.string.invites),
+                    trailingText = if (privacy.invites == PrivacyLevel.Everybody) {
                         stringResource(R.string.everybody)
                     } else {
                         stringResource(R.string.nobody)
@@ -185,8 +160,8 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
             
             SectionContainer {
                 SectionItem(
-                    text = stringResource(R.string.delete_account),
-                    color = MaterialTheme.colorScheme.error,
+                    headlineText = stringResource(R.string.delete_account),
+                    contentColor = MaterialTheme.colorScheme.error,
                     onClick = {
                         privacyViewModel.onDeleteAccountClick()
                     })
@@ -196,8 +171,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
     
     if (showDeleteBottomSheet.isVisible) {
         ModalBottomSheet(
-            onDismissRequest = showDeleteBottomSheet::hide,
-            dragHandle = null
+            onDismissRequest = showDeleteBottomSheet::hide, dragHandle = null
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
@@ -213,8 +187,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                         modifier = Modifier.size(30.dp)
                     )
                     Text(
-                        text = stringResource(R.string.delete_account_message),
-                        lineHeight = 18.sp
+                        text = stringResource(R.string.delete_account_message), lineHeight = 18.sp
                     )
                 }
                 
@@ -233,8 +206,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                 ) {
                     Row(modifier = Modifier.padding(8.dp)) {
                         Text(
-                            text = "Все равно удалить",
-                            fontSize = 16.sp
+                            text = "Все равно удалить", fontSize = 16.sp
                         )
                         
                         LaunchedEffect(Unit) {
@@ -245,8 +217,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                         }
                         
                         AnimatedContent(
-                            targetState = waitSeconds,
-                            transitionSpec = {
+                            targetState = waitSeconds, transitionSpec = {
                                 slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
                             }) { second ->
                             if (second > 0) {
@@ -269,8 +240,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
             onDismissRequest = showDeleteDialog::hide,
             content = {
                 Text(
-                    text = stringResource(R.string.delete_account_confirm),
-                    lineHeight = 18.sp
+                    text = stringResource(R.string.delete_account_confirm), lineHeight = 18.sp
                 )
             },
             buttons = {
@@ -296,8 +266,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                 ) {
                     Text(stringResource(R.string.yes))
                     AnimatedContent(
-                        targetState = waitSeconds,
-                        transitionSpec = {
+                        targetState = waitSeconds, transitionSpec = {
                             slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
                         }) { second ->
                         if (second > 0) {
@@ -318,10 +287,8 @@ private fun TopBar() {
     val navHost = LocalNavHost.current
     
     PageTopBar(
-        title = { Text(stringResource(R.string.confidentiality)) },
-        navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navHost::removeLastOrNull
+        title = { Text(stringResource(R.string.confidentiality)) }, navigationIcon = NavigationIcon(
+            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navHost::removeLastOrNull
         )
     )
 }

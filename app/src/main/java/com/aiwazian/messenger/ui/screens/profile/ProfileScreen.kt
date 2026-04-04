@@ -223,8 +223,8 @@ private fun GroupProfile(
             SectionContainer {
                 if (!group.bio.isNullOrBlank()) {
                     SectionItem(
-                        text = group.bio,
-                        description = stringResource(R.string.description)
+                        headlineText = group.bio,
+                        supportingText = stringResource(R.string.description)
                     )
                 }
             }
@@ -247,15 +247,15 @@ private fun ChannelProfile(
             SectionContainer {
                 if (!channel.bio.isNullOrBlank()) {
                     SectionItem(
-                        text = channel.bio,
-                        description = stringResource(R.string.description)
+                        headlineText = channel.bio,
+                        supportingText = stringResource(R.string.description)
                     )
                 }
                 
                 if (!channel.publicLink.isNullOrBlank()) {
                     SectionItem(
-                        text = channel.publicLink,
-                        description = stringResource(R.string.public_link)
+                        headlineText = channel.publicLink,
+                        supportingText = stringResource(R.string.public_link)
                     )
                 }
             }
@@ -289,8 +289,8 @@ private fun UserProfile(
                 
                 if (!userBio.isNullOrBlank()) {
                     SectionItem(
-                        text = userBio,
-                        description = stringResource(R.string.bio)
+                        headlineText = userBio,
+                        supportingText = stringResource(R.string.bio)
                     )
                 }
                 
@@ -298,8 +298,8 @@ private fun UserProfile(
                 
                 if (!username.isNullOrBlank()) {
                     SectionItem(
-                        text = ("@$username"),
-                        description = stringResource(R.string.username)
+                        headlineText = ("@$username"),
+                        supportingText = stringResource(R.string.username)
                     )
                 }
                 
@@ -307,8 +307,8 @@ private fun UserProfile(
                 
                 if (dateOfBirth != null) {
                     SectionItem(
-                        text = dateOfBirth.toInstance().toPrettyDateWithYear(),
-                        description = stringResource(R.string.date_of_birth)
+                        headlineText = dateOfBirth.toInstance().toPrettyDateWithYear(),
+                        supportingText = stringResource(R.string.date_of_birth)
                     )
                 }
             }

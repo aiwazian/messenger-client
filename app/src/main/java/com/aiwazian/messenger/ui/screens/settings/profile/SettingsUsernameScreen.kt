@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.InputField
+import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
@@ -53,7 +53,7 @@ fun SettingsUsernameScreen(
     }) {
         Column(modifier = Modifier.padding(it)) {
             SectionContainer {
-                InputField(
+                FramelessTextBox(
                     placeholder = stringResource(R.string.username),
                     value = uiState.username,
                     onValueChange = viewModel::onChangeUsername

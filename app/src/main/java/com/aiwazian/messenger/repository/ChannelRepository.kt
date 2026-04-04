@@ -7,13 +7,14 @@ package com.aiwazian.messenger.repository
 import android.util.Log
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.domain.Channel
+import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.domain.User
-import com.aiwazian.messenger.enums.ChannelType
-import com.aiwazian.messenger.network.api.ChannelApi
-import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
-import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
+import com.aiwazian.messenger.network.api.ChannelApi
+import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
+import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
+import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -64,7 +65,7 @@ class ChannelRepository @Inject constructor(
             val request = CreateChannelRequestDto(
                 name = channelInfo.name,
                 bio = channelInfo.bio,
-                channelType = ChannelType.entries.getOrElse(channelInfo.channelType) { ChannelType.PRIVATE },
+                channelType = channelInfo.channelType,
                 username = channelInfo.username
             )
             val response = channelApi.createChannel(request)
@@ -95,7 +96,7 @@ class ChannelRepository @Inject constructor(
             val request = UpdateChannelRequestDto(
                 name = channel.name,
                 bio = channel.bio,
-                channelType = ChannelType.entries.getOrNull(channel.channelType),
+                channelType = channel.channelType,
                 username = channel.username
             )
             val response =
@@ -217,7 +218,7 @@ class ChannelRepository @Inject constructor(
             val request = UpdateChannelRequestDto(
                 name = channel.name,
                 bio = channel.bio,
-                channelType = ChannelType.fromInt(channel.channelType),
+                channelType = channel.channelType,
                 username = channel.username
             )
             val response =
@@ -287,6 +288,58 @@ class ChannelRepository @Inject constructor(
                 "Ошибка при бане пользователя",
                 e
             )
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getInviteLinks(channelId: Long): Result<List<InviteLink>> {
+        return try {
+            val response = channelApi.getInviteLinks(channelId)
+            if (response.isSuccessful) {
+                val dtos = response.body().orEmpty()
+                Result.success(dtos.map { it.toDomain() })
+            } else {
+                Result.failure(Exception("Failed to get invite links"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChannelRepository", "Error getting invite links", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun createInviteLink(channelId: Long, maxUses: Int?, expiresInSeconds: Int? = null): Result<InviteLink> {
+        return try {
+            val request = CreateInviteLinkRequestDto(
+                maxUses = maxUses,
+                expiresInSeconds = expiresInSeconds
+            )
+            val response = channelApi.createInviteLink(channelId, request)
+            if (response.isSuccessful) {
+                val dto = response.body()
+                if (dto != null) {
+                    Result.success(dto.toDomain())
+                } else {
+                    Result.failure(Exception("No invite link returned"))
+                }
+            } else {
+                Result.failure(Exception("Create invite link failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChannelRepository", "Error creating invite link", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteInviteLink(channelId: Long, inviteLinkId: Long): Result<Unit> {
+        return try {
+            val response = channelApi.deleteInviteLink(channelId, inviteLinkId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Delete invite link failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChannelRepository", "Error deleting invite link", e)
             Result.failure(e)
         }
     }

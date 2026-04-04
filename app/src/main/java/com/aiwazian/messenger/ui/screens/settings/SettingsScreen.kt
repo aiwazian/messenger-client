@@ -60,15 +60,15 @@ fun SettingsScreen() {
                 SectionHeader(stringResource(R.string.account))
             }) {
                 SectionItem(
-                    text = stringResource(R.string.profile),
-                    description = stringResource(R.string.write_about_me),
+                    headlineText = stringResource(R.string.profile),
+                    supportingText = stringResource(R.string.write_about_me),
                     onClick = {
                         navHost.add(AppRoute.SettingsProfile)
                     })
                 
                 SectionItem(
-                    text = stringResource(R.string.security),
-                    description = stringResource(R.string.protect_your_account),
+                    headlineText = stringResource(R.string.security),
+                    supportingText = stringResource(R.string.protect_your_account),
                     onClick = {
                         navHost.add(AppRoute.SettingsSecurity)
                     })
@@ -80,29 +80,29 @@ fun SettingsScreen() {
                     SectionHeader(stringResource(R.string.settings))
                 }) {
                 SectionItem(
-                    icon = Icons.Rounded.ChatBubbleOutline,
-                    text = stringResource(R.string.appearance),
+                    leadingIcon = Icons.Rounded.ChatBubbleOutline,
+                    headlineText = stringResource(R.string.appearance),
                     onClick = {
                         navHost.add(AppRoute.SettingsChat)
                     })
                 
                 SectionItem(
-                    icon = Icons.Outlined.Lock,
-                    text = stringResource(R.string.confidentiality),
+                    leadingIcon = Icons.Outlined.Lock,
+                    headlineText = stringResource(R.string.confidentiality),
                     onClick = {
                         navHost.add(AppRoute.SettingsPrivacy)
                     })
                 
                 SectionItem(
-                    icon = Icons.Rounded.DataUsage,
-                    text = stringResource(R.string.data_and_storage),
+                    leadingIcon = Icons.Rounded.DataUsage,
+                    headlineText = stringResource(R.string.data_and_storage),
                     onClick = {
                         navHost.add(AppRoute.SettingsDataAndStorage)
                     })
                 
                 SectionItem(
-                    icon = Icons.Rounded.Language,
-                    text = stringResource(R.string.language),
+                    leadingIcon = Icons.Rounded.Language,
+                    headlineText = stringResource(R.string.language),
                     onClick = {
                         navHost.add(AppRoute.SettingsLanguage)
                     })
@@ -127,8 +127,8 @@ fun SettingsScreen() {
                 val context = LocalContext.current
                 
                 SectionItem(
-                    icon = Icons.Outlined.PrivacyTip,
-                    text = stringResource(R.string.privacy_policy),
+                    leadingIcon = Icons.Outlined.PrivacyTip,
+                    headlineText = stringResource(R.string.privacy_policy),
                     onClick = {
                         val intent =
                             CustomTabsIntent.Builder()

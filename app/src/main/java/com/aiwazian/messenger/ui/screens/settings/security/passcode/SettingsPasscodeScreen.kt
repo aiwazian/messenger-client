@@ -341,7 +341,7 @@ private fun SettingsPasscodeLockScreen(
             
             SectionContainer {
                 SectionItem(
-                    text = stringResource(R.string.change_passcode),
+                    headlineText = stringResource(R.string.change_passcode),
                     onClick = {
                         navHost.add(AppRoute.SettingsPasscodeChange)
                     })
@@ -349,8 +349,8 @@ private fun SettingsPasscodeLockScreen(
             
             SectionContainer {
                 SectionItem(
-                    text = stringResource(R.string.turn_passcode_off),
-                    color = MaterialTheme.colorScheme.error,
+                    headlineText = stringResource(R.string.turn_passcode_off),
+                    contentColor = MaterialTheme.colorScheme.error,
                     onClick = disablePasscodeDialog::show
                 )
             }

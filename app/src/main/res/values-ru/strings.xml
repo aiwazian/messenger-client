@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Поиск</string>
@@ -7,8 +11,6 @@
     <string name="notifications">Уведомления</string>
     <string name="language">Язык</string>
     <string name="logout">Выйти</string>
-    
-    
     <string name="help">Помощь</string>
     <string name="confidentiality">Конфиденциальность</string>
     <string name="account">Аккаунт</string>
@@ -148,4 +150,9 @@
     <string name="terminate_all_other_sessions_confirm_message">Вы уверены, что хотите завершить все остальные сеансы\?</string>
     <string name="waiting_for_network">Ожидание сети</string>
     <string name="your_name">Ваше имя</string>
+    <string name="kick">Выгнать</string>
+    <string name="active_links">Активные ссылки</string>
+    <string name="inactive_links">Неактивные ссылки</string>
+    <string name="new_link">Новая ссылка</string>
+    <string name="send">Отправить</string>
 </resources>

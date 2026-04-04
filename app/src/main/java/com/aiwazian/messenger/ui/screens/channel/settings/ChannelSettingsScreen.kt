@@ -29,7 +29,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.InputField
+import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -44,16 +44,15 @@ import kotlinx.coroutines.launch
 @Composable
 fun ChannelSettingsScreen(
     channelId: Long,
-    channelViewModel: ChannelSettingsViewModel = hiltViewModel()
+    channelViewModel: ChannelSettingsViewModel = hiltViewModel(),
+    mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val navHost = LocalNavHost.current
     LaunchedEffect(channelId) {
-        if (channelId != -1L) {
-            channelViewModel.init(channelId)
-        }
+        channelViewModel.init(channelId)
     }
     
-    val channelInfo by channelViewModel.channelInfo.collectAsState()
+    val channel by channelViewModel.channelInfo.collectAsState()
     val hasChanges by channelViewModel.hasChanges.collectAsState()
     
     val scrollState = rememberScrollState()
@@ -87,60 +86,49 @@ fun ChannelSettingsScreen(
                 .verticalScroll(scrollState)
         ) {
             SectionContainer {
-                InputField(
+                FramelessTextBox(
                     placeholder = stringResource(R.string.channel_name),
-                    value = channelInfo.name,
+                    value = channel.name,
                     onValueChange = channelViewModel::changeName
                 )
-                InputField(
+                FramelessTextBox(
                     placeholder = stringResource(R.string.description),
-                    value = channelInfo.bio.orEmpty(),
+                    value = channel.bio.orEmpty(),
                     onValueChange = channelViewModel::changeBio
                 )
             }
             
             SectionContainer {
                 SectionItem(
-                    icon = Icons.Rounded.PeopleAlt,
-                    text = stringResource(R.string.channel_type),
-                    primaryText = if (channelInfo.channelType == ChannelType.PUBLIC.ordinal) {
+                    leadingIcon = Icons.Rounded.PeopleAlt,
+                    headlineText = stringResource(R.string.channel_type),
+                    trailingText = if (channel.channelType == ChannelType.PUBLIC) {
                         stringResource(R.string.public_channel)
                     } else {
                         stringResource(R.string.private_channel)
                     },
                     onClick = {
-                        navHost.add(AppRoute.ChannelTypeSettings(channelInfo.id))
+                        navHost.add(AppRoute.ChannelTypeSettings(channelId = channel.id))
                     })
             }
             
             SectionContainer {
                 SectionItem(
-                    icon = Icons.Rounded.PeopleAlt,
-                    text = stringResource(R.string.subscribers),
-                    primaryText = channelInfo.subscribers.toString(),
+                    leadingIcon = Icons.Rounded.PeopleAlt,
+                    headlineText = stringResource(R.string.subscribers),
+                    trailingText = channel.subscribers.toString(),
                     onClick = {
-                        navHost.add(AppRoute.ChannelSubscribers(channelInfo.id))
+                        navHost.add(AppRoute.ChannelSubscribers(channel.id))
                     })
             }
             
             SectionContainer {
                 SectionItem(
-                    icon = Icons.Rounded.PeopleAlt,
-                    text = stringResource(R.string.invite_links),
-                    onClick = {
-                        navHost.add(AppRoute.ChannelInviteLinks(channelInfo.id))
-                    })
-            }
-            
-            SectionContainer {
-                SectionItem(
-                    text = stringResource(R.string.delete_channel),
-                    color = MaterialTheme.colorScheme.error,
+                    headlineText = stringResource(R.string.delete_channel),
+                    contentColor = MaterialTheme.colorScheme.error,
                     onClick = channelViewModel.deleteDialog::show
                 )
             }
-            
-            val mainViewModel = hiltViewModel<MainViewModel>()
             
             if (channelViewModel.deleteDialog.isVisible) {
                 CustomDialog(
@@ -156,7 +144,7 @@ fun ChannelSettingsScreen(
                                     val isDeleted = channelViewModel.tryDelete()
                                     
                                     if (isDeleted) {
-                                        mainViewModel.deleteChat(channelInfo.id)
+                                        mainViewModel.deleteChat(channel.id)
                                         channelViewModel.deleteDialog.hide()
                                         navHost.clear()
                                         navHost.add(AppRoute.Main)
@@ -190,6 +178,3 @@ private fun TopBar(actions: List<TopBarAction>) {
         actions = actions
     )
 }
-
-
-

@@ -6,7 +6,5 @@ package com.aiwazian.messenger.ui.screens.channel.settings.type
 
 sealed class ChannelTypeSettingsEffect {
     data object NavigateBack : ChannelTypeSettingsEffect()
-    data object VibrateError : ChannelTypeSettingsEffect()
-    data object VibrateSuccess : ChannelTypeSettingsEffect()
     data class ShowError(val message: String) : ChannelTypeSettingsEffect()
 }

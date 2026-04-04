@@ -25,7 +25,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,11 +42,9 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.Reply
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.LockOpen
@@ -73,15 +70,10 @@ import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBarValue
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberSearchBarState
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -297,8 +289,6 @@ private fun Content(
     
     val hasPasscode by mainViewModel.hasPasscode.collectAsState()
     
-    val snackbarHostState = remember { SnackbarHostState() }
-    
     val scope = rememberCoroutineScope()
     
     Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
@@ -309,8 +299,6 @@ private fun Content(
                 }
             }, socketState = mainViewModel.socketState.collectAsState().value
         )
-    }, snackbarHost = {
-        SwipeDismissSnackbarHost(snackbarHostState)
     }, floatingActionButton = {
         FloatingButton(onClick = {
             navHost.add(AppRoute.NewMessage)
@@ -374,78 +362,6 @@ private fun FloatingButton(onClick: () -> Unit) {
         Icon(
             imageVector = Icons.Default.Create, contentDescription = null
         )
-    }
-}
-
-@Composable
-private fun SwipeDismissSnackbarHost(snackbarHostState: SnackbarHostState) {
-    SnackbarHost(
-        hostState = snackbarHostState, modifier = Modifier.fillMaxWidth()
-    ) { data ->
-        var dismissed by remember { mutableStateOf(false) }
-        
-        if (!dismissed) {
-            val swipeToDismissBoxState = rememberSwipeToDismissBoxState()
-            
-            SwipeToDismissBox(
-                state = swipeToDismissBoxState,
-                backgroundContent = { },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.surface),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(start = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Archive,
-                                contentDescription = null,
-                            )
-                            
-                            Text(
-                                text = data.visuals.message
-                            )
-                        }
-                        
-                        TextButton(
-                            onClick = { data.performAction() },
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.primary,
-                            ),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.Reply,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            
-                            data.visuals.actionLabel?.let {
-                                Text(
-                                    text = it, color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            data.dismiss()
-        }
     }
 }
 

@@ -24,7 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.InputField
+import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -85,13 +85,13 @@ fun GroupSettingsScreen(
     }) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
             SectionContainer {
-                InputField(
+                FramelessTextBox(
                     value = groupInfo.name,
                     onValueChange = groupViewModel::changeGroupName,
                     placeholder = stringResource(R.string.group_name)
                 )
                 
-                InputField(
+                FramelessTextBox(
                     value = groupInfo.bio.orEmpty(),
                     onValueChange = groupViewModel::changeGroupBio,
                     placeholder = stringResource(R.string.description)
@@ -100,9 +100,9 @@ fun GroupSettingsScreen(
             
             SectionContainer {
                 SectionItem(
-                    icon = Icons.Rounded.PeopleOutline,
-                    text = stringResource(R.string.members),
-                    primaryText = groupInfo.members.toString(),
+                    leadingIcon = Icons.Rounded.PeopleOutline,
+                    headlineText = stringResource(R.string.members),
+                    trailingText = groupInfo.members.toString(),
                     onClick = {
                         navHost.add(AppRoute.GroupMembers(groupInfo.id))
                     }
@@ -111,8 +111,8 @@ fun GroupSettingsScreen(
             
             SectionContainer {
                 SectionItem(
-                    text = stringResource(R.string.delete_group),
-                    color = MaterialTheme.colorScheme.error,
+                    headlineText = stringResource(R.string.delete_group),
+                    contentColor = MaterialTheme.colorScheme.error,
                     onClick = deleteGroupDialog::show
                 )
             }

@@ -8,11 +8,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.Channel
 import com.aiwazian.messenger.domain.User
-import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.enums.ChannelType
+import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.utils.DialogController
-import com.aiwazian.messenger.utils.VibrationPattern
 import com.aiwazian.messenger.utils.VibrationManager
+import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -120,7 +120,7 @@ class ChannelSettingsViewModel @Inject constructor(
             return false
         }
         
-        if (_channel.value.channelType == ChannelType.PUBLIC.ordinal && _channel.value.username?.isBlank() == true) {
+        if (_channel.value.channelType == ChannelType.PUBLIC && _channel.value.username?.isBlank() == true) {
             return false
         }
         

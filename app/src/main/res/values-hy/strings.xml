@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Որոնում</string>
@@ -7,8 +11,6 @@
     <string name="notifications">Ծանուցումներ</string>
     <string name="language">Լեզու</string>
     <string name="logout">Դուրս գալ</string>
-    
-    
     <string name="help">Օգնություն</string>
     <string name="confidentiality">Գաղտնիություն</string>
     <string name="account">Հաշիվ</string>
@@ -148,4 +150,9 @@
     <string name="terminate_all_other_sessions_confirm_message">Վստա՞հ եք, որ ցանկանում եք դադարեցնել մնացած բոլոր նիստերը:</string>
     <string name="waiting_for_network">Սպասում է ցանցին</string>
     <string name="your_name">Ձեր անունը</string>
+    <string name="kick">Ոտքով հարվածել</string>
+    <string name="active_links">Ակտիվ հղումներ</string>
+    <string name="inactive_links">Անգործուն Հղումներ</string>
+    <string name="new_link">Նոր հղում</string>
+    <string name="send">Ուղարկել</string>
 </resources>

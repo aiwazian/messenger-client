@@ -119,8 +119,8 @@ fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
             
             SectionContainer {
                 SectionItem(
-                    text = stringResource(R.string.dark_theme),
-                    primaryText = theme,
+                    headlineText = stringResource(R.string.dark_theme),
+                    trailingText = theme,
                     onClick = {
                         navHost.add(AppRoute.SettingsDesign)
                     })

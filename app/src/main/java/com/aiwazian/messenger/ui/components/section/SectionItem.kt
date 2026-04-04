@@ -27,11 +27,12 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun SectionItem(
-    text: String,
-    icon: ImageVector? = null,
-    description: String? = null,
-    primaryText: String? = null,
-    color: Color = MaterialTheme.colorScheme.onSurface,
+    headlineText: String,
+    supportingText: String? = null,
+    leadingIcon: ImageVector? = null,
+    trailingText: String? = null,
+    trailingContent: @Composable (() -> Unit) = {},
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
 ) {
@@ -45,51 +46,63 @@ fun SectionItem(
             ),
         onClick = onClick,
         colors = ButtonDefaults.textButtonColors(
-            contentColor = color
+            contentColor = contentColor
         )
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = color,
-                    modifier = Modifier.padding(end = 16.dp)
-                )
-            }
-            
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = text,
-                    color = color,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Normal
-                )
-                
-                if (description != null) {
-                    Text(
-                        text = description,
-                        fontSize = 12.sp,
-                        lineHeight = 14.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if (leadingIcon != null) {
+                    Icon(
+                        imageVector = leadingIcon,
+                        contentDescription = null,
+                        tint = contentColor,
+                        modifier = Modifier.padding(end = 16.dp)
                     )
+                }
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = headlineText,
+                        color = contentColor,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                    
+                    if (supportingText != null) {
+                        Text(
+                            text = supportingText,
+                            fontSize = 12.sp,
+                            lineHeight = 14.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
             
-            if (primaryText != null) {
-                Text(
-                    text = primaryText,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Normal
-                )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End
+            ) {
+                if (trailingText != null) {
+                    Text(
+                        text = trailingText,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
+                trailingContent()
             }
         }
     }

@@ -22,7 +22,6 @@ data class InviteLinkResponseDto(
     @SerialName("code") val code: String,
     @SerialName("link") val link: String,
     @SerialName("expiresAt") val expiresAt: String? = null,
-    @SerialName("isPermanent") val isPermanent: Boolean,
     @SerialName("maxUses") val maxUses: Int? = null,
     @SerialName("uses") val uses: Int
 )

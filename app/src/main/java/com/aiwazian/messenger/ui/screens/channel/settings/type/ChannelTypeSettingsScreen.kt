@@ -5,7 +5,6 @@
 package com.aiwazian.messenger.ui.screens.channel.settings.type
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -17,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -31,7 +31,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
-import com.aiwazian.messenger.ui.components.InputField
+import com.aiwazian.messenger.ui.components.FramelessTextBox
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
@@ -50,9 +51,7 @@ fun ChannelTypeSettingsScreen(
     val navHost = LocalNavHost.current
     
     LaunchedEffect(channelId) {
-        if (channelId != -1L) {
-            viewModel.init(channelId)
-        }
+        viewModel.init(channelId)
     }
     
     val uiState by viewModel.uiState.collectAsState()
@@ -60,9 +59,7 @@ fun ChannelTypeSettingsScreen(
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
             when (effect) {
-                is ChannelTypeSettingsEffect.NavigateBack -> {
-                    navHost.removeLastOrNull()
-                }
+                is ChannelTypeSettingsEffect.NavigateBack -> navHost.removeLastOrNull()
                 
                 else -> {}
             }
@@ -116,9 +113,7 @@ fun ChannelTypeSettingsScreen(
             AnimatedContent(
                 targetState = uiState.channelType,
                 transitionSpec = {
-                    scaleIn(tween(200)) + fadeIn(tween(200)) togetherWith scaleOut(tween(200)) + fadeOut(
-                        tween(200)
-                    )
+                    scaleIn() + fadeIn() togetherWith scaleOut() + fadeOut()
                 },
                 label = "channel_type_animation"
             ) { type ->
@@ -129,7 +124,7 @@ fun ChannelTypeSettingsScreen(
                         }, footer = {
                             SectionDescription(text = "Если у канала будет постоянная публичная ссылка, другие пользователи смогут найти его и подписаться.")
                         }) {
-                            InputField(
+                            FramelessTextBox(
                                 placeholder = stringResource(R.string.username),
                                 value = uiState.publicLink,
                                 onValueChange = { viewModel.changePublicLink(it) }
@@ -160,27 +155,17 @@ fun ChannelTypeSettingsScreen(
                             )
                         }
                     }
-                } else {
-                    Column {
-                        SectionContainer(
-                            header = {
-                                SectionHeader(title = stringResource(R.string.invite_link))
-                            },
-                            footer = {
-                                SectionDescription(text = "Любой, у кого есть эта ссылка, сможет вступить в канал.")
-                            }) {
-                            SectionItem(
-                                text = uiState.inviteLink ?: "Генерация...",
-                                onClick = { /* Копирование в буфер обмена */ }
-                            )
-                            SectionItem(
-                                text = "Сбросить ссылку",
-                                color = MaterialTheme.colorScheme.error,
-                                onClick = viewModel::resetInviteLink
-                            )
-                        }
-                    }
                 }
+            }
+            
+            SectionContainer {
+                SectionItem(
+                    leadingIcon = Icons.Rounded.Link,
+                    headlineText = stringResource(R.string.invite_links),
+                    onClick = {
+                        navHost.add(AppRoute.ChannelInviteLinks(channelId))
+                    }
+                )
             }
         }
     }

@@ -19,8 +19,9 @@ import androidx.navigation3.ui.NavDisplay
 import com.aiwazian.messenger.ui.screens.channel.CreateChannelScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.ChannelBlackListScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.ChannelSettingsScreen
-import com.aiwazian.messenger.ui.screens.channel.settings.ChannelSubscribersScreen
-import com.aiwazian.messenger.ui.screens.channel.settings.type.ChannelInviteLinksScreen
+import com.aiwazian.messenger.ui.screens.channel.settings.invites.ChannelInviteLinksScreen
+import com.aiwazian.messenger.ui.screens.channel.settings.invites.CreateInviteLinkScreen
+import com.aiwazian.messenger.ui.screens.channel.settings.subscribers.ChannelSubscribersScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.type.ChannelTypeSettingsScreen
 import com.aiwazian.messenger.ui.screens.chat.ChatScreen
 import com.aiwazian.messenger.ui.screens.group.AddMemberScreen
@@ -94,7 +95,8 @@ fun AppNavHost(startRoute: AppRoute = AppRoute.Main) {
                 entry<AppRoute.ChannelTypeSettings> { ChannelTypeSettingsScreen(channelId = it.channelId) }
                 entry<AppRoute.ChannelSubscribers> { ChannelSubscribersScreen(channelId = it.channelId) }
                 entry<AppRoute.ChannelBlackList> { ChannelBlackListScreen() }
-                entry<AppRoute.ChannelInviteLinks> { ChannelInviteLinksScreen() }
+                entry<AppRoute.ChannelInviteLinks> { ChannelInviteLinksScreen(channelId = it.channelId) }
+                entry<AppRoute.CreateInviteLink> { CreateInviteLinkScreen(channelId = it.channelId) }
                 entry<AppRoute.GroupSettings> { GroupSettingsScreen(groupId = it.groupId) }
                 entry<AppRoute.GroupMembers> { GroupMembersScreen() }
                 entry<AppRoute.AddMember> { AddMemberScreen() }
@@ -114,7 +116,6 @@ fun AppNavHost(startRoute: AppRoute = AppRoute.Main) {
             },
             predictivePopTransitionSpec = {
                 slideInHorizontally { -it / 4 } togetherWith slideOutHorizontally { it }
-            }
-        )
+            })
     }
 }

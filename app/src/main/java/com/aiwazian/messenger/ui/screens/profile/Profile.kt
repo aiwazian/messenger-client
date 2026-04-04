@@ -26,7 +26,7 @@ sealed interface Profile {
         override val bio: String? = null,
         val subscribers: Int = 0,
         val removedUser: Int? = null,
-        val channelType: Int = ChannelType.PRIVATE.ordinal,
+        val channelType: ChannelType = ChannelType.PRIVATE,
         val publicLink: String? = null,
         val isSubscribed: Boolean = false
     ) : Profile

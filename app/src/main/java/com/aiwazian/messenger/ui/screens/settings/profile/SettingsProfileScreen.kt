@@ -35,7 +35,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
-import com.aiwazian.messenger.ui.components.InputField
+import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -89,7 +89,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                 SectionContainer(header = {
                     SectionHeader(title = stringResource(R.string.your_name))
                 }) {
-                    InputField(
+                    FramelessTextBox(
                         placeholder = stringResource(R.string.first_name),
                         value = uiState.user.firstName,
                         onValueChange = viewModel::onChangeFirstName
@@ -100,7 +100,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                         thickness = 1.dp,
                     )
                     
-                    InputField(
+                    FramelessTextBox(
                         placeholder = stringResource(R.string.last_name),
                         value = uiState.user.lastName.orEmpty(),
                         onValueChange = viewModel::onChangeLastName
@@ -114,7 +114,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                     footer = {
                         SectionDescription(text = "В настройках можно выбрать, кому они будут видны.")
                     }) {
-                    InputField(
+                    FramelessTextBox(
                         placeholder = stringResource(R.string.write_about_me),
                         value = uiState.user.bio.orEmpty(),
                         onValueChange = viewModel::onChangeBio
@@ -129,7 +129,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                         SectionDescription("Другие пользователи смогут найти Вас по такому имени и связаться.")
                     }) {
                     SectionItem(
-                        text = if (uiState.user.username != null) {
+                        headlineText = if (uiState.user.username != null) {
                             "@${uiState.user.username}"
                         } else {
                             "Задать имя пользователя"
@@ -144,8 +144,8 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                     SectionHeader(title = stringResource(R.string.date_of_birth))
                 }) {
                     SectionItem(
-                        text = "Дата Вашего рождения",
-                        primaryText = if (uiState.user.dateOfBirth != null) {
+                        headlineText = "Дата Вашего рождения",
+                        trailingText = if (uiState.user.dateOfBirth != null) {
                             uiState.user.dateOfBirth!!.toInstance().toPrettyDateWithYear()
                         } else {
                             "Указать"
@@ -156,11 +156,11 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                     AnimatedContent(targetState = uiState.user.dateOfBirth) { dateOfBirth ->
                         if (dateOfBirth != null) {
                             SectionItem(
-                                text = stringResource(R.string.remove_date_of_birth),
+                                headlineText = stringResource(R.string.remove_date_of_birth),
                                 onClick = {
                                     viewModel.onChangeDateOfBirth(null)
                                 },
-                                color = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.primary,
                             )
                         }
                     }

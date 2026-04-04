@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Buscar</string>
@@ -7,8 +11,6 @@
     <string name="notifications">Notificaciones</string>
     <string name="language">Idioma</string>
     <string name="logout">Finalizar la sesión</string>
-    
-    
     <string name="help">Ayuda</string>
     <string name="confidentiality">Privacidad</string>
     <string name="account">Cuenta</string>
@@ -148,4 +150,9 @@
     <string name="terminate_all_other_sessions_confirm_message">¿Está seguro de que desea finalizar todas las demás sesiones\?</string>
     <string name="waiting_for_network">esperando red</string>
     <string name="your_name">Su nombre</string>
+    <string name="kick">Patada</string>
+    <string name="active_links">Enlaces activos</string>
+    <string name="inactive_links">Enlaces inactivos</string>
+    <string name="new_link">Nuevo enlace</string>
+    <string name="send">Enviar</string>
 </resources>

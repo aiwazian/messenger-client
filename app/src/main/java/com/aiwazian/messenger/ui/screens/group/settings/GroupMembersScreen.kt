@@ -39,9 +39,9 @@ fun GroupMembersScreen(groupViewModel: GroupViewModel = hiltViewModel()) {
         Column(modifier = Modifier.padding(innerPadding)) {
             SectionContainer {
                 SectionItem(
-                    icon = Icons.Rounded.PersonAdd,
-                    text = stringResource(R.string.add_member),
-                    color = MaterialTheme.colorScheme.primary,
+                    leadingIcon = Icons.Rounded.PersonAdd,
+                    headlineText = stringResource(R.string.add_member),
+                    contentColor = MaterialTheme.colorScheme.primary,
                     onClick = {
                         //                        navHost.add(AppRoute.AddMember())
                     }

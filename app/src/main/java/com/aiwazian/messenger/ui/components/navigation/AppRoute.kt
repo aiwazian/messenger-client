@@ -13,7 +13,7 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data object Main : AppRoute
-
+    
     @Serializable
     data class Chat(val chatId: Long) : AppRoute
     
@@ -52,7 +52,7 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data class SettingsDateOfBirth(val level: PrivacyLevel) : AppRoute
-
+    
     @Serializable
     data class SettingsInvites(val level: PrivacyLevel) : AppRoute
     
@@ -103,6 +103,9 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data class ChannelInviteLinks(val channelId: Long) : AppRoute
+    
+    @Serializable
+    data class CreateInviteLink(val channelId: Long) : AppRoute
     
     @Serializable
     data class GroupSettings(val groupId: Long) : AppRoute
