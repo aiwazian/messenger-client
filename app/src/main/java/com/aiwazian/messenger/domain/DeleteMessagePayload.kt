@@ -4,6 +4,9 @@
 
 package com.aiwazian.messenger.domain
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class DeleteMessagePayload(
     val chatId: Long,
     val messageId: Int

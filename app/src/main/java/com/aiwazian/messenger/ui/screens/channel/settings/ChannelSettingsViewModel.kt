@@ -133,4 +133,23 @@ class ChannelSettingsViewModel @Inject constructor(
             onResult(result.isSuccess)
         }
     }
+
+    fun banUser(userId: Long, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val result = channelRepository.banUser(_channelId, userId)
+            onResult(result.isSuccess)
+        }
+    }
+
+    fun unbanUser(userId: Long, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val result = channelRepository.unbanUser(_channelId, userId)
+            onResult(result.isSuccess)
+        }
+    }
+
+    suspend fun getBannedUsers(search: String? = null): List<User> {
+        val bannedUsers = channelRepository.getBannedUsers(_channelId, search = search)
+        return bannedUsers.getOrThrow()
+    }
 }

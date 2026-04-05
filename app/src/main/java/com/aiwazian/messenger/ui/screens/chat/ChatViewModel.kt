@@ -128,7 +128,12 @@ class ChatViewModel @Inject constructor(
         webSocketClient.subscribeToTypedMessages<Message>(WebSocketAction.NEW_MESSAGE) { message ->
             if (message.senderId == _uiState.value.chat.id && message.senderId != _uiState.value.currentUserId || message.chatId == _uiState.value.chat.id) {
                 viewModelScope.launch {
-                    val messages = getRawMessages() + message
+                    val existingMessages = getRawMessages()
+                    val messages = if (existingMessages.any { it.id == message.id }) {
+                        existingMessages.map { if (it.id == message.id) message else it }
+                    } else {
+                        existingMessages + message
+                    }
                     updateChatItems(messages)
                     _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
                 }
@@ -158,6 +163,14 @@ class ChatViewModel @Inject constructor(
                     if (it.id == message.messageId) it.copy(isRead = true) else it
                 }
                 updateChatItems(messages)
+            }
+        }
+        
+        webSocketClient.subscribeToTypedMessages<DeleteChatPayload>(WebSocketAction.CHAT_REMOVED) { payload ->
+            if (payload.chatId == _chatId) {
+                viewModelScope.launch {
+                    _uiEffect.emit(ChatUiEffect.NavigateToMain)
+                }
             }
         }
         
@@ -1110,7 +1123,16 @@ class ChatViewModel @Inject constructor(
 
     fun onLinkClicked(url: String) {
         val inviteLinkRegex = Regex("(?:https?://)?aiwazian\\.ru/\\+([a-f0-9]+)")
-        val match = inviteLinkRegex.find(url) ?: return
+        val match = inviteLinkRegex.find(url)
+
+        if (match == null) {
+            val normalizedUrl = if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"
+            viewModelScope.launch {
+                _uiEffect.emit(ChatUiEffect.OpenUrl(normalizedUrl))
+            }
+            return
+        }
+
         val code = match.groupValues[1]
 
         viewModelScope.launch {
@@ -1121,17 +1143,31 @@ class ChatViewModel @Inject constructor(
                 val info = result.getOrNull()!!
                 val channel = channelRepository.getById(info.channelId).first()
 
-                if (channel.isSubscribed) {
+                if (ChatState.isChatOpen(info.channelId)) {
+                    _uiState.update { it.copy(isProcessingInvite = false) }
+                    _uiEffect.emit(ChatUiEffect.ShowAlreadyInChatSnackbar)
+                } else if (channel.isSubscribed) {
                     _uiState.update { it.copy(isProcessingInvite = false) }
                     _uiEffect.emit(ChatUiEffect.NavigateToChat(info.channelId))
                 } else {
-                    _uiState.update {
-                        it.copy(
-                            inviteLinkInfo = info,
-                            inviteLinkCode = code,
-                            showInviteBottomSheet = true,
-                            isProcessingInvite = false
-                        )
+                    val banCheck = channelRepository.isUserBanned(info.channelId)
+                    if (banCheck.isSuccess && banCheck.getOrNull() == true) {
+                        _uiState.update {
+                            it.copy(
+                                showBannedDialog = true,
+                                isProcessingInvite = false
+                            )
+                        }
+                        vibrationManager.vibrate(VibrationPattern.Error)
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                inviteLinkInfo = info,
+                                inviteLinkCode = code,
+                                showInviteBottomSheet = true,
+                                isProcessingInvite = false
+                            )
+                        }
                     }
                 }
             } else {
@@ -1140,6 +1176,10 @@ class ChatViewModel @Inject constructor(
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }
+    }
+
+    fun dismissBannedDialog() {
+        _uiState.update { it.copy(showBannedDialog = false) }
     }
 
     fun onSubscribeViaInviteLink() {

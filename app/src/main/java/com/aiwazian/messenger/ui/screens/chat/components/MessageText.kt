@@ -20,7 +20,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val INVITE_LINK_REGEX = Regex("(https?://)?(aiwazian\\.ru/\\+[a-f0-9]+)")
+private val URL_REGEX = Regex("(?:https?://)?(?:aiwazian\\.ru/\\+[a-f0-9]+|[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z]{2,})(?:/[^\\s]*)?)")
 
 @Composable
 fun MessageText(
@@ -32,7 +32,7 @@ fun MessageText(
     ) {
         val annotatedString = buildAnnotatedString {
             var lastIndex = 0
-            val matches = INVITE_LINK_REGEX.findAll(text).toList()
+            val matches = URL_REGEX.findAll(text).toList()
             
             if (matches.isEmpty()) {
                 append(text)
@@ -48,7 +48,6 @@ fun MessageText(
                 }
                 
                 val matchedUrl = matchResult.value
-                val displayText = matchedUrl.replace(Regex("^https?://"), "")
                 
                 if (onLinkClicked != null) {
                     withLink(
@@ -68,7 +67,7 @@ fun MessageText(
                             }
                         )
                     ) {
-                        append(displayText)
+                        append(matchedUrl)
                     }
                 } else {
                     withStyle(
@@ -77,7 +76,7 @@ fun MessageText(
                             textDecoration = TextDecoration.Underline
                         )
                     ) {
-                        append(displayText)
+                        append(matchedUrl)
                     }
                 }
                 

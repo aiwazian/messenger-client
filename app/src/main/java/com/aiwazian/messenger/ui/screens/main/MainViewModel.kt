@@ -12,8 +12,8 @@ import com.aiwazian.messenger.domain.DeleteMessagePayload
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.ReadMessagePayload
 import com.aiwazian.messenger.enums.ConnectionState
-import com.aiwazian.messenger.socket.WebSocketAction
 import com.aiwazian.messenger.repository.ChatRepository
+import com.aiwazian.messenger.socket.WebSocketAction
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.utils.AppLockManager
 import com.aiwazian.messenger.utils.SessionManager
@@ -110,6 +110,19 @@ class MainViewModel @Inject constructor(
         
         webSocketClient.subscribeToTypedMessages<DeleteChatPayload>(WebSocketAction.DELETE_CHAT) { payload ->
             deleteChat(payload.chatId)
+        }
+        
+        webSocketClient.subscribeToTypedMessages<DeleteChatPayload>(WebSocketAction.CHAT_REMOVED) { payload ->
+            deleteChat(payload.chatId)
+        }
+        
+        webSocketClient.subscribeToTypedMessages<DeleteChatPayload>(WebSocketAction.CHAT_UPDATED) { payload ->
+            viewModelScope.launch {
+                val chatInfo = chatRepository.get(payload.chatId)
+                if (chatInfo != null) {
+                    updateChatInList(chatInfo)
+                }
+            }
         }
         
         viewModelScope.launch {
@@ -238,5 +251,18 @@ class MainViewModel @Inject constructor(
 
     private fun List<Chat>.sortedByLastMessage(): List<Chat> {
         return this.sortedByDescending { it.lastMessage?.sendTime ?: 0L }
+    }
+    
+    private fun updateChatInList(chat: Chat) {
+        _chats.update { currentChats ->
+            val index = currentChats.indexOfFirst { it.id == chat.id }
+            if (index >= 0) {
+                currentChats.toMutableList().apply {
+                    set(index, chat)
+                }.sortedByLastMessage()
+            } else {
+                currentChats
+            }
+        }
     }
 }

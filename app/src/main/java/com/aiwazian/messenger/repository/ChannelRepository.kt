@@ -380,4 +380,77 @@ class ChannelRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun getBannedUsers(
+        id: Long,
+        skip: Int = 0,
+        take: Int = 100,
+        search: String? = null
+    ): Result<List<User>> {
+        return try {
+            val response =
+                channelApi.getBannedUsers(
+                    id,
+                    skip,
+                    take,
+                    search
+                )
+            if (response.isSuccessful) {
+                val dtos = response.body().orEmpty()
+                Result.success(dtos.map { it.toDomain() })
+            } else {
+                Result.success(emptyList())
+            }
+        } catch (e: Exception) {
+            Log.e(
+                "ChannelRepository",
+                "Ошибка при получении заблокированных пользователей",
+                e
+            )
+            Result.failure(e)
+        }
+    }
+
+    suspend fun unbanUser(
+        channelId: Long,
+        userId: Long
+    ): Result<Unit> {
+        return try {
+            val response =
+                channelApi.unbanUser(
+                    channelId,
+                    userId
+                )
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Unban failed"))
+            }
+        } catch (e: Exception) {
+            Log.e(
+                "ChannelRepository",
+                "Ошибка при разблокировке пользователя",
+                e
+            )
+            Result.failure(e)
+        }
+    }
+
+    suspend fun isUserBanned(channelId: Long): Result<Boolean> {
+        return try {
+            val response = channelApi.isUserBanned(channelId)
+            if (response.isSuccessful) {
+                Result.success(response.body()?.isBanned ?: false)
+            } else {
+                Result.success(false)
+            }
+        } catch (e: Exception) {
+            Log.e(
+                "ChannelRepository",
+                "Ошибка при проверке блокировки пользователя",
+                e
+            )
+            Result.failure(e)
+        }
+    }
 }

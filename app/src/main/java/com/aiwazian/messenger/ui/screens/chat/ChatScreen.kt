@@ -7,6 +7,7 @@ package com.aiwazian.messenger.ui.screens.chat
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -87,6 +88,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
@@ -100,6 +102,7 @@ import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.main.MainViewModel
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -163,6 +166,21 @@ fun ChatScreen(
                 
                 is ChatUiEffect.NavigateToChat -> {
                     navHost.add(AppRoute.Chat(effect.chatId))
+                }
+                
+                is ChatUiEffect.OpenUrl -> {
+                    val intent = CustomTabsIntent.Builder()
+                        .setShowTitle(true)
+                        .setTranslateLocale(Locale.getDefault())
+                        .build()
+                    intent.launchUrl(context, effect.url.toUri())
+                }
+                
+                is ChatUiEffect.ShowAlreadyInChatSnackbar -> {
+                    snackbarHostState.showSnackbar(
+                        message = "Вы уже в этом чате",
+                        duration = SnackbarDuration.Short
+                    )
                 }
             }
         }
@@ -315,6 +333,21 @@ fun ChatScreen(
                 isLoading = uiState.isProcessingInvite,
                 onDismiss = { chatViewModel.dismissInviteBottomSheet() },
                 onSubscribe = { chatViewModel.onSubscribeViaInviteLink() }
+            )
+        }
+        
+        if (uiState.showBannedDialog) {
+            CustomDialog(
+                title = "Нет доступа",
+                onDismissRequest = { chatViewModel.dismissBannedDialog() },
+                buttons = {
+                    TextButton(onClick = { chatViewModel.dismissBannedDialog() }) {
+                        Text("Ок")
+                    }
+                },
+                content = {
+                    Text("Вас заблокировал администратор канала")
+                }
             )
         }
     }

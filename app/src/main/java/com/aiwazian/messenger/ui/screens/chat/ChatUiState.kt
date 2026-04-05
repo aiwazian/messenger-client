@@ -39,5 +39,6 @@ data class ChatUiState(
     val inviteLinkCode: String? = null,
     val showInviteBottomSheet: Boolean = false,
     val isProcessingInvite: Boolean = false,
-    val inviteLinkError: String? = null
+    val inviteLinkError: String? = null,
+    val showBannedDialog: Boolean = false
 )

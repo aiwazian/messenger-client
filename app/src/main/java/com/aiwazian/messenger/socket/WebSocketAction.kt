@@ -52,7 +52,13 @@ enum class WebSocketAction(val value: String) {
     DELETE_CHAT("delete_chat"),
     
     @SerialName("read_message")
-    READ_MESSAGE("read_message");
+    READ_MESSAGE("read_message"),
+    
+    @SerialName("chat:removed")
+    CHAT_REMOVED("chat:removed"),
+    
+    @SerialName("chat:updated")
+    CHAT_UPDATED("chat:updated");
     
     companion object {
         private val map = entries.associateBy { it.value }

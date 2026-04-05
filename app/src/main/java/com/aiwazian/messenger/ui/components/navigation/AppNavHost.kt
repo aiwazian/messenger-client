@@ -94,7 +94,7 @@ fun AppNavHost(startRoute: AppRoute = AppRoute.Main) {
                 entry<AppRoute.ChannelSettings> { ChannelSettingsScreen(channelId = it.channelId) }
                 entry<AppRoute.ChannelTypeSettings> { ChannelTypeSettingsScreen(channelId = it.channelId) }
                 entry<AppRoute.ChannelSubscribers> { ChannelSubscribersScreen(channelId = it.channelId) }
-                entry<AppRoute.ChannelBlackList> { ChannelBlackListScreen() }
+                entry<AppRoute.ChannelBlackList> { ChannelBlackListScreen(channelId = it.channelId) }
                 entry<AppRoute.ChannelInviteLinks> { ChannelInviteLinksScreen(channelId = it.channelId) }
                 entry<AppRoute.CreateInviteLink> { CreateInviteLinkScreen(channelId = it.channelId) }
                 entry<AppRoute.GroupSettings> { GroupSettingsScreen(groupId = it.groupId) }

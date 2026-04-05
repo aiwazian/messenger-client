@@ -8,6 +8,7 @@ import com.aiwazian.messenger.network.dto.ChannelResponseDto
 import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import com.aiwazian.messenger.network.dto.InviteLinkResponseDto
+import com.aiwazian.messenger.network.dto.IsBannedResponseDto
 import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
 import retrofit2.Response
@@ -76,4 +77,23 @@ interface ChannelApi {
         @Path("channelId") channelId: Long,
         @Path("inviteLinkId") inviteLinkId: Long
     ): Response<Unit>
+
+    @GET("channels/{channelId}/banned-users")
+    suspend fun getBannedUsers(
+        @Path("channelId") channelId: Long,
+        @Query("skip") skip: Int = 0,
+        @Query("take") take: Int = 100,
+        @Query("search") search: String? = null
+    ): Response<List<UserResponseDto>>
+
+    @POST("channels/{channelId}/unban/{userId}")
+    suspend fun unbanUser(
+        @Path("channelId") channelId: Long,
+        @Path("userId") userId: Long
+    ): Response<Unit>
+
+    @GET("channels/{channelId}/is-banned")
+    suspend fun isUserBanned(
+        @Path("channelId") channelId: Long
+    ): Response<IsBannedResponseDto>
 }

@@ -19,4 +19,6 @@ sealed class ChatUiEffect {
     ) : ChatUiEffect()
     data class ShowInviteSnackbar(val message: String) : ChatUiEffect()
     data class NavigateToChat(val chatId: Long) : ChatUiEffect()
+    data class OpenUrl(val url: String) : ChatUiEffect()
+    data object ShowAlreadyInChatSnackbar : ChatUiEffect()
 }

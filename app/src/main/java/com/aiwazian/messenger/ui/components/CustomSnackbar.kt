@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
@@ -25,6 +26,7 @@ fun CustomSnackbar(text: String, onDismiss: (() -> Unit)? = null) {
         onDismiss = { onDismiss?.invoke() }) {
         Row(
             modifier = Modifier
+                .fillMaxWidth()
                 .padding(10.dp)
                 .clip(shape = MaterialTheme.shapes.large)
                 .background(MaterialTheme.colorScheme.surfaceContainer),
@@ -34,7 +36,7 @@ fun CustomSnackbar(text: String, onDismiss: (() -> Unit)? = null) {
                 fontSize = 14.sp,
                 lineHeight = 14.sp,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(10.dp),
+                modifier = Modifier.padding(12.dp),
             )
         }
     }
