@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.PeopleAlt
+import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -119,6 +120,13 @@ fun ChannelSettingsScreen(
                     trailingText = channel.subscribers.toString(),
                     onClick = {
                         navHost.add(AppRoute.ChannelSubscribers(channel.id))
+                    })
+                SectionItem(
+                    leadingIcon = Icons.Rounded.RemoveCircleOutline,
+                    headlineText = stringResource(R.string.removed_user),
+                    trailingText = channel.removedUser?.toString(),
+                    onClick = {
+                        navHost.add(AppRoute.ChannelBlackList(channel.id))
                     })
             }
             

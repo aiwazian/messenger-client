@@ -35,7 +35,8 @@ import com.aiwazian.messenger.ui.screens.chat.ChatItem
 fun MessageBubble(
     item: ChatItem.MessageItem,
     onSeen: () -> Unit,
-    onFileAction: (MessageFile, FileAction) -> Unit
+    onFileAction: (MessageFile, FileAction) -> Unit,
+    onLinkClicked: ((String) -> Unit)? = null
 ) {
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
@@ -96,7 +97,7 @@ fun MessageBubble(
                 }
                 
                 if (!message.text.isNullOrBlank()) {
-                    MessageText(message.text)
+                    MessageText(message.text, onLinkClicked = onLinkClicked)
                 }
             }
             

@@ -46,6 +46,7 @@ import com.aiwazian.messenger.utils.FileHandler
 import com.aiwazian.messenger.utils.ProgressRequestBody
 import com.aiwazian.messenger.utils.UserManager
 import com.aiwazian.messenger.utils.VibrationManager
+import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -54,6 +55,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -1104,5 +1106,76 @@ class ChatViewModel @Inject constructor(
         val emojiRegex =
             Regex("^[\\p{So}\\p{Cntrl}\\p{InEmoticons}\\p{InMiscellaneousSymbolsAndPictographs}\\p{InSupplementalSymbolsAndPictographs}\\uD83C\\uDFF0-\\uD83D\\uDFFF]+$")
         return emojiRegex.matches(text.trim())
+    }
+
+    fun onLinkClicked(url: String) {
+        val inviteLinkRegex = Regex("(?:https?://)?aiwazian\\.ru/\\+([a-f0-9]+)")
+        val match = inviteLinkRegex.find(url) ?: return
+        val code = match.groupValues[1]
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessingInvite = true) }
+
+            val result = channelRepository.validateInviteLink(code)
+            if (result.isSuccess) {
+                val info = result.getOrNull()!!
+                val channel = channelRepository.getById(info.channelId).first()
+
+                if (channel.isSubscribed) {
+                    _uiState.update { it.copy(isProcessingInvite = false) }
+                    _uiEffect.emit(ChatUiEffect.NavigateToChat(info.channelId))
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            inviteLinkInfo = info,
+                            inviteLinkCode = code,
+                            showInviteBottomSheet = true,
+                            isProcessingInvite = false
+                        )
+                    }
+                }
+            } else {
+                _uiState.update { it.copy(isProcessingInvite = false) }
+                _uiEffect.emit(ChatUiEffect.ShowInviteSnackbar("Ссылка недействительна"))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
+    }
+
+    fun onSubscribeViaInviteLink() {
+        val info = _uiState.value.inviteLinkInfo ?: return
+        val code = _uiState.value.inviteLinkCode ?: return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessingInvite = true) }
+
+            val result = channelRepository.joinViaInviteCode(code)
+            if (result.isSuccess) {
+                _uiState.update {
+                    it.copy(
+                        isProcessingInvite = false,
+                        showInviteBottomSheet = false,
+                        inviteLinkInfo = null,
+                        inviteLinkCode = null
+                    )
+                }
+                _uiEffect.emit(ChatUiEffect.NavigateToChat(info.channelId))
+            } else {
+                _uiState.update { it.copy(isProcessingInvite = false) }
+                _uiEffect.emit(ChatUiEffect.ShowInviteSnackbar("Ссылка недействительна"))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
+    }
+
+    fun dismissInviteBottomSheet() {
+        _uiState.update {
+            it.copy(
+                showInviteBottomSheet = false,
+                inviteLinkInfo = null,
+                inviteLinkCode = null,
+                isProcessingInvite = false
+            )
+        }
     }
 }

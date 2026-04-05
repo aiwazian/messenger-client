@@ -8,10 +8,12 @@ import android.util.Log
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.domain.Channel
 import com.aiwazian.messenger.domain.InviteLink
+import com.aiwazian.messenger.domain.InviteLinkInfo
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.network.api.ChannelApi
+import com.aiwazian.messenger.network.api.ChatApi
 import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
@@ -23,9 +25,11 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.aiwazian.messenger.mappers.toDomain as toDomainInfo
 
 class ChannelRepository @Inject constructor(
     private val channelApi: ChannelApi,
+    private val chatApi: ChatApi,
     private val channelDao: ChannelDao
 ) {
     
@@ -340,6 +344,39 @@ class ChannelRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e("ChannelRepository", "Error deleting invite link", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun validateInviteLink(code: String): Result<InviteLinkInfo> {
+        return try {
+            val response = chatApi.getInviteLinkInfo(code)
+            if (response.isSuccessful) {
+                val dto = response.body()
+                if (dto != null) {
+                    Result.success(dto.toDomainInfo())
+                } else {
+                    Result.failure(Exception("No invite link info returned"))
+                }
+            } else {
+                Result.failure(Exception("Failed to validate invite link"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChannelRepository", "Error validating invite link", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun joinViaInviteCode(code: String): Result<Unit> {
+        return try {
+            val response = chatApi.joinViaInviteCode(code)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Join via invite link failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChannelRepository", "Error joining via invite link", e)
             Result.failure(e)
         }
     }

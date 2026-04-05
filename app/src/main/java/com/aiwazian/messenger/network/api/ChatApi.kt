@@ -6,6 +6,7 @@ package com.aiwazian.messenger.network.api
 
 import com.aiwazian.messenger.network.dto.ChatResponseDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
+import com.aiwazian.messenger.network.dto.InviteLinkInfoDto
 import com.aiwazian.messenger.network.dto.InviteLinkResponseDto
 import com.aiwazian.messenger.network.dto.MessageResponseDto
 import retrofit2.Response
@@ -37,4 +38,10 @@ interface ChatApi {
 
     @POST("chats/invite-links")
     suspend fun createInviteLink(@Body request: CreateInviteLinkRequestDto): Response<InviteLinkResponseDto>
+
+    @GET("chats/invite-links/{code}/info")
+    suspend fun getInviteLinkInfo(@Path("code") code: String): Response<InviteLinkInfoDto>
+
+    @GET("chats/join/{code}")
+    suspend fun joinViaInviteCode(@Path("code") code: String): Response<Unit>
 }

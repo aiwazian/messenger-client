@@ -55,6 +55,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -89,6 +92,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
@@ -109,6 +113,7 @@ fun ChatScreen(
     
     val uiState by chatViewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
+    val snackbarHostState = remember { SnackbarHostState() }
     
     val firstVisibleItemIndex =
         remember { androidx.compose.runtime.derivedStateOf { listState.firstVisibleItemIndex } }
@@ -148,6 +153,17 @@ fun ChatScreen(
                     effect.chat,
                     effect.lastMessage
                 )
+                
+                is ChatUiEffect.ShowInviteSnackbar -> {
+                    snackbarHostState.showSnackbar(
+                        message = effect.message,
+                        duration = SnackbarDuration.Short
+                    )
+                }
+                
+                is ChatUiEffect.NavigateToChat -> {
+                    navHost.add(AppRoute.Chat(effect.chatId))
+                }
             }
         }
     }
@@ -159,6 +175,14 @@ fun ChatScreen(
     }
     
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) {
+                CustomSnackbar(
+                    text = it.visuals.message,
+                    onDismiss = it::dismiss
+                )
+            }
+        },
         topBar = {
             TopBar(
                 title = if (uiState.isSavedMessages) stringResource(R.string.saved_messages) else uiState.topBarTitle,
@@ -236,6 +260,9 @@ fun ChatScreen(
                                             action
                                         )
                                     }
+                                },
+                                onLinkClicked = { url ->
+                                    chatViewModel.onLinkClicked(url)
                                 })
                         }
                     }
@@ -278,6 +305,17 @@ fun ChatScreen(
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                     ) { Text("Да") }
                 })
+        }
+        
+        if (uiState.showInviteBottomSheet && uiState.inviteLinkInfo != null) {
+            InviteLinkBottomSheet(
+                channelName = uiState.inviteLinkInfo!!.channelName,
+                description = uiState.inviteLinkInfo!!.description,
+                subscribersCount = uiState.inviteLinkInfo!!.subscribersCount,
+                isLoading = uiState.isProcessingInvite,
+                onDismiss = { chatViewModel.dismissInviteBottomSheet() },
+                onSubscribe = { chatViewModel.onSubscribeViaInviteLink() }
+            )
         }
     }
 }
@@ -848,4 +886,67 @@ private fun Checkbox(
         onCheckedChange = onCheckedChange,
         modifier = modifier
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun InviteLinkBottomSheet(
+    channelName: String,
+    description: String?,
+    subscribersCount: Int,
+    isLoading: Boolean,
+    onDismiss: () -> Unit,
+    onSubscribe: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        dragHandle = null
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = channelName,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            
+            if (!description.isNullOrBlank()) {
+                Text(
+                    text = description,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            
+            Text(
+                text = "$subscribersCount ${stringResource(R.string.subscriberCount).lowercase()}",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
+            TextButton(
+                onClick = onSubscribe,
+                enabled = !isLoading,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isLoading) {
+                    CircularWavyProgressIndicator(modifier = Modifier.padding(4.dp))
+                } else {
+                    Text(
+                        text = stringResource(R.string.subscribe).uppercase(),
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    }
 }

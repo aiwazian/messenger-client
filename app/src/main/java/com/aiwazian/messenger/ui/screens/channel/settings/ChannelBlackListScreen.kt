@@ -14,9 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 
 @Composable
 fun ChannelBlackListScreen() {
@@ -36,6 +36,3 @@ fun ChannelBlackListScreen() {
         }
     }
 }
-
-
-

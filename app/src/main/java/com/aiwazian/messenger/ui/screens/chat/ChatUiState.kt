@@ -5,9 +5,10 @@
 package com.aiwazian.messenger.ui.screens.chat
 
 import com.aiwazian.messenger.domain.Chat
+import com.aiwazian.messenger.domain.InviteLinkInfo
 import com.aiwazian.messenger.domain.Message
-import com.aiwazian.messenger.ui.screens.profile.Profile
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.ui.screens.profile.Profile
 
 data class ChatUiState(
     val chat: Chat = Chat(),
@@ -33,5 +34,10 @@ data class ChatUiState(
     val isOwner: Boolean = false,
     val isLoading: Boolean = true,
     val isLoadingMore: Boolean = false,
-    val hasMoreMessages: Boolean = true
+    val hasMoreMessages: Boolean = true,
+    val inviteLinkInfo: InviteLinkInfo? = null,
+    val inviteLinkCode: String? = null,
+    val showInviteBottomSheet: Boolean = false,
+    val isProcessingInvite: Boolean = false,
+    val inviteLinkError: String? = null
 )
