@@ -10,9 +10,11 @@ import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.domain.Group
 import com.aiwazian.messenger.domain.User
+import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.network.dto.CreateGroupRequestDto
 import com.aiwazian.messenger.network.dto.UpdateGroupRequestDto
+import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
@@ -87,7 +89,9 @@ class GroupRepository @Inject constructor(
         return try {
             val request = UpdateGroupRequestDto(
                 name = group.name,
-                bio = group.bio
+                bio = group.bio,
+                username = group.username,
+                groupType = group.groupType
             )
             val response = groupApi.updateGroup(group.id, request)
             if (response.isSuccessful) {
@@ -169,6 +173,58 @@ class GroupRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e("GroupRepository", "Ошибка при бане пользователя", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getInviteLinks(groupId: Long): Result<List<InviteLink>> {
+        return try {
+            val response = groupApi.getInviteLinks(groupId)
+            if (response.isSuccessful) {
+                val dtos = response.body().orEmpty()
+                Result.success(dtos.map { it.toDomain() })
+            } else {
+                Result.failure(Exception("Failed to get invite links"))
+            }
+        } catch (e: Exception) {
+            Log.e("GroupRepository", "Error getting invite links", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun createInviteLink(groupId: Long, maxUses: Int?, expiresInSeconds: Int? = null): Result<InviteLink> {
+        return try {
+            val request = CreateInviteLinkRequestDto(
+                maxUses = maxUses,
+                expiresInSeconds = expiresInSeconds
+            )
+            val response = groupApi.createInviteLink(groupId, request)
+            if (response.isSuccessful) {
+                val dto = response.body()
+                if (dto != null) {
+                    Result.success(dto.toDomain())
+                } else {
+                    Result.failure(Exception("No invite link returned"))
+                }
+            } else {
+                Result.failure(Exception("Create invite link failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("GroupRepository", "Error creating invite link", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteInviteLink(groupId: Long, inviteLinkId: Long): Result<Unit> {
+        return try {
+            val response = groupApi.deleteInviteLink(groupId, inviteLinkId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Delete invite link failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("GroupRepository", "Error deleting invite link", e)
             Result.failure(e)
         }
     }

@@ -155,4 +155,6 @@
     <string name="inactive_links">Неактивные ссылки</string>
     <string name="new_link">Новая ссылка</string>
     <string name="send">Отправить</string>
+    <string name="subscribe">Подписаться</string>
+    <string name="group_type">Тип группы</string>
 </resources>

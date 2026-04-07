@@ -156,4 +156,5 @@
     <string name="new_link">New Link</string>
     <string name="send">Send</string>
     <string name="subscribe">Subscribe</string>
+    <string name="group_type">Group Type</string>
 </resources>

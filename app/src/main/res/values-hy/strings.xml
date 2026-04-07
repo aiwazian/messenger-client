@@ -155,4 +155,6 @@
     <string name="inactive_links">Անգործուն Հղումներ</string>
     <string name="new_link">Նոր հղում</string>
     <string name="send">Ուղարկել</string>
+    <string name="subscribe">Բաժանորդագրվել</string>
+    <string name="group_type">Խմբի տեսակը</string>
 </resources>

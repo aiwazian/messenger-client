@@ -155,4 +155,6 @@
     <string name="inactive_links">Белсенді емес сілтемелер</string>
     <string name="new_link">Жаңа сілтеме</string>
     <string name="send">Жіберу</string>
+    <string name="subscribe">Жазылу</string>
+    <string name="group_type">Топ түрі</string>
 </resources>

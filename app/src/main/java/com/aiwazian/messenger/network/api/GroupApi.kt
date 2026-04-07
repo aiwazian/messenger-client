@@ -5,7 +5,9 @@
 package com.aiwazian.messenger.network.api
 
 import com.aiwazian.messenger.network.dto.CreateGroupRequestDto
+import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import com.aiwazian.messenger.network.dto.GroupResponseDto
+import com.aiwazian.messenger.network.dto.InviteLinkResponseDto
 import com.aiwazian.messenger.network.dto.UpdateGroupRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
 import retrofit2.Response
@@ -58,5 +60,20 @@ interface GroupApi {
     suspend fun banUser(
         @Path("groupId") groupId: Long,
         @Path("userId") userId: Long
+    ): Response<Unit>
+
+    @GET("groups/{groupId}/invite-links")
+    suspend fun getInviteLinks(@Path("groupId") groupId: Long): Response<List<InviteLinkResponseDto>>
+
+    @POST("groups/{groupId}/invite-links")
+    suspend fun createInviteLink(
+        @Path("groupId") groupId: Long,
+        @Body request: CreateInviteLinkRequestDto
+    ): Response<InviteLinkResponseDto>
+
+    @DELETE("groups/{groupId}/invite-links/{inviteLinkId}")
+    suspend fun deleteInviteLink(
+        @Path("groupId") groupId: Long,
+        @Path("inviteLinkId") inviteLinkId: Long
     ): Response<Unit>
 }

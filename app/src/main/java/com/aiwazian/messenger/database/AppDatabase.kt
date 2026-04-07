@@ -24,7 +24,7 @@ import androidx.room.TypeConverters
 @Database(
     entities = [UserEntity::class, MessageEntity::class, ChannelEntity::class, AccountEntity::class, GroupEntity::class, AttachmentEntity::class],
     exportSchema = false,
-    version = 18
+    version = 19
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {

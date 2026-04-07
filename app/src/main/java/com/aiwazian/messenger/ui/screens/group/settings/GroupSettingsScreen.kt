@@ -9,7 +9,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.LockOpen
+import androidx.compose.material.icons.rounded.People
+import androidx.compose.material.icons.rounded.PeopleAlt
 import androidx.compose.material.icons.rounded.PeopleOutline
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -100,7 +104,14 @@ fun GroupSettingsScreen(
             
             SectionContainer {
                 SectionItem(
-                    leadingIcon = Icons.Rounded.PeopleOutline,
+                    leadingIcon = Icons.Rounded.LockOpen,
+                    headlineText = stringResource(R.string.group_type),
+                    onClick = {
+                        navHost.add(AppRoute.GroupTypeSettings(groupInfo.id))
+                    }
+                )
+                SectionItem(
+                    leadingIcon = Icons.Rounded.People,
                     headlineText = stringResource(R.string.members),
                     trailingText = groupInfo.members.toString(),
                     onClick = {

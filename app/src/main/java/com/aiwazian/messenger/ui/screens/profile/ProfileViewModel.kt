@@ -155,7 +155,7 @@ class ProfileViewModel @Inject constructor(
                             subscribers = channel.subscribers,
                             removedUser = channel.removedUser,
                             channelType = channel.channelType,
-                            publicLink = channel.username,
+                            username = channel.username,
                             isSubscribed = channel.isSubscribed
                         )
                         _profile.update { profile }
@@ -182,6 +182,7 @@ class ProfileViewModel @Inject constructor(
                             ownerId = group.ownerId,
                             name = group.name,
                             bio = group.bio,
+                            username = group.username,
                             members = group.members
                         )
                         _profile.update { profile }

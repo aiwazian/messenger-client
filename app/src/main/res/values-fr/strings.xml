@@ -155,4 +155,6 @@
     <string name="inactive_links">Liens inactifs</string>
     <string name="new_link">Nouveau lien</string>
     <string name="send">Envoyer</string>
+    <string name="subscribe">S\'abonner</string>
+    <string name="group_type">Type de groupe</string>
 </resources>

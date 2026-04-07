@@ -227,6 +227,13 @@ private fun GroupProfile(
                         supportingText = stringResource(R.string.description)
                     )
                 }
+                
+                if (!group.username.isNullOrBlank()) {
+                    SectionItem(
+                        headlineText = group.username,
+                        supportingText = stringResource(R.string.public_link)
+                    )
+                }
             }
         }
     }
@@ -252,9 +259,9 @@ private fun ChannelProfile(
                     )
                 }
                 
-                if (!channel.publicLink.isNullOrBlank()) {
+                if (!channel.username.isNullOrBlank()) {
                     SectionItem(
-                        headlineText = channel.publicLink,
+                        headlineText = channel.username,
                         supportingText = stringResource(R.string.public_link)
                     )
                 }

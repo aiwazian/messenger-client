@@ -6,40 +6,45 @@ package com.aiwazian.messenger.mappers
 
 import com.aiwazian.messenger.database.entity.GroupEntity
 import com.aiwazian.messenger.domain.Group
+import com.aiwazian.messenger.enums.GroupType
 import com.aiwazian.messenger.network.dto.GroupResponseDto
 
 fun GroupResponseDto.toDomain(): Group = Group(
-    id = this.id.toLongOrNull() ?: 0L,
-    ownerId = this.ownerId?.toLong(),
-    name = this.name,
-    bio = this.bio ?: "",
-    members = this.membersCount ?: 0
+    id = id.toLongOrNull() ?: 0L,
+    ownerId = ownerId?.toLong(),
+    name = name,
+    bio = bio ?: "",
+    username = username,
+    groupType = groupType,
+    members = membersCount ?: 0
 )
 
 fun GroupEntity.toDomain(): Group = Group(
-    id = this.id,
-    ownerId = this.ownerId,
-    name = this.name,
-    bio = this.bio,
-    members = this.members
+    id = id,
+    ownerId = ownerId,
+    name = name,
+    bio = bio,
+    username = username,
+    groupType = GroupType.fromOrdinal(groupType),
+    members = members
 )
 
-fun Group.toEntity(): GroupEntity {
-    return GroupEntity(
-        id = this.id,
-        name = this.name,
-        bio = this.bio,
-        ownerId = this.ownerId,
-        members = this.members
-    )
-}
+fun Group.toEntity(): GroupEntity = GroupEntity(
+    id = id,
+    name = name,
+    bio = bio,
+    username = username,
+    ownerId = ownerId,
+    groupType = groupType.ordinal,
+    members = members
+)
 
-fun GroupEntity.toGroup(): Group {
-    return Group(
-        id = this.id,
-        name = this.name,
-        bio = this.bio,
-        ownerId = this.ownerId,
-        members = this.members
-    )
-}
+fun GroupEntity.toGroup(): Group = Group(
+    id = id,
+    name = name,
+    bio = bio,
+    username = username,
+    ownerId = ownerId,
+    groupType = GroupType.fromOrdinal(groupType),
+    members = members
+)

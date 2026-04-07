@@ -271,7 +271,7 @@ class ChatViewModel @Inject constructor(
                             subscribers = channel.subscribers,
                             removedUser = channel.removedUser,
                             channelType = channel.channelType,
-                            publicLink = channel.username,
+                            username = channel.username,
                             isSubscribed = channel.isSubscribed
                         )
                         _uiState.update {

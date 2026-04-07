@@ -12,7 +12,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.PeopleAlt
+import androidx.compose.material.icons.rounded.LockOpen
+import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -101,7 +102,7 @@ fun ChannelSettingsScreen(
             
             SectionContainer {
                 SectionItem(
-                    leadingIcon = Icons.Rounded.PeopleAlt,
+                    leadingIcon = Icons.Rounded.LockOpen,
                     headlineText = stringResource(R.string.channel_type),
                     trailingText = if (channel.channelType == ChannelType.PUBLIC) {
                         stringResource(R.string.public_channel)
@@ -115,7 +116,7 @@ fun ChannelSettingsScreen(
             
             SectionContainer {
                 SectionItem(
-                    leadingIcon = Icons.Rounded.PeopleAlt,
+                    leadingIcon = Icons.Rounded.People,
                     headlineText = stringResource(R.string.subscribers),
                     trailingText = channel.subscribers.toString(),
                     onClick = {

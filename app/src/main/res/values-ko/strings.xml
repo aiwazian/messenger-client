@@ -155,4 +155,6 @@
     <string name="inactive_links">비활성 링크</string>
     <string name="new_link">새 링크</string>
     <string name="send">보내다</string>
+    <string name="subscribe">구독하다</string>
+    <string name="group_type">그룹 유형</string>
 </resources>

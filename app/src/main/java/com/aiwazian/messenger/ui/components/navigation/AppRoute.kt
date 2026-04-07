@@ -87,6 +87,9 @@ sealed interface AppRoute : NavKey {
     data object CreateGroup : AppRoute
     
     @Serializable
+    data class CreateGroupInviteLink(val groupId: Long) : AppRoute
+    
+    @Serializable
     data object CreateChannel : AppRoute
     
     @Serializable
@@ -109,6 +112,12 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data class GroupSettings(val groupId: Long) : AppRoute
+    
+    @Serializable
+    data class GroupTypeSettings(val groupId: Long) : AppRoute
+    
+    @Serializable
+    data class GroupInviteLinks(val groupId: Long) : AppRoute
     
     @Serializable
     data class GroupMembers(val groupId: Long) : AppRoute

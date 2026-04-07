@@ -28,6 +28,9 @@ import com.aiwazian.messenger.ui.screens.group.AddMemberScreen
 import com.aiwazian.messenger.ui.screens.group.create.CreateGroupScreen
 import com.aiwazian.messenger.ui.screens.group.settings.GroupMembersScreen
 import com.aiwazian.messenger.ui.screens.group.settings.GroupSettingsScreen
+import com.aiwazian.messenger.ui.screens.group.settings.invites.CreateGroupInviteLinkScreen
+import com.aiwazian.messenger.ui.screens.group.settings.invites.GroupInviteLinksScreen
+import com.aiwazian.messenger.ui.screens.group.settings.type.GroupTypeSettingsScreen
 import com.aiwazian.messenger.ui.screens.login.LoginScreen
 import com.aiwazian.messenger.ui.screens.login.PasswordScreen
 import com.aiwazian.messenger.ui.screens.logout.LogoutScreen
@@ -98,6 +101,9 @@ fun AppNavHost(startRoute: AppRoute = AppRoute.Main) {
                 entry<AppRoute.ChannelInviteLinks> { ChannelInviteLinksScreen(channelId = it.channelId) }
                 entry<AppRoute.CreateInviteLink> { CreateInviteLinkScreen(channelId = it.channelId) }
                 entry<AppRoute.GroupSettings> { GroupSettingsScreen(groupId = it.groupId) }
+                entry<AppRoute.GroupTypeSettings> { GroupTypeSettingsScreen(groupId = it.groupId) }
+                entry<AppRoute.GroupInviteLinks> { GroupInviteLinksScreen(groupId = it.groupId) }
+                entry<AppRoute.CreateGroupInviteLink> { CreateGroupInviteLinkScreen(groupId = it.groupId) }
                 entry<AppRoute.GroupMembers> { GroupMembersScreen() }
                 entry<AppRoute.AddMember> { AddMemberScreen() }
                 entry<AppRoute.Logout> { LogoutScreen() }
