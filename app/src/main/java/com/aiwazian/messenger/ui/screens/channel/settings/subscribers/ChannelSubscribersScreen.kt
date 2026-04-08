@@ -127,7 +127,7 @@ fun ChannelSubscribersScreen(
                                         onDismissRequest = { showMenu = false }
                                     ) {
                                         DropdownMenuItem(
-                                            text = { Text("Выгнать") },
+                                            text = { Text(stringResource(R.string.kick)) },
                                             onClick = {
                                                 showMenu = false
                                                 userToKick = user
@@ -196,7 +196,7 @@ fun ChannelSubscribersScreen(
                             contentColor = MaterialTheme.colorScheme.error
                         )
                     ) {
-                        Text("Выгнать")
+                        Text(stringResource(R.string.kick))
                     }
                 },
                 content = {
@@ -211,7 +211,7 @@ fun ChannelSubscribersScreen(
                 onDismissRequest = { userToBan = null },
                 buttons = {
                     TextButton(onClick = { userToBan = null }) {
-                        Text("Нет")
+                        Text(stringResource(R.string.no))
                     }
                     TextButton(
                         onClick = {
@@ -234,7 +234,7 @@ fun ChannelSubscribersScreen(
                             contentColor = MaterialTheme.colorScheme.error
                         )
                     ) {
-                        Text("Да")
+                        Text(stringResource(R.string.yes))
                     }
                 },
                 content = {

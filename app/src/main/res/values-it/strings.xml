@@ -157,4 +157,5 @@
     <string name="send">Inviare</string>
     <string name="subscribe">Iscriviti</string>
     <string name="group_type">Tipo di gruppo</string>
+    <string name="delete_account_after_twenty_four_hours">La cancellazione dell\'account sarà disponibile 24 ore dopo l\'inizio della sessione corrente.</string>
 </resources>

@@ -33,6 +33,7 @@ import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository
+import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.WebSocketAction
 import com.aiwazian.messenger.socket.WebSocketClient
@@ -77,6 +78,7 @@ class ChatViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
     private val userManager: UserManager,
+    private val inviteLinkRepository: InviteLinkRepository,
     private val clipboardService: ClipboardService,
     private val webSocketClient: WebSocketClient,
     private val downloaderManager: DownloaderManager,
@@ -240,7 +242,6 @@ class ChatViewModel @Inject constructor(
         super.onCleared()
         profileCollectionJob?.cancel()
         messagesCollectionJob?.cancel()
-        close()
     }
     
     private fun getRawMessages(): List<Message> {
@@ -248,7 +249,6 @@ class ChatViewModel @Inject constructor(
     }
     
     private fun loadChatData(chatId: Long) {
-        ChatState.openChat(chatId)
         _uiState.update {
             it.copy(
                 isLoading = true,
@@ -635,13 +635,6 @@ class ChatViewModel @Inject constructor(
                     dropdownActions = actions))
         }
         _uiState.update { it.copy(chatItems = chatItems) }
-    }
-    
-    fun close() {
-        _uiState.update { ChatUiState() }
-        ChatState.closeChat()
-        isInitialized = false
-        _chatId = -1L
     }
     
     fun changeText(newText: String) {
@@ -1138,36 +1131,32 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessingInvite = true) }
 
-            val result = channelRepository.validateInviteLink(code)
+            val result = inviteLinkRepository.getInviteLinkInfo(code)
             if (result.isSuccess) {
                 val info = result.getOrNull()!!
-                val channel = channelRepository.getById(info.channelId).first()
 
-                if (ChatState.isChatOpen(info.channelId)) {
+                if (_chatId == info.chatId) {
                     _uiState.update { it.copy(isProcessingInvite = false) }
                     _uiEffect.emit(ChatUiEffect.ShowAlreadyInChatSnackbar)
-                } else if (channel.isSubscribed) {
+                } else if (info.isJoined) {
                     _uiState.update { it.copy(isProcessingInvite = false) }
-                    _uiEffect.emit(ChatUiEffect.NavigateToChat(info.channelId))
+                    _uiEffect.emit(ChatUiEffect.NavigateToChat(info.chatId))
+                } else if (info.isBanned) {
+                    _uiState.update {
+                        it.copy(
+                            showBannedDialog = true,
+                            isProcessingInvite = false
+                        )
+                    }
+                    vibrationManager.vibrate(VibrationPattern.Error)
                 } else {
-                    val banCheck = channelRepository.isUserBanned(info.channelId)
-                    if (banCheck.isSuccess && banCheck.getOrNull() == true) {
-                        _uiState.update {
-                            it.copy(
-                                showBannedDialog = true,
-                                isProcessingInvite = false
-                            )
-                        }
-                        vibrationManager.vibrate(VibrationPattern.Error)
-                    } else {
-                        _uiState.update {
-                            it.copy(
-                                inviteLinkInfo = info,
-                                inviteLinkCode = code,
-                                showInviteBottomSheet = true,
-                                isProcessingInvite = false
-                            )
-                        }
+                    _uiState.update {
+                        it.copy(
+                            inviteLinkInfo = info,
+                            inviteLinkCode = code,
+                            showInviteBottomSheet = true,
+                            isProcessingInvite = false
+                        )
                     }
                 }
             } else {
@@ -1189,7 +1178,7 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessingInvite = true) }
 
-            val result = channelRepository.joinViaInviteCode(code)
+            val result = inviteLinkRepository.joinViaInviteCode(code)
             if (result.isSuccess) {
                 _uiState.update {
                     it.copy(
@@ -1199,10 +1188,10 @@ class ChatViewModel @Inject constructor(
                         inviteLinkCode = null
                     )
                 }
-                _uiEffect.emit(ChatUiEffect.NavigateToChat(info.channelId))
+                _uiEffect.emit(ChatUiEffect.NavigateToChat(info.chatId))
             } else {
                 _uiState.update { it.copy(isProcessingInvite = false) }
-                _uiEffect.emit(ChatUiEffect.ShowInviteSnackbar("Ссылка недействительна"))
+                _uiEffect.emit(ChatUiEffect.ShowInviteSnackbar("Ошибка при вступлении"))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }

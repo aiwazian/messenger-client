@@ -90,8 +90,8 @@ class GroupRepository @Inject constructor(
             val request = UpdateGroupRequestDto(
                 name = group.name,
                 bio = group.bio,
-                username = group.username,
-                groupType = group.groupType
+                groupType = group.groupType,
+                username = group.username
             )
             val response = groupApi.updateGroup(group.id, request)
             if (response.isSuccessful) {
@@ -211,20 +211,6 @@ class GroupRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e("GroupRepository", "Error creating invite link", e)
-            Result.failure(e)
-        }
-    }
-
-    suspend fun deleteInviteLink(groupId: Long, inviteLinkId: Long): Result<Unit> {
-        return try {
-            val response = groupApi.deleteInviteLink(groupId, inviteLinkId)
-            if (response.isSuccessful) {
-                Result.success(Unit)
-            } else {
-                Result.failure(Exception("Delete invite link failed"))
-            }
-        } catch (e: Exception) {
-            Log.e("GroupRepository", "Error deleting invite link", e)
             Result.failure(e)
         }
     }

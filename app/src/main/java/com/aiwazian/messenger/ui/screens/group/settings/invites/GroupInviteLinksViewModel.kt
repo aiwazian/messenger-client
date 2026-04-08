@@ -12,6 +12,7 @@ import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.ChatRepository
+import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DialogController
@@ -29,6 +30,7 @@ class GroupInviteLinksViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val chatRepository: ChatRepository,
     private val userRepository: UserRepository,
+    private val inviteLinkRepository: InviteLinkRepository,
     private val clipboardService: ClipboardService
 ) : ViewModel() {
 
@@ -86,7 +88,7 @@ class GroupInviteLinksViewModel @Inject constructor(
 
     fun deleteLink(inviteLinkId: Long) {
         viewModelScope.launch {
-            val result = groupRepository.deleteInviteLink(groupId, inviteLinkId)
+            val result = inviteLinkRepository.deleteInviteLink(inviteLinkId)
             if (result.isSuccess) {
                 loadLinks()
             }
@@ -128,8 +130,7 @@ class GroupInviteLinksViewModel @Inject constructor(
                         ChatType.PRIVATE -> true
                         ChatType.GROUP -> true
                         ChatType.CHANNEL -> {
-                            // Assuming channelRepository is available or similar
-                            // For group invites, we probably don't need this check, but keeping for consistency if needed
+                            // Similar logic as in ChannelViewModel if needed
                             true
                         }
                         else -> false

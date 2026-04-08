@@ -205,9 +205,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
                     Row(modifier = Modifier.padding(8.dp)) {
-                        Text(
-                            text = "Все равно удалить", fontSize = 16.sp
-                        )
+                        Text(text = "Все равно удалить", fontSize = 16.sp)
                         
                         LaunchedEffect(Unit) {
                             while (waitSeconds > 0) {
@@ -258,7 +256,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                 TextButton(
                     onClick = {
                         if (waitSeconds <= 0) {
-                            showDeleteDialog.javaClass
+                            showDeleteDialog.hide()
                             privacyViewModel.deleteAccount()
                         }
                     },

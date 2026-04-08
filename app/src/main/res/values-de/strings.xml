@@ -157,4 +157,5 @@
     <string name="send">Schicken</string>
     <string name="subscribe">Abonnieren</string>
     <string name="group_type">Gruppentyp</string>
+    <string name="delete_account_after_twenty_four_hours">Die Kontolöschung ist 24 Stunden nach Beginn der aktuellen Sitzung möglich.</string>
 </resources>

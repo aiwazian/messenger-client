@@ -65,14 +65,6 @@ class GroupViewModel @Inject constructor(
         _group.update { it.copy(bio = newBio) }
     }
     
-    fun changeMembers(count: Int) {
-        _group.update { it.copy(members = count) }
-    }
-    
-    fun open(group: Group) {
-        _group.update { group }
-    }
-    
     suspend fun load(groupId: Long) {
         if (_group.value.id == groupId && _group.value.name.isNotBlank()) {
             return

@@ -81,6 +81,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -183,12 +184,6 @@ fun ChatScreen(
                     )
                 }
             }
-        }
-    }
-    
-    DisposableEffect(Unit) {
-        onDispose {
-            chatViewModel.close()
         }
     }
     
@@ -326,13 +321,15 @@ fun ChatScreen(
         }
         
         if (uiState.showInviteBottomSheet && uiState.inviteLinkInfo != null) {
+            val info = uiState.inviteLinkInfo!!
             InviteLinkBottomSheet(
-                channelName = uiState.inviteLinkInfo!!.channelName,
-                description = uiState.inviteLinkInfo!!.description,
-                subscribersCount = uiState.inviteLinkInfo!!.subscribersCount,
+                name = info.name,
+                description = info.description,
+                count = info.membersCount,
+                type = info.type,
                 isLoading = uiState.isProcessingInvite,
                 onDismiss = { chatViewModel.dismissInviteBottomSheet() },
-                onSubscribe = { chatViewModel.onSubscribeViaInviteLink() }
+                onJoin = { chatViewModel.onSubscribeViaInviteLink() }
             )
         }
         
@@ -346,7 +343,7 @@ fun ChatScreen(
                     }
                 },
                 content = {
-                    Text("Вас заблокировал администратор канала")
+                    Text("Вас заблокировал администратор этого чата")
                 }
             )
         }
@@ -830,6 +827,7 @@ private fun InputMessage(
         value = value,
         onValueChange = onValueChange,
         maxLines = 5,
+        textStyle = TextStyle(lineHeight = 14.sp),
         modifier = Modifier.fillMaxWidth(),
         placeholder = { Text(stringResource(R.string.message)) },
         colors = TextFieldDefaults.colors(
@@ -924,13 +922,26 @@ private fun Checkbox(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun InviteLinkBottomSheet(
-    channelName: String,
+    name: String,
     description: String?,
-    subscribersCount: Int,
+    count: Int,
+    type: ChatType,
     isLoading: Boolean,
     onDismiss: () -> Unit,
-    onSubscribe: () -> Unit
+    onJoin: () -> Unit
 ) {
+    val countText = if (type == ChatType.CHANNEL) {
+        "$count ${stringResource(R.string.subscriberCount).lowercase()}"
+    } else {
+        "$count ${stringResource(R.string.memberCount).lowercase()}"
+    }
+    
+    val buttonText = if (type == ChatType.CHANNEL) {
+        stringResource(R.string.subscribe).uppercase()
+    } else {
+        stringResource(R.string.join).uppercase()
+    }
+    
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         dragHandle = null
@@ -942,7 +953,7 @@ private fun InviteLinkBottomSheet(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = channelName,
+                text = name,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -952,31 +963,38 @@ private fun InviteLinkBottomSheet(
                 Text(
                     text = description,
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
             }
             
             Text(
-                text = "$subscribersCount ${stringResource(R.string.subscriberCount).lowercase()}",
+                text = countText,
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
+            Spacer(modifier = Modifier.height(16.dp))
+            
             TextButton(
-                onClick = onSubscribe,
+                onClick = onJoin,
                 enabled = !isLoading,
                 shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.textButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             ) {
                 if (isLoading) {
                     CircularWavyProgressIndicator(modifier = Modifier.padding(4.dp))
                 } else {
                     Text(
-                        text = stringResource(R.string.subscribe).uppercase(),
+                        text = buttonText,
                         fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }

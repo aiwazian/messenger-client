@@ -55,9 +55,7 @@ fun GroupSettingsScreen(
     LaunchedEffect(Unit) {
         groupViewModel.updateEffect.collectLatest { effect ->
             when (effect) {
-                is UpdateGroupEffect.NavigateBack -> {
-                    navHost.removeLastOrNull()
-                }
+                is UpdateGroupEffect.NavigateBack -> navHost.removeLastOrNull()
                 
                 is UpdateGroupEffect.NavigateToMain -> {
                     navHost.clear()

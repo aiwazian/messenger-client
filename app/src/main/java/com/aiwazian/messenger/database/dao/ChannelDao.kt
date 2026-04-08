@@ -10,6 +10,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.aiwazian.messenger.database.entity.ChannelEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ChannelDao {
@@ -20,10 +21,7 @@ interface ChannelDao {
     suspend fun getAll(): List<ChannelEntity>
     
     @Query("SELECT * FROM channel WHERE id = :id")
-    suspend fun get(id: Long): ChannelEntity?
-    
-    @Query("SELECT * FROM channel WHERE id = :id")
-    fun getFlow(id: Long): kotlinx.coroutines.flow.Flow<ChannelEntity?>
+    fun getFlow(id: Long): Flow<ChannelEntity?>
     
     @Update
     suspend fun update(channelEntity: ChannelEntity)

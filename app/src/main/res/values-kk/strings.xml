@@ -157,4 +157,5 @@
     <string name="send">Жіберу</string>
     <string name="subscribe">Жазылу</string>
     <string name="group_type">Топ түрі</string>
+    <string name="delete_account_after_twenty_four_hours">Есептік жазбаны жою ағымдағы сеанс басталғаннан кейін 24 сағаттан кейін қолжетімді болады.</string>
 </resources>

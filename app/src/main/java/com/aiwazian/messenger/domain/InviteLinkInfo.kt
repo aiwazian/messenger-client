@@ -4,9 +4,14 @@
 
 package com.aiwazian.messenger.domain
 
+import com.aiwazian.messenger.enums.ChatType
+
 data class InviteLinkInfo(
-    val channelId: Long,
-    val channelName: String,
+    val chatId: Long,
+    val name: String,
     val description: String?,
-    val subscribersCount: Int
+    val membersCount: Int,
+    val isBanned: Boolean,
+    val isJoined: Boolean,
+    val type: ChatType
 )

@@ -157,4 +157,5 @@
     <string name="send">Enviar</string>
     <string name="subscribe">Suscribir</string>
     <string name="group_type">Tipo de grupo</string>
+    <string name="delete_account_after_twenty_four_hours">La eliminación de la cuenta estará disponible 24 horas después del inicio de la sesión actual.</string>
 </resources>

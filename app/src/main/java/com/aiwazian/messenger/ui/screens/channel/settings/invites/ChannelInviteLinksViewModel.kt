@@ -12,6 +12,7 @@ import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
+import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DialogController
@@ -29,6 +30,7 @@ class ChannelInviteLinksViewModel @Inject constructor(
     private val channelRepository: ChannelRepository,
     private val chatRepository: ChatRepository,
     private val userRepository: UserRepository,
+    private val inviteLinkRepository: InviteLinkRepository,
     private val clipboardService: ClipboardService
 ) : ViewModel() {
 
@@ -86,7 +88,7 @@ class ChannelInviteLinksViewModel @Inject constructor(
 
     fun deleteLink(inviteLinkId: Long) {
         viewModelScope.launch {
-            val result = channelRepository.deleteInviteLink(channelId, inviteLinkId)
+            val result = inviteLinkRepository.deleteInviteLink(inviteLinkId)
             if (result.isSuccess) {
                 loadLinks()
             }

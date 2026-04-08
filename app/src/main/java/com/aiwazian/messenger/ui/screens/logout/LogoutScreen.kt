@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -76,7 +77,7 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
                 SectionHeader(title = stringResource(R.string.alternative_options))
             }) {
                 SectionItem(
-                    leadingIcon = Icons.Rounded.Delete,
+                    leadingIcon = Icons.Rounded.DeleteOutline,
                     headlineText = stringResource(R.string.clear_cache),
                     supportingText = "Освободите память устройства, файлы останутся в облаке.",
                     onClick = {

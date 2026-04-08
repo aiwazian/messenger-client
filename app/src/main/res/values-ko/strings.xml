@@ -157,4 +157,5 @@
     <string name="send">보내다</string>
     <string name="subscribe">구독하다</string>
     <string name="group_type">그룹 유형</string>
+    <string name="delete_account_after_twenty_four_hours">계정 삭제는 현재 세션 시작 후 24시간 후에 가능합니다.</string>
 </resources>

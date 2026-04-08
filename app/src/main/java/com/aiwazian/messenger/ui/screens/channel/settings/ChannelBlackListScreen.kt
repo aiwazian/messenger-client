@@ -41,6 +41,7 @@ import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.DropdownMenu
 import com.aiwazian.messenger.ui.components.FramelessTextBox
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
@@ -143,7 +144,9 @@ fun ChannelBlackListScreen(
                                     }
                                 }
                             },
-                            onClick = {}
+                            onClick = {
+                                navHost.add(AppRoute.Chat(user.id))
+                            }
                         )
                     }
                 }
@@ -156,7 +159,7 @@ fun ChannelBlackListScreen(
                 onDismissRequest = { userToUnban = null },
                 buttons = {
                     TextButton(onClick = { userToUnban = null }) {
-                        Text("Нет")
+                        Text(stringResource(R.string.no))
                     }
                     TextButton(
                         onClick = {
@@ -179,7 +182,7 @@ fun ChannelBlackListScreen(
                             contentColor = MaterialTheme.colorScheme.primary
                         )
                     ) {
-                        Text("Да")
+                        Text(stringResource(R.string.yes))
                     }
                 },
                 content = {

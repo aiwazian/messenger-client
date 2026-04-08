@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.settings.privacy
 
+import com.aiwazian.messenger.R
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -64,7 +65,7 @@ class SettingsPrivacyViewModel @Inject constructor(
 
             if (currentTime - createdAt < twentyFourHoursInMs) {
                 vibrationManager.vibrate(VibrationPattern.Error)
-                _sideEffect.emit(SettingsPrivacySideEffect.ShowSnackbar("Удаление аккаунта будет доступно через 24 часа с начала текущей сессии"))
+                _sideEffect.emit(SettingsPrivacySideEffect.ShowSnackbar(R.string.delete_account_after_twenty_four_hours))
             } else {
                 _sideEffect.emit(SettingsPrivacySideEffect.ShowDeleteBottomSheet)
             }

@@ -8,71 +8,27 @@ import android.util.Log
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.domain.Channel
 import com.aiwazian.messenger.domain.InviteLink
-import com.aiwazian.messenger.domain.InviteLinkInfo
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.network.api.ChannelApi
-import com.aiwazian.messenger.network.api.ChatApi
 import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
-import com.aiwazian.messenger.mappers.toDomain as toDomainInfo
 
 class ChannelRepository @Inject constructor(
     private val channelApi: ChannelApi,
-    private val chatApi: ChatApi,
     private val channelDao: ChannelDao
 ) {
     
-    fun getById(id: Long): Flow<Channel> = flow {
-        coroutineScope {
-            launch {
-                try {
-                    val response = channelApi.getChannelById(id)
-                    if (response.isSuccessful) {
-                        val dto = response.body()
-                        if (dto != null) {
-                            val channel = dto.toDomain()
-                            channelDao.insert(channel.toEntity())
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e(
-                        "ChannelRepository",
-                        "Ошибка при получении канала по сети",
-                        e
-                    )
-                }
-            }
-            
-            emitAll(getByIdFlow(id))
-        }
-    }
-
-    fun getByIdFlow(id: Long): Flow<Channel> {
-        return channelDao.getFlow(id)
-            .filterNotNull()
-            .map { it.toDomain() }
-    }
-    
-    suspend fun create(channelInfo: Channel): Result<Long> {
+    suspend fun create(channel: Channel): Result<Long> {
         return try {
-            val request = CreateChannelRequestDto(
-                name = channelInfo.name,
-                bio = channelInfo.bio,
-                channelType = channelInfo.channelType,
-                username = channelInfo.username
-            )
-            val response = channelApi.createChannel(request)
+            val response =
+                channelApi.createChannel(CreateChannelRequestDto(channel.name, channel.bio))
             if (response.isSuccessful) {
                 val dto = response.body()
                 if (dto != null) {
@@ -83,14 +39,50 @@ class ChannelRepository @Inject constructor(
                     Result.failure(Exception("No channel returned"))
                 }
             } else {
-                Result.failure(Exception("Create failed"))
+                Result.failure(Exception("Create channel failed"))
             }
         } catch (e: Exception) {
-            Log.e(
-                "ChannelRepository",
-                "Ошибка при создании канала",
-                e
-            )
+            Log.e("ChannelRepository", "Error creating channel", e)
+            Result.failure(e)
+        }
+    }
+    
+    fun getById(channelId: Long): Flow<Channel> = channelDao.getFlow(channelId)
+        .mapNotNull { it?.toDomain() }
+        .onStart {
+            try {
+                val response = channelApi.getChannelById(channelId)
+                if (response.isSuccessful) {
+                    val dto = response.body()
+                    if (dto != null) {
+                        val channel = dto.toDomain()
+                        channelDao.insert(channel.toEntity())
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("ChannelRepository", "Error getting channel", e)
+            }
+        }
+    
+    fun getByIdFlow(channelId: Long): Flow<Channel> = channelDao.getFlow(channelId)
+        .mapNotNull { it?.toDomain() }
+    
+    suspend fun getSubscribers(
+        channelId: Long,
+        skip: Int = 0,
+        take: Int = 100,
+        search: String? = null
+    ): Result<List<User>> {
+        return try {
+            val response = channelApi.getChannelSubscribers(channelId, skip, take, search)
+            if (response.isSuccessful) {
+                val dtos = response.body().orEmpty()
+                Result.success(dtos.map { it.toDomain() })
+            } else {
+                Result.failure(Exception(""))
+            }
+        } catch (e: Exception) {
+            Log.e("ChannelRepository", "Error getting subscribers", e)
             Result.failure(e)
         }
     }
@@ -103,11 +95,7 @@ class ChannelRepository @Inject constructor(
                 channelType = channel.channelType,
                 username = channel.username
             )
-            val response =
-                channelApi.updateChannel(
-                    channel.id,
-                    request
-                )
+            val response = channelApi.updateChannel(channel.id, request)
             if (response.isSuccessful) {
                 channelDao.insert(channel.toEntity())
                 Result.success(Unit)
@@ -115,187 +103,68 @@ class ChannelRepository @Inject constructor(
                 Result.failure(Exception("Update failed"))
             }
         } catch (e: Exception) {
-            Log.e(
-                "ChannelRepository",
-                "Ошибка при обновлении канала",
-                e
-            )
+            Log.e("ChannelRepository", "Error updating channel", e)
             Result.failure(e)
         }
     }
     
-    suspend fun delete(id: Long): Result<Unit> {
+    suspend fun delete(channelId: Long): Result<Unit> {
         return try {
-            val response = channelApi.deleteChannel(id)
+            val response = channelApi.deleteChannel(channelId)
             if (response.isSuccessful) {
-                channelDao.delete(id)
+                channelDao.delete(channelId)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Delete failed"))
             }
         } catch (e: Exception) {
-            Log.e(
-                "ChannelRepository",
-                "Ошибка при удалении канала",
-                e
-            )
+            Log.e("ChannelRepository", "Error deleting channel", e)
             Result.failure(e)
         }
     }
     
-    suspend fun getSubscribers(
-        id: Long,
-        skip: Int = 0,
-        take: Int = 100,
-        search: String? = null
-    ): Result<List<User>> {
+    suspend fun join(channelId: Long): Result<Unit> {
         return try {
-            val response =
-                channelApi.getChannelSubscribers(
-                    id,
-                    skip,
-                    take,
-                    search
-                )
+            val response = channelApi.joinChannel(channelId)
             if (response.isSuccessful) {
-                val dtos = response.body().orEmpty()
-                Result.success(dtos.map { it.toDomain() })
-            } else {
-                Result.success(emptyList())
-            }
-        } catch (e: Exception) {
-            Log.e(
-                "ChannelRepository",
-                "Ошибка при получении подписчиков канала",
-                e
-            )
-            Result.failure(e)
-        }
-    }
-    
-    suspend fun join(id: Long): Result<Unit> {
-        return try {
-            val response = channelApi.joinChannel(id)
-            if (response.isSuccessful) {
-                val channel = channelDao.get(id)
-                if (channel != null) {
-                    channelDao.update(channel.copy(isSubscribed = true))
-                }
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Join failed"))
             }
         } catch (e: Exception) {
-            Log.e(
-                "ChannelRepository",
-                "Ошибка при подписке на канал",
-                e
-            )
+            Log.e("ChannelRepository", "Error joining channel", e)
             Result.failure(e)
         }
     }
     
-    suspend fun leave(id: Long): Result<Unit> {
+    suspend fun leave(channelId: Long): Result<Unit> {
         return try {
-            val response = channelApi.leaveChannel(id)
+            val response = channelApi.leaveChannel(channelId)
             if (response.isSuccessful) {
-                val channel = channelDao.get(id)
-                if (channel != null) {
-                    channelDao.update(channel.copy(isSubscribed = false))
-                }
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Leave failed"))
             }
         } catch (e: Exception) {
-            Log.e(
-                "ChannelRepository",
-                "Ошибка при отписке от канала",
-                e
-            )
+            Log.e("ChannelRepository", "Error leaving channel", e)
             Result.failure(e)
         }
     }
     
-    suspend fun save(channel: Channel): Long? {
+    suspend fun kickUser(channelId: Long, userId: Long): Result<Unit> {
         return try {
-            val request = UpdateChannelRequestDto(
-                name = channel.name,
-                bio = channel.bio,
-                channelType = channel.channelType,
-                username = channel.username
-            )
-            val response =
-                channelApi.updateChannel(
-                    channel.id,
-                    request
-                )
-            if (response.isSuccessful) {
-                channelDao.insert(channel.toEntity())
-                channel.id
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            Log.e(
-                "ChannelRepository",
-                "Ошибка при сохранении канала",
-                e
-            )
-            null
-        }
-    }
-    
-    suspend fun kickUser(
-        channelId: Long,
-        userId: Long
-    ): Result<Unit> {
-        return try {
-            val response =
-                channelApi.kickUser(
-                    channelId,
-                    userId
-                )
+            val response = channelApi.kickUser(channelId, userId)
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Kick failed"))
             }
         } catch (e: Exception) {
-            Log.e(
-                "ChannelRepository",
-                "Ошибка при выгонении пользователя",
-                e
-            )
+            Log.e("ChannelRepository", "Error kicking user", e)
             Result.failure(e)
         }
     }
     
-    suspend fun banUser(
-        channelId: Long,
-        userId: Long
-    ): Result<Unit> {
-        return try {
-            val response =
-                channelApi.banUser(
-                    channelId,
-                    userId
-                )
-            if (response.isSuccessful) {
-                Result.success(Unit)
-            } else {
-                Result.failure(Exception("Ban failed"))
-            }
-        } catch (e: Exception) {
-            Log.e(
-                "ChannelRepository",
-                "Ошибка при бане пользователя",
-                e
-            )
-            Result.failure(e)
-        }
-    }
-
     suspend fun getInviteLinks(channelId: Long): Result<List<InviteLink>> {
         return try {
             val response = channelApi.getInviteLinks(channelId)
@@ -310,8 +179,12 @@ class ChannelRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
-    suspend fun createInviteLink(channelId: Long, maxUses: Int?, expiresInSeconds: Int? = null): Result<InviteLink> {
+    
+    suspend fun createInviteLink(
+        channelId: Long,
+        maxUses: Int?,
+        expiresInSeconds: Int? = null
+    ): Result<InviteLink> {
         return try {
             val request = CreateInviteLinkRequestDto(
                 maxUses = maxUses,
@@ -333,54 +206,7 @@ class ChannelRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
-    suspend fun deleteInviteLink(channelId: Long, inviteLinkId: Long): Result<Unit> {
-        return try {
-            val response = channelApi.deleteInviteLink(channelId, inviteLinkId)
-            if (response.isSuccessful) {
-                Result.success(Unit)
-            } else {
-                Result.failure(Exception("Delete invite link failed"))
-            }
-        } catch (e: Exception) {
-            Log.e("ChannelRepository", "Error deleting invite link", e)
-            Result.failure(e)
-        }
-    }
-
-    suspend fun validateInviteLink(code: String): Result<InviteLinkInfo> {
-        return try {
-            val response = chatApi.getInviteLinkInfo(code)
-            if (response.isSuccessful) {
-                val dto = response.body()
-                if (dto != null) {
-                    Result.success(dto.toDomainInfo())
-                } else {
-                    Result.failure(Exception("No invite link info returned"))
-                }
-            } else {
-                Result.failure(Exception("Failed to validate invite link"))
-            }
-        } catch (e: Exception) {
-            Log.e("ChannelRepository", "Error validating invite link", e)
-            Result.failure(e)
-        }
-    }
-
-    suspend fun joinViaInviteCode(code: String): Result<Unit> {
-        return try {
-            val response = chatApi.joinViaInviteCode(code)
-            if (response.isSuccessful) {
-                Result.success(Unit)
-            } else {
-                Result.failure(Exception("Join via invite link failed"))
-            }
-        } catch (e: Exception) {
-            Log.e("ChannelRepository", "Error joining via invite link", e)
-            Result.failure(e)
-        }
-    }
-
+    
     suspend fun getBannedUsers(
         id: Long,
         skip: Int = 0,
@@ -410,7 +236,7 @@ class ChannelRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun unbanUser(
         channelId: Long,
         userId: Long
@@ -435,7 +261,31 @@ class ChannelRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
+    suspend fun banUser(
+        channelId: Long,
+        userId: Long
+    ): Result<Unit> {
+        return try {
+            val response = channelApi.banUser(
+                channelId,
+                userId
+            )
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Ban failed"))
+            }
+        } catch (e: Exception) {
+            Log.e(
+                "ChannelRepository",
+                "Ошибка при блокировке пользователя",
+                e
+            )
+            Result.failure(e)
+        }
+    }
+    
     suspend fun isUserBanned(channelId: Long): Result<Boolean> {
         return try {
             val response = channelApi.isUserBanned(channelId)

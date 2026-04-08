@@ -44,6 +44,3 @@ fun AddMemberScreen(groupViewModel: GroupViewModel = hiltViewModel()) {
         }
     }
 }
-
-
-
