@@ -29,16 +29,11 @@ data class GroupTypeSettingsUiState(
     val isLoading: Boolean = false,
     val group: com.aiwazian.messenger.domain.Group? = null,
     val groupType: GroupType = GroupType.PRIVATE,
-    val publicLink: String = "",
+    val username: String = "",
     val canSave: Boolean = false,
     val linkCheckStatus: LinkCheckStatus = LinkCheckStatus.Idle,
     val error: String? = null
 )
-
-sealed interface GroupTypeSettingsEffect {
-    object NavigateBack : GroupTypeSettingsEffect
-    data class ShowError(val message: String) : GroupTypeSettingsEffect
-}
 
 @HiltViewModel
 class GroupTypeSettingsViewModel @Inject constructor(
@@ -70,7 +65,7 @@ class GroupTypeSettingsViewModel @Inject constructor(
                         isLoading = false,
                         group = groupInfo,
                         groupType = groupInfo.groupType,
-                        publicLink = groupInfo.username ?: "",
+                        username = groupInfo.username ?: "",
                         canSave = true
                     )
                 }
@@ -82,7 +77,7 @@ class GroupTypeSettingsViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 groupType = groupType,
-                canSave = canSaveGroupType(groupType, it.publicLink, it.linkCheckStatus)
+                canSave = canSaveGroupType(groupType, it.username, it.linkCheckStatus)
             )
         }
     }
@@ -90,7 +85,7 @@ class GroupTypeSettingsViewModel @Inject constructor(
     fun changePublicLink(publicLink: String) {
         _uiState.update {
             it.copy(
-                publicLink = publicLink,
+                username = publicLink,
                 linkCheckStatus = LinkCheckStatus.Idle,
                 canSave = canSaveGroupType(it.groupType, publicLink, LinkCheckStatus.Idle)
             )
@@ -142,7 +137,7 @@ class GroupTypeSettingsViewModel @Inject constructor(
             try {
                 val updatedGroup = group.copy(
                     groupType = currentState.groupType,
-                    username = if (currentState.groupType == GroupType.PUBLIC) currentState.publicLink else null
+                    username = if (currentState.groupType == GroupType.PUBLIC) currentState.username else null
                 )
                 val result = groupRepository.update(updatedGroup)
                 if (result.isSuccess) {

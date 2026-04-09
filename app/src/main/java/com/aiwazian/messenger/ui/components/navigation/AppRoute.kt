@@ -123,6 +123,9 @@ sealed interface AppRoute : NavKey {
     data class GroupMembers(val groupId: Long) : AppRoute
     
     @Serializable
+    data class GroupBlackList(val groupId: Long) : AppRoute
+    
+    @Serializable
     data class AddMember(val groupId: Long) : AppRoute
     
     @Serializable

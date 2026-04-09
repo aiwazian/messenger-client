@@ -35,7 +35,6 @@ import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
@@ -110,7 +109,7 @@ fun GroupTypeSettingsScreen(
                         SectionContainer(header = { SectionHeader(title = "Публичная ссылка") }) {
                             FramelessTextBox(
                                 placeholder = stringResource(R.string.username),
-                                value = uiState.publicLink,
+                                value = uiState.username,
                                 onValueChange = viewModel::changePublicLink
                             )
                         }

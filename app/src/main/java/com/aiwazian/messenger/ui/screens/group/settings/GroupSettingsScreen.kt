@@ -8,12 +8,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.People
-import androidx.compose.material.icons.rounded.PeopleAlt
-import androidx.compose.material.icons.rounded.PeopleOutline
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -27,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.enums.GroupType
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -65,7 +64,7 @@ fun GroupSettingsScreen(
         }
     }
     
-    val groupInfo by groupViewModel.groupInfo.collectAsState()
+    val group by groupViewModel.group.collectAsState()
     val updateState by groupViewModel.updateState.collectAsState()
     
     val deleteGroupDialog = DialogController()
@@ -88,13 +87,13 @@ fun GroupSettingsScreen(
         Column(modifier = Modifier.padding(innerPadding)) {
             SectionContainer {
                 FramelessTextBox(
-                    value = groupInfo.name,
+                    value = group.name,
                     onValueChange = groupViewModel::changeGroupName,
                     placeholder = stringResource(R.string.group_name)
                 )
                 
                 FramelessTextBox(
-                    value = groupInfo.bio.orEmpty(),
+                    value = group.bio.orEmpty(),
                     onValueChange = groupViewModel::changeGroupBio,
                     placeholder = stringResource(R.string.description)
                 )
@@ -105,15 +104,30 @@ fun GroupSettingsScreen(
                     leadingIcon = Icons.Rounded.LockOpen,
                     headlineText = stringResource(R.string.group_type),
                     onClick = {
-                        navHost.add(AppRoute.GroupTypeSettings(groupInfo.id))
+                        navHost.add(AppRoute.GroupTypeSettings(group.id))
+                    },
+                    trailingText = if (group.groupType == GroupType.PUBLIC) {
+                        "Публичная группа"
+                    } else {
+                        "Приватная группа"
                     }
                 )
+            }
+            
+            SectionContainer {
                 SectionItem(
                     leadingIcon = Icons.Rounded.People,
                     headlineText = stringResource(R.string.members),
-                    trailingText = groupInfo.members.toString(),
+                    trailingText = group.members.toString(),
                     onClick = {
-                        navHost.add(AppRoute.GroupMembers(groupInfo.id))
+                        navHost.add(AppRoute.GroupMembers(group.id))
+                    }
+                )
+                SectionItem(
+                    leadingIcon = Icons.Rounded.Block,
+                    headlineText = stringResource(R.string.removed_user),
+                    onClick = {
+                        navHost.add(AppRoute.GroupBlackList(group.id))
                     }
                 )
             }

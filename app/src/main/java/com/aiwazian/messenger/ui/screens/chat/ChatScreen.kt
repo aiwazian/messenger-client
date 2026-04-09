@@ -64,7 +64,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -930,11 +929,11 @@ private fun InviteLinkBottomSheet(
     onDismiss: () -> Unit,
     onJoin: () -> Unit
 ) {
-    val countText = if (type == ChatType.CHANNEL) {
-        "$count ${stringResource(R.string.subscriberCount).lowercase()}"
+    val countText = "$count" + (if (type == ChatType.CHANNEL) {
+        stringResource(R.string.subscriberCount).lowercase()
     } else {
-        "$count ${stringResource(R.string.memberCount).lowercase()}"
-    }
+        stringResource(R.string.members).lowercase()
+    })
     
     val buttonText = if (type == ChatType.CHANNEL) {
         stringResource(R.string.subscribe).uppercase()
@@ -984,8 +983,7 @@ private fun InviteLinkBottomSheet(
                 shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.textButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    contentColor = MaterialTheme.colorScheme.primary
                 )
             ) {
                 if (isLoading) {

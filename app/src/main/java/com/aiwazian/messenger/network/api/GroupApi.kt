@@ -62,6 +62,20 @@ interface GroupApi {
         @Path("userId") userId: Long
     ): Response<Unit>
 
+    @GET("groups/{groupId}/blacklist")
+    suspend fun getBlackList(
+        @Path("groupId") groupId: Long,
+        @Query("skip") skip: Int = 0,
+        @Query("take") take: Int = 100,
+        @Query("search") search: String? = null
+    ): Response<List<UserResponseDto>>
+
+    @POST("groups/{groupId}/unban/{userId}")
+    suspend fun unbanUser(
+        @Path("groupId") groupId: Long,
+        @Path("userId") userId: Long
+    ): Response<Unit>
+
     @GET("groups/{groupId}/invite-links")
     suspend fun getInviteLinks(@Path("groupId") groupId: Long): Response<List<InviteLinkResponseDto>>
 

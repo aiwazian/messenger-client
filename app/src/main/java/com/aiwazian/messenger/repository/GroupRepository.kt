@@ -177,6 +177,37 @@ class GroupRepository @Inject constructor(
         }
     }
 
+    fun getBlackList(
+        id: Long,
+        skip: Int = 0,
+        take: Int = 100,
+        search: String? = null
+    ): Flow<List<User>> = flow {
+        try {
+            val response = groupApi.getBlackList(id, skip, take, search)
+            if (response.isSuccessful) {
+                val dtos = response.body().orEmpty()
+                emit(dtos.map { it.toDomain() })
+            }
+        } catch (e: Exception) {
+            Log.e("GroupRepository", "Ошибка при получении черного списка группы", e)
+        }
+    }
+
+    suspend fun unban(groupId: Long, userId: Long): Result<Unit> {
+        return try {
+            val response = groupApi.unbanUser(groupId, userId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Unban failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("GroupRepository", "Ошибка при разбане пользователя", e)
+            Result.failure(e)
+        }
+    }
+
     suspend fun getInviteLinks(groupId: Long): Result<List<InviteLink>> {
         return try {
             val response = groupApi.getInviteLinks(groupId)

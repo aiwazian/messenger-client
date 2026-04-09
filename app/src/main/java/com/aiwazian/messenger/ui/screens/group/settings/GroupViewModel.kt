@@ -31,7 +31,7 @@ class GroupViewModel @Inject constructor(
     private var _groupId: Long = -1L
 
     private val _group = MutableStateFlow(Group())
-    val groupInfo = _group.asStateFlow()
+    val group = _group.asStateFlow()
 
     private val _updateState = MutableStateFlow<UpdateGroupState>(UpdateGroupState.Idle)
     val updateState: StateFlow<UpdateGroupState> = _updateState.asStateFlow()

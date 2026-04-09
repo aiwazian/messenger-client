@@ -98,7 +98,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                     snackbarJob = launch {
                         snackbarHostState.currentSnackbarData?.dismiss()
                         snackbarHostState.showSnackbar(
-                            message = effect.message, duration = SnackbarDuration.Long
+                            message = effect.message.toString(), duration = SnackbarDuration.Long
                         )
                     }
                 }

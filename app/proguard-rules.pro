@@ -1,20 +1,24 @@
 -keepattributes Signature
 
-# Keep generic signature of Call, Response (R8 full mode strips signatures from non-kept items).
--keep,allowobfuscation,allowshrinking interface retrofit2.Call
--keep,allowobfuscation,allowshrinking class retrofit2.Response
+# This is generated automatically by the Android Gradle plugin.
+-dontwarn androidx.window.extensions.WindowExtensions
+-dontwarn androidx.window.extensions.WindowExtensionsProvider
+-dontwarn androidx.window.extensions.area.ExtensionWindowAreaPresentation
+-dontwarn androidx.window.extensions.core.util.function.Consumer
+-dontwarn androidx.window.extensions.core.util.function.Function
+-dontwarn androidx.window.extensions.core.util.function.Predicate
+-dontwarn androidx.window.extensions.layout.DisplayFeature
+-dontwarn androidx.window.extensions.layout.FoldingFeature
+-dontwarn androidx.window.extensions.layout.WindowLayoutComponent
+-dontwarn androidx.window.extensions.layout.WindowLayoutInfo
+-dontwarn androidx.window.sidecar.SidecarDeviceState
+-dontwarn androidx.window.sidecar.SidecarDisplayFeature
+-dontwarn androidx.window.sidecar.SidecarInterface$SidecarCallback
+-dontwarn androidx.window.sidecar.SidecarInterface
+-dontwarn androidx.window.sidecar.SidecarProvider
+-dontwarn androidx.window.sidecar.SidecarWindowLayoutInfo
 
-# With R8 full mode generic signatures are stripped for classes that are not
-# kept. Suspend functions are wrapped in continuations where the type argument
-# is used.
--keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
-
-# R8 full mode strips generic signatures from return types if not kept.
--if interface * { @retrofit2.http.* public *** *(...); }
--keep,allowoptimization,allowshrinking,allowobfuscation class <3>
-
-# With R8 full mode generic signatures are stripped for classes that are not kept.
--keep,allowobfuscation,allowshrinking class retrofit2.Response
+-keep class com.aiwazian.messenger.BuildConfig { *; }
 
 # Deleting all calls Log.v, Log.d, Log.i, Log.w, Log.e, Log.wtf
 -assumenosideeffects class android.util.Log {

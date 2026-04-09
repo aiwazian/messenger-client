@@ -29,19 +29,18 @@ android {
             buildConfigField(
                 "String",
                 "API_URL",
-                "\"http://10.155.204.101:3000/api/\""
+                "\"https://aiwazian.ru/api/\""
             )
             
             buildConfigField(
                 "String",
                 "WS_URL",
-                "\"ws://10.155.204.101:3000\""
+                "\"wss://aiwazian.ru\""
             )
         }
         
         release {
             isMinifyEnabled = true
-            isShrinkResources = true
             proguardFiles("proguard-rules.pro")
             signingConfig = signingConfigs.getByName("debug")
             
