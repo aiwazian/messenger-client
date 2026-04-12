@@ -2,7 +2,7 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.screens.group.settings
+package com.aiwazian.messenger.ui.screens.group.settings.blockedUsers
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

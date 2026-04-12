@@ -197,7 +197,7 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
                     scope.launch {
                         drawerState.close()
                     }
-                }, viewModel.user.collectAsState().value
+                }, user = viewModel.user.collectAsState(initial = User()).value
             )
         },
     ) {
@@ -228,8 +228,7 @@ private fun NotificationBottomModal(
                     .size(70.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primary)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth(), contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Notifications,
@@ -327,7 +326,9 @@ private fun EmptyChatPlaceholder(
     text: String, animation: String? = null
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 10.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -347,9 +348,7 @@ private fun EmptyChatPlaceholder(
         }
         
         Text(
-            text = text,
-            textAlign = TextAlign.Center,
-            lineHeight = 16.sp
+            text = text, textAlign = TextAlign.Center, lineHeight = 16.sp
         )
     }
 }
@@ -402,7 +401,10 @@ private fun DefaultTopBar(
                 ) { state ->
                     when (state) {
                         ConnectionState.CONNECTED -> Text(stringResource(R.string.search))
-                        ConnectionState.DISCONNECTED -> AnimatedDotsText(stringResource(R.string.waiting_for_network))
+                        ConnectionState.DISCONNECTED -> AnimatedDotsText(
+                            stringResource(R.string.waiting_for_network)
+                        )
+                        
                         ConnectionState.CONNECTING, ConnectionState.RECONNECTING -> AnimatedDotsText(
                             stringResource(R.string.connecting)
                         )
@@ -642,11 +644,17 @@ private fun DrawerContent(
                         val nativeAdView = findViewById<NativeAdView>(R.id.native_ad_container)
                         
                         val viewBinder =
-                            NativeAdViewBinder.Builder(nativeAdView).setTitleView(title)
-                                .setDomainView(domain).setWarningView(warning)
-                                .setSponsoredView(sponsored).setFeedbackView(feedback)
-                                .setMediaView(media).setIconView(appIcon).setPriceView(price)
-                                .setFaviconView(favicon).build()
+                            NativeAdViewBinder.Builder(nativeAdView)
+                                .setTitleView(title)
+                                .setDomainView(domain)
+                                .setWarningView(warning)
+                                .setSponsoredView(sponsored)
+                                .setFeedbackView(feedback)
+                                .setMediaView(media)
+                                .setIconView(appIcon)
+                                .setPriceView(price)
+                                .setFaviconView(favicon)
+                                .build()
                         
                         nativeAd?.bindNativeAd(viewBinder)
                     }

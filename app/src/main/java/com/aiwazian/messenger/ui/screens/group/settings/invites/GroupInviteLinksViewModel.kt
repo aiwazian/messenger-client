@@ -29,7 +29,6 @@ import javax.inject.Inject
 class GroupInviteLinksViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val chatRepository: ChatRepository,
-    private val userRepository: UserRepository,
     private val inviteLinkRepository: InviteLinkRepository,
     private val clipboardService: ClipboardService
 ) : ViewModel() {
@@ -122,17 +121,13 @@ class GroupInviteLinksViewModel @Inject constructor(
 
     private fun loadAvailableChats() {
         viewModelScope.launch {
-            val me = userRepository.getMe().first()
             chatRepository.getAllChats().collect { chats ->
                 val filtered = chats.filter { chat ->
                     val type = ChatType.fromId(chat.id)
                     when (type) {
                         ChatType.PRIVATE -> true
                         ChatType.GROUP -> true
-                        ChatType.CHANNEL -> {
-                            // Similar logic as in ChannelViewModel if needed
-                            true
-                        }
+                        ChatType.CHANNEL -> true
                         else -> false
                     }
                 }

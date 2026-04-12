@@ -44,7 +44,6 @@ import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.FileHandler
 import com.aiwazian.messenger.utils.ProgressRequestBody
-import com.aiwazian.messenger.utils.UserManager
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -55,6 +54,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -75,7 +75,6 @@ class ChatViewModel @Inject constructor(
     private val channelRepository: ChannelRepository,
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
-    private val userManager: UserManager,
     private val inviteLinkRepository: InviteLinkRepository,
     private val clipboardService: ClipboardService,
     private val webSocketClient: WebSocketClient,
@@ -117,7 +116,7 @@ class ChatViewModel @Inject constructor(
     
     private fun setupUserObserver() {
         viewModelScope.launch {
-            userManager.user.collect { user ->
+            userRepository.getMe().collectLatest { user ->
                 _uiState.update { it.copy(currentUserId = user.id) }
                 updateUiContent()
             }
@@ -301,8 +300,8 @@ class ChatViewModel @Inject constructor(
             
             ChatType.PRIVATE -> {
                 viewModelScope.launch {
-                    if (chatId == userManager.user.value.id) {
-                        userManager.user.collectLatest { user ->
+                    if (chatId == userRepository.getMe().first().id) {
+                        userRepository.getMe().collectLatest { user ->
                             val profile = Profile.User(
                                 id = user.id,
                                 firstName = user.firstName,

@@ -22,7 +22,6 @@ import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.ShortcutManager
-import com.aiwazian.messenger.utils.UserManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -40,8 +40,7 @@ class ProfileViewModel @Inject constructor(
     private val channelRepository: ChannelRepository,
     private val groupRepository: GroupRepository,
     private val shortcutManager: ShortcutManager,
-    private val clipboardService: ClipboardService,
-    private val userManager: UserManager
+    private val clipboardService: ClipboardService
 ) : ViewModel() {
     
     private var _profileId: Long = -1L
@@ -68,7 +67,7 @@ class ProfileViewModel @Inject constructor(
     
     private fun setupUserObserver() {
         viewModelScope.launch {
-            userManager.user.collectLatest { user ->
+            userRepository.getMe().collectLatest { user ->
                 _uiState.update { it.copy(myId = user.id) }
                 recalculateActions()
             }
@@ -99,9 +98,9 @@ class ProfileViewModel @Inject constructor(
         
         when (ChatType.fromId(profileId)) {
             ChatType.PRIVATE -> {
-                if (profileId == userManager.user.value.id) {
-                    viewModelScope.launch {
-                        userManager.user.collectLatest { user ->
+                viewModelScope.launch {
+                    if (profileId == userRepository.getMe().first().id) {
+                        userRepository.getMe().collectLatest { user ->
                             val profile = Profile.User(
                                 id = user.id,
                                 firstName = user.firstName,
@@ -119,9 +118,7 @@ class ProfileViewModel @Inject constructor(
                             }
                             recalculateActions()
                         }
-                    }
-                } else {
-                    viewModelScope.launch {
+                    } else {
                         userRepository.getById(profileId).collectLatest { user ->
                             val profile = Profile.User(
                                 id = user.id,

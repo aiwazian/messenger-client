@@ -21,6 +21,15 @@ fun UserResponseDto.toDomain(): User = User(
     dateOfBirth = this.dateOfBirth
 )
 
+fun UserResponseDto.toEntity(): UserEntity = UserEntity(
+    id = this.id,
+    firstName = this.firstName ?: "",
+    lastName = this.lastName,
+    username = this.username,
+    bio = this.bio,
+    dateOfBirth = this.dateOfBirth
+)
+
 fun User.toUpdateRequest(): UpdateUserRequestDto = UpdateUserRequestDto(
     firstName = this.firstName,
     lastName = this.lastName,

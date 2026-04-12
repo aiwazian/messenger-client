@@ -17,7 +17,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.aiwazian.messenger.ui.screens.channel.CreateChannelScreen
-import com.aiwazian.messenger.ui.screens.channel.settings.ChannelBlackListScreen
+import com.aiwazian.messenger.ui.screens.channel.settings.blockedUsers.ChannelBlackListScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.ChannelSettingsScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.invites.ChannelInviteLinksScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.invites.CreateInviteLinkScreen
@@ -26,7 +26,7 @@ import com.aiwazian.messenger.ui.screens.channel.settings.type.ChannelTypeSettin
 import com.aiwazian.messenger.ui.screens.chat.ChatScreen
 import com.aiwazian.messenger.ui.screens.group.AddMemberScreen
 import com.aiwazian.messenger.ui.screens.group.create.CreateGroupScreen
-import com.aiwazian.messenger.ui.screens.group.settings.GroupBlockedUsersScreen
+import com.aiwazian.messenger.ui.screens.group.settings.blockedUsers.GroupBlockedUsersScreen
 import com.aiwazian.messenger.ui.screens.group.settings.members.GroupMembersScreen
 import com.aiwazian.messenger.ui.screens.group.settings.GroupSettingsScreen
 import com.aiwazian.messenger.ui.screens.group.settings.invites.CreateGroupInviteLinkScreen

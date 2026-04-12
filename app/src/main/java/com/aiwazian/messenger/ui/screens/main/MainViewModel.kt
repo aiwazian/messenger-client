@@ -13,12 +13,11 @@ import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.ReadMessagePayload
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.repository.ChatRepository
+import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.WebSocketAction
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.utils.AppLockManager
 import com.aiwazian.messenger.utils.SessionManager
-import com.aiwazian.messenger.utils.UserManager
-import com.aiwazian.messenger.utils.VibrationManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,8 +32,7 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     private val appLockManager: AppLockManager,
-    private val vibrationManager: VibrationManager,
-    userManager: UserManager,
+    userRepository: UserRepository,
     webSocketClient: WebSocketClient
 ) : ViewModel() {
     
@@ -45,11 +43,7 @@ class MainViewModel @Inject constructor(
     
     val hasPasscode = appLockManager.hasPasscode
     
-    val user = userManager.user
-    
-    fun vibrate(pattern: LongArray) {
-        vibrationManager.vibrate(pattern)
-    }
+    val user = userRepository.getMe()
     
     suspend fun lockApp() {
         appLockManager.lock()
@@ -84,12 +78,9 @@ class MainViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
-            SessionManager.loadSession()
-            userManager.loadUserData()
             webSocketClient.connectionState.collectLatest {
                 if (it == ConnectionState.CONNECTED) {
                     SessionManager.loadSession()
-                    userManager.loadUserData()
                 }
             }
         }

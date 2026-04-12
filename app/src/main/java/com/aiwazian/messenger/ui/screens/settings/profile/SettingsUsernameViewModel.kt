@@ -8,12 +8,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
-import com.aiwazian.messenger.utils.UserManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -22,7 +22,6 @@ import javax.inject.Inject
 class SettingsUsernameViewModel @Inject constructor(
     private val searchRepository: SearchRepository,
     private val userRepository: UserRepository,
-    private val userManager: UserManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(UsernameScreenUiState())
@@ -72,10 +71,6 @@ class SettingsUsernameViewModel @Inject constructor(
     }
     
     suspend fun save(): Boolean {
-        val isSaved = userRepository.saveUsername(_uiState.value.username)
-        if (isSaved) {
-            userManager.updateUserInfo(userManager.user.value.copy(username = _uiState.value.username))
-        }
-        return isSaved
+        return userRepository.saveUsername(_uiState.value.username)
     }
 }

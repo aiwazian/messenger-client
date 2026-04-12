@@ -10,6 +10,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.aiwazian.messenger.database.entity.UserEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface UserDao {
@@ -20,10 +21,10 @@ interface UserDao {
     suspend fun get(id: Long): UserEntity?
 
     @Query("SELECT * FROM user WHERE id = (SELECT userId FROM account WHERE isCurrent = 1)")
-    suspend fun getMe(): UserEntity?
+    fun getMe(): Flow<UserEntity?>
 
     @Query("SELECT * FROM user")
-    fun getAllFlow(): kotlinx.coroutines.flow.Flow<List<UserEntity>>
+    fun getAllFlow(): Flow<List<UserEntity>>
     
     @Delete
     suspend fun delete(userEntity: UserEntity)
