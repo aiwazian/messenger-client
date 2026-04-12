@@ -40,7 +40,6 @@ import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.profile.Profile
-import com.aiwazian.messenger.utils.ChatState
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.FileHandler
@@ -56,7 +55,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -127,7 +125,7 @@ class ChatViewModel @Inject constructor(
     }
     
     private fun setupWebSocketListeners() {
-        webSocketClient.subscribeToTypedMessages<Message>(WebSocketAction.NEW_MESSAGE) { message ->
+        webSocketClient.subscribeToEvent<Message>(WebSocketAction.NEW_MESSAGE) { message ->
             if (message.senderId == _uiState.value.chat.id && message.senderId != _uiState.value.currentUserId || message.chatId == _uiState.value.chat.id) {
                 viewModelScope.launch {
                     val existingMessages = getRawMessages()
@@ -142,7 +140,7 @@ class ChatViewModel @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToTypedMessages<DeleteChatPayload>(WebSocketAction.DELETE_CHAT) { chat ->
+        webSocketClient.subscribeToEvent<DeleteChatPayload>(WebSocketAction.DELETE_CHAT) { chat ->
             if (chat.chatId == _uiState.value.chat.id) {
                 viewModelScope.launch {
                     _uiEffect.emit(ChatUiEffect.NavigateToMain)
@@ -150,7 +148,7 @@ class ChatViewModel @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToTypedMessages<DeleteMessagePayload>(WebSocketAction.DELETE_MESSAGE) { message ->
+        webSocketClient.subscribeToEvent<DeleteMessagePayload>(WebSocketAction.DELETE_MESSAGE) { message ->
             if (message.chatId == _uiState.value.chat.id) {
                 viewModelScope.launch {
                     val messages = getRawMessages().filter { it.id != message.messageId }
@@ -159,7 +157,7 @@ class ChatViewModel @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToTypedMessages<ReadMessagePayload>(WebSocketAction.READ_MESSAGE) { message ->
+        webSocketClient.subscribeToEvent<ReadMessagePayload>(WebSocketAction.READ_MESSAGE) { message ->
             viewModelScope.launch {
                 val messages = getRawMessages().map {
                     if (it.id == message.messageId) it.copy(isRead = true) else it
@@ -168,7 +166,7 @@ class ChatViewModel @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToTypedMessages<DeleteChatPayload>(WebSocketAction.CHAT_REMOVED) { payload ->
+        webSocketClient.subscribeToEvent<DeleteChatPayload>(WebSocketAction.CHAT_REMOVED) { payload ->
             if (payload.chatId == _chatId) {
                 viewModelScope.launch {
                     _uiEffect.emit(ChatUiEffect.NavigateToMain)

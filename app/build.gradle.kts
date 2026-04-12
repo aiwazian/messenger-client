@@ -14,47 +14,32 @@ plugins {
 
 android {
     namespace = "com.aiwazian.messenger"
-    compileSdk = 36
+    compileSdk = 37
     
     defaultConfig {
         applicationId = "com.aiwazian.messenger"
         minSdk = 30
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 13
         versionName = "1.6.1"
     }
     
     buildTypes {
         debug {
-            buildConfigField(
-                "String",
-                "API_URL",
-                "\"https://aiwazian.ru/api/\""
-            )
+            buildConfigField("String", "API_URL", "\"http://10.155.204.101:3000/api/\"")
             
-            buildConfigField(
-                "String",
-                "WS_URL",
-                "\"wss://aiwazian.ru\""
-            )
+            buildConfigField("String", "WS_URL", "\"ws://10.155.204.101:3000\"")
         }
         
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles("proguard-rules.pro")
             signingConfig = signingConfigs.getByName("debug")
             
-            buildConfigField(
-                "String",
-                "API_URL",
-                "\"https://aiwazian.ru/api/\""
-            )
+            buildConfigField("String", "API_URL", "\"https://aiwazian.ru/api/\"")
             
-            buildConfigField(
-                "String",
-                "WS_URL",
-                "\"wss://aiwazian.ru\""
-            )
+            buildConfigField("String", "WS_URL", "\"wss://aiwazian.ru\"")
         }
     }
     compileOptions {
@@ -71,6 +56,7 @@ android {
         includeInApk = false
         includeInBundle = false
     }
+    compileSdkMinor = 0
 }
 
 dependencies {
@@ -135,8 +121,7 @@ dependencies {
     
     implementation(libs.socketio.client) {
         exclude(
-            "org.json",
-            "json"
+            "org.json", "json"
         )
     }
     

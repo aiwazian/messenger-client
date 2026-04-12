@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.LockOpen
@@ -101,7 +102,7 @@ fun GroupSettingsScreen(
             
             SectionContainer {
                 SectionItem(
-                    leadingIcon = Icons.Rounded.LockOpen,
+                    leadingIcon = Icons.Outlined.Lock,
                     headlineText = stringResource(R.string.group_type),
                     onClick = {
                         navHost.add(AppRoute.GroupTypeSettings(group.id))

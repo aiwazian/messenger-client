@@ -21,15 +21,18 @@ class UserRepository @Inject constructor(
 ) {
 
     fun getMe(): Flow<User> = flow {
+        val localUser = userDao.getMe()
+        if (localUser != null) {
+            emit(localUser.toDomain())
+        }
+
         try {
             val response = userApi.getMe()
             if (response.isSuccessful) {
                 val dto = response.body()
                 if (dto != null) {
                     val user = dto.toDomain()
-                    val userEntity = user.toEntity()
-                    userDao.insert(userEntity)
-
+                    userDao.insert(user.toEntity())
                     emit(user)
                 }
             }
@@ -39,6 +42,11 @@ class UserRepository @Inject constructor(
     }
 
     fun getById(id: Long): Flow<User> = flow {
+        val localUser = userDao.get(id)
+        if (localUser != null) {
+            emit(localUser.toDomain())
+        }
+
         try {
             val response = userApi.getUserById(id)
             if (response.isSuccessful) {
@@ -51,11 +59,6 @@ class UserRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e("UserRepository", "Ошибка при получении профиля", e)
-        }
-
-        val localUser = userDao.get(id)
-        if (localUser != null) {
-            emit(localUser.toDomain())
         }
     }
 

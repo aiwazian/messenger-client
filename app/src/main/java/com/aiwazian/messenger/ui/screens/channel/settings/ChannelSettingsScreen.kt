@@ -11,6 +11,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.People
@@ -102,7 +104,7 @@ fun ChannelSettingsScreen(
             
             SectionContainer {
                 SectionItem(
-                    leadingIcon = Icons.Rounded.LockOpen,
+                    leadingIcon = Icons.Outlined.Lock,
                     headlineText = stringResource(R.string.channel_type),
                     trailingText = if (channel.channelType == ChannelType.PUBLIC) {
                         stringResource(R.string.public_channel)
@@ -123,7 +125,7 @@ fun ChannelSettingsScreen(
                         navHost.add(AppRoute.ChannelSubscribers(channel.id))
                     })
                 SectionItem(
-                    leadingIcon = Icons.Rounded.RemoveCircleOutline,
+                    leadingIcon = Icons.Rounded.Block,
                     headlineText = stringResource(R.string.removed_user),
                     trailingText = channel.removedUser?.toString(),
                     onClick = {

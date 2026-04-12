@@ -6,6 +6,8 @@ package com.aiwazian.messenger.repository
 
 import android.util.Log
 import com.aiwazian.messenger.database.dao.ChannelDao
+import com.aiwazian.messenger.database.dao.ChatDao
+import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.domain.Channel
 import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.domain.User
@@ -16,13 +18,16 @@ import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 
 class ChannelRepository @Inject constructor(
     private val channelApi: ChannelApi,
-    private val channelDao: ChannelDao
+    private val channelDao: ChannelDao,
+    private val chatDao: ChatDao,
+    private val messageDao: MessageDao
 ) {
     
     suspend fun create(channel: Channel): Result<Long> {
@@ -47,22 +52,26 @@ class ChannelRepository @Inject constructor(
         }
     }
     
-    fun getById(channelId: Long): Flow<Channel> = channelDao.getFlow(channelId)
-        .mapNotNull { it?.toDomain() }
-        .onStart {
-            try {
-                val response = channelApi.getChannelById(channelId)
-                if (response.isSuccessful) {
-                    val dto = response.body()
-                    if (dto != null) {
-                        val channel = dto.toDomain()
-                        channelDao.insert(channel.toEntity())
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("ChannelRepository", "Error getting channel", e)
-            }
+    fun getById(channelId: Long): Flow<Channel> = flow {
+        val localChannel = channelDao.get(channelId)
+        if (localChannel != null) {
+            emit(localChannel.toDomain())
         }
+        
+        try {
+            val response = channelApi.getChannelById(channelId)
+            if (response.isSuccessful) {
+                val dto = response.body()
+                if (dto != null) {
+                    val channel = dto.toDomain()
+                    channelDao.insert(channel.toEntity())
+                    emit(channel)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("ChannelRepository", "Error getting channel", e)
+        }
+    }
     
     fun getByIdFlow(channelId: Long): Flow<Channel> = channelDao.getFlow(channelId)
         .mapNotNull { it?.toDomain() }
@@ -113,6 +122,8 @@ class ChannelRepository @Inject constructor(
             val response = channelApi.deleteChannel(channelId)
             if (response.isSuccessful) {
                 channelDao.delete(channelId)
+                chatDao.deleteChat(channelId)
+                messageDao.clearChatHistory(channelId)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Delete failed"))

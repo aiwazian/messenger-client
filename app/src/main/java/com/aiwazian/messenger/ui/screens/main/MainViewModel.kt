@@ -78,6 +78,14 @@ class MainViewModel @Inject constructor(
     
     init {
         viewModelScope.launch {
+            chatRepository.getAllChats().collectLatest { chats ->
+                _chats.update { chats.sortedByLastMessage() }
+            }
+        }
+        
+        viewModelScope.launch {
+            SessionManager.loadSession()
+            userManager.loadUserData()
             webSocketClient.connectionState.collectLatest {
                 if (it == ConnectionState.CONNECTED) {
                     SessionManager.loadSession()
@@ -86,49 +94,35 @@ class MainViewModel @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToTypedMessages<Message>(WebSocketAction.NEW_MESSAGE) { message ->
+        webSocketClient.subscribeToEvent<Message>(WebSocketAction.NEW_MESSAGE) { message ->
             onReceivingMessage(message)
         }
         
-        webSocketClient.subscribeToTypedMessages<DeleteMessagePayload>(WebSocketAction.DELETE_MESSAGE) { message ->
-            onMessageDeleted(
-                message.messageId,
-                message.chatId
-            )
+        webSocketClient.subscribeToEvent<DeleteMessagePayload>(WebSocketAction.DELETE_MESSAGE) { message ->
+            onMessageDeleted(message.messageId, message.chatId)
         }
         
-        webSocketClient.subscribeToTypedMessages<ReadMessagePayload>(WebSocketAction.READ_MESSAGE) { message ->
-            onReadMessage(
-                message.chatId,
-                message.messageId
-            )
+        webSocketClient.subscribeToEvent<ReadMessagePayload>(WebSocketAction.READ_MESSAGE) { message ->
+            onReadMessage(message.chatId, message.messageId)
         }
         
-        webSocketClient.subscribeToTypedMessages<Chat>(WebSocketAction.NEW_CHAT) { chatInfo ->
+        webSocketClient.subscribeToEvent<Chat>(WebSocketAction.NEW_CHAT) { chatInfo ->
             showNewChat(chatInfo)
         }
         
-        webSocketClient.subscribeToTypedMessages<DeleteChatPayload>(WebSocketAction.DELETE_CHAT) { payload ->
+        webSocketClient.subscribeToEvent<DeleteChatPayload>(WebSocketAction.DELETE_CHAT) { payload ->
             deleteChat(payload.chatId)
         }
         
-        webSocketClient.subscribeToTypedMessages<DeleteChatPayload>(WebSocketAction.CHAT_REMOVED) { payload ->
+        webSocketClient.subscribeToEvent<DeleteChatPayload>(WebSocketAction.CHAT_REMOVED) { payload ->
             deleteChat(payload.chatId)
         }
         
-        webSocketClient.subscribeToTypedMessages<DeleteChatPayload>(WebSocketAction.CHAT_UPDATED) { payload ->
+        webSocketClient.subscribeToEvent<DeleteChatPayload>(WebSocketAction.CHAT_UPDATED) { payload ->
             viewModelScope.launch {
                 val chatInfo = chatRepository.get(payload.chatId)
                 if (chatInfo != null) {
-                    updateChatInList(chatInfo)
-                }
-            }
-        }
-        
-        viewModelScope.launch {
-            webSocketClient.connectionState.collectLatest {
-                if (it == ConnectionState.CONNECTED) {
-                    loadChats()
+                    chatRepository.saveChat(chatInfo)
                 }
             }
         }
@@ -136,133 +130,74 @@ class MainViewModel @Inject constructor(
     
     fun onSendMessage(message: Message) {
         processMessage(
-            message.chatId,
-            message
+            message.chatId, message
         )
     }
     
     fun onReceivingMessage(message: Message) {
-        processMessage(
-            message.senderId,
-            message
-        )
+        processMessage(message.chatId, message)
     }
     
     fun showNewChat(
-        chat: Chat,
-        lastMessage: Message? = null
+        chat: Chat, lastMessage: Message? = null
     ) {
-        val newChatInfo = chat.copy(lastMessage = lastMessage)
-        
-        _chats.update { currentChats ->
-            (currentChats + newChatInfo).distinctBy { it.id }.sortedByLastMessage()
+        viewModelScope.launch {
+            lastMessage?.let { chatRepository.saveMessage(it) }
+            chatRepository.syncChat(chat.copy(lastMessage = lastMessage))
         }
     }
     
     fun deleteChat(chatId: Long) {
-        _chats.update { currentChats ->
-            currentChats.filter { it.id != chatId }
-        }
-        
         viewModelScope.launch {
             chatRepository.deleteChat(chatId)
         }
     }
     
     private fun onReadMessage(
-        chatId: Long,
-        messageId: Int
+        chatId: Long, messageId: Int
     ) {
-        _chats.update { currentChats ->
-            currentChats.map { chat ->
-                if (chat.id == chatId && chat.lastMessage?.id == messageId) {
-                    val lastMessage = chat.lastMessage.copy(isRead = true)
-                    chat.copy(lastMessage = lastMessage)
-                } else {
-                    chat
-                }
+        viewModelScope.launch {
+            val currentChat = _chats.value.find { it.id == chatId }
+            if (currentChat?.lastMessage?.id == messageId) {
+                val lastMessage = currentChat.lastMessage.copy(isRead = true)
+                chatRepository.saveMessage(lastMessage)
+                chatRepository.syncChat(currentChat.copy(lastMessage = lastMessage))
             }
         }
     }
     
     private fun onMessageDeleted(
-        messageId: Int,
-        chatId: Long
+        messageId: Int, chatId: Long
     ) {
         viewModelScope.launch {
-            _chats.update { currentChats ->
-                currentChats.map { chat ->
-                    if (chat.id == chatId && chat.lastMessage?.id == messageId) {
-                        val lastMessage = chatRepository.getLastMessage(chatId)
-                        chat.copy(lastMessage = lastMessage)
-                    } else {
-                        chat
-                    }
-                }.sortedByLastMessage()
+            val currentChat = _chats.value.find { it.id == chatId }
+            if (currentChat?.lastMessage?.id == messageId) {
+                val lastMessage = chatRepository.getLastMessage(chatId)
+                lastMessage?.let { chatRepository.saveMessage(it) }
+                chatRepository.syncChat(currentChat.copy(lastMessage = lastMessage))
             }
         }
     }
     
     private fun processMessage(
-        chatId: Long,
-        message: Message
+        chatId: Long, message: Message
     ) {
-        val chatExists = _chats.value.any { it.id == chatId }
-        
-        if (!chatExists) {
-            viewModelScope.launch {
+        viewModelScope.launch {
+            chatRepository.saveMessage(message)
+            val chat = _chats.value.find { it.id == chatId }
+            
+            if (chat == null) {
                 val chatInfo = chatRepository.get(chatId)
-                
                 if (chatInfo != null) {
-                    showNewChat(
-                        chatInfo,
-                        message
-                    )
+                    chatRepository.syncChat(chatInfo.copy(lastMessage = message))
                 }
+            } else {
+                chatRepository.syncChat(chat.copy(lastMessage = message))
             }
-        } else {
-            updateLastMessage(
-                chatId,
-                message
-            )
         }
     }
     
-    private fun updateLastMessage(
-        chatId: Long,
-        lastMessage: Message
-    ) {
-        _chats.update { currentChats ->
-            currentChats.map { chat ->
-                if (chat.id == chatId) {
-                    chat.copy(lastMessage = lastMessage)
-                } else {
-                    chat
-                }
-            }.sortedByLastMessage()
-        }
-    }
-    
-    private suspend fun loadChats() {
-        chatRepository.getAllChats().collectLatest { chats ->
-            _chats.update { chats.sortedByLastMessage() }
-        }
-    }
-
     private fun List<Chat>.sortedByLastMessage(): List<Chat> {
         return this.sortedByDescending { it.lastMessage?.sendTime ?: 0L }
-    }
-    
-    private fun updateChatInList(chat: Chat) {
-        _chats.update { currentChats ->
-            val index = currentChats.indexOfFirst { it.id == chat.id }
-            if (index >= 0) {
-                currentChats.toMutableList().apply {
-                    set(index, chat)
-                }.sortedByLastMessage()
-            } else {
-                currentChats
-            }
-        }
     }
 }

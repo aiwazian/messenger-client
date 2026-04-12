@@ -40,6 +40,12 @@ interface MessageDao {
     @Query("SELECT * FROM message WHERE id = :messageId LIMIT 1")
     suspend fun getMessageById(messageId: Int): MessageEntity?
 
+    @Query("SELECT * FROM message")
+    fun getAllFlow(): Flow<List<MessageEntity>>
+    
     @Query("DELETE FROM message WHERE chatId = :chatId")
     suspend fun clearChatHistory(chatId: Long)
+    
+    @Query("DELETE FROM message WHERE chatId NOT IN (:chatIds)")
+    suspend fun deleteMessagesNotInChatIds(chatIds: List<Long>)
 }

@@ -20,7 +20,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val URL_REGEX = Regex("(?:https?://)?(?:aiwazian\\.ru/\\+[a-f0-9]+|[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z]{2,})(?:/[^\\s]*)?)")
+private val URL_REGEX = Regex("(https?://)?([\\w-]+\\.)+[\\w-]+(:\\d+)?(/\\S*)?")
 
 @Composable
 fun MessageText(

@@ -21,6 +21,12 @@ interface GroupDao {
     @Query("SELECT * FROM 'group' WHERE id = :id")
     fun get(id: Long): Flow<GroupEntity?>
     
+    @Query("SELECT * FROM 'group' WHERE id = :id")
+    suspend fun getById(id: Long): GroupEntity?
+    
+    @Query("SELECT * FROM 'group'")
+    fun getAllFlow(): Flow<List<GroupEntity>>
+    
     @Update
     suspend fun update(groupEntity: GroupEntity)
     

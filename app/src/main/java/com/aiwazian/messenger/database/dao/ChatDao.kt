@@ -8,16 +8,28 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.aiwazian.messenger.database.entity.AttachmentEntity
+import com.aiwazian.messenger.database.entity.ChatEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ChatDao {
     
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun save(attachment: AttachmentEntity)
+    @Query("""
+        SELECT * FROM chats 
+        ORDER BY isPinned DESC, lastMessageId DESC
+    """)
+    fun getAllChatsFlow(): Flow<List<ChatEntity>>
     
-    @Query("SELECT * FROM attachment WHERE id = :id")
-    suspend fun get(id: Int): AttachmentEntity
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertChats(chats: List<ChatEntity>)
+    
+    @Query("DELETE FROM chats WHERE chatId = :chatId")
+    suspend fun deleteChat(chatId: Long)
+    
+    @Query("DELETE FROM chats WHERE chatId NOT IN (:chatIds)")
+    suspend fun deleteChatsNotIn(chatIds: List<Long>)
+    
+    @Query("DELETE FROM chats")
+    suspend fun deleteAllChats()
     
 }
-

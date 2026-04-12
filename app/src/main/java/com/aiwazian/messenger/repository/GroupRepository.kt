@@ -12,6 +12,8 @@ import com.aiwazian.messenger.domain.Group
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.database.dao.GroupDao
+import com.aiwazian.messenger.database.dao.ChatDao
+import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.network.dto.CreateGroupRequestDto
 import com.aiwazian.messenger.network.dto.UpdateGroupRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
@@ -23,7 +25,9 @@ import javax.inject.Inject
 
 class GroupRepository @Inject constructor(
     private val groupApi: GroupApi,
-    private val groupDao: GroupDao
+    private val groupDao: GroupDao,
+    private val chatDao: ChatDao,
+    private val messageDao: MessageDao
 ) {
 
     suspend fun create(groupInfo: Group): Result<Long> {
@@ -51,22 +55,26 @@ class GroupRepository @Inject constructor(
         }
     }
 
-    fun getById(id: Long): Flow<Group> = groupDao.get(id)
-        .mapNotNull { it?.toDomain() }
-        .onStart {
-            try {
-                val response = groupApi.getGroupById(id)
-                if (response.isSuccessful) {
-                    val dto = response.body()
-                    if (dto != null) {
-                        val group = dto.toDomain()
-                        groupDao.insert(group.toEntity())
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("GroupRepository", "Ошибка при получении группы", e)
-            }
+    fun getById(id: Long): Flow<Group> = flow {
+        val localGroup = groupDao.getById(id)
+        if (localGroup != null) {
+            emit(localGroup.toDomain())
         }
+
+        try {
+            val response = groupApi.getGroupById(id)
+            if (response.isSuccessful) {
+                val dto = response.body()
+                if (dto != null) {
+                    val group = dto.toDomain()
+                    groupDao.insert(group.toEntity())
+                    emit(group)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("GroupRepository", "Ошибка при получении группы", e)
+        }
+    }
 
     fun getMembers(
         id: Long,
@@ -111,6 +119,8 @@ class GroupRepository @Inject constructor(
             val response = groupApi.deleteGroup(id)
             if (response.isSuccessful) {
                 groupDao.delete(id)
+                chatDao.deleteChat(id)
+                messageDao.clearChatHistory(id)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Delete failed"))

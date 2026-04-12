@@ -7,7 +7,6 @@ package com.aiwazian.messenger.socket
 import android.util.Log
 import com.aiwazian.messenger.BuildConfig
 import com.aiwazian.messenger.enums.ConnectionState
-import com.aiwazian.messenger.socket.WebSocketAction
 import com.aiwazian.messenger.utils.SessionManager
 import io.socket.client.IO
 import io.socket.client.Socket
@@ -40,8 +39,6 @@ class WebSocketClient @Inject constructor(
         }
     }
     
-    private var socket: Socket? = null
-    
     private var _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
     val connectionState = _connectionState.asStateFlow()
     
@@ -55,14 +52,7 @@ class WebSocketClient @Inject constructor(
         establishConnection()
     }
     
-    fun emit(event: String, data: Any?): Boolean {
-        val s = socket ?: return false
-        if (!s.connected()) return false
-        s.emit(event, data)
-        return true
-    }
-    
-    internal inline fun <reified T> subscribeToTypedMessages(
+    internal inline fun <reified T> subscribeToEvent(
         action: WebSocketAction,
         crossinline handler: (T) -> Unit
     ) {
@@ -84,7 +74,7 @@ class WebSocketClient @Inject constructor(
             .setReconnectionDelayMax(MAX_RECONNECT_DELAY_MS)
             .build()
         
-        socket = IO.socket(BuildConfig.WS_URL, opts).apply {
+        IO.socket(BuildConfig.WS_URL, opts).apply {
             on(Socket.EVENT_CONNECT) { onConnect() }
             on(Socket.EVENT_CONNECT_ERROR) { onConnectError(it.firstOrNull() as? Exception) }
             on(Socket.EVENT_DISCONNECT) { onDisconnect() }

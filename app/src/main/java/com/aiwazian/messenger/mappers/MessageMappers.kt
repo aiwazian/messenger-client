@@ -5,12 +5,23 @@
 package com.aiwazian.messenger.mappers
 
 import com.aiwazian.messenger.network.dto.MessageResponseDto
+import com.aiwazian.messenger.network.dto.MessageDto
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageFile
 import com.aiwazian.messenger.database.entity.MessageEntity
 import com.aiwazian.messenger.network.dto.MessageFileDto
 
 fun MessageResponseDto.toDomain(): Message = Message(
+    id = this.id,
+    senderId = this.senderId.toLong(),
+    chatId = this.chatId.toLong(),
+    text = this.text,
+    sendTime = this.sendTime,
+    isRead = this.isRead ?: false,
+    files = this.files.map { it.toDomain() }
+)
+
+fun MessageDto.toDomain(): Message = Message(
     id = this.id,
     senderId = this.senderId.toLong(),
     chatId = this.chatId.toLong(),

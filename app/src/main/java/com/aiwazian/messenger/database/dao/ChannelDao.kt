@@ -23,6 +23,12 @@ interface ChannelDao {
     @Query("SELECT * FROM channel WHERE id = :id")
     fun getFlow(id: Long): Flow<ChannelEntity?>
     
+    @Query("SELECT * FROM channel WHERE id = :id")
+    suspend fun get(id: Long): ChannelEntity?
+    
+    @Query("SELECT * FROM channel")
+    fun getAllFlow(): Flow<List<ChannelEntity>>
+    
     @Update
     suspend fun update(channelEntity: ChannelEntity)
     
