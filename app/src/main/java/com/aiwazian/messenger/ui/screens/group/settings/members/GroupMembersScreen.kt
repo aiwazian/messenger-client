@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.PersonRemove
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -42,6 +43,7 @@ import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
@@ -108,18 +110,16 @@ fun GroupMembersScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
                 SectionContainer {
+                    SectionItem(
+                        leadingIcon = Icons.Rounded.PersonAdd,
+                        headlineText = stringResource(R.string.add_member),
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        onClick = { navHost.add(AppRoute.AddMember(groupId)) }
+                    )
+                }
+
+                SectionContainer {
                     LazyColumn {
-                        //                    item {
-                        //                        SectionContainer {
-                        //                            SectionItem(
-                        //                                leadingIcon = Icons.Rounded.PersonAdd,
-                        //                                headlineText = stringResource(R.string.add_member),
-                        //                                contentColor = MaterialTheme.colorScheme.primary,
-                        //                                onClick = { /* TODO: Navigate to AddMemberScreen */ }
-                        //                            )
-                        //                        }
-                        //                    }
-                        //
                         items(state.members) { user ->
                             MemberItem(
                                 user = user,

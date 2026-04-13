@@ -93,6 +93,35 @@ class GroupRepository @Inject constructor(
         }
     }
 
+    fun getAvailableUsersForInvite(id: Long): Flow<List<User>> = flow {
+        try {
+            val response = groupApi.getAvailableUsersForInvite(id)
+            if (response.isSuccessful) {
+                val dtos = response.body().orEmpty()
+                emit(dtos.map { it.toDomain() })
+            }
+        } catch (e: Exception) {
+            Log.e("GroupRepository", "Ошибка при получении доступных пользователей", e)
+        }
+    }
+
+    suspend fun addMembers(groupId: Long, userIds: List<Long>): Result<Unit> {
+        return try {
+            val request = com.aiwazian.messenger.network.dto.AddMembersRequestDto(
+                userIds = userIds.map { it.toString() }
+            )
+            val response = groupApi.addMembers(groupId, request)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Add members failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("GroupRepository", "Ошибка при добавлении участников", e)
+            Result.failure(e)
+        }
+    }
+
     suspend fun update(group: Group): Result<Unit> {
         return try {
             val request = UpdateGroupRequestDto(

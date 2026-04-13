@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.network.api
 
+import com.aiwazian.messenger.network.dto.AddMembersRequestDto
 import com.aiwazian.messenger.network.dto.CreateGroupRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import com.aiwazian.messenger.network.dto.GroupResponseDto
@@ -34,6 +35,17 @@ interface GroupApi {
         @Query("take") take: Int = 100,
         @Query("search") search: String? = null
     ): Response<List<UserResponseDto>>
+
+    @GET("groups/{groupId}/available-users")
+    suspend fun getAvailableUsersForInvite(
+        @Path("groupId") groupId: Long
+    ): Response<List<UserResponseDto>>
+
+    @POST("groups/{groupId}/add-members")
+    suspend fun addMembers(
+        @Path("groupId") groupId: Long,
+        @Body request: AddMembersRequestDto
+    ): Response<Unit>
 
     @PATCH("groups/{groupId}")
     suspend fun updateGroup(

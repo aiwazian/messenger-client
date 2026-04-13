@@ -34,3 +34,8 @@ data class UpdateGroupRequestDto(
     @SerialName("username") val username: String?,
     @SerialName("groupType") val groupType: GroupType,
 )
+
+@Serializable
+data class AddMembersRequestDto(
+    @SerialName("userIds") val userIds: List<String>
+)

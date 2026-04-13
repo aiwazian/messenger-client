@@ -24,7 +24,7 @@ import com.aiwazian.messenger.ui.screens.channel.settings.invites.CreateInviteLi
 import com.aiwazian.messenger.ui.screens.channel.settings.subscribers.ChannelSubscribersScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.type.ChannelTypeSettingsScreen
 import com.aiwazian.messenger.ui.screens.chat.ChatScreen
-import com.aiwazian.messenger.ui.screens.group.AddMemberScreen
+import com.aiwazian.messenger.ui.screens.group.settings.addMember.AddMemberScreen
 import com.aiwazian.messenger.ui.screens.group.create.CreateGroupScreen
 import com.aiwazian.messenger.ui.screens.group.settings.blockedUsers.GroupBlockedUsersScreen
 import com.aiwazian.messenger.ui.screens.group.settings.members.GroupMembersScreen
@@ -107,7 +107,7 @@ fun AppNavHost(startRoute: AppRoute = AppRoute.Main) {
                 entry<AppRoute.CreateGroupInviteLink> { CreateGroupInviteLinkScreen(groupId = it.groupId) }
                 entry<AppRoute.GroupMembers> { GroupMembersScreen(groupId = it.groupId) }
                 entry<AppRoute.GroupBlackList> { GroupBlockedUsersScreen(groupId = it.groupId) }
-                entry<AppRoute.AddMember> { AddMemberScreen() }
+                entry<AppRoute.AddMember> { AddMemberScreen(groupId = it.groupId) }
                 entry<AppRoute.Logout> { LogoutScreen() }
                 entry<AppRoute.Login> { LoginScreen() }
                 entry<AppRoute.Password> { PasswordScreen() }
