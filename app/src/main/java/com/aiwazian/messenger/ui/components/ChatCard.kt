@@ -39,6 +39,7 @@ import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
+import com.aiwazian.messenger.utils.SYSTEM_USER_ID
 
 @Composable
 fun ChatCard(
@@ -67,8 +68,10 @@ fun ChatCard(
                 if (chat.lastMessage.files.isNotEmpty()) {
                     Text(text = chat.lastMessage.files.first().name)
                 } else if (!chat.lastMessage.text.isNullOrBlank()) {
+                    val isSystem = chat.lastMessage.senderId == SYSTEM_USER_ID
                     Text(
                         text = chat.lastMessage.text,
+                        color = if (isSystem) MaterialTheme.colorScheme.primary else Color.Unspecified,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )

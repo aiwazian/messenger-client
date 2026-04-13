@@ -10,8 +10,8 @@ import androidx.room.PrimaryKey
 @Entity("channel")
 data class ChannelEntity(
     @PrimaryKey val id: Long,
-    var name: String,
-    var bio: String?,
+    val name: String,
+    val bio: String?,
     val ownerId: Long?,
     val subscribers: Int,
     val removedUser: Int?,

@@ -16,7 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
-import com.aiwazian.messenger.ui.components.DropdownMenu
+import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +52,7 @@ fun PageTopBar(
                     )
                 }
                 
-                DropdownMenu(
+                CustomDropdownMenu(
                     expanded = expand,
                     onDismissRequest = { expand = false }) {
                     action.dropdownActions.forEach { item ->

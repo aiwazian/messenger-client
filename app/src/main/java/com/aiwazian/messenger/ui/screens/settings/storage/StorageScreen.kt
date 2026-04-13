@@ -22,10 +22,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -36,6 +39,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,7 +52,6 @@ import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
-import com.aiwazian.messenger.ui.components.section.SectionRadioItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.flow.collectLatest
@@ -72,8 +76,7 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
     val sizeBytes = storageViewModel.appSize
     val sizeMb = sizeBytes / (1024.0 * 1024.0)
     val sizeMbRounded = BigDecimal(sizeMb).setScale(
-        2,
-        RoundingMode.HALF_UP
+        2, RoundingMode.HALF_UP
     ).toDouble()
     
     Scaffold(
@@ -104,8 +107,7 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
             
             if (uiState.isLoading) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
                 }
@@ -114,24 +116,24 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                     uiState.categories.forEachIndexed { index, category ->
                         val sizeMb = category.totalSize / (1024.0 * 1024.0)
                         val sizeMbRounded = BigDecimal(sizeMb).setScale(
-                            2,
-                            RoundingMode.HALF_UP
+                            2, RoundingMode.HALF_UP
                         ).toDouble()
                         
-                        SectionRadioItem(
+                        StorageCategory(
                             text = stringResource(category.category.title),
                             selected = category.isSelected,
+                            color = AppPrimaryColor.entries[index].color,
                             primaryText = "$sizeMbRounded MB",
-                            radioColor = AppPrimaryColor.entries[index].color,
-                            onClick = { storageViewModel.toggleCategory(category.category) })
-                        
+                            onClick = {
+                                storageViewModel.toggleCategory(category.category)
+                            },
+                        )
                     }
                     
                     val selectedSize = uiState.selectedSize
                     val selectedSizeMb = selectedSize / (1024.0 * 1024.0)
                     val selectedSizeMbRounded = BigDecimal(selectedSizeMb).setScale(
-                        2,
-                        RoundingMode.HALF_UP
+                        2, RoundingMode.HALF_UP
                     ).toDouble()
                     
                     val hasSelection = uiState.selectedCategories.isNotEmpty()
@@ -157,8 +159,7 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                                 lineHeight = 18.sp
                             )
                             AnimatedContent(
-                                targetState = selectedSizeMbRounded,
-                                transitionSpec = {
+                                targetState = selectedSizeMbRounded, transitionSpec = {
                                     if (targetState > initialState) {
                                         slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
                                     } else {
@@ -166,15 +167,11 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                                     }
                                 }) { size ->
                                 Text(
-                                    text = "$size",
-                                    fontSize = 16.sp,
-                                    lineHeight = 18.sp
+                                    text = "$size", fontSize = 16.sp, lineHeight = 18.sp
                                 )
                             }
                             Text(
-                                text = "MB)",
-                                fontSize = 16.sp,
-                                lineHeight = 18.sp
+                                text = "MB)", fontSize = 16.sp, lineHeight = 18.sp
                             )
                         }
                     }
@@ -187,9 +184,59 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
         ClearCacheConfirmationDialog(
             onConfirm = {
                 storageViewModel.clearSelectedCache()
-            },
-            onDismiss = storageViewModel::hideConfirmDialog
+            }, onDismiss = storageViewModel::hideConfirmDialog
         )
+    }
+}
+
+@Composable
+private fun StorageCategory(
+    onClick: () -> Unit, selected: Boolean, color: Color, text: String, primaryText: String
+) {
+    TextButton(
+        shape = RectangleShape,
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(modifier = Modifier.padding(end = 16.dp), contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Rounded.RadioButtonUnchecked,
+                    contentDescription = null,
+                    tint = color
+                )
+                AnimatedContent(
+                    targetState = selected,
+                    transitionSpec = { scaleIn() + fadeIn() togetherWith scaleOut() + fadeOut() },
+                    contentAlignment = Alignment.Center
+                ) { selected ->
+                    if (selected) {
+                        Icon(
+                            imageVector = Icons.Rounded.CheckCircle,
+                            contentDescription = null,
+                            tint = color
+                        )
+                    }
+                }
+            }
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = text,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Normal
+                )
+            }
+            
+            Text(primaryText, color = MaterialTheme.colorScheme.primary)
+        }
     }
 }
 
@@ -214,8 +261,7 @@ private fun ClearCacheConfirmationDialog(
                 Text(stringResource(R.string.cancel))
             }
             TextButton(
-                onClick = onConfirm,
-                colors = ButtonDefaults.textButtonColors(
+                onClick = onConfirm, colors = ButtonDefaults.textButtonColors(
                     contentColor = MaterialTheme.colorScheme.error
                 )
             ) {
@@ -230,8 +276,7 @@ private fun TopBar() {
     
     PageTopBar(
         navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navHost::removeLastOrNull
+            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navHost::removeLastOrNull
         )
     )
 }

@@ -99,7 +99,8 @@ fun SectionItem(
                         text = trailingText,
                         color = MaterialTheme.colorScheme.primary,
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.Normal
+                        fontWeight = FontWeight.Normal,
+                        modifier = Modifier.padding(end = 6.dp)
                     )
                 }
                 trailingContent()

@@ -11,12 +11,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.PersonRemove
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -31,11 +34,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -185,7 +190,7 @@ fun MemberItem(
                 IconButton(onClick = { showMenu = true }) {
                     Icon(Icons.Rounded.MoreVert, contentDescription = null)
                 }
-                DropdownMenu(
+                CustomDropdownMenu(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false }
                 ) {
@@ -194,14 +199,36 @@ fun MemberItem(
                         onClick = {
                             showMenu = false
                             onKick()
-                        }
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Rounded.PersonRemove, null)
+                        },
+                        colors = MenuItemColors(
+                            textColor = MaterialTheme.colorScheme.error,
+                            leadingIconColor = MaterialTheme.colorScheme.error,
+                            trailingIconColor = MaterialTheme.colorScheme.error,
+                            disabledTextColor = Color.Unspecified,
+                            disabledLeadingIconColor = Color.Unspecified,
+                            disabledTrailingIconColor = Color.Unspecified
+                        )
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.block_user)) },
                         onClick = {
                             showMenu = false
                             onBlock()
-                        }
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Rounded.Block, null)
+                        },
+                        colors = MenuItemColors(
+                            textColor = MaterialTheme.colorScheme.error,
+                            leadingIconColor = MaterialTheme.colorScheme.error,
+                            trailingIconColor = MaterialTheme.colorScheme.error,
+                            disabledTextColor = Color.Unspecified,
+                            disabledLeadingIconColor = Color.Unspecified,
+                            disabledTrailingIconColor = Color.Unspecified
+                        )
                     )
                 }
             }

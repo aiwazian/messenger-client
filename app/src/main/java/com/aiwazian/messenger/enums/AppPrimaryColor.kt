@@ -11,8 +11,8 @@ enum class AppPrimaryColor(val color: Color) {
     Green(Color(0xFF4E9C57)),
     Lime(Color(0xFF3FC1B0)),
     Pink(Color(0xFFCA7896)),
-    Orange(Color(0xFFFF5722)),
     Purple(Color(0xFFA58ED2)),
+    Orange(Color(0xFFFF5722)),
     Coral(Color(0xFFD27570)),
     Gray(Color(0xFF7B8799)),
     Yellow(Color(0xFFCBAC67));

@@ -13,6 +13,7 @@ import com.aiwazian.messenger.mappers.toUpdateRequest
 import com.aiwazian.messenger.network.api.UserApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -26,12 +27,14 @@ class UserRepository @Inject constructor(
     fun getMe(): Flow<User> = userDao.getMe().filterNotNull().map {
         it.toDomain()
     }.onStart {
-        try {
-            val response = userApi.getMe()
-            if (response.isSuccessful) {
-                response.body()?.let { userDao.insert(it.toEntity()) }
+        if (userDao.getMe().first() == null) {
+            try {
+                val response = userApi.getMe()
+                if (response.isSuccessful) {
+                    response.body()?.let { userDao.insert(it.toEntity()) }
+                }
+            } catch (_: Exception) {
             }
-        } catch (_: Exception) {
         }
     }
     

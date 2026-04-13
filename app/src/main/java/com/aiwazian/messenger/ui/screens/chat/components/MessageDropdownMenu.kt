@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
-import com.aiwazian.messenger.ui.components.DropdownMenu
+import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 
 @Composable
@@ -25,7 +25,7 @@ fun MessageDropdownMenu(
     onDismissRequest: () -> Unit,
     actions: List<DropdownMenuAction>
 ) {
-    DropdownMenu(
+    CustomDropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
         properties = PopupProperties(focusable = true),

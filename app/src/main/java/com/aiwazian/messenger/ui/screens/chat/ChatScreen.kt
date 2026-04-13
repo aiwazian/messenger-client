@@ -101,6 +101,7 @@ import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
+import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.main.MainViewModel
 import java.util.Locale
 
@@ -252,11 +253,13 @@ fun ChatScreen(
                         key = { item ->
                             when (item) {
                                 is ChatItem.DateSeparator -> "date_${item.text}"
+                                is ChatItem.SystemMessage -> "sys_${item.sendTime}"
                                 is ChatItem.MessageItem -> "msg_${item.message.id}"
                             }
                         }) { item ->
                         when (item) {
-                            is ChatItem.DateSeparator -> DateSeparator(item.text)
+                            is ChatItem.DateSeparator -> DateSeparatorItem(item.text)
+                            is ChatItem.SystemMessage -> SystemMessageBubble(item.text)
                             is ChatItem.MessageItem -> MessageBubble(
                                 item = item,
                                 onSeen = {
@@ -266,16 +269,11 @@ fun ChatScreen(
                                     if (action == FileAction.CANCEL) {
                                         fileToCancelId = item.message.id
                                     } else {
-                                        chatViewModel.onFileAction(
-                                            item.message,
-                                            file,
-                                            action
-                                        )
+                                        chatViewModel.onFileAction(item.message, file, action)
                                     }
                                 },
-                                onLinkClicked = { url ->
-                                    chatViewModel.onLinkClicked(url)
-                                })
+                                onLinkClicked = chatViewModel::onLinkClicked
+                            )
                         }
                     }
                     
@@ -365,7 +363,7 @@ private fun getLocalizedSubTitle(uiState: ChatUiState): String {
 }
 
 @Composable
-private fun DateSeparator(text: String) {
+private fun DateSeparatorItem(text: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

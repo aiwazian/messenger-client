@@ -44,6 +44,7 @@ import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.FileHandler
 import com.aiwazian.messenger.utils.ProgressRequestBody
+import com.aiwazian.messenger.utils.SYSTEM_USER_ID
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -557,6 +558,14 @@ class ChatViewModel @Inject constructor(
                 lastDate = messageDate
             }
             
+            if (message.senderId == SYSTEM_USER_ID) {
+                val text = message.text ?: ""
+                if (text.isNotBlank()) {
+                    chatItems.add(ChatItem.SystemMessage(text = text.trim(), sendTime = message.sendTime))
+                }
+                return@forEach
+            }
+
             val isMine = message.senderId == myId
             val isSingleEmoji = isSingleEmoji(message.text ?: "")
             

@@ -67,7 +67,7 @@ fun GroupTypeSettingsScreen(
     }
     
     val actions = if (uiState.canSave) {
-        listOf(TopBarAction(icon = Icons.Rounded.Check, onClick = { viewModel.save() }))
+        listOf(TopBarAction(icon = Icons.Rounded.Check, onClick = viewModel::save))
     } else emptyList()
     
     Scaffold(
@@ -106,7 +106,7 @@ fun GroupTypeSettingsScreen(
             ) { type ->
                 if (type == GroupType.PUBLIC) {
                     Column {
-                        SectionContainer(header = { SectionHeader(title = "Публичная ссылка") }) {
+                        SectionContainer(header = { SectionHeader(title = stringResource(R.string.public_link)) }) {
                             FramelessTextBox(
                                 placeholder = stringResource(R.string.username),
                                 value = uiState.username,
@@ -122,7 +122,12 @@ fun GroupTypeSettingsScreen(
                         }
                         
                         if (message != null) {
-                            Text(text = message, modifier = Modifier.padding(16.dp), fontSize = 12.sp, color = color!!)
+                            Text(
+                                text = message,
+                                modifier = Modifier.padding(16.dp),
+                                fontSize = 12.sp,
+                                color = color!!
+                            )
                         }
                     }
                 }

@@ -9,6 +9,7 @@ import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 
 sealed class ChatItem {
     data class DateSeparator(val text: String) : ChatItem()
+    data class SystemMessage(val text: String, val sendTime: Long) : ChatItem()
     data class MessageItem(
         val message: Message,
         val time: String,

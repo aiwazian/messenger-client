@@ -6,6 +6,7 @@ package com.aiwazian.messenger.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
@@ -20,12 +21,10 @@ import com.aiwazian.messenger.database.entity.GroupEntity
 import com.aiwazian.messenger.database.entity.MessageEntity
 import com.aiwazian.messenger.database.entity.UserEntity
 
-import androidx.room.TypeConverters
-
 @Database(
     entities = [UserEntity::class, MessageEntity::class, ChannelEntity::class, AccountEntity::class, GroupEntity::class, AttachmentEntity::class, ChatEntity::class],
     exportSchema = false,
-    version = 20
+    version = 21
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {

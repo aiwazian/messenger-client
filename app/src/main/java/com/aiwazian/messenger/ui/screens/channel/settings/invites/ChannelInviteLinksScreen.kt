@@ -62,7 +62,7 @@ import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
 import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.DropdownMenu
+import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -261,7 +261,7 @@ private fun InviteLinkItem(
                 IconButton(onClick = { viewModel.toggleMenu(link.id) }) {
                     Icon(Icons.Rounded.MoreVert, contentDescription = null)
                 }
-                DropdownMenu(
+                CustomDropdownMenu(
                     expanded = expandedMenuId == link.id,
                     onDismissRequest = { viewModel.toggleMenu(null) }
                 ) {

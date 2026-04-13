@@ -9,10 +9,10 @@ import androidx.room.PrimaryKey
 
 @Entity("user")
 data class UserEntity(
-    @PrimaryKey var id: Long,
-    var firstName: String = "",
-    var lastName: String? = null,
-    var username: String? = null,
-    var bio: String? = null,
-    var dateOfBirth: Long? = null
+    @PrimaryKey val id: Long,
+    val firstName: String = "",
+    val lastName: String? = null,
+    val username: String? = null,
+    val bio: String? = null,
+    val dateOfBirth: Long? = null
 )
