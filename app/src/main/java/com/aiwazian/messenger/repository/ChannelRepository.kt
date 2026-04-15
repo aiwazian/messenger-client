@@ -123,7 +123,6 @@ class ChannelRepository @Inject constructor(
             if (response.isSuccessful) {
                 channelDao.delete(channelId)
                 chatDao.deleteChat(channelId)
-                messageDao.clearChatHistory(channelId)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Delete failed"))

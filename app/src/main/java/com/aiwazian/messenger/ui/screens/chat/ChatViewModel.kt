@@ -166,6 +166,15 @@ class ChatViewModel @Inject constructor(
             }
         }
         
+        webSocketClient.subscribeToEvent<DeleteChatPayload>(WebSocketAction.HISTORY_CLEAR) { payload ->
+            if (payload.chatId == _chatId) {
+                viewModelScope.launch {
+                    chatRepository.clearLocalHistory(_chatId)
+                    updateChatItems(emptyList())
+                }
+            }
+        }
+        
         webSocketClient.subscribeToEvent<DeleteChatPayload>(WebSocketAction.CHAT_REMOVED) { payload ->
             if (payload.chatId == _chatId) {
                 viewModelScope.launch {
@@ -784,12 +793,9 @@ class ChatViewModel @Inject constructor(
         }
     }
     
-    fun onDeleteMessagesConfirmed(deleteForReceiver: Boolean) {
+    fun onDeleteMessagesConfirmed() {
         viewModelScope.launch {
-            if (chatRepository.deleteChatMessages(
-                    _uiState.value.chat.id,
-                    deleteForReceiver
-                )
+            if (chatRepository.deleteChatMessages(_uiState.value.chat.id)
             ) {
                 updateChatItems(emptyList())
                 hideClearHistoryDialog()

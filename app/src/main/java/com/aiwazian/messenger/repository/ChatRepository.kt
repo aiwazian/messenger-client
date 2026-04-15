@@ -31,6 +31,7 @@ import com.aiwazian.messenger.network.dto.TextMessageRequestDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -93,32 +94,16 @@ class ChatRepository @Inject constructor(
                         }
                         
                         ChatType.GROUP -> {
-                            val group =
-                                groupDao.getById(id) ?: GroupEntity(
-                                    id,
-                                    null,
-                                    dto.name,
-                                    null,
-                                    null,
-                                    0,
-                                    0
-                                )
+                            val group = groupDao.getById(id) ?: GroupEntity(
+                                id, null, dto.name, null, null, 0, 0
+                            )
                             groupDao.insert(group.copy(name = dto.name))
                         }
                         
                         ChatType.CHANNEL -> {
-                            val channel =
-                                channelDao.get(id) ?: ChannelEntity(
-                                    id,
-                                    dto.name,
-                                    null,
-                                    null,
-                                    0,
-                                    null,
-                                    0,
-                                    null,
-                                    null
-                                )
+                            val channel = channelDao.get(id) ?: ChannelEntity(
+                                id, dto.name, null, null, 0, null, 0, null, null
+                            )
                             channelDao.insert(channel.copy(name = dto.name))
                         }
                         
@@ -165,10 +150,7 @@ class ChatRepository @Inject constructor(
     }
     
     fun getMessagesFlow(
-        senderId: Long,
-        chatId: Long,
-        limit: Int,
-        offset: Int
+        senderId: Long, chatId: Long, limit: Int, offset: Int
     ): Flow<List<Message>> {
         return when (ChatType.fromId(chatId)) {
             ChatType.PRIVATE -> messageDao.getMessages(senderId, chatId, limit, offset)
@@ -265,9 +247,7 @@ class ChatRepository @Inject constructor(
     }
     
     suspend fun getDownloadUrl(
-        chatId: Long,
-        messageId: Int,
-        fileId: String
+        chatId: Long, messageId: Int, fileId: String
     ): FileDownloadResponseDto? {
         return try {
             val response = messageApi.getFileDownloadUrl(chatId, messageId, fileId)
@@ -313,9 +293,18 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    suspend fun deleteChatMessages(chatId: Long, forReceiver: Boolean): Boolean {
+    suspend fun clearLocalHistory(chatId: Long) {
+        userDao.getMe().first()?.id?.let { userId ->
+            messageDao.clearChatHistory(userId, chatId)
+        }
+    }
+    
+    suspend fun deleteChatMessages(chatId: Long): Boolean {
         return try {
             val response = messageApi.clearHistory(chatId)
+            if (response.isSuccessful) {
+                clearLocalHistory(chatId)
+            }
             response.isSuccessful
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error clearing chat history", e)
@@ -350,7 +339,7 @@ class ChatRepository @Inject constructor(
             val response = chatApi.deleteChat(chatId)
             if (response.isSuccessful) {
                 chatDao.deleteChat(chatId)
-                messageDao.clearChatHistory(chatId)
+                clearLocalHistory(chatId)
             }
             response.isSuccessful
         } catch (e: Exception) {
@@ -375,24 +364,16 @@ class ChatRepository @Inject constructor(
             }
             
             ChatType.GROUP -> {
-                val group =
-                    groupDao.getById(id) ?: GroupEntity(id, null, chat.chatName, null, null, 0, 0)
+                val group = groupDao.getById(id) ?: GroupEntity(
+                    id, null, chat.chatName, null, null, 0, 0
+                )
                 groupDao.insert(group.copy(name = chat.chatName))
             }
             
             ChatType.CHANNEL -> {
-                val channel =
-                    channelDao.get(id) ?: ChannelEntity(
-                        id,
-                        chat.chatName,
-                        null,
-                        null,
-                        0,
-                        null,
-                        0,
-                        null,
-                        null
-                    )
+                val channel = channelDao.get(id) ?: ChannelEntity(
+                    id, chat.chatName, null, null, 0, null, 0, null, null
+                )
                 channelDao.insert(channel.copy(name = chat.chatName))
             }
             

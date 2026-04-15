@@ -402,7 +402,7 @@ private fun BottomSection(
             }
             
             ChatType.GROUP -> {
-                if(uiState.isOwner) {
+                if (uiState.isOwner) {
                     InputMessage(
                         value = uiState.messageText,
                         onValueChange = onTextChanged,
@@ -410,7 +410,7 @@ private fun BottomSection(
                         onFilesSelected = onFilesSelected
                     )
                 } else {
-                    if(uiState.isJoined) {
+                    if (uiState.isJoined) {
                         InputMessage(
                             value = uiState.messageText,
                             onValueChange = onTextChanged,
@@ -664,49 +664,21 @@ private fun DeleteChatDialog(
 
 @Composable
 private fun ClearHistoryDialog(
-    onDismissRequest: () -> Unit, onConfirm: (Boolean) -> Unit, chatName: String, isSelf: Boolean
+    onDismissRequest: () -> Unit, onConfirm: () -> Unit, chatName: String, isSelf: Boolean
 ) {
-    var deleteForReceiver by remember { mutableStateOf(false) }
-    
     CustomDialog(
         title = stringResource(R.string.clear_history),
         onDismissRequest = onDismissRequest,
         content = {
-            val suffix = if (!isSelf) " в чате c " + chatName.trimEnd() else ""
             Text(
-                text = "Удалить все сообщения$suffix без возможности восстановления?",
+                text = "Удалить все сообщения в чате, без возможности восстановления?",
                 lineHeight = 16.sp
             )
-            
-            if (!isSelf) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .clickable { deleteForReceiver = !deleteForReceiver }) {
-                    Row(modifier = Modifier.padding(10.dp)) {
-                        Checkbox(
-                            checked = deleteForReceiver,
-                            onCheckedChange = null,
-                            modifier = Modifier.padding(end = 10.dp)
-                        )
-                        Text(
-                            text = "${stringResource(R.string.also_delete_for)} $chatName",
-                            fontSize = 14.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            } else {
-                deleteForReceiver = true
-            }
         },
         buttons = {
             TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
             TextButton(
-                onClick = { onConfirm(deleteForReceiver) },
+                onClick = onConfirm,
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) { Text(stringResource(R.string.delete)) }
         })
