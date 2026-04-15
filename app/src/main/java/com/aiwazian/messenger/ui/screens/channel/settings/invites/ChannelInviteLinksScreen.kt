@@ -64,7 +64,7 @@ import com.aiwazian.messenger.extensions.toPrettyDateWithYear
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
@@ -95,7 +95,7 @@ fun ChannelInviteLinksScreen(
     val isShareSheetVisible by viewModel.isShareSheetVisible.collectAsState()
     val availableChats by viewModel.availableChats.collectAsState()
     val selectedChatIds by viewModel.selectedChatIds.collectAsState()
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     if (viewModel.deleteDialog.isVisible) {
         CustomDialog(
@@ -184,7 +184,7 @@ fun ChannelInviteLinksScreen(
                 title = { Text(stringResource(R.string.invite_links)) },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 )
             )
         }
@@ -200,7 +200,7 @@ fun ChannelInviteLinksScreen(
                         headlineText = stringResource(R.string.new_link),
                         leadingIcon = Icons.Rounded.AddLink,
                         onClick = {
-                            navHost.add(AppRoute.CreateInviteLink(channelId))
+                            navBackStack.add(AppRoute.CreateInviteLink(channelId))
                         }
                     )
                 }

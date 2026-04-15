@@ -65,7 +65,7 @@ import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
@@ -96,7 +96,7 @@ fun GroupInviteLinksScreen(
     val isShareSheetVisible by viewModel.isShareSheetVisible.collectAsState()
     val availableChats by viewModel.availableChats.collectAsState()
     val selectedChatIds by viewModel.selectedChatIds.collectAsState()
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     if (viewModel.deleteDialog.isVisible) {
         CustomDialog(
@@ -189,7 +189,7 @@ fun GroupInviteLinksScreen(
                 title = { Text(stringResource(R.string.invite_links)) },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 )
             )
         }
@@ -205,7 +205,7 @@ fun GroupInviteLinksScreen(
                         headlineText = stringResource(R.string.new_link),
                         leadingIcon = Icons.Rounded.AddLink,
                         onClick = {
-                            navHost.add(AppRoute.CreateGroupInviteLink(groupId))
+                            navBackStack.add(AppRoute.CreateGroupInviteLink(groupId))
                         }
                     )
                 }

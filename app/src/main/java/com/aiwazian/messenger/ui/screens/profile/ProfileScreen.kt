@@ -41,7 +41,7 @@ import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
@@ -54,7 +54,7 @@ fun ProfileScreen(
     profileId: Long,
     profileViewModel: ProfileViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val uiState by profileViewModel.uiState.collectAsState()
     var showLeaveDialog by remember { mutableStateOf(false) }
@@ -70,24 +70,24 @@ fun ProfileScreen(
         profileViewModel.uiEffect.collect { effect ->
             when (effect) {
                 is ProfileUiEffect.NavigateBack -> {
-                    navHost.removeLastOrNull()
+                    navBackStack.removeLastOrNull()
                 }
                 
                 is ProfileUiEffect.NavigateToMain -> {
-                    navHost.clear()
-                    navHost.add(AppRoute.Main)
+                    navBackStack.clear()
+                    navBackStack.add(AppRoute.Main)
                 }
                 
                 is ProfileUiEffect.NavigateToUserSettings -> {
-                    navHost.add(AppRoute.SettingsProfile)
+                    navBackStack.add(AppRoute.SettingsProfile)
                 }
                 
                 is ProfileUiEffect.NavigateToGroupSettings -> {
-                    navHost.add(AppRoute.GroupSettings(effect.chatId))
+                    navBackStack.add(AppRoute.GroupSettings(effect.chatId))
                 }
                 
                 is ProfileUiEffect.NavigateToChannelSettings -> {
-                    navHost.add(AppRoute.ChannelSettings(effect.chatId))
+                    navBackStack.add(AppRoute.ChannelSettings(effect.chatId))
                 }
                 
                 is ProfileUiEffect.ShowLeaveDialog -> {
@@ -113,7 +113,7 @@ fun ProfileScreen(
                 PageTopBar(
                     navigationIcon = NavigationIcon(
                         icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                        onClick = navHost::removeLastOrNull
+                        onClick = navBackStack::removeLastOrNull
                     )
                 )
             }) {
@@ -134,7 +134,7 @@ fun ProfileScreen(
                 PageTopBar(
                     navigationIcon = NavigationIcon(
                         icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                        onClick = navHost::removeLastOrNull
+                        onClick = navBackStack::removeLastOrNull
                     )
                 )
             }) {
@@ -176,7 +176,7 @@ fun ProfileScreen(
                 PageTopBar(
                     navigationIcon = NavigationIcon(
                         icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                        onClick = navHost::removeLastOrNull
+                        onClick = navBackStack::removeLastOrNull
                     )
                 )
             }) {
@@ -328,7 +328,7 @@ private fun TopBar(
     title: String,
     actions: List<TopBarAction>
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     PageTopBar(
         title = {
@@ -341,7 +341,7 @@ private fun TopBar(
         },
         navigationIcon = NavigationIcon(
             icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navHost::removeLastOrNull
+            onClick = navBackStack::removeLastOrNull
         ),
         actions = actions
     )

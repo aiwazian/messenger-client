@@ -36,7 +36,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.enums.ThemeOption
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
@@ -48,7 +48,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val primaryColor by viewModel.primaryColor.collectAsState()
     val isDynamicColorEnable by viewModel.dynamicColor.collectAsState()
@@ -122,7 +122,7 @@ fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
                     headlineText = stringResource(R.string.dark_theme),
                     trailingText = theme,
                     onClick = {
-                        navHost.add(AppRoute.SettingsDesign)
+                        navBackStack.add(AppRoute.SettingsDesign)
                     })
             }
         }
@@ -131,7 +131,7 @@ fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
 
 @Composable
 private fun TopBar() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     PageTopBar(
         title = {
@@ -139,7 +139,7 @@ private fun TopBar() {
         },
         navigationIcon = NavigationIcon(
             icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navHost::removeLastOrNull
+            onClick = navBackStack::removeLastOrNull
         )
     )
 }

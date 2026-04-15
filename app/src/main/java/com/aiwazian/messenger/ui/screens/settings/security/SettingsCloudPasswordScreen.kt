@@ -35,7 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.VibrationPattern
@@ -43,7 +43,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsCloudPasswordScreen(cloudPasswordViewModel: CloudPasswordViewModel = hiltViewModel()) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val newPassword by cloudPasswordViewModel.newPassword.collectAsState()
     val errorMessage by cloudPasswordViewModel.errorMessage.collectAsState()
@@ -57,7 +57,7 @@ fun SettingsCloudPasswordScreen(cloudPasswordViewModel: CloudPasswordViewModel =
             PageTopBar(
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 )
             )
         },
@@ -77,7 +77,7 @@ fun SettingsCloudPasswordScreen(cloudPasswordViewModel: CloudPasswordViewModel =
                         
                         val isChanged = cloudPasswordViewModel.changePassword()
                         if (isChanged) {
-                            navHost.removeLastOrNull()
+                            navBackStack.removeLastOrNull()
                         }
                     }
                 },

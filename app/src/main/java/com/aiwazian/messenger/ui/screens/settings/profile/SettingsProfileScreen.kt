@@ -37,7 +37,7 @@ import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
@@ -48,13 +48,13 @@ import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 
 @Composable
 fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel()) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     val uiState by viewModel.uiState.collectAsState()
     
     LaunchedEffect(Unit) {
         viewModel.sideEffect.collect { effect ->
             when (effect) {
-                is SettingsProfileSideEffect.NavigateBack -> navHost.removeLastOrNull()
+                is SettingsProfileSideEffect.NavigateBack -> navBackStack.removeLastOrNull()
                 else -> {}
             }
         }
@@ -68,7 +68,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                 title = { Text(stringResource(R.string.profile)) },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 ),
                 actions = listOf(
                     TopBarAction(
@@ -135,7 +135,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                             "Задать имя пользователя"
                         },
                         onClick = {
-                            navHost.add(AppRoute.SettingsUsername(uiState.user.username))
+                            navBackStack.add(AppRoute.SettingsUsername(uiState.user.username))
                         }
                     )
                 }

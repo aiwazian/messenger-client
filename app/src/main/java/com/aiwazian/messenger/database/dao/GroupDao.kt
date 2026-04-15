@@ -18,6 +18,9 @@ interface GroupDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(groupEntity: GroupEntity)
     
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(groups: List<GroupEntity>)
+    
     @Query("SELECT * FROM 'group' WHERE id = :id")
     fun get(id: Long): Flow<GroupEntity?>
     

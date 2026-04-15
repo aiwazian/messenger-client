@@ -52,7 +52,7 @@ import com.aiwazian.messenger.enums.PrivacyLevel
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
@@ -67,7 +67,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewModel()) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val privacy by privacyViewModel.privacySettings.collectAsState()
     
@@ -132,7 +132,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                         stringResource(R.string.nobody)
                     },
                     onClick = {
-                        navHost.add(AppRoute.SettingsBio(privacy.bio))
+                        navBackStack.add(AppRoute.SettingsBio(privacy.bio))
                     })
                 
                 SectionItem(
@@ -143,7 +143,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                         stringResource(R.string.nobody)
                     },
                     onClick = {
-                        navHost.add(AppRoute.SettingsDateOfBirth(privacy.dateOfBirth))
+                        navBackStack.add(AppRoute.SettingsDateOfBirth(privacy.dateOfBirth))
                     })
                 
                 SectionItem(
@@ -154,7 +154,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                         stringResource(R.string.nobody)
                     },
                     onClick = {
-                        navHost.add(AppRoute.SettingsInvites(privacy.invites))
+                        navBackStack.add(AppRoute.SettingsInvites(privacy.invites))
                     })
             }
             
@@ -282,11 +282,11 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
 
 @Composable
 private fun TopBar() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     PageTopBar(
         title = { Text(stringResource(R.string.confidentiality)) }, navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navHost::removeLastOrNull
+            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navBackStack::removeLastOrNull
         )
     )
 }

@@ -42,7 +42,7 @@ import com.aiwazian.messenger.ui.components.CodeBlocks
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomNumberBoard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
@@ -67,14 +67,14 @@ fun SettingsPasscodeScreen() {
 fun SettingsPasscodeCreateScreen(
     passcodeViewModel: PasscodeViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val uiState by passcodeViewModel.uiState.collectAsState()
     
     LaunchedEffect(Unit) {
         passcodeViewModel.uiEffect.collectLatest { effect ->
             when (effect) {
-                PasscodeUiEffect.NavigateBack -> navHost.removeLastOrNull()
+                PasscodeUiEffect.NavigateBack -> navBackStack.removeLastOrNull()
             }
         }
     }
@@ -157,14 +157,14 @@ fun SettingsPasscodeCreateScreen(
 fun SettingsPasscodeChangeScreen(
     passcodeViewModel: PasscodeViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val uiState by passcodeViewModel.uiState.collectAsState()
     
     LaunchedEffect(Unit) {
         passcodeViewModel.uiEffect.collectLatest { effect ->
             when (effect) {
-                PasscodeUiEffect.NavigateBack -> navHost.removeLastOrNull()
+                PasscodeUiEffect.NavigateBack -> navBackStack.removeLastOrNull()
             }
         }
     }
@@ -174,7 +174,7 @@ fun SettingsPasscodeChangeScreen(
             PageTopBar(
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 )
             )
         },
@@ -250,7 +250,7 @@ fun SettingsPasscodeChangeScreen(
 
 @Composable
 private fun PasscodeLockMainScreen() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     Scaffold(
         topBar = {
@@ -266,7 +266,7 @@ private fun PasscodeLockMainScreen() {
                 description = stringResource(R.string.passcode_lock_description),
                 buttonText = stringResource(R.string.enable_passcode),
                 buttonClick = {
-                    navHost.add(AppRoute.SettingsPasscodeCreate)
+                    navBackStack.add(AppRoute.SettingsPasscodeCreate)
                 })
         }
     }
@@ -274,11 +274,11 @@ private fun PasscodeLockMainScreen() {
 
 @Composable
 private fun TopBar() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     PageTopBar(
         navigationIcon = NavigationIcon(
             icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navHost::removeLastOrNull
+            onClick = navBackStack::removeLastOrNull
         )
     )
 }
@@ -287,7 +287,7 @@ private fun TopBar() {
 private fun SettingsPasscodeLockScreen(
     passcodeViewModel: PasscodeViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val disablePasscodeDialog = passcodeViewModel.disablePasscodeDialog
     
@@ -296,7 +296,7 @@ private fun SettingsPasscodeLockScreen(
     LaunchedEffect(Unit) {
         passcodeViewModel.uiEffect.collectLatest { effect ->
             when (effect) {
-                PasscodeUiEffect.NavigateBack -> navHost.removeLastOrNull()
+                PasscodeUiEffect.NavigateBack -> navBackStack.removeLastOrNull()
             }
         }
     }
@@ -343,7 +343,7 @@ private fun SettingsPasscodeLockScreen(
                 SectionItem(
                     headlineText = stringResource(R.string.change_passcode),
                     onClick = {
-                        navHost.add(AppRoute.SettingsPasscodeChange)
+                        navBackStack.add(AppRoute.SettingsPasscodeChange)
                     })
             }
             
@@ -397,12 +397,12 @@ private fun DisablePasscodeDialog(
 
 @Composable
 private fun TopBarMain() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     PageTopBar(
         title = { Text(stringResource(R.string.passcode_lock)) },
         navigationIcon = NavigationIcon(
             icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navHost::removeLastOrNull
+            onClick = navBackStack::removeLastOrNull
         )
     )
 }

@@ -7,7 +7,9 @@ package com.aiwazian.messenger.ui.components.navigation
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -17,20 +19,20 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.aiwazian.messenger.ui.screens.channel.CreateChannelScreen
-import com.aiwazian.messenger.ui.screens.channel.settings.blockedUsers.ChannelBlackListScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.ChannelSettingsScreen
+import com.aiwazian.messenger.ui.screens.channel.settings.blockedUsers.ChannelBlackListScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.invites.ChannelInviteLinksScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.invites.CreateInviteLinkScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.subscribers.ChannelSubscribersScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.type.ChannelTypeSettingsScreen
 import com.aiwazian.messenger.ui.screens.chat.ChatScreen
-import com.aiwazian.messenger.ui.screens.group.settings.addMember.AddMemberScreen
 import com.aiwazian.messenger.ui.screens.group.create.CreateGroupScreen
-import com.aiwazian.messenger.ui.screens.group.settings.blockedUsers.GroupBlockedUsersScreen
-import com.aiwazian.messenger.ui.screens.group.settings.members.GroupMembersScreen
 import com.aiwazian.messenger.ui.screens.group.settings.GroupSettingsScreen
+import com.aiwazian.messenger.ui.screens.group.settings.addMember.AddMemberScreen
+import com.aiwazian.messenger.ui.screens.group.settings.blockedUsers.GroupBlockedUsersScreen
 import com.aiwazian.messenger.ui.screens.group.settings.invites.CreateGroupInviteLinkScreen
 import com.aiwazian.messenger.ui.screens.group.settings.invites.GroupInviteLinksScreen
+import com.aiwazian.messenger.ui.screens.group.settings.members.GroupMembersScreen
 import com.aiwazian.messenger.ui.screens.group.settings.type.GroupTypeSettingsScreen
 import com.aiwazian.messenger.ui.screens.login.LoginScreen
 import com.aiwazian.messenger.ui.screens.login.PasswordScreen
@@ -60,13 +62,13 @@ import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPass
 import com.aiwazian.messenger.ui.screens.settings.storage.StorageScreen
 
 @Composable
-fun AppNavHost(startRoute: AppRoute = AppRoute.Main) {
+fun AppNavDisplay(startRoute: AppRoute = AppRoute.Main) {
     val backStack = rememberNavBackStack(startRoute)
     
-    CompositionLocalProvider(LocalNavHost provides backStack) {
+    CompositionLocalProvider(LocalNavBackStack provides backStack) {
         NavDisplay(
             backStack = backStack,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
             onBack = backStack::removeLastOrNull,
             entryProvider = entryProvider {
                 entry<AppRoute.Main> { MainScreen() }

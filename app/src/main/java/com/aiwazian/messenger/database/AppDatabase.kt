@@ -11,20 +11,33 @@ import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.GroupDao
+import com.aiwazian.messenger.database.dao.GroupMemberDao
 import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.database.dao.UserDao
 import com.aiwazian.messenger.database.entity.AccountEntity
 import com.aiwazian.messenger.database.entity.AttachmentEntity
 import com.aiwazian.messenger.database.entity.ChannelEntity
 import com.aiwazian.messenger.database.entity.ChatEntity
+import com.aiwazian.messenger.database.entity.GroupBlackListEntity
 import com.aiwazian.messenger.database.entity.GroupEntity
+import com.aiwazian.messenger.database.entity.GroupMemberEntity
 import com.aiwazian.messenger.database.entity.MessageEntity
 import com.aiwazian.messenger.database.entity.UserEntity
 
 @Database(
-    entities = [UserEntity::class, MessageEntity::class, ChannelEntity::class, AccountEntity::class, GroupEntity::class, AttachmentEntity::class, ChatEntity::class],
+    entities = [
+        UserEntity::class,
+        MessageEntity::class,
+        ChannelEntity::class,
+        AccountEntity::class,
+        GroupEntity::class,
+        GroupMemberEntity::class,
+        GroupBlackListEntity::class,
+        AttachmentEntity::class,
+        ChatEntity::class
+    ],
     exportSchema = false,
-    version = 21
+    version = 22
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -33,6 +46,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun channelDao(): ChannelDao
 
     abstract fun groupDao(): GroupDao
+
+    abstract fun groupMemberDao(): GroupMemberDao
 
     abstract fun chatDao(): ChatDao
 

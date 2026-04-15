@@ -42,7 +42,7 @@ import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
@@ -56,7 +56,7 @@ fun ChannelBlackListScreen(
     channelId: Long,
     viewModel: ChannelSettingsViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     var searchQuery by remember { mutableStateOf("") }
     var bannedUsers by remember { mutableStateOf(emptyList<User>()) }
     
@@ -93,7 +93,7 @@ fun ChannelBlackListScreen(
                 title = { Text(text = stringResource(R.string.removed_user)) },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 )
             )
         }
@@ -146,7 +146,7 @@ fun ChannelBlackListScreen(
                                 }
                             },
                             onClick = {
-                                navHost.add(AppRoute.Chat(user.id))
+                                navBackStack.add(AppRoute.Chat(user.id))
                             }
                         )
                     }

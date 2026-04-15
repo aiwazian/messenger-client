@@ -22,7 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.PrivacyLevel
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
@@ -34,7 +34,7 @@ import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 fun SettingsDateOfBirthScreen(
     level: PrivacyLevel
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val settingsDateOfBirthViewModel = hiltViewModel<SettingsDateOfBirthViewModel>()
     
@@ -47,7 +47,7 @@ fun SettingsDateOfBirthScreen(
         settingsDateOfBirthViewModel.effect.collect { effect ->
             when (effect) {
                 is SettingsDateOfBirthEffect.Back -> {
-                    navHost.removeLastOrNull()
+                    navBackStack.removeLastOrNull()
                 }
             }
         }
@@ -77,7 +77,7 @@ fun SettingsDateOfBirthScreen(
                 },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 ),
                 actions = actions
             )

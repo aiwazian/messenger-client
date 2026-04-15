@@ -60,14 +60,16 @@ class GroupTypeSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             groupRepository.getById(groupId).collect { groupInfo ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        group = groupInfo,
-                        groupType = groupInfo.groupType,
-                        username = groupInfo.username ?: "",
-                        canSave = true
-                    )
+                groupInfo?.let { group ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            group = group,
+                            groupType = group.groupType,
+                            username = group.username ?: "",
+                            canSave = true
+                        )
+                    }
                 }
             }
         }

@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.group.settings.members
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -33,7 +34,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -44,7 +44,7 @@ import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
@@ -56,7 +56,7 @@ fun GroupMembersScreen(
     groupId: Long,
     viewModel: GroupMembersViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     
@@ -91,7 +91,7 @@ fun GroupMembersScreen(
                 title = { Text(stringResource(R.string.members)) },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 )
             )
         },
@@ -101,20 +101,20 @@ fun GroupMembersScreen(
             }
         }
     ) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
             if (state.isLoading && state.members.isEmpty()) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator()
             } else {
                 SectionContainer {
                     SectionItem(
                         leadingIcon = Icons.Rounded.PersonAdd,
                         headlineText = stringResource(R.string.add_member),
                         contentColor = MaterialTheme.colorScheme.primary,
-                        onClick = { navHost.add(AppRoute.AddMember(groupId)) }
+                        onClick = { navBackStack.add(AppRoute.AddMember(groupId)) }
                     )
                 }
 

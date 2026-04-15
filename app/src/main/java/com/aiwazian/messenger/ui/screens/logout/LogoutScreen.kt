@@ -13,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -31,7 +30,7 @@ import com.aiwazian.messenger.AuthActivity
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
@@ -41,7 +40,7 @@ import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     val scrollState = rememberScrollState()
     val context = LocalContext.current
     
@@ -81,7 +80,7 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
                     headlineText = stringResource(R.string.clear_cache),
                     supportingText = "Освободите память устройства, файлы останутся в облаке.",
                     onClick = {
-                        navHost.add(AppRoute.SettingsDataAndStorage)
+                        navBackStack.add(AppRoute.SettingsDataAndStorage)
                     })
             }
             
@@ -126,13 +125,13 @@ private fun LogoutModal(
 
 @Composable
 private fun TopBar() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     PageTopBar(
         title = { Text(stringResource(R.string.logout)) },
         navigationIcon = NavigationIcon(
             icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navHost::removeLastOrNull
+            onClick = navBackStack::removeLastOrNull
         )
     )
 }

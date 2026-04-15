@@ -8,6 +8,6 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 
-val LocalNavHost = staticCompositionLocalOf<NavBackStack<NavKey>> {
-    error("No NavHost provided")
+val LocalNavBackStack = staticCompositionLocalOf<NavBackStack<NavKey>> {
+    error("No NavBackStack provided")
 }

@@ -42,7 +42,7 @@ import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
@@ -53,7 +53,7 @@ fun GroupBlockedUsersScreen(
     groupId: Long,
     viewModel: GroupBlockedUsersViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     
@@ -83,7 +83,7 @@ fun GroupBlockedUsersScreen(
                 title = { Text(stringResource(R.string.removed_user)) },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 )
             )
         },
@@ -137,7 +137,7 @@ fun BlockedUserItem(
     user: User,
     onUnblock: () -> Unit
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     var showMenu by remember { mutableStateOf(false) }
     
     SectionItem(
@@ -174,7 +174,7 @@ fun BlockedUserItem(
             }
         },
         onClick = {
-            navHost.add(AppRoute.Chat(user.id))
+            navBackStack.add(AppRoute.Chat(user.id))
         }
     )
 }

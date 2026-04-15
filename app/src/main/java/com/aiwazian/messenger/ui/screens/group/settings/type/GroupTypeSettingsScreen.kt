@@ -33,7 +33,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.GroupType
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
@@ -48,7 +48,7 @@ fun GroupTypeSettingsScreen(
     groupId: Long,
     viewModel: GroupTypeSettingsViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     LaunchedEffect(groupId) {
         viewModel.init(groupId)
@@ -59,7 +59,7 @@ fun GroupTypeSettingsScreen(
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
             when (effect) {
-                is GroupTypeSettingsEffect.NavigateBack -> navHost.removeLastOrNull()
+                is GroupTypeSettingsEffect.NavigateBack -> navBackStack.removeLastOrNull()
                 
                 else -> {}
             }
@@ -76,7 +76,7 @@ fun GroupTypeSettingsScreen(
                 title = { Text(stringResource(R.string.group_type)) },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 ),
                 actions = actions
             )
@@ -86,13 +86,13 @@ fun GroupTypeSettingsScreen(
         Column(modifier = Modifier.padding(innerPadding)) {
             SectionContainer(header = { SectionHeader(title = stringResource(R.string.group_type)) }) {
                 SectionRadioItem(
-                    text = "Приватная группа",
+                    text = stringResource(R.string.private_group),
                     selected = uiState.groupType == GroupType.PRIVATE,
                     description = "В частные группы можно вступить только по ссылке-приглашению.",
                     onClick = { viewModel.changeGroupType(GroupType.PRIVATE) }
                 )
                 SectionRadioItem(
-                    text = "Публичная группа",
+                    text = stringResource(R.string.public_group),
                     selected = uiState.groupType == GroupType.PUBLIC,
                     description = "Публичные группы можно найти через поиск.",
                     onClick = { viewModel.changeGroupType(GroupType.PUBLIC) }
@@ -137,7 +137,7 @@ fun GroupTypeSettingsScreen(
                 SectionItem(
                     leadingIcon = Icons.Rounded.Link,
                     headlineText = stringResource(R.string.invite_links),
-                    onClick = { navHost.add(AppRoute.GroupInviteLinks(groupId)) }
+                    onClick = { navBackStack.add(AppRoute.GroupInviteLinks(groupId)) }
                 )
             }
         }

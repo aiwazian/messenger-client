@@ -174,22 +174,24 @@ class ProfileViewModel @Inject constructor(
             ChatType.GROUP -> {
                 viewModelScope.launch {
                     groupRepository.getById(profileId).collectLatest { group ->
-                        val profile = Profile.Group(
-                            id = group.id,
-                            ownerId = group.ownerId,
-                            name = group.name,
-                            bio = group.bio,
-                            username = group.username,
-                            members = group.members
-                        )
-                        _profile.update { profile }
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                profile = profile
+                        group?.let {
+                            val profile = Profile.Group(
+                                id = group.id,
+                                ownerId = group.ownerId,
+                                name = group.name,
+                                bio = group.bio,
+                                username = group.username,
+                                members = group.members
                             )
+                            _profile.update { profile }
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    profile = profile
+                                )
+                            }
+                            recalculateActions()
                         }
-                        recalculateActions()
                     }
                 }
             }

@@ -22,7 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ThemeOption
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
@@ -86,13 +86,13 @@ fun SettingsDarkThemeScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
 
 @Composable
 private fun TopBar() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     PageTopBar(
         title = { Text(stringResource(R.string.dark_theme)) },
         navigationIcon = NavigationIcon(
             icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navHost::removeLastOrNull
+            onClick = navBackStack::removeLastOrNull
         )
     )
 }

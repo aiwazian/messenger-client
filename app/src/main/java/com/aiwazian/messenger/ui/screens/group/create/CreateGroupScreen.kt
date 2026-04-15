@@ -35,7 +35,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
@@ -43,7 +43,7 @@ import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val groupInfo by viewModel.groupInfo.collectAsState()
     val createState by viewModel.createState.collectAsState()
@@ -57,9 +57,9 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
                         chatName = effect.chat.chatName
                     )
                     
-                    navHost.clear()
-                    navHost.add(AppRoute.Main)
-                    navHost.add(AppRoute.Chat(chat.id))
+                    navBackStack.clear()
+                    navBackStack.add(AppRoute.Main)
+                    navBackStack.add(AppRoute.Chat(chat.id))
                 }
             }
         }
@@ -123,13 +123,13 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
 
 @Composable
 private fun TopBar() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     PageTopBar(
         title = { Text(text = stringResource(R.string.create_group)) },
         navigationIcon = NavigationIcon(
             icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navHost::removeLastOrNull
+            onClick = navBackStack::removeLastOrNull
         )
     )
 }

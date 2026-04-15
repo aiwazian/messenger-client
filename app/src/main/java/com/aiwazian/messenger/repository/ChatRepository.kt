@@ -45,20 +45,22 @@ class ChatRepository @Inject constructor(
     private val groupDao: GroupDao,
     private val channelDao: ChannelDao
 ) {
-
+    
     fun getAllChats(): Flow<List<Chat>> = channelFlow {
         launch {
             chatDao.getAllChatsFlow().collectLatest { entities ->
                 val result = entities.map { entity ->
                     val name = when (ChatType.fromId(entity.chatId)) {
-                        ChatType.PRIVATE -> userDao.get(entity.chatId)?.let { "${it.firstName} ${it.lastName.orEmpty()}".trim() } ?: ""
+                        ChatType.PRIVATE -> userDao.get(entity.chatId)
+                            ?.let { "${it.firstName} ${it.lastName.orEmpty()}".trim() } ?: ""
+                        
                         ChatType.GROUP -> groupDao.getById(entity.chatId)?.name ?: ""
                         ChatType.CHANNEL -> channelDao.get(entity.chatId)?.name ?: ""
                         else -> ""
                     }
                     
-                    val lastMessage = entity.lastMessageId?.let { 
-                        messageDao.getMessageById(it)?.toDomain() 
+                    val lastMessage = entity.lastMessageId?.let {
+                        messageDao.getMessageById(it)?.toDomain()
                     }
                     
                     entity.toDomain(name, lastMessage)
@@ -66,7 +68,7 @@ class ChatRepository @Inject constructor(
                 send(result)
             }
         }
-
+        
         try {
             val response = chatApi.getAllChats()
             if (response.isSuccessful) {
@@ -89,14 +91,37 @@ class ChatRepository @Inject constructor(
                             val user = userDao.get(id) ?: UserEntity(id)
                             userDao.insert(user.copy(firstName = dto.name))
                         }
+                        
                         ChatType.GROUP -> {
-                            val group = groupDao.getById(id) ?: GroupEntity(id, null, dto.name, null, null, 0, 0)
+                            val group =
+                                groupDao.getById(id) ?: GroupEntity(
+                                    id,
+                                    null,
+                                    dto.name,
+                                    null,
+                                    null,
+                                    0,
+                                    0
+                                )
                             groupDao.insert(group.copy(name = dto.name))
                         }
+                        
                         ChatType.CHANNEL -> {
-                            val channel = channelDao.get(id) ?: ChannelEntity(id, dto.name, null, null, 0, null, 0, null, null)
+                            val channel =
+                                channelDao.get(id) ?: ChannelEntity(
+                                    id,
+                                    dto.name,
+                                    null,
+                                    null,
+                                    0,
+                                    null,
+                                    0,
+                                    null,
+                                    null
+                                )
                             channelDao.insert(channel.copy(name = dto.name))
                         }
+                        
                         else -> {}
                     }
                 }
@@ -107,7 +132,7 @@ class ChatRepository @Inject constructor(
             Log.e("ChatRepository", "Error getting all chats", e)
         }
     }
-
+    
     suspend fun get(chatId: Long): Chat? {
         try {
             val response = chatApi.getChatById(chatId)
@@ -121,26 +146,42 @@ class ChatRepository @Inject constructor(
         }
         return null
     }
-
+    
     suspend fun getLastMessage(chatId: Long): Message? {
         try {
             val response = chatApi.getLastMessage(chatId)
             if (response.isSuccessful) {
                 return response.body()?.toDomain()
             } else {
-                Log.e("ChatRepository", "Failed to get last message for chat $chatId: ${response.message()}")
+                Log.e(
+                    "ChatRepository",
+                    "Failed to get last message for chat $chatId: ${response.message()}"
+                )
             }
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error getting last message for chat $chatId", e)
         }
         return null
     }
-
-    fun getMessagesFlow(chatId: Long, limit: Int, offset: Int): Flow<List<Message>> =
-        messageDao.getMessages(chatId, limit, offset).map { entities ->
-            entities.map { it.message.toDomain(it.messageAttachments.map { att -> att.toDomain() }) }
+    
+    fun getMessagesFlow(
+        senderId: Long,
+        chatId: Long,
+        limit: Int,
+        offset: Int
+    ): Flow<List<Message>> {
+        return when (ChatType.fromId(chatId)) {
+            ChatType.PRIVATE -> messageDao.getMessages(senderId, chatId, limit, offset)
+                .map { entities ->
+                    entities.map { it.message.toDomain(it.messageAttachments.map { att -> att.toDomain() }) }
+                }
+            
+            else -> messageDao.getMessages(chatId, limit, offset).map { entities ->
+                entities.map { it.message.toDomain(it.messageAttachments.map { att -> att.toDomain() }) }
+            }
         }
-
+    }
+    
     suspend fun getMessages(chatId: Long, limit: Int? = null, offset: Int? = null): List<Message> {
         return try {
             val response = messageApi.getMessages(chatId, limit, offset)
@@ -150,7 +191,10 @@ class ChatRepository @Inject constructor(
                 saveMessagesToDb(domains)
                 domains
             } else {
-                Log.e("ChatRepository", "Failed to get messages for chat $chatId: ${response.message()}")
+                Log.e(
+                    "ChatRepository",
+                    "Failed to get messages for chat $chatId: ${response.message()}"
+                )
                 emptyList()
             }
         } catch (e: Exception) {
@@ -158,7 +202,7 @@ class ChatRepository @Inject constructor(
             emptyList()
         }
     }
-
+    
     suspend fun sendMessage(chatId: Long, message: Message): Message? {
         return try {
             val request = TextMessageRequestDto(text = message.text ?: "")
@@ -176,20 +220,20 @@ class ChatRepository @Inject constructor(
             null
         }
     }
-
+    
     suspend fun saveMessage(message: Message) {
         saveMessagesToDb(listOf(message))
     }
-
+    
     private suspend fun saveMessagesToDb(messages: List<Message>) {
         messageDao.saveMessages(messages.map { it.toEntity() })
         messages.forEach { msg ->
-            val attachments = msg.files.map { it.toEntity(msg.id.toLong(), AttachmentType.MESSAGE, msg.chatId) }
+            val attachments =
+                msg.files.map { it.toEntity(msg.id.toLong(), AttachmentType.MESSAGE, msg.chatId) }
             attachmentDao.upsertAttachments(attachments)
         }
     }
-
-
+    
     suspend fun initFileUpload(chatId: Long, dto: FileInitRequestDto): FileInitResponseDto? {
         return try {
             val response = messageApi.initFileUpload(chatId, dto)
@@ -204,7 +248,7 @@ class ChatRepository @Inject constructor(
             null
         }
     }
-
+    
     suspend fun confirmFileUpload(chatId: Long, dto: FileConfirmRequestDto): Message? {
         return try {
             val response = messageApi.confirmFileUpload(chatId, dto)
@@ -219,8 +263,12 @@ class ChatRepository @Inject constructor(
             null
         }
     }
-
-    suspend fun getDownloadUrl(chatId: Long, messageId: Int, fileId: String): FileDownloadResponseDto? {
+    
+    suspend fun getDownloadUrl(
+        chatId: Long,
+        messageId: Int,
+        fileId: String
+    ): FileDownloadResponseDto? {
         return try {
             val response = messageApi.getFileDownloadUrl(chatId, messageId, fileId)
             if (response.isSuccessful) {
@@ -234,7 +282,7 @@ class ChatRepository @Inject constructor(
             null
         }
     }
-
+    
     suspend fun makeAsRead(chatId: Long, messageId: Int): Boolean {
         return try {
             val response = messageApi.markRead(chatId, messageId)
@@ -244,7 +292,7 @@ class ChatRepository @Inject constructor(
             false
         }
     }
-
+    
     suspend fun markAllAsRead(chatId: Long): Boolean {
         return try {
             val response = messageApi.markAllRead(chatId)
@@ -254,7 +302,7 @@ class ChatRepository @Inject constructor(
             false
         }
     }
-
+    
     suspend fun deleteMessage(chatId: Long, messageId: Int, forEveryone: Boolean): Boolean {
         return try {
             val response = messageApi.deleteMessage(chatId, messageId, forEveryone)
@@ -264,7 +312,7 @@ class ChatRepository @Inject constructor(
             false
         }
     }
-
+    
     suspend fun deleteChatMessages(chatId: Long, forReceiver: Boolean): Boolean {
         return try {
             val response = messageApi.clearHistory(chatId)
@@ -274,7 +322,7 @@ class ChatRepository @Inject constructor(
             false
         }
     }
-
+    
     suspend fun archive(chatId: Long) {
         try {
             val response = chatApi.archiveChat(chatId)
@@ -285,7 +333,7 @@ class ChatRepository @Inject constructor(
             Log.e("ChatRepository", "Error archiving chat $chatId", e)
         }
     }
-
+    
     suspend fun unarchive(chatId: Long) {
         try {
             val response = chatApi.unarchiveChat(chatId)
@@ -296,7 +344,7 @@ class ChatRepository @Inject constructor(
             Log.e("ChatRepository", "Error unarchiving chat $chatId", e)
         }
     }
-
+    
     suspend fun deleteChat(chatId: Long): Boolean {
         return try {
             val response = chatApi.deleteChat(chatId)
@@ -310,11 +358,11 @@ class ChatRepository @Inject constructor(
             false
         }
     }
-
+    
     suspend fun saveChat(chat: Chat) {
         chatDao.upsertChats(listOf(chat.toEntity()))
     }
-
+    
     suspend fun syncChat(chat: Chat) {
         chatDao.upsertChats(listOf(chat.toEntity()))
         
@@ -325,18 +373,33 @@ class ChatRepository @Inject constructor(
                 val user = userDao.get(id) ?: UserEntity(id)
                 userDao.insert(user.copy(firstName = chat.chatName))
             }
+            
             ChatType.GROUP -> {
-                val group = groupDao.getById(id) ?: GroupEntity(id, null, chat.chatName, null, null, 0, 0)
+                val group =
+                    groupDao.getById(id) ?: GroupEntity(id, null, chat.chatName, null, null, 0, 0)
                 groupDao.insert(group.copy(name = chat.chatName))
             }
+            
             ChatType.CHANNEL -> {
-                val channel = channelDao.get(id) ?: ChannelEntity(id, chat.chatName, null, null, 0, null, 0, null, null)
+                val channel =
+                    channelDao.get(id) ?: ChannelEntity(
+                        id,
+                        chat.chatName,
+                        null,
+                        null,
+                        0,
+                        null,
+                        0,
+                        null,
+                        null
+                    )
                 channelDao.insert(channel.copy(name = chat.chatName))
             }
+            
             else -> {}
         }
     }
-
+    
     suspend fun resetInviteLink(channelId: Long): String? {
         return try {
             val request = CreateInviteLinkRequestDto(channelId = channelId.toString())

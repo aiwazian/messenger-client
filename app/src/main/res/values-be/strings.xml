@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Пошук</string>
@@ -158,4 +154,6 @@
     <string name="subscribe">Падпісвайцеся</string>
     <string name="group_type">Тып групы</string>
     <string name="delete_account_after_twenty_four_hours">Выдаленне ўліковага запісу будзе даступна праз 24 гадзіны пасля пачатку бягучага сеансу.</string>
+    <string name="public_group">Публічная група</string>
+    <string name="private_group">Прыватная група</string>
 </resources>

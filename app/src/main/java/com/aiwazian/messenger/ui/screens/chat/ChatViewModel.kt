@@ -286,15 +286,17 @@ class ChatViewModel @Inject constructor(
             ChatType.GROUP -> {
                 viewModelScope.launch {
                     groupRepository.getById(chatId).collectLatest { group ->
-                        val profile = Profile.Group(
-                            id = group.id,
-                            ownerId = group.ownerId,
-                            name = group.name,
-                            bio = group.bio,
-                            members = group.members
-                        )
-                        _uiState.update { it.copy(profile = profile) }
-                        updateUiContent()
+                        group?.let {
+                            val profile = Profile.Group(
+                                id = group.id,
+                                ownerId = group.ownerId,
+                                name = group.name,
+                                bio = group.bio,
+                                members = group.members
+                            )
+                            _uiState.update { it.copy(profile = profile) }
+                            updateUiContent()
+                        }
                     }
                 }
             }
@@ -335,8 +337,10 @@ class ChatViewModel @Inject constructor(
         }
         
         messagesCollectionJob = viewModelScope.launch {
+            val userId = userRepository.getMe().first().id
             limitFlow.collectLatest { limit ->
                 chatRepository.getMessagesFlow(
+                    userId,
                     chatId,
                     limit,
                     0
@@ -561,12 +565,17 @@ class ChatViewModel @Inject constructor(
             if (message.senderId == SYSTEM_USER_ID) {
                 val text = message.text ?: ""
                 if (text.isNotBlank()) {
-                    chatItems.add(ChatItem.SystemMessage(text = text.trim(), sendTime = message.sendTime))
+                    chatItems.add(
+                        ChatItem.SystemMessage(
+                            text = text.trim(),
+                            sendTime = message.sendTime
+                        )
+                    )
                 }
                 return@forEach
             }
-
-            val isMine = message.senderId == myId
+            
+            val isMine = message.senderId == myId && ChatType.fromId(_chatId) != ChatType.CHANNEL
             val isSingleEmoji = isSingleEmoji(message.text ?: "")
             
             val updatedFiles = message.files.map { file ->
@@ -1119,28 +1128,29 @@ class ChatViewModel @Inject constructor(
             Regex("^[\\p{So}\\p{Cntrl}\\p{InEmoticons}\\p{InMiscellaneousSymbolsAndPictographs}\\p{InSupplementalSymbolsAndPictographs}\\uD83C\\uDFF0-\\uD83D\\uDFFF]+$")
         return emojiRegex.matches(text.trim())
     }
-
+    
     fun onLinkClicked(url: String) {
         val inviteLinkRegex = Regex("(?:https?://)?aiwazian\\.ru/\\+([a-f0-9]+)")
         val match = inviteLinkRegex.find(url)
-
+        
         if (match == null) {
-            val normalizedUrl = if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"
+            val normalizedUrl =
+                if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"
             viewModelScope.launch {
                 _uiEffect.emit(ChatUiEffect.OpenUrl(normalizedUrl))
             }
             return
         }
-
+        
         val code = match.groupValues[1]
-
+        
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessingInvite = true) }
-
+            
             val result = inviteLinkRepository.getInviteLinkInfo(code)
             if (result.isSuccess) {
                 val info = result.getOrNull()!!
-
+                
                 if (_chatId == info.chatId) {
                     _uiState.update { it.copy(isProcessingInvite = false) }
                     _uiEffect.emit(ChatUiEffect.ShowAlreadyInChatSnackbar)
@@ -1172,18 +1182,18 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-
+    
     fun dismissBannedDialog() {
         _uiState.update { it.copy(showBannedDialog = false) }
     }
-
+    
     fun onSubscribeViaInviteLink() {
         val info = _uiState.value.inviteLinkInfo ?: return
         val code = _uiState.value.inviteLinkCode ?: return
-
+        
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessingInvite = true) }
-
+            
             val result = inviteLinkRepository.joinViaInviteCode(code)
             if (result.isSuccess) {
                 _uiState.update {
@@ -1202,7 +1212,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-
+    
     fun dismissInviteBottomSheet() {
         _uiState.update {
             it.copy(

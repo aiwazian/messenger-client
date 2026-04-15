@@ -8,6 +8,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.aiwazian.messenger.database.entity.MessageEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -18,31 +19,17 @@ interface MessageDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveMessages(messages: List<MessageEntity>)
 
-    @androidx.room.Transaction
+    @Transaction
+    @Query("SELECT * FROM (SELECT * FROM message WHERE senderId = :userId AND chatId = :chatId OR senderId = :chatId AND chatId = :userId ORDER BY sendTime DESC LIMIT :limit OFFSET :offset) ORDER BY sendTime ASC")
+    fun getMessages(userId: Long, chatId: Long, limit: Int, offset: Int): Flow<List<MessageWithAttachments>>
+    
+    @Transaction
     @Query("SELECT * FROM (SELECT * FROM message WHERE chatId = :chatId ORDER BY sendTime DESC LIMIT :limit OFFSET :offset) ORDER BY sendTime ASC")
     fun getMessages(chatId: Long, limit: Int, offset: Int): Flow<List<MessageWithAttachments>>
-
-    @androidx.room.Transaction
-    @Query("SELECT * FROM message WHERE chatId = :chatId ORDER BY sendTime ASC")
-    fun getMessages(chatId: Long): Flow<List<MessageWithAttachments>>
-
-    @androidx.room.Transaction
-    @Query("SELECT * FROM message WHERE chatId = :chatId ORDER BY sendTime ASC")
-    suspend fun getMessagesSync(chatId: Long): List<MessageWithAttachments>
-
-    @Query("SELECT DISTINCT chatId FROM message")
-    suspend fun getAllChatIds(): List<Long>
-
-    @androidx.room.Transaction
-    @Query("SELECT * FROM message WHERE id = :messageId LIMIT 1")
-    suspend fun getMessageWithAttachmentsById(messageId: Int): MessageWithAttachments?
-
+    
     @Query("SELECT * FROM message WHERE id = :messageId LIMIT 1")
     suspend fun getMessageById(messageId: Int): MessageEntity?
 
-    @Query("SELECT * FROM message")
-    fun getAllFlow(): Flow<List<MessageEntity>>
-    
     @Query("DELETE FROM message WHERE chatId = :chatId")
     suspend fun clearChatHistory(chatId: Long)
     

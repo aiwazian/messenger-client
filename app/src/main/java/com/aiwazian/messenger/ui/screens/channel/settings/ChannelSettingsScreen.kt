@@ -14,9 +14,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.People
-import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -35,7 +33,7 @@ import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
@@ -48,10 +46,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun ChannelSettingsScreen(
     channelId: Long,
-    channelViewModel: ChannelSettingsViewModel = hiltViewModel(),
-    mainViewModel: MainViewModel = hiltViewModel()
+    channelViewModel: ChannelSettingsViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     LaunchedEffect(channelId) {
         channelViewModel.init(channelId)
     }
@@ -73,7 +70,7 @@ fun ChannelSettingsScreen(
                             scope.launch {
                                 val savedId = channelViewModel.trySave()
                                 if (savedId != null) {
-                                    navHost.removeLastOrNull()
+                                    navBackStack.removeLastOrNull()
                                 }
                             }
                         })
@@ -112,7 +109,7 @@ fun ChannelSettingsScreen(
                         stringResource(R.string.private_channel)
                     },
                     onClick = {
-                        navHost.add(AppRoute.ChannelTypeSettings(channelId = channel.id))
+                        navBackStack.add(AppRoute.ChannelTypeSettings(channelId = channel.id))
                     })
             }
             
@@ -122,14 +119,14 @@ fun ChannelSettingsScreen(
                     headlineText = stringResource(R.string.subscribers),
                     trailingText = channel.subscribers.toString(),
                     onClick = {
-                        navHost.add(AppRoute.ChannelSubscribers(channel.id))
+                        navBackStack.add(AppRoute.ChannelSubscribers(channel.id))
                     })
                 SectionItem(
                     leadingIcon = Icons.Rounded.Block,
                     headlineText = stringResource(R.string.removed_user),
                     trailingText = channel.removedUser?.toString(),
                     onClick = {
-                        navHost.add(AppRoute.ChannelBlackList(channel.id))
+                        navBackStack.add(AppRoute.ChannelBlackList(channel.id))
                     })
             }
             
@@ -155,10 +152,9 @@ fun ChannelSettingsScreen(
                                     val isDeleted = channelViewModel.tryDelete()
                                     
                                     if (isDeleted) {
-                                        mainViewModel.deleteChat(channel.id)
                                         channelViewModel.deleteDialog.hide()
-                                        navHost.clear()
-                                        navHost.add(AppRoute.Main)
+                                        navBackStack.clear()
+                                        navBackStack.add(AppRoute.Main)
                                     } else {
                                         channelViewModel.vibrate(VibrationPattern.Error)
                                     }
@@ -179,12 +175,12 @@ fun ChannelSettingsScreen(
 
 @Composable
 private fun TopBar(actions: List<TopBarAction>) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     PageTopBar(
         navigationIcon = NavigationIcon(
             icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navHost::removeLastOrNull
+            onClick = navBackStack::removeLastOrNull
         ),
         actions = actions
     )

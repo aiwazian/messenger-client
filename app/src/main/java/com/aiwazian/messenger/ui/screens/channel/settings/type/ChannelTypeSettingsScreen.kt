@@ -33,7 +33,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
@@ -48,7 +48,7 @@ fun ChannelTypeSettingsScreen(
     channelId: Long,
     viewModel: ChannelTypeSettingsViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     LaunchedEffect(channelId) {
         viewModel.init(channelId)
@@ -59,7 +59,7 @@ fun ChannelTypeSettingsScreen(
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
             when (effect) {
-                is ChannelTypeSettingsEffect.NavigateBack -> navHost.removeLastOrNull()
+                is ChannelTypeSettingsEffect.NavigateBack -> navBackStack.removeLastOrNull()
                 
                 else -> {}
             }
@@ -83,7 +83,7 @@ fun ChannelTypeSettingsScreen(
                 title = { Text(stringResource(R.string.channel_type)) },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 ),
                 actions = actions
             )
@@ -163,7 +163,7 @@ fun ChannelTypeSettingsScreen(
                     leadingIcon = Icons.Rounded.Link,
                     headlineText = stringResource(R.string.invite_links),
                     onClick = {
-                        navHost.add(AppRoute.ChannelInviteLinks(channelId))
+                        navBackStack.add(AppRoute.ChannelInviteLinks(channelId))
                     }
                 )
             }

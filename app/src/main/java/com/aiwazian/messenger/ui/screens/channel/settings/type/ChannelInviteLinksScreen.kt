@@ -16,7 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
@@ -24,7 +24,7 @@ import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
 fun ChannelInviteLinksScreen() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     Scaffold(topBar = {
         PageTopBar(
@@ -33,7 +33,7 @@ fun ChannelInviteLinksScreen() {
             },
             navigationIcon = NavigationIcon(
                 icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                onClick = navHost::removeLastOrNull
+                onClick = navBackStack::removeLastOrNull
             )
         )
     }) { innerPadding ->

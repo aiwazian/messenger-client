@@ -38,7 +38,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.ui.components.CustomSnackbar
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
@@ -48,7 +48,7 @@ fun AddMemberScreen(
     groupId: Long,
     viewModel: AddMemberViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -72,14 +72,14 @@ fun AddMemberScreen(
                 title = { Text(stringResource(R.string.add_member)) },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 ),
                 actions = listOf(
                     TopBarAction(
                         icon = Icons.Rounded.Check,
                         onClick = {
                             viewModel.addSelectedUsers {
-                                navHost.removeLastOrNull()
+                                navBackStack.removeLastOrNull()
                             }
                         }
                     )
@@ -96,7 +96,7 @@ fun AddMemberScreen(
                 FloatingActionButton(
                     onClick = {
                         viewModel.addSelectedUsers {
-                            navHost.removeLastOrNull()
+                            navBackStack.removeLastOrNull()
                         }
                     }
                 ) {

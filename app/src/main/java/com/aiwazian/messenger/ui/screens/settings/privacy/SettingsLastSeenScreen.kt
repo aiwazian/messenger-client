@@ -22,11 +22,11 @@ import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 
 @Composable
 fun SettingsLastSeenScreen() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val scrollState = rememberScrollState()
     
@@ -38,7 +38,7 @@ fun SettingsLastSeenScreen() {
                 },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 )
             )
         }

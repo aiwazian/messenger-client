@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.FramelessTextBox
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
@@ -36,7 +36,7 @@ fun SettingsUsernameScreen(
     username: String?,
     viewModel: SettingsUsernameViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val uiState by viewModel.uiState.collectAsState()
 
@@ -46,7 +46,7 @@ fun SettingsUsernameScreen(
     
     Scaffold(topBar = {
         TopBar(
-            onBack = navHost::removeLastOrNull,
+            onBack = navBackStack::removeLastOrNull,
             viewModel = viewModel,
             uiState = uiState
         )
@@ -84,7 +84,7 @@ private fun TopBar(
     viewModel: SettingsUsernameViewModel,
     uiState: UsernameScreenUiState
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val scope = rememberCoroutineScope()
     
@@ -95,7 +95,7 @@ private fun TopBar(
                 onClick = {
                     scope.launch {
                         if (viewModel.save()) {
-                            navHost.removeLastOrNull()
+                            navBackStack.removeLastOrNull()
                         }
                     }
                 })

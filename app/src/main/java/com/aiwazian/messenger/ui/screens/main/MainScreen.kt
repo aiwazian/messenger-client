@@ -110,7 +110,7 @@ import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.screens.main.search.ChatResultsList
 import com.aiwazian.messenger.ui.screens.main.search.EmptySearchResultsPlaceholder
 import com.aiwazian.messenger.ui.screens.main.search.FileResultsList
@@ -282,7 +282,7 @@ private fun NotificationBottomModal(
 private fun Content(
     drawerState: DrawerState, mainViewModel: MainViewModel
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val chats by mainViewModel.chats.collectAsState()
     
@@ -300,7 +300,7 @@ private fun Content(
         )
     }, floatingActionButton = {
         FloatingButton(onClick = {
-            navHost.add(AppRoute.NewMessage)
+            navBackStack.add(AppRoute.NewMessage)
         })
     }) { innerPadding ->
         Column(
@@ -312,7 +312,7 @@ private fun Content(
                 LazyColumn {
                     items(chats) { chat ->
                         ChatCard(chat = chat, onClickChat = {
-                            navHost.add(AppRoute.Chat(chat.id))
+                            navBackStack.add(AppRoute.Chat(chat.id))
                         })
                     }
                 }
@@ -379,7 +379,7 @@ private fun DefaultTopBar(
     val textFieldState = rememberTextFieldState(searchUiState.query)
     val searchBarState = rememberSearchBarState()
     val scope = rememberCoroutineScope()
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     LaunchedEffect(textFieldState.text) {
         searchViewModel.onQueryChange(textFieldState.text.toString())
@@ -536,7 +536,7 @@ private fun DefaultTopBar(
                             onChatClick = { chatId ->
                                 scope.launch {
                                     searchBarState.animateToCollapsed()
-                                    navHost.add(AppRoute.Chat(chatId))
+                                    navBackStack.add(AppRoute.Chat(chatId))
                                 }
                             })
                     }
@@ -566,7 +566,7 @@ private fun DefaultTopBar(
 private fun DrawerContent(
     onClose: () -> Unit, user: User, nativeAdViewModel: NativeAdViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     ModalDrawerSheet(
         modifier = Modifier
@@ -594,21 +594,21 @@ private fun DrawerContent(
                 label = stringResource(R.string.profile), icon = Icons.Rounded.AccountCircle
             ) {
                 onClose.invoke()
-                navHost.add(AppRoute.Profile(user.id))
+                navBackStack.add(AppRoute.Profile(user.id))
             }
             
             DrawerItem(
                 label = stringResource(R.string.saved_messages), icon = Icons.Rounded.BookmarkBorder
             ) {
                 onClose.invoke()
-                navHost.add(AppRoute.Chat(user.id))
+                navBackStack.add(AppRoute.Chat(user.id))
             }
             
             DrawerItem(
                 label = stringResource(R.string.settings), icon = Icons.Rounded.Settings
             ) {
                 onClose.invoke()
-                navHost.add(AppRoute.Settings)
+                navBackStack.add(AppRoute.Settings)
             }
         }
         

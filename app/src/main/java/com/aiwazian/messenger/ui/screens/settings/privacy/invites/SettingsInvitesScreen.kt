@@ -22,7 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.PrivacyLevel
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
@@ -35,7 +35,7 @@ fun SettingsInvitesScreen(
     level: PrivacyLevel,
     settingsInvitesViewModel: SettingsInvitesViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val currentValue by settingsInvitesViewModel.currentLevel.collectAsState()
     val showSaveButton by settingsInvitesViewModel.showSaveButton.collectAsState()
@@ -46,7 +46,7 @@ fun SettingsInvitesScreen(
         settingsInvitesViewModel.effect.collect { effect ->
             when (effect) {
                 is SettingsInvitesEffect.Back -> {
-                    navHost.removeLastOrNull()
+                    navBackStack.removeLastOrNull()
                 }
             }
         }
@@ -76,7 +76,7 @@ fun SettingsInvitesScreen(
                 },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 ),
                 actions = actions
             )

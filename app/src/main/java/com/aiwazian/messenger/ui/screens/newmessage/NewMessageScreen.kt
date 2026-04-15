@@ -20,7 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
@@ -28,7 +28,7 @@ import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
 fun NewMessageScreen() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val scrollState = rememberScrollState()
     
@@ -46,13 +46,13 @@ fun NewMessageScreen() {
                     leadingIcon = Icons.Rounded.Group,
                     headlineText = stringResource(R.string.create_channel),
                     onClick = {
-                        navHost.add(AppRoute.CreateChannel)
+                        navBackStack.add(AppRoute.CreateChannel)
                     })
                 SectionItem(
                     leadingIcon = Icons.Rounded.Groups,
                     headlineText = stringResource(R.string.create_group),
                     onClick = {
-                        navHost.add(AppRoute.CreateGroup)
+                        navBackStack.add(AppRoute.CreateGroup)
                     })
             }
         }
@@ -61,13 +61,13 @@ fun NewMessageScreen() {
 
 @Composable
 private fun TopBar() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     PageTopBar(
         title = { Text(stringResource(R.string.new_message)) },
         navigationIcon = NavigationIcon(
             icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navHost::removeLastOrNull
+            onClick = navBackStack::removeLastOrNull
         )
     )
 }

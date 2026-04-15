@@ -41,13 +41,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 
 @Composable
 fun LoginScreen(
     authViewModel: AuthViewModel = hiltViewModel(LocalActivity.current as ComponentActivity)
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val loginFieldError by authViewModel.loginFieldError.collectAsState()
     val isLoadingLogin by authViewModel.isLoadingLogin.collectAsState()
@@ -70,7 +70,7 @@ fun LoginScreen(
             }
             
             is AuthUiEffect.NavigateToPassword -> {
-                navHost.add(AppRoute.Password)
+                navBackStack.add(AppRoute.Password)
             }
             
             else -> {}

@@ -96,7 +96,7 @@ import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -112,7 +112,7 @@ fun ChatScreen(
     chatViewModel: ChatViewModel = hiltViewModel(),
     mainViewModel: MainViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     val context = LocalContext.current
     
     val uiState by chatViewModel.uiState.collectAsState()
@@ -139,10 +139,10 @@ fun ChatScreen(
     LaunchedEffect(Unit) {
         chatViewModel.uiEffect.collect { effect ->
             when (effect) {
-                is ChatUiEffect.NavigateBack -> navHost.removeLastOrNull()
+                is ChatUiEffect.NavigateBack -> navBackStack.removeLastOrNull()
                 is ChatUiEffect.NavigateToMain -> {
-                    navHost.clear()
-                    navHost.add(AppRoute.Main)
+                    navBackStack.clear()
+                    navBackStack.add(AppRoute.Main)
                 }
                 
                 is ChatUiEffect.ScrollToBottom -> {
@@ -166,7 +166,7 @@ fun ChatScreen(
                 }
                 
                 is ChatUiEffect.NavigateToChat -> {
-                    navHost.add(AppRoute.Chat(effect.chatId))
+                    navBackStack.add(AppRoute.Chat(effect.chatId))
                 }
                 
                 is ChatUiEffect.OpenUrl -> {
@@ -417,7 +417,29 @@ private fun BottomSection(
                 }
             }
             
-            ChatType.GROUP, ChatType.PRIVATE -> {
+            ChatType.GROUP -> {
+                if(uiState.isOwner) {
+                    InputMessage(
+                        value = uiState.messageText,
+                        onValueChange = onTextChanged,
+                        onSendMessage = onSendClicked,
+                        onFilesSelected = onFilesSelected
+                    )
+                } else {
+                    if(uiState.isJoined) {
+                        InputMessage(
+                            value = uiState.messageText,
+                            onValueChange = onTextChanged,
+                            onSendMessage = onSendClicked,
+                            onFilesSelected = onFilesSelected
+                        )
+                    } else {
+                        JoinButton(onClick = onJoinClicked)
+                    }
+                }
+            }
+            
+            ChatType.PRIVATE -> {
                 InputMessage(
                     value = uiState.messageText,
                     onValueChange = onTextChanged,
@@ -530,7 +552,7 @@ private fun TopBar(
     onBackClicked: () -> Unit,
     chatId: Long
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -552,7 +574,7 @@ private fun TopBar(
                     .clickable(
                         interactionSource = interactionSource,
                         indication = null,
-                        onClick = { navHost.add(AppRoute.Profile(chatId)) }),
+                        onClick = { navBackStack.add(AppRoute.Profile(chatId)) }),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent)
             ) {
                 Row(

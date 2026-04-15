@@ -56,7 +56,7 @@ import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateTime
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
@@ -66,7 +66,7 @@ import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
 fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     val uiState by devicesViewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     
@@ -89,7 +89,7 @@ fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) 
                 title = { Text(stringResource(R.string.devices)) },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navHost::removeLastOrNull
+                    onClick = navBackStack::removeLastOrNull
                 )
             )
         },

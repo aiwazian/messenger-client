@@ -25,7 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionItem
@@ -34,7 +34,7 @@ import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
 fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel()) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val deviceCount by viewModel.deviceCount.collectAsState()
     val passcodeEnabled by viewModel.isEnablePasscode.collectAsState()
@@ -67,7 +67,7 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
                         headlineText = stringResource(R.string.cloud_password),
                         trailingText = stringResource(R.string.on),
                         onClick = {
-                            navHost.add(AppRoute.SettingsCloudPassword)
+                            navBackStack.add(AppRoute.SettingsCloudPassword)
                         }
                     )
                     
@@ -82,7 +82,7 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
                         headlineText = stringResource(R.string.passcode_lock),
                         trailingText = passcodeEnabledText,
                         onClick = {
-                            navHost.add(AppRoute.SettingsPasscode)
+                            navBackStack.add(AppRoute.SettingsPasscode)
                         }
                     )
                     
@@ -91,7 +91,7 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
                         headlineText = stringResource(R.string.devices),
                         trailingText = deviceCount.toString(),
                         onClick = {
-                            navHost.add(AppRoute.SettingsDevices)
+                            navBackStack.add(AppRoute.SettingsDevices)
                         }
                     )
                 }
@@ -102,13 +102,13 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
 
 @Composable
 private fun TopBar() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     PageTopBar(
         title = { Text(stringResource(R.string.security)) },
         navigationIcon = NavigationIcon(
             icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navHost::removeLastOrNull
+            onClick = navBackStack::removeLastOrNull
         )
     )
 }

@@ -21,7 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.aiwazian.messenger.socket.WebSocketClient
-import com.aiwazian.messenger.ui.components.navigation.AppNavHost
+import com.aiwazian.messenger.ui.components.navigation.AppNavDisplay
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.screens.lock.LockScreen
 import com.aiwazian.messenger.ui.theme.ApplicationTheme
@@ -120,7 +120,7 @@ class MainActivity : AppCompatActivity() {
                 dynamicColor = isDynamicColorEnable,
                 appPrimaryColor = primaryColor.color
             ) {
-                AppNavHost(startRoute = startRoute)
+                AppNavDisplay(startRoute = startRoute)
                 
                 AnimatedVisibility(
                     visible = isLockApp,

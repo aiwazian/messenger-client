@@ -33,7 +33,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
 import com.aiwazian.messenger.ui.components.FramelessTextBox
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
@@ -50,7 +50,7 @@ import java.time.ZoneId
 fun CreateGroupInviteLinkScreen(
     groupId: Long, viewModel: CreateGroupInviteLinkViewModel = hiltViewModel()
 ) {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     val uiState by viewModel.uiState.collectAsState()
     
     LaunchedEffect(groupId) {
@@ -60,7 +60,7 @@ fun CreateGroupInviteLinkScreen(
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
-                CreateGroupInviteLinkEffect.Success -> navHost.removeLastOrNull()
+                CreateGroupInviteLinkEffect.Success -> navBackStack.removeLastOrNull()
             }
         }
     }
@@ -101,7 +101,7 @@ fun CreateGroupInviteLinkScreen(
             PageTopBar(
                 title = { Text(stringResource(R.string.new_link)) },
                 navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navHost::removeLastOrNull
+                    icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navBackStack::removeLastOrNull
                 ),
                 actions = listOf(
                     TopBarAction(

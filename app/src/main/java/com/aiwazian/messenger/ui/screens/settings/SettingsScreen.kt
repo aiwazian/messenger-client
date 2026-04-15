@@ -28,7 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
@@ -41,7 +41,7 @@ import java.util.Locale
 
 @Composable
 fun SettingsScreen() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val scrollState = rememberScrollState()
     
@@ -63,14 +63,14 @@ fun SettingsScreen() {
                     headlineText = stringResource(R.string.profile),
                     supportingText = stringResource(R.string.write_about_me),
                     onClick = {
-                        navHost.add(AppRoute.SettingsProfile)
+                        navBackStack.add(AppRoute.SettingsProfile)
                     })
                 
                 SectionItem(
                     headlineText = stringResource(R.string.security),
                     supportingText = stringResource(R.string.protect_your_account),
                     onClick = {
-                        navHost.add(AppRoute.SettingsSecurity)
+                        navBackStack.add(AppRoute.SettingsSecurity)
                     })
             }
             
@@ -83,28 +83,28 @@ fun SettingsScreen() {
                     leadingIcon = Icons.Rounded.ChatBubbleOutline,
                     headlineText = stringResource(R.string.appearance),
                     onClick = {
-                        navHost.add(AppRoute.SettingsChat)
+                        navBackStack.add(AppRoute.SettingsChat)
                     })
                 
                 SectionItem(
                     leadingIcon = Icons.Outlined.Lock,
                     headlineText = stringResource(R.string.confidentiality),
                     onClick = {
-                        navHost.add(AppRoute.SettingsPrivacy)
+                        navBackStack.add(AppRoute.SettingsPrivacy)
                     })
                 
                 SectionItem(
                     leadingIcon = Icons.Rounded.DataUsage,
                     headlineText = stringResource(R.string.data_and_storage),
                     onClick = {
-                        navHost.add(AppRoute.SettingsDataAndStorage)
+                        navBackStack.add(AppRoute.SettingsDataAndStorage)
                     })
                 
                 SectionItem(
                     leadingIcon = Icons.Rounded.Language,
                     headlineText = stringResource(R.string.language),
                     onClick = {
-                        navHost.add(AppRoute.SettingsLanguage)
+                        navBackStack.add(AppRoute.SettingsLanguage)
                     })
             }
             SectionContainer(header = {
@@ -144,7 +144,7 @@ fun SettingsScreen() {
 
 @Composable
 private fun TopBar() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     val actions = listOf(
         TopBarAction(
@@ -154,7 +154,7 @@ private fun TopBar() {
                     icon = Icons.AutoMirrored.Rounded.Logout,
                     textResId = R.string.logout,
                     onClick = {
-                        navHost.add(AppRoute.Logout)
+                        navBackStack.add(AppRoute.Logout)
                     })
             )
         )
@@ -163,7 +163,7 @@ private fun TopBar() {
     PageTopBar(
         navigationIcon = NavigationIcon(
             icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navHost::removeLastOrNull
+            onClick = navBackStack::removeLastOrNull
         ),
         actions = actions
     )

@@ -49,7 +49,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.navigation.LocalNavHost
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
@@ -272,11 +272,11 @@ private fun ClearCacheConfirmationDialog(
 
 @Composable
 private fun TopBar() {
-    val navHost = LocalNavHost.current
+    val navBackStack = LocalNavBackStack.current
     
     PageTopBar(
         navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navHost::removeLastOrNull
+            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navBackStack::removeLastOrNull
         )
     )
 }
