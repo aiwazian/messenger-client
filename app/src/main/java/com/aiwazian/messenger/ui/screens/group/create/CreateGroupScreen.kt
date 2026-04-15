@@ -7,7 +7,6 @@ package com.aiwazian.messenger.ui.screens.group.create
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -19,21 +18,18 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.domain.Chat
+import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -52,14 +48,9 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
         viewModel.createEffect.collectLatest { effect ->
             when (effect) {
                 is CreateGroupEffect.NavigateToChat -> {
-                    val chat = Chat(
-                        id = effect.chat.id,
-                        chatName = effect.chat.chatName
-                    )
-                    
                     navBackStack.clear()
                     navBackStack.add(AppRoute.Main)
-                    navBackStack.add(AppRoute.Chat(chat.id))
+                    navBackStack.add(AppRoute.Chat(effect.chat.id))
                 }
             }
         }
@@ -99,22 +90,19 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
     ) {
         Column(
             Modifier
-                .padding(it)
                 .fillMaxSize()
+                .padding(it)
         ) {
             SectionContainer {
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
+                FramelessTextBox(
                     value = groupInfo.name,
                     onValueChange = viewModel::changeGroupName,
-                    placeholder = { Text(stringResource(R.string.group_name)) },
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                    )
+                    placeholder = stringResource(R.string.group_name)
+                )
+                FramelessTextBox(
+                    value = groupInfo.bio.orEmpty(),
+                    onValueChange = viewModel::changeGroupDescription,
+                    placeholder = stringResource(R.string.description)
                 )
             }
         }
@@ -133,4 +121,3 @@ private fun TopBar() {
         )
     )
 }
-

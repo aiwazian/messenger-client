@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,71 +26,68 @@ fun MessageText(
     text: String,
     onLinkClicked: ((String) -> Unit)? = null
 ) {
-    Box(
-        modifier = Modifier.padding(8.dp)
-    ) {
-        val annotatedString = buildAnnotatedString {
-            var lastIndex = 0
-            val matches = URL_REGEX.findAll(text).toList()
-            
-            if (matches.isEmpty()) {
-                append(text)
-                return@buildAnnotatedString
-            }
-            
-            matches.forEach { matchResult ->
-                val startIndex = matchResult.range.first
-                val endIndex = matchResult.range.last + 1
-                
-                if (startIndex > lastIndex) {
-                    append(text.substring(lastIndex, startIndex))
-                }
-                
-                val matchedUrl = matchResult.value
-                
-                if (onLinkClicked != null) {
-                    withLink(
-                        link = LinkAnnotation.Clickable(
-                            tag = matchedUrl,
-                            styles = TextLinkStyles(
-                                style = SpanStyle(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    textDecoration = TextDecoration.Underline
-                                ),
-                                pressedStyle = SpanStyle(
-                                    background = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                                )
-                            ),
-                            linkInteractionListener = {
-                                onLinkClicked(matchedUrl)
-                            }
-                        )
-                    ) {
-                        append(matchedUrl)
-                    }
-                } else {
-                    withStyle(
-                        style = SpanStyle(
-                            color = MaterialTheme.colorScheme.primary,
-                            textDecoration = TextDecoration.Underline
-                        )
-                    ) {
-                        append(matchedUrl)
-                    }
-                }
-                
-                lastIndex = endIndex
-            }
-            
-            if (lastIndex < text.length) {
-                append(text.substring(lastIndex))
-            }
+    val annotatedString = buildAnnotatedString {
+        var lastIndex = 0
+        val matches = URL_REGEX.findAll(text).toList()
+        
+        if (matches.isEmpty()) {
+            append(text)
+            return@buildAnnotatedString
         }
         
-        Text(
-            text = annotatedString,
-            fontSize = 16.sp,
-            lineHeight = 16.sp
-        )
+        matches.forEach { matchResult ->
+            val startIndex = matchResult.range.first
+            val endIndex = matchResult.range.last + 1
+            
+            if (startIndex > lastIndex) {
+                append(text.substring(lastIndex, startIndex))
+            }
+            
+            val matchedUrl = matchResult.value
+            
+            if (onLinkClicked != null) {
+                withLink(
+                    link = LinkAnnotation.Clickable(
+                        tag = matchedUrl,
+                        styles = TextLinkStyles(
+                            style = SpanStyle(
+                                color = MaterialTheme.colorScheme.primary,
+                                textDecoration = TextDecoration.Underline
+                            ),
+                            pressedStyle = SpanStyle(
+                                background = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                            )
+                        ),
+                        linkInteractionListener = {
+                            onLinkClicked(matchedUrl)
+                        }
+                    )
+                ) {
+                    append(matchedUrl)
+                }
+            } else {
+                withStyle(
+                    style = SpanStyle(
+                        color = MaterialTheme.colorScheme.primary,
+                        textDecoration = TextDecoration.Underline
+                    )
+                ) {
+                    append(matchedUrl)
+                }
+            }
+            
+            lastIndex = endIndex
+        }
+        
+        if (lastIndex < text.length) {
+            append(text.substring(lastIndex))
+        }
     }
+    
+    Text(
+        text = annotatedString,
+        fontSize = 16.sp,
+        lineHeight = 16.sp,
+        modifier = Modifier.padding(8.dp)
+    )
 }

@@ -100,6 +100,7 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.main.MainViewModel
@@ -359,23 +360,6 @@ private fun getLocalizedSubTitle(uiState: ChatUiState): String {
         }
         
         else -> uiState.subTitle
-    }
-}
-
-@Composable
-private fun DateSeparatorItem(text: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Box(modifier = Modifier.clip(CircleShape)) {
-            Text(
-                text = text,
-                textAlign = TextAlign.Center
-            )
-        }
     }
 }
 

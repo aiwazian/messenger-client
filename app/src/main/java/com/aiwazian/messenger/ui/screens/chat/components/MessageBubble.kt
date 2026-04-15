@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,7 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.domain.MessageFile
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
@@ -82,6 +85,17 @@ fun MessageBubble(
                 .background(containerColor)
         ) {
             Column {
+                if (!item.isMine && item.isFirstInGroup && item.senderName != null) {
+                    Text(
+                        text = item.senderName,
+                        fontSize = 12.sp,
+                        lineHeight = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp)
+                    )
+                }
+                
                 if (message.files.isNotEmpty()) {
                     message.files.forEach { file ->
                         MessageFile(

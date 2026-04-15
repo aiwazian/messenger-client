@@ -545,11 +545,12 @@ class ChatViewModel @Inject constructor(
         val myId = _uiState.value.currentUserId
         val chatItems = mutableListOf<ChatItem>()
         var lastDate: java.time.LocalDate? = null
-        
+        var lastSenderId: Long? = null
+
         messages.forEach { message ->
             val messageDate =
                 message.sendTime.toInstance().atZone(ZoneId.systemDefault()).toLocalDate()
-            
+
             if (lastDate == null || !messageDate.isEqual(lastDate)) {
                 val monthName = messageDate.month.getDisplayName(
                     TextStyle.FULL,
@@ -561,7 +562,7 @@ class ChatViewModel @Inject constructor(
                 chatItems.add(ChatItem.DateSeparator("${messageDate.dayOfMonth} $capitalizedMonthName"))
                 lastDate = messageDate
             }
-            
+
             if (message.senderId == SYSTEM_USER_ID) {
                 val text = message.text ?: ""
                 if (text.isNotBlank()) {
@@ -572,11 +573,13 @@ class ChatViewModel @Inject constructor(
                         )
                     )
                 }
+                lastSenderId = message.senderId
                 return@forEach
             }
-            
+
             val isMine = message.senderId == myId && ChatType.fromId(_chatId) != ChatType.CHANNEL
             val isSingleEmoji = isSingleEmoji(message.text ?: "")
+            val isFirstInGroup = message.senderId != lastSenderId
             
             val updatedFiles = message.files.map { file ->
                 val localFile by lazy {
@@ -646,8 +649,11 @@ class ChatViewModel @Inject constructor(
                             if (it == null) loadUserName(message.senderId)
                         }
                     } else null,
+                    isFirstInGroup = isFirstInGroup,
                     isSingleEmoji = isSingleEmoji,
                     dropdownActions = actions))
+            
+            lastSenderId = message.senderId
         }
         _uiState.update { it.copy(chatItems = chatItems) }
     }
@@ -1099,7 +1105,7 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 userRepository.getById(userId).collect { user ->
-                    val name = "${user.firstName} ${user.lastName}"
+                    val name = "${user.firstName} ${user.lastName.orEmpty()}".trim()
                     _uiState.update { it.copy(userNamesCache = it.userNamesCache + (userId to name)) }
                     updateChatItems(getRawMessages())
                 }

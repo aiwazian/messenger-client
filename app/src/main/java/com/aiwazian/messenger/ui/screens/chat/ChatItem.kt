@@ -16,6 +16,7 @@ sealed class ChatItem {
         val isMine: Boolean,
         val isRead: Boolean?,
         val senderName: String?,
+        val isFirstInGroup: Boolean,
         val isSingleEmoji: Boolean,
         val dropdownActions: List<DropdownMenuAction>
     ) : ChatItem()

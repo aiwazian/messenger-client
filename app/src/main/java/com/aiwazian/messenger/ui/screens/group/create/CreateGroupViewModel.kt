@@ -41,6 +41,10 @@ class CreateGroupViewModel @Inject constructor(
         _group.update { it.copy(name = newName) }
     }
     
+    fun changeGroupDescription(new: String) {
+        _group.update { it.copy(bio = new) }
+    }
+    
     fun checkValid(): Boolean {
         return _group.value.name.isNotBlank()
     }
