@@ -204,6 +204,7 @@ fun GroupInviteLinksScreen(
                     SectionItem(
                         headlineText = stringResource(R.string.new_link),
                         leadingIcon = Icons.Rounded.AddLink,
+                        contentColor = MaterialTheme.colorScheme.primary,
                         onClick = {
                             navBackStack.add(AppRoute.CreateGroupInviteLink(groupId))
                         }

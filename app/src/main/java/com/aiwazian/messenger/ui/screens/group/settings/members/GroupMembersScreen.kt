@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.PersonRemove
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -117,7 +118,7 @@ fun GroupMembersScreen(
                         onClick = { navBackStack.add(AppRoute.AddMember(groupId)) }
                     )
                 }
-
+                
                 SectionContainer {
                     LazyColumn {
                         items(state.members) { user ->
@@ -141,10 +142,15 @@ fun GroupMembersScreen(
                 TextButton(onClick = kickDialogController::hide) {
                     Text(stringResource(R.string.cancel))
                 }
-                TextButton(onClick = {
-                    viewModel.confirmKick()
-                    kickDialogController.hide()
-                }) {
+                TextButton(
+                    onClick = {
+                        viewModel.confirmKick()
+                        kickDialogController.hide()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
                     Text(stringResource(R.string.kick))
                 }
             }
@@ -161,10 +167,15 @@ fun GroupMembersScreen(
                 TextButton(onClick = blockDialogController::hide) {
                     Text(stringResource(R.string.cancel))
                 }
-                TextButton(onClick = {
-                    viewModel.confirmBlock()
-                    blockDialogController.hide()
-                }) {
+                TextButton(
+                    onClick = {
+                        viewModel.confirmBlock()
+                        blockDialogController.hide()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
                     Text(stringResource(R.string.block_user))
                 }
             }

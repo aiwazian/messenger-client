@@ -145,7 +145,7 @@ fun ChannelSubscribersScreen(
                                             )
                                         )
                                         DropdownMenuItem(
-                                            text = { Text("Заблокировать") },
+                                            text = { Text(stringResource(R.string.block_user)) },
                                             onClick = {
                                                 showMenu = false
                                                 userToBan = user
@@ -175,7 +175,7 @@ fun ChannelSubscribersScreen(
         
         userToKick?.let { user ->
             CustomDialog(
-                title = "Выгнать участника",
+                title = stringResource(R.string.kick),
                 onDismissRequest = { userToKick = null },
                 buttons = {
                     TextButton(onClick = { userToKick = null }) {
@@ -207,7 +207,7 @@ fun ChannelSubscribersScreen(
         
         userToBan?.let { user ->
             CustomDialog(
-                title = "Заблокировать подписчика",
+                title = stringResource(R.string.block_user),
                 onDismissRequest = { userToBan = null },
                 buttons = {
                     TextButton(onClick = { userToBan = null }) {

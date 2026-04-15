@@ -199,6 +199,7 @@ fun ChannelInviteLinksScreen(
                     SectionItem(
                         headlineText = stringResource(R.string.new_link),
                         leadingIcon = Icons.Rounded.AddLink,
+                        contentColor = MaterialTheme.colorScheme.primary,
                         onClick = {
                             navBackStack.add(AppRoute.CreateInviteLink(channelId))
                         }
