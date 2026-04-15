@@ -156,4 +156,5 @@
     <string name="delete_account_after_twenty_four_hours">Die Kontolöschung ist 24 Stunden nach Beginn der aktuellen Sitzung möglich.</string>
     <string name="public_group">Öffentliche Gruppe</string>
     <string name="private_group">Private Gruppe</string>
+    <string name="clear_database">Datenbank löschen</string>
 </resources>

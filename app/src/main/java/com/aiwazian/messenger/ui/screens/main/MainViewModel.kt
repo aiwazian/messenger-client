@@ -134,7 +134,7 @@ class MainViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             lastMessage?.let { chatRepository.saveMessage(it) }
-            chatRepository.syncChat(chat.copy(lastMessage = lastMessage))
+            chatRepository.saveChat(chat.copy(lastMessage = lastMessage))
         }
     }
     
@@ -152,7 +152,7 @@ class MainViewModel @Inject constructor(
             if (currentChat?.lastMessage?.id == messageId) {
                 val lastMessage = currentChat.lastMessage.copy(isRead = true)
                 chatRepository.saveMessage(lastMessage)
-                chatRepository.syncChat(currentChat.copy(lastMessage = lastMessage))
+                chatRepository.saveChat(currentChat.copy(lastMessage = lastMessage))
             }
         }
     }
@@ -165,7 +165,7 @@ class MainViewModel @Inject constructor(
             if (currentChat?.lastMessage?.id == messageId) {
                 val lastMessage = chatRepository.getLastMessage(chatId)
                 lastMessage?.let { chatRepository.saveMessage(it) }
-                chatRepository.syncChat(currentChat.copy(lastMessage = lastMessage))
+                chatRepository.saveChat(currentChat.copy(lastMessage = lastMessage))
             }
         }
     }
@@ -180,10 +180,10 @@ class MainViewModel @Inject constructor(
             if (chat == null) {
                 val chatInfo = chatRepository.get(chatId)
                 if (chatInfo != null) {
-                    chatRepository.syncChat(chatInfo.copy(lastMessage = message))
+                    chatRepository.saveChat(chatInfo.copy(lastMessage = message))
                 }
             } else {
-                chatRepository.syncChat(chat.copy(lastMessage = message))
+                chatRepository.saveChat(chat.copy(lastMessage = message))
             }
         }
     }

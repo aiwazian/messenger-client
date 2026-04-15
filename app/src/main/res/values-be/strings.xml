@@ -156,4 +156,5 @@
     <string name="delete_account_after_twenty_four_hours">Выдаленне ўліковага запісу будзе даступна праз 24 гадзіны пасля пачатку бягучага сеансу.</string>
     <string name="public_group">Публічная група</string>
     <string name="private_group">Прыватная група</string>
+    <string name="clear_database">Ачысціць базу даных</string>
 </resources>

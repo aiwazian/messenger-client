@@ -156,4 +156,5 @@
     <string name="delete_account_after_twenty_four_hours">La cancellazione dell\'account sarà disponibile 24 ore dopo l\'inizio della sessione corrente.</string>
     <string name="public_group">Gruppo pubblico</string>
     <string name="private_group">Gruppo privato</string>
+    <string name="clear_database">Cancella database</string>
 </resources>

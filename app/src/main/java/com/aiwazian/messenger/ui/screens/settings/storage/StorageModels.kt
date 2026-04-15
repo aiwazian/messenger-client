@@ -62,8 +62,8 @@ data class StorageUiState(
     val categories: List<CategoryStats> = emptyList(),
     val totalCacheSize: Long = 0,
     val selectedSize: Long = 0,
-    val isLoading: Boolean = false,
-    val showConfirmDialog: Boolean = false
+    val showConfirmDialog: Boolean = false,
+    val showClearDatabaseDialog: Boolean = false
 ) {
     val selectedCategories: List<CategoryStats>
         get() = categories.filter { it.isSelected }

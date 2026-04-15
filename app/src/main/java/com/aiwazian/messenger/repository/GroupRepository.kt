@@ -35,17 +35,13 @@ class GroupRepository @Inject constructor(
     private val userDao: UserDao
 ) {
 
-    // ==================== GROUP INFO ====================
-
-    fun getById(id: Long): Flow<Group?> = channelFlow {
-        // 1. Подписка на Room — данные сразу + при каждом изменении
+    fun getById(id: Long): Flow<Group> = channelFlow {
         launch {
             groupDao.get(id).collectLatest { entity ->
                 entity?.let { send(it.toDomain()) }
             }
         }
 
-        // 2. Запрос к серверу и обновление Room
         try {
             val response = groupApi.getGroupById(id)
             if (response.isSuccessful) {
@@ -53,7 +49,6 @@ class GroupRepository @Inject constructor(
                 if (dto != null) {
                     val group = dto.toDomain()
                     groupDao.insert(group.toEntity())
-                    // Room автоматически обновит Flow выше
                 }
             } else {
                 Log.e("GroupRepository", "Failed to get group $id: ${response.message()}")
@@ -63,15 +58,12 @@ class GroupRepository @Inject constructor(
         }
     }
 
-    // ==================== MEMBERS ====================
-
     fun getMembers(
         id: Long,
         skip: Int = 0,
         take: Int = 100,
         search: String? = null
     ): Flow<List<User>> = channelFlow {
-        // 1. Подписка на участников из Room (userId → User из UserDao)
         launch {
             groupMemberDao.getMemberUserIdsFlow(id).collectLatest { userIds ->
                 val users = userIds.mapNotNull { uid ->
@@ -81,24 +73,19 @@ class GroupRepository @Inject constructor(
             }
         }
 
-        // 2. Запрос к серверу и обновление Room
         try {
             val response = groupApi.getGroupMembers(id, skip, take, search)
             if (response.isSuccessful) {
                 val dtos = response.body().orEmpty()
                 val users = dtos.map { it.toDomain() }
 
-                // Сохраняем пользователей в UserDao
                 users.forEach { user ->
                     userDao.insert(user.toEntity())
                 }
 
-                // Обновляем список участников группы
                 groupMemberDao.clearMembers(id)
                 val members = users.map { GroupMemberEntity(groupId = id, userId = it.id) }
                 groupMemberDao.insertAll(members)
-
-                // Room автоматически обновит Flow выше
             } else {
                 Log.e("GroupRepository", "Failed to get members for group $id: ${response.message()}")
             }
@@ -119,15 +106,12 @@ class GroupRepository @Inject constructor(
         }
     }
 
-    // ==================== BLACKLIST ====================
-
     fun getBlackList(
         id: Long,
         skip: Int = 0,
         take: Int = 100,
         search: String? = null
     ): Flow<List<User>> = channelFlow {
-        // 1. Подписка на забаненных пользователей из Room
         launch {
             groupMemberDao.getBlackListUserIdsFlow(id).collectLatest { userIds ->
                 val users = userIds.mapNotNull { uid ->
@@ -137,24 +121,19 @@ class GroupRepository @Inject constructor(
             }
         }
 
-        // 2. Запрос к серверу и обновление Room
         try {
             val response = groupApi.getBlackList(id, skip, take, search)
             if (response.isSuccessful) {
                 val dtos = response.body().orEmpty()
                 val users = dtos.map { it.toDomain() }
 
-                // Сохраняем пользователей в UserDao
                 users.forEach { user ->
                     userDao.insert(user.toEntity())
                 }
 
-                // Обновляем чёрный список
                 groupMemberDao.clearBlackList(id)
                 val blackListEntries = users.map { GroupBlackListEntity(groupId = id, userId = it.id) }
                 groupMemberDao.insertAllBlackList(blackListEntries)
-
-                // Room автоматически обновит Flow выше
             } else {
                 Log.e("GroupRepository", "Failed to get blacklist for group $id: ${response.message()}")
             }
@@ -162,8 +141,6 @@ class GroupRepository @Inject constructor(
             Log.e("GroupRepository", "Error fetching blacklist for group $id", e)
         }
     }
-
-    // ==================== MUTATION OPERATIONS ====================
 
     suspend fun create(groupInfo: Group): Result<Long> {
         return try {
@@ -197,7 +174,6 @@ class GroupRepository @Inject constructor(
             )
             val response = groupApi.addMembers(groupId, request)
             if (response.isSuccessful) {
-                // Добавляем участников в Room
                 val members = userIds.map { GroupMemberEntity(groupId = groupId, userId = it) }
                 groupMemberDao.insertAll(members)
                 Result.success(Unit)
@@ -220,7 +196,6 @@ class GroupRepository @Inject constructor(
             )
             val response = groupApi.updateGroup(group.id, request)
             if (response.isSuccessful) {
-                // Обновляем группу в Room
                 groupDao.insert(group.toEntity())
                 Result.success(Unit)
             } else {
@@ -251,7 +226,6 @@ class GroupRepository @Inject constructor(
         return try {
             val response = groupApi.joinGroup(id)
             if (response.isSuccessful) {
-                // Обновляем данные группы (membersCount мог измениться)
                 refreshGroup(id)
                 Result.success(Unit)
             } else {
@@ -267,7 +241,6 @@ class GroupRepository @Inject constructor(
         return try {
             val response = groupApi.leaveGroup(id)
             if (response.isSuccessful) {
-                // Обновляем данные группы
                 refreshGroup(id)
                 Result.success(Unit)
             } else {
@@ -283,9 +256,7 @@ class GroupRepository @Inject constructor(
         return try {
             val response = groupApi.kickUser(groupId, userId)
             if (response.isSuccessful) {
-                // Удаляем участника из Room
                 groupMemberDao.removeMember(groupId, userId)
-                // Обновляем данные группы
                 refreshGroup(groupId)
                 Result.success(Unit)
             } else {
@@ -301,10 +272,8 @@ class GroupRepository @Inject constructor(
         return try {
             val response = groupApi.banUser(groupId, userId)
             if (response.isSuccessful) {
-                // Удаляем из участников и добавляем в чёрный список
                 groupMemberDao.removeMember(groupId, userId)
                 groupMemberDao.insertBlackListEntry(GroupBlackListEntity(groupId = groupId, userId = userId))
-                // Обновляем данные группы
                 refreshGroup(groupId)
                 Result.success(Unit)
             } else {
@@ -320,7 +289,6 @@ class GroupRepository @Inject constructor(
         return try {
             val response = groupApi.unbanUser(groupId, userId)
             if (response.isSuccessful) {
-                // Удаляем из чёрного списка
                 groupMemberDao.removeFromBlackList(groupId, userId)
                 Result.success(Unit)
             } else {
@@ -331,8 +299,6 @@ class GroupRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
-    // ==================== INVITE LINKS ====================
 
     suspend fun getInviteLinks(groupId: Long): Result<List<InviteLink>> {
         return try {
@@ -371,8 +337,6 @@ class GroupRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
-    // ==================== HELPERS ====================
 
     private suspend fun refreshGroup(groupId: Long) {
         try {

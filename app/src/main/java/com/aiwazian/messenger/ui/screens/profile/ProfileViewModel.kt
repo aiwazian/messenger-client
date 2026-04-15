@@ -174,7 +174,7 @@ class ProfileViewModel @Inject constructor(
             ChatType.GROUP -> {
                 viewModelScope.launch {
                     groupRepository.getById(profileId).collectLatest { group ->
-                        group?.let {
+                        group.let {
                             val profile = Profile.Group(
                                 id = group.id,
                                 ownerId = group.ownerId,

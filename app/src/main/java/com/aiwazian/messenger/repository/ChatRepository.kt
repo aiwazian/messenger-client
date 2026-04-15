@@ -6,14 +6,8 @@ package com.aiwazian.messenger.repository
 
 import android.util.Log
 import com.aiwazian.messenger.database.dao.AttachmentDao
-import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
-import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.database.dao.MessageDao
-import com.aiwazian.messenger.database.dao.UserDao
-import com.aiwazian.messenger.database.entity.ChannelEntity
-import com.aiwazian.messenger.database.entity.GroupEntity
-import com.aiwazian.messenger.database.entity.UserEntity
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.enums.AttachmentType
@@ -42,9 +36,9 @@ class ChatRepository @Inject constructor(
     private val messageDao: MessageDao,
     private val attachmentDao: AttachmentDao,
     private val chatDao: ChatDao,
-    private val userDao: UserDao,
-    private val groupDao: GroupDao,
-    private val channelDao: ChannelDao
+    private val userRepository: UserRepository,
+    private val channelRepository: ChannelRepository,
+    private val groupRepository: GroupRepository
 ) {
     
     fun getAllChats(): Flow<List<Chat>> = channelFlow {
@@ -52,11 +46,12 @@ class ChatRepository @Inject constructor(
             chatDao.getAllChatsFlow().collectLatest { entities ->
                 val result = entities.map { entity ->
                     val name = when (ChatType.fromId(entity.chatId)) {
-                        ChatType.PRIVATE -> userDao.get(entity.chatId)
-                            ?.let { "${it.firstName} ${it.lastName.orEmpty()}".trim() } ?: ""
+                        ChatType.PRIVATE -> userRepository.getById(entity.chatId)
+                            .first()
+                            .let { "${it.firstName} ${it.lastName.orEmpty()}".trim() }
                         
-                        ChatType.GROUP -> groupDao.getById(entity.chatId)?.name ?: ""
-                        ChatType.CHANNEL -> channelDao.get(entity.chatId)?.name ?: ""
+                        ChatType.GROUP -> groupRepository.getById(entity.chatId).first().name
+                        ChatType.CHANNEL -> channelRepository.getById(entity.chatId).first().name
                         else -> ""
                     }
                     
@@ -83,33 +78,6 @@ class ChatRepository @Inject constructor(
                 
                 val lastMessages = dtos.mapNotNull { it.lastMessage?.toDomain() }
                 saveMessagesToDb(lastMessages)
-                
-                dtos.forEach { dto ->
-                    val id = dto.id.toLong()
-                    val type = ChatType.fromId(id)
-                    when (type) {
-                        ChatType.PRIVATE -> {
-                            val user = userDao.get(id) ?: UserEntity(id)
-                            userDao.insert(user.copy(firstName = dto.name))
-                        }
-                        
-                        ChatType.GROUP -> {
-                            val group = groupDao.getById(id) ?: GroupEntity(
-                                id, null, dto.name, null, null, 0, 0
-                            )
-                            groupDao.insert(group.copy(name = dto.name))
-                        }
-                        
-                        ChatType.CHANNEL -> {
-                            val channel = channelDao.get(id) ?: ChannelEntity(
-                                id, dto.name, null, null, 0, null, 0, null, null
-                            )
-                            channelDao.insert(channel.copy(name = dto.name))
-                        }
-                        
-                        else -> {}
-                    }
-                }
             } else {
                 Log.e("ChatRepository", "Failed to get all chats: ${response.message()}")
             }
@@ -283,9 +251,10 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    suspend fun deleteMessage(chatId: Long, messageId: Int, forEveryone: Boolean): Boolean {
+    suspend fun deleteMessage(chatId: Long, messageId: Int): Boolean {
         return try {
-            val response = messageApi.deleteMessage(chatId, messageId, forEveryone)
+            messageDao.deleteMessageById(messageId)
+            val response = messageApi.deleteMessage(chatId, messageId)
             response.isSuccessful
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error deleting message", e)
@@ -294,7 +263,7 @@ class ChatRepository @Inject constructor(
     }
     
     suspend fun clearLocalHistory(chatId: Long) {
-        userDao.getMe().first()?.id?.let { userId ->
+        userRepository.getMe().first().id.let { userId ->
             messageDao.clearChatHistory(userId, chatId)
         }
     }
@@ -350,35 +319,6 @@ class ChatRepository @Inject constructor(
     
     suspend fun saveChat(chat: Chat) {
         chatDao.upsertChats(listOf(chat.toEntity()))
-    }
-    
-    suspend fun syncChat(chat: Chat) {
-        chatDao.upsertChats(listOf(chat.toEntity()))
-        
-        val id = chat.id
-        val type = ChatType.fromId(id)
-        when (type) {
-            ChatType.PRIVATE -> {
-                val user = userDao.get(id) ?: UserEntity(id)
-                userDao.insert(user.copy(firstName = chat.chatName))
-            }
-            
-            ChatType.GROUP -> {
-                val group = groupDao.getById(id) ?: GroupEntity(
-                    id, null, chat.chatName, null, null, 0, 0
-                )
-                groupDao.insert(group.copy(name = chat.chatName))
-            }
-            
-            ChatType.CHANNEL -> {
-                val channel = channelDao.get(id) ?: ChannelEntity(
-                    id, chat.chatName, null, null, 0, null, 0, null, null
-                )
-                channelDao.insert(channel.copy(name = chat.chatName))
-            }
-            
-            else -> {}
-        }
     }
     
     suspend fun resetInviteLink(channelId: Long): String? {

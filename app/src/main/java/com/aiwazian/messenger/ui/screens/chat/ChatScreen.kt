@@ -103,15 +103,13 @@ import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
-import com.aiwazian.messenger.ui.screens.main.MainViewModel
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ChatScreen(
     chatId: Long,
-    chatViewModel: ChatViewModel = hiltViewModel(),
-    mainViewModel: MainViewModel = hiltViewModel()
+    chatViewModel: ChatViewModel = hiltViewModel()
 ) {
     val navBackStack = LocalNavBackStack.current
     val context = LocalContext.current
@@ -151,13 +149,6 @@ fun ChatScreen(
                         listState.animateScrollToItem(effect.index)
                     }
                 }
-                
-                is ChatUiEffect.NotifyMainMessageSent -> mainViewModel.onSendMessage(effect.message)
-                is ChatUiEffect.NotifyMainChatDeleted -> mainViewModel.deleteChat(effect.chatId)
-                is ChatUiEffect.NotifyMainNewChat -> mainViewModel.showNewChat(
-                    effect.chat,
-                    effect.lastMessage
-                )
                 
                 is ChatUiEffect.ShowInviteSnackbar -> {
                     snackbarHostState.showSnackbar(
@@ -501,18 +492,14 @@ private fun Dialogs(
     if (uiState.showClearHistoryDialog) {
         ClearHistoryDialog(
             onDismissRequest = chatViewModel::hideClearHistoryDialog,
-            onConfirm = chatViewModel::onDeleteMessagesConfirmed,
-            chatName = uiState.chat.chatName,
-            isSelf = uiState.isSavedMessages
+            onConfirm = chatViewModel::onDeleteMessagesConfirmed
         )
     }
     
     if (uiState.showDeleteMessageDialog) {
         DeleteMessageDialog(
             onDismissRequest = chatViewModel::hideDeleteMessageDialog,
-            onConfirm = chatViewModel::onDeleteMessageConfirmed,
-            chatName = uiState.chat.chatName,
-            isSelf = uiState.isSavedMessages
+            onConfirm = chatViewModel::onDeleteMessageConfirmed
         )
     }
     
@@ -614,10 +601,8 @@ private fun TopBar(
 
 @Composable
 private fun DeleteChatDialog(
-    onDismissRequest: () -> Unit, onConfirm: (Boolean) -> Unit, chatName: String, isSelf: Boolean
+    onDismissRequest: () -> Unit, onConfirm: () -> Unit, chatName: String, isSelf: Boolean
 ) {
-    var deleteForReceiver by remember { mutableStateOf(false) }
-    
     CustomDialog(
         title = stringResource(R.string.delete_chat),
         onDismissRequest = onDismissRequest,
@@ -627,44 +612,23 @@ private fun DeleteChatDialog(
                 text = "Удалить чат$suffix без возможности восстановления?",
                 lineHeight = 16.sp
             )
-            
-            if (!isSelf) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .clickable { deleteForReceiver = !deleteForReceiver }) {
-                    Row(modifier = Modifier.padding(10.dp)) {
-                        Checkbox(
-                            checked = deleteForReceiver,
-                            onCheckedChange = null,
-                            modifier = Modifier.padding(end = 10.dp)
-                        )
-                        Text(
-                            text = "${stringResource(R.string.also_delete_for)} $chatName",
-                            fontSize = 14.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            } else {
-                deleteForReceiver = true
-            }
         },
         buttons = {
-            TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(R.string.cancel))
+            }
             TextButton(
-                onClick = { onConfirm(deleteForReceiver) },
+                onClick = onConfirm,
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            ) { Text(stringResource(R.string.delete_chat)) }
+            ) {
+                Text(stringResource(R.string.delete_chat))
+            }
         })
 }
 
 @Composable
 private fun ClearHistoryDialog(
-    onDismissRequest: () -> Unit, onConfirm: () -> Unit, chatName: String, isSelf: Boolean
+    onDismissRequest: () -> Unit, onConfirm: () -> Unit
 ) {
     CustomDialog(
         title = stringResource(R.string.clear_history),
@@ -685,11 +649,7 @@ private fun ClearHistoryDialog(
 }
 
 @Composable
-private fun DeleteMessageDialog(
-    onDismissRequest: () -> Unit, onConfirm: (Boolean) -> Unit, chatName: String, isSelf: Boolean
-) {
-    var deleteForReceiver by remember { mutableStateOf(false) }
-    
+private fun DeleteMessageDialog(onDismissRequest: () -> Unit, onConfirm: () -> Unit) {
     CustomDialog(
         title = stringResource(R.string.delete_message),
         onDismissRequest = onDismissRequest,
@@ -698,38 +658,15 @@ private fun DeleteMessageDialog(
                 text = stringResource(R.string.delete_message_description),
                 lineHeight = 16.sp
             )
-            
-            if (!isSelf) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .clickable { deleteForReceiver = !deleteForReceiver }) {
-                    Row(modifier = Modifier.padding(10.dp)) {
-                        Checkbox(
-                            checked = deleteForReceiver,
-                            onCheckedChange = null,
-                            modifier = Modifier.padding(end = 10.dp)
-                        )
-                        Text(
-                            text = "${stringResource(R.string.also_delete_for)} $chatName",
-                            fontSize = 14.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            } else {
-                deleteForReceiver = true
-            }
         },
         buttons = {
             TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
             TextButton(
-                onClick = { onConfirm(deleteForReceiver) },
+                onClick = onConfirm,
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            ) { Text(stringResource(R.string.delete)) }
+            ) {
+                Text(stringResource(R.string.delete))
+            }
         })
 }
 
@@ -743,24 +680,10 @@ private fun LeaveDialog(
         else -> stringResource(R.string.leave)
     }
     
-    val message = when (chatType) {
-        ChatType.CHANNEL -> buildAnnotatedString {
-            append(stringResource(R.string.leave_channel_confirm_message))
-            withStyle(style = SpanStyle(fontWeight = FontWeight.W500)) { append(" $chatName") }
-            append("?")
-        }
-        
-        ChatType.GROUP -> buildAnnotatedString {
-            append(stringResource(R.string.leave_group_confirm))
-            withStyle(style = SpanStyle(fontWeight = FontWeight.W500)) { append(" $chatName") }
-            append("?")
-        }
-        
-        else -> buildAnnotatedString {
-            append(stringResource(R.string.leave_confirm))
-            withStyle(style = SpanStyle(fontWeight = FontWeight.W500)) { append(" $chatName") }
-            append("?")
-        }
+    val message = buildAnnotatedString {
+        append(stringResource(R.string.leave_channel_confirm_message))
+        withStyle(style = SpanStyle(fontWeight = FontWeight.W500)) { append(" $chatName") }
+        append("?")
     }
     
     CustomDialog(
@@ -770,11 +693,15 @@ private fun LeaveDialog(
             Text(text = message)
         },
         buttons = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
             TextButton(
                 onClick = onConfirm,
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            ) { Text(title) }
+            ) {
+                Text(title)
+            }
         })
 }
 

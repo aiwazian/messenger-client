@@ -61,8 +61,7 @@ interface MessageApi {
     @DELETE("chats/{chatId}/messages/{messageId}")
     suspend fun deleteMessage(
         @Path("chatId") chatId: Long,
-        @Path("messageId") messageId: Int,
-        @Query("forEveryone") forEveryone: Boolean = false
+        @Path("messageId") messageId: Int
     ): Response<Unit>
 
     @DELETE("chats/{chatId}/messages")

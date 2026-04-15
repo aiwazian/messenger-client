@@ -4,8 +4,8 @@
 
 package com.aiwazian.messenger.repository
 
+import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.database.dao.AttachmentDao
-import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.ui.screens.settings.storage.CategoryStats
@@ -19,10 +19,14 @@ import javax.inject.Singleton
 
 @Singleton
 class StorageRepository @Inject constructor(
-    private val attachmentDao: AttachmentDao,
-    private val messageDao: MessageDao
+    private val appDatabase: AppDatabase,
+    private val attachmentDao: AttachmentDao
 ) {
-
+    
+    suspend fun clearDatabaseExceptAccount() = withContext(Dispatchers.IO) {
+        appDatabase.messageDao().deleteAll()
+    }
+    
     suspend fun getStorageStats(): List<CategoryStats> = withContext(Dispatchers.IO) {
         val allAttachments = attachmentDao.getAllAttachments()
         
@@ -49,28 +53,29 @@ class StorageRepository @Inject constructor(
             )
         }
     }
-
-    suspend fun getFilesForCategories(categories: List<FileCategory>): List<StorageFile> = withContext(Dispatchers.IO) {
-        val allAttachments = attachmentDao.getAllAttachments()
-        
-        allAttachments.filter { attachment ->
-            attachment.localUri != null && 
-            FileCategory.fromExtension(attachment.extension) in categories &&
-            File(attachment.localUri).exists()
-        }.map { attachment ->
-            StorageFile(
-                id = attachment.id,
-                name = attachment.name,
-                size = attachment.size,
-                extension = attachment.extension,
-                category = FileCategory.fromExtension(attachment.extension),
-                localUri = attachment.localUri!!,
-                messageId = if (attachment.type == AttachmentType.MESSAGE) attachment.relationId.toInt() else 0,
-                chatId = attachment.chatId ?: 0
-            )
+    
+    suspend fun getFilesForCategories(categories: List<FileCategory>): List<StorageFile> =
+        withContext(Dispatchers.IO) {
+            val allAttachments = attachmentDao.getAllAttachments()
+            
+            allAttachments.filter { attachment ->
+                attachment.localUri != null &&
+                        FileCategory.fromExtension(attachment.extension) in categories &&
+                        File(attachment.localUri).exists()
+            }.map { attachment ->
+                StorageFile(
+                    id = attachment.id,
+                    name = attachment.name,
+                    size = attachment.size,
+                    extension = attachment.extension,
+                    category = FileCategory.fromExtension(attachment.extension),
+                    localUri = attachment.localUri!!,
+                    messageId = if (attachment.type == AttachmentType.MESSAGE) attachment.relationId.toInt() else 0,
+                    chatId = attachment.chatId ?: 0
+                )
+            }
         }
-    }
-
+    
     suspend fun clearFiles(files: List<StorageFile>) = withContext(Dispatchers.IO) {
         files.forEach { storageFile ->
             val file = File(storageFile.localUri)

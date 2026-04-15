@@ -23,10 +23,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -52,8 +53,10 @@ import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
+import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import kotlinx.coroutines.flow.collectLatest
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -67,7 +70,7 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
         storageViewModel.uiEvent.collectLatest { event ->
             when (event) {
                 is StorageUiEvent.CacheCleared -> {}
-                
+                is StorageUiEvent.DatabaseCleared -> {}
                 is StorageUiEvent.Error -> {}
             }
         }
@@ -80,7 +83,7 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
     ).toDouble()
     
     Scaffold(
-        topBar = { TopBar() }) { padding ->
+        topBar = { TopBar(storageViewModel) }) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -104,76 +107,67 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
-            if (uiState.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                SectionContainer(footer = { SectionDescription("Все медиа останутся в облаке, при необходимости Вы сможете загрузить их.") }) {
-                    uiState.categories.forEachIndexed { index, category ->
-                        val sizeMb = category.totalSize / (1024.0 * 1024.0)
-                        val sizeMbRounded = BigDecimal(sizeMb).setScale(
-                            2, RoundingMode.HALF_UP
-                        ).toDouble()
-                        
-                        StorageCategory(
-                            text = stringResource(category.category.title),
-                            selected = category.isSelected,
-                            color = AppPrimaryColor.entries[index].color,
-                            primaryText = "$sizeMbRounded MB",
-                            onClick = {
-                                storageViewModel.toggleCategory(category.category)
-                            },
-                        )
-                    }
-                    
-                    val selectedSize = uiState.selectedSize
-                    val selectedSizeMb = selectedSize / (1024.0 * 1024.0)
-                    val selectedSizeMbRounded = BigDecimal(selectedSizeMb).setScale(
+            SectionContainer(footer = { SectionDescription("Все медиа останутся в облаке, при необходимости Вы сможете загрузить их.") }) {
+                uiState.categories.forEachIndexed { index, category ->
+                    val sizeMb = category.totalSize / (1024.0 * 1024.0)
+                    val sizeMbRounded = BigDecimal(sizeMb).setScale(
                         2, RoundingMode.HALF_UP
                     ).toDouble()
                     
-                    val hasSelection = uiState.selectedCategories.isNotEmpty()
-                    
-                    Button(
-                        onClick = storageViewModel::showConfirmDialog,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(10.dp),
-                        shape = MaterialTheme.shapes.medium,
-                        colors = ButtonDefaults.buttonColors(
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ),
-                        enabled = hasSelection
+                    StorageCategory(
+                        text = stringResource(category.category.title),
+                        selected = category.isSelected,
+                        color = AppPrimaryColor.entries[index].color,
+                        primaryText = "$sizeMbRounded MB",
+                        onClick = {
+                            storageViewModel.toggleCategory(category.category)
+                        },
+                    )
+                }
+                
+                val selectedSize = uiState.selectedSize
+                val selectedSizeMb = selectedSize / (1024.0 * 1024.0)
+                val selectedSizeMbRounded = BigDecimal(selectedSizeMb).setScale(
+                    2, RoundingMode.HALF_UP
+                ).toDouble()
+                
+                val hasSelection = uiState.selectedCategories.isNotEmpty()
+                
+                Button(
+                    onClick = storageViewModel::showConfirmDialog,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.buttonColors(
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
+                    enabled = hasSelection
+                ) {
+                    Row(
+                        modifier = Modifier.padding(8.dp),
                     ) {
-                        Row(
-                            modifier = Modifier.padding(8.dp),
-                        ) {
+                        Text(
+                            text = "${stringResource(R.string.clear_cache)} (",
+                            fontSize = 16.sp,
+                            lineHeight = 18.sp
+                        )
+                        AnimatedContent(
+                            targetState = selectedSizeMbRounded, transitionSpec = {
+                                if (targetState > initialState) {
+                                    slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
+                                } else {
+                                    slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
+                                }
+                            }) { size ->
                             Text(
-                                text = "${stringResource(R.string.clear_cache)} (",
-                                fontSize = 16.sp,
-                                lineHeight = 18.sp
-                            )
-                            AnimatedContent(
-                                targetState = selectedSizeMbRounded, transitionSpec = {
-                                    if (targetState > initialState) {
-                                        slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
-                                    } else {
-                                        slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
-                                    }
-                                }) { size ->
-                                Text(
-                                    text = "$size", fontSize = 16.sp, lineHeight = 18.sp
-                                )
-                            }
-                            Text(
-                                text = "MB)", fontSize = 16.sp, lineHeight = 18.sp
+                                text = "$size", fontSize = 16.sp, lineHeight = 18.sp
                             )
                         }
+                        Text(
+                            text = "MB)", fontSize = 16.sp, lineHeight = 18.sp
+                        )
                     }
                 }
             }
@@ -185,6 +179,16 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
             onConfirm = {
                 storageViewModel.clearSelectedCache()
             }, onDismiss = storageViewModel::hideConfirmDialog
+        )
+    }
+    
+    if (uiState.showClearDatabaseDialog) {
+        ClearDatabaseConfirmationDialog(
+            onConfirm = {
+                storageViewModel.clearDatabase()
+                storageViewModel.hideClearDatabaseDialog()
+            },
+            onDismiss = storageViewModel::hideClearDatabaseDialog
         )
     }
 }
@@ -271,12 +275,55 @@ private fun ClearCacheConfirmationDialog(
 }
 
 @Composable
-private fun TopBar() {
+private fun ClearDatabaseConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    CustomDialog(
+        title = "Удаление",
+        onDismissRequest = onDismiss,
+        content = {
+            Text(
+                text = "Удалить все сообщения из локальной базы данных?",
+                lineHeight = 16.sp
+            )
+        },
+        buttons = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text(stringResource(R.string.delete))
+            }
+        }
+    )
+}
+
+@Composable
+private fun TopBar(viewModel: StorageViewModel) {
     val navBackStack = LocalNavBackStack.current
     
     PageTopBar(
         navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navBackStack::removeLastOrNull
+            icon = Icons.AutoMirrored.Rounded.ArrowBack,
+            onClick = navBackStack::removeLastOrNull
+        ),
+        actions = listOf(
+            TopBarAction(
+                icon = Icons.Rounded.MoreVert, onClick = {}, dropdownActions = listOf(
+                    DropdownMenuAction(
+                        icon = Icons.Rounded.DeleteOutline,
+                        textResId = R.string.clear_database,
+                        onClick = viewModel::showClearDatabaseDialog,
+                        isDestructive = true
+                    )
+                )
+            )
         )
     )
 }

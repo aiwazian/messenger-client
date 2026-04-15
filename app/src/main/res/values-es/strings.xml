@@ -156,4 +156,5 @@
     <string name="delete_account_after_twenty_four_hours">La eliminación de la cuenta estará disponible 24 horas después del inicio de la sesión actual.</string>
     <string name="public_group">Grupo público</string>
     <string name="private_group">Grupo Privado</string>
+    <string name="clear_database">Borrar base de datos</string>
 </resources>

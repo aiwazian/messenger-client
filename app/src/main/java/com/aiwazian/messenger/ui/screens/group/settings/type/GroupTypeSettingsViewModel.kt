@@ -60,7 +60,7 @@ class GroupTypeSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             groupRepository.getById(groupId).collect { groupInfo ->
-                groupInfo?.let { group ->
+                groupInfo.let { group ->
                     _uiState.update {
                         it.copy(
                             isLoading = false,

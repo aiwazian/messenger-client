@@ -8,6 +8,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.aiwazian.messenger.database.dao.AccountDao
+import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.GroupDao
@@ -55,5 +56,5 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun messageDao(): MessageDao
 
-    abstract fun attachmentDao(): com.aiwazian.messenger.database.dao.AttachmentDao
+    abstract fun attachmentDao(): AttachmentDao
 }

@@ -48,7 +48,7 @@ class GroupSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             groupRepository.getById(groupId).collectLatest { group ->
-                group?.let {
+                group.let {
                     _uiState.update {
                         it.copy(
                             isLoading = false,

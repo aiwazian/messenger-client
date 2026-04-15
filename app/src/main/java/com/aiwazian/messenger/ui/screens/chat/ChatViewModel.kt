@@ -295,7 +295,7 @@ class ChatViewModel @Inject constructor(
             ChatType.GROUP -> {
                 viewModelScope.launch {
                     groupRepository.getById(chatId).collectLatest { group ->
-                        group?.let {
+                        group.let {
                             val profile = Profile.Group(
                                 id = group.id,
                                 ownerId = group.ownerId,
@@ -555,11 +555,11 @@ class ChatViewModel @Inject constructor(
         val chatItems = mutableListOf<ChatItem>()
         var lastDate: java.time.LocalDate? = null
         var lastSenderId: Long? = null
-
+        
         messages.forEach { message ->
             val messageDate =
                 message.sendTime.toInstance().atZone(ZoneId.systemDefault()).toLocalDate()
-
+            
             if (lastDate == null || !messageDate.isEqual(lastDate)) {
                 val monthName = messageDate.month.getDisplayName(
                     TextStyle.FULL,
@@ -571,7 +571,7 @@ class ChatViewModel @Inject constructor(
                 chatItems.add(ChatItem.DateSeparator("${messageDate.dayOfMonth} $capitalizedMonthName"))
                 lastDate = messageDate
             }
-
+            
             if (message.senderId == SYSTEM_USER_ID) {
                 val text = message.text ?: ""
                 if (text.isNotBlank()) {
@@ -585,7 +585,7 @@ class ChatViewModel @Inject constructor(
                 lastSenderId = message.senderId
                 return@forEach
             }
-
+            
             val isMine = message.senderId == myId && ChatType.fromId(_chatId) != ChatType.CHANNEL
             val isSingleEmoji = isSingleEmoji(message.text ?: "")
             val isFirstInGroup = message.senderId != lastSenderId
@@ -706,7 +706,6 @@ class ChatViewModel @Inject constructor(
                         if (it.id == tempId) it.copy(id = sentMessage.id) else it
                     }
                     updateChatItems(updatedMessages)
-                    _uiEffect.emit(ChatUiEffect.NotifyMainMessageSent(sentMessage))
                     _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
                 }
             } catch (e: Exception) {
@@ -724,12 +723,6 @@ class ChatViewModel @Inject constructor(
             val result = channelRepository.join(_uiState.value.chat.id)
             if (result.isSuccess) {
                 _uiState.update { it.copy(isJoined = true) }
-                _uiEffect.emit(
-                    ChatUiEffect.NotifyMainNewChat(
-                        _uiState.value.chat,
-                        getRawMessages().lastOrNull()
-                    )
-                )
             }
         }
     }
@@ -744,7 +737,6 @@ class ChatViewModel @Inject constructor(
             }
             if (success) {
                 hideLeaveDialog()
-                _uiEffect.emit(ChatUiEffect.NotifyMainChatDeleted(chatId))
                 _uiEffect.emit(ChatUiEffect.NavigateToMain)
             }
         }
@@ -782,12 +774,11 @@ class ChatViewModel @Inject constructor(
     fun hideLeaveDialog() =
         _uiState.update { it.copy(showLeaveDialog = false) }
     
-    fun onDeleteChatConfirmed(deleteForReceiver: Boolean) {
+    fun onDeleteChatConfirmed() {
         viewModelScope.launch {
             if (chatRepository.deleteChat(_uiState.value.chat.id)) {
                 updateChatItems(emptyList())
                 hideDeleteChatDialog()
-                _uiEffect.emit(ChatUiEffect.NotifyMainChatDeleted(_uiState.value.chat.id))
                 _uiEffect.emit(ChatUiEffect.NavigateToMain)
             }
         }
@@ -803,15 +794,10 @@ class ChatViewModel @Inject constructor(
         }
     }
     
-    fun onDeleteMessageConfirmed(deleteForAll: Boolean) {
+    fun onDeleteMessageConfirmed() {
         viewModelScope.launch {
             _uiState.value.selectedMessages.forEach { message ->
-                if (chatRepository.deleteMessage(
-                        _uiState.value.chat.id,
-                        message.id,
-                        deleteForAll
-                    )
-                ) {
+                if (chatRepository.deleteMessage(_uiState.value.chat.id, message.id)) {
                     val messages = getRawMessages().filter { it.id != message.id }
                     updateChatItems(messages)
                 }

@@ -156,4 +156,5 @@
     <string name="delete_account_after_twenty_four_hours">계정 삭제는 현재 세션 시작 후 24시간 후에 가능합니다.</string>
     <string name="public_group">공개 그룹</string>
     <string name="private_group">비공개 그룹</string>
+    <string name="clear_database">데이터베이스 지우기</string>
 </resources>

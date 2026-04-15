@@ -40,18 +40,15 @@ class StorageViewModel @Inject constructor(
         loadStorageInfo()
     }
     
-    fun loadStorageInfo() {
+    private fun loadStorageInfo() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            
             val categories = storageRepository.getStorageStats()
             val totalCacheSize = categories.sumOf { it.totalSize }
             
             _uiState.update {
                 it.copy(
                     categories = categories,
-                    totalCacheSize = totalCacheSize,
-                    isLoading = false
+                    totalCacheSize = totalCacheSize
                 )
             }
             
@@ -94,6 +91,14 @@ class StorageViewModel @Inject constructor(
         _uiState.update { it.copy(showConfirmDialog = false) }
     }
     
+    fun showClearDatabaseDialog() {
+        _uiState.update { it.copy(showClearDatabaseDialog = true) }
+    }
+    
+    fun hideClearDatabaseDialog() {
+        _uiState.update { it.copy(showClearDatabaseDialog = false) }
+    }
+    
     fun clearSelectedCache() {
         viewModelScope.launch {
             val state = _uiState.value
@@ -112,6 +117,13 @@ class StorageViewModel @Inject constructor(
             
             hideConfirmDialog()
             _uiEvent.emit(StorageUiEvent.CacheCleared)
+        }
+    }
+    
+    fun clearDatabase() {
+        viewModelScope.launch {
+            storageRepository.clearDatabaseExceptAccount()
+            _uiEvent.emit(StorageUiEvent.DatabaseCleared)
         }
     }
     
