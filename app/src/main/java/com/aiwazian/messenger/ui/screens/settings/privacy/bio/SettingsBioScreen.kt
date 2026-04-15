@@ -91,15 +91,15 @@ fun SettingsBioScreen(
             }) {
                 SectionRadioItem(
                     text = stringResource(R.string.everybody),
-                    selected = currentValue == PrivacyLevel.Everybody,
+                    selected = currentValue == PrivacyLevel.EVERYBODY,
                     onClick = {
-                        settingsBioViewModel.selectValue(PrivacyLevel.Everybody)
+                        settingsBioViewModel.selectValue(PrivacyLevel.EVERYBODY)
                     })
                 SectionRadioItem(
                     text = stringResource(R.string.nobody),
-                    selected = currentValue == PrivacyLevel.Nobody,
+                    selected = currentValue == PrivacyLevel.NOBODY,
                     onClick = {
-                        settingsBioViewModel.selectValue(PrivacyLevel.Nobody)
+                        settingsBioViewModel.selectValue(PrivacyLevel.NOBODY)
                     })
             }
         }

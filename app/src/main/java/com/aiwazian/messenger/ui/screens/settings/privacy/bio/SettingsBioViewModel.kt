@@ -26,9 +26,9 @@ class SettingsBioViewModel @Inject constructor(
     private val privacyRepository: PrivacyRepository
 ) : ViewModel() {
 
-    private val _initialLevel = MutableStateFlow(PrivacyLevel.Everybody)
+    private val _initialLevel = MutableStateFlow(PrivacyLevel.EVERYBODY)
 
-    private val _currentLevel = MutableStateFlow(PrivacyLevel.Everybody)
+    private val _currentLevel = MutableStateFlow(PrivacyLevel.EVERYBODY)
     val currentLevel = _currentLevel.asStateFlow()
 
     private val _showSaveButton = MutableStateFlow(false)
@@ -60,7 +60,7 @@ class SettingsBioViewModel @Inject constructor(
     fun onSaveClick() {
         viewModelScope.launch {
             try {
-                val success = privacyRepository.updateBioPrivacy(_currentLevel.value.ordinal)
+                val success = privacyRepository.updateBioPrivacy(_currentLevel.value)
 
                 if (success) {
                     _effect.send(SettingsBioEffect.Back)

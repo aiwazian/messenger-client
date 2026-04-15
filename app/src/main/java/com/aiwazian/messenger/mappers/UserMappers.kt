@@ -39,11 +39,11 @@ fun User.toUpdateRequest(): UpdateUserRequestDto = UpdateUserRequestDto(
 )
 
 fun PrivacySettingsResponseDto.toDomain(): PrivacySettings = PrivacySettings(
-    lastSeen = PrivacyLevel.fromId(lastSeen),
-    messages = PrivacyLevel.fromId(messages),
-    bio = PrivacyLevel.fromId(bio),
-    dateOfBirth = PrivacyLevel.fromId(dateOfBirth),
-    invites = PrivacyLevel.fromId(invites)
+    lastSeen = lastSeen,
+    messages = messages,
+    bio = bio,
+    dateOfBirth = dateOfBirth,
+    invites = invites
 )
 
 fun UserEntity.toDomain(): User = User(

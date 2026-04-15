@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.network.dto
 
+import com.aiwazian.messenger.enums.PrivacyLevel
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -33,18 +34,18 @@ data class ChangePasswordRequestDto(
 
 @Serializable
 data class PrivacySettingsResponseDto(
-    @SerialName("lastSeen") val lastSeen: Int,
-    @SerialName("messages") val messages: Int,
-    @SerialName("bio") val bio: Int,
-    @SerialName("dateOfBirth") val dateOfBirth: Int,
-    @SerialName("invites") val invites: Int
+    @SerialName("lastSeen") val lastSeen: PrivacyLevel,
+    @SerialName("messages") val messages: PrivacyLevel,
+    @SerialName("bio") val bio: PrivacyLevel,
+    @SerialName("dateOfBirth") val dateOfBirth: PrivacyLevel,
+    @SerialName("invites") val invites: PrivacyLevel
 )
 
 @Serializable
 data class UpdatePrivacySettingsRequestDto(
-    @SerialName("lastSeen") val lastSeen: Int? = null,
-    @SerialName("messages") val messages: Int? = null,
-    @SerialName("bio") val bio: Int? = null,
-    @SerialName("dateOfBirth") val dateOfBirth: Int? = null,
-    @SerialName("invites") val invites: Int? = null
+    @SerialName("lastSeen") val lastSeen: PrivacyLevel? = null,
+    @SerialName("messages") val messages: PrivacyLevel? = null,
+    @SerialName("bio") val bio: PrivacyLevel? = null,
+    @SerialName("dateOfBirth") val dateOfBirth: PrivacyLevel? = null,
+    @SerialName("invites") val invites: PrivacyLevel? = null
 )

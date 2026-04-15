@@ -10,6 +10,8 @@ import com.aiwazian.messenger.network.api.PrivacyApi
 import com.aiwazian.messenger.network.dto.UpdatePrivacySettingsRequestDto
 import javax.inject.Inject
 
+import com.aiwazian.messenger.enums.PrivacyLevel
+
 class PrivacyRepository @Inject constructor(
     private val privacyApi: PrivacyApi
 ) {
@@ -23,19 +25,19 @@ class PrivacyRepository @Inject constructor(
         }
     }
 
-    suspend fun updateBioPrivacy(bio: Int): Boolean {
+    suspend fun updateBioPrivacy(bio: PrivacyLevel): Boolean {
         val request = UpdatePrivacySettingsRequestDto(bio = bio)
         val response = privacyApi.updatePrivacySettings(request)
         return response.isSuccessful
     }
 
-    suspend fun updateDateOfBirthPrivacy(dateOfBirth: Int): Boolean {
+    suspend fun updateDateOfBirthPrivacy(dateOfBirth: PrivacyLevel): Boolean {
         val request = UpdatePrivacySettingsRequestDto(dateOfBirth = dateOfBirth)
         val response = privacyApi.updatePrivacySettings(request)
         return response.isSuccessful
     }
 
-    suspend fun updateInvitesPrivacy(invites: Int): Boolean {
+    suspend fun updateInvitesPrivacy(invites: PrivacyLevel): Boolean {
         val request = UpdatePrivacySettingsRequestDto(invites = invites)
         val response = privacyApi.updatePrivacySettings(request)
         return response.isSuccessful

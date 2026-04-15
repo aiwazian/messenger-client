@@ -126,7 +126,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
             }) {
                 SectionItem(
                     headlineText = stringResource(R.string.bio),
-                    trailingText = if (privacy.bio == PrivacyLevel.Everybody) {
+                    trailingText = if (privacy.bio == PrivacyLevel.EVERYBODY) {
                         stringResource(R.string.everybody)
                     } else {
                         stringResource(R.string.nobody)
@@ -137,7 +137,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                 
                 SectionItem(
                     headlineText = stringResource(R.string.date_of_birth),
-                    trailingText = if (privacy.dateOfBirth == PrivacyLevel.Everybody) {
+                    trailingText = if (privacy.dateOfBirth == PrivacyLevel.EVERYBODY) {
                         stringResource(R.string.everybody)
                     } else {
                         stringResource(R.string.nobody)
@@ -148,7 +148,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                 
                 SectionItem(
                     headlineText = stringResource(R.string.invites),
-                    trailingText = if (privacy.invites == PrivacyLevel.Everybody) {
+                    trailingText = if (privacy.invites == PrivacyLevel.EVERYBODY) {
                         stringResource(R.string.everybody)
                     } else {
                         stringResource(R.string.nobody)

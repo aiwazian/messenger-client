@@ -92,15 +92,15 @@ fun SettingsDateOfBirthScreen(
             }) {
                 SectionRadioItem(
                     text = stringResource(R.string.everybody),
-                    selected = currentValue == PrivacyLevel.Everybody,
+                    selected = currentValue == PrivacyLevel.EVERYBODY,
                     onClick = {
-                        settingsDateOfBirthViewModel.selectValue(PrivacyLevel.Everybody)
+                        settingsDateOfBirthViewModel.selectValue(PrivacyLevel.EVERYBODY)
                     })
                 SectionRadioItem(
                     text = stringResource(R.string.nobody),
-                    selected = currentValue == PrivacyLevel.Nobody,
+                    selected = currentValue == PrivacyLevel.NOBODY,
                     onClick = {
-                        settingsDateOfBirthViewModel.selectValue(PrivacyLevel.Nobody)
+                        settingsDateOfBirthViewModel.selectValue(PrivacyLevel.NOBODY)
                     })
             }
         }
