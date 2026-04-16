@@ -41,6 +41,7 @@
     <string name="nobody">Никто</string>
     <string name="messages">Сообщения</string>
     <string name="last_seen">Время захода</string>
+    <string name="who_can_see_my_last_seen">Кто видит время моего последнего захода?</string>
     <string name="this_device">Это устройство</string>
     <string name="members">Участники</string>
     <string name="first_name">Имя</string>

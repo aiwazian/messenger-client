@@ -45,8 +45,8 @@ import com.aiwazian.messenger.ui.screens.settings.SettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsAppearanceScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsDarkThemeScreen
 import com.aiwazian.messenger.ui.screens.settings.language.SettingsLanguageScreen
-import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsLastSeenScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsPrivacyScreen
+import com.aiwazian.messenger.ui.screens.settings.privacy.lastSeen.SettingsLastSeenScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.bio.SettingsBioScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.invites.SettingsInvitesScreen
@@ -79,7 +79,7 @@ fun AppNavDisplay(startRoute: AppRoute = AppRoute.Main) {
                 entry<AppRoute.SettingsDesign> { SettingsDarkThemeScreen() }
                 entry<AppRoute.SettingsChat> { SettingsAppearanceScreen() }
                 entry<AppRoute.SettingsPrivacy> { SettingsPrivacyScreen() }
-                entry<AppRoute.SettingsLastSeen> { SettingsLastSeenScreen() }
+                entry<AppRoute.SettingsLastSeen> { SettingsLastSeenScreen(level = it.level) }
                 entry<AppRoute.SettingsSecurity> { SettingsSecurityScreen() }
                 entry<AppRoute.SettingsProfile> { SettingsProfileScreen() }
                 entry<AppRoute.SettingsUsername> { SettingsUsernameScreen(username = it.username) }

@@ -36,7 +36,7 @@ sealed interface AppRoute : NavKey {
     data object SettingsPrivacy : AppRoute
     
     @Serializable
-    data object SettingsLastSeen : AppRoute
+    data class SettingsLastSeen(val level: PrivacyLevel) : AppRoute
     
     @Serializable
     data object SettingsSecurity : AppRoute

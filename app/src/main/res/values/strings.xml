@@ -45,6 +45,7 @@
     <string name="nobody">Nobody</string>
     <string name="messages">Messages</string>
     <string name="last_seen">Last Seen</string>
+    <string name="who_can_see_my_last_seen">Who can see my last seen time?</string>
     <string name="this_device">This device</string>
     <string name="members">Members</string>
     <string name="first_name">First name</string>

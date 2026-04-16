@@ -43,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,6 +69,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewModel()) {
     val navBackStack = LocalNavBackStack.current
+    val context = LocalContext.current
     
     val privacy by privacyViewModel.privacySettings.collectAsState()
     
@@ -98,7 +100,7 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                     snackbarJob = launch {
                         snackbarHostState.currentSnackbarData?.dismiss()
                         snackbarHostState.showSnackbar(
-                            message = effect.message.toString(), duration = SnackbarDuration.Long
+                            message = context.getString(effect.message), duration = SnackbarDuration.Long
                         )
                     }
                 }
@@ -133,6 +135,17 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                     },
                     onClick = {
                         navBackStack.add(AppRoute.SettingsBio(privacy.bio))
+                    })
+
+                SectionItem(
+                    headlineText = stringResource(R.string.last_seen),
+                    trailingText = if (privacy.lastSeen == PrivacyLevel.EVERYBODY) {
+                        stringResource(R.string.everybody)
+                    } else {
+                        stringResource(R.string.nobody)
+                    },
+                    onClick = {
+                        navBackStack.add(AppRoute.SettingsLastSeen(privacy.lastSeen))
                     })
                 
                 SectionItem(
