@@ -77,7 +77,9 @@ class MainActivity : AppCompatActivity() {
         
         enableEdgeToEdge()
         
-        handleIntent(intent)
+        if (savedInstanceState == null) {
+            handleIntent(intent)
+        }
         
         setContent {
             val isLockApp by appLockManager.isLockApp.collectAsState()

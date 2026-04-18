@@ -10,12 +10,11 @@ import com.aiwazian.messenger.network.dto.InviteLinkInfoDto
 
 fun InviteLinkInfoDto.toDomain(): InviteLinkInfo {
     return InviteLinkInfo(
-        chatId = chatId.toLong(),
+        chatId = chatId,
         name = name,
         description = description,
         membersCount = membersCount,
         isBanned = isBanned,
-        isJoined = isJoined,
-        type = ChatType.valueOf(type)
+        isJoined = isJoined
     )
 }

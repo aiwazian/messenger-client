@@ -41,10 +41,14 @@ import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.outlined.InsertDriveFile
+import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Attachment
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -91,6 +95,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -157,7 +162,7 @@ fun ChatScreen(
                     }
                 }
                 
-                is ChatUiEffect.ShowInviteSnackbar -> {
+                is ChatUiEffect.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(
                         message = effect.message, duration = SnackbarDuration.Short
                     )
@@ -168,18 +173,11 @@ fun ChatScreen(
                 }
                 
                 is ChatUiEffect.OpenUrl -> {
-                    val intent =
-                        CustomTabsIntent.Builder()
-                            .setShowTitle(true)
-                            .setTranslateLocale(Locale.getDefault())
-                            .build()
-                    intent.launchUrl(context, effect.url.toUri())
-                }
-                
-                is ChatUiEffect.ShowAlreadyInChatSnackbar -> {
-                    snackbarHostState.showSnackbar(
-                        message = "Вы уже в этом чате", duration = SnackbarDuration.Short
-                    )
+                    CustomTabsIntent.Builder()
+                        .setShowTitle(true)
+                        .setTranslateLocale(Locale.getDefault())
+                        .build()
+                        .launchUrl(context, effect.url.toUri())
                 }
             }
         }
@@ -255,14 +253,14 @@ fun ChatScreen(
                             is ChatItem.SystemMessage -> SystemMessageBubble(item.text)
                             is ChatItem.MessageItem -> MessageBubble(
                                 item = item, onSeen = {
-                                    chatViewModel.markAsReadMessage(item.message)
-                                }, onFileAction = { file, action ->
-                                    if (action == FileAction.CANCEL) {
-                                        fileToCancelId = item.message.id
-                                    } else {
-                                        chatViewModel.onFileAction(item.message, file, action)
-                                    }
-                                }, onLinkClicked = chatViewModel::onLinkClicked
+                                chatViewModel.markAsReadMessage(item.message)
+                            }, onFileAction = { file, action ->
+                                if (action == FileAction.CANCEL) {
+                                    fileToCancelId = item.message.id
+                                } else {
+                                    chatViewModel.onFileAction(item.message, file, action)
+                                }
+                            }, onLinkClicked = chatViewModel::onLinkClicked
                             )
                         }
                     }
@@ -289,35 +287,35 @@ fun ChatScreen(
         if (fileToCancelId != null) {
             CustomDialog(
                 title = "Отменить отправку",
-                onDismissRequest = { fileToCancelId = null },
-                content = { Text("Вы уверены, что хотите отменить отправку файла?") },
-                buttons = {
-                    TextButton(onClick = {
-                        fileToCancelId = null
-                    }) {
-                        Text(stringResource(R.string.no))
-                    }
-                    TextButton(
-                        onClick = {
-                            fileToCancelId?.let {
-                                chatViewModel.cancelUpload(it)
-                            }
-                            fileToCancelId = null
-                        },
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text(stringResource(R.string.yes))
-                    }
-                })
+                         onDismissRequest = { fileToCancelId = null },
+                         content = { Text("Вы уверены, что хотите отменить отправку файла?") },
+                         buttons = {
+                             TextButton(onClick = {
+                                 fileToCancelId = null
+                             }) {
+                                 Text(stringResource(R.string.no))
+                             }
+                             TextButton(
+                                 onClick = {
+                                     fileToCancelId?.let {
+                                         chatViewModel.cancelUpload(it)
+                                     }
+                                     fileToCancelId = null
+                                 },
+                                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                             ) {
+                                 Text(stringResource(R.string.yes))
+                             }
+                         })
         }
         
         if (uiState.showInviteBottomSheet && uiState.inviteLinkInfo != null) {
             val info = uiState.inviteLinkInfo!!
             InviteLinkBottomSheet(
-                name = info.name,
+                chatId = info.chatId,
+                name = info.name.orEmpty(),
                 description = info.description,
-                count = info.membersCount,
-                type = info.type,
+                count = info.membersCount ?: 0,
                 isLoading = uiState.isProcessingInvite,
                 onDismiss = chatViewModel::dismissInviteBottomSheet,
                 onJoin = chatViewModel::onSubscribeViaInviteLink
@@ -719,7 +717,7 @@ private fun InputMessage(
     if (attachmentModal) {
         AttachmentBottomSheet(
             onDismissRequest = { attachmentModal = false },
-            onFileSystemClick = { filePickerLauncher.launch(arrayOf("*/*")) })
+                              onFileSystemClick = { filePickerLauncher.launch(arrayOf("*/*")) })
     }
 }
 
@@ -741,15 +739,13 @@ private fun AttachmentBottomSheet(
     }
     
     ModalBottomSheet(
-        sheetState = sheetState,
-        onDismissRequest = onDismissRequest,
-        dragHandle = null
+        sheetState = sheetState, onDismissRequest = onDismissRequest, dragHandle = null
     ) {
         Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.BottomCenter) {
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier
-                    .padding(top = 10.dp, bottom = 42.dp)
+                    .padding(top = 10.dp, bottom = 60.dp)
                     .align(Alignment.TopCenter),
                 verticalAlignment = Alignment.Top
             ) { page ->
@@ -809,7 +805,11 @@ private fun AttachmentBottomSheet(
                             }
                             
                             SectionContainer {
-                                LazyColumn {
+                                LazyColumn(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .weight(1f)
+                                ) {
                                     items(30) {
                                         SectionItem(headlineText = "ds")
                                     }
@@ -825,27 +825,35 @@ private fun AttachmentBottomSheet(
                 modifier = Modifier
                     .navigationBarsPadding()
                     .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) }
-                    .padding(horizontal = 10.dp),
-                containerColor = Color.Transparent,
+                    .padding(10.dp)
+                    .clip(MaterialTheme.shapes.large),
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                indicator = {},
                 divider = {},
             ) {
                 Tab(
                     selected = selectedIndex == 0,
                     onClick = { selectedIndex = 0 },
-                    modifier = Modifier.clip(MaterialTheme.shapes.medium),
+                    modifier = Modifier
+                        .padding(start = 4.dp, top = 4.dp, end = 2.dp, bottom = 4.dp)
+                        .clip(MaterialTheme.shapes.large),
                     selectedContentColor = MaterialTheme.colorScheme.primary,
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurface
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ) {
-                    Text(stringResource(R.string.files), modifier = Modifier.padding(10.dp))
+                    Icon(Icons.AutoMirrored.Outlined.InsertDriveFile, null, modifier = Modifier.padding(top = 2.dp))
+                    Text(stringResource(R.string.files), fontSize = 12.sp, lineHeight = 12.sp)
                 }
                 Tab(
                     selected = selectedIndex == 1,
                     onClick = { selectedIndex = 1 },
-                    modifier = Modifier.clip(MaterialTheme.shapes.medium),
+                    modifier = Modifier
+                        .padding(start = 2.dp, top = 4.dp, end = 2.dp, bottom = 4.dp)
+                        .clip(MaterialTheme.shapes.large),
                     selectedContentColor = MaterialTheme.colorScheme.primary,
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurface
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ) {
-                    Text(stringResource(R.string.music), modifier = Modifier.padding(10.dp))
+                    Icon(Icons.Rounded.MusicNote, null, modifier = Modifier.padding(top = 2.dp))
+                    Text(stringResource(R.string.music), fontSize = 12.sp, lineHeight = 12.sp)
                 }
             }
         }
@@ -855,21 +863,23 @@ private fun AttachmentBottomSheet(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun InviteLinkBottomSheet(
+    chatId: Long,
     name: String,
     description: String?,
     count: Int,
-    type: ChatType,
     isLoading: Boolean,
     onDismiss: () -> Unit,
     onJoin: () -> Unit
 ) {
-    val countText = "$count" + (if (type == ChatType.CHANNEL) {
+    val chatType = ChatType.fromId(chatId)
+    
+    val countText = "$count" + (if (chatType == ChatType.CHANNEL) {
         stringResource(R.string.subscriberCount).lowercase()
     } else {
         stringResource(R.string.members).lowercase()
     })
     
-    val buttonText = if (type == ChatType.CHANNEL) {
+    val buttonText = if (chatType == ChatType.CHANNEL) {
         stringResource(R.string.subscribe).uppercase()
     } else {
         stringResource(R.string.join).uppercase()

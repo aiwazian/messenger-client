@@ -1066,36 +1066,30 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessingInvite = true) }
             
-            val result = inviteLinkRepository.getInviteLinkInfo(code)
-            if (result.isSuccess) {
-                val info = result.getOrNull()!!
-                
-                if (_uiState.value.chatId == info.chatId) {
+            inviteLinkRepository.getInviteLinkInfo(code).onSuccess { linkInfo ->
+                if (_uiState.value.chatId == linkInfo.chatId) {
                     _uiState.update { it.copy(isProcessingInvite = false) }
-                    _uiEffect.emit(ChatUiEffect.ShowAlreadyInChatSnackbar)
-                } else if (info.isJoined) {
+                    _uiEffect.emit(ChatUiEffect.ShowSnackbar("Вы уже в этом чате"))
+                    vibrationManager.vibrate(VibrationPattern.Error)
+                } else if (linkInfo.isJoined != null) {
                     _uiState.update { it.copy(isProcessingInvite = false) }
-                    _uiEffect.emit(ChatUiEffect.NavigateToChat(info.chatId))
-                } else if (info.isBanned) {
-                    _uiState.update {
-                        it.copy(
-                            showBannedDialog = true, isProcessingInvite = false
-                        )
-                    }
+                    _uiEffect.emit(ChatUiEffect.NavigateToChat(linkInfo.chatId))
+                } else if (linkInfo.isBanned != null) {
+                    _uiState.update { it.copy(showBannedDialog = true, isProcessingInvite = false) }
                     vibrationManager.vibrate(VibrationPattern.Error)
                 } else {
                     _uiState.update {
                         it.copy(
-                            inviteLinkInfo = info,
+                            inviteLinkInfo = linkInfo,
                             inviteLinkCode = code,
                             showInviteBottomSheet = true,
                             isProcessingInvite = false
                         )
                     }
                 }
-            } else {
+            }.onFailure {
                 _uiState.update { it.copy(isProcessingInvite = false) }
-                _uiEffect.emit(ChatUiEffect.ShowInviteSnackbar("Ссылка недействительна"))
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar("Ссылка недействительна"))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }
@@ -1125,7 +1119,7 @@ class ChatViewModel @Inject constructor(
                 _uiEffect.emit(ChatUiEffect.NavigateToChat(info.chatId))
             } else {
                 _uiState.update { it.copy(isProcessingInvite = false) }
-                _uiEffect.emit(ChatUiEffect.ShowInviteSnackbar("Ошибка при вступлении"))
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar("Ошибка при вступлении"))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }

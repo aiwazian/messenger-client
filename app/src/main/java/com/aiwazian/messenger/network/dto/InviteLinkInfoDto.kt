@@ -9,11 +9,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class InviteLinkInfoDto(
-    @SerialName("chatId") val chatId: String,
-    @SerialName("name") val name: String,
+    @SerialName("chatId") val chatId: Long,
+    @SerialName("name") val name: String? = null,
     @SerialName("description") val description: String? = null,
-    @SerialName("membersCount") val membersCount: Int,
-    @SerialName("isBanned") val isBanned: Boolean,
-    @SerialName("isJoined") val isJoined: Boolean,
-    @SerialName("type") val type: String
+    @SerialName("membersCount") val membersCount: Int? = null,
+    @SerialName("isBanned") val isBanned: Boolean? = null,
+    @SerialName("isJoined") val isJoined: Boolean? = null
 )
