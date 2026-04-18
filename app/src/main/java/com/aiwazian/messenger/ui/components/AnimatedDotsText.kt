@@ -15,10 +15,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
 @Composable
-fun AnimatedDotsText(text: String, dots: Int = 3) {
+fun AnimatedDotsText(
+    text: String,
+    fontSize: TextUnit = TextUnit.Unspecified,
+    lineHeight: TextUnit = TextUnit.Unspecified,
+    color: Color = Color.Unspecified
+) {
     var dotsCount by remember { mutableIntStateOf(0) }
     
     LaunchedEffect(Unit) {
@@ -29,14 +38,21 @@ fun AnimatedDotsText(text: String, dots: Int = 3) {
     }
     
     Row {
-        Text(text)
-        repeat(dots) {
+        Text(text = text, fontSize = fontSize, lineHeight = lineHeight, color = color)
+        repeat(3) {
             AnimatedVisibility(
                 visible = it < dotsCount,
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                Text(".")
+                Text(
+                    text = ".",
+                    fontSize = fontSize,
+                    lineHeight = lineHeight,
+                    color = color,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.sp
+                )
             }
         }
     }

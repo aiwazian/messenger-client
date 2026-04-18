@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.network.dto
 
+import com.aiwazian.messenger.enums.DownloadStatus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -13,7 +14,7 @@ data class MessageFileDto(
     @SerialName("name") val name: String,
     @SerialName("size") val size: String,
     @SerialName("mimeType") val mimeType: String,
-    @SerialName("status") val status: String
+    @SerialName("status") val status: DownloadStatus
 )
 
 @Serializable

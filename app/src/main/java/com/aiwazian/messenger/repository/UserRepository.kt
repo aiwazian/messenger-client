@@ -27,7 +27,7 @@ class UserRepository @Inject constructor(
     fun getMe(): Flow<User> = userDao.getMe().filterNotNull().map {
         it.toDomain()
     }.onStart {
-        if (userDao.getMe().first() == null) {
+        userDao.getMe().first()?.let {
             try {
                 val response = userApi.getMe()
                 if (response.isSuccessful) {

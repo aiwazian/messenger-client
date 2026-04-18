@@ -18,7 +18,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import com.aiwazian.messenger.ui.screens.channel.CreateChannelScreen
+import com.aiwazian.messenger.ui.screens.channel.create.CreateChannelScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.ChannelSettingsScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.blockedUsers.ChannelBlackListScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.invites.ChannelInviteLinksScreen
@@ -46,10 +46,10 @@ import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsAppearanceS
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsDarkThemeScreen
 import com.aiwazian.messenger.ui.screens.settings.language.SettingsLanguageScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsPrivacyScreen
-import com.aiwazian.messenger.ui.screens.settings.privacy.lastSeen.SettingsLastSeenScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.bio.SettingsBioScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.invites.SettingsInvitesScreen
+import com.aiwazian.messenger.ui.screens.settings.privacy.lastSeen.SettingsLastSeenScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileColorScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsUsernameScreen
@@ -62,13 +62,19 @@ import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPass
 import com.aiwazian.messenger.ui.screens.settings.storage.StorageScreen
 
 @Composable
-fun AppNavDisplay(startRoute: AppRoute = AppRoute.Main) {
-    val backStack = rememberNavBackStack(startRoute)
+fun AppNavDisplay(startRoute: AppRoute? = null) {
+    val backStack = rememberNavBackStack(AppRoute.Main)
+    
+    startRoute?.let {
+        backStack.add(it)
+    }
     
     CompositionLocalProvider(LocalNavBackStack provides backStack) {
         NavDisplay(
             backStack = backStack,
-            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
             onBack = backStack::removeLastOrNull,
             entryProvider = entryProvider {
                 entry<AppRoute.Main> { MainScreen() }

@@ -27,8 +27,6 @@ class GroupSettingsViewModel @Inject constructor(
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
-    private var _groupId: Long = -1L
-    
     private val _uiState = MutableStateFlow(GroupSettingsUiState())
     val uiState: StateFlow<GroupSettingsUiState> = _uiState.asStateFlow()
     
@@ -36,15 +34,6 @@ class GroupSettingsViewModel @Inject constructor(
     val uiEffect: SharedFlow<GroupSettingsUiEffect> = _uiEffect.asSharedFlow()
     
     fun init(groupId: Long) {
-        if (_groupId != -1L) return
-        _groupId = groupId
-        
-        viewModelScope.launch {
-            loadGroup(groupId)
-        }
-    }
-    
-    private fun loadGroup(groupId: Long) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             groupRepository.getById(groupId).collectLatest { group ->
@@ -109,22 +98,18 @@ class GroupSettingsViewModel @Inject constructor(
             
             _uiState.update { it.copy(isDeleting = true, error = null) }
             
-            val result = groupRepository.delete(group.id)
-            result.fold(
-                onSuccess = {
-                    _uiEffect.emit(GroupSettingsUiEffect.NavigateToMain)
-                },
-                onFailure = { exception ->
-                    _uiState.update {
-                        it.copy(
-                            isDeleting = false,
-                            error = exception.message ?: "Ошибка при удалении группы"
-                        )
-                    }
-                    _uiEffect.emit(GroupSettingsUiEffect.ShowError(exception.message ?: "Ошибка"))
-                    vibrationManager.vibrate(VibrationPattern.Error)
+            groupRepository.delete(group.id).onSuccess {
+                _uiEffect.emit(GroupSettingsUiEffect.NavigateToMain)
+            }.onFailure { exception ->
+                _uiState.update {
+                    it.copy(
+                        isDeleting = false,
+                        error = exception.message ?: "Ошибка при удалении группы"
+                    )
                 }
-            )
+                _uiEffect.emit(GroupSettingsUiEffect.ShowError(exception.message ?: "Ошибка"))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
         }
     }
 }

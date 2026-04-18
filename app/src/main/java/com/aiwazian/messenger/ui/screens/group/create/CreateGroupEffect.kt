@@ -4,8 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.group.create
 
-import com.aiwazian.messenger.domain.Chat
-
-sealed class CreateGroupEffect {
-    data class NavigateToChat(val chat: Chat) : CreateGroupEffect()
+sealed interface CreateGroupEffect {
+    data class ShowSnackbar(val message: String) : CreateGroupEffect
+    data class NavigateToChat(val chatId: Long) : CreateGroupEffect
 }

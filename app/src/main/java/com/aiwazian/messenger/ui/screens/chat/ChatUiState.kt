@@ -4,17 +4,16 @@
 
 package com.aiwazian.messenger.ui.screens.chat
 
-import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.InviteLinkInfo
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.profile.Profile
 
 data class ChatUiState(
-    val chat: Chat = Chat(),
-    val topBarTitle: String = "",
-    val isSavedMessages: Boolean = false,
+    val chatId: Long = 0,
+    val chatName: String = "",
     val subTitle: String = "",
+    val isSavedMessages: Boolean = false,
     val subscriberCount: Int? = null,
     val memberCount: Int? = null,
     val topBarActions: List<TopBarAction> = emptyList(),

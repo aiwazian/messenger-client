@@ -59,7 +59,6 @@ import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import com.aiwazian.messenger.utils.DialogController
 import com.aiwazian.messenger.utils.SessionManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -67,40 +66,32 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewModel()) {
+fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel()) {
     val navBackStack = LocalNavBackStack.current
     val context = LocalContext.current
     
-    val privacy by privacyViewModel.privacySettings.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     
     val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
     
-    var showDeleteBottomSheet by remember { mutableStateOf(DialogController()) }
-    
-    var showDeleteDialog by remember { mutableStateOf(DialogController()) }
-    
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     LaunchedEffect(Unit) {
-        privacyViewModel.loadValues()
-        privacyViewModel.sideEffect.collect { effect ->
+        viewModel.init()
+    }
+    
+    LaunchedEffect(Unit) {
+        viewModel.sideEffect.collect { effect ->
             when (effect) {
-                SettingsPrivacySideEffect.ShowDeleteBottomSheet -> {
-                    showDeleteBottomSheet.show()
-                }
-                
-                SettingsPrivacySideEffect.ShowDeleteDialog -> {
-                    showDeleteDialog.show()
-                }
-                
                 is SettingsPrivacySideEffect.ShowSnackbar -> {
                     snackbarJob?.cancel()
                     
                     snackbarJob = launch {
                         snackbarHostState.currentSnackbarData?.dismiss()
                         snackbarHostState.showSnackbar(
-                            message = context.getString(effect.message), duration = SnackbarDuration.Long
+                            message = context.getString(effect.message),
+                            duration = SnackbarDuration.Long
                         )
                     }
                 }
@@ -128,46 +119,46 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
             }) {
                 SectionItem(
                     headlineText = stringResource(R.string.bio),
-                    trailingText = if (privacy.bio == PrivacyLevel.EVERYBODY) {
+                    trailingText = if (uiState.privacy.bio == PrivacyLevel.EVERYBODY) {
                         stringResource(R.string.everybody)
                     } else {
                         stringResource(R.string.nobody)
                     },
                     onClick = {
-                        navBackStack.add(AppRoute.SettingsBio(privacy.bio))
+                        navBackStack.add(AppRoute.SettingsBio(uiState.privacy.bio))
                     })
-
+                
                 SectionItem(
                     headlineText = stringResource(R.string.last_seen),
-                    trailingText = if (privacy.lastSeen == PrivacyLevel.EVERYBODY) {
+                    trailingText = if (uiState.privacy.lastSeen == PrivacyLevel.EVERYBODY) {
                         stringResource(R.string.everybody)
                     } else {
                         stringResource(R.string.nobody)
                     },
                     onClick = {
-                        navBackStack.add(AppRoute.SettingsLastSeen(privacy.lastSeen))
+                        navBackStack.add(AppRoute.SettingsLastSeen(uiState.privacy.lastSeen))
                     })
                 
                 SectionItem(
                     headlineText = stringResource(R.string.date_of_birth),
-                    trailingText = if (privacy.dateOfBirth == PrivacyLevel.EVERYBODY) {
+                    trailingText = if (uiState.privacy.dateOfBirth == PrivacyLevel.EVERYBODY) {
                         stringResource(R.string.everybody)
                     } else {
                         stringResource(R.string.nobody)
                     },
                     onClick = {
-                        navBackStack.add(AppRoute.SettingsDateOfBirth(privacy.dateOfBirth))
+                        navBackStack.add(AppRoute.SettingsDateOfBirth(uiState.privacy.dateOfBirth))
                     })
                 
                 SectionItem(
                     headlineText = stringResource(R.string.invites),
-                    trailingText = if (privacy.invites == PrivacyLevel.EVERYBODY) {
+                    trailingText = if (uiState.privacy.invites == PrivacyLevel.EVERYBODY) {
                         stringResource(R.string.everybody)
                     } else {
                         stringResource(R.string.nobody)
                     },
                     onClick = {
-                        navBackStack.add(AppRoute.SettingsInvites(privacy.invites))
+                        navBackStack.add(AppRoute.SettingsInvites(uiState.privacy.invites))
                     })
             }
             
@@ -176,15 +167,16 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                     headlineText = stringResource(R.string.delete_account),
                     contentColor = MaterialTheme.colorScheme.error,
                     onClick = {
-                        privacyViewModel.onDeleteAccountClick()
+                        viewModel.onDeleteAccountClick()
                     })
             }
         }
     }
     
-    if (showDeleteBottomSheet.isVisible) {
+    if (uiState.showDeleteBottomSheet) {
         ModalBottomSheet(
-            onDismissRequest = showDeleteBottomSheet::hide, dragHandle = null
+            onDismissRequest = viewModel::hideDeleteBottomSheet,
+            dragHandle = null
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
@@ -209,8 +201,8 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                 TextButton(
                     onClick = {
                         if (waitSeconds <= 0) {
-                            showDeleteBottomSheet.hide()
-                            privacyViewModel.onDeleteConfirmClick()
+                            viewModel.hideDeleteBottomSheet()
+                            viewModel.showDeleteDialog()
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -245,17 +237,17 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
         }
     }
     
-    if (showDeleteDialog.isVisible) {
+    if (uiState.showDeleteDialog) {
         CustomDialog(
             title = stringResource(R.string.delete_account),
-            onDismissRequest = showDeleteDialog::hide,
+            onDismissRequest = viewModel::hideDeleteDialog,
             content = {
                 Text(
                     text = stringResource(R.string.delete_account_confirm), lineHeight = 18.sp
                 )
             },
             buttons = {
-                TextButton(onClick = showDeleteDialog::hide) {
+                TextButton(onClick = viewModel::hideDeleteDialog) {
                     Text(stringResource(R.string.no))
                 }
                 
@@ -269,8 +261,8 @@ fun SettingsPrivacyScreen(privacyViewModel: SettingsPrivacyViewModel = hiltViewM
                 TextButton(
                     onClick = {
                         if (waitSeconds <= 0) {
-                            showDeleteDialog.hide()
-                            privacyViewModel.deleteAccount()
+                            viewModel.hideDeleteDialog()
+                            viewModel.deleteAccount()
                         }
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)

@@ -61,7 +61,6 @@ import kotlinx.coroutines.flow.collectLatest
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
     val uiState by storageViewModel.uiState.collectAsState()

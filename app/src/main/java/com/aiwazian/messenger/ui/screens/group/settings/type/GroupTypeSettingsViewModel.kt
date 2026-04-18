@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.group.settings.type
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.domain.Group
 import com.aiwazian.messenger.enums.GroupType
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.SearchRepository
@@ -27,7 +28,7 @@ import javax.inject.Inject
 
 data class GroupTypeSettingsUiState(
     val isLoading: Boolean = false,
-    val group: com.aiwazian.messenger.domain.Group? = null,
+    val group: Group? = null,
     val groupType: GroupType = GroupType.PRIVATE,
     val username: String = "",
     val canSave: Boolean = false,

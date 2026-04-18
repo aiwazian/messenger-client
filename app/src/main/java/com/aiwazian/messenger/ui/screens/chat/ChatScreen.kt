@@ -10,11 +10,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -36,8 +33,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -55,10 +55,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -67,6 +69,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -93,10 +96,12 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.FileAction
+import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -108,8 +113,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ChatScreen(
-    chatId: Long,
-    chatViewModel: ChatViewModel = hiltViewModel()
+    chatId: Long, chatViewModel: ChatViewModel = hiltViewModel()
 ) {
     val navBackStack = LocalNavBackStack.current
     val context = LocalContext.current
@@ -130,9 +134,7 @@ fun ChatScreen(
     var fileToCancelId by remember { mutableStateOf<Int?>(null) }
     
     LaunchedEffect(chatId) {
-        if (chatId != -1L) {
-            chatViewModel.init(chatId)
-        }
+        chatViewModel.init(chatId)
     }
     
     LaunchedEffect(Unit) {
@@ -152,8 +154,7 @@ fun ChatScreen(
                 
                 is ChatUiEffect.ShowInviteSnackbar -> {
                     snackbarHostState.showSnackbar(
-                        message = effect.message,
-                        duration = SnackbarDuration.Short
+                        message = effect.message, duration = SnackbarDuration.Short
                     )
                 }
                 
@@ -162,17 +163,17 @@ fun ChatScreen(
                 }
                 
                 is ChatUiEffect.OpenUrl -> {
-                    val intent = CustomTabsIntent.Builder()
-                        .setShowTitle(true)
-                        .setTranslateLocale(Locale.getDefault())
-                        .build()
+                    val intent =
+                        CustomTabsIntent.Builder()
+                            .setShowTitle(true)
+                            .setTranslateLocale(Locale.getDefault())
+                            .build()
                     intent.launchUrl(context, effect.url.toUri())
                 }
                 
                 is ChatUiEffect.ShowAlreadyInChatSnackbar -> {
                     snackbarHostState.showSnackbar(
-                        message = "Вы уже в этом чате",
-                        duration = SnackbarDuration.Short
+                        message = "Вы уже в этом чате", duration = SnackbarDuration.Short
                     )
                 }
             }
@@ -183,19 +184,18 @@ fun ChatScreen(
         snackbarHost = {
             SnackbarHost(snackbarHostState) {
                 CustomSnackbar(
-                    text = it.visuals.message,
-                    onDismiss = it::dismiss
+                    text = it.visuals.message, onDismiss = it::dismiss
                 )
             }
         },
         topBar = {
             TopBar(
-                title = if (uiState.isSavedMessages) stringResource(R.string.saved_messages) else uiState.topBarTitle,
+                title = if (uiState.isSavedMessages) stringResource(R.string.saved_messages) else uiState.chatName,
                 subTitle = getLocalizedSubTitle(uiState),
                 dropdownActions = uiState.topBarActions,
                 isConnected = uiState.isConnected,
                 onBackClicked = chatViewModel::onBackClicked,
-                chatId = uiState.chat.id
+                chatId = uiState.chatId
             )
         },
         bottomBar = {
@@ -204,11 +204,9 @@ fun ChatScreen(
                 onTextChanged = chatViewModel::changeText,
                 onSendClicked = chatViewModel::onSendMessageClicked,
                 onJoinClicked = chatViewModel::onJoinClicked,
-                onToggleMuteClicked = chatViewModel::onToggleMuteClicked,
                 onFilesSelected = { uris ->
                     chatViewModel.uploadFiles(
-                        uris,
-                        context
+                        uris, context
                     )
                 })
         },
@@ -219,8 +217,7 @@ fun ChatScreen(
                 .padding(innerPadding)
         ) {
             Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Bottom
+                modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom
             ) {
                 LazyColumn(
                     state = listState,
@@ -241,8 +238,7 @@ fun ChatScreen(
                     }
                     
                     items(
-                        items = uiState.chatItems,
-                        key = { item ->
+                        items = uiState.chatItems, key = { item ->
                             when (item) {
                                 is ChatItem.DateSeparator -> "date_${item.text}"
                                 is ChatItem.SystemMessage -> "sys_${item.sendTime}"
@@ -253,18 +249,15 @@ fun ChatScreen(
                             is ChatItem.DateSeparator -> DateSeparatorItem(item.text)
                             is ChatItem.SystemMessage -> SystemMessageBubble(item.text)
                             is ChatItem.MessageItem -> MessageBubble(
-                                item = item,
-                                onSeen = {
+                                item = item, onSeen = {
                                     chatViewModel.markAsReadMessage(item.message)
-                                },
-                                onFileAction = { file, action ->
+                                }, onFileAction = { file, action ->
                                     if (action == FileAction.CANCEL) {
                                         fileToCancelId = item.message.id
                                     } else {
                                         chatViewModel.onFileAction(item.message, file, action)
                                     }
-                                },
-                                onLinkClicked = chatViewModel::onLinkClicked
+                                }, onLinkClicked = chatViewModel::onLinkClicked
                             )
                         }
                     }
@@ -277,8 +270,7 @@ fun ChatScreen(
             
             if (uiState.isLoading) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
                 ) {
                     CircularWavyProgressIndicator()
                 }
@@ -286,17 +278,20 @@ fun ChatScreen(
         }
         
         Dialogs(
-            uiState = uiState,
-            chatViewModel = chatViewModel
+            uiState = uiState, chatViewModel = chatViewModel
         )
         
         if (fileToCancelId != null) {
             CustomDialog(
-                title = "Отмена отправки",
+                title = "Отменить отправку",
                 onDismissRequest = { fileToCancelId = null },
                 content = { Text("Вы уверены, что хотите отменить отправку файла?") },
                 buttons = {
-                    TextButton(onClick = { fileToCancelId = null }) { Text("Нет") }
+                    TextButton(onClick = {
+                        fileToCancelId = null
+                    }) {
+                        Text(stringResource(R.string.no))
+                    }
                     TextButton(
                         onClick = {
                             fileToCancelId?.let {
@@ -305,7 +300,9 @@ fun ChatScreen(
                             fileToCancelId = null
                         },
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) { Text("Да") }
+                    ) {
+                        Text(stringResource(R.string.yes))
+                    }
                 })
         }
         
@@ -317,37 +314,42 @@ fun ChatScreen(
                 count = info.membersCount,
                 type = info.type,
                 isLoading = uiState.isProcessingInvite,
-                onDismiss = { chatViewModel.dismissInviteBottomSheet() },
-                onJoin = { chatViewModel.onSubscribeViaInviteLink() }
+                onDismiss = chatViewModel::dismissInviteBottomSheet,
+                onJoin = chatViewModel::onSubscribeViaInviteLink
             )
         }
         
         if (uiState.showBannedDialog) {
             CustomDialog(
                 title = "Нет доступа",
-                onDismissRequest = { chatViewModel.dismissBannedDialog() },
+                onDismissRequest = chatViewModel::dismissBannedDialog,
                 buttons = {
-                    TextButton(onClick = { chatViewModel.dismissBannedDialog() }) {
-                        Text("Ок")
+                    TextButton(onClick = chatViewModel::dismissBannedDialog) {
+                        Text(stringResource(R.string.ok))
                     }
                 },
                 content = {
                     Text("Вас заблокировал администратор этого чата")
-                }
-            )
+                })
         }
     }
 }
 
 @Composable
 private fun getLocalizedSubTitle(uiState: ChatUiState): String {
-    return when {
-        uiState.subscriberCount != null -> {
+    val chatType = ChatType.fromId(uiState.chatId)
+    
+    return when (chatType) {
+        ChatType.CHANNEL -> {
             "${uiState.subscriberCount} ${stringResource(R.string.subscriberCount).lowercase()}"
         }
         
-        uiState.memberCount != null -> {
-            "${uiState.memberCount} ${stringResource(R.string.members)}"
+        ChatType.GROUP -> {
+            "${uiState.memberCount} ${stringResource(R.string.members)}".lowercase()
+        }
+        
+        ChatType.PRIVATE -> {
+            uiState.subTitle
         }
         
         else -> uiState.subTitle
@@ -360,11 +362,9 @@ private fun BottomSection(
     onTextChanged: (String) -> Unit,
     onSendClicked: () -> Unit,
     onJoinClicked: () -> Unit,
-    onToggleMuteClicked: () -> Unit,
     onFilesSelected: (List<Uri>) -> Unit
 ) {
-    val chatId = uiState.chat.id
-    val chatType = ChatType.fromId(chatId)
+    val chatType = ChatType.fromId(uiState.chatId)
     
     Box(
         modifier = Modifier
@@ -381,12 +381,7 @@ private fun BottomSection(
                         onFilesSelected = onFilesSelected
                     )
                 } else {
-                    if (uiState.isJoined) {
-                        MuteButton(
-                            isMuted = uiState.isMuted,
-                            onClick = onToggleMuteClicked
-                        )
-                    } else {
+                    if (!uiState.isJoined) {
                         JoinButton(onClick = onJoinClicked)
                     }
                 }
@@ -429,43 +424,9 @@ private fun BottomSection(
 }
 
 @Composable
-private fun MuteButton(
-    isMuted: Boolean, onClick: () -> Unit
-) {
-    TextButton(
-        shape = RoundedCornerShape(0),
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick
-    ) {
-        AnimatedContent(
-            targetState = isMuted,
-            transitionSpec = {
-                if (targetState > initialState) {
-                    slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
-                } else {
-                    slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
-                }
-            },
-            label = "mute_animation"
-        ) { isMute ->
-            Text(
-                text = if (isMute) stringResource(R.string.mute).uppercase() else stringResource(R.string.unmute).uppercase(),
-                modifier = Modifier
-                    .padding(vertical = 8.dp)
-                    .fillMaxWidth(),
-                fontSize = 18.sp,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
-
-@Composable
 private fun JoinButton(onClick: () -> Unit) {
     TextButton(
-        shape = RoundedCornerShape(0),
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick
+        shape = RoundedCornerShape(0), modifier = Modifier.fillMaxWidth(), onClick = onClick
     ) {
         Text(
             text = stringResource(R.string.join).uppercase(),
@@ -484,7 +445,7 @@ private fun Dialogs(
         DeleteChatDialog(
             onDismissRequest = chatViewModel::hideDeleteChatDialog,
             onConfirm = chatViewModel::onDeleteChatConfirmed,
-            chatName = uiState.chat.chatName,
+            chatName = uiState.chatName,
             isSelf = uiState.isSavedMessages
         )
     }
@@ -504,11 +465,11 @@ private fun Dialogs(
     }
     
     if (uiState.showLeaveDialog) {
-        val chatType = ChatType.fromId(uiState.chat.id)
+        val chatType = ChatType.fromId(uiState.chatId)
         LeaveDialog(
             onDismiss = chatViewModel::hideLeaveDialog,
             onConfirm = chatViewModel::onLeaveClicked,
-            chatName = uiState.chat.chatName,
+            chatName = uiState.chatName,
             chatType = chatType
         )
     }
@@ -539,8 +500,7 @@ private fun TopBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .graphicsLayer(
-                        scaleX = scale,
-                        scaleY = scale
+                        scaleX = scale, scaleY = scale
                     )
                     .clickable(
                         interactionSource = interactionSource,
@@ -553,13 +513,11 @@ private fun TopBar(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.AccountCircle,
-                        contentDescription = null
+                        imageVector = Icons.Rounded.AccountCircle, contentDescription = null
                     )
                     
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.Center
+                        modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center
                     ) {
                         Text(
                             text = title,
@@ -573,29 +531,33 @@ private fun TopBar(
                             modifier = Modifier.fillMaxWidth(),
                             targetState = isConnected,
                             transitionSpec = {
-                                slideInVertically(tween(200)) togetherWith slideOutVertically(
-                                    tween(200)
-                                )
+                                slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
                             },
                             label = "connection_animation"
                         ) { connected ->
-                            Text(
-                                text = if (!connected) "${stringResource(R.string.connecting)}..." else subTitle,
-                                fontSize = 12.sp,
-                                lineHeight = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                            if (!connected) {
+                                AnimatedDotsText(
+                                    text = stringResource(R.string.connecting),
+                                    fontSize = 12.sp,
+                                    lineHeight = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            } else if (subTitle.isNotBlank()) {
+                                Text(
+                                    text = subTitle,
+                                    fontSize = 12.sp,
+                                    lineHeight = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
             }
-        },
-        navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = onBackClicked
-        ),
-        actions = dropdownActions
+        }, navigationIcon = NavigationIcon(
+            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = onBackClicked
+        ), actions = dropdownActions
     )
 }
 
@@ -609,8 +571,7 @@ private fun DeleteChatDialog(
         content = {
             val suffix = if (!isSelf) " c " + chatName.trimEnd() else ""
             Text(
-                text = "Удалить чат$suffix без возможности восстановления?",
-                lineHeight = 16.sp
+                text = "Удалить чат$suffix без возможности восстановления?", lineHeight = 16.sp
             )
         },
         buttons = {
@@ -655,8 +616,7 @@ private fun DeleteMessageDialog(onDismissRequest: () -> Unit, onConfirm: () -> U
         onDismissRequest = onDismissRequest,
         content = {
             Text(
-                text = stringResource(R.string.delete_message_description),
-                lineHeight = 16.sp
+                text = stringResource(R.string.delete_message_description), lineHeight = 16.sp
             )
         },
         buttons = {
@@ -686,26 +646,21 @@ private fun LeaveDialog(
         append("?")
     }
     
-    CustomDialog(
-        title = title,
-        onDismissRequest = onDismiss,
-        content = {
-            Text(text = message)
-        },
-        buttons = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
-            TextButton(
-                onClick = onConfirm,
-                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            ) {
-                Text(title)
-            }
-        })
+    CustomDialog(title = title, onDismissRequest = onDismiss, content = {
+        Text(text = message)
+    }, buttons = {
+        TextButton(onClick = onDismiss) {
+            Text(stringResource(R.string.cancel))
+        }
+        TextButton(
+            onClick = onConfirm,
+            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+        ) {
+            Text(title)
+        }
+    })
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun InputMessage(
     value: String,
@@ -716,8 +671,7 @@ private fun InputMessage(
     var attachmentModal by remember { mutableStateOf(false) }
     
     val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments(),
-        onResult = { uris: List<Uri> ->
+        contract = ActivityResultContracts.OpenMultipleDocuments(), onResult = { uris: List<Uri> ->
             if (uris.isNotEmpty()) {
                 attachmentModal = false
                 onFilesSelected(uris)
@@ -733,6 +687,8 @@ private fun InputMessage(
         modifier = Modifier.fillMaxWidth(),
         placeholder = { Text(stringResource(R.string.message)) },
         colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
         ),
@@ -747,8 +703,7 @@ private fun InputMessage(
                 }
                 IconButton(onClick = onSendMessage) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.Send,
-                        contentDescription = null
+                        imageVector = Icons.AutoMirrored.Rounded.Send, contentDescription = null
                     )
                 }
             }
@@ -766,59 +721,108 @@ private fun InputMessage(
 private fun AttachmentBottomSheet(
     onDismissRequest: () -> Unit, onFileSystemClick: () -> Unit
 ) {
-    ModalBottomSheet(onDismissRequest = onDismissRequest) {
-        Column {
-            Card(
-                onClick = onFileSystemClick,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(0),
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-            ) {
-                Row(
-                    modifier = Modifier.padding(10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                    ) {
-                        Icon(
-                            modifier = Modifier.padding(10.dp),
-                            imageVector = Icons.Rounded.Storage,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+    var selectedIndex by remember { mutableIntStateOf(0) }
+    val pagerState = rememberPagerState(pageCount = { 2 })
+    
+    LaunchedEffect(selectedIndex) {
+        pagerState.animateScrollToPage(selectedIndex)
+    }
+    
+    LaunchedEffect(pagerState.currentPage) {
+        selectedIndex = pagerState.currentPage
+    }
+    
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest, dragHandle = null
+    ) {
+        HorizontalPager(state = pagerState, modifier = Modifier.padding(top = 10.dp)) { page ->
+            when (page) {
+                0 -> {
+                    SectionContainer {
+                        Card(
+                            onClick = onFileSystemClick,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RectangleShape,
+                            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primaryContainer)
+                                ) {
+                                    Icon(
+                                        modifier = Modifier.padding(10.dp),
+                                        imageVector = Icons.Rounded.Storage,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                                
+                                Column {
+                                    Text(
+                                        text = stringResource(R.string.internal_storage),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.file_system_search),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 12.sp,
+                                        lineHeight = 12.sp
+                                    )
+                                }
+                            }
+                        }
                     }
-                    
-                    Column {
-                        Text(
-                            text = stringResource(R.string.internal_storage),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource(R.string.file_system_search),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 12.sp,
-                            lineHeight = 12.sp
-                        )
+                }
+                
+                1 -> {
+                    SectionContainer {
+                        Text("Music")
                     }
                 }
             }
         }
+        PrimaryTabRow(
+            selectedTabIndex = selectedIndex,
+            modifier = Modifier.padding(horizontal = 10.dp),
+            containerColor = Color.Transparent,
+            divider = {},
+        ) {
+            Tab(
+                selected = selectedIndex == 0,
+                onClick = { selectedIndex = 0 },
+                modifier = Modifier.clip(
+                    MaterialTheme.shapes.medium.copy(
+                        bottomStart = CornerSize(0.dp),
+                        bottomEnd = CornerSize(0.dp)
+                    )
+                ),
+                selectedContentColor = MaterialTheme.colorScheme.primary,
+                unselectedContentColor = MaterialTheme.colorScheme.onSurface
+            ) {
+                Text(stringResource(R.string.files), modifier = Modifier.padding(10.dp))
+            }
+            Tab(
+                selected = selectedIndex == 1,
+                onClick = { selectedIndex = 1 },
+                modifier = Modifier.clip(
+                    MaterialTheme.shapes.medium.copy(
+                        bottomStart = CornerSize(0.dp),
+                        bottomEnd = CornerSize(0.dp)
+                    )
+                ),
+                selectedContentColor = MaterialTheme.colorScheme.primary,
+                unselectedContentColor = MaterialTheme.colorScheme.onSurface
+            ) {
+                Text(stringResource(R.string.music), modifier = Modifier.padding(10.dp))
+            }
+        }
     }
-}
-
-@Composable
-private fun Checkbox(
-    checked: Boolean, onCheckedChange: ((Boolean) -> Unit)?, modifier: Modifier = Modifier
-) {
-    androidx.compose.material3.Checkbox(
-        checked = checked,
-        onCheckedChange = onCheckedChange,
-        modifier = modifier
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -845,8 +849,7 @@ private fun InviteLinkBottomSheet(
     }
     
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        dragHandle = null
+        onDismissRequest = onDismiss, dragHandle = null
     ) {
         Column(
             modifier = Modifier
@@ -893,9 +896,7 @@ private fun InviteLinkBottomSheet(
                     CircularWavyProgressIndicator(modifier = Modifier.padding(4.dp))
                 } else {
                     Text(
-                        text = buttonText,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
+                        text = buttonText, fontSize = 16.sp, fontWeight = FontWeight.Bold
                     )
                 }
             }

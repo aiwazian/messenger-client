@@ -6,15 +6,15 @@ package com.aiwazian.messenger.ui.screens.channel.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.domain.Channel
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.repository.ChannelRepository
-import com.aiwazian.messenger.utils.DialogController
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -25,129 +25,106 @@ class ChannelSettingsViewModel @Inject constructor(
     private val channelRepository: ChannelRepository,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
-
+    
     private var _channelId: Long = -1L
-
-    private val _channel = MutableStateFlow(Channel())
-    val channelInfo = _channel.asStateFlow()
     
-    private val _originalChannel = MutableStateFlow(Channel())
+    private val _uiState = MutableStateFlow(ChannelSettingsUiState())
+    val uiState = _uiState.asStateFlow()
     
-    private val _hasChanges = MutableStateFlow(false)
-    val hasChanges = _hasChanges.asStateFlow()
-
-    val deleteDialog = DialogController()
-
-    private var isInitialized = false
-
+    private val _uiEffect = MutableSharedFlow<ChannelSettingsEffect>()
+    val uiEffect = _uiEffect.asSharedFlow()
+    
     fun init(channelId: Long) {
-        if (isInitialized) return
-        isInitialized = true
         _channelId = channelId
         
         viewModelScope.launch {
             if (channelId != -1L) {
-                load()
+                channelRepository.getByIdFlow(_channelId).collect { channelInfo ->
+                    _uiState.update {
+                        it.copy(
+                            channel = channelInfo,
+                            originalChannelData = channelInfo
+                        )
+                    }
+                }
             }
         }
     }
-
-    fun vibrate(pattern: LongArray) {
-        vibrationManager.vibrate(pattern)
-    }
     
     fun changeName(newName: String) {
-        _channel.update { it.copy(name = newName) }
+        _uiState.update { it.copy(channel = it.channel.copy(name = newName)) }
         updateHasChanges()
     }
     
     fun changeBio(newBio: String) {
-        _channel.update { it.copy(bio = newBio) }
+        _uiState.update { it.copy(channel = it.channel.copy(bio = newBio)) }
         updateHasChanges()
     }
     
     private fun updateHasChanges() {
-        val current = _channel.value
-        val original = _originalChannel.value
-        _hasChanges.value = current.name != original.name ||
-                (current.bio ?: "") != (original.bio ?: "") ||
-                current.channelType != original.channelType ||
-                (current.username ?: "") != (original.username ?: "")
+        _uiState.update { it.copy(hasChanges = _uiState.value.channel != _uiState.value.originalChannelData) }
     }
     
-    suspend fun load() {
-        // Фоновое сетевое обновление
+    fun save() {
         viewModelScope.launch {
-            channelRepository.getById(_channelId).collect {}
-        }
-
-        // Реактивное обновление из Room
-        channelRepository.getByIdFlow(_channelId).collect { channelInfo ->
-            _channel.update { channelInfo }
-            _originalChannel.update { channelInfo }
-            _hasChanges.value = false
-        }
-    }
-    
-    suspend fun getSubscribers(search: String? = null): List<User> {
-        val subscribers = channelRepository.getSubscribers(_channelId, search = search)
-        return subscribers.getOrThrow()
-    }
-    
-    suspend fun trySave(): Long? {
-        if (!checkValid()) {
-            vibrationManager.vibrate(VibrationPattern.Error)
-            return null
-        }
-        
-        val result = channelRepository.update(_channel.value)
-        return if (result.isSuccess) {
-            _originalChannel.value = _channel.value
-            _hasChanges.value = false
-            _channel.value.id
-        } else {
-            vibrationManager.vibrate(VibrationPattern.Error)
-            null
+            if (!checkValid()) {
+                vibrationManager.vibrate(VibrationPattern.Error)
+                return@launch
+            }
+            
+            channelRepository.update(_uiState.value.channel).onSuccess {
+                _uiState.update { it.copy(originalChannelData = _uiState.value.channel) }
+                _uiEffect.emit(ChannelSettingsEffect.NavigateToBack)
+            }.onFailure {
+                _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar("Не удалось сохранить изменения"))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
         }
     }
     
-    suspend fun tryDelete(): Boolean {
-        return channelRepository.delete(channelInfo.value.id).isSuccess
+    fun delete() {
+        viewModelScope.launch {
+            channelRepository.delete(uiState.value.channel.id).onSuccess {
+                _uiEffect.emit(ChannelSettingsEffect.NavigateToMain)
+            }.onFailure {
+                _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar("Не удалось удалить канал"))
+            }
+        }
     }
-
+    
     private fun checkValid(): Boolean {
-        if (_channel.value.name.isBlank()) {
+        if (_uiState.value.channel.name.isBlank()) {
+            viewModelScope.launch {
+                _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar("Введите название канала"))
+            }
             return false
         }
         
-        if (_channel.value.channelType == ChannelType.PUBLIC && _channel.value.username?.isBlank() == true) {
+        if (_uiState.value.channel.channelType == ChannelType.PUBLIC && _uiState.value.channel.username.isNullOrBlank()) {
+            viewModelScope.launch {
+                _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar("Введите публичную ссылку канала"))
+            }
             return false
         }
         
         return true
     }
-
-    fun kickUser(userId: Long, onResult: (Boolean) -> Unit) {
-        viewModelScope.launch {
-            val result = channelRepository.kickUser(_channelId, userId)
-            onResult(result.isSuccess)
-        }
-    }
-
-    fun banUser(userId: Long, onResult: (Boolean) -> Unit) {
-        viewModelScope.launch {
-            val result = channelRepository.banUser(_channelId, userId)
-            onResult(result.isSuccess)
-        }
-    }
-
+    
     fun unbanUser(userId: Long, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             val result = channelRepository.unbanUser(_channelId, userId)
             onResult(result.isSuccess)
         }
     }
-
+    
+    fun showDeleteDialog() {
+        _uiState.update { it.copy(showDeleteDialog = true) }
+    }
+    
+    fun hideDeleteDialog() {
+        _uiState.update { it.copy(showDeleteDialog = false) }
+    }
+    
     suspend fun getBannedUsers(search: String? = null): List<User> {
         val bannedUsers = channelRepository.getBannedUsers(_channelId, search = search)
         return bannedUsers.getOrThrow()

@@ -27,17 +27,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
@@ -48,38 +47,31 @@ import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import com.aiwazian.messenger.ui.screens.channel.settings.ChannelSettingsViewModel
-import com.aiwazian.messenger.utils.VibrationPattern
-import kotlinx.coroutines.launch
 
 @Composable
 fun ChannelSubscribersScreen(
     channelId: Long,
-    viewModel: ChannelSettingsViewModel = hiltViewModel()
+    viewModel: ChannelSubscribersViewModel = hiltViewModel()
 ) {
     val navBackStack = LocalNavBackStack.current
-    var searchQuery by remember { mutableStateOf("") }
-    var subscribers by remember { mutableStateOf(emptyList<User>()) }
     
-    val scope = rememberCoroutineScope()
+    val uiState by viewModel.uiState.collectAsState()
+    
     val snackbarHostState = remember { SnackbarHostState() }
     
-    fun loadSubscribers() {
-        scope.launch {
-            subscribers = viewModel.getSubscribers(searchQuery.ifBlank { null })
+    LaunchedEffect(channelId) {
+        viewModel.init(channelId)
+    }
+    
+    LaunchedEffect(Unit) {
+        viewModel.uiEffect.collect { effect ->
+            when (effect) {
+                is ChannelSubscribersSideEffect.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(effect.message)
+                }
+            }
         }
     }
-    
-    LaunchedEffect(
-        channelId,
-        searchQuery
-    ) {
-        viewModel.init(channelId)
-        loadSubscribers()
-    }
-    
-    var userToKick by remember { mutableStateOf<User?>(null) }
-    var userToBan by remember { mutableStateOf<User?>(null) }
     
     Scaffold(
         snackbarHost = {
@@ -102,16 +94,16 @@ fun ChannelSubscribersScreen(
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
             FramelessTextBox(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
+                value = uiState.searchQuery,
+                onValueChange = viewModel::changeSearchQuery,
                 placeholder = stringResource(R.string.search)
             )
             
             SectionContainer {
                 LazyColumn {
-                    items(subscribers) { user ->
+                    items(items = uiState.subscribers) { user ->
                         SectionItem(
-                            headlineText = "${user.firstName} ${user.lastName.orEmpty()}",
+                            headlineText = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
                             trailingContent = {
                                 var showMenu by remember { mutableStateOf(false) }
                                 
@@ -130,7 +122,7 @@ fun ChannelSubscribersScreen(
                                             text = { Text(stringResource(R.string.kick)) },
                                             onClick = {
                                                 showMenu = false
-                                                userToKick = user
+                                                viewModel.showKickDialog(user.id)
                                             },
                                             leadingIcon = {
                                                 Icon(Icons.Rounded.PersonRemove, null)
@@ -148,7 +140,7 @@ fun ChannelSubscribersScreen(
                                             text = { Text(stringResource(R.string.block_user)) },
                                             onClick = {
                                                 showMenu = false
-                                                userToBan = user
+                                                viewModel.showBlockDialog(user.id)
                                             },
                                             leadingIcon = {
                                                 Icon(Icons.Rounded.Block, null)
@@ -173,25 +165,16 @@ fun ChannelSubscribersScreen(
             }
         }
         
-        userToKick?.let { user ->
+        if (uiState.showKickDialog) {
             CustomDialog(
                 title = stringResource(R.string.kick),
-                onDismissRequest = { userToKick = null },
+                onDismissRequest = viewModel::hideKickDialog,
                 buttons = {
-                    TextButton(onClick = { userToKick = null }) {
+                    TextButton(onClick = viewModel::hideKickDialog) {
                         Text(stringResource(R.string.cancel))
                     }
                     TextButton(
-                        onClick = {
-                            viewModel.kickUser(user.id) { success ->
-                                if (success) {
-                                    userToKick = null
-                                    loadSubscribers()
-                                } else {
-                                    viewModel.vibrate(VibrationPattern.Error)
-                                }
-                            }
-                        },
+                        onClick = viewModel::kickUser,
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = MaterialTheme.colorScheme.error
                         )
@@ -200,47 +183,32 @@ fun ChannelSubscribersScreen(
                     }
                 },
                 content = {
-                    Text("Вы уверены, что хотите выгнать ${user.firstName} из канала?")
+                    Text("Вы уверены, что хотите выгнать пользователя из канала?")
                 }
             )
         }
-        
-        userToBan?.let { user ->
-            CustomDialog(
-                title = stringResource(R.string.block_user),
-                onDismissRequest = { userToBan = null },
-                buttons = {
-                    TextButton(onClick = { userToBan = null }) {
-                        Text(stringResource(R.string.no))
-                    }
-                    TextButton(
-                        onClick = {
-                            viewModel.banUser(user.id) { success ->
-                                userToBan = null
-                                if (success) {
-                                    loadSubscribers()
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Пользователь заблокирован")
-                                    }
-                                } else {
-                                    viewModel.vibrate(VibrationPattern.Error)
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Не удалось заблокировать пользователя")
-                                    }
-                                }
-                            }
-                        },
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Text(stringResource(R.string.yes))
-                    }
-                },
-                content = {
-                    Text("Вы точно хотите заблокировать подписчика?")
+    }
+    
+    if (uiState.showBlockDialog) {
+        CustomDialog(
+            title = stringResource(R.string.block_user),
+            onDismissRequest = viewModel::hideBlockDialog,
+            buttons = {
+                TextButton(onClick = viewModel::hideBlockDialog) {
+                    Text(stringResource(R.string.no))
                 }
-            )
-        }
+                TextButton(
+                    onClick = viewModel::blockUser,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(stringResource(R.string.yes))
+                }
+            },
+            content = {
+                Text("Вы точно хотите заблокировать подписчика?")
+            }
+        )
     }
 }

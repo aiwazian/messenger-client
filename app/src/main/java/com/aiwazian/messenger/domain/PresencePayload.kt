@@ -7,9 +7,6 @@ package com.aiwazian.messenger.domain
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Chat(
-    val id: Long,
-    val chatName: String,
-    val isPinned: Boolean,
-    val lastMessage: Message?
+data class PresencePayload(
+    val userId: Long
 )

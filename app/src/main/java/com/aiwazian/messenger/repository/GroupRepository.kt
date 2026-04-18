@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.repository
 
 import android.util.Log
+import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.database.dao.GroupMemberDao
 import com.aiwazian.messenger.database.dao.UserDao
@@ -24,7 +25,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -34,14 +34,14 @@ class GroupRepository @Inject constructor(
     private val groupMemberDao: GroupMemberDao,
     private val userDao: UserDao
 ) {
-
+    
     fun getById(id: Long): Flow<Group> = channelFlow {
         launch {
             groupDao.get(id).collectLatest { entity ->
                 entity?.let { send(it.toDomain()) }
             }
         }
-
+        
         try {
             val response = groupApi.getGroupById(id)
             if (response.isSuccessful) {
@@ -57,7 +57,7 @@ class GroupRepository @Inject constructor(
             Log.e("GroupRepository", "Error fetching group $id", e)
         }
     }
-
+    
     fun getMembers(
         id: Long,
         skip: Int = 0,
@@ -72,28 +72,31 @@ class GroupRepository @Inject constructor(
                 send(users)
             }
         }
-
+        
         try {
             val response = groupApi.getGroupMembers(id, skip, take, search)
             if (response.isSuccessful) {
                 val dtos = response.body().orEmpty()
                 val users = dtos.map { it.toDomain() }
-
+                
                 users.forEach { user ->
                     userDao.insert(user.toEntity())
                 }
-
+                
                 groupMemberDao.clearMembers(id)
                 val members = users.map { GroupMemberEntity(groupId = id, userId = it.id) }
                 groupMemberDao.insertAll(members)
             } else {
-                Log.e("GroupRepository", "Failed to get members for group $id: ${response.message()}")
+                Log.e(
+                    "GroupRepository",
+                    "Failed to get members for group $id: ${response.message()}"
+                )
             }
         } catch (e: Exception) {
             Log.e("GroupRepository", "Error fetching members for group $id", e)
         }
     }
-
+    
     fun getAvailableUsersForInvite(id: Long): Flow<List<User>> = flow {
         try {
             val response = groupApi.getAvailableUsersForInvite(id)
@@ -105,7 +108,7 @@ class GroupRepository @Inject constructor(
             Log.e("GroupRepository", "Ошибка при получении доступных пользователей", e)
         }
     }
-
+    
     fun getBlackList(
         id: Long,
         skip: Int = 0,
@@ -120,33 +123,37 @@ class GroupRepository @Inject constructor(
                 send(users)
             }
         }
-
+        
         try {
             val response = groupApi.getBlackList(id, skip, take, search)
             if (response.isSuccessful) {
                 val dtos = response.body().orEmpty()
                 val users = dtos.map { it.toDomain() }
-
+                
                 users.forEach { user ->
                     userDao.insert(user.toEntity())
                 }
-
+                
                 groupMemberDao.clearBlackList(id)
-                val blackListEntries = users.map { GroupBlackListEntity(groupId = id, userId = it.id) }
+                val blackListEntries =
+                    users.map { GroupBlackListEntity(groupId = id, userId = it.id) }
                 groupMemberDao.insertAllBlackList(blackListEntries)
             } else {
-                Log.e("GroupRepository", "Failed to get blacklist for group $id: ${response.message()}")
+                Log.e(
+                    "GroupRepository",
+                    "Failed to get blacklist for group $id: ${response.message()}"
+                )
             }
         } catch (e: Exception) {
             Log.e("GroupRepository", "Error fetching blacklist for group $id", e)
         }
     }
-
-    suspend fun create(groupInfo: Group): Result<Long> {
+    
+    suspend fun create(name: String, bio: String): Result<Long> {
         return try {
             val request = CreateGroupRequestDto(
-                name = groupInfo.name,
-                bio = groupInfo.bio
+                name = name,
+                bio = bio
             )
             val response = groupApi.createGroup(request)
             if (response.isSuccessful) {
@@ -166,7 +173,7 @@ class GroupRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun addMembers(groupId: Long, userIds: List<Long>): Result<Unit> {
         return try {
             val request = AddMembersRequestDto(
@@ -185,7 +192,7 @@ class GroupRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun update(group: Group): Result<Unit> {
         return try {
             val request = UpdateGroupRequestDto(
@@ -206,7 +213,7 @@ class GroupRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun delete(id: Long): Result<Unit> {
         return try {
             val response = groupApi.deleteGroup(id)
@@ -221,7 +228,7 @@ class GroupRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun join(id: Long): Result<Unit> {
         return try {
             val response = groupApi.joinGroup(id)
@@ -236,7 +243,7 @@ class GroupRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun leave(id: Long): Result<Unit> {
         return try {
             val response = groupApi.leaveGroup(id)
@@ -251,13 +258,12 @@ class GroupRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun kickUser(groupId: Long, userId: Long): Result<Unit> {
         return try {
             val response = groupApi.kickUser(groupId, userId)
             if (response.isSuccessful) {
                 groupMemberDao.removeMember(groupId, userId)
-                refreshGroup(groupId)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Kick failed"))
@@ -267,14 +273,18 @@ class GroupRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun banUser(groupId: Long, userId: Long): Result<Unit> {
         return try {
             val response = groupApi.banUser(groupId, userId)
             if (response.isSuccessful) {
                 groupMemberDao.removeMember(groupId, userId)
-                groupMemberDao.insertBlackListEntry(GroupBlackListEntity(groupId = groupId, userId = userId))
-                refreshGroup(groupId)
+                groupMemberDao.insertBlackListEntry(
+                    GroupBlackListEntity(
+                        groupId = groupId,
+                        userId = userId
+                    )
+                )
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Ban failed"))
@@ -284,7 +294,7 @@ class GroupRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun unban(groupId: Long, userId: Long): Result<Unit> {
         return try {
             val response = groupApi.unbanUser(groupId, userId)
@@ -299,7 +309,7 @@ class GroupRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun getInviteLinks(groupId: Long): Result<List<InviteLink>> {
         return try {
             val response = groupApi.getInviteLinks(groupId)
@@ -314,8 +324,12 @@ class GroupRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
-    suspend fun createInviteLink(groupId: Long, maxUses: Int?, expiresInSeconds: Int? = null): Result<InviteLink> {
+    
+    suspend fun createInviteLink(
+        groupId: Long,
+        maxUses: Int?,
+        expiresInSeconds: Int? = null
+    ): Result<InviteLink> {
         return try {
             val request = CreateInviteLinkRequestDto(
                 maxUses = maxUses,
@@ -337,7 +351,7 @@ class GroupRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     private suspend fun refreshGroup(groupId: Long) {
         try {
             val response = groupApi.getGroupById(groupId)

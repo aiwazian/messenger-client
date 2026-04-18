@@ -55,7 +55,6 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
         viewModel.sideEffect.collect { effect ->
             when (effect) {
                 is SettingsProfileSideEffect.NavigateBack -> navBackStack.removeLastOrNull()
-                else -> {}
             }
         }
     }

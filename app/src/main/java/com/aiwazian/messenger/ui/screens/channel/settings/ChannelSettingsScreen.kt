@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -39,41 +38,46 @@ import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
-import com.aiwazian.messenger.ui.screens.main.MainViewModel
-import com.aiwazian.messenger.utils.VibrationPattern
-import kotlinx.coroutines.launch
 
 @Composable
 fun ChannelSettingsScreen(
     channelId: Long,
-    channelViewModel: ChannelSettingsViewModel = hiltViewModel()
+    viewModel: ChannelSettingsViewModel = hiltViewModel()
 ) {
     val navBackStack = LocalNavBackStack.current
-    LaunchedEffect(channelId) {
-        channelViewModel.init(channelId)
+    val uiState by viewModel.uiState.collectAsState()
+    
+    LaunchedEffect(Unit) {
+        viewModel.uiEffect.collect { effect ->
+            when (effect) {
+                ChannelSettingsEffect.NavigateToMain -> {
+                    navBackStack.clear()
+                    navBackStack.add(AppRoute.Main)
+                }
+                
+                ChannelSettingsEffect.NavigateToBack -> navBackStack.removeLastOrNull()
+                
+                is ChannelSettingsEffect.ShowSnackbar -> {
+                
+                }
+            }
+        }
     }
     
-    val channel by channelViewModel.channelInfo.collectAsState()
-    val hasChanges by channelViewModel.hasChanges.collectAsState()
+    LaunchedEffect(channelId) {
+        viewModel.init(channelId)
+    }
     
     val scrollState = rememberScrollState()
     
-    val scope = rememberCoroutineScope()
-    
     Scaffold(
         topBar = {
-            val actions = if (hasChanges) {
+            val actions = if (uiState.hasChanges) {
                 listOf(
                     TopBarAction(
                         icon = Icons.Rounded.Check,
-                        onClick = {
-                            scope.launch {
-                                val savedId = channelViewModel.trySave()
-                                if (savedId != null) {
-                                    navBackStack.removeLastOrNull()
-                                }
-                            }
-                        })
+                        onClick = viewModel::save
+                    )
                 )
             } else emptyList()
             
@@ -89,13 +93,13 @@ fun ChannelSettingsScreen(
             SectionContainer {
                 FramelessTextBox(
                     placeholder = stringResource(R.string.channel_name),
-                    value = channel.name,
-                    onValueChange = channelViewModel::changeName
+                    value = uiState.channel.name,
+                    onValueChange = viewModel::changeName
                 )
                 FramelessTextBox(
                     placeholder = stringResource(R.string.description),
-                    value = channel.bio.orEmpty(),
-                    onValueChange = channelViewModel::changeBio
+                    value = uiState.channel.bio.orEmpty(),
+                    onValueChange = viewModel::changeBio
                 )
             }
             
@@ -103,13 +107,13 @@ fun ChannelSettingsScreen(
                 SectionItem(
                     leadingIcon = Icons.Outlined.Lock,
                     headlineText = stringResource(R.string.channel_type),
-                    trailingText = if (channel.channelType == ChannelType.PUBLIC) {
+                    trailingText = if (uiState.channel.channelType == ChannelType.PUBLIC) {
                         stringResource(R.string.public_channel)
                     } else {
                         stringResource(R.string.private_channel)
                     },
                     onClick = {
-                        navBackStack.add(AppRoute.ChannelTypeSettings(channelId = channel.id))
+                        navBackStack.add(AppRoute.ChannelTypeSettings(channelId = uiState.channel.id))
                     })
             }
             
@@ -117,16 +121,16 @@ fun ChannelSettingsScreen(
                 SectionItem(
                     leadingIcon = Icons.Rounded.People,
                     headlineText = stringResource(R.string.subscribers),
-                    trailingText = channel.subscribers.toString(),
+                    trailingText = uiState.channel.subscribers.toString(),
                     onClick = {
-                        navBackStack.add(AppRoute.ChannelSubscribers(channel.id))
+                        navBackStack.add(AppRoute.ChannelSubscribers(uiState.channel.id))
                     })
                 SectionItem(
                     leadingIcon = Icons.Rounded.Block,
                     headlineText = stringResource(R.string.removed_user),
-                    trailingText = channel.removedUser?.toString(),
+                    trailingText = uiState.channel.removedUser?.toString(),
                     onClick = {
-                        navBackStack.add(AppRoute.ChannelBlackList(channel.id))
+                        navBackStack.add(AppRoute.ChannelBlackList(uiState.channel.id))
                     })
             }
             
@@ -134,32 +138,20 @@ fun ChannelSettingsScreen(
                 SectionItem(
                     headlineText = stringResource(R.string.delete_channel),
                     contentColor = MaterialTheme.colorScheme.error,
-                    onClick = channelViewModel.deleteDialog::show
+                    onClick = viewModel::showDeleteDialog
                 )
             }
             
-            if (channelViewModel.deleteDialog.isVisible) {
+            if (uiState.showDeleteDialog) {
                 CustomDialog(
                     title = stringResource(R.string.delete_channel),
-                    onDismissRequest = channelViewModel.deleteDialog::hide,
+                    onDismissRequest = viewModel::hideDeleteDialog,
                     buttons = {
-                        TextButton(onClick = channelViewModel.deleteDialog::hide) {
+                        TextButton(onClick = viewModel::hideDeleteDialog) {
                             Text(stringResource(R.string.cancel))
                         }
                         TextButton(
-                            onClick = {
-                                scope.launch {
-                                    val isDeleted = channelViewModel.tryDelete()
-                                    
-                                    if (isDeleted) {
-                                        channelViewModel.deleteDialog.hide()
-                                        navBackStack.clear()
-                                        navBackStack.add(AppRoute.Main)
-                                    } else {
-                                        channelViewModel.vibrate(VibrationPattern.Error)
-                                    }
-                                }
-                            },
+                            onClick = viewModel::delete,
                             colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                         ) {
                             Text(stringResource(R.string.delete_channel))

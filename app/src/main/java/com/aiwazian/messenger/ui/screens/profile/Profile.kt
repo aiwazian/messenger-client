@@ -18,6 +18,7 @@ sealed interface Profile {
         override val username: String? = null,
         override val bio: String? = null,
         val dateOfBirth: Long? = null,
+        val lastSeen: Long? = null,
     ) : Profile
     
     data class Channel(

@@ -4,11 +4,10 @@
 
 package com.aiwazian.messenger.ui.screens.settings.privacy
 
-import com.aiwazian.messenger.R
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.domain.PrivacySettings
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.repository.PrivacyRepository
 import com.aiwazian.messenger.utils.VibrationManager
@@ -29,61 +28,62 @@ class SettingsPrivacyViewModel @Inject constructor(
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
-    private val _privacySettings = MutableStateFlow(PrivacySettings())
-    val privacySettings = _privacySettings.asStateFlow()
-
+    private val _uiState = MutableStateFlow(SettingsPrivacyUiState())
+    val uiState = _uiState.asStateFlow()
+    
     private val _sideEffect = MutableSharedFlow<SettingsPrivacySideEffect>()
     val sideEffect = _sideEffect.asSharedFlow()
-
-    init {
-        loadValues()
-    }
-
-    fun loadValues() {
-        viewModelScope.launch {
-            try {
-                val myPrivacy = privacyRepository.getPrivacySettings()
-
-                if (myPrivacy != null) {
-                    _privacySettings.update { myPrivacy }
-                }
-            } catch (e: Exception) {
-                Log.e(
-                    "SettingsPrivacyViewModel",
-                    "Ошибка при получении настроек конфиденциальности",
-                    e
-                )
+    
+    suspend fun init() {
+        try {
+            privacyRepository.getPrivacySettings()?.let { settings ->
+                _uiState.update { it.copy(privacy = settings) }
             }
+        } catch (e: Exception) {
+            Log.e(
+                "SettingsPrivacyViewModel",
+                "Ошибка при получении настроек конфиденциальности",
+                e
+            )
         }
     }
-
+    
+    private fun showDeleteBottomSheet() {
+        _uiState.update { it.copy(showDeleteBottomSheet = true) }
+    }
+    
+    fun hideDeleteBottomSheet() {
+        _uiState.update { it.copy(showDeleteBottomSheet = false) }
+    }
+    
+    fun showDeleteDialog() {
+        _uiState.update { it.copy(showDeleteDialog = true) }
+    }
+    
+    fun hideDeleteDialog() {
+        _uiState.update { it.copy(showDeleteDialog = false) }
+    }
+    
     fun onDeleteAccountClick() {
         viewModelScope.launch {
             val createdAt = authRepository.getCurrentAccountCreatedAt()
             val currentTime = System.currentTimeMillis()
             val twentyFourHoursInMs = 24 * 60 * 60 * 1000L
-
+            
             if (currentTime - createdAt < twentyFourHoursInMs) {
-                vibrationManager.vibrate(VibrationPattern.Error)
                 _sideEffect.emit(SettingsPrivacySideEffect.ShowSnackbar(R.string.delete_account_after_twenty_four_hours))
+                vibrationManager.vibrate(VibrationPattern.Error)
             } else {
-                _sideEffect.emit(SettingsPrivacySideEffect.ShowDeleteBottomSheet)
+                showDeleteBottomSheet()
             }
         }
     }
-
-    fun onDeleteConfirmClick() {
-        viewModelScope.launch {
-            _sideEffect.emit(SettingsPrivacySideEffect.ShowDeleteDialog)
-        }
-    }
-
+    
     fun deleteAccount() {
         viewModelScope.launch {
-            val result = authRepository.deleteMe()
-            if (result.isSuccess) {
+            authRepository.deleteMe().onSuccess {
                 _sideEffect.emit(SettingsPrivacySideEffect.NavigateToLogin)
-            } else {
+            }.onFailure {
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }

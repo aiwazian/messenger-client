@@ -172,7 +172,6 @@ fun ChannelBlackListScreen(
                                         snackbarHostState.showSnackbar("Пользователь разблокирован")
                                     }
                                 } else {
-                                    viewModel.vibrate(VibrationPattern.Error)
                                     scope.launch {
                                         snackbarHostState.showSnackbar("Не удалось разблокировать пользователя")
                                     }

@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Buscar</string>
@@ -41,6 +45,9 @@
     <string name="nobody">Nadie</string>
     <string name="messages">Mensajes</string>
     <string name="last_seen">Visto por última vez</string>
+    <string name="who_can_see_my_last_seen">¿Quién puede ver la última vez que lo vi\?</string>
+    <string name="online">En línea</string>
+    <string name="last_seen_recently">En línea recientemente</string>
     <string name="this_device">este dispositivo</string>
     <string name="members">Miembros</string>
     <string name="first_name">Nombre de pila</string>
@@ -157,4 +164,5 @@
     <string name="public_group">Grupo público</string>
     <string name="private_group">Grupo Privado</string>
     <string name="clear_database">Borrar base de datos</string>
+    <string name="music">Música</string>
 </resources>

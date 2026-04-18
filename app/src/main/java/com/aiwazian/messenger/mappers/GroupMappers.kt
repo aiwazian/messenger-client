@@ -29,22 +29,12 @@ fun GroupEntity.toDomain(): Group = Group(
     members = members
 )
 
-fun Group.toEntity(): GroupEntity = GroupEntity(
+fun Group.toEntity() = GroupEntity(
     id = id,
     name = name,
     bio = bio,
     username = username,
     ownerId = ownerId,
     groupType = groupType.ordinal,
-    members = members
-)
-
-fun GroupEntity.toGroup(): Group = Group(
-    id = id,
-    name = name,
-    bio = bio,
-    username = username,
-    ownerId = ownerId,
-    groupType = GroupType.fromOrdinal(groupType),
     members = members
 )

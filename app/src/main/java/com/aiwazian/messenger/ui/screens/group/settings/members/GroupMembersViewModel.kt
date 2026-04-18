@@ -6,7 +6,6 @@ package com.aiwazian.messenger.ui.screens.group.settings.members
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.repository.GroupRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -22,77 +21,66 @@ import javax.inject.Inject
 class GroupMembersViewModel @Inject constructor(
     private val groupRepository: GroupRepository
 ) : ViewModel() {
-
+    
     private val _uiState = MutableStateFlow(GroupMembersState())
     val uiState = _uiState.asStateFlow()
-
+    
     private val _sideEffect = MutableSharedFlow<GroupMembersSideEffect>()
     val sideEffect = _sideEffect.asSharedFlow()
-
-    private var _groupId: Long = -1L
-    private var selectedUser: User? = null
     
-    private var isInitialized = false
-
+    private var _groupId: Long = -1L
+    
     fun init(groupId: Long) {
-        if (isInitialized) return
-        isInitialized = true
         _groupId = groupId
-        loadMembers()
-    }
-
-    fun loadMembers() {
+        
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
             groupRepository.getMembers(_groupId).collectLatest { members ->
-                _uiState.update { it.copy(members = members, isLoading = false) }
+                _uiState.update { it.copy(members = members) }
             }
         }
     }
-
-    fun onKickClick(user: User) {
-        selectedUser = user
+    
+    fun onKickClick(userId: Long) {
+        _uiState.update { it.copy(selectedUserId = userId) }
         viewModelScope.launch {
             _sideEffect.emit(GroupMembersSideEffect.ShowKickConfirmation)
         }
     }
-
-    fun onBlockClick(user: User) {
-        selectedUser = user
+    
+    fun onBlockClick(userId: Long) {
+        _uiState.update { it.copy(selectedUserId = userId) }
         viewModelScope.launch {
             _sideEffect.emit(GroupMembersSideEffect.ShowBlockConfirmation)
         }
     }
-
+    
     fun confirmKick() {
-        val user = selectedUser ?: return
+        val userId = _uiState.value.selectedUserId ?: return
         viewModelScope.launch {
-            val result = groupRepository.kickUser(_groupId, user.id)
-            if (result.isSuccess) {
+            groupRepository.kickUser(_groupId, userId).onSuccess {
                 _uiState.update { state ->
-                    state.copy(members = state.members.filter { it.id != user.id })
+                    state.copy(members = state.members.filter { it.id != userId })
                 }
                 _sideEffect.emit(GroupMembersSideEffect.ShowSnackbar("Пользователь выгнан"))
-            } else {
-                _sideEffect.emit(GroupMembersSideEffect.ShowSnackbar("Ошибка при выгонении"))
+            }.onFailure {
+                _sideEffect.emit(GroupMembersSideEffect.ShowSnackbar("Не удалось выгнать пользователя"))
             }
-            selectedUser = null
+            _uiState.update { it.copy(selectedUserId = null) }
         }
     }
-
+    
     fun confirmBlock() {
-        val user = selectedUser ?: return
+        val userId = _uiState.value.selectedUserId ?: return
         viewModelScope.launch {
-            val result = groupRepository.banUser(_groupId, user.id)
-            if (result.isSuccess) {
+            groupRepository.banUser(_groupId, userId).onSuccess {
                 _uiState.update { state ->
-                    state.copy(members = state.members.filter { it.id != user.id })
+                    state.copy(members = state.members.filter { it.id != userId })
                 }
                 _sideEffect.emit(GroupMembersSideEffect.ShowSnackbar("Пользователь заблокирован"))
-            } else {
+            }.onFailure {
                 _sideEffect.emit(GroupMembersSideEffect.ShowSnackbar("Ошибка при блокировке"))
             }
-            selectedUser = null
+            _uiState.update { it.copy(selectedUserId = null) }
         }
     }
 }

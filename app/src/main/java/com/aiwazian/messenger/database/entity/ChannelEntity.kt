@@ -17,6 +17,5 @@ data class ChannelEntity(
     val removedUser: Int?,
     val channelType: Int,
     val username: String?,
-    val inviteLink: String?,
     val isSubscribed: Boolean = false
 )

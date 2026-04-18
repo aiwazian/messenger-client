@@ -60,8 +60,9 @@ fun ChannelTypeSettingsScreen(
         viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is ChannelTypeSettingsEffect.NavigateBack -> navBackStack.removeLastOrNull()
+                is ChannelTypeSettingsEffect.ShowSnackbar -> {
                 
-                else -> {}
+                }
             }
         }
     }
@@ -126,7 +127,7 @@ fun ChannelTypeSettingsScreen(
                         }) {
                             FramelessTextBox(
                                 placeholder = stringResource(R.string.username),
-                                value = uiState.publicLink,
+                                value = uiState.publicLink.orEmpty(),
                                 onValueChange = { viewModel.changePublicLink(it) }
                             )
                         }

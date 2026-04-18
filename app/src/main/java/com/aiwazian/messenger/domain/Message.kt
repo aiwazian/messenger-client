@@ -8,11 +8,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Message(
-    val id: Int = 0,
-    val senderId: Long = 0,
-    val chatId: Long = 0,
-    val text: String? = null,
-    val sendTime: Long = 0,
-    val isRead: Boolean = false,
-    val files: List<MessageFile> = emptyList()
+    val id: Int,
+    val senderId: Long,
+    val chatId: Long,
+    val text: String?,
+    val sendTime: Long,
+    val isRead: Boolean,
+    val files: List<MessageFile>
 )

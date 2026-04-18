@@ -45,7 +45,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateInviteLinkScreen(
     channelId: Long, viewModel: CreateInviteLinkViewModel = hiltViewModel()

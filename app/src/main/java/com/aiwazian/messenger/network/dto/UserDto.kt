@@ -15,7 +15,8 @@ data class UserResponseDto(
     @SerialName("lastName") val lastName: String? = null,
     @SerialName("username") val username: String? = null,
     @SerialName("bio") val bio: String? = null,
-    @SerialName("dateOfBirth") val dateOfBirth: Long? = null
+    @SerialName("dateOfBirth") val dateOfBirth: Long? = null,
+    @SerialName("lastSeen") val lastSeen: Long? = null
 )
 
 @Serializable

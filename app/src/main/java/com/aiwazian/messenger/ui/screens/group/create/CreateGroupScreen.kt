@@ -41,8 +41,7 @@ import kotlinx.coroutines.flow.collectLatest
 fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
     val navBackStack = LocalNavBackStack.current
     
-    val groupInfo by viewModel.groupInfo.collectAsState()
-    val createState by viewModel.createState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     
     LaunchedEffect(Unit) {
         viewModel.createEffect.collectLatest { effect ->
@@ -50,13 +49,15 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
                 is CreateGroupEffect.NavigateToChat -> {
                     navBackStack.clear()
                     navBackStack.add(AppRoute.Main)
-                    navBackStack.add(AppRoute.Chat(effect.chat.id))
+                    navBackStack.add(AppRoute.Chat(effect.chatId))
+                }
+                
+                is CreateGroupEffect.ShowSnackbar -> {
+                    
                 }
             }
         }
     }
-    
-    val isLoading = createState is CreateGroupState.Loading
     
     Scaffold(
         topBar = {
@@ -71,7 +72,7 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
-                AnimatedContent(targetState = isLoading) { isLoading ->
+                AnimatedContent(targetState = uiState.isLoading) { isLoading ->
                     if (isLoading) {
                         CircularProgressIndicator(
                             color = MaterialTheme.colorScheme.onPrimary,
@@ -95,12 +96,12 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
         ) {
             SectionContainer {
                 FramelessTextBox(
-                    value = groupInfo.name,
+                    value = uiState.name,
                     onValueChange = viewModel::changeGroupName,
                     placeholder = stringResource(R.string.group_name)
                 )
                 FramelessTextBox(
-                    value = groupInfo.bio.orEmpty(),
+                    value = uiState.bio,
                     onValueChange = viewModel::changeGroupDescription,
                     placeholder = stringResource(R.string.description)
                 )

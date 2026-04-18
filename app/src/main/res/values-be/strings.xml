@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Пошук</string>
@@ -41,6 +45,9 @@
     <string name="nobody">Ніхто</string>
     <string name="messages">Паведамленні</string>
     <string name="last_seen">Апошні раз</string>
+    <string name="who_can_see_my_last_seen">Хто можа бачыць час майго апошняга наведвання\?</string>
+    <string name="online">Анлайн</string>
+    <string name="last_seen_recently">Нядаўна онлайн</string>
     <string name="this_device">Гэта прылада</string>
     <string name="members">Члены</string>
     <string name="first_name">імя</string>
@@ -157,4 +164,5 @@
     <string name="public_group">Публічная група</string>
     <string name="private_group">Прыватная група</string>
     <string name="clear_database">Ачысціць базу даных</string>
+    <string name="music">Музыка</string>
 </resources>

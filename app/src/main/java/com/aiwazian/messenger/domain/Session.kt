@@ -5,11 +5,11 @@
 package com.aiwazian.messenger.domain
 
 data class Session(
-    val id: Int = 0,
-    val userId: Long = 0,
-    val deviceModel: String = "",
-    val osVersion: String = "",
-    val osName: String = "",
-    val createdAt: Long = 0,
-    val isCurrent: Boolean = false
+    val id: Int,
+    val userId: Long,
+    val deviceModel: String,
+    val osVersion: String,
+    val osName: String,
+    val createdAt: Long,
+    val isCurrent: Boolean
 )

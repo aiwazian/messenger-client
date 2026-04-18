@@ -38,7 +38,7 @@ import com.aiwazian.messenger.database.entity.UserEntity
         ChatEntity::class
     ],
     exportSchema = false,
-    version = 22
+    version = 24
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {

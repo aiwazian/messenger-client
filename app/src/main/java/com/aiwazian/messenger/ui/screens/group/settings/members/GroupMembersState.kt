@@ -8,6 +8,5 @@ import com.aiwazian.messenger.domain.User
 
 data class GroupMembersState(
     val members: List<User> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null
+    val selectedUserId: Long? = null
 )

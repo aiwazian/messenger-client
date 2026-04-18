@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var webSocketClient: WebSocketClient
     
-    private var startRoute by mutableStateOf<AppRoute>(AppRoute.Main)
+    private var startRoute by mutableStateOf<AppRoute?>(null)
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,13 +77,7 @@ class MainActivity : AppCompatActivity() {
         
         enableEdgeToEdge()
         
-        val chatId = intent.getLongExtra(
-            "chatId",
-            -1L
-        )
-        if (chatId != -1L) {
-            startRoute = AppRoute.Chat(chatId)
-        }
+        handleIntent(intent)
         
         setContent {
             val isLockApp by appLockManager.isLockApp.collectAsState()
@@ -135,5 +129,14 @@ class MainActivity : AppCompatActivity() {
     
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+    
+    private fun handleIntent(intent: Intent) {
+        val chatId = intent.getStringExtra("chatId")?.toLongOrNull() ?: -1L
+        if (chatId != -1L) {
+            startRoute = AppRoute.Chat(chatId)
+            return
+        }
     }
 }

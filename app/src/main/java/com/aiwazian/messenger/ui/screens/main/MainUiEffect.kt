@@ -4,8 +4,8 @@
 
 package com.aiwazian.messenger.ui.screens.main
 
-sealed class MainUiEffect {
-    data object ShowPermissionRationale : MainUiEffect()
-    data object HidePermissionRationale : MainUiEffect()
-    data object OpenNotificationSettings : MainUiEffect()
+sealed interface MainUiEffect {
+    data object ShowPermissionRationale : MainUiEffect
+    data object HidePermissionRationale : MainUiEffect
+    data object OpenNotificationSettings : MainUiEffect
 }

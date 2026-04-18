@@ -8,11 +8,18 @@ import com.aiwazian.messenger.domain.User
 
 sealed interface SettingsProfileSideEffect {
     data object NavigateBack : SettingsProfileSideEffect
-    data class ShowDatePicker(val initialDate: Long?) : SettingsProfileSideEffect
 }
 
 data class SettingsProfileUiState(
-    val user: User = User(),
+    val user: User = User(
+        id = 0,
+        firstName = "",
+        lastName = null,
+        bio = null,
+        username = null,
+        dateOfBirth = null,
+        lastSeen = null
+    ),
     val isSaving: Boolean = false,
     val showDatePicker: Boolean = false
 )

@@ -4,7 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.channel.settings.type
 
-sealed class ChannelTypeSettingsEffect {
-    data object NavigateBack : ChannelTypeSettingsEffect()
-    data class ShowError(val message: String) : ChannelTypeSettingsEffect()
+sealed interface ChannelTypeSettingsEffect {
+    data object NavigateBack : ChannelTypeSettingsEffect
+    data class ShowSnackbar(val message: String) : ChannelTypeSettingsEffect
 }

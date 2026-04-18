@@ -46,6 +46,8 @@
     <string name="messages">Messages</string>
     <string name="last_seen">Last Seen</string>
     <string name="who_can_see_my_last_seen">Who can see my last seen time?</string>
+    <string name="online">Online</string>
+    <string name="last_seen_recently">Online recently</string>
     <string name="this_device">This device</string>
     <string name="members">Members</string>
     <string name="first_name">First name</string>
@@ -162,4 +164,5 @@
     <string name="public_group">Public Group</string>
     <string name="private_group">Private Group</string>
     <string name="clear_database">Clear Database</string>
+    <string name="music">Music</string>
 </resources>

@@ -2,11 +2,11 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.screens.group.create
+package com.aiwazian.messenger.ui.screens.channel.create
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.repository.GroupRepository
+import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,29 +21,29 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class CreateGroupViewModel @Inject constructor(
-    private val groupRepository: GroupRepository,
+class CreateChannelViewModel @Inject constructor(
+    private val channelRepository: ChannelRepository,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
-    private val _uiState = MutableStateFlow(CreateGroupState())
-    val uiState: StateFlow<CreateGroupState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(CreateChannelState())
+    val uiState: StateFlow<CreateChannelState> = _uiState.asStateFlow()
     
-    private val _createEffect = MutableSharedFlow<CreateGroupEffect>()
-    val createEffect: SharedFlow<CreateGroupEffect> = _createEffect.asSharedFlow()
+    private val _createEffect = MutableSharedFlow<CreateChannelEffect>()
+    val createEffect: SharedFlow<CreateChannelEffect> = _createEffect.asSharedFlow()
     
-    fun changeGroupName(newName: String) {
+    fun changeName(newName: String) {
         _uiState.update { it.copy(name = newName) }
     }
     
-    fun changeGroupDescription(new: String) {
-        _uiState.update { it.copy(bio = new) }
+    fun changeBio(newBio: String) {
+        _uiState.update { it.copy(bio = newBio) }
     }
     
-    fun createGroup() {
+    fun createChannel() {
         viewModelScope.launch {
             if (!checkValid()) {
-                _createEffect.emit(CreateGroupEffect.ShowSnackbar("Введите название группы"))
+                _createEffect.emit(CreateChannelEffect.ShowSnackbar("Заполните название канала"))
                 vibrationManager.vibrate(VibrationPattern.Error)
                 return@launch
             }
@@ -51,16 +51,16 @@ class CreateGroupViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             
             try {
-                groupRepository.create(_uiState.value.name, _uiState.value.bio)
+                channelRepository.create(_uiState.value.name, _uiState.value.bio)
                     .onSuccess { createdId ->
-                        _createEffect.emit(CreateGroupEffect.NavigateToChat(createdId))
+                        _createEffect.emit(CreateChannelEffect.NavigateToChat(createdId))
                     }
                     .onFailure {
-                        _createEffect.emit(CreateGroupEffect.ShowSnackbar("Ошибка при создании группы"))
+                        _createEffect.emit(CreateChannelEffect.ShowSnackbar("Ошибка при создании канала"))
                         vibrationManager.vibrate(VibrationPattern.Error)
                     }
             } catch (_: Exception) {
-                _createEffect.emit(CreateGroupEffect.ShowSnackbar("Неизвестная ошибка"))
+                _createEffect.emit(CreateChannelEffect.ShowSnackbar("Неизвестная ошибка"))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }

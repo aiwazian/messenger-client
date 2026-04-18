@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Іздеу</string>
@@ -41,6 +45,9 @@
     <string name="nobody">Ешкім</string>
     <string name="messages">Хабарламалар</string>
     <string name="last_seen">Соңғы рет көрген</string>
+    <string name="who_can_see_my_last_seen">Менің соңғы көрген уақытымды кім көре алады\?</string>
+    <string name="online">Онлайн</string>
+    <string name="last_seen_recently">Жақында желіде</string>
     <string name="this_device">Бұл құрылғы</string>
     <string name="members">Мүшелер</string>
     <string name="first_name">Аты</string>
@@ -157,4 +164,5 @@
     <string name="public_group">Қоғамдық топ</string>
     <string name="private_group">Жеке топ</string>
     <string name="clear_database">Дерекқорды тазалау</string>
+    <string name="music">Музыка</string>
 </resources>

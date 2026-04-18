@@ -4,8 +4,6 @@
 
 package com.aiwazian.messenger.ui.components
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,10 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.PushPin
@@ -28,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
@@ -79,7 +74,7 @@ fun ChatCard(
             }
         },
         leadingContent = {
-            Leading(selected)
+            Leading()
         },
         trailingContent = {
             Column {
@@ -145,37 +140,12 @@ private fun UnreadMessageCount(count: Int) {
 }
 
 @Composable
-private fun Leading(visible: Boolean) {
+private fun Leading() {
     Box(modifier = Modifier.size(40.dp)) {
         Icon(
             imageVector = Icons.Rounded.AccountCircle,
             contentDescription = null,
             modifier = Modifier.fillMaxSize()
         )
-        
-        Box(
-            modifier = Modifier
-                .clip(CircleShape)
-                .size(16.dp)
-                .align(Alignment.BottomEnd)
-        ) {
-            AnimatedContent(targetState = visible) { isVisible ->
-                if (isVisible) {
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .size(16.dp)
-                            .background(Color.Green),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Check,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-            }
-        }
     }
 }

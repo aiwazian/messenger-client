@@ -135,28 +135,26 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
         }
     }
     
-    val uiEffect by viewModel.uiEffect.collectAsState(null)
-    
-    LaunchedEffect(uiEffect) {
-        when (uiEffect) {
-            is MainUiEffect.ShowPermissionRationale -> {
-                showPermissionRationale = true
-            }
-            
-            is MainUiEffect.HidePermissionRationale -> {
-                showPermissionRationale = false
-            }
-            
-            is MainUiEffect.OpenNotificationSettings -> {
-                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                    putExtra(
-                        Settings.EXTRA_APP_PACKAGE, context.packageName
-                    )
+    LaunchedEffect(Unit) {
+        viewModel.uiEffect.collect { effect ->
+            when (effect) {
+                MainUiEffect.ShowPermissionRationale -> {
+                    showPermissionRationale = true
                 }
-                context.startActivity(intent)
+                
+                MainUiEffect.HidePermissionRationale -> {
+                    showPermissionRationale = false
+                }
+                
+                MainUiEffect.OpenNotificationSettings -> {
+                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                        putExtra(
+                            Settings.EXTRA_APP_PACKAGE, context.packageName
+                        )
+                    }
+                    context.startActivity(intent)
+                }
             }
-            
-            else -> {}
         }
     }
     
@@ -197,7 +195,7 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
                     scope.launch {
                         drawerState.close()
                     }
-                }, user = viewModel.user.collectAsState(initial = User()).value
+                }, user = viewModel.user.collectAsState().value
             )
         },
     ) {

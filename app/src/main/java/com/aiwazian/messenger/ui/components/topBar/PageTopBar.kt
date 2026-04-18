@@ -18,7 +18,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageTopBar(
     title: @Composable () -> Unit = { },
@@ -41,10 +40,7 @@ fun PageTopBar(
                 
                 IconButton(onClick = {
                     action.onClick?.invoke()
-                    
-                    if (action.dropdownActions.isNotEmpty()) {
-                        expand = true
-                    }
+                    expand = action.dropdownActions.isNotEmpty()
                 }) {
                     Icon(
                         imageVector = action.icon,

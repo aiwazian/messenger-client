@@ -16,7 +16,6 @@ import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.network.api.ChatApi
 import com.aiwazian.messenger.network.api.MessageApi
-import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
 import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
@@ -58,13 +57,15 @@ class ChatRepository @Inject constructor(
                     val lastMessage = entity.lastMessageId?.let {
                         messageDao.getMessageById(it)?.toDomain()
                     }
-                    
                     entity.toDomain(name, lastMessage)
                 }
                 send(result)
             }
         }
-        
+        refreshChats()
+    }
+    
+    suspend fun refreshChats() {
         try {
             val response = chatApi.getAllChats()
             if (response.isSuccessful) {
@@ -153,9 +154,9 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    suspend fun sendMessage(chatId: Long, message: Message): Message? {
+    suspend fun sendMessage(chatId: Long, message: String): Message? {
         return try {
-            val request = TextMessageRequestDto(text = message.text ?: "")
+            val request = TextMessageRequestDto(text = message)
             val response = messageApi.sendTextMessage(chatId, request)
             if (response.isSuccessful) {
                 val sentMessage = response.body()?.toDomain()
@@ -319,20 +320,5 @@ class ChatRepository @Inject constructor(
     
     suspend fun saveChat(chat: Chat) {
         chatDao.upsertChats(listOf(chat.toEntity()))
-    }
-    
-    suspend fun resetInviteLink(channelId: Long): String? {
-        return try {
-            val request = CreateInviteLinkRequestDto(channelId = channelId.toString())
-            val response = chatApi.createInviteLink(request)
-            if (response.isSuccessful) {
-                response.body()?.link
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            Log.e("ChatRepository", "Error resetting invite link", e)
-            null
-        }
     }
 }

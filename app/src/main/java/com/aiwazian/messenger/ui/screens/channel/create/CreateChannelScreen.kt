@@ -2,12 +2,11 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.screens.channel
+package com.aiwazian.messenger.ui.screens.channel.create
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -19,54 +18,46 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.domain.Chat
+import com.aiwazian.messenger.ui.components.FramelessTextBox
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun CreateChannelScreen(viewModel: CreateChannelViewModel = hiltViewModel()) {
     val navBackStack = LocalNavBackStack.current
-    val channel by viewModel.channelInfo.collectAsState()
-    val createState by viewModel.createState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     
-    // Обработка side effects для навигации
     LaunchedEffect(Unit) {
         viewModel.createEffect.collectLatest { effect ->
             when (effect) {
                 is CreateChannelEffect.NavigateToChat -> {
-                    val chat = Chat(
-                        id = effect.chat.id,
-                        chatName = effect.chat.chatName
-                    )
-                    
                     navBackStack.clear()
                     navBackStack.add(AppRoute.Main)
-                    navBackStack.add(AppRoute.Chat(chat.id))
+                    navBackStack.add(AppRoute.Chat(effect.chatId))
+                }
+                
+                is CreateChannelEffect.ShowSnackbar -> {
+                
                 }
             }
         }
     }
-    
-    val isLoading = createState is CreateChannelState.Loading
     
     Scaffold(
         topBar = {
@@ -81,7 +72,7 @@ fun CreateChannelScreen(viewModel: CreateChannelViewModel = hiltViewModel()) {
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
-                AnimatedContent(targetState = isLoading) { isLoading ->
+                AnimatedContent(targetState = uiState.isLoading) { isLoading ->
                     if (isLoading) {
                         CircularProgressIndicator(
                             color = MaterialTheme.colorScheme.onPrimary,
@@ -105,36 +96,16 @@ fun CreateChannelScreen(viewModel: CreateChannelViewModel = hiltViewModel()) {
             SectionContainer(footer = {
                 SectionDescription("Можете указать дополнительное описание канала.")
             }) {
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    value = channel.name,
+                FramelessTextBox(
+                    value = uiState.name,
                     onValueChange = viewModel::changeName,
-                    placeholder = {
-                        Text(text = stringResource(R.string.channel_name))
-                    },
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                    )
+                    placeholder = stringResource(R.string.channel_name)
                 )
                 
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    value = channel.bio.orEmpty(),
+                FramelessTextBox(
+                    value = uiState.bio,
                     onValueChange = viewModel::changeBio,
-                    placeholder = {
-                        Text(text = stringResource(R.string.description))
-                    },
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                    )
+                    placeholder = stringResource(R.string.description),
                 )
             }
         }

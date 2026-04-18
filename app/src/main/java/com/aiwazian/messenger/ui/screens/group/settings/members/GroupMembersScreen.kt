@@ -17,7 +17,6 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.PersonRemove
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -104,30 +103,26 @@ fun GroupMembersScreen(
     ) { innerPadding ->
         Column(
             modifier = Modifier
-                .padding(innerPadding)
                 .fillMaxSize()
+                .padding(innerPadding)
         ) {
-            if (state.isLoading && state.members.isEmpty()) {
-                CircularProgressIndicator()
-            } else {
-                SectionContainer {
-                    SectionItem(
-                        leadingIcon = Icons.Rounded.PersonAdd,
-                        headlineText = stringResource(R.string.add_member),
-                        contentColor = MaterialTheme.colorScheme.primary,
-                        onClick = { navBackStack.add(AppRoute.AddMember(groupId)) }
-                    )
-                }
-                
-                SectionContainer {
-                    LazyColumn {
-                        items(state.members) { user ->
-                            MemberItem(
-                                user = user,
-                                onKick = { viewModel.onKickClick(user) },
-                                onBlock = { viewModel.onBlockClick(user) }
-                            )
-                        }
+            SectionContainer {
+                SectionItem(
+                    leadingIcon = Icons.Rounded.PersonAdd,
+                    headlineText = stringResource(R.string.add_member),
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    onClick = { navBackStack.add(AppRoute.AddMember(groupId)) }
+                )
+            }
+            
+            SectionContainer {
+                LazyColumn {
+                    items(state.members) { user ->
+                        MemberItem(
+                            user = user,
+                            onKick = { viewModel.onKickClick(user.id) },
+                            onBlock = { viewModel.onBlockClick(user.id) }
+                        )
                     }
                 }
             }
@@ -191,6 +186,8 @@ fun MemberItem(
     onKick: () -> Unit,
     onBlock: () -> Unit
 ) {
+    val navBackStack = LocalNavBackStack.current
+    
     var showMenu by remember { mutableStateOf(false) }
     
     SectionItem(
@@ -243,6 +240,9 @@ fun MemberItem(
                     )
                 }
             }
+        },
+        onClick = {
+            navBackStack.add(AppRoute.Chat(user.id))
         }
     )
 }

@@ -8,7 +8,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.repository.ChannelRepository
-import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
@@ -17,8 +16,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -28,7 +25,6 @@ import javax.inject.Inject
 @HiltViewModel
 class ChannelTypeSettingsViewModel @Inject constructor(
     private val channelRepository: ChannelRepository,
-    private val chatRepository: ChatRepository,
     private val searchRepository: SearchRepository,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
@@ -37,51 +33,34 @@ class ChannelTypeSettingsViewModel @Inject constructor(
     private var checkLinkJob: Job? = null
     
     private val _uiState = MutableStateFlow(ChannelTypeSettingsUiState())
-    val uiState: StateFlow<ChannelTypeSettingsUiState> = _uiState.asStateFlow()
+    val uiState = _uiState.asStateFlow()
     
     private val _uiEffect = MutableSharedFlow<ChannelTypeSettingsEffect>()
-    val uiEffect: SharedFlow<ChannelTypeSettingsEffect> = _uiEffect.asSharedFlow()
-    
-    private var isInitialized = false
+    val uiEffect = _uiEffect.asSharedFlow()
     
     fun init(channelId: Long) {
-        if (isInitialized) return
-        isInitialized = true
         _channelId = channelId
-        loadChannel(channelId)
-    }
-    
-    fun loadChannel(channelId: Long) {
+        
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isLoading = true) }
             
             try {
-                viewModelScope.launch {
-                    channelRepository.getById(channelId).collect {}
-                }
-                
-                channelRepository.getByIdFlow(channelId).collect { channelInfo ->
+                channelRepository.getByIdFlow(channelId).collect { channel ->
                     _uiState.update {
                         it.copy(
+                            channelId = channel.id,
                             isLoading = false,
-                            channel = channelInfo,
-                            channelType = channelInfo.channelType,
-                            publicLink = channelInfo.username ?: "",
-                            inviteLink = channelInfo.inviteLink,
+                            channelType = channel.channelType,
+                            publicLink = channel.username,
                             canSave = true,
                             linkCheckStatus = LinkCheckStatus.Idle
                         )
                     }
                 }
             } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = e.message ?: "Ошибка загрузки канала"
-                    )
-                }
+                _uiState.update { it.copy(isLoading = false) }
                 _uiEffect.emit(
-                    ChannelTypeSettingsEffect.ShowError(
+                    ChannelTypeSettingsEffect.ShowSnackbar(
                         e.message ?: "Ошибка загрузки канала"
                     )
                 )
@@ -141,20 +120,15 @@ class ChannelTypeSettingsViewModel @Inject constructor(
             return
         }
         
-        if (publicLink == _uiState.value.channel.username) {
+        if (publicLink == _uiState.value.publicLink) {
             _uiState.update {
-                it.copy(
-                    linkCheckStatus = LinkCheckStatus.Available,
-                    canSave = true
-                )
+                it.copy(linkCheckStatus = LinkCheckStatus.Available, canSave = true)
             }
             return
         }
         
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(linkCheckStatus = LinkCheckStatus.Checking)
-            }
+            _uiState.update { it.copy(linkCheckStatus = LinkCheckStatus.Checking) }
             
             try {
                 val isAvailable = searchRepository.checkUsernameAvailable(publicLink)
@@ -174,7 +148,7 @@ class ChannelTypeSettingsViewModel @Inject constructor(
                         )
                     }
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _uiState.update {
                     it.copy(
                         linkCheckStatus = LinkCheckStatus.Error("Не удалось проверить"),
@@ -203,41 +177,17 @@ class ChannelTypeSettingsViewModel @Inject constructor(
             }
             
             try {
-                val updatedChannel = currentState.channel.copy(
-                    channelType = currentState.channelType,
-                    username = if (currentState.channelType == ChannelType.PUBLIC) {
-                        currentState.publicLink.trim()
-                    } else {
-                        null
+                channelRepository.updateChannelType(_channelId, currentState.channelType)
+                    .onSuccess {
+                        _uiEffect.emit(ChannelTypeSettingsEffect.NavigateBack)
                     }
-                )
-                
-                val result = channelRepository.update(updatedChannel)
-                
-                if (result.isSuccess) {
-                    _uiEffect.emit(ChannelTypeSettingsEffect.NavigateBack)
-                } else {
-                    vibrationManager.vibrate(VibrationPattern.Error)
-                    _uiEffect.emit(ChannelTypeSettingsEffect.ShowError("Не удалось сохранить"))
-                }
-            } catch (e: Exception) {
+                    .onFailure {
+                        vibrationManager.vibrate(VibrationPattern.Error)
+                        _uiEffect.emit(ChannelTypeSettingsEffect.ShowSnackbar("Не удалось сохранить"))
+                    }
+            } catch (_: Exception) {
                 vibrationManager.vibrate(VibrationPattern.Error)
-                _uiEffect.emit(
-                    ChannelTypeSettingsEffect.ShowError(
-                        e.message ?: "Ошибка сохранения"
-                    )
-                )
-            }
-        }
-    }
-    
-    fun resetInviteLink() {
-        viewModelScope.launch {
-            val newLink = chatRepository.resetInviteLink(_channelId)
-            if (newLink != null) {
-                _uiState.update { it.copy(inviteLink = newLink) }
-            } else {
-                vibrationManager.vibrate(VibrationPattern.Error)
+                _uiEffect.emit(ChannelTypeSettingsEffect.ShowSnackbar("Ошибка сохранения"))
             }
         }
     }
@@ -247,11 +197,11 @@ class ChannelTypeSettingsViewModel @Inject constructor(
      */
     private fun canSaveChannelType(
         channelType: ChannelType,
-        publicLink: String,
+        publicLink: String?,
         status: LinkCheckStatus
     ): Boolean {
         if (channelType == ChannelType.PUBLIC) {
-            if (publicLink.isBlank()) return false
+            if (publicLink.isNullOrBlank()) return false
             if (status == LinkCheckStatus.Busy) return false
             if (status is LinkCheckStatus.Error) return false
         }

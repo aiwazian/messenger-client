@@ -19,8 +19,7 @@ data class ChannelResponseDto(
     @SerialName("subscribers") val subscribers: String? = null,
     @SerialName("removedUser") val removedUser: String? = null,
     @SerialName("isSubscribed") val isSubscribed: Boolean,
-    @SerialName("isOwner") val isOwner: Boolean? = null,
-    @SerialName("inviteLink") val inviteLink: String? = null
+    @SerialName("isOwner") val isOwner: Boolean? = null
 )
 
 @Serializable

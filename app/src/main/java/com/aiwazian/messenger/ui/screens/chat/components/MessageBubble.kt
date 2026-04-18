@@ -80,7 +80,7 @@ fun MessageBubble(
                     min = 60.dp,
                     max = 280.dp
                 )
-                .padding(horizontal = 2.dp)
+                .padding(horizontal = 4.dp)
                 .clip(MaterialTheme.shapes.large)
                 .background(containerColor)
         ) {

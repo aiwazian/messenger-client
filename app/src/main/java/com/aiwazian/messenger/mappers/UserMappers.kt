@@ -4,41 +4,42 @@
 
 package com.aiwazian.messenger.mappers
 
-import com.aiwazian.messenger.network.dto.UserResponseDto
-import com.aiwazian.messenger.network.dto.UpdateUserRequestDto
-import com.aiwazian.messenger.network.dto.PrivacySettingsResponseDto
-import com.aiwazian.messenger.domain.User
-import com.aiwazian.messenger.domain.PrivacySettings
 import com.aiwazian.messenger.database.entity.UserEntity
-import com.aiwazian.messenger.enums.PrivacyLevel
+import com.aiwazian.messenger.domain.PrivacySettings
+import com.aiwazian.messenger.domain.User
+import com.aiwazian.messenger.network.dto.PrivacySettingsResponseDto
+import com.aiwazian.messenger.network.dto.UpdateUserRequestDto
+import com.aiwazian.messenger.network.dto.UserResponseDto
 
 fun UserResponseDto.toDomain(): User = User(
-    id = this.id,
-    firstName = this.firstName ?: "",
-    lastName = this.lastName,
-    username = this.username,
-    bio = this.bio,
-    dateOfBirth = this.dateOfBirth
+    id = id,
+    firstName = firstName ?: "",
+    lastName = lastName,
+    username = username,
+    bio = bio,
+    dateOfBirth = dateOfBirth,
+    lastSeen = lastSeen
 )
 
 fun UserResponseDto.toEntity(): UserEntity = UserEntity(
-    id = this.id,
-    firstName = this.firstName ?: "",
-    lastName = this.lastName,
-    username = this.username,
-    bio = this.bio,
-    dateOfBirth = this.dateOfBirth
+    id = id,
+    firstName = firstName ?: "",
+    lastName = lastName,
+    username = username,
+    bio = bio,
+    dateOfBirth = dateOfBirth,
+    lastSeen = lastSeen
 )
 
 fun User.toUpdateRequest(): UpdateUserRequestDto = UpdateUserRequestDto(
-    firstName = this.firstName,
-    lastName = this.lastName,
-    username = this.username,
-    bio = this.bio,
-    dateOfBirth = this.dateOfBirth
+    firstName = firstName,
+    lastName = lastName,
+    username = username,
+    bio = bio,
+    dateOfBirth = dateOfBirth
 )
 
-fun PrivacySettingsResponseDto.toDomain(): PrivacySettings = PrivacySettings(
+fun PrivacySettingsResponseDto.toDomain() = PrivacySettings(
     lastSeen = lastSeen,
     messages = messages,
     bio = bio,
@@ -47,32 +48,21 @@ fun PrivacySettingsResponseDto.toDomain(): PrivacySettings = PrivacySettings(
 )
 
 fun UserEntity.toDomain(): User = User(
-    id = this.id,
-    firstName = this.firstName,
-    lastName = this.lastName,
-    username = this.username,
-    bio = this.bio,
-    dateOfBirth = this.dateOfBirth
+    id = id,
+    firstName = firstName,
+    lastName = lastName,
+    username = username,
+    bio = bio,
+    dateOfBirth = dateOfBirth,
+    lastSeen = lastSeen
 )
 
-fun User.toEntity(): UserEntity {
-    return UserEntity(
-        id = this.id,
-        firstName = this.firstName,
-        lastName = this.lastName,
-        username = this.username,
-        bio = this.bio,
-        dateOfBirth = this.dateOfBirth
-    )
-}
-
-fun UserEntity.toUser(): User {
-    return User(
-        id = this.id,
-        firstName = this.firstName,
-        lastName = this.lastName,
-        username = this.username,
-        bio = this.bio,
-        dateOfBirth = this.dateOfBirth
-    )
-}
+fun User.toEntity(): UserEntity = UserEntity(
+    id = id,
+    firstName = firstName,
+    lastName = lastName,
+    username = username,
+    bio = bio,
+    dateOfBirth = dateOfBirth,
+    lastSeen = lastSeen
+)

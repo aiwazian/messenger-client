@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Որոնում</string>
@@ -41,6 +45,9 @@
     <string name="nobody">Ոչ ոք</string>
     <string name="messages">Հաղորդագրություններ</string>
     <string name="last_seen">Վերջին տեսածը</string>
+    <string name="who_can_see_my_last_seen">Ո՞վ կարող է տեսնել իմ վերջին տեսած ժամանակը:</string>
+    <string name="online">Առցանց</string>
+    <string name="last_seen_recently">Առցանց վերջերս</string>
     <string name="this_device">Այս սարքը</string>
     <string name="members">Անդամներ</string>
     <string name="first_name">Անուն</string>
@@ -157,4 +164,5 @@
     <string name="public_group">Հասարակական խումբ</string>
     <string name="private_group">Մասնավոր խումբ</string>
     <string name="clear_database">Մաքրել տվյալների բազան</string>
+    <string name="music">Երաժշտություն</string>
 </resources>

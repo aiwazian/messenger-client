@@ -151,7 +151,7 @@ class GroupInviteLinksViewModel @Inject constructor(
 
         viewModelScope.launch {
             chatIds.forEach { chatId ->
-                chatRepository.sendMessage(chatId, Message(text = link))
+                chatRepository.sendMessage(chatId, link)
             }
             val count = chatIds.size
             _isShareSheetVisible.value = false
