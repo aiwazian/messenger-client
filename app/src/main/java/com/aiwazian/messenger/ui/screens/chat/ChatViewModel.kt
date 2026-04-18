@@ -166,7 +166,6 @@ class ChatViewModel @Inject constructor(
             if (payload.chatId == _uiState.value.chatId) {
                 viewModelScope.launch {
                     chatRepository.clearLocalHistory(_uiState.value.chatId)
-                    updateChatItems(emptyList())
                 }
             }
         }
@@ -192,14 +191,12 @@ class ChatViewModel @Inject constructor(
         }
         
         webSocketClient.subscribeToEvent<PresencePayload>(WebSocketAction.USER_ONLINE) { payload ->
-            if (payload.userId == _uiState.value.chatId) {
-                //                _uiState.update { it.copy(lastSeen = true) }
+            if (payload.userId == _uiState.value.chatId) { //                _uiState.update { it.copy(lastSeen = true) }
             }
         }
         
         webSocketClient.subscribeToEvent<PresencePayload>(WebSocketAction.USER_OFFLINE) { payload ->
-            if (payload.userId == _uiState.value.chatId) {
-                //                _uiState.update { it.copy(lastSeen = false) }
+            if (payload.userId == _uiState.value.chatId) { //                _uiState.update { it.copy(lastSeen = false) }
             }
         }
     }
@@ -233,16 +230,14 @@ class ChatViewModel @Inject constructor(
                             )
                         }
                     } else if (downloaderManager.isDownloaded(
-                            file.id,
-                            file.extension
+                            file.id, file.extension
                         )
                     ) {
                         file.copy(
                             status = DownloadStatus.COMPLETED,
                             progress = 100,
                             localUri = downloaderManager.getFile(
-                                file.id,
-                                file.extension
+                                file.id, file.extension
                             ).absolutePath
                         )
                     } else file
@@ -266,8 +261,7 @@ class ChatViewModel @Inject constructor(
     private fun loadChatData() {
         _uiState.update {
             it.copy(
-                isLoading = true,
-                profile = null
+                isLoading = true, profile = null
             )
         }
         
@@ -290,8 +284,7 @@ class ChatViewModel @Inject constructor(
                         )
                         _uiState.update {
                             it.copy(
-                                profile = profile,
-                                isJoined = channel.isSubscribed
+                                profile = profile, isJoined = channel.isSubscribed
                             )
                         }
                         updateUiContent()
@@ -354,14 +347,13 @@ class ChatViewModel @Inject constructor(
                                 if (isOnline) {
                                     "в сети"
                                 } else {
-                                    "в сети " + user.lastSeen.toInstance().toPrettyTime()
+                                    "был(а) в " + user.lastSeen.toInstance().toPrettyTime()
                                 }
                             } else ""
                             
                             _uiState.update {
                                 it.copy(
-                                    profile = profile,
-                                    subTitle = lastSeenText
+                                    profile = profile, subTitle = lastSeenText
                                 )
                             }
                             updateUiContent()
@@ -381,8 +373,7 @@ class ChatViewModel @Inject constructor(
                         updateChatItems(messages)
                         _uiState.update {
                             it.copy(
-                                isLoading = false,
-                                isLoadingMore = false
+                                isLoading = false, isLoadingMore = false
                             )
                         }
                         if (messages.isNotEmpty() && !isFirstLoadDone) {
@@ -398,18 +389,14 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val freshMessages = chatRepository.getMessages(
-                    chatId = _uiState.value.chatId,
-                    limit = 50,
-                    offset = 0
+                    chatId = _uiState.value.chatId, limit = 50, offset = 0
                 )
                 if (freshMessages.size < 50) {
                     _uiState.update { it.copy(hasMoreMessages = false) }
                 }
             } catch (e: Exception) {
                 Log.e(
-                    "ChatVM",
-                    "Error fetching fresh messages",
-                    e
+                    "ChatVM", "Error fetching fresh messages", e
                 )
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
@@ -427,18 +414,14 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val offset = limitFlow.value
-                val moreMessages =
-                    chatRepository.getMessages(
-                        _uiState.value.chatId,
-                        limit = 50,
-                        offset = offset
-                    )
+                val moreMessages = chatRepository.getMessages(
+                    _uiState.value.chatId, limit = 50, offset = offset
+                )
                 
                 if (moreMessages.isEmpty()) {
                     _uiState.update {
                         it.copy(
-                            isLoadingMore = false,
-                            hasMoreMessages = false
+                            isLoadingMore = false, hasMoreMessages = false
                         )
                     }
                 } else {
@@ -449,9 +432,7 @@ class ChatViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e(
-                    "ChatVM",
-                    "Error loading more messages",
-                    e
+                    "ChatVM", "Error loading more messages", e
                 )
                 _uiState.update { it.copy(isLoadingMore = false) }
             }
@@ -482,8 +463,7 @@ class ChatViewModel @Inject constructor(
             ChatType.PRIVATE -> {
                 actions = listOf(
                     TopBarAction(
-                        icon = Icons.Rounded.MoreVert,
-                        dropdownActions = listOf(
+                        icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
                             DropdownMenuAction(
                                 Icons.Rounded.DeleteOutline,
                                 R.string.clear_history,
@@ -503,8 +483,7 @@ class ChatViewModel @Inject constructor(
                     if (isOwner) {
                         actions = listOf(
                             TopBarAction(
-                                icon = Icons.Rounded.MoreVert,
-                                dropdownActions = listOf(
+                                icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
                                     DropdownMenuAction(
                                         Icons.Rounded.DeleteOutline,
                                         R.string.clear_history,
@@ -529,8 +508,7 @@ class ChatViewModel @Inject constructor(
                     if (isOwner) {
                         actions = listOf(
                             TopBarAction(
-                                icon = Icons.Rounded.MoreVert,
-                                dropdownActions = listOf(
+                                icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
                                     DropdownMenuAction(
                                         Icons.Rounded.DeleteOutline,
                                         R.string.clear_history,
@@ -542,8 +520,7 @@ class ChatViewModel @Inject constructor(
                     } else {
                         actions = listOf(
                             TopBarAction(
-                                icon = Icons.Rounded.MoreVert,
-                                dropdownActions = listOf(
+                                icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
                                     DropdownMenuAction(
                                         Icons.AutoMirrored.Rounded.Logout,
                                         R.string.leave_group,
@@ -583,8 +560,7 @@ class ChatViewModel @Inject constructor(
             
             if (lastDate == null || !messageDate.isEqual(lastDate)) {
                 val monthName = messageDate.month.getDisplayName(
-                    TextStyle.FULL,
-                    Locale.getDefault()
+                    TextStyle.FULL, Locale.getDefault()
                 )
                 val capitalizedMonthName = monthName.replaceFirstChar {
                     if (it.isLowerCase()) it.titlecase() else it.toString()
@@ -598,12 +574,11 @@ class ChatViewModel @Inject constructor(
                 if (text.isNotBlank()) {
                     chatItems.add(
                         ChatItem.SystemMessage(
-                            text = text.trim(),
-                            sendTime = message.sendTime
+                            text = text.trim(), sendTime = message.sendTime
                         )
                     )
                 }
-                lastSenderId = message.senderId
+                lastSenderId = SYSTEM_USER_ID
                 return@forEach
             }
             
@@ -615,16 +590,13 @@ class ChatViewModel @Inject constructor(
             val updatedFiles = message.files.map { file ->
                 val localFile by lazy {
                     downloaderManager.getFile(
-                        file.id,
-                        file.extension
+                        file.id, file.extension
                     )
                 }
                 
                 if (file.localUri != null && File(file.localUri).exists()) {
                     file.copy(
-                        status = DownloadStatus.COMPLETED,
-                        progress = 100,
-                        localUri = file.localUri
+                        status = DownloadStatus.COMPLETED, progress = 100, localUri = file.localUri
                     )
                 } else if (localFile.exists() && localFile.length() > 0) {
                     file.copy(
@@ -659,13 +631,10 @@ class ChatViewModel @Inject constructor(
             }
             actions.add(
                 DropdownMenuAction(
-                    Icons.Rounded.DeleteOutline,
-                    R.string.delete,
-                    onClick = {
+                    Icons.Rounded.DeleteOutline, R.string.delete, onClick = {
                         showDeleteMessageDialog(message.id)
                         selectMessage(message)
-                    },
-                    isDestructive = true
+                    }, isDestructive = true
                 )
             )
             
@@ -702,8 +671,7 @@ class ChatViewModel @Inject constructor(
             val rawMessages = getRawMessages()
             val lastId = if (rawMessages.isNotEmpty()) rawMessages.last().id + 1 else 1
             val tempId = Random.nextInt(
-                lastId + 1,
-                Int.MAX_VALUE
+                lastId + 1, Int.MAX_VALUE
             )
             
             val message = Message(
@@ -717,17 +685,11 @@ class ChatViewModel @Inject constructor(
             )
             
             changeText("")
-            updateChatItems(rawMessages + message)
             
             try {
                 chatRepository.sendMessage(
-                    message.chatId,
-                    validText
+                    message.chatId, validText
                 )?.let {
-                    val updatedMessages = (rawMessages + message).map {
-                        if (it.id == tempId) it.copy(id = it.id) else it
-                    }
-                    updateChatItems(updatedMessages)
                     _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
                 }
             } catch (e: Exception) {
@@ -759,21 +721,13 @@ class ChatViewModel @Inject constructor(
         }
     }
     
-    fun onToggleMuteClicked() {
-        _uiState.update { it.copy(isMuted = !it.isMuted) }
-    }
+    fun showDeleteChatDialog() = _uiState.update { it.copy(showDeleteChatDialog = true) }
     
-    fun showDeleteChatDialog() =
-        _uiState.update { it.copy(showDeleteChatDialog = true) }
+    fun hideDeleteChatDialog() = _uiState.update { it.copy(showDeleteChatDialog = false) }
     
-    fun hideDeleteChatDialog() =
-        _uiState.update { it.copy(showDeleteChatDialog = false) }
+    fun showClearHistoryDialog() = _uiState.update { it.copy(showClearHistoryDialog = true) }
     
-    fun showClearHistoryDialog() =
-        _uiState.update { it.copy(showClearHistoryDialog = true) }
-    
-    fun hideClearHistoryDialog() =
-        _uiState.update { it.copy(showClearHistoryDialog = false) }
+    fun hideClearHistoryDialog() = _uiState.update { it.copy(showClearHistoryDialog = false) }
     
     fun showDeleteMessageDialog(messageId: Int) {
         _selectedMessageId.value = messageId
@@ -785,16 +739,13 @@ class ChatViewModel @Inject constructor(
         _uiState.update { it.copy(showDeleteMessageDialog = false) }
     }
     
-    fun showLeaveDialog() =
-        _uiState.update { it.copy(showLeaveDialog = true) }
+    fun showLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = true) }
     
-    fun hideLeaveDialog() =
-        _uiState.update { it.copy(showLeaveDialog = false) }
+    fun hideLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = false) }
     
     fun onDeleteChatConfirmed() {
         viewModelScope.launch {
             if (chatRepository.deleteChat(_uiState.value.chatId)) {
-                updateChatItems(emptyList())
                 hideDeleteChatDialog()
                 _uiEffect.emit(ChatUiEffect.NavigateToMain)
             }
@@ -803,9 +754,7 @@ class ChatViewModel @Inject constructor(
     
     fun onDeleteMessagesConfirmed() {
         viewModelScope.launch {
-            if (chatRepository.deleteChatMessages(_uiState.value.chatId)
-            ) {
-                updateChatItems(emptyList())
+            if (chatRepository.deleteChatMessages(_uiState.value.chatId)) {
                 hideClearHistoryDialog()
             }
         }
@@ -814,10 +763,7 @@ class ChatViewModel @Inject constructor(
     fun onDeleteMessageConfirmed() {
         viewModelScope.launch {
             _uiState.value.selectedMessages.forEach { message ->
-                if (chatRepository.deleteMessage(_uiState.value.chatId, message.id)) {
-                    val messages = getRawMessages().filter { it.id != message.id }
-                    updateChatItems(messages)
-                }
+                chatRepository.deleteMessage(_uiState.value.chatId, message.id)
             }
             _uiState.update { it.copy(selectedMessages = emptySet()) }
             hideDeleteMessageDialog()
@@ -830,13 +776,11 @@ class ChatViewModel @Inject constructor(
     fun unselectMessage(message: Message) =
         _uiState.update { it.copy(selectedMessages = it.selectedMessages - message) }
     
-    fun copyToClipboard(text: String?) =
-        text?.let { clipboardService.copy(it) }
+    fun copyToClipboard(text: String?) = text?.let { clipboardService.copy(it) }
     
-    fun onBackClicked() =
-        viewModelScope.launch {
-            _uiEffect.emit(ChatUiEffect.NavigateBack)
-        }
+    fun onBackClicked() = viewModelScope.launch {
+        _uiEffect.emit(ChatUiEffect.NavigateBack)
+    }
     
     fun cancelUpload(tempMessageId: Int) {
         val uploadId = tempMessageId.toLong()
@@ -856,9 +800,7 @@ class ChatViewModel @Inject constructor(
                 viewModelScope.launch {
                     try {
                         chatRepository.getDownloadUrl(
-                            message.chatId,
-                            message.id,
-                            file.id
+                            message.chatId, message.id, file.id
                         )?.let {
                             downloaderManager.download(
                                 url = it.downloadUrl,
@@ -871,9 +813,7 @@ class ChatViewModel @Inject constructor(
                         }
                     } catch (e: Exception) {
                         Log.e(
-                            "ChatVM",
-                            "Error getting download URL",
-                            e
+                            "ChatVM", "Error getting download URL", e
                         )
                     }
                 }
@@ -918,18 +858,15 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             uris.forEach { uri ->
                 val fileName = getFileName(
-                    context,
-                    uri
+                    context, uri
                 ) ?: "file"
                 val fileSize = getFileSize(
-                    context,
-                    uri
+                    context, uri
                 )
                 val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
                 
                 val tempId = Random.nextInt(
-                    1000000,
-                    Int.MAX_VALUE
+                    1000000, Int.MAX_VALUE
                 )
                 val tempMessage = Message(
                     id = tempId,
@@ -954,34 +891,24 @@ class ChatViewModel @Inject constructor(
                 updateChatItems(getRawMessages() + tempMessage)
                 
                 downloaderManager.registerUpload(
-                    tempId,
-                    fileName,
-                    fileSize
+                    tempId, fileName, fileSize
                 )
                 
                 val initResponse = chatRepository.initFileUpload(
-                    _uiState.value.chatId,
-                    FileInitRequestDto(
-                        name = fileName,
-                        size = fileSize,
-                        mimeType = mimeType
+                    _uiState.value.chatId, FileInitRequestDto(
+                        name = fileName, size = fileSize, mimeType = mimeType
                     )
                 )
                 
                 try {
                     if (initResponse != null) {
                         performUpload(
-                            uri,
-                            initResponse.signedUrl,
-                            tempId,
-                            context
+                            uri, initResponse.signedUrl, tempId, context
                         ) {
                             viewModelScope.launch {
                                 val confirmedMessage = chatRepository.confirmFileUpload(
-                                    _uiState.value.chatId,
-                                    FileConfirmRequestDto(
-                                        fileId = initResponse.fileId,
-                                        text = null
+                                    _uiState.value.chatId, FileConfirmRequestDto(
+                                        fileId = initResponse.fileId, text = null
                                     )
                                 )
                                 if (confirmedMessage != null) {
@@ -1015,15 +942,11 @@ class ChatViewModel @Inject constructor(
                 val mimeType = context.contentResolver.getType(uri)?.toMediaTypeOrNull()
                 
                 val requestBody = ProgressRequestBody(
-                    mimeType,
-                    fileSize,
-                    { progress ->
+                    mimeType, fileSize, { progress ->
                         downloaderManager.updateUploadProgress(
-                            id,
-                            progress
+                            id, progress
                         )
-                    }
-                ) {
+                    }) {
                     context.contentResolver.openInputStream(uri)
                         ?: throw java.io.IOException("Unable to open input stream from $uri")
                 }
@@ -1041,9 +964,7 @@ class ChatViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e(
-                    "ChatViewModel",
-                    e.message,
-                    e
+                    "ChatViewModel", e.message, e
                 )
                 if (e !is CancellationException) {
                     withContext(Dispatchers.Main) {
@@ -1062,11 +983,7 @@ class ChatViewModel @Inject constructor(
     ): String? {
         var name: String? = null
         context.contentResolver.query(
-            uri,
-            null,
-            null,
-            null,
-            null
+            uri, null, null, null, null
         )?.use { cursor ->
             if (cursor.moveToFirst()) {
                 name =
@@ -1081,11 +998,7 @@ class ChatViewModel @Inject constructor(
     ): Long {
         var size: Long = 0
         context.contentResolver.query(
-            uri,
-            null,
-            null,
-            null,
-            null
+            uri, null, null, null, null
         )?.use { cursor ->
             if (cursor.moveToFirst()) {
                 size =
@@ -1099,8 +1012,7 @@ class ChatViewModel @Inject constructor(
         if (message.senderId == _uiState.value.currentUserId || message.isRead) return
         viewModelScope.launch {
             if (chatRepository.makeAsRead(
-                    _uiState.value.chatId,
-                    message.id
+                    _uiState.value.chatId, message.id
                 )
             ) {
                 readMessage(message.id)
@@ -1119,9 +1031,7 @@ class ChatViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e(
-                    "ChatVM",
-                    "Error loading user name",
-                    e
+                    "ChatVM", "Error loading user name", e
                 )
             }
         }
@@ -1129,11 +1039,6 @@ class ChatViewModel @Inject constructor(
     
     private fun readMessage(id: Int) {
         val messages = getRawMessages().map { if (it.id == id) it.copy(isRead = true) else it }
-        updateChatItems(messages)
-    }
-    
-    private fun deleteMessage(id: Int) {
-        val messages = getRawMessages().filter { it.id != id }
         updateChatItems(messages)
     }
     
@@ -1174,8 +1079,7 @@ class ChatViewModel @Inject constructor(
                 } else if (info.isBanned) {
                     _uiState.update {
                         it.copy(
-                            showBannedDialog = true,
-                            isProcessingInvite = false
+                            showBannedDialog = true, isProcessingInvite = false
                         )
                     }
                     vibrationManager.vibrate(VibrationPattern.Error)

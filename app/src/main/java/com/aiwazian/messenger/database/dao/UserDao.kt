@@ -20,7 +20,7 @@ interface UserDao {
     @Query("SELECT * FROM user WHERE id = :id")
     suspend fun get(id: Long): UserEntity?
 
-    @Query("SELECT * FROM user WHERE id = (SELECT userId FROM account WHERE isCurrent = 1)")
+    @Query("SELECT * FROM user WHERE id = (SELECT userId FROM account WHERE isCurrent = TRUE)")
     fun getMe(): Flow<UserEntity?>
 
     @Query("SELECT * FROM user")

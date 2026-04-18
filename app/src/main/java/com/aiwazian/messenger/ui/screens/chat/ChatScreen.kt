@@ -24,11 +24,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,7 +39,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -65,6 +66,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -89,6 +91,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
@@ -99,9 +102,11 @@ import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
+import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -703,7 +708,9 @@ private fun InputMessage(
                 }
                 IconButton(onClick = onSendMessage) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.Send, contentDescription = null
+                        imageVector = Icons.AutoMirrored.Rounded.Send,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -723,6 +730,7 @@ private fun AttachmentBottomSheet(
 ) {
     var selectedIndex by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState(pageCount = { 2 })
+    val sheetState = rememberModalBottomSheetState()
     
     LaunchedEffect(selectedIndex) {
         pagerState.animateScrollToPage(selectedIndex)
@@ -733,93 +741,112 @@ private fun AttachmentBottomSheet(
     }
     
     ModalBottomSheet(
-        onDismissRequest = onDismissRequest, dragHandle = null
+        sheetState = sheetState,
+        onDismissRequest = onDismissRequest,
+        dragHandle = null
     ) {
-        HorizontalPager(state = pagerState, modifier = Modifier.padding(top = 10.dp)) { page ->
-            when (page) {
-                0 -> {
-                    SectionContainer {
-                        Card(
-                            onClick = onFileSystemClick,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RectangleShape,
-                            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(10.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.primaryContainer)
+        Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.BottomCenter) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .padding(top = 10.dp, bottom = 42.dp)
+                    .align(Alignment.TopCenter),
+                verticalAlignment = Alignment.Top
+            ) { page ->
+                when (page) {
+                    0 -> {
+                        Column(Modifier.fillMaxSize()) {
+                            SectionContainer {
+                                Card(
+                                    onClick = onFileSystemClick,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RectangleShape,
+                                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
                                 ) {
-                                    Icon(
+                                    Row(
                                         modifier = Modifier.padding(10.dp),
-                                        imageVector = Icons.Rounded.Storage,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(CircleShape)
+                                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                        ) {
+                                            Icon(
+                                                modifier = Modifier.padding(10.dp),
+                                                imageVector = Icons.Rounded.Storage,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                        }
+                                        
+                                        Column {
+                                            Text(
+                                                text = stringResource(R.string.internal_storage),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                text = stringResource(R.string.file_system_search),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                fontSize = 12.sp,
+                                                lineHeight = 12.sp
+                                            )
+                                        }
+                                    }
                                 }
-                                
-                                Column {
-                                    Text(
-                                        text = stringResource(R.string.internal_storage),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.file_system_search),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = 12.sp,
-                                        lineHeight = 12.sp
-                                    )
+                            }
+                        }
+                    }
+                    
+                    1 -> {
+                        Column {
+                            SectionContainer {
+                                FramelessTextBox(
+                                    placeholder = stringResource(R.string.search),
+                                    value = "",
+                                    onValueChange = {})
+                            }
+                            
+                            SectionContainer {
+                                LazyColumn {
+                                    items(30) {
+                                        SectionItem(headlineText = "ds")
+                                    }
                                 }
                             }
                         }
                     }
                 }
-                
-                1 -> {
-                    SectionContainer {
-                        Text("Music")
-                    }
+            }
+            
+            PrimaryTabRow(
+                selectedTabIndex = selectedIndex,
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) }
+                    .padding(horizontal = 10.dp),
+                containerColor = Color.Transparent,
+                divider = {},
+            ) {
+                Tab(
+                    selected = selectedIndex == 0,
+                    onClick = { selectedIndex = 0 },
+                    modifier = Modifier.clip(MaterialTheme.shapes.medium),
+                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurface
+                ) {
+                    Text(stringResource(R.string.files), modifier = Modifier.padding(10.dp))
                 }
-            }
-        }
-        PrimaryTabRow(
-            selectedTabIndex = selectedIndex,
-            modifier = Modifier.padding(horizontal = 10.dp),
-            containerColor = Color.Transparent,
-            divider = {},
-        ) {
-            Tab(
-                selected = selectedIndex == 0,
-                onClick = { selectedIndex = 0 },
-                modifier = Modifier.clip(
-                    MaterialTheme.shapes.medium.copy(
-                        bottomStart = CornerSize(0.dp),
-                        bottomEnd = CornerSize(0.dp)
-                    )
-                ),
-                selectedContentColor = MaterialTheme.colorScheme.primary,
-                unselectedContentColor = MaterialTheme.colorScheme.onSurface
-            ) {
-                Text(stringResource(R.string.files), modifier = Modifier.padding(10.dp))
-            }
-            Tab(
-                selected = selectedIndex == 1,
-                onClick = { selectedIndex = 1 },
-                modifier = Modifier.clip(
-                    MaterialTheme.shapes.medium.copy(
-                        bottomStart = CornerSize(0.dp),
-                        bottomEnd = CornerSize(0.dp)
-                    )
-                ),
-                selectedContentColor = MaterialTheme.colorScheme.primary,
-                unselectedContentColor = MaterialTheme.colorScheme.onSurface
-            ) {
-                Text(stringResource(R.string.music), modifier = Modifier.padding(10.dp))
+                Tab(
+                    selected = selectedIndex == 1,
+                    onClick = { selectedIndex = 1 },
+                    modifier = Modifier.clip(MaterialTheme.shapes.medium),
+                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurface
+                ) {
+                    Text(stringResource(R.string.music), modifier = Modifier.padding(10.dp))
+                }
             }
         }
     }
