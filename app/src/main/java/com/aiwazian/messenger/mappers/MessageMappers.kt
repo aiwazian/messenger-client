@@ -7,26 +7,14 @@ package com.aiwazian.messenger.mappers
 import com.aiwazian.messenger.database.entity.MessageEntity
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageFile
-import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.network.dto.MessageDto
 import com.aiwazian.messenger.network.dto.MessageFileDto
-import com.aiwazian.messenger.network.dto.MessageResponseDto
-
-fun MessageResponseDto.toDomain(): Message = Message(
-    id = id,
-    senderId = senderId.toLong(),
-    chatId = chatId.toLong(),
-    text = text,
-    sendTime = sendTime,
-    isRead = isRead ?: false,
-    files = files.map { it.toDomain() }
-)
 
 fun MessageDto.toDomain(): Message = Message(
     id = id,
-    senderId = senderId.toLong(),
-    chatId = chatId.toLong(),
-    text = text,
+    senderId = senderId,
+    chatId = chatId,
+    text = if (text == "null") null else text,
     sendTime = sendTime,
     isRead = isRead ?: false,
     files = files.map { it.toDomain() }

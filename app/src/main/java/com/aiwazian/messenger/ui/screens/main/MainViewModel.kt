@@ -7,17 +7,13 @@ package com.aiwazian.messenger.ui.screens.main
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.Chat
-import com.aiwazian.messenger.domain.DeleteChatPayload
-import com.aiwazian.messenger.domain.DeleteMessagePayload
 import com.aiwazian.messenger.domain.Message
-import com.aiwazian.messenger.domain.PresencePayload
-import com.aiwazian.messenger.domain.ReadMessagePayload
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.UserRepository
-import com.aiwazian.messenger.socket.WebSocketAction
 import com.aiwazian.messenger.socket.WebSocketClient
+import com.aiwazian.messenger.socket.WebSocketEvent
 import com.aiwazian.messenger.utils.AppLockManager
 import com.aiwazian.messenger.utils.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -103,31 +99,31 @@ class MainViewModel @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToEvent<Message>(WebSocketAction.NEW_MESSAGE) { message ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.NewMessage) { message ->
             onReceivingMessage(message)
         }
         
-        webSocketClient.subscribeToEvent<DeleteMessagePayload>(WebSocketAction.DELETE_MESSAGE) { message ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.DeleteMessage) { message ->
             onMessageDeleted(message.messageId, message.chatId)
         }
         
-        webSocketClient.subscribeToEvent<ReadMessagePayload>(WebSocketAction.READ_MESSAGE) { message ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.ReadMessage) { message ->
             onReadMessage(message.chatId, message.messageId)
         }
         
-        webSocketClient.subscribeToEvent<Chat>(WebSocketAction.NEW_CHAT) { chatInfo ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.NewChat) { chatInfo ->
             showNewChat(chatInfo)
         }
         
-        webSocketClient.subscribeToEvent<DeleteChatPayload>(WebSocketAction.DELETE_CHAT) { payload ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.DeleteChat) { payload ->
             deleteChat(payload.chatId)
         }
         
-        webSocketClient.subscribeToEvent<DeleteChatPayload>(WebSocketAction.CHAT_REMOVED) { payload ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.ChatRemoved) { payload ->
             deleteChat(payload.chatId)
         }
         
-        webSocketClient.subscribeToEvent<DeleteChatPayload>(WebSocketAction.CHAT_UPDATED) { payload ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.ChatUpdated) { payload ->
             viewModelScope.launch {
                 chatRepository.get(payload.chatId)?.let {
                     chatRepository.saveChat(it)
@@ -135,7 +131,7 @@ class MainViewModel @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToEvent<PresencePayload>(WebSocketAction.USER_ONLINE) { payload ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.UserOnline) { payload ->
             viewModelScope.launch {
                 _chats.value.find { it.id == payload.userId }?.let {
                     //                    chatRepository.saveChat(it.copy(isOnline = true))
@@ -143,7 +139,7 @@ class MainViewModel @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToEvent<PresencePayload>(WebSocketAction.USER_OFFLINE) { payload ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.UserOffline) { payload ->
             viewModelScope.launch {
                 _chats.value.find { it.id == payload.userId }?.let {
                     //                    chatRepository.saveChat(it.copy(isOnline = false))

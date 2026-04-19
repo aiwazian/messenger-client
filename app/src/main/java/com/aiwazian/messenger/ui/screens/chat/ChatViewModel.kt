@@ -15,13 +15,9 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.domain.DeleteChatPayload
-import com.aiwazian.messenger.domain.DeleteMessagePayload
 import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageFile
-import com.aiwazian.messenger.domain.PresencePayload
-import com.aiwazian.messenger.domain.ReadMessagePayload
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.DownloadStatus
@@ -35,8 +31,8 @@ import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.UserRepository
-import com.aiwazian.messenger.socket.WebSocketAction
 import com.aiwazian.messenger.socket.WebSocketClient
+import com.aiwazian.messenger.socket.WebSocketEvent
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.profile.Profile
@@ -121,7 +117,7 @@ class ChatViewModel @Inject constructor(
     }
     
     private fun setupWebSocketListeners() {
-        webSocketClient.subscribeToEvent<Message>(WebSocketAction.NEW_MESSAGE) { message ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.NewMessage) { message ->
             if (message.senderId == _uiState.value.chatId && message.senderId != _uiState.value.currentUserId || message.chatId == _uiState.value.chatId) {
                 viewModelScope.launch {
                     val existingMessages = getRawMessages()
@@ -136,7 +132,7 @@ class ChatViewModel @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToEvent<DeleteChatPayload>(WebSocketAction.DELETE_CHAT) { chat ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.DeleteChat) { chat ->
             if (chat.chatId == _uiState.value.chatId) {
                 viewModelScope.launch {
                     _uiEffect.emit(ChatUiEffect.NavigateToMain)
@@ -144,7 +140,7 @@ class ChatViewModel @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToEvent<DeleteMessagePayload>(WebSocketAction.DELETE_MESSAGE) { message ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.DeleteMessage) { message ->
             if (message.chatId == _uiState.value.chatId) {
                 viewModelScope.launch {
                     val messages = getRawMessages().filter { it.id != message.messageId }
@@ -153,7 +149,7 @@ class ChatViewModel @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToEvent<ReadMessagePayload>(WebSocketAction.READ_MESSAGE) { message ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.ReadMessage) { message ->
             viewModelScope.launch {
                 val messages = getRawMessages().map {
                     if (it.id == message.messageId) it.copy(isRead = true) else it
@@ -162,7 +158,7 @@ class ChatViewModel @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToEvent<DeleteChatPayload>(WebSocketAction.HISTORY_CLEAR) { payload ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.HistoryClear) { payload ->
             if (payload.chatId == _uiState.value.chatId) {
                 viewModelScope.launch {
                     chatRepository.clearLocalHistory(_uiState.value.chatId)
@@ -170,7 +166,7 @@ class ChatViewModel @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToEvent<DeleteChatPayload>(WebSocketAction.CHAT_REMOVED) { payload ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.ChatRemoved) { payload ->
             if (payload.chatId == _uiState.value.chatId) {
                 viewModelScope.launch {
                     _uiEffect.emit(ChatUiEffect.NavigateToMain)
@@ -190,12 +186,12 @@ class ChatViewModel @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToEvent<PresencePayload>(WebSocketAction.USER_ONLINE) { payload ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.UserOnline) { payload ->
             if (payload.userId == _uiState.value.chatId) { //                _uiState.update { it.copy(lastSeen = true) }
             }
         }
         
-        webSocketClient.subscribeToEvent<PresencePayload>(WebSocketAction.USER_OFFLINE) { payload ->
+        webSocketClient.subscribeToEvent(WebSocketEvent.UserOffline) { payload ->
             if (payload.userId == _uiState.value.chatId) { //                _uiState.update { it.copy(lastSeen = false) }
             }
         }

@@ -20,20 +20,8 @@ data class MessageFileDto(
 @Serializable
 data class MessageDto(
     @SerialName("id") val id: Int,
-    @SerialName("senderId") val senderId: String,
-    @SerialName("chatId") val chatId: String,
-    @SerialName("text") val text: String? = null,
-    @SerialName("sendTime") val sendTime: Long,
-    @SerialName("editedAt") val editedAt: Long? = null,
-    @SerialName("isRead") val isRead: Boolean? = null,
-    @SerialName("files") val files: List<MessageFileDto> = emptyList()
-)
-
-@Serializable
-data class MessageResponseDto(
-    @SerialName("id") val id: Int,
-    @SerialName("senderId") val senderId: String,
-    @SerialName("chatId") val chatId: String,
+    @SerialName("senderId") val senderId: Long,
+    @SerialName("chatId") val chatId: Long,
     @SerialName("text") val text: String? = null,
     @SerialName("sendTime") val sendTime: Long,
     @SerialName("editedAt") val editedAt: Long? = null,
