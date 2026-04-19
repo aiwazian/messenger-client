@@ -44,8 +44,7 @@ import com.aiwazian.messenger.extensions.getFileIcon
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MessageFile(
-    file: MessageFile,
-    onAction: (FileAction) -> Unit
+    file: MessageFile, onAction: (FileAction) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -53,11 +52,13 @@ fun MessageFile(
                 when (file.status) {
                     DownloadStatus.DOWNLOADING -> onAction(FileAction.PAUSE)
                     DownloadStatus.PAUSED -> onAction(FileAction.RESUME)
-                    DownloadStatus.IDLE -> onAction(FileAction.DOWNLOAD)
+                    DownloadStatus.IDLE,
+                    DownloadStatus.CANCELLED,
+                    DownloadStatus.FAILED,
+                    DownloadStatus.UPLOADED -> onAction(FileAction.DOWNLOAD)
+                    
                     DownloadStatus.UPLOADING -> onAction(FileAction.CANCEL)
                     DownloadStatus.COMPLETED -> onAction(FileAction.OPEN)
-                    DownloadStatus.FAILED -> onAction(FileAction.DOWNLOAD)
-                    DownloadStatus.CANCELLED -> onAction(FileAction.DOWNLOAD)
                 }
             }
             .padding(8.dp),
@@ -83,16 +84,14 @@ fun MessageFile(
                     )
                     
                     CircularWavyProgressIndicator(
-                        progress = { animatedProgress },
-                        modifier = Modifier.size(48.dp)
+                        progress = { animatedProgress }, modifier = Modifier.size(48.dp)
                     )
                 }
             }
         }
         
         Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
                 text = file.name,
@@ -125,6 +124,7 @@ private fun StatusIcon(
         DownloadStatus.COMPLETED -> file.extension.getFileIcon()
         DownloadStatus.FAILED -> Icons.Rounded.Refresh
         DownloadStatus.CANCELLED -> Icons.Rounded.Download
+        DownloadStatus.UPLOADED -> Icons.Rounded.Download
     }
     Icon(
         imageVector = icon,

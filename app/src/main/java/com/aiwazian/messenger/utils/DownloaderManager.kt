@@ -184,7 +184,7 @@ class DownloaderManager @Inject constructor(
         _downloads.update { current ->
             val existing = current[id] ?: return@update current
             current + (id to existing.copy(
-                status = DownloadStatus.COMPLETED,
+                status = DownloadStatus.UPLOADED,
                 progress = 100
             ))
         }

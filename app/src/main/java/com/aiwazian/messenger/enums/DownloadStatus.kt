@@ -11,6 +11,7 @@ enum class DownloadStatus {
     IDLE,
     DOWNLOADING,
     UPLOADING,
+    UPLOADED,
     PAUSED,
     COMPLETED,
     CANCELLED,

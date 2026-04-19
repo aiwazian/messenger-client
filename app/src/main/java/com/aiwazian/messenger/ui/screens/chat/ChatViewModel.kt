@@ -515,17 +515,15 @@ class ChatViewModel @Inject constructor(
             val isFirstInGroup = message.senderId != lastSenderId
             
             val updatedFiles = message.files.map { file ->
-                val localFile by lazy {
-                    downloaderManager.getFile(
-                        file.id, file.extension
-                    )
-                }
+                val localFile = if (file.id.isNotBlank()) downloaderManager.getFile(file.id, file.extension) else null
                 
-                if (file.localUri != null && File(file.localUri).exists()) {
+                if (file.status == DownloadStatus.UPLOADED) {
+                    file
+                } else if (file.localUri != null && File(file.localUri).exists()) {
                     file.copy(
                         status = DownloadStatus.COMPLETED, progress = 100, localUri = file.localUri
                     )
-                } else if (localFile.exists() && localFile.length() > 0) {
+                } else if (localFile != null && localFile.isFile && localFile.length() > 0) {
                     file.copy(
                         status = DownloadStatus.COMPLETED,
                         progress = 100,
@@ -839,9 +837,13 @@ class ChatViewModel @Inject constructor(
                                     )
                                 )
                                 if (confirmedMessage != null) {
+                                    // Принудительно устанавливаем UPLOADED, чтобы не конфликтовать с COMPLETED (скачанным)
+                                    val messageWithUploadedStatus = confirmedMessage.copy(
+                                        files = confirmedMessage.files.map { it.copy(status = DownloadStatus.UPLOADED) }
+                                    )
                                     downloaderManager.completeUpload(tempId)
                                     val updated =
-                                        getRawMessages().map { if (it.id == tempId) confirmedMessage else it }
+                                        getRawMessages().map { if (it.id == tempId) messageWithUploadedStatus else it }
                                     updateChatItems(updated)
                                 }
                             }
