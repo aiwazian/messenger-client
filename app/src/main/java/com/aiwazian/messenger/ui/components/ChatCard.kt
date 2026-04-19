@@ -57,7 +57,7 @@ fun ChatCard(
             .sharedBounds(key = "chat-${chat.id}"),
         headlineContent = {
             Text(
-                text = chat.chatName,
+                text = chat.chatName.asString(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.sharedElement(key = "chat-name-${chat.id}")

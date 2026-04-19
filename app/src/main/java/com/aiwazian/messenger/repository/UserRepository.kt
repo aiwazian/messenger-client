@@ -24,16 +24,16 @@ class UserRepository @Inject constructor(
     private val userApi: UserApi,
     private val userDao: UserDao
 ) {
-    fun getMe(): Flow<User> = userDao.getMe().filterNotNull().map {
-        it.toDomain()
-    }.onStart {
-        userDao.getMe().first()?.let {
+    fun getMe(): Flow<User> = userDao.getMe().filterNotNull().map { it.toDomain() }.onStart {
+        val localUser = userDao.getMe().first()
+        if (localUser == null) {
             try {
                 val response = userApi.getMe()
                 if (response.isSuccessful) {
                     response.body()?.let { userDao.insert(it.toEntity()) }
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.e("UserRepository", "Ошибка при загрузке профиля при старте", e)
             }
         }
     }

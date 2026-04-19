@@ -130,7 +130,7 @@ fun ChannelInviteLinksScreen(
                         val isSelected = selectedChatIds.contains(chat.id)
                         ListItem(
                             modifier = Modifier.clickable { viewModel.toggleChatSelection(chat.id) },
-                            headlineContent = { Text(chat.chatName) },
+                            headlineContent = { Text(chat.chatName.asString()) },
                             leadingContent = {
                                 Icon(
                                     imageVector = Icons.Rounded.AccountCircle,

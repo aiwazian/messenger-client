@@ -4,12 +4,11 @@
 
 package com.aiwazian.messenger.domain
 
-import kotlinx.serialization.Serializable
+import com.aiwazian.messenger.common.utils.UiText
 
-@Serializable
 data class Chat(
     val id: Long,
-    val chatName: String,
+    val chatName: UiText,
     val isPinned: Boolean,
     val lastMessage: Message?
 )

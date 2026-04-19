@@ -5,6 +5,8 @@
 package com.aiwazian.messenger.repository
 
 import android.util.Log
+import com.aiwazian.messenger.R
+import com.aiwazian.messenger.common.utils.UiText
 import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.MessageDao
@@ -43,15 +45,22 @@ class ChatRepository @Inject constructor(
     fun getAllChats(): Flow<List<Chat>> = channelFlow {
         launch {
             chatDao.getAllChatsFlow().collectLatest { entities ->
+                val myId = userRepository.getMe().first().id
                 val result = entities.map { entity ->
-                    val name = when (ChatType.fromId(entity.chatId)) {
-                        ChatType.PRIVATE -> userRepository.getById(entity.chatId)
-                            .first()
-                            .let { "${it.firstName} ${it.lastName.orEmpty()}".trim() }
+                    val name: UiText = when (ChatType.fromId(entity.chatId)) {
+                        ChatType.PRIVATE -> {
+                            if (entity.chatId == myId) {
+                                UiText.StringResource(R.string.saved_messages)
+                            } else {
+                                userRepository.getById(entity.chatId)
+                                    .first()
+                                    .let { UiText.DynamicString("${it.firstName} ${it.lastName.orEmpty()}".trim()) }
+                            }
+                        }
                         
-                        ChatType.GROUP -> groupRepository.getById(entity.chatId).first().name
-                        ChatType.CHANNEL -> channelRepository.getById(entity.chatId).first().name
-                        else -> ""
+                        ChatType.GROUP -> UiText.DynamicString(groupRepository.getById(entity.chatId).first().name)
+                        ChatType.CHANNEL -> UiText.DynamicString(channelRepository.getById(entity.chatId).first().name)
+                        else -> UiText.DynamicString("")
                     }
                     
                     val lastMessage = entity.lastMessageId?.let {
