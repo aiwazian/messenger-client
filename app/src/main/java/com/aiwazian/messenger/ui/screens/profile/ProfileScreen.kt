@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.profile
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -13,7 +12,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -26,7 +24,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -37,6 +34,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
 import com.aiwazian.messenger.ui.components.CustomDialog
@@ -107,64 +105,22 @@ fun ProfileScreen(
         }
     }
     
-    when {
-        uiState.isLoading -> {
-            Scaffold(topBar = {
-                PageTopBar(
-                    navigationIcon = NavigationIcon(
-                        icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                        onClick = navBackStack::removeLastOrNull
-                    )
-                )
-            }) {
-                Column(
-                    Modifier
-                        .padding(it)
-                        .fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    CircularWavyProgressIndicator()
-                }
-            }
-        }
-        
-        uiState.error != null -> {
-            Scaffold(topBar = {
-                PageTopBar(
-                    navigationIcon = NavigationIcon(
-                        icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                        onClick = navBackStack::removeLastOrNull
-                    )
-                )
-            }) {
-                Column(
-                    Modifier
-                        .padding(it)
-                        .fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = uiState.error ?: "Error")
-                }
-            }
-        }
-        
-        uiState.profile is Profile.User -> {
+    when (uiState.profile) {
+        is Profile.User -> {
             UserProfile(
                 user = uiState.profile as Profile.User,
                 actions = uiState.actions
             )
         }
         
-        uiState.profile is Profile.Channel -> {
+        is Profile.Channel -> {
             ChannelProfile(
                 channel = uiState.profile as Profile.Channel,
                 actions = uiState.actions
             )
         }
         
-        uiState.profile is Profile.Group -> {
+        is Profile.Group -> {
             GroupProfile(
                 group = uiState.profile as Profile.Group,
                 actions = uiState.actions
@@ -172,24 +128,7 @@ fun ProfileScreen(
         }
         
         else -> {
-            Scaffold(topBar = {
-                PageTopBar(
-                    navigationIcon = NavigationIcon(
-                        icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                        onClick = navBackStack::removeLastOrNull
-                    )
-                )
-            }) {
-                Column(
-                    Modifier
-                        .padding(it)
-                        .fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    CircularWavyProgressIndicator()
-                }
-            }
+        
         }
     }
     
@@ -215,6 +154,7 @@ private fun GroupProfile(
 ) {
     Scaffold(topBar = {
         TopBar(
+            chatId = group.id,
             title = group.name,
             actions = actions
         )
@@ -246,6 +186,7 @@ private fun ChannelProfile(
 ) {
     Scaffold(topBar = {
         TopBar(
+            chatId = channel.id,
             title = channel.name,
             actions = actions
         )
@@ -280,6 +221,7 @@ private fun UserProfile(
     Scaffold(
         topBar = {
             TopBar(
+                chatId = user.id,
                 title = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
                 actions = actions
             )
@@ -287,8 +229,8 @@ private fun UserProfile(
     ) {
         Column(
             Modifier
-                .padding(it)
                 .fillMaxSize()
+                .padding(it)
                 .verticalScroll(scrollState)
         ) {
             SectionContainer {
@@ -325,6 +267,7 @@ private fun UserProfile(
 
 @Composable
 private fun TopBar(
+    chatId: Long,
     title: String,
     actions: List<TopBarAction>
 ) {
@@ -336,7 +279,8 @@ private fun TopBar(
                 text = title,
                 maxLines = 1,
                 softWrap = false,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.sharedElement(key = "chat-name-$chatId")
             )
         },
         navigationIcon = NavigationIcon(

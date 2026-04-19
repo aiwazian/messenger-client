@@ -4,6 +4,11 @@
 
 package com.aiwazian.messenger.ui.components.navigation
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -15,6 +20,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.metadata
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
@@ -61,6 +67,7 @@ import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPass
 import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeScreen
 import com.aiwazian.messenger.ui.screens.settings.storage.StorageScreen
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun AppNavDisplay(startRoute: AppRoute? = null) {
     val backStack = rememberNavBackStack(AppRoute.Main)
@@ -69,69 +76,119 @@ fun AppNavDisplay(startRoute: AppRoute? = null) {
         backStack.add(it)
     }
     
-    CompositionLocalProvider(LocalNavBackStack provides backStack) {
-        NavDisplay(
-            backStack = backStack,
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            onBack = backStack::removeLastOrNull,
-            entryProvider = entryProvider {
-                entry<AppRoute.Main> { MainScreen() }
-                entry<AppRoute.Chat> { ChatScreen(chatId = it.chatId) }
-                entry<AppRoute.Profile> { ProfileScreen(profileId = it.profileId) }
-                entry<AppRoute.Settings> { SettingsScreen() }
-                entry<AppRoute.SettingsLanguage> { SettingsLanguageScreen() }
-                entry<AppRoute.SettingsDesign> { SettingsDarkThemeScreen() }
-                entry<AppRoute.SettingsChat> { SettingsAppearanceScreen() }
-                entry<AppRoute.SettingsPrivacy> { SettingsPrivacyScreen() }
-                entry<AppRoute.SettingsLastSeen> { SettingsLastSeenScreen(level = it.level) }
-                entry<AppRoute.SettingsSecurity> { SettingsSecurityScreen() }
-                entry<AppRoute.SettingsProfile> { SettingsProfileScreen() }
-                entry<AppRoute.SettingsUsername> { SettingsUsernameScreen(username = it.username) }
-                entry<AppRoute.SettingsBio> { SettingsBioScreen(level = it.level) }
-                entry<AppRoute.SettingsDateOfBirth> { SettingsDateOfBirthScreen(level = it.level) }
-                entry<AppRoute.SettingsInvites> { SettingsInvitesScreen(level = it.level) }
-                entry<AppRoute.SettingsDevices> { SettingsDevicesScreen() }
-                entry<AppRoute.SettingsPasscode> { SettingsPasscodeScreen() }
-                entry<AppRoute.SettingsPasscodeCreate> { SettingsPasscodeCreateScreen() }
-                entry<AppRoute.SettingsPasscodeChange> { SettingsPasscodeChangeScreen() }
-                entry<AppRoute.SettingsCloudPassword> { SettingsCloudPasswordScreen() }
-                entry<AppRoute.SettingsNotifications> { SettingsNotificationsScreen() }
-                entry<AppRoute.SettingsDataAndStorage> { StorageScreen() }
-                entry<AppRoute.SettingsProfileColor> { SettingsProfileColorScreen() }
-                entry<AppRoute.NewMessage> { NewMessageScreen() }
-                entry<AppRoute.CreateGroup> { CreateGroupScreen() }
-                entry<AppRoute.CreateChannel> { CreateChannelScreen() }
-                entry<AppRoute.ChannelSettings> { ChannelSettingsScreen(channelId = it.channelId) }
-                entry<AppRoute.ChannelTypeSettings> { ChannelTypeSettingsScreen(channelId = it.channelId) }
-                entry<AppRoute.ChannelSubscribers> { ChannelSubscribersScreen(channelId = it.channelId) }
-                entry<AppRoute.ChannelBlackList> { ChannelBlackListScreen(channelId = it.channelId) }
-                entry<AppRoute.ChannelInviteLinks> { ChannelInviteLinksScreen(channelId = it.channelId) }
-                entry<AppRoute.CreateInviteLink> { CreateInviteLinkScreen(channelId = it.channelId) }
-                entry<AppRoute.GroupSettings> { GroupSettingsScreen(groupId = it.groupId) }
-                entry<AppRoute.GroupTypeSettings> { GroupTypeSettingsScreen(groupId = it.groupId) }
-                entry<AppRoute.GroupInviteLinks> { GroupInviteLinksScreen(groupId = it.groupId) }
-                entry<AppRoute.CreateGroupInviteLink> { CreateGroupInviteLinkScreen(groupId = it.groupId) }
-                entry<AppRoute.GroupMembers> { GroupMembersScreen(groupId = it.groupId) }
-                entry<AppRoute.GroupBlackList> { GroupBlockedUsersScreen(groupId = it.groupId) }
-                entry<AppRoute.AddMember> { AddMemberScreen(groupId = it.groupId) }
-                entry<AppRoute.Logout> { LogoutScreen() }
-                entry<AppRoute.Login> { LoginScreen() }
-                entry<AppRoute.Password> { PasswordScreen() }
-            },
-            entryDecorators = listOf(
-                rememberSaveableStateHolderNavEntryDecorator(),
-                rememberViewModelStoreNavEntryDecorator()
-            ),
-            transitionSpec = {
-                slideInHorizontally { it } togetherWith slideOutHorizontally { -it / 4 }
-            },
-            popTransitionSpec = {
-                slideInHorizontally { -it / 4 } togetherWith slideOutHorizontally { it }
-            },
-            predictivePopTransitionSpec = {
-                slideInHorizontally { -it / 4 } togetherWith slideOutHorizontally { it }
-            })
+    SharedTransitionLayout {
+        CompositionLocalProvider(
+            LocalNavBackStack provides backStack,
+            LocalSharedTransitionScope provides this
+        ) {
+            NavDisplay(
+                backStack = backStack,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                onBack = backStack::removeLastOrNull,
+                entryProvider = entryProvider {
+                    entry<AppRoute.Main> { MainScreen() }
+                    entry<AppRoute.Chat>(metadata = metadata {
+                        put(NavDisplay.TransitionKey) {
+                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
+                                animationSpec = tween(
+                                    500
+                                )
+                            )
+                        }
+                        put(NavDisplay.PopTransitionKey) {
+                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
+                                animationSpec = tween(
+                                    500
+                                )
+                            )
+                        }
+                        put(NavDisplay.PredictivePopTransitionKey) {
+                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
+                                animationSpec = tween(
+                                    500
+                                )
+                            )
+                        }
+                    }) { ChatScreen(chatId = it.chatId) }
+                    entry<AppRoute.Profile>(metadata = metadata {
+                        put(NavDisplay.TransitionKey) {
+                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
+                                animationSpec = tween(
+                                    500
+                                )
+                            )
+                        }
+                        put(NavDisplay.PopTransitionKey) {
+                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
+                                animationSpec = tween(
+                                    500
+                                )
+                            )
+                        }
+                        put(NavDisplay.PredictivePopTransitionKey) {
+                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
+                                animationSpec = tween(
+                                    500
+                                )
+                            )
+                        }
+                    }) { ProfileScreen(profileId = it.profileId) }
+                    entry<AppRoute.Settings> { SettingsScreen() }
+                    entry<AppRoute.SettingsLanguage> { SettingsLanguageScreen() }
+                    entry<AppRoute.SettingsDesign> { SettingsDarkThemeScreen() }
+                    entry<AppRoute.SettingsChat> { SettingsAppearanceScreen() }
+                    entry<AppRoute.SettingsPrivacy> { SettingsPrivacyScreen() }
+                    entry<AppRoute.SettingsLastSeen> { SettingsLastSeenScreen(level = it.level) }
+                    entry<AppRoute.SettingsSecurity> { SettingsSecurityScreen() }
+                    entry<AppRoute.SettingsProfile> { SettingsProfileScreen() }
+                    entry<AppRoute.SettingsUsername> { SettingsUsernameScreen(username = it.username) }
+                    entry<AppRoute.SettingsBio> { SettingsBioScreen(level = it.level) }
+                    entry<AppRoute.SettingsDateOfBirth> { SettingsDateOfBirthScreen(level = it.level) }
+                    entry<AppRoute.SettingsInvites> { SettingsInvitesScreen(level = it.level) }
+                    entry<AppRoute.SettingsDevices> { SettingsDevicesScreen() }
+                    entry<AppRoute.SettingsPasscode> { SettingsPasscodeScreen() }
+                    entry<AppRoute.SettingsPasscodeCreate> { SettingsPasscodeCreateScreen() }
+                    entry<AppRoute.SettingsPasscodeChange> { SettingsPasscodeChangeScreen() }
+                    entry<AppRoute.SettingsCloudPassword> { SettingsCloudPasswordScreen() }
+                    entry<AppRoute.SettingsNotifications> { SettingsNotificationsScreen() }
+                    entry<AppRoute.SettingsDataAndStorage> { StorageScreen() }
+                    entry<AppRoute.SettingsProfileColor> { SettingsProfileColorScreen() }
+                    entry<AppRoute.NewMessage> { NewMessageScreen() }
+                    entry<AppRoute.CreateGroup> { CreateGroupScreen() }
+                    entry<AppRoute.CreateChannel> { CreateChannelScreen() }
+                    entry<AppRoute.ChannelSettings> { ChannelSettingsScreen(channelId = it.channelId) }
+                    entry<AppRoute.ChannelTypeSettings> { ChannelTypeSettingsScreen(channelId = it.channelId) }
+                    entry<AppRoute.ChannelSubscribers> { ChannelSubscribersScreen(channelId = it.channelId) }
+                    entry<AppRoute.ChannelBlackList> { ChannelBlackListScreen(channelId = it.channelId) }
+                    entry<AppRoute.ChannelInviteLinks> { ChannelInviteLinksScreen(channelId = it.channelId) }
+                    entry<AppRoute.CreateInviteLink> { CreateInviteLinkScreen(channelId = it.channelId) }
+                    entry<AppRoute.GroupSettings> { GroupSettingsScreen(groupId = it.groupId) }
+                    entry<AppRoute.GroupTypeSettings> { GroupTypeSettingsScreen(groupId = it.groupId) }
+                    entry<AppRoute.GroupInviteLinks> { GroupInviteLinksScreen(groupId = it.groupId) }
+                    entry<AppRoute.CreateGroupInviteLink> { CreateGroupInviteLinkScreen(groupId = it.groupId) }
+                    entry<AppRoute.GroupMembers> { GroupMembersScreen(groupId = it.groupId) }
+                    entry<AppRoute.GroupBlackList> { GroupBlockedUsersScreen(groupId = it.groupId) }
+                    entry<AppRoute.AddMember> { AddMemberScreen(groupId = it.groupId) }
+                    entry<AppRoute.Logout> { LogoutScreen() }
+                    entry<AppRoute.Login> { LoginScreen() }
+                    entry<AppRoute.Password> { PasswordScreen() }
+                },
+                entryDecorators = listOf(
+                    rememberSaveableStateHolderNavEntryDecorator(),
+                    rememberViewModelStoreNavEntryDecorator()
+                ),
+                transitionSpec = {
+                    slideInHorizontally { it } togetherWith slideOutHorizontally { -it / 4 }
+                },
+                popTransitionSpec = {
+                    slideInHorizontally { -it / 4 } togetherWith slideOutHorizontally { it }
+                },
+                predictivePopTransitionSpec = {
+                    slideInHorizontally { -it / 4 } togetherWith slideOutHorizontally { it }
+                }
+            )
+        }
     }
 }

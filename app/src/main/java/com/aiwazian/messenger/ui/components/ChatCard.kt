@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.extensions.sharedBounds
+import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.utils.SYSTEM_USER_ID
@@ -47,15 +49,18 @@ fun ChatCard(
     onLongClickChatLogo: () -> Unit = {}
 ) {
     ListItem(
-        modifier = Modifier.combinedClickable(
-            onClick = onClickChat,
-            onLongClick = onLongClickChat
-        ),
+        modifier = Modifier
+            .combinedClickable(
+                onClick = onClickChat,
+                onLongClick = onLongClickChat
+            )
+            .sharedBounds(key = "chat-${chat.id}"),
         headlineContent = {
             Text(
                 text = chat.chatName,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.sharedElement(key = "chat-name-${chat.id}")
             )
         },
         supportingContent = {
@@ -74,7 +79,7 @@ fun ChatCard(
             }
         },
         leadingContent = {
-            Leading()
+            Leading(chat.id)
         },
         trailingContent = {
             Column {
@@ -140,12 +145,14 @@ private fun UnreadMessageCount(count: Int) {
 }
 
 @Composable
-private fun Leading() {
+private fun Leading(id: Long) {
     Box(modifier = Modifier.size(40.dp)) {
         Icon(
             imageVector = Icons.Rounded.AccountCircle,
             contentDescription = null,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .sharedElement(key = "avatar-$id")
         )
     }
 }

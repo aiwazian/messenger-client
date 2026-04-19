@@ -44,8 +44,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.outlined.InsertDriveFile
-import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Attachment
 import androidx.compose.material.icons.rounded.MusicNote
@@ -95,7 +93,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -104,6 +101,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.FileAction
+import com.aiwazian.messenger.extensions.sharedBounds
+import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
@@ -184,6 +183,7 @@ fun ChatScreen(
     }
     
     Scaffold(
+        modifier = Modifier.sharedBounds(key = "chat-${chatId}"),
         snackbarHost = {
             SnackbarHost(snackbarHostState) {
                 CustomSnackbar(
@@ -253,14 +253,14 @@ fun ChatScreen(
                             is ChatItem.SystemMessage -> SystemMessageBubble(item.text)
                             is ChatItem.MessageItem -> MessageBubble(
                                 item = item, onSeen = {
-                                chatViewModel.markAsReadMessage(item.message)
-                            }, onFileAction = { file, action ->
-                                if (action == FileAction.CANCEL) {
-                                    fileToCancelId = item.message.id
-                                } else {
-                                    chatViewModel.onFileAction(item.message, file, action)
-                                }
-                            }, onLinkClicked = chatViewModel::onLinkClicked
+                                    chatViewModel.markAsReadMessage(item.message)
+                                }, onFileAction = { file, action ->
+                                    if (action == FileAction.CANCEL) {
+                                        fileToCancelId = item.message.id
+                                    } else {
+                                        chatViewModel.onFileAction(item.message, file, action)
+                                    }
+                                }, onLinkClicked = chatViewModel::onLinkClicked
                             )
                         }
                     }
@@ -287,26 +287,26 @@ fun ChatScreen(
         if (fileToCancelId != null) {
             CustomDialog(
                 title = "Отменить отправку",
-                         onDismissRequest = { fileToCancelId = null },
-                         content = { Text("Вы уверены, что хотите отменить отправку файла?") },
-                         buttons = {
-                             TextButton(onClick = {
-                                 fileToCancelId = null
-                             }) {
-                                 Text(stringResource(R.string.no))
-                             }
-                             TextButton(
-                                 onClick = {
-                                     fileToCancelId?.let {
-                                         chatViewModel.cancelUpload(it)
-                                     }
-                                     fileToCancelId = null
-                                 },
-                                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                             ) {
-                                 Text(stringResource(R.string.yes))
-                             }
-                         })
+                onDismissRequest = { fileToCancelId = null },
+                content = { Text("Вы уверены, что хотите отменить отправку файла?") },
+                buttons = {
+                    TextButton(onClick = {
+                        fileToCancelId = null
+                    }) {
+                        Text(stringResource(R.string.no))
+                    }
+                    TextButton(
+                        onClick = {
+                            fileToCancelId?.let {
+                                chatViewModel.cancelUpload(it)
+                            }
+                            fileToCancelId = null
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(stringResource(R.string.yes))
+                    }
+                })
         }
         
         if (uiState.showInviteBottomSheet && uiState.inviteLinkInfo != null) {
@@ -516,7 +516,8 @@ private fun TopBar(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.AccountCircle, contentDescription = null
+                        imageVector = Icons.Rounded.AccountCircle, contentDescription = null,
+                        modifier = Modifier.sharedElement(key = "avatar-$chatId")
                     )
                     
                     Column(
@@ -528,6 +529,7 @@ private fun TopBar(
                             fontSize = 18.sp,
                             lineHeight = 16.sp,
                             overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.sharedElement(key = "chat-name-$chatId")
                         )
                         
                         AnimatedContent(
@@ -717,7 +719,7 @@ private fun InputMessage(
     if (attachmentModal) {
         AttachmentBottomSheet(
             onDismissRequest = { attachmentModal = false },
-                              onFileSystemClick = { filePickerLauncher.launch(arrayOf("*/*")) })
+            onFileSystemClick = { filePickerLauncher.launch(arrayOf("*/*")) })
     }
 }
 
@@ -840,7 +842,11 @@ private fun AttachmentBottomSheet(
                     selectedContentColor = MaterialTheme.colorScheme.primary,
                     unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ) {
-                    Icon(Icons.AutoMirrored.Outlined.InsertDriveFile, null, modifier = Modifier.padding(top = 2.dp))
+                    Icon(
+                        Icons.AutoMirrored.Outlined.InsertDriveFile,
+                        null,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
                     Text(stringResource(R.string.files), fontSize = 12.sp, lineHeight = 12.sp)
                 }
                 Tab(

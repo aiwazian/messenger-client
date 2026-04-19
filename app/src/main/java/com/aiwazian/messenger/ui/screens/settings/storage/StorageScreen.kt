@@ -28,7 +28,6 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -106,7 +105,9 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            SectionContainer(footer = { SectionDescription("Все медиа останутся в облаке, при необходимости Вы сможете загрузить их.") }) {
+            SectionContainer(footer = {
+                SectionDescription("Все медиа останутся в облаке, при необходимости Вы сможете загрузить их.")
+            }) {
                 uiState.categories.forEachIndexed { index, category ->
                     val sizeMb = category.totalSize / (1024.0 * 1024.0)
                     val sizeMbRounded = BigDecimal(sizeMb).setScale(
@@ -186,8 +187,7 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
             onConfirm = {
                 storageViewModel.clearDatabase()
                 storageViewModel.hideClearDatabaseDialog()
-            },
-            onDismiss = storageViewModel::hideClearDatabaseDialog
+            }, onDismiss = storageViewModel::hideClearDatabaseDialog
         )
     }
 }
@@ -275,11 +275,10 @@ private fun ClearCacheConfirmationDialog(
 
 @Composable
 private fun ClearDatabaseConfirmationDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onConfirm: () -> Unit, onDismiss: () -> Unit
 ) {
     CustomDialog(
-        title = "Удаление",
+        title = stringResource(R.string.clear_database),
         onDismissRequest = onDismiss,
         content = {
             Text(
@@ -292,15 +291,13 @@ private fun ClearDatabaseConfirmationDialog(
                 Text(stringResource(R.string.cancel))
             }
             TextButton(
-                onClick = onConfirm,
-                colors = ButtonDefaults.textButtonColors(
+                onClick = onConfirm, colors = ButtonDefaults.textButtonColors(
                     contentColor = MaterialTheme.colorScheme.error
                 )
             ) {
                 Text(stringResource(R.string.delete))
             }
-        }
-    )
+        })
 }
 
 @Composable
@@ -309,10 +306,8 @@ private fun TopBar(viewModel: StorageViewModel) {
     
     PageTopBar(
         navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navBackStack::removeLastOrNull
-        ),
-        actions = listOf(
+            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navBackStack::removeLastOrNull
+        ), actions = listOf(
             TopBarAction(
                 icon = Icons.Rounded.MoreVert, onClick = {}, dropdownActions = listOf(
                     DropdownMenuAction(

@@ -54,11 +54,7 @@ class ProfileViewModel @Inject constructor(
     private val _profile = MutableStateFlow<Profile?>(null)
     val profile = _profile.asStateFlow()
     
-    private var isInitialized = false
-    
     fun init(profileId: Long) {
-        if (isInitialized) return
-        isInitialized = true
         _profileId = profileId
         
         setupUserObserver()
