@@ -172,6 +172,17 @@ class ChatRepository @Inject constructor(
         }
     }
     
+    suspend fun markMessageAsRead(chatId: Long, messageId: Int) {
+        messageDao.updateMessageReadStatus(messageId, true)
+        // Не вызываем API тут, т.к. это задача синхронизатора или ViewModel (в зависимости от логики)
+        // Однако для текущей реализации лучше оставить API вызов в makeAsRead,
+        // а этот метод использовать для локального обновления.
+    }
+
+    suspend fun updateChat(chat: Chat) {
+        chatDao.upsertChats(listOf(chat.toEntity()))
+    }
+    
     suspend fun saveMessage(message: Message) {
         saveMessagesToDb(listOf(message))
     }
@@ -182,6 +193,7 @@ class ChatRepository @Inject constructor(
             val attachments =
                 msg.files.map { it.toEntity(msg.id.toLong(), AttachmentType.MESSAGE, msg.chatId) }
             attachmentDao.upsertAttachments(attachments)
+            chatDao.updateLastMessageId(msg.chatId, msg.id)
         }
     }
     

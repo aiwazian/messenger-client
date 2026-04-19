@@ -7,13 +7,11 @@ package com.aiwazian.messenger.ui.screens.main
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.Chat
-import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.WebSocketClient
-import com.aiwazian.messenger.socket.WebSocketEvent
 import com.aiwazian.messenger.utils.AppLockManager
 import com.aiwazian.messenger.utils.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -96,117 +94,6 @@ class MainViewModel @Inject constructor(
                     SessionManager.loadSession()
                     chatRepository.refreshChats()
                 }
-            }
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.NewMessage) { message ->
-            onReceivingMessage(message)
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.DeleteMessage) { message ->
-            onMessageDeleted(message.messageId, message.chatId)
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.ReadMessage) { message ->
-            onReadMessage(message.chatId, message.messageId)
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.NewChat) { chatInfo ->
-            showNewChat(chatInfo)
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.DeleteChat) { payload ->
-            deleteChat(payload.chatId)
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.ChatRemoved) { payload ->
-            deleteChat(payload.chatId)
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.ChatUpdated) { payload ->
-            viewModelScope.launch {
-                chatRepository.get(payload.chatId)?.let {
-                    chatRepository.saveChat(it)
-                }
-            }
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.UserOnline) { payload ->
-            viewModelScope.launch {
-                _chats.value.find { it.id == payload.userId }?.let {
-                    //                    chatRepository.saveChat(it.copy(isOnline = true))
-                }
-            }
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.UserOffline) { payload ->
-            viewModelScope.launch {
-                _chats.value.find { it.id == payload.userId }?.let {
-                    //                    chatRepository.saveChat(it.copy(isOnline = false))
-                }
-            }
-        }
-    }
-    
-    fun onReceivingMessage(message: Message) {
-        processMessage(message.chatId, message)
-    }
-    
-    fun showNewChat(
-        chat: Chat, lastMessage: Message? = null
-    ) {
-        viewModelScope.launch {
-            lastMessage?.let { chatRepository.saveMessage(it) }
-            chatRepository.saveChat(chat.copy(lastMessage = lastMessage))
-        }
-    }
-    
-    fun deleteChat(chatId: Long) {
-        viewModelScope.launch {
-            chatRepository.deleteChat(chatId)
-        }
-    }
-    
-    private fun onReadMessage(
-        chatId: Long, messageId: Int
-    ) {
-        viewModelScope.launch {
-            val currentChat = _chats.value.find { it.id == chatId }
-            if (currentChat?.lastMessage?.id == messageId) {
-                val lastMessage = currentChat.lastMessage.copy(isRead = true)
-                chatRepository.saveMessage(lastMessage)
-                chatRepository.saveChat(currentChat.copy(lastMessage = lastMessage))
-            }
-        }
-    }
-    
-    private fun onMessageDeleted(
-        messageId: Int, chatId: Long
-    ) {
-        viewModelScope.launch {
-            val currentChat = _chats.value.find { it.id == chatId }
-            if (currentChat?.lastMessage?.id == messageId) {
-                val lastMessage = chatRepository.getLastMessage(chatId)
-                lastMessage?.let { chatRepository.saveMessage(it) }
-                chatRepository.saveChat(currentChat.copy(lastMessage = lastMessage))
-            }
-        }
-    }
-    
-    private fun processMessage(
-        chatId: Long, message: Message
-    ) {
-        viewModelScope.launch {
-            chatRepository.saveMessage(message)
-            val chat = _chats.value.find { it.id == chatId }
-            
-            if (chat == null) {
-                val chatInfo = chatRepository.get(chatId)
-                if (chatInfo != null) {
-                    chatRepository.saveChat(chatInfo.copy(lastMessage = message))
-                }
-            } else {
-                chatRepository.saveChat(chat.copy(lastMessage = message))
             }
         }
     }

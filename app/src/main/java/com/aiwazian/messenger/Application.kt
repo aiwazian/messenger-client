@@ -6,6 +6,7 @@ package com.aiwazian.messenger
 
 import android.app.Application
 import com.aiwazian.messenger.repository.AuthRepository
+import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.utils.SessionManager
 import com.google.firebase.FirebaseApp
 import com.yandex.mobile.ads.common.MobileAds
@@ -19,6 +20,9 @@ class Application : Application() {
     @Inject
     lateinit var authRepository: AuthRepository
 
+    @Inject
+    lateinit var realtimeEventSyncService: RealtimeEventSyncService
+
     override fun onCreate() {
         super.onCreate()
         
@@ -30,5 +34,7 @@ class Application : Application() {
         FirebaseApp.initializeApp(this)
         MobileAds.initialize(this) { }
         MobileInstreamAds.setAdGroupPreloading(true)
+        
+        realtimeEventSyncService.start()
     }
 }

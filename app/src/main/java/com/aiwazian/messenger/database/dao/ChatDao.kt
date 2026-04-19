@@ -28,8 +28,10 @@ interface ChatDao {
     
     @Query("DELETE FROM chats WHERE chatId NOT IN (:chatIds)")
     suspend fun deleteChatsNotIn(chatIds: List<Long>)
-    
+
+    @Query("UPDATE chats SET lastMessageId = :messageId WHERE chatId = :chatId")
+    suspend fun updateLastMessageId(chatId: Long, messageId: Int)
+
     @Query("DELETE FROM chats")
     suspend fun deleteAllChats()
-    
-}
+    }

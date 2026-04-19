@@ -51,4 +51,7 @@ interface MessageDao {
     
     @Query("DELETE FROM message")
     suspend fun deleteAll()
+
+    @Query("UPDATE message SET isRead = :isRead WHERE id = :id")
+    suspend fun updateMessageReadStatus(id: Int, isRead: Boolean)
 }

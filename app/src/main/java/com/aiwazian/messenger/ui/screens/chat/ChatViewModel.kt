@@ -32,7 +32,6 @@ import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.WebSocketClient
-import com.aiwazian.messenger.socket.WebSocketEvent
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.profile.Profile
@@ -117,82 +116,14 @@ class ChatViewModel @Inject constructor(
     }
     
     private fun setupWebSocketListeners() {
-        webSocketClient.subscribeToEvent(WebSocketEvent.NewMessage) { message ->
-            if (message.senderId == _uiState.value.chatId && message.senderId != _uiState.value.currentUserId || message.chatId == _uiState.value.chatId) {
-                viewModelScope.launch {
-                    val existingMessages = getRawMessages()
-                    val messages = if (existingMessages.any { it.id == message.id }) {
-                        existingMessages.map { if (it.id == message.id) message else it }
-                    } else {
-                        existingMessages + message
-                    }
-                    updateChatItems(messages)
-                    _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
-                }
-            }
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.DeleteChat) { chat ->
-            if (chat.chatId == _uiState.value.chatId) {
-                viewModelScope.launch {
-                    _uiEffect.emit(ChatUiEffect.NavigateToMain)
-                }
-            }
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.DeleteMessage) { message ->
-            if (message.chatId == _uiState.value.chatId) {
-                viewModelScope.launch {
-                    val messages = getRawMessages().filter { it.id != message.messageId }
-                    updateChatItems(messages)
-                }
-            }
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.ReadMessage) { message ->
-            viewModelScope.launch {
-                val messages = getRawMessages().map {
-                    if (it.id == message.messageId) it.copy(isRead = true) else it
-                }
-                updateChatItems(messages)
-            }
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.HistoryClear) { payload ->
-            if (payload.chatId == _uiState.value.chatId) {
-                viewModelScope.launch {
-                    chatRepository.clearLocalHistory(_uiState.value.chatId)
-                }
-            }
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.ChatRemoved) { payload ->
-            if (payload.chatId == _uiState.value.chatId) {
-                viewModelScope.launch {
-                    _uiEffect.emit(ChatUiEffect.NavigateToMain)
-                }
-            }
-        }
-        
-        viewModelScope.launch {
-            webSocketClient.connectionState.collect { state ->
-                _uiState.update { it.copy(isConnected = state == ConnectionState.CONNECTED) }
-            }
-        }
-        
         viewModelScope.launch {
             downloaderManager.downloads.collect { downloads ->
                 updateDownloadsInUi(downloads)
             }
         }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.UserOnline) { payload ->
-            if (payload.userId == _uiState.value.chatId) { //                _uiState.update { it.copy(lastSeen = true) }
-            }
-        }
-        
-        webSocketClient.subscribeToEvent(WebSocketEvent.UserOffline) { payload ->
-            if (payload.userId == _uiState.value.chatId) { //                _uiState.update { it.copy(lastSeen = false) }
+        viewModelScope.launch {
+            webSocketClient.connectionState.collect { state ->
+                _uiState.update { it.copy(isConnected = state == ConnectionState.CONNECTED) }
             }
         }
     }
