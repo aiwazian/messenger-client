@@ -11,10 +11,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MessageFileDto(
     @SerialName("id") val id: String,
-    @SerialName("name") val name: String,
-    @SerialName("size") val size: String,
-    @SerialName("mimeType") val mimeType: String,
-    @SerialName("status") val status: DownloadStatus
+    @SerialName("name") val name: String = "",
+    @SerialName("size") val size: Long = 0,
+    @SerialName("mimeType") val mimeType: String = "",
+    @SerialName("status") val status: DownloadStatus = DownloadStatus.UPLOADED
 )
 
 @Serializable

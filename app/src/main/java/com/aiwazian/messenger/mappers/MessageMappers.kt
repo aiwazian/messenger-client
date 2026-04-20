@@ -23,11 +23,7 @@ fun MessageDto.toDomain(): Message = Message(
 fun MessageFileDto.toDomain() = MessageFile(
     id = id,
     name = name,
-    size = try {
-        size.toLong()
-    } catch (_: Exception) {
-        0L
-    },
+    size = size,
     extension = name.substringAfterLast('.', ""),
     status = status,
     progress = 0,

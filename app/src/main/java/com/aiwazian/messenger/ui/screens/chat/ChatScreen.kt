@@ -9,7 +9,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -33,7 +32,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -532,7 +530,9 @@ private fun TopBar(
                             fontSize = 18.sp,
                             lineHeight = 16.sp,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.fillMaxWidth().sharedElement(key = "chat-name-$chatId")
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .sharedElement(key = "chat-name-$chatId")
                         )
                         
                         AnimatedContent(
@@ -556,7 +556,9 @@ private fun TopBar(
                                     fontSize = 12.sp,
                                     lineHeight = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.fillMaxWidth().sharedElement(key = "chat-sub-title-$chatId")
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .sharedElement(key = "chat-sub-title-$chatId")
                                 )
                             }
                         }
