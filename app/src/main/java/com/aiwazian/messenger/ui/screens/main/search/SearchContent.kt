@@ -67,7 +67,7 @@ fun ChatResultsList(
     results: List<Search>,
     isLoading: Boolean,
     onLoadMore: () -> Unit,
-    onChatClick: (Long) -> Unit
+    onChatClick: (Long, String) -> Unit
 ) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         itemsIndexed(results) { index, chat ->
@@ -79,7 +79,7 @@ fun ChatResultsList(
             
             SearchChatItem(
                 chat = chat,
-                onClick = { onChatClick(chat.chatId) })
+                onClick = { onChatClick(chat.chatId, chat.name) })
         }
         
         if (isLoading) {

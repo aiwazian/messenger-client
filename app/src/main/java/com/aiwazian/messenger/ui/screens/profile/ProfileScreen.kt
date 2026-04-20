@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.profile
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -31,12 +32,14 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
+import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -49,8 +52,7 @@ import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ProfileScreen(
-    profileId: Long,
-    profileViewModel: ProfileViewModel = hiltViewModel()
+    profileId: Long, profileViewModel: ProfileViewModel = hiltViewModel()
 ) {
     val navBackStack = LocalNavBackStack.current
     
@@ -89,11 +91,9 @@ fun ProfileScreen(
                 }
                 
                 is ProfileUiEffect.ShowLeaveDialog -> {
-                    leaveDialogData =
-                        Pair(
-                            effect.profileName,
-                            effect.chatType
-                        )
+                    leaveDialogData = Pair(
+                        effect.profileName, effect.chatType
+                    )
                     showLeaveDialog = true
                 }
                 
@@ -108,22 +108,19 @@ fun ProfileScreen(
     when (uiState.profile) {
         is Profile.User -> {
             UserProfile(
-                user = uiState.profile as Profile.User,
-                actions = uiState.actions
+                user = uiState.profile as Profile.User, actions = uiState.actions
             )
         }
         
         is Profile.Channel -> {
             ChannelProfile(
-                channel = uiState.profile as Profile.Channel,
-                actions = uiState.actions
+                channel = uiState.profile as Profile.Channel, actions = uiState.actions
             )
         }
         
         is Profile.Group -> {
             GroupProfile(
-                group = uiState.profile as Profile.Group,
-                actions = uiState.actions
+                group = uiState.profile as Profile.Group, actions = uiState.actions
             )
         }
         
@@ -137,25 +134,22 @@ fun ProfileScreen(
             onDismiss = {
                 showLeaveDialog = false
                 profileViewModel.hideLeaveDialog()
-            },
-            onConfirm = {
+            }, onConfirm = {
                 profileViewModel.onLeaveConfirmed()
-            },
-            profileName = leaveDialogData!!.first,
-            chatType = leaveDialogData!!.second
+            }, profileName = leaveDialogData!!.first, chatType = leaveDialogData!!.second
         )
     }
 }
 
 @Composable
 private fun GroupProfile(
-    group: Profile.Group,
-    actions: List<TopBarAction>
+    group: Profile.Group, actions: List<TopBarAction>
 ) {
     Scaffold(topBar = {
         TopBar(
             chatId = group.id,
             title = group.name,
+            subTitle = "${group.members} ${stringResource(R.string.members)}".lowercase(),
             actions = actions
         )
     }) { innerPadding ->
@@ -181,13 +175,13 @@ private fun GroupProfile(
 
 @Composable
 private fun ChannelProfile(
-    channel: Profile.Channel,
-    actions: List<TopBarAction>
+    channel: Profile.Channel, actions: List<TopBarAction>
 ) {
     Scaffold(topBar = {
         TopBar(
             chatId = channel.id,
             title = channel.name,
+            subTitle = "${channel.subscribers} ${stringResource(R.string.subscriberCount)}".lowercase(),
             actions = actions
         )
     }) { innerPadding ->
@@ -213,8 +207,7 @@ private fun ChannelProfile(
 
 @Composable
 private fun UserProfile(
-    user: Profile.User,
-    actions: List<TopBarAction>
+    user: Profile.User, actions: List<TopBarAction>
 ) {
     val scrollState = rememberScrollState()
     
@@ -223,6 +216,7 @@ private fun UserProfile(
             TopBar(
                 chatId = user.id,
                 title = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                subTitle = user.lastSeen?.toInstance()?.toPrettyTime() ?: "в сети недавно",
                 actions = actions
             )
         },
@@ -238,8 +232,7 @@ private fun UserProfile(
                 
                 if (!userBio.isNullOrBlank()) {
                     SectionItem(
-                        headlineText = userBio,
-                        supportingText = stringResource(R.string.bio)
+                        headlineText = userBio, supportingText = stringResource(R.string.bio)
                     )
                 }
                 
@@ -267,36 +260,42 @@ private fun UserProfile(
 
 @Composable
 private fun TopBar(
-    chatId: Long,
-    title: String,
-    actions: List<TopBarAction>
+    chatId: Long, title: String, subTitle: String, actions: List<TopBarAction>
 ) {
     val navBackStack = LocalNavBackStack.current
     
     PageTopBar(
         title = {
-            Text(
-                text = title,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.sharedElement(key = "chat-name-$chatId")
-            )
-        },
-        navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navBackStack::removeLastOrNull
-        ),
-        actions = actions
+            Column {
+                Text(
+                    text = title,
+                    maxLines = 1,
+                    fontSize = 18.sp,
+                    lineHeight = 16.sp,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .sharedElement(key = "chat-name-$chatId")
+                )
+                Text(
+                    text = subTitle,
+                    fontSize = 12.sp,
+                    lineHeight = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .sharedElement(key = "chat-sub-title-$chatId")
+                )
+            }
+        }, navigationIcon = NavigationIcon(
+            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navBackStack::removeLastOrNull
+        ), actions = actions
     )
 }
 
 @Composable
 private fun LeaveProfileDialog(
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-    profileName: String,
-    chatType: ChatType
+    onDismiss: () -> Unit, onConfirm: () -> Unit, profileName: String, chatType: ChatType
 ) {
     val title = when (chatType) {
         ChatType.CHANNEL -> stringResource(R.string.leave_channel)
@@ -324,18 +323,13 @@ private fun LeaveProfileDialog(
         }
     }
     
-    CustomDialog(
-        title = title,
-        onDismissRequest = onDismiss,
-        content = {
-            Text(text = message)
-        },
-        buttons = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-            TextButton(
-                onClick = onConfirm,
-                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            ) { Text(title) }
-        }
-    )
+    CustomDialog(title = title, onDismissRequest = onDismiss, content = {
+        Text(text = message)
+    }, buttons = {
+        TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        TextButton(
+            onClick = onConfirm,
+            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+        ) { Text(title) }
+    })
 }

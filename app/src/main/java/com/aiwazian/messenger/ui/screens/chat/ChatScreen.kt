@@ -9,6 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -32,6 +33,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -72,6 +74,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -122,8 +125,12 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ChatScreen(
-    chatId: Long, chatViewModel: ChatViewModel = hiltViewModel()
+    chatId: Long, chatName: String? = null, chatViewModel: ChatViewModel = hiltViewModel()
 ) {
+    LaunchedEffect(Unit) {
+        chatViewModel.init(chatId, chatName)
+    }
+    
     val navBackStack = LocalNavBackStack.current
     val context = LocalContext.current
     
@@ -132,7 +139,7 @@ fun ChatScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     
     val firstVisibleItemIndex =
-        remember { androidx.compose.runtime.derivedStateOf { listState.firstVisibleItemIndex } }
+        remember { derivedStateOf { listState.firstVisibleItemIndex } }
     
     LaunchedEffect(firstVisibleItemIndex.value) {
         if (firstVisibleItemIndex.value < 10 && uiState.hasMoreMessages && !uiState.isLoadingMore && !uiState.isLoading) {
@@ -141,10 +148,6 @@ fun ChatScreen(
     }
     
     var fileToCancelId by remember { mutableStateOf<Int?>(null) }
-    
-    LaunchedEffect(chatId) {
-        chatViewModel.init(chatId)
-    }
     
     LaunchedEffect(Unit) {
         chatViewModel.uiEffect.collect { effect ->
@@ -168,7 +171,7 @@ fun ChatScreen(
                 }
                 
                 is ChatUiEffect.NavigateToChat -> {
-                    navBackStack.add(AppRoute.Chat(effect.chatId))
+                    navBackStack.add(AppRoute.Chat(effect.chatId, null))
                 }
                 
                 is ChatUiEffect.OpenUrl -> {
@@ -529,7 +532,7 @@ private fun TopBar(
                             fontSize = 18.sp,
                             lineHeight = 16.sp,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.sharedElement(key = "chat-name-$chatId")
+                            modifier = Modifier.fillMaxWidth().sharedElement(key = "chat-name-$chatId")
                         )
                         
                         AnimatedContent(
@@ -553,7 +556,7 @@ private fun TopBar(
                                     fontSize = 12.sp,
                                     lineHeight = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth().sharedElement(key = "chat-sub-title-$chatId")
                                 )
                             }
                         }

@@ -146,7 +146,7 @@ fun ChannelBlackListScreen(
                                 }
                             },
                             onClick = {
-                                navBackStack.add(AppRoute.Chat(user.id))
+                                navBackStack.add(AppRoute.Chat(user.id, "${user.firstName} ${user.lastName.orEmpty()}"))
                             }
                         )
                     }

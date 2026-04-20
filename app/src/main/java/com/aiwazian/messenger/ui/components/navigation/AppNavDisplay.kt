@@ -111,7 +111,7 @@ fun AppNavDisplay(startRoute: AppRoute? = null) {
                                 )
                             )
                         }
-                    }) { ChatScreen(chatId = it.chatId) }
+                    }) { ChatScreen(chatId = it.chatId, chatName = it.chatName) }
                     entry<AppRoute.Profile>(metadata = metadata {
                         put(NavDisplay.TransitionKey) {
                             fadeIn(animationSpec = tween(500)) togetherWith fadeOut(

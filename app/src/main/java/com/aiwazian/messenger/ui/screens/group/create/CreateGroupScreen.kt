@@ -49,7 +49,7 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
                 is CreateGroupEffect.NavigateToChat -> {
                     navBackStack.clear()
                     navBackStack.add(AppRoute.Main)
-                    navBackStack.add(AppRoute.Chat(effect.chatId))
+                    navBackStack.add(AppRoute.Chat(effect.chatId, uiState.name))
                 }
                 
                 is CreateGroupEffect.ShowSnackbar -> {

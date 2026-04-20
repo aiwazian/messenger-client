@@ -137,7 +137,7 @@ class MainActivity : AppCompatActivity() {
     private fun handleIntent(intent: Intent) {
         val chatId = intent.getStringExtra("chatId")?.toLongOrNull() ?: -1L
         if (chatId != -1L) {
-            startRoute = AppRoute.Chat(chatId)
+            startRoute = AppRoute.Chat(chatId, null)
             return
         }
     }

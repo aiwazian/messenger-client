@@ -107,6 +107,7 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ConnectionState
+import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -309,8 +310,11 @@ private fun Content(
             } else {
                 LazyColumn {
                     items(chats) { chat ->
+                        val chatName = chat.chatName.asString()
                         ChatCard(chat = chat, onClickChat = {
-                            navBackStack.add(AppRoute.Chat(chat.id))
+                            navBackStack.add(
+                                AppRoute.Chat(chat.id, chatName)
+                            )
                         })
                     }
                 }
@@ -531,10 +535,10 @@ private fun DefaultTopBar(
                             results = searchUiState.chatResults,
                             isLoading = searchUiState.isChatLoading,
                             onLoadMore = searchViewModel::loadMore,
-                            onChatClick = { chatId ->
+                            onChatClick = { chatId, chatName ->
                                 scope.launch {
                                     searchBarState.animateToCollapsed()
-                                    navBackStack.add(AppRoute.Chat(chatId))
+                                    navBackStack.add(AppRoute.Chat(chatId, chatName))
                                 }
                             })
                     }
@@ -599,7 +603,12 @@ private fun DrawerContent(
                 label = stringResource(R.string.saved_messages), icon = Icons.Rounded.BookmarkBorder
             ) {
                 onClose.invoke()
-                navBackStack.add(AppRoute.Chat(user.id))
+                navBackStack.add(
+                    AppRoute.Chat(
+                        user.id,
+                        "${user.firstName} ${user.lastName.orEmpty()}"
+                    )
+                )
             }
             
             DrawerItem(

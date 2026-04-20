@@ -96,8 +96,8 @@ class ChatViewModel @Inject constructor(
     
     private val uploadJobs = mutableMapOf<Long, Job>()
     
-    fun init(chatId: Long) {
-        _uiState.update { it.copy(chatId = chatId) }
+    fun init(chatId: Long, chatName: String? = null) {
+        _uiState.update { it.copy(chatId = chatId, chatName = chatName.orEmpty()) }
         isFirstLoadDone = false
         limitFlow.value = 50
         
@@ -515,7 +515,11 @@ class ChatViewModel @Inject constructor(
             val isFirstInGroup = message.senderId != lastSenderId
             
             val updatedFiles = message.files.map { file ->
-                val localFile = if (file.id.isNotBlank()) downloaderManager.getFile(file.id, file.extension) else null
+                val localFile =
+                    if (file.id.isNotBlank()) downloaderManager.getFile(
+                        file.id,
+                        file.extension
+                    ) else null
                 
                 if (file.status == DownloadStatus.UPLOADED) {
                     file

@@ -28,6 +28,7 @@ import com.aiwazian.messenger.ui.components.navigation.LocalSharedTransitionScop
 fun Modifier.sharedElement(
     key: Any,
     zIndexInOverlay: Float = 0f,
+    placeHolderSize: SharedTransitionScope.PlaceholderSize = SharedTransitionScope.PlaceholderSize.AnimatedSize
 ): Modifier {
     val sharedTransitionScope = LocalSharedTransitionScope.current
     val animatedContentScope = LocalNavAnimatedContentScope.current
@@ -36,6 +37,7 @@ fun Modifier.sharedElement(
             sharedContentState = rememberSharedContentState(key = key),
             animatedVisibilityScope = animatedContentScope,
             zIndexInOverlay = zIndexInOverlay,
+            placeholderSize = placeHolderSize
         )
     }
 }
@@ -60,6 +62,7 @@ fun Modifier.sharedBounds(
     exit: ExitTransition = fadeOut(),
     zIndexInOverlay: Float = 0f,
     resizeMode: SharedTransitionScope.ResizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
+    placeHolderSize: SharedTransitionScope.PlaceholderSize = SharedTransitionScope.PlaceholderSize.AnimatedSize
 ): Modifier {
     val sharedTransitionScope = LocalSharedTransitionScope.current
     val animatedContentScope = LocalNavAnimatedContentScope.current
@@ -71,6 +74,7 @@ fun Modifier.sharedBounds(
             exit = exit,
             zIndexInOverlay = zIndexInOverlay,
             resizeMode = resizeMode,
+            placeholderSize = placeHolderSize
         )
     }
 }

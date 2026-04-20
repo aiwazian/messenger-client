@@ -15,7 +15,7 @@ sealed interface AppRoute : NavKey {
     data object Main : AppRoute
     
     @Serializable
-    data class Chat(val chatId: Long) : AppRoute
+    data class Chat(val chatId: Long, val chatName: String?) : AppRoute
     
     @Serializable
     data class Profile(val profileId: Long) : AppRoute
