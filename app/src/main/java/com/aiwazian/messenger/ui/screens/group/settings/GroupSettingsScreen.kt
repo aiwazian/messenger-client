@@ -174,7 +174,7 @@ fun GroupSettingsScreen(
                     }
                     TextButton(
                         onClick = {
-                            viewModel.deleteGroup()
+                            viewModel.delete()
                         },
                         enabled = !isLoading,
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)

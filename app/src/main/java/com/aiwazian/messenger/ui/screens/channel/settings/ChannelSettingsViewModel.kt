@@ -7,6 +7,7 @@ package com.aiwazian.messenger.ui.screens.channel.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.User
+import com.aiwazian.messenger.domain.usecase.DeleteChannelUseCase
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.utils.VibrationManager
@@ -23,6 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ChannelSettingsViewModel @Inject constructor(
     private val channelRepository: ChannelRepository,
+    private val deleteChannelUseCase: DeleteChannelUseCase,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
@@ -84,9 +86,9 @@ class ChannelSettingsViewModel @Inject constructor(
     
     fun delete() {
         viewModelScope.launch {
-            channelRepository.delete(uiState.value.channel.id).onSuccess {
+            if (deleteChannelUseCase(uiState.value.channel.id)) {
                 _uiEffect.emit(ChannelSettingsEffect.NavigateToMain)
-            }.onFailure {
+            } else {
                 _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar("Не удалось удалить канал"))
             }
         }

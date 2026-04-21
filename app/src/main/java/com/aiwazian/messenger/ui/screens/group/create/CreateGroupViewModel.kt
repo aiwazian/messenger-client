@@ -6,7 +6,7 @@ package com.aiwazian.messenger.ui.screens.group.create
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.repository.GroupRepository
+import com.aiwazian.messenger.domain.usecase.CreateGroupUseCase
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,7 +22,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CreateGroupViewModel @Inject constructor(
-    private val groupRepository: GroupRepository,
+    private val createGroupUseCase: CreateGroupUseCase,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
@@ -51,7 +51,7 @@ class CreateGroupViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             
             try {
-                groupRepository.create(_uiState.value.name, _uiState.value.bio)
+                createGroupUseCase(_uiState.value.name, _uiState.value.bio)
                     .onSuccess { createdId ->
                         _createEffect.emit(CreateGroupEffect.NavigateToChat(createdId))
                     }

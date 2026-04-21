@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.group.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.domain.usecase.DeleteGroupUseCase
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
@@ -24,6 +25,7 @@ import javax.inject.Inject
 @HiltViewModel
 class GroupSettingsViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
+    private val deleteGroupUseCase: DeleteGroupUseCase,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
@@ -92,22 +94,22 @@ class GroupSettingsViewModel @Inject constructor(
         }
     }
     
-    fun deleteGroup() {
+    fun delete() {
         viewModelScope.launch {
             val group = _uiState.value.group
             
             _uiState.update { it.copy(isDeleting = true, error = null) }
             
-            groupRepository.delete(group.id).onSuccess {
+            if (deleteGroupUseCase(group.id)) {
                 _uiEffect.emit(GroupSettingsUiEffect.NavigateToMain)
-            }.onFailure { exception ->
+            } else {
                 _uiState.update {
                     it.copy(
                         isDeleting = false,
-                        error = exception.message ?: "Ошибка при удалении группы"
+                        error = "Ошибка при удалении группы"
                     )
                 }
-                _uiEffect.emit(GroupSettingsUiEffect.ShowError(exception.message ?: "Ошибка"))
+                _uiEffect.emit(GroupSettingsUiEffect.ShowError("Ошибка при удалении группы"))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }

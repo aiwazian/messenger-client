@@ -6,7 +6,7 @@ package com.aiwazian.messenger.ui.screens.channel.create
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.repository.ChannelRepository
+import com.aiwazian.messenger.domain.usecase.CreateChannelUseCase
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,7 +22,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CreateChannelViewModel @Inject constructor(
-    private val channelRepository: ChannelRepository,
+    private val createChannelUseCase: CreateChannelUseCase,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
@@ -51,7 +51,7 @@ class CreateChannelViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             
             try {
-                channelRepository.create(_uiState.value.name, _uiState.value.bio)
+                createChannelUseCase(_uiState.value.name, _uiState.value.bio)
                     .onSuccess { createdId ->
                         _createEffect.emit(CreateChannelEffect.NavigateToChat(createdId))
                     }

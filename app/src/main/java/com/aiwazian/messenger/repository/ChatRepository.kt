@@ -58,8 +58,16 @@ class ChatRepository @Inject constructor(
                             }
                         }
                         
-                        ChatType.GROUP -> UiText.DynamicString(groupRepository.getById(entity.chatId).first().name)
-                        ChatType.CHANNEL -> UiText.DynamicString(channelRepository.getById(entity.chatId).first().name)
+                        ChatType.GROUP -> UiText.DynamicString(
+                            groupRepository.getById(entity.chatId)
+                                .first().name
+                        )
+                        
+                        ChatType.CHANNEL -> UiText.DynamicString(
+                            channelRepository.getById(entity.chatId)
+                                .first().name
+                        )
+                        
                         else -> UiText.DynamicString("")
                     }
                     
@@ -106,23 +114,6 @@ class ChatRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error getting chat $chatId", e)
-        }
-        return null
-    }
-    
-    suspend fun getLastMessage(chatId: Long): Message? {
-        try {
-            val response = chatApi.getLastMessage(chatId)
-            if (response.isSuccessful) {
-                return response.body()?.toDomain()
-            } else {
-                Log.e(
-                    "ChatRepository",
-                    "Failed to get last message for chat $chatId: ${response.message()}"
-                )
-            }
-        } catch (e: Exception) {
-            Log.e("ChatRepository", "Error getting last message for chat $chatId", e)
         }
         return null
     }
@@ -186,10 +177,6 @@ class ChatRepository @Inject constructor(
         // Не вызываем API тут, т.к. это задача синхронизатора или ViewModel (в зависимости от логики)
         // Однако для текущей реализации лучше оставить API вызов в makeAsRead,
         // а этот метод использовать для локального обновления.
-    }
-
-    suspend fun updateChat(chat: Chat) {
-        chatDao.upsertChats(listOf(chat.toEntity()))
     }
     
     suspend fun saveMessage(message: Message) {
@@ -293,9 +280,7 @@ class ChatRepository @Inject constructor(
     suspend fun deleteChatMessages(chatId: Long): Boolean {
         return try {
             val response = messageApi.clearHistory(chatId)
-            if (response.isSuccessful) {
-                clearLocalHistory(chatId)
-            }
+            clearLocalHistory(chatId)
             response.isSuccessful
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error clearing chat history", e)
@@ -328,18 +313,12 @@ class ChatRepository @Inject constructor(
     suspend fun deleteChat(chatId: Long): Boolean {
         return try {
             val response = chatApi.deleteChat(chatId)
-            if (response.isSuccessful) {
-                chatDao.deleteChat(chatId)
-                clearLocalHistory(chatId)
-            }
+            chatDao.deleteChat(chatId)
+            clearLocalHistory(chatId)
             response.isSuccessful
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error deleting chat $chatId", e)
             false
         }
-    }
-    
-    suspend fun saveChat(chat: Chat) {
-        chatDao.upsertChats(listOf(chat.toEntity()))
     }
 }
