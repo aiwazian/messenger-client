@@ -18,6 +18,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageFile
+import com.aiwazian.messenger.domain.usecase.SendMessageUseCase
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.DownloadStatus
@@ -80,7 +81,8 @@ class ChatViewModel @Inject constructor(
     private val downloaderManager: DownloaderManager,
     private val okHttpClient: OkHttpClient,
     private val vibrationManager: VibrationManager,
-    private val fileHandler: FileHandler
+    private val fileHandler: FileHandler,
+    private val sendMessageUseCase: SendMessageUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -604,7 +606,7 @@ class ChatViewModel @Inject constructor(
             changeText("")
             
             try {
-                chatRepository.sendMessage(_uiState.value.chatId, validText)?.let {
+                sendMessageUseCase(_uiState.value.chatId, validText)?.let {
                     _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
                 }
             } catch (e: Exception) {

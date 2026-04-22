@@ -8,12 +8,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.InviteLink
-import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.domain.usecase.SendMessageUseCase
 import com.aiwazian.messenger.enums.ChatType
-import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.ChatRepository
+import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
-import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DialogController
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +20,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,7 +28,8 @@ class GroupInviteLinksViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val chatRepository: ChatRepository,
     private val inviteLinkRepository: InviteLinkRepository,
-    private val clipboardService: ClipboardService
+    private val clipboardService: ClipboardService,
+    private val sendMessageUseCase: SendMessageUseCase
 ) : ViewModel() {
 
     private val _activeInviteLinks = MutableStateFlow<List<InviteLink>>(emptyList())
@@ -151,7 +150,7 @@ class GroupInviteLinksViewModel @Inject constructor(
 
         viewModelScope.launch {
             chatIds.forEach { chatId ->
-                chatRepository.sendMessage(chatId, link)
+                sendMessageUseCase(chatId, link)
             }
             val count = chatIds.size
             _isShareSheetVisible.value = false

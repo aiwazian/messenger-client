@@ -154,6 +154,10 @@ class ChatRepository @Inject constructor(
         }
     }
     
+    fun getById(chatId: Long): Flow<Chat?> {
+        return chatDao.getChatByIdFlow(chatId).map { it?.toDomain(UiText.DynamicString(""), null) }
+    }
+    
     suspend fun sendMessage(chatId: Long, message: String): Message? {
         return try {
             val request = TextMessageRequestDto(text = message)
@@ -195,7 +199,11 @@ class ChatRepository @Inject constructor(
                     )
                 }
             attachmentDao.upsertAttachments(attachments)
-            chatDao.updateLastMessageId(msg.chatId, msg.id)
+            if (ChatType.fromId(msg.chatId) == ChatType.PRIVATE) {
+                chatDao.updateLastMessageId(msg.senderId, msg.id)
+            } else {
+                chatDao.updateLastMessageId(msg.chatId, msg.id)
+            }
         }
     }
     
