@@ -19,16 +19,25 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -36,12 +45,19 @@ import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @Composable
 fun CreateChannelScreen(viewModel: CreateChannelViewModel = hiltViewModel()) {
+    val context = LocalContext.current
     val navBackStack = LocalNavBackStack.current
     val uiState by viewModel.uiState.collectAsState()
+    
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     LaunchedEffect(Unit) {
         viewModel.createEffect.collectLatest { effect ->
@@ -53,13 +69,24 @@ fun CreateChannelScreen(viewModel: CreateChannelViewModel = hiltViewModel()) {
                 }
                 
                 is CreateChannelEffect.ShowSnackbar -> {
-                
+                    snackbarJob?.cancel()
+                    snackbarJob = scope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = effect.message.asString(context),
+                            duration = SnackbarDuration.Short
+                        )
+                    }
                 }
             }
         }
     }
     
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) {
+                CustomSnackbar(text = it.visuals.message, onDismiss = it::dismiss)
+            }
+        },
         topBar = {
             TopBar()
         },
