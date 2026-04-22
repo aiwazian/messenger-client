@@ -2,18 +2,18 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.domain.usecase
+package com.aiwazian.messenger.usecase
 
+import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
-import com.aiwazian.messenger.repository.GroupRepository
 import javax.inject.Inject
 
-class DeleteGroupUseCase @Inject constructor(
-    private val groupRepository: GroupRepository,
+class DeleteChannelUseCase @Inject constructor(
+    private val channelRepository: ChannelRepository,
     private val chatRepository: ChatRepository
 ) {
     suspend operator fun invoke(chatId: Long): Boolean {
-        val success = groupRepository.delete(chatId).isSuccess
+        val success = channelRepository.delete(chatId).isSuccess
         if (success) {
             chatRepository.deleteChat(chatId)
         }

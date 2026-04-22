@@ -8,7 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.InviteLink
-import com.aiwazian.messenger.domain.usecase.SendMessageUseCase
+import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository

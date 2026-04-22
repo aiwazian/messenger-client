@@ -4,12 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.settings.privacy
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.PrivacyLevel
+import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -61,7 +55,6 @@ import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.SessionManager
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -196,43 +189,18 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                     )
                 }
                 
-                var waitSeconds by remember { mutableIntStateOf(10) }
-                
-                TextButton(
-                    onClick = {
-                        if (waitSeconds <= 0) {
-                            viewModel.hideDeleteBottomSheet()
-                            viewModel.showDeleteDialog()
-                        }
-                    },
+                CountdownTextButton(
+                    text = "Все равно удалить",
+                    seconds = 15,
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Row(modifier = Modifier.padding(8.dp)) {
-                        Text(text = "Все равно удалить", fontSize = 16.sp)
-                        
-                        LaunchedEffect(Unit) {
-                            while (waitSeconds > 0) {
-                                delay(1000)
-                                waitSeconds--
-                            }
-                        }
-                        
-                        AnimatedContent(
-                            targetState = waitSeconds, transitionSpec = {
-                                slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
-                            }) { second ->
-                            if (second > 0) {
-                                Text(
-                                    text = " $second",
-                                    fontSize = 16.sp,
-                                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
-                                )
-                            }
-                        }
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    onClickWhileRunning = viewModel::vibrate,
+                    onClickAfterFinish = {
+                        viewModel.hideDeleteBottomSheet()
+                        viewModel.showDeleteDialog()
                     }
-                }
+                )
             }
         }
     }
@@ -243,7 +211,8 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
             onDismissRequest = viewModel::hideDeleteDialog,
             content = {
                 Text(
-                    text = stringResource(R.string.delete_account_confirm), lineHeight = 18.sp
+                    text = stringResource(R.string.delete_account_confirm),
+                    lineHeight = 18.sp
                 )
             },
             buttons = {
@@ -251,36 +220,18 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                     Text(stringResource(R.string.no))
                 }
                 
-                var waitSeconds by remember { mutableIntStateOf(10) }
-                LaunchedEffect(Unit) {
-                    while (waitSeconds > 0) {
-                        delay(1000)
-                        waitSeconds--
+                CountdownTextButton(
+                    text = stringResource(R.string.yes),
+                    seconds = 15,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    onClickWhileRunning = viewModel::vibrate,
+                    onClickAfterFinish = {
+                        viewModel.hideDeleteDialog()
+                        viewModel.deleteAccount()
                     }
-                }
-                TextButton(
-                    onClick = {
-                        if (waitSeconds <= 0) {
-                            viewModel.hideDeleteDialog()
-                            viewModel.deleteAccount()
-                        }
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(stringResource(R.string.yes))
-                    AnimatedContent(
-                        targetState = waitSeconds, transitionSpec = {
-                            slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
-                        }) { second ->
-                        if (second > 0) {
-                            Text(
-                                text = " $second",
-                                fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
-                            )
-                        }
-                    }
-                }
+                )
             })
     }
 }

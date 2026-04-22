@@ -6,7 +6,7 @@ package com.aiwazian.messenger.ui.screens.group.create
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.domain.usecase.CreateGroupUseCase
+import com.aiwazian.messenger.usecase.CreateGroupUseCase
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel

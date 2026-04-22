@@ -6,13 +6,14 @@ package com.aiwazian.messenger.mappers
 
 import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.network.dto.InviteLinkResponseDto
+import okhttp3.internal.toLongOrDefault
 
-fun InviteLinkResponseDto.toDomain(): InviteLink = InviteLink(
-    id = this.id.toLongOrNull() ?: 0L,
-    chatId = this.chatId.toLongOrNull() ?: 0L,
-    code = this.code,
-    link = this.link,
-    expiresAt = this.expiresAt,
-    maxUses = this.maxUses,
-    uses = this.uses
+fun InviteLinkResponseDto.toDomain() = InviteLink(
+    id = id.toLongOrDefault(0),
+    chatId = chatId.toLongOrDefault(0),
+    code = code,
+    link = link,
+    expiresAt = expiresAt,
+    maxUses = maxUses,
+    uses = uses
 )

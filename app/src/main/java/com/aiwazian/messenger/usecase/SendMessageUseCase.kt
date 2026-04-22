@@ -2,7 +2,7 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.domain.usecase
+package com.aiwazian.messenger.usecase
 
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.repository.ChatRepository

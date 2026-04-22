@@ -6,8 +6,8 @@ package com.aiwazian.messenger.ui.screens.group.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.domain.usecase.DeleteGroupUseCase
 import com.aiwazian.messenger.repository.GroupRepository
+import com.aiwazian.messenger.usecase.DeleteGroupUseCase
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -92,6 +92,10 @@ class GroupSettingsViewModel @Inject constructor(
                 }
             )
         }
+    }
+    
+    fun vibrate() {
+        vibrationManager.vibrate(VibrationPattern.Error)
     }
     
     fun delete() {

@@ -5,7 +5,6 @@
 package com.aiwazian.messenger.repository
 
 import android.util.Log
-import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.database.dao.GroupMemberDao
 import com.aiwazian.messenger.database.dao.UserDao

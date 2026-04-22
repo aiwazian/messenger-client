@@ -9,8 +9,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CreateInviteLinkRequestDto(
-    @SerialName("channelId") val channelId: String? = null,
-    @SerialName("groupId") val groupId: String? = null,
     @SerialName("expiresInSeconds") val expiresInSeconds: Int? = null,
     @SerialName("maxUses") val maxUses: Int? = null
 )
@@ -23,5 +21,5 @@ data class InviteLinkResponseDto(
     @SerialName("link") val link: String,
     @SerialName("expiresAt") val expiresAt: String? = null,
     @SerialName("maxUses") val maxUses: Int? = null,
-    @SerialName("uses") val uses: Int
+    @SerialName("uses") val uses: Int = 0
 )

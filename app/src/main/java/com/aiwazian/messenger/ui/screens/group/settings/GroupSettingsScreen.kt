@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.GroupType
+import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
@@ -172,15 +173,14 @@ fun GroupSettingsScreen(
                     TextButton(onClick = deleteGroupDialog::hide) {
                         Text(stringResource(R.string.cancel))
                     }
-                    TextButton(
-                        onClick = {
-                            viewModel.delete()
-                        },
-                        enabled = !isLoading,
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text(stringResource(R.string.delete_group))
-                    }
+                    
+                    CountdownTextButton(
+                        text = stringResource(R.string.delete_group),
+                        seconds = 5,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        onClickWhileRunning = viewModel::vibrate,
+                        onClickAfterFinish = viewModel::delete
+                    )
                 }) {
                 Text("Вы точно хотите удалить группу для себя и всех участников?")
             }

@@ -29,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
+import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -150,12 +151,14 @@ fun ChannelSettingsScreen(
                         TextButton(onClick = viewModel::hideDeleteDialog) {
                             Text(stringResource(R.string.cancel))
                         }
-                        TextButton(
-                            onClick = viewModel::delete,
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Text(stringResource(R.string.delete_channel))
-                        }
+                        
+                        CountdownTextButton(
+                            text = stringResource(R.string.delete_channel),
+                            seconds = 5,
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            onClickWhileRunning = viewModel::vibrate,
+                            onClickAfterFinish = viewModel::delete
+                        )
                     },
                     content = {
                         Text("Вы точно хотите удалить канал?")

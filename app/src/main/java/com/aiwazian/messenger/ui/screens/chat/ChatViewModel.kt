@@ -18,7 +18,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageFile
-import com.aiwazian.messenger.domain.usecase.SendMessageUseCase
+import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.DownloadStatus

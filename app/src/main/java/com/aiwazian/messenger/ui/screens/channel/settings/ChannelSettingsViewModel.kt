@@ -7,9 +7,9 @@ package com.aiwazian.messenger.ui.screens.channel.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.User
-import com.aiwazian.messenger.domain.usecase.DeleteChannelUseCase
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.repository.ChannelRepository
+import com.aiwazian.messenger.usecase.DeleteChannelUseCase
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -82,6 +82,10 @@ class ChannelSettingsViewModel @Inject constructor(
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }
+    }
+    
+    fun vibrate() {
+        vibrationManager.vibrate(VibrationPattern.Error)
     }
     
     fun delete() {

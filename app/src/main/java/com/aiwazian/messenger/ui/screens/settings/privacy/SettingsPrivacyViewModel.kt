@@ -64,6 +64,8 @@ class SettingsPrivacyViewModel @Inject constructor(
         _uiState.update { it.copy(showDeleteDialog = false) }
     }
     
+    fun vibrate() = vibrationManager.vibrate(VibrationPattern.Error)
+    
     fun onDeleteAccountClick() {
         viewModelScope.launch {
             val createdAt = authRepository.getCurrentAccountCreatedAt()

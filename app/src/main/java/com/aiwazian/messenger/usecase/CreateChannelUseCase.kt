@@ -2,18 +2,18 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.domain.usecase
+package com.aiwazian.messenger.usecase
 
+import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
-import com.aiwazian.messenger.repository.GroupRepository
 import javax.inject.Inject
 
-class CreateGroupUseCase @Inject constructor(
-    private val groupRepository: GroupRepository,
+class CreateChannelUseCase @Inject constructor(
+    private val channelRepository: ChannelRepository,
     private val chatRepository: ChatRepository
 ) {
     suspend operator fun invoke(name: String, bio: String): Result<Long> {
-        val result = groupRepository.create(name, bio)
+        val result = channelRepository.create(name, bio)
         result.onSuccess {
             chatRepository.refreshChats()
         }
