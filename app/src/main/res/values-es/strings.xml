@@ -165,4 +165,7 @@
     <string name="private_group">Grupo Privado</string>
     <string name="clear_database">Borrar base de datos</string>
     <string name="music">Música</string>
+    <string name="channel_created">Canal creado</string>
+    <string name="group_created">Grupo creado</string>
+    <string name="history_cleared">Historial borrado</string>
 </resources>

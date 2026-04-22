@@ -13,11 +13,9 @@ data class MessageWithAttachments(
     @Relation(
         parentColumn = "id",
         entityColumn = "relationId",
-        // filters by type are tricky in Relation without custom Query in DAO
     )
     val allAttachments: List<AttachmentEntity>
 ) {
-    // Filter attachments by type
     val messageAttachments: List<AttachmentEntity>
-        get() = allAttachments.filter { it.type == AttachmentType.MESSAGE }
+        get() = allAttachments.filter { it.type == AttachmentType.FILE }
 }

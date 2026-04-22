@@ -251,7 +251,7 @@ fun ChatScreen(
                         }) { item ->
                         when (item) {
                             is ChatItem.DateSeparator -> DateSeparatorItem(item.text)
-                            is ChatItem.SystemMessage -> SystemMessageBubble(item.text)
+                            is ChatItem.SystemMessage -> SystemMessageBubble(item.text.asString())
                             is ChatItem.MessageItem -> MessageBubble(
                                 item = item, onSeen = {
                                     chatViewModel.markAsReadMessage(item.message)

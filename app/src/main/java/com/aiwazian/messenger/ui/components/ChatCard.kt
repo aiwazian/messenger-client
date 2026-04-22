@@ -30,13 +30,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
-import com.aiwazian.messenger.utils.SYSTEM_USER_ID
+import com.aiwazian.messenger.utils.UiText
 
 @Composable
 fun ChatCard(
@@ -65,17 +67,28 @@ fun ChatCard(
         },
         supportingContent = {
             if (chat.lastMessage != null) {
-                if (chat.lastMessage.files.isNotEmpty()) {
-                    Text(text = chat.lastMessage.files.first().name)
+                var color = Color.Unspecified
+                val text = if (chat.lastMessage.attachments.isNotEmpty()) {
+                    UiText.DynamicString(chat.lastMessage.attachments.first().name)
                 } else if (!chat.lastMessage.text.isNullOrBlank()) {
-                    val isSystem = chat.lastMessage.senderId == SYSTEM_USER_ID
-                    Text(
-                        text = chat.lastMessage.text,
-                        color = if (isSystem) MaterialTheme.colorScheme.primary else Color.Unspecified,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                    UiText.DynamicString(chat.lastMessage.text)
+                } else if (chat.lastMessage.systemMessageEventType != null) {
+                    color = MaterialTheme.colorScheme.primary
+                    UiText.StringResource(
+                        when (chat.lastMessage.systemMessageEventType) {
+                            SystemMessageEventType.CHANNEL_CREATED -> R.string.channel_created
+                            SystemMessageEventType.GROUP_CREATED -> R.string.group_created
+                            SystemMessageEventType.HISTORY_CLEARED -> R.string.history_cleared
+                        }
                     )
-                }
+                } else UiText.DynamicString("")
+                
+                Text(
+                    text = text.asString(),
+                    maxLines = 1,
+                    color = color,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         },
         leadingContent = {

@@ -6,7 +6,6 @@ package com.aiwazian.messenger.repository
 
 import android.util.Log
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.common.utils.UiText
 import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.MessageDao
@@ -23,6 +22,7 @@ import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
+import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -187,7 +187,13 @@ class ChatRepository @Inject constructor(
         messageDao.saveMessages(messages.map { it.toEntity() })
         messages.forEach { msg ->
             val attachments =
-                msg.files.map { it.toEntity(msg.id.toLong(), AttachmentType.MESSAGE, msg.chatId) }
+                msg.attachments.map {
+                    it.toEntity(
+                        msg.id.toLong(),
+                        AttachmentType.FILE,
+                        msg.chatId
+                    )
+                }
             attachmentDao.upsertAttachments(attachments)
             chatDao.updateLastMessageId(msg.chatId, msg.id)
         }

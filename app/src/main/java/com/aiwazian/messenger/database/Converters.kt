@@ -26,6 +26,6 @@ class Converters {
     fun toAttachmentType(type: String): AttachmentType = try {
         AttachmentType.valueOf(type)
     } catch (_: Exception) {
-        AttachmentType.MESSAGE
+        AttachmentType.FILE
     }
 }

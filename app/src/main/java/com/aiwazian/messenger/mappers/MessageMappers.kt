@@ -7,8 +7,10 @@ package com.aiwazian.messenger.mappers
 import com.aiwazian.messenger.database.entity.MessageEntity
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageFile
+import com.aiwazian.messenger.enums.MessageType
+import com.aiwazian.messenger.enums.SystemMessageEventType
+import com.aiwazian.messenger.network.dto.MessageAttachmentDto
 import com.aiwazian.messenger.network.dto.MessageDto
-import com.aiwazian.messenger.network.dto.MessageFileDto
 
 fun MessageDto.toDomain(): Message = Message(
     id = id,
@@ -17,10 +19,12 @@ fun MessageDto.toDomain(): Message = Message(
     text = if (text == "null") null else text,
     sendTime = sendTime,
     isRead = isRead ?: false,
-    files = files.map { it.toDomain() }
+    messageType = messageType,
+    systemMessageEventType = systemEventType,
+    attachments = attachments.map { it.toDomain() }
 )
 
-fun MessageFileDto.toDomain() = MessageFile(
+fun MessageAttachmentDto.toDomain() = MessageFile(
     id = id,
     name = name,
     size = size,
@@ -30,14 +34,18 @@ fun MessageFileDto.toDomain() = MessageFile(
     localUri = null
 )
 
-fun MessageEntity.toDomain(files: List<MessageFile> = emptyList()) = Message(
+fun MessageEntity.toDomain(attachments: List<MessageFile> = emptyList()) = Message(
     id = id,
     senderId = senderId,
     chatId = chatId,
     text = text,
     sendTime = sendTime,
     isRead = isRead,
-    files = files
+    messageType = MessageType.fromOrdinal(messageType),
+    systemMessageEventType = if (systemMessageEventType != null) SystemMessageEventType.fromOrdinal(
+        systemMessageEventType
+    ) else null,
+    attachments = attachments
 )
 
 fun Message.toEntity() = MessageEntity(
@@ -46,5 +54,7 @@ fun Message.toEntity() = MessageEntity(
     chatId = chatId,
     text = text,
     sendTime = sendTime,
-    isRead = isRead
+    isRead = isRead,
+    messageType = messageType.ordinal,
+    systemMessageEventType = systemMessageEventType?.ordinal
 )

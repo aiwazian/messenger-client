@@ -2,7 +2,7 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.common.utils
+package com.aiwazian.messenger.utils
 
 import android.content.Context
 import androidx.annotation.StringRes

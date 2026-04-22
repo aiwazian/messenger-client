@@ -165,4 +165,7 @@
     <string name="private_group">Մասնավոր խումբ</string>
     <string name="clear_database">Մաքրել տվյալների բազան</string>
     <string name="music">Երաժշտություն</string>
+    <string name="channel_created">Ստեղծվել է ալիք</string>
+    <string name="group_created">Ստեղծվել է խումբ</string>
+    <string name="history_cleared">Պատմությունը մաքրված է</string>
 </resources>

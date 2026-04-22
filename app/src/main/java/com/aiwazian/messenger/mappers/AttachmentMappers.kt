@@ -9,24 +9,24 @@ import com.aiwazian.messenger.domain.MessageFile
 import com.aiwazian.messenger.enums.AttachmentType
 
 fun AttachmentEntity.toDomain(): MessageFile = MessageFile(
-    id = this.id,
-    name = this.name,
-    size = this.size,
-    extension = this.extension,
-    status = this.status,
-    progress = this.progress,
-    localUri = this.localUri
+    id = id,
+    name = name,
+    size = size,
+    extension = extension,
+    status = status,
+    progress = progress,
+    localUri = localUri
 )
 
 fun MessageFile.toEntity(relationId: Long, type: AttachmentType, chatId: Long? = null): AttachmentEntity = AttachmentEntity(
-    id = this.id,
+    id = id,
     relationId = relationId,
     chatId = chatId,
     type = type,
-    name = this.name,
-    size = this.size,
-    extension = this.extension,
-    status = this.status,
-    progress = this.progress,
-    localUri = this.localUri
+    name = name,
+    size = size,
+    extension = extension,
+    status = status,
+    progress = progress,
+    localUri = localUri
 )

@@ -165,4 +165,7 @@
     <string name="private_group">Прыватная група</string>
     <string name="clear_database">Ачысціць базу даных</string>
     <string name="music">Музыка</string>
+    <string name="channel_created">Канал створаны</string>
+    <string name="group_created">Група створана</string>
+    <string name="history_cleared">Гісторыя ачышчана</string>
 </resources>

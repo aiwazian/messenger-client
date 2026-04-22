@@ -4,7 +4,7 @@
 
 package com.aiwazian.messenger.domain
 
-import com.aiwazian.messenger.common.utils.UiText
+import com.aiwazian.messenger.utils.UiText
 
 data class Chat(
     val id: Long,

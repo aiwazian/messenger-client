@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.domain.usecase
 
 import com.aiwazian.messenger.repository.ChannelRepository

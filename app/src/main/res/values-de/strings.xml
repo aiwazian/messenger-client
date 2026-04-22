@@ -165,4 +165,7 @@
     <string name="private_group">Private Gruppe</string>
     <string name="clear_database">Datenbank löschen</string>
     <string name="music">Musik</string>
+    <string name="channel_created">Kanal erstellt</string>
+    <string name="group_created">Gruppe erstellt</string>
+    <string name="history_cleared">Verlauf gelöscht</string>
 </resources>

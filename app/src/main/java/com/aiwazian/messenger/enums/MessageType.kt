@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
+package com.aiwazian.messenger.enums
+
+enum class MessageType {
+    TEXT,
+    STICKER,
+    SYSTEM;
+    
+    companion object {
+        fun fromOrdinal(value: Int): MessageType {
+            return entries.first { it.ordinal == value }
+        }
+    }
+}

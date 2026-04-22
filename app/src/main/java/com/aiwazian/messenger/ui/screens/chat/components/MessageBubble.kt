@@ -96,18 +96,16 @@ fun MessageBubble(
                     )
                 }
                 
-                if (message.files.isNotEmpty()) {
-                    message.files.forEach { file ->
-                        MessageFile(
-                            file = file,
-                            onAction = { action ->
-                                onFileAction(
-                                    file,
-                                    action
-                                )
-                            }
-                        )
-                    }
+                message.attachments.forEach { file ->
+                    MessageFile(
+                        file = file,
+                        onAction = { action ->
+                            onFileAction(
+                                file,
+                                action
+                            )
+                        }
+                    )
                 }
                 
                 if (!message.text.isNullOrBlank()) {

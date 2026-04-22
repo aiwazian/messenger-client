@@ -12,7 +12,9 @@ data class MessageEntity(
     @PrimaryKey val id: Int,
     val senderId: Long,
     val chatId: Long,
-    val text: String? = null,
-    val sendTime: Long = 0,
-    val isRead: Boolean = false
+    val text: String?,
+    val sendTime: Long,
+    val messageType: Int,
+    val systemMessageEventType: Int?,
+    val isRead: Boolean
 )

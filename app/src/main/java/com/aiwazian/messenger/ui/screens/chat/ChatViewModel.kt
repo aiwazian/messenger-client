@@ -22,6 +22,8 @@ import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
+import com.aiwazian.messenger.enums.MessageType
+import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
@@ -39,7 +41,7 @@ import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.FileHandler
 import com.aiwazian.messenger.utils.ProgressRequestBody
-import com.aiwazian.messenger.utils.SYSTEM_USER_ID
+import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -131,7 +133,7 @@ class ChatViewModel @Inject constructor(
     private fun updateDownloadsInUi(downloads: List<DownloadItem>) {
         val currentItems = _uiState.value.chatItems.map { item ->
             if (item is ChatItem.MessageItem) {
-                val updatedFiles = item.message.files.map { file ->
+                val updatedAttachments = item.message.attachments.map { file ->
                     val download =
                         downloads.findLast { it.fileId == file.id || (it.messageId == item.message.id && it.name == file.name) }
                     if (download != null) {
@@ -143,10 +145,10 @@ class ChatViewModel @Inject constructor(
                             )
                             viewModelScope.launch {
                                 val messageToUpdate = item.message
-                                val finalFiles = messageToUpdate.files.map {
+                                val finalAttachments = messageToUpdate.attachments.map {
                                     if (it.id == updatedFile.id) updatedFile else it
                                 }
-                                chatRepository.saveMessage(messageToUpdate.copy(files = finalFiles))
+                                chatRepository.saveMessage(messageToUpdate.copy(attachments = finalAttachments))
                             }
                             updatedFile
                         } else {
@@ -169,7 +171,7 @@ class ChatViewModel @Inject constructor(
                         )
                     } else file
                 }
-                item.copy(message = item.message.copy(files = updatedFiles))
+                item.copy(message = item.message.copy(attachments = updatedAttachments))
             } else item
         }
         _uiState.update { it.copy(chatItems = currentItems) }
@@ -496,16 +498,17 @@ class ChatViewModel @Inject constructor(
                 lastDate = messageDate
             }
             
-            if (message.senderId == SYSTEM_USER_ID) {
-                val text = message.text ?: ""
-                if (text.isNotBlank()) {
-                    chatItems.add(
-                        ChatItem.SystemMessage(
-                            text = text.trim(), sendTime = message.sendTime
-                        )
-                    )
+            if (message.messageType == MessageType.SYSTEM && message.systemMessageEventType != null) {
+                val textResId = when (message.systemMessageEventType) {
+                    SystemMessageEventType.CHANNEL_CREATED -> R.string.channel_created
+                    SystemMessageEventType.GROUP_CREATED -> R.string.group_created
+                    SystemMessageEventType.HISTORY_CLEARED -> R.string.history_cleared
                 }
-                lastSenderId = SYSTEM_USER_ID
+                chatItems.add(
+                    ChatItem.SystemMessage(
+                        text = UiText.StringResource(resId = textResId), sendTime = message.sendTime
+                    )
+                )
                 return@forEach
             }
             
@@ -514,7 +517,7 @@ class ChatViewModel @Inject constructor(
             val isSingleEmoji = isSingleEmoji(message.text ?: "")
             val isFirstInGroup = message.senderId != lastSenderId
             
-            val updatedFiles = message.files.map { file ->
+            val updatedAttachments = message.attachments.map { file ->
                 val localFile =
                     if (file.id.isNotBlank()) downloaderManager.getFile(
                         file.id,
@@ -547,7 +550,7 @@ class ChatViewModel @Inject constructor(
                     }
                 }
             }
-            val processedMessage = message.copy(files = updatedFiles)
+            val processedMessage = message.copy(attachments = updatedAttachments)
             
             val actions = mutableListOf<DropdownMenuAction>()
             if (!message.text.isNullOrBlank()) {
@@ -597,28 +600,11 @@ class ChatViewModel @Inject constructor(
             if (text.isBlank()) return@launch
             
             val validText = text.trim()
-            val rawMessages = getRawMessages()
-            val lastId = if (rawMessages.isNotEmpty()) rawMessages.last().id + 1 else 1
-            val tempId = Random.nextInt(
-                lastId + 1, Int.MAX_VALUE
-            )
-            
-            val message = Message(
-                id = tempId,
-                senderId = _uiState.value.currentUserId,
-                chatId = _uiState.value.chatId,
-                text = validText,
-                isRead = _uiState.value.chatId == _uiState.value.currentUserId,
-                sendTime = System.currentTimeMillis(),
-                files = emptyList()
-            )
             
             changeText("")
             
             try {
-                chatRepository.sendMessage(
-                    message.chatId, validText
-                )?.let {
+                chatRepository.sendMessage(_uiState.value.chatId, validText)?.let {
                     _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
                 }
             } catch (e: Exception) {
@@ -728,9 +714,7 @@ class ChatViewModel @Inject constructor(
             FileAction.DOWNLOAD -> {
                 viewModelScope.launch {
                     try {
-                        chatRepository.getDownloadUrl(
-                            message.chatId, message.id, file.id
-                        )?.let {
+                        chatRepository.getDownloadUrl(message.chatId, message.id, file.id)?.let {
                             downloaderManager.download(
                                 url = it.downloadUrl,
                                 fileName = file.name,
@@ -794,9 +778,7 @@ class ChatViewModel @Inject constructor(
                 )
                 val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
                 
-                val tempId = Random.nextInt(
-                    1000000, Int.MAX_VALUE
-                )
+                val tempId = Random.nextInt(1000000, Int.MAX_VALUE)
                 val tempMessage = Message(
                     id = tempId,
                     text = null,
@@ -804,7 +786,9 @@ class ChatViewModel @Inject constructor(
                     chatId = _uiState.value.chatId,
                     sendTime = System.currentTimeMillis(),
                     isRead = false,
-                    files = listOf(
+                    messageType = MessageType.TEXT,
+                    systemMessageEventType = null,
+                    attachments = listOf(
                         MessageFile(
                             id = "temp_${tempId}",
                             name = fileName,
@@ -843,7 +827,11 @@ class ChatViewModel @Inject constructor(
                                 if (confirmedMessage != null) {
                                     // Принудительно устанавливаем UPLOADED, чтобы не конфликтовать с COMPLETED (скачанным)
                                     val messageWithUploadedStatus = confirmedMessage.copy(
-                                        files = confirmedMessage.files.map { it.copy(status = DownloadStatus.UPLOADED) }
+                                        attachments = confirmedMessage.attachments.map {
+                                            it.copy(
+                                                status = DownloadStatus.UPLOADED
+                                            )
+                                        }
                                     )
                                     downloaderManager.completeUpload(tempId)
                                     val updated =

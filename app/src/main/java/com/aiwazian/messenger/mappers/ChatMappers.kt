@@ -4,11 +4,11 @@
 
 package com.aiwazian.messenger.mappers
 
-import com.aiwazian.messenger.common.utils.UiText
 import com.aiwazian.messenger.database.entity.ChatEntity
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.network.dto.ChatResponseDto
+import com.aiwazian.messenger.utils.UiText
 
 fun ChatResponseDto.toDomain(): Chat = Chat(
     id = id.toLong(),

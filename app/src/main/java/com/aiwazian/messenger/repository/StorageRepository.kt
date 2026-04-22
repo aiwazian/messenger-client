@@ -70,7 +70,7 @@ class StorageRepository @Inject constructor(
                     extension = attachment.extension,
                     category = FileCategory.fromExtension(attachment.extension),
                     localUri = attachment.localUri!!,
-                    messageId = if (attachment.type == AttachmentType.MESSAGE) attachment.relationId.toInt() else 0,
+                    messageId = if (attachment.type == AttachmentType.FILE) attachment.relationId.toInt() else 0,
                     chatId = attachment.chatId ?: 0
                 )
             }

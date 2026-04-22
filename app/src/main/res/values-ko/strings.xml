@@ -165,4 +165,7 @@
     <string name="private_group">비공개 그룹</string>
     <string name="clear_database">데이터베이스 지우기</string>
     <string name="music">음악</string>
+    <string name="channel_created">채널이 생성되었습니다</string>
+    <string name="group_created">그룹이 생성되었습니다.</string>
+    <string name="history_cleared">기록 삭제됨</string>
 </resources>

@@ -6,7 +6,6 @@ package com.aiwazian.messenger.network.api
 
 import com.aiwazian.messenger.network.dto.ChatResponseDto
 import com.aiwazian.messenger.network.dto.InviteLinkInfoDto
-import com.aiwazian.messenger.network.dto.MessageDto
 import retrofit2.Response
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -20,9 +19,6 @@ interface ChatApi {
     
     @GET("chats/{chatId}")
     suspend fun getChatById(@Path("chatId") chatId: Long): Response<ChatResponseDto>
-    
-    @GET("chats/{chatId}/last-message")
-    suspend fun getLastMessage(@Path("chatId") chatId: Long): Response<MessageDto>
     
     @POST("chats/{chatId}/archive")
     suspend fun archiveChat(@Path("chatId") chatId: Long): Response<Unit>

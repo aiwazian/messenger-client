@@ -165,4 +165,7 @@
     <string name="private_group">Жеке топ</string>
     <string name="clear_database">Дерекқорды тазалау</string>
     <string name="music">Музыка</string>
+    <string name="channel_created">Арна құрылды</string>
+    <string name="group_created">Топ құрылды</string>
+    <string name="history_cleared">Тарих тазартылды</string>
 </resources>

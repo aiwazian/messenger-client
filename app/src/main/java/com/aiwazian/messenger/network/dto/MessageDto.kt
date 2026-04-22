@@ -5,11 +5,13 @@
 package com.aiwazian.messenger.network.dto
 
 import com.aiwazian.messenger.enums.DownloadStatus
+import com.aiwazian.messenger.enums.MessageType
+import com.aiwazian.messenger.enums.SystemMessageEventType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MessageFileDto(
+data class MessageAttachmentDto(
     @SerialName("id") val id: String,
     @SerialName("name") val name: String = "",
     @SerialName("size") val size: Long = 0,
@@ -26,7 +28,9 @@ data class MessageDto(
     @SerialName("sendTime") val sendTime: Long,
     @SerialName("editedAt") val editedAt: Long? = null,
     @SerialName("isRead") val isRead: Boolean? = null,
-    @SerialName("files") val files: List<MessageFileDto> = emptyList()
+    @SerialName("messageType") val messageType: MessageType = MessageType.TEXT,
+    @SerialName("systemEventType") val systemEventType: SystemMessageEventType? = null,
+    @SerialName("attachments") val attachments: List<MessageAttachmentDto> = emptyList()
 )
 
 @Serializable

@@ -4,6 +4,9 @@
 
 package com.aiwazian.messenger.domain
 
+import com.aiwazian.messenger.enums.MessageType
+import com.aiwazian.messenger.enums.SystemMessageEventType
+
 data class Message(
     val id: Int,
     val senderId: Long,
@@ -11,5 +14,7 @@ data class Message(
     val text: String?,
     val sendTime: Long,
     val isRead: Boolean,
-    val files: List<MessageFile>
+    val messageType: MessageType,
+    val systemMessageEventType: SystemMessageEventType?,
+    val attachments: List<MessageFile>
 )
