@@ -168,4 +168,15 @@
     <string name="channel_created">Ստեղծվել է ալիք</string>
     <string name="group_created">Ստեղծվել է խումբ</string>
     <string name="history_cleared">Պատմությունը մաքրված է</string>
+    <string name="error_empty_group_name">Մուտքագրեք խմբի անունը</string>
+    <string name="error_empty_channel_name">Մուտքագրեք ալիքի անունը</string>
+    <string name="failed_to_delete_channel">Չհաջողվեց ջնջել ալիքը</string>
+    <string name="failed_to_delete_group">Չհաջողվեց ջնջել խումբը</string>
+    <string name="failed_to_save_changes">Չհաջողվեց պահպանել փոփոխությունները</string>
+    <string name="error_empty_public_link">Մուտքագրեք հանրային հղում</string>
+    <string name="user_blocked">Օգտատերը արգելափակված է</string>
+    <string name="user_unblocked">Օգտատերն ապաարգելափակված է</string>
+    <string name="unblock">Ապաշրջափակել</string>
+    <string name="block">Արգելափակել</string>
+    <string name="failed_to_unblock_user">Չհաջողվեց ապաարգելափակել օգտատիրոջը</string>
 </resources>

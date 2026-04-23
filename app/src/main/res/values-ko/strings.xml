@@ -168,4 +168,15 @@
     <string name="channel_created">채널이 생성되었습니다</string>
     <string name="group_created">그룹이 생성되었습니다.</string>
     <string name="history_cleared">기록 삭제됨</string>
+    <string name="error_empty_group_name">그룹 이름을 입력하세요.</string>
+    <string name="error_empty_channel_name">채널 이름을 입력하세요.</string>
+    <string name="failed_to_delete_channel">채널을 삭제하지 못했습니다.</string>
+    <string name="failed_to_delete_group">그룹을 삭제하지 못했습니다.</string>
+    <string name="failed_to_save_changes">변경사항을 저장하지 못했습니다.</string>
+    <string name="error_empty_public_link">공개 링크를 입력하세요</string>
+    <string name="user_blocked">사용자가 차단됨</string>
+    <string name="user_unblocked">사용자가 차단 해제되었습니다.</string>
+    <string name="unblock">차단 해제</string>
+    <string name="block">차단하다</string>
+    <string name="failed_to_unblock_user">사용자 차단을 해제하지 못했습니다.</string>
 </resources>

@@ -168,4 +168,15 @@
     <string name="channel_created">Арна құрылды</string>
     <string name="group_created">Топ құрылды</string>
     <string name="history_cleared">Тарих тазартылды</string>
+    <string name="error_empty_group_name">Топ атын енгізіңіз</string>
+    <string name="error_empty_channel_name">Арна атын енгізіңіз</string>
+    <string name="failed_to_delete_channel">Арна жойылмады</string>
+    <string name="failed_to_delete_group">Топты жою мүмкін болмады</string>
+    <string name="failed_to_save_changes">Өзгерістерді сақтау мүмкін болмады</string>
+    <string name="error_empty_public_link">Жалпыға ортақ сілтемені енгізіңіз</string>
+    <string name="user_blocked">Пайдаланушы блокталды</string>
+    <string name="user_unblocked">Пайдаланушы блоктан шығарылды</string>
+    <string name="unblock">Блоктан шығару</string>
+    <string name="block">Блоктау</string>
+    <string name="failed_to_unblock_user">Пайдаланушыны бөгеуден шығару мүмкін болмады</string>
 </resources>

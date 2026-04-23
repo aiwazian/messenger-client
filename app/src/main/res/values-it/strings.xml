@@ -168,4 +168,15 @@
     <string name="channel_created">Canale creato</string>
     <string name="group_created">Gruppo creato</string>
     <string name="history_cleared">Cronologia cancellata</string>
+    <string name="error_empty_group_name">Inserisci il nome del gruppo</string>
+    <string name="error_empty_channel_name">Inserisci un nome per il canale</string>
+    <string name="failed_to_delete_channel">Impossibile eliminare il canale</string>
+    <string name="failed_to_delete_group">Impossibile eliminare il gruppo</string>
+    <string name="failed_to_save_changes">Impossibile salvare le modifiche</string>
+    <string name="error_empty_public_link">Inserisci un collegamento pubblico</string>
+    <string name="user_blocked">Utente bloccato</string>
+    <string name="user_unblocked">Utente sbloccato</string>
+    <string name="unblock">Sbloccare</string>
+    <string name="block">Bloccare</string>
+    <string name="failed_to_unblock_user">Impossibile sbloccare l\'utente</string>
 </resources>

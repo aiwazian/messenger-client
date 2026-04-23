@@ -168,4 +168,15 @@
     <string name="channel_created">Канал створаны</string>
     <string name="group_created">Група створана</string>
     <string name="history_cleared">Гісторыя ачышчана</string>
+    <string name="error_empty_group_name">Увядзіце назву групы</string>
+    <string name="error_empty_channel_name">Увядзіце назву канала</string>
+    <string name="failed_to_delete_channel">Не ўдалося выдаліць канал</string>
+    <string name="failed_to_delete_group">Не ўдалося выдаліць групу</string>
+    <string name="failed_to_save_changes">Не ўдалося захаваць змены</string>
+    <string name="error_empty_public_link">Увядзіце агульнадаступную спасылку</string>
+    <string name="user_blocked">Карыстальнік заблакіраваны</string>
+    <string name="user_unblocked">Карыстальнік разблакіраваны</string>
+    <string name="unblock">Разблакіраваць</string>
+    <string name="block">Блок</string>
+    <string name="failed_to_unblock_user">Не ўдалося разблакіраваць карыстальніка</string>
 </resources>

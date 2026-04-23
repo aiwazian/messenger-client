@@ -168,4 +168,15 @@
     <string name="channel_created">Channel Created</string>
     <string name="group_created">Group Created</string>
     <string name="history_cleared">History Cleared</string>
+    <string name="error_empty_group_name">Enter a group name</string>
+    <string name="error_empty_channel_name">Enter a channel name</string>
+    <string name="failed_to_delete_channel">Failed to delete channel</string>
+    <string name="failed_to_delete_group">Failed to delete group</string>
+    <string name="failed_to_save_changes">Failed to save changes</string>
+    <string name="error_empty_public_link">Enter a public link</string>
+    <string name="user_blocked">User blocked</string>
+    <string name="user_unblocked">User unblocked</string>
+    <string name="unblock">Unblock</string>
+    <string name="block">Block</string>
+    <string name="failed_to_unblock_user">Failed to unblock user</string>
 </resources>
