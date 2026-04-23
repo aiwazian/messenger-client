@@ -17,7 +17,7 @@ data class GroupSettingsUiState(
         groupType = GroupType.PRIVATE,
         members = 0
     ),
-    val isLoading: Boolean = false,
-    val isDeleting: Boolean = false,
-    val error: String? = null
+    val originalChannelData: Group? = null,
+    val hasChanges: Boolean = false,
+    val showDeleteDialog: Boolean = false
 )

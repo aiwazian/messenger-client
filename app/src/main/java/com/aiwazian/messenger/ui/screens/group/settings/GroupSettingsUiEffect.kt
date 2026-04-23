@@ -4,8 +4,10 @@
 
 package com.aiwazian.messenger.ui.screens.group.settings
 
+import com.aiwazian.messenger.utils.UiText
+
 sealed interface GroupSettingsUiEffect {
     data object NavigateBack : GroupSettingsUiEffect
     data object NavigateToMain : GroupSettingsUiEffect
-    data class ShowError(val message: String) : GroupSettingsUiEffect
+    data class ShowSnackbar(val message: UiText) : GroupSettingsUiEffect
 }

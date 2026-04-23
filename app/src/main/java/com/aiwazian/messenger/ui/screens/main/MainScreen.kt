@@ -9,9 +9,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
-import android.view.LayoutInflater
-import android.widget.ImageView
-import android.widget.TextView
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -79,6 +77,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -88,7 +87,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -97,7 +95,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.airbnb.lottie.compose.LottieAnimation
@@ -107,7 +104,6 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ConnectionState
-import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -117,9 +113,13 @@ import com.aiwazian.messenger.ui.screens.main.search.EmptySearchResultsPlacehold
 import com.aiwazian.messenger.ui.screens.main.search.FileResultsList
 import com.aiwazian.messenger.ui.screens.main.search.LoadingPlaceholder
 import com.aiwazian.messenger.ui.screens.main.search.SearchViewModel
-import com.yandex.mobile.ads.nativeads.MediaView
-import com.yandex.mobile.ads.nativeads.NativeAdView
-import com.yandex.mobile.ads.nativeads.NativeAdViewBinder
+import com.yandex.mobile.ads.common.AdRequest
+import com.yandex.mobile.ads.common.AdTheme
+import com.yandex.mobile.ads.compose.Banner
+import com.yandex.mobile.ads.compose.BannerEvents
+import com.yandex.mobile.ads.compose.BannerSize
+import com.yandex.mobile.ads.compose.rememberBannerAdState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -565,9 +565,7 @@ private fun DefaultTopBar(
 }
 
 @Composable
-private fun DrawerContent(
-    onClose: () -> Unit, user: User, nativeAdViewModel: NativeAdViewModel = hiltViewModel()
-) {
+private fun DrawerContent(onClose: () -> Unit, user: User) {
     val navBackStack = LocalNavBackStack.current
     
     ModalDrawerSheet(
@@ -621,52 +619,37 @@ private fun DrawerContent(
         
         Box(Modifier.weight(1f))
         
-        val isAdLoaded by nativeAdViewModel.isAdLoaded.collectAsState()
-        val nativeAd = nativeAdViewModel.nativeAd
+        val scope = rememberCoroutineScope()
+        var loadTrigger by remember { mutableLongStateOf(0L) }
+        val adRequest = AdRequest.Builder("R-M-15520718-1")
+            .setPreferredTheme(AdTheme.DARK)
+            .build()
         
-        if (isAdLoaded) {
-            val textColor = MaterialTheme.colorScheme.onSurface
-            
-            AndroidView(
-                modifier = Modifier.fillMaxWidth(), factory = { context ->
-                    LayoutInflater.from(context).inflate(
-                        R.layout.fragment_ad_mob, null, false
-                    ).apply {
-                        val title = findViewById<TextView>(R.id.title)
-                        val domain = findViewById<TextView>(R.id.domain)
-                        val warning = findViewById<TextView>(R.id.warning)
-                        val sponsored = findViewById<TextView>(R.id.sponsored)
-                        val feedback = findViewById<ImageView>(R.id.feedback)
-                        val media = findViewById<MediaView>(R.id.media)
-                        val favicon = findViewById<ImageView>(R.id.favicon)
-                        val price = findViewById<TextView>(R.id.price)
-                        val appIcon = findViewById<ImageView>(R.id.app_icon)
-                        
-                        title.setTextColor(textColor.toArgb())
-                        domain.setTextColor(textColor.toArgb())
-                        warning.setTextColor(textColor.toArgb())
-                        sponsored.setTextColor(textColor.toArgb())
-                        price.setTextColor(textColor.toArgb())
-                        
-                        val nativeAdView = findViewById<NativeAdView>(R.id.native_ad_container)
-                        
-                        val viewBinder =
-                            NativeAdViewBinder.Builder(nativeAdView)
-                                .setTitleView(title)
-                                .setDomainView(domain)
-                                .setWarningView(warning)
-                                .setSponsoredView(sponsored)
-                                .setFeedbackView(feedback)
-                                .setMediaView(media)
-                                .setIconView(appIcon)
-                                .setPriceView(price)
-                                .setFaviconView(favicon)
-                                .build()
-                        
-                        nativeAd?.bindNativeAd(viewBinder)
+        val bannerState = rememberBannerAdState(
+            adSize = BannerSize.Inline(width = 300.dp, maxHeight = 300.dp),
+            events = BannerEvents(
+                onAdFailedToLoad = { error ->
+                    Log.e("YandexAds", error.description)
+                    scope.launch {
+                        delay(5_000)
+                        loadTrigger++
                     }
-                })
+                },
+                onImpression = { data ->
+                    Log.d("YandexAds", "Показ: ${data?.rawData}")
+                    scope.launch {
+                        delay(30_000)
+                        loadTrigger++
+                    }
+                }
+            )
+        )
+        
+        LaunchedEffect(loadTrigger) {
+            bannerState.loadAd(adRequest)
         }
+        
+        Banner(state = bannerState, modifier = Modifier.fillMaxWidth())
     }
 }
 

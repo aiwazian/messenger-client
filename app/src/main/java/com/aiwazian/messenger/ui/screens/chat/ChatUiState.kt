@@ -8,14 +8,12 @@ import com.aiwazian.messenger.domain.InviteLinkInfo
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.profile.Profile
+import com.aiwazian.messenger.utils.UiText
 
 data class ChatUiState(
-    val chatId: Long = 0,
-    val chatName: String = "",
-    val subTitle: String = "",
-    val isSavedMessages: Boolean = false,
-    val subscriberCount: Int? = null,
-    val memberCount: Int? = null,
+    val chatId: Long = -1,
+    val chatName: UiText = UiText.DynamicString(""),
+    val subTitle: UiText = UiText.DynamicString(""),
     val topBarActions: List<TopBarAction> = emptyList(),
     val chatItems: List<ChatItem> = emptyList(),
     val messageText: String = "",
@@ -30,7 +28,6 @@ data class ChatUiState(
     val selectedMessages: Set<Message> = emptySet(),
     val userNamesCache: Map<Long, String> = emptyMap(),
     val currentUserId: Long = -1L,
-    val isOwner: Boolean = false,
     val isLoading: Boolean = true,
     val isLoadingMore: Boolean = false,
     val hasMoreMessages: Boolean = true,

@@ -43,20 +43,13 @@ class ProfileViewModel @Inject constructor(
     private val clipboardService: ClipboardService
 ) : ViewModel() {
     
-    private var _profileId: Long = -1L
+    private val _uiState = MutableStateFlow(ProfileUiState())
+    val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
     
     private val _uiEffect = MutableSharedFlow<ProfileUiEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
     
-    private val _uiState = MutableStateFlow(ProfileUiState())
-    val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
-    
-    private val _profile = MutableStateFlow<Profile?>(null)
-    val profile = _profile.asStateFlow()
-    
     fun init(profileId: Long) {
-        _profileId = profileId
-        
         setupUserObserver()
         loadProfile(profileId)
     }
@@ -85,13 +78,6 @@ class ProfileViewModel @Inject constructor(
     }
     
     private fun loadProfile(profileId: Long) {
-        _uiState.update {
-            it.copy(
-                isLoading = true,
-                error = null
-            )
-        }
-        
         when (ChatType.fromId(profileId)) {
             ChatType.PRIVATE -> {
                 viewModelScope.launch {
@@ -105,12 +91,8 @@ class ProfileViewModel @Inject constructor(
                                 bio = user.bio,
                                 dateOfBirth = user.dateOfBirth
                             )
-                            _profile.update { profile }
                             _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    profile = profile
-                                )
+                                it.copy(profile = profile)
                             }
                             recalculateActions()
                         }
@@ -124,12 +106,8 @@ class ProfileViewModel @Inject constructor(
                                 bio = user.bio,
                                 dateOfBirth = user.dateOfBirth
                             )
-                            _profile.update { profile }
                             _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    profile = profile
-                                )
+                                it.copy(profile = profile)
                             }
                             recalculateActions()
                         }
@@ -151,12 +129,8 @@ class ProfileViewModel @Inject constructor(
                             username = channel.username,
                             isSubscribed = channel.isSubscribed
                         )
-                        _profile.update { profile }
                         _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                profile = profile
-                            )
+                            it.copy(profile = profile)
                         }
                         recalculateActions()
                     }
@@ -179,12 +153,8 @@ class ProfileViewModel @Inject constructor(
                                 username = group.username,
                                 members = group.members
                             )
-                            _profile.update { profile }
                             _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    profile = profile
-                                )
+                                it.copy(profile = profile)
                             }
                             recalculateActions()
                         }
@@ -192,19 +162,12 @@ class ProfileViewModel @Inject constructor(
                 }
             }
             
-            else -> {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = "Unknown profile type"
-                    )
-                }
-            }
+            else -> {}
         }
     }
     
     private fun recalculateActions() {
-        val profile = _profile.value ?: return
+        val profile = _uiState.value.profile ?: return
         val myId = _uiState.value.myId
         
         val newActions = when (profile) {
@@ -431,7 +394,7 @@ class ProfileViewModel @Inject constructor(
     
     fun onLeaveConfirmed() {
         viewModelScope.launch {
-            val profile = _profile.value ?: return@launch
+            val profile = _uiState.value.profile ?: return@launch
             val chatId = profile.id
             val chatType = ChatType.fromId(chatId)
             

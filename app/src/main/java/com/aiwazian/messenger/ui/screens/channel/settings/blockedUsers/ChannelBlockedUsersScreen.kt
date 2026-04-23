@@ -26,17 +26,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
@@ -47,37 +46,22 @@ import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import com.aiwazian.messenger.ui.screens.channel.settings.ChannelSettingsViewModel
-import com.aiwazian.messenger.utils.VibrationPattern
-import kotlinx.coroutines.launch
 
 @Composable
-fun ChannelBlackListScreen(
+fun ChannelBlockedUsersScreen(
     channelId: Long,
-    viewModel: ChannelSettingsViewModel = hiltViewModel()
+    viewModel: ChannelBlockedUsersViewModel = hiltViewModel()
 ) {
     val navBackStack = LocalNavBackStack.current
-    var searchQuery by remember { mutableStateOf("") }
-    var bannedUsers by remember { mutableStateOf(emptyList<User>()) }
+    val state by viewModel.uiState.collectAsState()
     
-    val scope = rememberCoroutineScope()
+    var searchQuery by remember { mutableStateOf("") }
+    
     val snackbarHostState = remember { SnackbarHostState() }
     
-    fun loadBannedUsers() {
-        scope.launch {
-            bannedUsers = viewModel.getBannedUsers(searchQuery.ifBlank { null })
-        }
-    }
-    
-    LaunchedEffect(
-        channelId,
-        searchQuery
-    ) {
+    LaunchedEffect(channelId, searchQuery) {
         viewModel.init(channelId)
-        loadBannedUsers()
     }
-    
-    var userToUnban by remember { mutableStateOf<User?>(null) }
     
     Scaffold(
         snackbarHost = {
@@ -107,7 +91,7 @@ fun ChannelBlackListScreen(
             
             SectionContainer {
                 LazyColumn {
-                    items(bannedUsers) { user ->
+                    items(state.blockedUsers) { user ->
                         SectionItem(
                             headlineText = "${user.firstName} ${user.lastName.orEmpty()}",
                             trailingContent = {
@@ -125,10 +109,10 @@ fun ChannelBlackListScreen(
                                         onDismissRequest = { showMenu = false }
                                     ) {
                                         DropdownMenuItem(
-                                            text = { Text("Разблокировать") },
+                                            text = { Text(stringResource(R.string.unblock)) },
                                             onClick = {
                                                 showMenu = false
-                                                userToUnban = user
+                                                viewModel.onUnblockClick(user)
                                             },
                                             leadingIcon = {
                                                 Icon(Icons.Rounded.CheckCircle, null)
@@ -154,30 +138,16 @@ fun ChannelBlackListScreen(
             }
         }
         
-        userToUnban?.let { user ->
+        if (state.showUnblockDialog) {
             CustomDialog(
-                title = "Разблокировать пользователя",
-                onDismissRequest = { userToUnban = null },
+                title = stringResource(R.string.unblock),
+                onDismissRequest = viewModel::hideUnblockDialog,
                 buttons = {
-                    TextButton(onClick = { userToUnban = null }) {
+                    TextButton(onClick = viewModel::hideUnblockDialog) {
                         Text(stringResource(R.string.no))
                     }
                     TextButton(
-                        onClick = {
-                            viewModel.unbanUser(user.id) { success ->
-                                userToUnban = null
-                                if (success) {
-                                    loadBannedUsers()
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Пользователь разблокирован")
-                                    }
-                                } else {
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Не удалось разблокировать пользователя")
-                                    }
-                                }
-                            }
-                        },
+                        onClick = viewModel::confirmUnblock,
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = MaterialTheme.colorScheme.primary
                         )

@@ -122,7 +122,6 @@
     <string name="channel_name">Название канала</string>
     <string name="description">Описание</string>
     <string name="remove_date_of_birth">Удалить дату рождения</string>
-    <string name="subscriberCount">Подписчиков</string>
     <string name="leave_group">Покинуть группу</string>
     <string name="leave_group_confirm">Вы точно хотите покинуть</string>
     <string name="leave">Покинуть</string>
@@ -179,4 +178,18 @@
     <string name="unblock">Разблокировать</string>
     <string name="block">Блокировать</string>
     <string name="failed_to_unblock_user">Не удалось разблокировать пользователя</string>
+    <plurals name="subscribers_count">
+        <item quantity="one">%1$d подписчик</item>
+        <item quantity="few">%1$d подписчика</item>
+        <item quantity="many">%1$d подписчиков</item>
+        <item quantity="other">%1$d подписчиков</item>
+    </plurals>
+    <plurals name="members_count">
+        <item quantity="one">%1$d участник</item>
+        <item quantity="few">%1$d участника</item>
+        <item quantity="many">%1$d участников</item>
+        <item quantity="other">%1$d участников</item>
+    </plurals>
+    <string name="gallery">Галерея</string>
+    <string name="to_send_images_without_compression">Отправка изображений без сжатия</string>
 </resources>

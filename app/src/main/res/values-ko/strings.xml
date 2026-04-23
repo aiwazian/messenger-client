@@ -122,7 +122,6 @@
     <string name="channel_name">채널 이름</string>
     <string name="description">설명</string>
     <string name="remove_date_of_birth">생년월일 삭제</string>
-    <string name="subscriberCount">구독자</string>
     <string name="leave_group">그룹 탈퇴</string>
     <string name="leave_group_confirm">정말 떠나시겠어요\?</string>
     <string name="leave">떠나다</string>
@@ -179,4 +178,12 @@
     <string name="unblock">차단 해제</string>
     <string name="block">차단하다</string>
     <string name="failed_to_unblock_user">사용자 차단을 해제하지 못했습니다.</string>
+    <plurals name="subscribers_count">
+        <item quantity="other">%1$d명의 구독자</item>
+    </plurals>
+    <plurals name="members_count">
+        <item quantity="other">회원 %1$d명</item>
+    </plurals>
+    <string name="gallery">갱도</string>
+    <string name="to_send_images_without_compression">압축하지 않고 이미지를 보내려면</string>
 </resources>

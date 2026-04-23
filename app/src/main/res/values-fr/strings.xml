@@ -122,7 +122,6 @@
     <string name="channel_name">Nom de la chaîne</string>
     <string name="description">Description</string>
     <string name="remove_date_of_birth">Supprimer la date de naissance</string>
-    <string name="subscriberCount">Abonnés</string>
     <string name="leave_group">Groupe de départ</string>
     <string name="leave_group_confirm">Tu es sûr de vouloir partir</string>
     <string name="leave">Partez</string>
@@ -179,4 +178,16 @@
     <string name="unblock">Débloquer</string>
     <string name="block">Bloc</string>
     <string name="failed_to_unblock_user">Échec du déblocage de l\'utilisateur</string>
+    <plurals name="subscribers_count">
+        <item quantity="one">%1$d abonné</item>
+        <item quantity="many">%1$d abonnés</item>
+        <item quantity="other">%1$d abonnés</item>
+    </plurals>
+    <plurals name="members_count">
+        <item quantity="one">%1$d membre</item>
+        <item quantity="many">%1$d membres</item>
+        <item quantity="other">%1$d membres</item>
+    </plurals>
+    <string name="gallery">Galerie</string>
+    <string name="to_send_images_without_compression">Pour envoyer des images sans compression</string>
 </resources>

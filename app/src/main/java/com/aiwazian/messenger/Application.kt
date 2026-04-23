@@ -9,8 +9,7 @@ import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.utils.SessionManager
 import com.google.firebase.FirebaseApp
-import com.yandex.mobile.ads.common.MobileAds
-import com.yandex.mobile.ads.instream.MobileInstreamAds
+import com.yandex.mobile.ads.common.YandexAds
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -32,8 +31,7 @@ class Application : Application() {
         
         SessionManager.init(authRepository)
         FirebaseApp.initializeApp(this)
-        MobileAds.initialize(this) { }
-        MobileInstreamAds.setAdGroupPreloading(true)
+        YandexAds.initialize(this) { }
         
         realtimeEventSyncService.start()
     }

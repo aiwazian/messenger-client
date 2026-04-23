@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
@@ -18,19 +19,24 @@ import androidx.compose.material.icons.rounded.People
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -42,11 +48,18 @@ import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 
 @Composable
 fun ChannelSettingsScreen(
-    channelId: Long,
-    viewModel: ChannelSettingsViewModel = hiltViewModel()
+    channelId: Long, viewModel: ChannelSettingsViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val navBackStack = LocalNavBackStack.current
+    
+    LaunchedEffect(channelId) {
+        viewModel.init(channelId)
+    }
+    
     val uiState by viewModel.uiState.collectAsState()
+    
+    val snackbarHostState = remember { SnackbarHostState() }
     
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
@@ -59,14 +72,10 @@ fun ChannelSettingsScreen(
                 ChannelSettingsEffect.NavigateToBack -> navBackStack.removeLastOrNull()
                 
                 is ChannelSettingsEffect.ShowSnackbar -> {
-                
+                    snackbarHostState.showSnackbar(effect.message.asString(context))
                 }
             }
         }
-    }
-    
-    LaunchedEffect(channelId) {
-        viewModel.init(channelId)
     }
     
     val scrollState = rememberScrollState()
@@ -76,15 +85,21 @@ fun ChannelSettingsScreen(
             val actions = if (uiState.hasChanges) {
                 listOf(
                     TopBarAction(
-                        icon = Icons.Rounded.Check,
-                        onClick = viewModel::save
+                        icon = Icons.Rounded.Check, onClick = viewModel::save
                     )
                 )
             } else emptyList()
             
             TopBar(actions)
-        },
-        modifier = Modifier.imePadding()
+        }, snackbarHost = {
+            SnackbarHost(snackbarHostState) {
+                CustomSnackbar(
+                    text = it.visuals.message,
+                    onDismiss = it::dismiss,
+                    leadingIcon = Icons.Outlined.Info
+                )
+            }
+        }, modifier = Modifier.imePadding()
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -174,9 +189,7 @@ private fun TopBar(actions: List<TopBarAction>) {
     
     PageTopBar(
         navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navBackStack::removeLastOrNull
-        ),
-        actions = actions
+            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navBackStack::removeLastOrNull
+        ), actions = actions
     )
 }

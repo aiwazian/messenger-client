@@ -122,7 +122,6 @@
     <string name="channel_name">Назва канала</string>
     <string name="description">Апісанне</string>
     <string name="remove_date_of_birth">Выдаліць дату нараджэння</string>
-    <string name="subscriberCount">Падпісчыкі</string>
     <string name="leave_group">Пакінуць групу</string>
     <string name="leave_group_confirm">Вы ўпэўнены, што хочаце сысці\?</string>
     <string name="leave">Сыходзь</string>
@@ -179,4 +178,18 @@
     <string name="unblock">Разблакіраваць</string>
     <string name="block">Блок</string>
     <string name="failed_to_unblock_user">Не ўдалося разблакіраваць карыстальніка</string>
+    <plurals name="subscribers_count">
+        <item quantity="one">%1$d падпісчык</item>
+        <item quantity="few">%1$d падпісчыкаў</item>
+        <item quantity="many">%1$d падпісчыкаў</item>
+        <item quantity="other">%1$d падпісчыкаў</item>
+    </plurals>
+    <plurals name="members_count">
+        <item quantity="one">%1$d удзельнік</item>
+        <item quantity="few">%1$d удзельнікаў</item>
+        <item quantity="many">%1$d удзельнікаў</item>
+        <item quantity="other">%1$d удзельнікаў</item>
+    </plurals>
+    <string name="gallery">Галерэя</string>
+    <string name="to_send_images_without_compression">Для адпраўкі малюнкаў без сціску</string>
 </resources>

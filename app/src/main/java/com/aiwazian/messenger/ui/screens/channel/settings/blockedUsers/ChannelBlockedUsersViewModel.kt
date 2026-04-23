@@ -2,7 +2,7 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.screens.group.settings.blockedUsers
+package com.aiwazian.messenger.ui.screens.channel.settings.blockedUsers
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,14 +21,14 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class GroupBlockedUsersViewModel @Inject constructor(
+class ChannelBlockedUsersViewModel @Inject constructor(
     private val groupRepository: GroupRepository
 ) : ViewModel() {
     
-    private val _uiState = MutableStateFlow(GroupBlockedUsersState())
+    private val _uiState = MutableStateFlow(ChannelBlockedUsersState())
     val uiState = _uiState.asStateFlow()
     
-    private val _sideEffect = MutableSharedFlow<GroupBlockedUsersSideEffect>()
+    private val _sideEffect = MutableSharedFlow<ChannelBlockedUsersSideEffect>()
     val sideEffect = _sideEffect.asSharedFlow()
     
     private var selectedUser: User? = null
@@ -49,13 +49,13 @@ class GroupBlockedUsersViewModel @Inject constructor(
     fun confirmUnblock() {
         val user = selectedUser ?: return
         viewModelScope.launch {
-            groupRepository.unban(_uiState.value.groupId, user.id).onSuccess {
+            groupRepository.unban(_uiState.value.channelId, user.id).onSuccess {
                 _uiState.update { state ->
                     state.copy(blockedUsers = state.blockedUsers.filter { it.id != user.id })
                 }
-                _sideEffect.emit(GroupBlockedUsersSideEffect.ShowSnackbar(UiText.StringResource(R.string.user_unblocked)))
+                _sideEffect.emit(ChannelBlockedUsersSideEffect.ShowSnackbar(UiText.StringResource(R.string.user_unblocked)))
             }.onFailure {
-                _sideEffect.emit(GroupBlockedUsersSideEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_unblock_user)))
+                _sideEffect.emit(ChannelBlockedUsersSideEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_unblock_user)))
             }
             selectedUser = null
         }

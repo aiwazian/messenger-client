@@ -61,6 +61,7 @@ android {
 
 dependencies {
     implementation(libs.mobileads)
+    implementation(libs.mobileads.compose)
     
     // Firebase
     implementation(platform(libs.firebase.bom))

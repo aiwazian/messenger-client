@@ -13,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,9 +30,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
@@ -46,18 +45,17 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import com.aiwazian.messenger.utils.DialogController
 
 @Composable
 fun GroupBlockedUsersScreen(
     groupId: Long,
     viewModel: GroupBlockedUsersViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val navBackStack = LocalNavBackStack.current
-    val state by viewModel.uiState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
     
-    val unblockDialogController = remember { DialogController() }
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     
     LaunchedEffect(groupId) {
         viewModel.init(groupId)
@@ -67,11 +65,7 @@ fun GroupBlockedUsersScreen(
         viewModel.sideEffect.collect { effect ->
             when (effect) {
                 is GroupBlockedUsersSideEffect.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(effect.message)
-                }
-                
-                GroupBlockedUsersSideEffect.ShowUnblockConfirmation -> {
-                    unblockDialogController.show()
+                    snackbarHostState.showSnackbar(effect.message.asString(context))
                 }
             }
         }
@@ -93,36 +87,31 @@ fun GroupBlockedUsersScreen(
             }
         }
     ) { innerPadding ->
-        Box(modifier = Modifier
-            .padding(innerPadding)
-            .fillMaxSize()) {
-            if (state.isLoading && state.blockedUsers.isEmpty()) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else {
-                LazyColumn {
-                    items(state.blockedUsers) { user ->
-                        BlockedUserItem(
-                            user = user,
-                            onUnblock = { viewModel.onUnblockClick(user) }
-                        )
-                    }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            LazyColumn {
+                items(uiState.blockedUsers) { user ->
+                    BlockedUserItem(
+                        user = user,
+                        onUnblock = { viewModel.onUnblockClick(user) }
+                    )
                 }
             }
         }
     }
     
-    if (unblockDialogController.isVisible) {
+    if (uiState.showUnblockDialog) {
         CustomDialog(
-            title = "Разблокировать",
-            onDismissRequest = unblockDialogController::hide,
+            title = stringResource(R.string.unblock),
+            onDismissRequest = viewModel::hideUnblockDialog,
             buttons = {
-                TextButton(onClick = unblockDialogController::hide) {
-                    Text(stringResource(R.string.cancel))
+                TextButton(onClick = viewModel::hideUnblockDialog) {
+                    Text(stringResource(R.string.no))
                 }
-                TextButton(onClick = {
-                    viewModel.confirmUnblock()
-                    unblockDialogController.hide()
-                }) {
+                TextButton(onClick = viewModel::confirmUnblock) {
                     Text(stringResource(R.string.ok))
                 }
             }
@@ -153,7 +142,7 @@ fun BlockedUserItem(
                     onDismissRequest = { showMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Разблокировать") },
+                        text = { Text(stringResource(R.string.unblock)) },
                         onClick = {
                             showMenu = false
                             onUnblock()

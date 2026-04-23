@@ -26,7 +26,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.aiwazian.messenger.ui.screens.channel.create.CreateChannelScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.ChannelSettingsScreen
-import com.aiwazian.messenger.ui.screens.channel.settings.blockedUsers.ChannelBlackListScreen
+import com.aiwazian.messenger.ui.screens.channel.settings.blockedUsers.ChannelBlockedUsersScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.invites.ChannelInviteLinksScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.invites.CreateInviteLinkScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.subscribers.ChannelSubscribersScreen
@@ -161,7 +161,7 @@ fun AppNavDisplay(startRoute: AppRoute? = null) {
                     entry<AppRoute.ChannelSettings> { ChannelSettingsScreen(channelId = it.channelId) }
                     entry<AppRoute.ChannelTypeSettings> { ChannelTypeSettingsScreen(channelId = it.channelId) }
                     entry<AppRoute.ChannelSubscribers> { ChannelSubscribersScreen(channelId = it.channelId) }
-                    entry<AppRoute.ChannelBlackList> { ChannelBlackListScreen(channelId = it.channelId) }
+                    entry<AppRoute.ChannelBlackList> { ChannelBlockedUsersScreen(channelId = it.channelId) }
                     entry<AppRoute.ChannelInviteLinks> { ChannelInviteLinksScreen(channelId = it.channelId) }
                     entry<AppRoute.CreateInviteLink> { CreateInviteLinkScreen(channelId = it.channelId) }
                     entry<AppRoute.GroupSettings> { GroupSettingsScreen(groupId = it.groupId) }

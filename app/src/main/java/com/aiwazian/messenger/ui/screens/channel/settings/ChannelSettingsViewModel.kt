@@ -6,10 +6,11 @@ package com.aiwazian.messenger.ui.screens.channel.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.domain.User
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.usecase.DeleteChannelUseCase
+import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -28,8 +30,6 @@ class ChannelSettingsViewModel @Inject constructor(
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
-    private var _channelId: Long = -1L
-    
     private val _uiState = MutableStateFlow(ChannelSettingsUiState())
     val uiState = _uiState.asStateFlow()
     
@@ -37,18 +37,9 @@ class ChannelSettingsViewModel @Inject constructor(
     val uiEffect = _uiEffect.asSharedFlow()
     
     fun init(channelId: Long) {
-        _channelId = channelId
-        
         viewModelScope.launch {
-            if (channelId != -1L) {
-                channelRepository.getByIdFlow(_channelId).collect { channelInfo ->
-                    _uiState.update {
-                        it.copy(
-                            channel = channelInfo,
-                            originalChannelData = channelInfo
-                        )
-                    }
-                }
+            channelRepository.getByIdFlow(channelId).collectLatest { channel ->
+                _uiState.update { it.copy(channel = channel, originalChannelData = channel) }
             }
         }
     }
@@ -78,7 +69,7 @@ class ChannelSettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(originalChannelData = _uiState.value.channel) }
                 _uiEffect.emit(ChannelSettingsEffect.NavigateToBack)
             }.onFailure {
-                _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar("Не удалось сохранить изменения"))
+                _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }
@@ -93,7 +84,8 @@ class ChannelSettingsViewModel @Inject constructor(
             if (deleteChannelUseCase(uiState.value.channel.id)) {
                 _uiEffect.emit(ChannelSettingsEffect.NavigateToMain)
             } else {
-                _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar("Не удалось удалить канал"))
+                _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_delete_channel)))
+                vibrationManager.vibrate(VibrationPattern.Error)
             }
         }
     }
@@ -101,26 +93,19 @@ class ChannelSettingsViewModel @Inject constructor(
     private fun checkValid(): Boolean {
         if (_uiState.value.channel.name.isBlank()) {
             viewModelScope.launch {
-                _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar("Введите название канала"))
+                _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar(UiText.StringResource(R.string.error_empty_channel_name)))
             }
             return false
         }
         
         if (_uiState.value.channel.channelType == ChannelType.PUBLIC && _uiState.value.channel.username.isNullOrBlank()) {
             viewModelScope.launch {
-                _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar("Введите публичную ссылку канала"))
+                _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar(UiText.StringResource(R.string.error_empty_public_link)))
             }
             return false
         }
         
         return true
-    }
-    
-    fun unbanUser(userId: Long, onResult: (Boolean) -> Unit) {
-        viewModelScope.launch {
-            val result = channelRepository.unbanUser(_channelId, userId)
-            onResult(result.isSuccess)
-        }
     }
     
     fun showDeleteDialog() {
@@ -129,10 +114,5 @@ class ChannelSettingsViewModel @Inject constructor(
     
     fun hideDeleteDialog() {
         _uiState.update { it.copy(showDeleteDialog = false) }
-    }
-    
-    suspend fun getBannedUsers(search: String? = null): List<User> {
-        val bannedUsers = channelRepository.getBannedUsers(_channelId, search = search)
-        return bannedUsers.getOrThrow()
     }
 }

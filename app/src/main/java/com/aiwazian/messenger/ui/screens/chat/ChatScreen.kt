@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.chat
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedContent
@@ -43,10 +44,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Attachment
-import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.Photo
+import androidx.compose.material.icons.rounded.PlayCircleFilled
+import androidx.compose.material.icons.rounded.PlayCircleOutline
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -86,6 +90,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -118,6 +123,8 @@ import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
+import com.aiwazian.messenger.ui.screens.profile.Profile
+import com.aiwazian.messenger.utils.DialogController
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -194,8 +201,8 @@ fun ChatScreen(
         },
         topBar = {
             TopBar(
-                title = if (uiState.isSavedMessages) stringResource(R.string.saved_messages) else uiState.chatName,
-                subTitle = getLocalizedSubTitle(uiState),
+                title = uiState.chatName.asString(),
+                subTitle = uiState.subTitle.asString(),
                 dropdownActions = uiState.topBarActions,
                 isConnected = uiState.isConnected,
                 onBackClicked = chatViewModel::onBackClicked,
@@ -209,9 +216,7 @@ fun ChatScreen(
                 onSendClicked = chatViewModel::onSendMessageClicked,
                 onJoinClicked = chatViewModel::onJoinClicked,
                 onFilesSelected = { uris ->
-                    chatViewModel.uploadFiles(
-                        uris, context
-                    )
+                    chatViewModel.uploadFiles(uris)
                 })
         },
     ) { innerPadding ->
@@ -340,27 +345,6 @@ fun ChatScreen(
 }
 
 @Composable
-private fun getLocalizedSubTitle(uiState: ChatUiState): String {
-    val chatType = ChatType.fromId(uiState.chatId)
-    
-    return when (chatType) {
-        ChatType.CHANNEL -> {
-            "${uiState.subscriberCount} ${stringResource(R.string.subscriberCount).lowercase()}"
-        }
-        
-        ChatType.GROUP -> {
-            "${uiState.memberCount} ${stringResource(R.string.members)}".lowercase()
-        }
-        
-        ChatType.PRIVATE -> {
-            uiState.subTitle
-        }
-        
-        else -> uiState.subTitle
-    }
-}
-
-@Composable
 private fun BottomSection(
     uiState: ChatUiState,
     onTextChanged: (String) -> Unit,
@@ -368,16 +352,14 @@ private fun BottomSection(
     onJoinClicked: () -> Unit,
     onFilesSelected: (List<Uri>) -> Unit
 ) {
-    val chatType = ChatType.fromId(uiState.chatId)
-    
     Box(
         modifier = Modifier
             .navigationBarsPadding()
             .imePadding()
     ) {
-        when (chatType) {
-            ChatType.CHANNEL -> {
-                if (uiState.isOwner) {
+        when (uiState.profile) {
+            is Profile.Channel -> {
+                if (uiState.profile.ownerId == uiState.currentUserId) {
                     InputMessage(
                         value = uiState.messageText,
                         onValueChange = onTextChanged,
@@ -391,8 +373,8 @@ private fun BottomSection(
                 }
             }
             
-            ChatType.GROUP -> {
-                if (uiState.isOwner) {
+            is Profile.Group -> {
+                if (uiState.profile.ownerId == uiState.currentUserId) {
                     InputMessage(
                         value = uiState.messageText,
                         onValueChange = onTextChanged,
@@ -413,7 +395,7 @@ private fun BottomSection(
                 }
             }
             
-            ChatType.PRIVATE -> {
+            is Profile.User -> {
                 InputMessage(
                     value = uiState.messageText,
                     onValueChange = onTextChanged,
@@ -448,9 +430,7 @@ private fun Dialogs(
     if (uiState.showDeleteChatDialog) {
         DeleteChatDialog(
             onDismissRequest = chatViewModel::hideDeleteChatDialog,
-            onConfirm = chatViewModel::onDeleteChatConfirmed,
-            chatName = uiState.chatName,
-            isSelf = uiState.isSavedMessages
+            onConfirm = chatViewModel::onDeleteChatConfirmed
         )
     }
     
@@ -473,7 +453,7 @@ private fun Dialogs(
         LeaveDialog(
             onDismiss = chatViewModel::hideLeaveDialog,
             onConfirm = chatViewModel::onLeaveClicked,
-            chatName = uiState.chatName,
+            chatName = uiState.chatName.asString(),
             chatType = chatType
         )
     }
@@ -572,17 +552,12 @@ private fun TopBar(
 }
 
 @Composable
-private fun DeleteChatDialog(
-    onDismissRequest: () -> Unit, onConfirm: () -> Unit, chatName: String, isSelf: Boolean
-) {
+private fun DeleteChatDialog(onDismissRequest: () -> Unit, onConfirm: () -> Unit) {
     CustomDialog(
         title = stringResource(R.string.delete_chat),
         onDismissRequest = onDismissRequest,
         content = {
-            val suffix = if (!isSelf) " c " + chatName.trimEnd() else ""
-            Text(
-                text = "Удалить чат$suffix без возможности восстановления?", lineHeight = 16.sp
-            )
+            Text(text = "Удалить чат без возможности восстановления?", lineHeight = 16.sp)
         },
         buttons = {
             TextButton(onClick = onDismissRequest) {
@@ -592,7 +567,7 @@ private fun DeleteChatDialog(
                 onClick = onConfirm,
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
-                Text(stringResource(R.string.delete_chat))
+                Text(stringResource(R.string.delete))
             }
         })
 }
@@ -678,12 +653,12 @@ private fun InputMessage(
     onSendMessage: () -> Unit,
     onFilesSelected: (List<Uri>) -> Unit
 ) {
-    var attachmentModal by remember { mutableStateOf(false) }
+    var attachmentModal by remember { mutableStateOf(DialogController()) }
     
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments(), onResult = { uris: List<Uri> ->
             if (uris.isNotEmpty()) {
-                attachmentModal = false
+                attachmentModal.hide()
                 onFilesSelected(uris)
             }
         })
@@ -704,7 +679,7 @@ private fun InputMessage(
         ),
         trailingIcon = {
             Row {
-                IconButton(onClick = { attachmentModal = true }) {
+                IconButton(onClick = attachmentModal::show) {
                     Icon(
                         imageVector = Icons.Rounded.Attachment,
                         contentDescription = null,
@@ -721,17 +696,21 @@ private fun InputMessage(
             }
         })
     
-    if (attachmentModal) {
+    if (attachmentModal.isVisible) {
         AttachmentBottomSheet(
-            onDismissRequest = { attachmentModal = false },
-            onFileSystemClick = { filePickerLauncher.launch(arrayOf("*/*")) })
+            onDismissRequest = attachmentModal::hide,
+            onFileSystemClick = { filePickerLauncher.launch(arrayOf("*/*")) },
+            onFileSelected = { uris ->
+                attachmentModal.hide()
+                onFilesSelected(uris)
+            })
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AttachmentBottomSheet(
-    onDismissRequest: () -> Unit, onFileSystemClick: () -> Unit
+    onDismissRequest: () -> Unit, onFileSystemClick: () -> Unit, onFileSelected: (List<Uri>) -> Unit
 ) {
     var selectedIndex by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState(pageCount = { 2 })
@@ -798,6 +777,56 @@ private fun AttachmentBottomSheet(
                                         }
                                     }
                                 }
+                                
+                                val d = rememberLauncherForActivityResult(
+                                    ActivityResultContracts.PickMultipleVisualMedia(
+                                        10
+                                    )
+                                ) { uris ->
+                                    if (uris.isNotEmpty()) {
+                                        onFileSelected(uris)
+                                    }
+                                }
+                                Card(
+                                    onClick = {
+                                        d.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RectangleShape,
+                                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(10.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(CircleShape)
+                                                .background(MaterialTheme.colorScheme.secondaryContainer)
+                                        ) {
+                                            Icon(
+                                                modifier = Modifier.padding(10.dp),
+                                                imageVector = Icons.Rounded.Photo,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                        }
+                                        
+                                        Column {
+                                            Text(
+                                                text = stringResource(R.string.gallery),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                text = stringResource(R.string.to_send_images_without_compression),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                fontSize = 12.sp,
+                                                lineHeight = 12.sp
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -833,8 +862,8 @@ private fun AttachmentBottomSheet(
                     .navigationBarsPadding()
                     .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) }
                     .padding(10.dp)
-                    .clip(MaterialTheme.shapes.large),
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    .clip(CircleShape),
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 indicator = {},
                 divider = {},
             ) {
@@ -842,29 +871,62 @@ private fun AttachmentBottomSheet(
                     selected = selectedIndex == 0,
                     onClick = { selectedIndex = 0 },
                     modifier = Modifier
-                        .padding(start = 4.dp, top = 4.dp, end = 2.dp, bottom = 4.dp)
-                        .clip(MaterialTheme.shapes.large),
+                        .padding(4.dp)
+                        .clip(CircleShape),
                     selectedContentColor = MaterialTheme.colorScheme.primary,
                     unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ) {
-                    Icon(
-                        Icons.AutoMirrored.Outlined.InsertDriveFile,
-                        null,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                    Text(stringResource(R.string.files), fontSize = 12.sp, lineHeight = 12.sp)
+                    Column(
+                        modifier = Modifier.padding(2.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        AnimatedContent(
+                            targetState = selectedIndex,
+                            transitionSpec = { fadeIn() togetherWith fadeOut() }) { index ->
+                            if (index == 0) {
+                                Icon(Icons.AutoMirrored.Rounded.InsertDriveFile, null)
+                            } else {
+                                Icon(Icons.AutoMirrored.Outlined.InsertDriveFile, null)
+                            }
+                        }
+                        Text(
+                            stringResource(R.string.files),
+                            fontSize = 12.sp,
+                            lineHeight = 12.sp
+                        )
+                    }
                 }
                 Tab(
                     selected = selectedIndex == 1,
                     onClick = { selectedIndex = 1 },
                     modifier = Modifier
-                        .padding(start = 2.dp, top = 4.dp, end = 2.dp, bottom = 4.dp)
-                        .clip(MaterialTheme.shapes.large),
+                        .padding(4.dp)
+                        .padding(start = 0.dp)
+                        .clip(CircleShape),
                     selectedContentColor = MaterialTheme.colorScheme.primary,
                     unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ) {
-                    Icon(Icons.Rounded.MusicNote, null, modifier = Modifier.padding(top = 2.dp))
-                    Text(stringResource(R.string.music), fontSize = 12.sp, lineHeight = 12.sp)
+                    Column(
+                        modifier = Modifier.padding(2.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        AnimatedContent(
+                            selectedIndex,
+                            transitionSpec = { fadeIn() togetherWith fadeOut() }) { index ->
+                            if (index == 1) {
+                                Icon(Icons.Rounded.PlayCircleFilled, null)
+                            } else {
+                                Icon(Icons.Rounded.PlayCircleOutline, null)
+                            }
+                        }
+                        Text(
+                            stringResource(R.string.music),
+                            fontSize = 12.sp,
+                            lineHeight = 12.sp
+                        )
+                    }
                 }
             }
         }
@@ -884,11 +946,7 @@ private fun InviteLinkBottomSheet(
 ) {
     val chatType = ChatType.fromId(chatId)
     
-    val countText = "$count" + (if (chatType == ChatType.CHANNEL) {
-        stringResource(R.string.subscriberCount).lowercase()
-    } else {
-        stringResource(R.string.members).lowercase()
-    })
+    val countText = pluralStringResource(R.plurals.subscribers_count, count, count)
     
     val buttonText = if (chatType == ChatType.CHANNEL) {
         stringResource(R.string.subscribe).uppercase()

@@ -122,7 +122,6 @@
     <string name="channel_name">Ալիքի անվանում</string>
     <string name="description">Նկարագրություն</string>
     <string name="remove_date_of_birth">Հեռացնել ծննդյան ամսաթիվը</string>
-    <string name="subscriberCount">Բաժանորդներ</string>
     <string name="leave_group">Հեռանալ խմբից</string>
     <string name="leave_group_confirm">Վստա՞հ եք, որ ուզում եք հեռանալ</string>
     <string name="leave">Հեռանալ</string>
@@ -179,4 +178,14 @@
     <string name="unblock">Ապաշրջափակել</string>
     <string name="block">Արգելափակել</string>
     <string name="failed_to_unblock_user">Չհաջողվեց ապաարգելափակել օգտատիրոջը</string>
+    <plurals name="subscribers_count">
+        <item quantity="one">%1$d բաժանորդ</item>
+        <item quantity="other">%1$d բաժանորդ</item>
+    </plurals>
+    <plurals name="members_count">
+        <item quantity="one">%1$d անդամ</item>
+        <item quantity="other">%1$d անդամ</item>
+    </plurals>
+    <string name="gallery">Պատկերասրահ</string>
+    <string name="to_send_images_without_compression">Պատկերներն առանց սեղմման ուղարկելու համար</string>
 </resources>

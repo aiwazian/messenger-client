@@ -29,6 +29,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
@@ -44,19 +45,17 @@ import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
-import com.aiwazian.messenger.utils.DialogController
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun GroupSettingsScreen(
     groupId: Long, viewModel: GroupSettingsViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val navBackStack = LocalNavBackStack.current
     
     LaunchedEffect(groupId) {
-        if (groupId != -1L) {
-            viewModel.init(groupId)
-        }
+        viewModel.init(groupId)
     }
     
     val snackbarHostState = remember { SnackbarHostState() }
@@ -71,8 +70,8 @@ fun GroupSettingsScreen(
                     navBackStack.add(AppRoute.Main)
                 }
                 
-                is GroupSettingsUiEffect.ShowError -> {
-                    snackbarHostState.showSnackbar(effect.message)
+                is GroupSettingsUiEffect.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(effect.message.asString(context))
                 }
             }
         }
@@ -80,9 +79,6 @@ fun GroupSettingsScreen(
     
     val uiState by viewModel.uiState.collectAsState()
     val group = uiState.group
-    val isLoading = uiState.isLoading || uiState.isDeleting
-    
-    val deleteGroupDialog = remember { DialogController() }
     
     Scaffold(
         topBar = {
@@ -90,11 +86,13 @@ fun GroupSettingsScreen(
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
                     onClick = navBackStack::removeLastOrNull
-                ), actions = listOf(
-                    TopBarAction(
-                        icon = Icons.Rounded.Check, onClick = viewModel::saveGroup
+                ), actions = if (uiState.hasChanges) {
+                    listOf(
+                        TopBarAction(
+                            icon = Icons.Rounded.Check, onClick = viewModel::save
+                        )
                     )
-                )
+                } else emptyList()
             )
         }, snackbarHost = {
             SnackbarHost(snackbarHostState) {
@@ -114,13 +112,13 @@ fun GroupSettingsScreen(
             SectionContainer {
                 FramelessTextBox(
                     value = group.name,
-                    onValueChange = viewModel::changeGroupName,
+                    onValueChange = viewModel::changeName,
                     placeholder = stringResource(R.string.group_name)
                 )
                 
                 FramelessTextBox(
                     value = group.bio.orEmpty(),
-                    onValueChange = viewModel::changeGroupBio,
+                    onValueChange = viewModel::changeBio,
                     placeholder = stringResource(R.string.description)
                 )
             }
@@ -160,17 +158,17 @@ fun GroupSettingsScreen(
                 SectionItem(
                     headlineText = stringResource(R.string.delete_group),
                     contentColor = MaterialTheme.colorScheme.error,
-                    onClick = deleteGroupDialog::show
+                    onClick = viewModel::showDeleteDialog
                 )
             }
         }
         
-        if (deleteGroupDialog.isVisible) {
+        if (uiState.showDeleteDialog) {
             CustomDialog(
                 title = stringResource(R.string.delete_group),
-                onDismissRequest = deleteGroupDialog::hide,
+                onDismissRequest = viewModel::hideDeleteDialog,
                 buttons = {
-                    TextButton(onClick = deleteGroupDialog::hide) {
+                    TextButton(onClick = viewModel::hideDeleteDialog) {
                         Text(stringResource(R.string.cancel))
                     }
                     

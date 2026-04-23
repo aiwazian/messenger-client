@@ -122,7 +122,6 @@
     <string name="channel_name">Арна аты</string>
     <string name="description">Сипаттама</string>
     <string name="remove_date_of_birth">Туған күнін алып тастаңыз</string>
-    <string name="subscriberCount">Жазылушылар</string>
     <string name="leave_group">Топтан шығу</string>
     <string name="leave_group_confirm">Сіз кеткіңіз келетініне сенімдісіз бе</string>
     <string name="leave">Кетіңіз</string>
@@ -179,4 +178,14 @@
     <string name="unblock">Блоктан шығару</string>
     <string name="block">Блоктау</string>
     <string name="failed_to_unblock_user">Пайдаланушыны бөгеуден шығару мүмкін болмады</string>
+    <plurals name="subscribers_count">
+        <item quantity="one">%1$d жазылушы</item>
+        <item quantity="other">%1$d жазылушы</item>
+    </plurals>
+    <plurals name="members_count">
+        <item quantity="one">%1$d мүше</item>
+        <item quantity="other">%1$d мүше</item>
+    </plurals>
+    <string name="gallery">Галерея</string>
+    <string name="to_send_images_without_compression">Суреттерді қыспай жіберу үшін</string>
 </resources>

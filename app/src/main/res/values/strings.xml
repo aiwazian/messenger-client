@@ -122,7 +122,6 @@
     <string name="channel_name">Channel name</string>
     <string name="description">Description</string>
     <string name="remove_date_of_birth">Remove Date of Birth</string>
-    <string name="subscriberCount">Subscribers</string>
     <string name="leave_group">Leave Group</string>
     <string name="leave_group_confirm">Are you sure you want to leave</string>
     <string name="leave">Leave</string>
@@ -132,7 +131,7 @@
     <string name="save_to_downloads">Save to Downloads</string>
     <string name="copied">Copied</string>
     <string name="internal_storage">Internal Storage</string>
-    <string name="file_system_search">File System Search</string>
+    <string name="file_system_search">File system search</string>
     <string name="system_default">System Default</string>
     <string name="disabled">Disabled</string>
     <string name="enabled">Enabled</string>
@@ -179,4 +178,22 @@
     <string name="unblock">Unblock</string>
     <string name="block">Block</string>
     <string name="failed_to_unblock_user">Failed to unblock user</string>
+    <plurals name="subscribers_count">
+        <item quantity="zero">%1$d subscribers</item>
+        <item quantity="one">%1$d subscriber</item>
+        <item quantity="two">%1$d subscribers</item>
+        <item quantity="few">%1$d subscribers</item>
+        <item quantity="many">%1$d subscribers</item>
+        <item quantity="other">%1$d subscribers</item>
+    </plurals>
+    <plurals name="members_count">
+        <item quantity="zero">%1$d members</item>
+        <item quantity="one">%1$d member</item>
+        <item quantity="two">%1$d members</item>
+        <item quantity="few">%1$d members</item>
+        <item quantity="many">%1$d members</item>
+        <item quantity="other">%1$d members</item>
+    </plurals>
+    <string name="gallery">Gallery</string>
+    <string name="to_send_images_without_compression">To send images without compression</string>
 </resources>

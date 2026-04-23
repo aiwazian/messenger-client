@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -105,28 +106,20 @@ fun ProfileScreen(
         }
     }
     
-    when (uiState.profile) {
+    when (val profile = uiState.profile) {
         is Profile.User -> {
-            UserProfile(
-                user = uiState.profile as Profile.User, actions = uiState.actions
-            )
+            UserProfile(user = profile, actions = uiState.actions)
         }
         
         is Profile.Channel -> {
-            ChannelProfile(
-                channel = uiState.profile as Profile.Channel, actions = uiState.actions
-            )
+            ChannelProfile(channel = profile, actions = uiState.actions)
         }
         
         is Profile.Group -> {
-            GroupProfile(
-                group = uiState.profile as Profile.Group, actions = uiState.actions
-            )
+            GroupProfile(group = profile, actions = uiState.actions)
         }
         
-        else -> {
-        
-        }
+        else -> {}
     }
     
     if (showLeaveDialog && leaveDialogData != null) {
@@ -149,7 +142,11 @@ private fun GroupProfile(
         TopBar(
             chatId = group.id,
             title = group.name,
-            subTitle = "${group.members} ${stringResource(R.string.members)}".lowercase(),
+            subTitle = pluralStringResource(
+                R.plurals.members_count,
+                group.members,
+                group.members
+            ),
             actions = actions
         )
     }) { innerPadding ->
@@ -181,7 +178,11 @@ private fun ChannelProfile(
         TopBar(
             chatId = channel.id,
             title = channel.name,
-            subTitle = "${channel.subscribers} ${stringResource(R.string.subscriberCount)}".lowercase(),
+            subTitle = pluralStringResource(
+                R.plurals.subscribers_count,
+                channel.subscribers,
+                channel.subscribers
+            ),
             actions = actions
         )
     }) { innerPadding ->
