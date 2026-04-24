@@ -16,5 +16,5 @@ data class Message(
     val isRead: Boolean,
     val messageType: MessageType,
     val systemMessageEventType: SystemMessageEventType?,
-    val attachments: List<MessageFile>
+    val attachments: List<MessageAttachment>
 )

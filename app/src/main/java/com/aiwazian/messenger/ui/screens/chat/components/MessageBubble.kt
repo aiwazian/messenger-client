@@ -30,7 +30,8 @@ import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.aiwazian.messenger.domain.MessageFile
+import com.aiwazian.messenger.domain.MessageAttachment
+import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
 
@@ -38,7 +39,7 @@ import com.aiwazian.messenger.ui.screens.chat.ChatItem
 fun MessageBubble(
     item: ChatItem.MessageItem,
     onSeen: () -> Unit,
-    onFileAction: (MessageFile, FileAction) -> Unit,
+    onFileAction: (MessageAttachment, FileAction) -> Unit,
     onLinkClicked: ((String) -> Unit)? = null
 ) {
     val message = item.message
@@ -68,8 +69,7 @@ fun MessageBubble(
                 onClick = { expanded = true },
                 onLongClick = { },
                 indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            )
+                interactionSource = remember { MutableInteractionSource() })
     ) {
         val containerColor =
             if (item.isMine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
@@ -77,8 +77,7 @@ fun MessageBubble(
         Box(
             modifier = Modifier
                 .widthIn(
-                    min = 60.dp,
-                    max = 280.dp
+                    min = 60.dp, max = 280.dp
                 )
                 .padding(horizontal = 4.dp)
                 .clip(MaterialTheme.shapes.large)
@@ -96,16 +95,28 @@ fun MessageBubble(
                     )
                 }
                 
-                message.attachments.forEach { file ->
-                    MessageFile(
-                        file = file,
-                        onAction = { action ->
-                            onFileAction(
-                                file,
-                                action
-                            )
+                message.attachments.forEach { attachment ->
+                    when (attachment.type) {
+                        AttachmentType.IMAGE -> {
+
                         }
-                    )
+                        
+                        AttachmentType.VIDEO -> {
+                        
+                        }
+                        
+                        AttachmentType.VOICE -> {
+                        
+                        }
+                        
+                        AttachmentType.FILE -> {
+                            MessageFile(
+                                file = attachment,
+                                onAction = { action ->
+                                    onFileAction(attachment, action)
+                                })
+                        }
+                    }
                 }
                 
                 if (!message.text.isNullOrBlank()) {
@@ -115,8 +126,7 @@ fun MessageBubble(
             
             Box(modifier = Modifier.align(Alignment.BottomEnd)) {
                 MessageFooter(
-                    time = item.time,
-                    isRead = if (item.isMine) item.isRead else null
+                    time = item.time, isRead = if (item.isMine) item.isRead else null
                 )
             }
             

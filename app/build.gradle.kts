@@ -131,4 +131,6 @@ dependencies {
     implementation(libs.ketch)
     
     implementation(libs.androidx.browser)
+    
+    implementation(libs.coil.compose)
 }

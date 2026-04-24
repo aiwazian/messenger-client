@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.network.dto
 
+import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
@@ -16,7 +17,8 @@ data class MessageAttachmentDto(
     @SerialName("name") val name: String = "",
     @SerialName("size") val size: Long = 0,
     @SerialName("mimeType") val mimeType: String = "",
-    @SerialName("status") val status: DownloadStatus = DownloadStatus.UPLOADED
+    @SerialName("status") val status: DownloadStatus = DownloadStatus.UPLOADED,
+    @SerialName("type") val type: AttachmentType = AttachmentType.FILE,
 )
 
 @Serializable
@@ -54,6 +56,7 @@ data class FileInitResponseDto(
 @Serializable
 data class FileConfirmRequestDto(
     @SerialName("fileId") val fileId: String,
+    @SerialName("type") val type: AttachmentType? = null,
     @SerialName("text") val text: String? = null
 )
 

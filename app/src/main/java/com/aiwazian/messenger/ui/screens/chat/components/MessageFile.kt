@@ -21,7 +21,6 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
@@ -35,17 +34,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.aiwazian.messenger.domain.MessageFile
+import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.extensions.getFileIcon
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun MessageFile(
-    file: MessageFile, onAction: (FileAction) -> Unit
-) {
+fun MessageFile(file: MessageAttachment, onAction: (FileAction) -> Unit) {
     Row(
         modifier = Modifier
             .clickable {
@@ -114,7 +110,7 @@ fun MessageFile(
 
 @Composable
 private fun StatusIcon(
-    file: MessageFile
+    file: MessageAttachment
 ) {
     val icon = when (file.status) {
         DownloadStatus.IDLE -> Icons.Rounded.Download

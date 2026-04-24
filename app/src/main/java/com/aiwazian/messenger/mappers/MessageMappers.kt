@@ -6,7 +6,7 @@ package com.aiwazian.messenger.mappers
 
 import com.aiwazian.messenger.database.entity.MessageEntity
 import com.aiwazian.messenger.domain.Message
-import com.aiwazian.messenger.domain.MessageFile
+import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.network.dto.MessageAttachmentDto
@@ -24,17 +24,18 @@ fun MessageDto.toDomain(): Message = Message(
     attachments = attachments.map { it.toDomain() }
 )
 
-fun MessageAttachmentDto.toDomain() = MessageFile(
+fun MessageAttachmentDto.toDomain() = MessageAttachment(
     id = id,
     name = name,
     size = size,
     extension = name.substringAfterLast('.', ""),
     status = status,
     progress = 0,
-    localUri = null
+    localUri = null,
+    type = type
 )
 
-fun MessageEntity.toDomain(attachments: List<MessageFile> = emptyList()) = Message(
+fun MessageEntity.toDomain(attachments: List<MessageAttachment> = emptyList()) = Message(
     id = id,
     senderId = senderId,
     chatId = chatId,

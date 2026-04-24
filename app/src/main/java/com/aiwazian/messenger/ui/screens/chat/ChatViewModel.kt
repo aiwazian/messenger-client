@@ -17,7 +17,8 @@ import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.domain.Message
-import com.aiwazian.messenger.domain.MessageFile
+import com.aiwazian.messenger.domain.MessageAttachment
+import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.DownloadStatus
@@ -706,7 +707,7 @@ class ChatViewModel @Inject constructor(
     }
     
     fun onFileAction(
-        message: Message, file: MessageFile, action: FileAction
+        message: Message, file: MessageAttachment, action: FileAction
     ) {
         when (action) {
             FileAction.DOWNLOAD -> {
@@ -776,6 +777,12 @@ class ChatViewModel @Inject constructor(
                 val mimeType =
                     context.contentResolver.getType(uri) ?: "application/octet-stream"
                 
+                val attachmentType = when {
+                    mimeType.startsWith("image/") -> AttachmentType.IMAGE
+                    mimeType.startsWith("video/") -> AttachmentType.VIDEO
+                    else -> AttachmentType.FILE
+                }
+                
                 val tempId = Random.nextInt(1000000, Int.MAX_VALUE)
                 val tempMessage = Message(
                     id = tempId,
@@ -787,14 +794,15 @@ class ChatViewModel @Inject constructor(
                     messageType = MessageType.TEXT,
                     systemMessageEventType = null,
                     attachments = listOf(
-                        MessageFile(
+                        MessageAttachment(
                             id = "temp_${tempId}",
                             name = fileName,
                             size = fileSize,
                             extension = fileName.substringAfterLast('.', ""),
                             status = DownloadStatus.UPLOADING,
                             progress = 0,
-                            localUri = null
+                            localUri = null,
+                            type = attachmentType
                         )
                     )
                 )
@@ -819,11 +827,10 @@ class ChatViewModel @Inject constructor(
                             viewModelScope.launch {
                                 val confirmedMessage = chatRepository.confirmFileUpload(
                                     _uiState.value.chatId, FileConfirmRequestDto(
-                                        fileId = initResponse.fileId, text = null
+                                        fileId = initResponse.fileId, text = null, type = attachmentType
                                     )
                                 )
                                 if (confirmedMessage != null) {
-                                    // Принудительно устанавливаем UPLOADED, чтобы не конфликтовать с COMPLETED (скачанным)
                                     val messageWithUploadedStatus = confirmedMessage.copy(
                                         attachments = confirmedMessage.attachments.map {
                                             it.copy(
