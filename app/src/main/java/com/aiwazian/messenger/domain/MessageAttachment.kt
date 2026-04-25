@@ -8,12 +8,14 @@ import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.DownloadStatus
 
 data class MessageAttachment(
-    val id: String,
+    val fileId: String,
+    val messageId: Long,
     val name: String,
     val size: Long,
     val extension: String,
     val status: DownloadStatus,
     val progress: Int,
     val localUri: String?,
-    val type: AttachmentType
+    val type: AttachmentType,
+    val sortOrder: Int
 )

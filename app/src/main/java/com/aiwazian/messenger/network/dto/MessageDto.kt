@@ -13,17 +13,18 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class MessageAttachmentDto(
-    @SerialName("id") val id: String,
+    @SerialName("fileId") val fileId: String,
     @SerialName("name") val name: String = "",
     @SerialName("size") val size: Long = 0,
     @SerialName("mimeType") val mimeType: String = "",
     @SerialName("status") val status: DownloadStatus = DownloadStatus.UPLOADED,
     @SerialName("type") val type: AttachmentType = AttachmentType.FILE,
+    @SerialName("sortOrder") val sortOrder: Int = 0,
 )
 
 @Serializable
 data class MessageDto(
-    @SerialName("id") val id: Int,
+    @SerialName("id") val id: Long,
     @SerialName("senderId") val senderId: Long,
     @SerialName("chatId") val chatId: Long,
     @SerialName("text") val text: String? = null,

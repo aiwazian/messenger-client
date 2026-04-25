@@ -48,14 +48,14 @@ interface MessageApi {
     @GET("chats/{chatId}/messages/{messageId}/files/{fileId}/download")
     suspend fun getFileDownloadUrl(
         @Path("chatId") chatId: Long,
-        @Path("messageId") messageId: Int,
+        @Path("messageId") messageId: Long,
         @Path("fileId") fileId: String
     ): Response<FileDownloadResponseDto>
     
     @POST("chats/{chatId}/messages/{messageId}/read")
     suspend fun markRead(
         @Path("chatId") chatId: Long,
-        @Path("messageId") messageId: Int
+        @Path("messageId") messageId: Long
     ): Response<Unit>
     
     @POST("chats/{chatId}/messages/read")
@@ -66,7 +66,7 @@ interface MessageApi {
     @DELETE("chats/{chatId}/messages/{messageId}")
     suspend fun deleteMessage(
         @Path("chatId") chatId: Long,
-        @Path("messageId") messageId: Int
+        @Path("messageId") messageId: Long
     ): Response<Unit>
     
     @DELETE("chats/{chatId}/messages")

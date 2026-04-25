@@ -94,7 +94,7 @@ class ChatViewModel @Inject constructor(
     private val _uiEffect = MutableSharedFlow<ChatUiEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
     
-    private val _selectedMessageId = MutableStateFlow<Int?>(null)
+    private val _selectedMessageId = MutableStateFlow<Long?>(null)
     
     private var profileCollectionJob: Job? = null
     private var messagesCollectionJob: Job? = null
@@ -142,7 +142,7 @@ class ChatViewModel @Inject constructor(
             if (item is ChatItem.MessageItem) {
                 val updatedAttachments = item.message.attachments.map { file ->
                     val download =
-                        downloads.findLast { it.fileId == file.id || (it.messageId == item.message.id && it.name == file.name) }
+                        downloads.findLast { it.fileId == file.fileId || (it.messageId == item.message.id && it.name == file.name) }
                     if (download != null) {
                         if (download.status == DownloadStatus.COMPLETED && file.status != DownloadStatus.COMPLETED) {
                             val updatedFile = file.copy(
@@ -153,7 +153,7 @@ class ChatViewModel @Inject constructor(
                             viewModelScope.launch {
                                 val messageToUpdate = item.message
                                 val finalAttachments = messageToUpdate.attachments.map {
-                                    if (it.id == updatedFile.id) updatedFile else it
+                                    if (it.fileId == updatedFile.fileId) updatedFile else it
                                 }
                                 chatRepository.saveMessage(messageToUpdate.copy(attachments = finalAttachments))
                             }
@@ -166,14 +166,14 @@ class ChatViewModel @Inject constructor(
                             )
                         }
                     } else if (downloaderManager.isDownloaded(
-                            file.id, file.extension
+                            file.fileId, file.extension
                         )
                     ) {
                         file.copy(
                             status = DownloadStatus.COMPLETED,
                             progress = 100,
                             localUri = downloaderManager.getFile(
-                                file.id, file.extension
+                                file.fileId, file.extension
                             ).absolutePath
                         )
                     } else file
@@ -516,8 +516,8 @@ class ChatViewModel @Inject constructor(
             
             val updatedAttachments = message.attachments.map { file ->
                 val localFile =
-                    if (file.id.isNotBlank()) downloaderManager.getFile(
-                        file.id,
+                    if (file.fileId.isNotBlank()) downloaderManager.getFile(
+                        file.fileId,
                         file.extension
                     ) else null
                 
@@ -537,7 +537,7 @@ class ChatViewModel @Inject constructor(
                     )
                 } else {
                     val download =
-                        downloaderManager.downloads.value.findLast { it.fileId == file.id }
+                        downloaderManager.downloads.value.findLast { it.fileId == file.fileId }
                     if (download != null) {
                         file.copy(
                             status = download.status,
@@ -643,7 +643,7 @@ class ChatViewModel @Inject constructor(
     
     fun hideClearHistoryDialog() = _uiState.update { it.copy(showClearHistoryDialog = false) }
     
-    fun showDeleteMessageDialog(messageId: Int) {
+    fun showDeleteMessageDialog(messageId: Long) {
         _selectedMessageId.value = messageId
         _uiState.update { it.copy(showDeleteMessageDialog = true) }
     }
@@ -696,11 +696,10 @@ class ChatViewModel @Inject constructor(
         _uiEffect.emit(ChatUiEffect.NavigateBack)
     }
     
-    fun cancelUpload(tempMessageId: Int) {
-        val uploadId = tempMessageId.toLong()
-        uploadJobs[uploadId]?.cancel()
-        uploadJobs.remove(uploadId)
-        downloaderManager.cancel(uploadId.toInt())
+    fun cancelUpload(tempMessageId: Long) {
+        uploadJobs[tempMessageId]?.cancel()
+        uploadJobs.remove(tempMessageId)
+        downloaderManager.cancel(tempMessageId.toInt())
         
         val updatedMessages = getRawMessages().filter { it.id != tempMessageId }
         updateChatItems(updatedMessages)
@@ -713,14 +712,14 @@ class ChatViewModel @Inject constructor(
             FileAction.DOWNLOAD -> {
                 viewModelScope.launch {
                     try {
-                        chatRepository.getDownloadUrl(message.chatId, message.id, file.id)
+                        chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
                             ?.let {
                                 downloaderManager.download(
                                     url = it.downloadUrl,
                                     fileName = file.name,
                                     chatId = message.chatId,
                                     messageId = message.id,
-                                    fileId = file.id,
+                                    fileId = file.fileId,
                                     size = file.size
                                 )
                             }
@@ -733,19 +732,19 @@ class ChatViewModel @Inject constructor(
             }
             
             FileAction.PAUSE -> {
-                downloaderManager.downloads.value.find { it.fileId == file.id }?.let {
+                downloaderManager.downloads.value.find { it.fileId == file.fileId }?.let {
                     downloaderManager.pause(it.id)
                 }
             }
             
             FileAction.RESUME -> {
-                downloaderManager.downloads.value.find { it.fileId == file.id }?.let {
+                downloaderManager.downloads.value.find { it.fileId == file.fileId }?.let {
                     downloaderManager.resume(it.id)
                 }
             }
             
             FileAction.CANCEL -> {
-                downloaderManager.downloads.value.find { it.fileId == file.id }?.let {
+                downloaderManager.downloads.value.find { it.fileId == file.fileId }?.let {
                     downloaderManager.cancel(it.id)
                 }
             }
@@ -755,7 +754,7 @@ class ChatViewModel @Inject constructor(
                     fileHandler.openFile(
                         chatId = message.chatId,
                         messageId = message.id,
-                        fileId = file.id,
+                        fileId = file.fileId,
                         fileName = file.name,
                         fileSize = file.size,
                         localUri = file.localUri
@@ -783,7 +782,7 @@ class ChatViewModel @Inject constructor(
                     else -> AttachmentType.FILE
                 }
                 
-                val tempId = Random.nextInt(1000000, Int.MAX_VALUE)
+                val tempId = Random.nextLong(1000000, Long.MAX_VALUE)
                 val tempMessage = Message(
                     id = tempId,
                     text = null,
@@ -795,14 +794,16 @@ class ChatViewModel @Inject constructor(
                     systemMessageEventType = null,
                     attachments = listOf(
                         MessageAttachment(
-                            id = "temp_${tempId}",
+                            fileId = "temp_${tempId}",
+                            messageId = tempId,
                             name = fileName,
                             size = fileSize,
                             extension = fileName.substringAfterLast('.', ""),
                             status = DownloadStatus.UPLOADING,
                             progress = 0,
                             localUri = null,
-                            type = attachmentType
+                            type = attachmentType,
+                            sortOrder = 0
                         )
                     )
                 )
@@ -810,7 +811,7 @@ class ChatViewModel @Inject constructor(
                 updateChatItems(getRawMessages() + tempMessage)
                 
                 downloaderManager.registerUpload(
-                    tempId, fileName, fileSize
+                    tempId.toInt(), fileName, fileSize
                 )
                 
                 val initResponse = chatRepository.initFileUpload(
@@ -838,7 +839,7 @@ class ChatViewModel @Inject constructor(
                                             )
                                         }
                                     )
-                                    downloaderManager.completeUpload(tempId)
+                                    downloaderManager.completeUpload(tempId.toInt())
                                     val updated =
                                         getRawMessages().map { if (it.id == tempId) messageWithUploadedStatus else it }
                                     updateChatItems(updated)
@@ -846,10 +847,10 @@ class ChatViewModel @Inject constructor(
                             }
                         }
                     } else {
-                        handleUploadError(tempId)
+                        handleUploadError(tempId.toInt())
                     }
                 } catch (_: Exception) {
-                    handleUploadError(tempId)
+                    handleUploadError(tempId.toInt())
                 }
             }
         }
@@ -860,7 +861,7 @@ class ChatViewModel @Inject constructor(
     }
     
     private fun performUpload(
-        uri: Uri, url: String, id: Int, context: Context, onSuccess: () -> Unit
+        uri: Uri, url: String, id: Long, context: Context, onSuccess: () -> Unit
     ) {
         val job = viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -869,9 +870,7 @@ class ChatViewModel @Inject constructor(
                 
                 val requestBody = ProgressRequestBody(
                     mimeType, fileSize, { progress ->
-                        downloaderManager.updateUploadProgress(
-                            id, progress
-                        )
+                        downloaderManager.updateUploadProgress(id.toInt(), progress)
                     }) {
                     context.contentResolver.openInputStream(uri)
                         ?: throw java.io.IOException("Unable to open input stream from $uri")
@@ -881,11 +880,11 @@ class ChatViewModel @Inject constructor(
                 
                 val response = okHttpClient.newCall(request).execute()
                 if (response.isSuccessful) {
-                    downloaderManager.completeUpload(id)
+                    downloaderManager.completeUpload(id.toInt())
                     onSuccess()
                 } else {
                     withContext(Dispatchers.Main) {
-                        handleUploadError(id)
+                        handleUploadError(id.toInt())
                     }
                 }
             } catch (e: Exception) {
@@ -894,14 +893,14 @@ class ChatViewModel @Inject constructor(
                 )
                 if (e !is CancellationException) {
                     withContext(Dispatchers.Main) {
-                        handleUploadError(id)
+                        handleUploadError(id.toInt())
                     }
                 }
             } finally {
-                uploadJobs.remove(id.toLong())
+                uploadJobs.remove(id)
             }
         }
-        uploadJobs[id.toLong()] = job
+        uploadJobs[id] = job
     }
     
     private fun getFileName(
@@ -963,7 +962,7 @@ class ChatViewModel @Inject constructor(
         }
     }
     
-    private fun readMessage(id: Int) {
+    private fun readMessage(id: Long) {
         val messages = getRawMessages().map { if (it.id == id) it.copy(isRead = true) else it }
         updateChatItems(messages)
     }

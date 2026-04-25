@@ -151,7 +151,7 @@ fun ChatScreen(
         }
     }
     
-    var fileToCancelId by remember { mutableStateOf<Int?>(null) }
+    var fileToCancelId by remember { mutableStateOf<Long?>(null) }
     
     LaunchedEffect(Unit) {
         chatViewModel.uiEffect.collect { effect ->

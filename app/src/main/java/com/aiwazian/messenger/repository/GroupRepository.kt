@@ -6,10 +6,7 @@ package com.aiwazian.messenger.repository
 
 import android.util.Log
 import com.aiwazian.messenger.database.dao.GroupDao
-import com.aiwazian.messenger.database.dao.GroupMemberDao
 import com.aiwazian.messenger.database.dao.UserDao
-import com.aiwazian.messenger.database.entity.GroupBlackListEntity
-import com.aiwazian.messenger.database.entity.GroupMemberEntity
 import com.aiwazian.messenger.domain.Group
 import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.domain.User
@@ -30,7 +27,6 @@ import javax.inject.Inject
 class GroupRepository @Inject constructor(
     private val groupApi: GroupApi,
     private val groupDao: GroupDao,
-    private val groupMemberDao: GroupMemberDao,
     private val userDao: UserDao
 ) {
     
@@ -62,29 +58,12 @@ class GroupRepository @Inject constructor(
         skip: Int = 0,
         take: Int = 100,
         search: String? = null
-    ): Flow<List<User>> = channelFlow {
-        launch {
-            groupMemberDao.getMemberUserIdsFlow(id).collectLatest { userIds ->
-                val users = userIds.mapNotNull { uid ->
-                    userDao.get(uid)?.toDomain()
-                }
-                send(users)
-            }
-        }
-        
+    ): Flow<List<User>> = flow {
         try {
             val response = groupApi.getGroupMembers(id, skip, take, search)
             if (response.isSuccessful) {
                 val dtos = response.body().orEmpty()
-                val users = dtos.map { it.toDomain() }
-                
-                users.forEach { user ->
-                    userDao.insert(user.toEntity())
-                }
-                
-                groupMemberDao.clearMembers(id)
-                val members = users.map { GroupMemberEntity(groupId = id, userId = it.id) }
-                groupMemberDao.insertAll(members)
+                emit(dtos.map { it.toDomain() })
             } else {
                 Log.e(
                     "GroupRepository",
@@ -113,30 +92,12 @@ class GroupRepository @Inject constructor(
         skip: Int = 0,
         take: Int = 100,
         search: String? = null
-    ): Flow<List<User>> = channelFlow {
-        launch {
-            groupMemberDao.getBlackListUserIdsFlow(id).collectLatest { userIds ->
-                val users = userIds.mapNotNull { uid ->
-                    userDao.get(uid)?.toDomain()
-                }
-                send(users)
-            }
-        }
-        
+    ): Flow<List<User>> = flow {
         try {
             val response = groupApi.getBlackList(id, skip, take, search)
             if (response.isSuccessful) {
                 val dtos = response.body().orEmpty()
-                val users = dtos.map { it.toDomain() }
-                
-                users.forEach { user ->
-                    userDao.insert(user.toEntity())
-                }
-                
-                groupMemberDao.clearBlackList(id)
-                val blackListEntries =
-                    users.map { GroupBlackListEntity(groupId = id, userId = it.id) }
-                groupMemberDao.insertAllBlackList(blackListEntries)
+                emit(dtos.map { it.toDomain() })
             } else {
                 Log.e(
                     "GroupRepository",
@@ -180,8 +141,6 @@ class GroupRepository @Inject constructor(
             )
             val response = groupApi.addMembers(groupId, request)
             if (response.isSuccessful) {
-                val members = userIds.map { GroupMemberEntity(groupId = groupId, userId = it) }
-                groupMemberDao.insertAll(members)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Add members failed"))
@@ -262,7 +221,6 @@ class GroupRepository @Inject constructor(
         return try {
             val response = groupApi.kickUser(groupId, userId)
             if (response.isSuccessful) {
-                groupMemberDao.removeMember(groupId, userId)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Kick failed"))
@@ -277,13 +235,6 @@ class GroupRepository @Inject constructor(
         return try {
             val response = groupApi.banUser(groupId, userId)
             if (response.isSuccessful) {
-                groupMemberDao.removeMember(groupId, userId)
-                groupMemberDao.insertBlackListEntry(
-                    GroupBlackListEntity(
-                        groupId = groupId,
-                        userId = userId
-                    )
-                )
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Ban failed"))
@@ -298,7 +249,6 @@ class GroupRepository @Inject constructor(
         return try {
             val response = groupApi.unbanUser(groupId, userId)
             if (response.isSuccessful) {
-                groupMemberDao.removeFromBlackList(groupId, userId)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Unban failed"))

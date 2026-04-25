@@ -8,7 +8,7 @@ import com.aiwazian.messenger.enums.DownloadStatus
 
 data class DownloadItem(
     val id: Int,
-    val messageId: Int? = null,
+    val messageId: Long? = null,
     val fileId: String? = null,
     val name: String,
     val size: Long,

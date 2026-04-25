@@ -10,8 +10,8 @@ import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
+import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.GroupDao
-import com.aiwazian.messenger.database.dao.GroupMemberDao
 import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.database.dao.UserDao
 import dagger.Module
@@ -47,11 +47,8 @@ object DatabaseModule {
     fun provideChannelDao(database: AppDatabase): ChannelDao = database.channelDao()
     
     @Provides
-    fun provideGroup(database: AppDatabase): GroupDao = database.groupDao()
+    fun provideGroupDao(database: AppDatabase): GroupDao = database.groupDao()
 
-    @Provides
-    fun provideGroupMemberDao(database: AppDatabase): GroupMemberDao = database.groupMemberDao()
-    
     @Provides
     fun provideChat(database: AppDatabase): ChatDao = database.chatDao()
     
@@ -63,4 +60,7 @@ object DatabaseModule {
     
     @Provides
     fun provideAttachmentDao(database: AppDatabase): AttachmentDao = database.attachmentDao()
+
+    @Provides
+    fun provideFileDao(database: AppDatabase): FileDao = database.fileDao()
 }

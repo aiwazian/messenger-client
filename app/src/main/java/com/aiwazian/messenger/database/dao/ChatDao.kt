@@ -32,7 +32,7 @@ interface ChatDao {
     suspend fun deleteChatsNotIn(chatIds: List<Long>)
     
     @Query("UPDATE chats SET lastMessageId = :messageId WHERE chatId = :chatId")
-    suspend fun updateLastMessageId(chatId: Long, messageId: Int)
+    suspend fun updateLastMessageId(chatId: Long, messageId: Long)
     
     @Query("SELECT * FROM chats WHERE chatId = :chatId")
     fun getChatByIdFlow(chatId: Long): Flow<ChatEntity?>

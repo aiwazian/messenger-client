@@ -17,7 +17,7 @@ class FileHandler @Inject constructor(
 ) {
     suspend fun openFile(
         chatId: Long,
-        messageId: Int,
+        messageId: Long,
         fileId: String,
         fileName: String,
         fileSize: Long,

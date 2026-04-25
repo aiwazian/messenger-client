@@ -61,7 +61,7 @@ class DownloaderManager @Inject constructor(
         url: String,
         fileName: String,
         chatId: Long,
-        messageId: Int,
+        messageId: Long,
         fileId: String,
         size: Long
     ): Int {

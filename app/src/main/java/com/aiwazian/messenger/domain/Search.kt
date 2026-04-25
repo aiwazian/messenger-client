@@ -13,7 +13,7 @@ data class Search(
     val fileId: String? = null,
     val size: Long? = null,
     val mimeType: String? = null,
-    val messageId: Int? = null,
+    val messageId: Long? = null,
     val senderName: String? = null,
     val createdAt: Long? = null
 )

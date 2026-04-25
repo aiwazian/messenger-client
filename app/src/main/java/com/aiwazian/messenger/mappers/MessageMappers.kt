@@ -21,18 +21,20 @@ fun MessageDto.toDomain(): Message = Message(
     isRead = isRead ?: false,
     messageType = messageType,
     systemMessageEventType = systemEventType,
-    attachments = attachments.map { it.toDomain() }
+    attachments = attachments.map { it.toDomain(messageId = id) }
 )
 
-fun MessageAttachmentDto.toDomain() = MessageAttachment(
-    id = id,
+fun MessageAttachmentDto.toDomain(messageId: Long) = MessageAttachment(
+    fileId = fileId,
+    messageId = messageId,
     name = name,
     size = size,
     extension = name.substringAfterLast('.', ""),
     status = status,
     progress = 0,
     localUri = null,
-    type = type
+    type = type,
+    sortOrder = sortOrder
 )
 
 fun MessageEntity.toDomain(attachments: List<MessageAttachment> = emptyList()) = Message(

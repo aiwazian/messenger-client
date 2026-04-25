@@ -8,7 +8,7 @@ import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 
 data class Message(
-    val id: Int,
+    val id: Long,
     val senderId: Long,
     val chatId: Long,
     val text: String?,

@@ -9,7 +9,7 @@ import androidx.room.PrimaryKey
 
 @Entity("message")
 data class MessageEntity(
-    @PrimaryKey val id: Int,
+    @PrimaryKey val id: Long,
     val senderId: Long,
     val chatId: Long,
     val text: String?,

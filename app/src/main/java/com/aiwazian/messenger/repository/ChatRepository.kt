@@ -8,10 +8,13 @@ import android.util.Log
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChatDao
+import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.MessageDao
+import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.network.api.ChatApi
@@ -35,6 +38,7 @@ class ChatRepository @Inject constructor(
     private val messageApi: MessageApi,
     private val messageDao: MessageDao,
     private val attachmentDao: AttachmentDao,
+    private val fileDao: FileDao,
     private val chatDao: ChatDao,
     private val userRepository: UserRepository,
     private val channelRepository: ChannelRepository,
@@ -118,20 +122,37 @@ class ChatRepository @Inject constructor(
     }
     
     fun getMessagesFlow(
-        senderId: Long, chatId: Long, limit: Int, offset: Int
+        senderId: Long,
+        chatId: Long,
+        limit: Int,
+        offset: Int
     ): Flow<List<Message>> {
         return when (ChatType.fromId(chatId)) {
             ChatType.PRIVATE -> messageDao.getMessages(senderId, chatId, limit, offset)
-                .map { entities ->
-                    entities.map { entity ->
-                        entity.message.toDomain(entity.attachments.map { att ->
-                            att.toDomain()
-                        })
+                .map { messages ->
+                    messages.map { message ->
+                        val attachments = attachmentDao.getAttachmentsByMessageId(message.id)
+                        val domainAttachments = attachments.mapNotNull { att ->
+                            val d = fileDao.getById(att.fileId)
+                            
+                            d?.let { file ->
+                                att.toDomain(file)
+                            }
+                        }
+                        message.toDomain(domainAttachments)
                     }
                 }
             
-            else -> messageDao.getMessages(chatId, limit, offset).map { entities ->
-                entities.map { it.message.toDomain(it.attachments.map { att -> att.toDomain() }) }
+            else -> messageDao.getMessages(chatId, limit, offset).map { messages ->
+                messages.map { message ->
+                    val attachments = attachmentDao.getAttachmentsByMessageId(message.id)
+                    val domainAttachments = attachments.mapNotNull { att ->
+                        fileDao.getById(att.fileId)?.let { file ->
+                            att.toDomain(file)
+                        }
+                    }
+                    message.toDomain(domainAttachments)
+                }
             }
         }
     }
@@ -141,9 +162,11 @@ class ChatRepository @Inject constructor(
             val response = messageApi.getMessages(chatId, limit, offset)
             if (response.isSuccessful) {
                 val dtos = response.body().orEmpty()
-                val domains = dtos.map { it.toDomain() }
-                saveMessagesToDb(domains)
-                domains
+                val messages = dtos.map { messageDto ->
+                    messageDto.toDomain()
+                }
+                saveMessagesToDb(messages)
+                messages
             } else {
                 Log.e(
                     "ChatRepository",
@@ -158,7 +181,8 @@ class ChatRepository @Inject constructor(
     }
     
     fun getById(chatId: Long): Flow<Chat?> {
-        return chatDao.getChatByIdFlow(chatId).map { it?.toDomain(UiText.DynamicString(""), null) }
+        return chatDao.getChatByIdFlow(chatId)
+            .map { it?.toDomain(UiText.DynamicString(""), null) }
     }
     
     suspend fun sendMessage(chatId: Long, message: String): Message? {
@@ -192,18 +216,31 @@ class ChatRepository @Inject constructor(
     
     private suspend fun saveMessagesToDb(messages: List<Message>) {
         messageDao.saveMessages(messages.map { it.toEntity() })
-        messages.forEach { msg ->
-            val attachments = msg.attachments.map {
-                it.toEntity(
-                    msg.id.toLong(),
-                    msg.chatId
-                )
+        messages.forEach { message ->
+            val attachments = message.attachments.map { attachment ->
+                val existingFile = fileDao.getById(attachment.fileId)
+                
+                val file = if (existingFile == null) {
+                    val newFile = FileEntity(
+                        id = attachment.fileId,
+                        name = attachment.name,
+                        size = attachment.size,
+                        path = null,
+                        status = DownloadStatus.UPLOADED
+                    )
+                    fileDao.save(newFile)
+                    newFile
+                } else {
+                    existingFile
+                }
+                
+                attachment.toEntity(file)
             }
             attachmentDao.upsertAttachments(attachments)
-            if (ChatType.fromId(msg.chatId) == ChatType.PRIVATE) {
-                chatDao.updateLastMessageId(msg.senderId, msg.id)
+            if (ChatType.fromId(message.chatId) == ChatType.PRIVATE) {
+                chatDao.updateLastMessageId(message.senderId, message.id)
             } else {
-                chatDao.updateLastMessageId(msg.chatId, msg.id)
+                chatDao.updateLastMessageId(message.chatId, message.id)
             }
         }
     }
@@ -239,7 +276,7 @@ class ChatRepository @Inject constructor(
     }
     
     suspend fun getDownloadUrl(
-        chatId: Long, messageId: Int, fileId: String
+        chatId: Long, messageId: Long, fileId: String
     ): FileDownloadResponseDto? {
         return try {
             val response = messageApi.getFileDownloadUrl(chatId, messageId, fileId)
@@ -255,7 +292,7 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    suspend fun makeAsRead(chatId: Long, messageId: Int): Boolean {
+    suspend fun makeAsRead(chatId: Long, messageId: Long): Boolean {
         return try {
             val response = messageApi.markRead(chatId, messageId)
             response.isSuccessful
@@ -275,7 +312,7 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    suspend fun deleteMessage(chatId: Long, messageId: Int): Boolean {
+    suspend fun deleteMessage(chatId: Long, messageId: Long): Boolean {
         return try {
             messageDao.deleteMessageById(messageId)
             val response = messageApi.deleteMessage(chatId, messageId)
@@ -318,7 +355,10 @@ class ChatRepository @Inject constructor(
         try {
             val response = chatApi.unarchiveChat(chatId)
             if (!response.isSuccessful) {
-                Log.e("ChatRepository", "Failed to unarchive chat $chatId: ${response.message()}")
+                Log.e(
+                    "ChatRepository",
+                    "Failed to unarchive chat $chatId: ${response.message()}"
+                )
             }
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error unarchiving chat $chatId", e)

@@ -5,20 +5,36 @@
 package com.aiwazian.messenger.database.entity
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.aiwazian.messenger.enums.AttachmentType
-import com.aiwazian.messenger.enums.DownloadStatus
 
-@Entity("attachment")
+@Entity(
+    tableName = "attachment",
+    foreignKeys = [
+        ForeignKey(
+            entity = MessageEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["messageId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = FileEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["fileId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index(value = ["messageId"]),
+        Index(value = ["fileId"])
+    ]
+)
 data class AttachmentEntity(
-    @PrimaryKey val id: String,
-    val relationId: Long,
-    val chatId: Long? = null,
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val fileId: String,
+    val messageId: Long,
     val type: AttachmentType,
-    val name: String,
-    val size: Long,
-    val extension: String,
-    val status: DownloadStatus = DownloadStatus.IDLE,
-    val progress: Int = 0,
-    val localUri: String? = null
+    val sortOrder: Int
 )

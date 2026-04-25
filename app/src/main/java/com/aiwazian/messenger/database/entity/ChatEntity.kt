@@ -11,5 +11,5 @@ import androidx.room.PrimaryKey
 data class ChatEntity(
     @PrimaryKey val chatId: Long,
     val isPinned: Boolean,
-    val lastMessageId: Int?
+    val lastMessageId: Long?
 )
