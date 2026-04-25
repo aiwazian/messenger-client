@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.chat
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -40,7 +41,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -120,6 +120,7 @@ import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
+import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.profile.Profile
@@ -187,6 +188,8 @@ fun ChatScreen(
             }
         }
     }
+    
+    var imageUrl by remember { mutableStateOf<String?>(null) }
     
     Scaffold(
         modifier = Modifier.sharedBounds(key = "chat-${chatId}"),
@@ -264,7 +267,11 @@ fun ChatScreen(
                                     } else {
                                         chatViewModel.onFileAction(item.message, file, action)
                                     }
-                                }, onLinkClicked = chatViewModel::onLinkClicked
+                                }, onLinkClicked = chatViewModel::onLinkClicked,
+                                onImageClick = {
+                                    imageUrl = it
+                                },
+                                currentImageUrl = imageUrl
                             )
                         }
                     }
@@ -340,6 +347,13 @@ fun ChatScreen(
                 })
         }
     }
+    
+    if (!imageUrl.isNullOrBlank()) {
+        FullScreenViewer(imageUrl!!) { imageUrl = null }
+        BackHandler {
+            imageUrl = null
+        }
+    }
 }
 
 @Composable
@@ -364,10 +378,8 @@ private fun BottomSection(
                         onSendMessage = onSendClicked,
                         onFilesSelected = onFilesSelected
                     )
-                } else {
-                    if (!uiState.isJoined) {
-                        JoinButton(onClick = onJoinClicked)
-                    }
+                } else if (!uiState.isJoined) {
+                    JoinButton(onClick = onJoinClicked)
                 }
             }
             
@@ -379,17 +391,15 @@ private fun BottomSection(
                         onSendMessage = onSendClicked,
                         onFilesSelected = onFilesSelected
                     )
+                } else if (uiState.isJoined) {
+                    InputMessage(
+                        value = uiState.messageText,
+                        onValueChange = onTextChanged,
+                        onSendMessage = onSendClicked,
+                        onFilesSelected = onFilesSelected
+                    )
                 } else {
-                    if (uiState.isJoined) {
-                        InputMessage(
-                            value = uiState.messageText,
-                            onValueChange = onTextChanged,
-                            onSendMessage = onSendClicked,
-                            onFilesSelected = onFilesSelected
-                        )
-                    } else {
-                        JoinButton(onClick = onJoinClicked)
-                    }
+                    JoinButton(onClick = onJoinClicked)
                 }
             }
             
@@ -410,7 +420,7 @@ private fun BottomSection(
 @Composable
 private fun JoinButton(onClick: () -> Unit) {
     TextButton(
-        shape = RoundedCornerShape(0), modifier = Modifier.fillMaxWidth(), onClick = onClick
+        shape = RectangleShape, modifier = Modifier.fillMaxWidth(), onClick = onClick
     ) {
         Text(
             text = stringResource(R.string.join).uppercase(),
@@ -478,7 +488,7 @@ private fun TopBar(
     PageTopBar(
         title = {
             Card(
-                shape = RoundedCornerShape(0),
+                shape = RectangleShape,
                 modifier = Modifier
                     .fillMaxWidth()
                     .graphicsLayer(

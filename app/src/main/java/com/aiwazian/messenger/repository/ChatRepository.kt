@@ -11,7 +11,6 @@ import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
-import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
@@ -124,11 +123,15 @@ class ChatRepository @Inject constructor(
         return when (ChatType.fromId(chatId)) {
             ChatType.PRIVATE -> messageDao.getMessages(senderId, chatId, limit, offset)
                 .map { entities ->
-                    entities.map { it.message.toDomain(it.messageAttachments.map { att -> att.toDomain() }) }
+                    entities.map { entity ->
+                        entity.message.toDomain(entity.attachments.map { att ->
+                            att.toDomain()
+                        })
+                    }
                 }
             
             else -> messageDao.getMessages(chatId, limit, offset).map { entities ->
-                entities.map { it.message.toDomain(it.messageAttachments.map { att -> att.toDomain() }) }
+                entities.map { it.message.toDomain(it.attachments.map { att -> att.toDomain() }) }
             }
         }
     }
@@ -190,14 +193,12 @@ class ChatRepository @Inject constructor(
     private suspend fun saveMessagesToDb(messages: List<Message>) {
         messageDao.saveMessages(messages.map { it.toEntity() })
         messages.forEach { msg ->
-            val attachments =
-                msg.attachments.map {
-                    it.toEntity(
-                        msg.id.toLong(),
-                        AttachmentType.FILE,
-                        msg.chatId
-                    )
-                }
+            val attachments = msg.attachments.map {
+                it.toEntity(
+                    msg.id.toLong(),
+                    msg.chatId
+                )
+            }
             attachmentDao.upsertAttachments(attachments)
             if (ChatType.fromId(msg.chatId) == ChatType.PRIVATE) {
                 chatDao.updateLastMessageId(msg.senderId, msg.id)

@@ -6,7 +6,6 @@ package com.aiwazian.messenger.mappers
 
 import com.aiwazian.messenger.database.entity.AttachmentEntity
 import com.aiwazian.messenger.domain.MessageAttachment
-import com.aiwazian.messenger.enums.AttachmentType
 
 fun AttachmentEntity.toDomain(): MessageAttachment = MessageAttachment(
     id = id,
@@ -19,7 +18,7 @@ fun AttachmentEntity.toDomain(): MessageAttachment = MessageAttachment(
     type = type
 )
 
-fun MessageAttachment.toEntity(relationId: Long, type: AttachmentType, chatId: Long? = null): AttachmentEntity = AttachmentEntity(
+fun MessageAttachment.toEntity(relationId: Long, chatId: Long? = null): AttachmentEntity = AttachmentEntity(
     id = id,
     relationId = relationId,
     chatId = chatId,

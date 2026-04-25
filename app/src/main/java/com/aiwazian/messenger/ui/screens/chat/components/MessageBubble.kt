@@ -5,15 +5,21 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,14 +31,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.FileAction
+import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
 
 @Composable
@@ -40,7 +53,9 @@ fun MessageBubble(
     item: ChatItem.MessageItem,
     onSeen: () -> Unit,
     onFileAction: (MessageAttachment, FileAction) -> Unit,
-    onLinkClicked: ((String) -> Unit)? = null
+    onLinkClicked: ((String) -> Unit)? = null,
+    onImageClick: (String) -> Unit,
+    currentImageUrl: String? = null
 ) {
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
@@ -95,29 +110,60 @@ fun MessageBubble(
                     )
                 }
                 
-                message.attachments.forEach { attachment ->
-                    when (attachment.type) {
-                        AttachmentType.IMAGE -> {
-
-                        }
-                        
-                        AttachmentType.VIDEO -> {
-                        
-                        }
-                        
-                        AttachmentType.VOICE -> {
-                        
-                        }
-                        
-                        AttachmentType.FILE -> {
-                            MessageFile(
-                                file = attachment,
-                                onAction = { action ->
-                                    onFileAction(attachment, action)
-                                })
+                ImageGridCustomLayout(
+                    Modifier.heightIn(max = 400.dp),
+                    content = {
+                        message.attachments.filter { it.type == AttachmentType.IMAGE }
+                            .forEach { attachment ->
+                                if (attachment.localUri == null) {
+                                    Box(
+                                        modifier = Modifier.clickable {
+                                            onFileAction(attachment, FileAction.DOWNLOAD)
+                                        },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Rounded.Download, null)
+                                    }
+                                } else {
+                                    AsyncImage(
+                                        model = attachment.localUri,
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .sharedBounds(key = attachment.localUri)
+                                            .fillMaxSize()
+                                            .clip(MaterialTheme.shapes.extraSmall)
+                                            .clickable(onClick = {
+                                                onImageClick(attachment.localUri)
+                                            })
+                                    )
+                                }
+                            }
+                    }
+                )
+                
+                message.attachments.filter { it.type != AttachmentType.IMAGE }
+                    .forEach { attachment ->
+                        when (attachment.type) {
+                            AttachmentType.VIDEO -> {
+                            
+                            }
+                            
+                            AttachmentType.VOICE -> {
+                            
+                            }
+                            
+                            AttachmentType.FILE -> {
+                                MessageFile(
+                                    file = attachment,
+                                    onAction = { action ->
+                                        onFileAction(attachment, action)
+                                    })
+                            }
+                            
+                            else -> {}
                         }
                     }
-                }
                 
                 if (!message.text.isNullOrBlank()) {
                     MessageText(message.text, onLinkClicked = onLinkClicked)
@@ -135,6 +181,90 @@ fun MessageBubble(
                 onDismissRequest = { expanded = false },
                 actions = item.dropdownActions
             )
+        }
+    }
+}
+
+@Composable
+fun ImageGridCustomLayout(
+    modifier: Modifier = Modifier,
+    spacing: Dp = 2.dp,
+    content: @Composable () -> Unit
+) {
+    val gap = with(LocalDensity.current) { spacing.toPx() }
+    
+    Layout(
+        content = content,
+        modifier = modifier
+            .padding(spacing)
+            .clip(MaterialTheme.shapes.large)
+    ) { measurables, constraints ->
+        val count = measurables.size.coerceAtMost(10)
+        if (count == 0) return@Layout layout(0, 0) {}
+        
+        val width = constraints.maxWidth
+        val height =
+            if (constraints.hasBoundedHeight) constraints.maxHeight else (width * 0.75f).toInt()
+        
+        layout(width, height) {
+            when (count) {
+                1 -> {
+                    val p = measurables[0].measure(Constraints.fixed(width, height))
+                    p.place(0, 0)
+                }
+                
+                2 -> {
+                    val itemW = (width - gap) / 2
+                    val itemConstraints = Constraints.fixed(itemW.toInt(), height)
+                    
+                    measurables.take(2).forEachIndexed { i, m ->
+                        val p = m.measure(itemConstraints)
+                        p.place((i * (itemW + gap)).toInt(), 0)
+                    }
+                }
+                
+                3 -> {
+                    val mainW = (width * 0.6f).toInt()
+                    val sideW = (width - mainW - gap).toInt()
+                    val sideH = (height - gap) / 2
+                    
+                    val p1 = measurables[0].measure(Constraints.fixed(mainW, height))
+                    val p2 = measurables[1].measure(Constraints.fixed(sideW, sideH.toInt()))
+                    val p3 = measurables[2].measure(Constraints.fixed(sideW, sideH.toInt()))
+                    
+                    p1.place(0, 0)
+                    p2.place(mainW + gap.toInt(), 0)
+                    p3.place(mainW + gap.toInt(), (sideH + gap).toInt())
+                }
+                
+                4 -> {
+                    val itemW = (width - gap) / 2
+                    val itemH = (height - gap) / 2
+                    val itemConstraints = Constraints.fixed(itemW.toInt(), itemH.toInt())
+                    
+                    measurables.take(4).forEachIndexed { i, m ->
+                        val p = m.measure(itemConstraints)
+                        val x = (i % 2) * (itemW + gap)
+                        val y = (i / 2) * (itemH + gap)
+                        p.place(x.toInt(), y.toInt())
+                    }
+                }
+                
+                else -> {
+                    val columns = 3
+                    val rows = (count + columns - 1) / columns
+                    val itemW = (width - gap * (columns - 1)) / columns
+                    val itemH = (height - gap * (rows - 1)) / rows
+                    val itemConstraints = Constraints.fixed(itemW.toInt(), itemH.toInt())
+                    
+                    measurables.take(count).forEachIndexed { i, m ->
+                        val p = m.measure(itemConstraints)
+                        val x = (i % columns) * (itemW + gap)
+                        val y = (i / columns) * (itemH + gap)
+                        p.place(x.toInt(), y.toInt())
+                    }
+                }
+            }
         }
     }
 }
