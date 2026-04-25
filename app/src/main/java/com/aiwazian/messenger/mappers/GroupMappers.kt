@@ -25,7 +25,7 @@ fun GroupEntity.toDomain(): Group = Group(
     name = name,
     bio = bio,
     username = username,
-    groupType = GroupType.fromOrdinal(groupType),
+    groupType = groupType,
     members = members
 )
 
@@ -35,6 +35,6 @@ fun Group.toEntity() = GroupEntity(
     bio = bio,
     username = username,
     ownerId = ownerId,
-    groupType = groupType.ordinal,
+    groupType = groupType,
     members = members
 )

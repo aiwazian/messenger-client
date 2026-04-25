@@ -6,6 +6,8 @@ package com.aiwazian.messenger.database.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.aiwazian.messenger.enums.MessageType
+import com.aiwazian.messenger.enums.SystemMessageEventType
 
 @Entity("message")
 data class MessageEntity(
@@ -14,7 +16,7 @@ data class MessageEntity(
     val chatId: Long,
     val text: String?,
     val sendTime: Long,
-    val messageType: Int,
-    val systemMessageEventType: Int?,
+    val messageType: MessageType,
+    val systemMessageEventType: SystemMessageEventType?,
     val isRead: Boolean
 )

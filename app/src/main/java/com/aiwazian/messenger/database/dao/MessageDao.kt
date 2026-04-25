@@ -10,6 +10,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.aiwazian.messenger.database.entity.MessageEntity
+import com.aiwazian.messenger.database.entity.MessageWithAttachments
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -17,19 +18,20 @@ interface MessageDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveMessages(messages: List<MessageEntity>)
     
-    @Query("SELECT * FROM (SELECT * FROM message WHERE senderId = :userId AND chatId = :chatId OR senderId = :chatId AND chatId = :userId ORDER BY sendTime DESC LIMIT :limit OFFSET :offset) ORDER BY sendTime ASC")
-    fun getMessages(
-        userId: Long,
-        chatId: Long,
-        limit: Int,
-        offset: Int
-    ): Flow<List<MessageEntity>>
+    @Transaction
+    @Query("SELECT * FROM message " +
+                   "WHERE senderId = :senderId AND chatId = :chatId " +
+                   "OR senderId = :chatId AND chatId = :senderId " +
+                   "ORDER BY sendTime ASC " +
+                   "LIMIT :limit " +
+                   "OFFSET :offset")
+    fun getMessagesWithAttachments(
+        senderId: Long, chatId: Long, limit: Int, offset: Int
+    ): Flow<List<MessageWithAttachments>>
     
-    @Query("SELECT * FROM (SELECT * FROM message WHERE chatId = :chatId ORDER BY sendTime DESC LIMIT :limit OFFSET :offset) ORDER BY sendTime ASC")
-    fun getMessages(chatId: Long, limit: Int, offset: Int): Flow<List<MessageEntity>>
-    
+    @Transaction
     @Query("SELECT * FROM message WHERE id = :messageId LIMIT 1")
-    suspend fun getMessageById(messageId: Long): MessageEntity?
+    suspend fun getMessageById(messageId: Long): MessageWithAttachments?
     
     @Query(
         "DELETE FROM message " +
@@ -47,7 +49,7 @@ interface MessageDao {
     
     @Query("DELETE FROM message")
     suspend fun deleteAll()
-
+    
     @Query("UPDATE message SET isRead = :isRead WHERE id = :id")
     suspend fun updateMessageReadStatus(id: Int, isRead: Boolean)
 }

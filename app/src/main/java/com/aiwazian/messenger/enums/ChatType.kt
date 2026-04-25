@@ -17,9 +17,9 @@ enum class ChatType {
             val firstDigit = id.toString().firstOrNull()?.digitToInt()
             
             return when (firstDigit) {
-                1-> PRIVATE
-                2-> CHANNEL
-                3-> GROUP
+                1 -> PRIVATE
+                2 -> CHANNEL
+                3 -> GROUP
                 else -> UNKNOWN
             }
         }

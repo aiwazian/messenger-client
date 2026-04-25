@@ -15,6 +15,6 @@ data class GroupEntity(
     val name: String,
     val bio: String?,
     val username: String?,
-    val groupType: Int,
+    val groupType: GroupType,
     val members: Int
 )

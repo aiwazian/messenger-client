@@ -47,37 +47,42 @@ class ChatRepository @Inject constructor(
     
     fun getAllChats(): Flow<List<Chat>> = channelFlow {
         launch {
-            chatDao.getAllChatsFlow().collectLatest { entities ->
+            chatDao.getAllChatsFlow().collectLatest { chatEntities ->
                 val myId = userRepository.getMe().first().id
-                val result = entities.map { entity ->
-                    val name: UiText = when (ChatType.fromId(entity.chatId)) {
+                val result = chatEntities.map { chatEntity ->
+                    val name: UiText = when (ChatType.fromId(chatEntity.chatId)) {
                         ChatType.PRIVATE -> {
-                            if (entity.chatId == myId) {
+                            if (chatEntity.chatId == myId) {
                                 UiText.StringResource(R.string.saved_messages)
                             } else {
-                                userRepository.getById(entity.chatId)
+                                userRepository.getById(chatEntity.chatId)
                                     .first()
                                     .let { UiText.DynamicString("${it.firstName} ${it.lastName.orEmpty()}".trim()) }
                             }
                         }
                         
                         ChatType.GROUP -> UiText.DynamicString(
-                            groupRepository.getById(entity.chatId)
-                                .first().name
+                            groupRepository.getById(chatEntity.chatId).first().name
                         )
                         
                         ChatType.CHANNEL -> UiText.DynamicString(
-                            channelRepository.getById(entity.chatId)
-                                .first().name
+                            channelRepository.getById(chatEntity.chatId).first().name
                         )
                         
                         else -> UiText.DynamicString("")
                     }
                     
-                    val lastMessage = entity.lastMessageId?.let {
-                        messageDao.getMessageById(it)?.toDomain()
+                    val lastMessage = chatEntity.lastMessageId?.let {
+                        messageDao.getMessageById(it)?.let { messageWithAttachments ->
+                            val attachments = messageWithAttachments.attachments.mapNotNull { att ->
+                                fileDao.getById(att.fileId)?.let { file ->
+                                    att.toDomain(file)
+                                }
+                            }
+                            messageWithAttachments.message.toDomain(attachments)
+                        }
                     }
-                    entity.toDomain(name, lastMessage)
+                    chatEntity.toDomain(name, lastMessage)
                 }
                 send(result)
             }
@@ -107,20 +112,6 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    suspend fun get(chatId: Long): Chat? {
-        try {
-            val response = chatApi.getChatById(chatId)
-            if (response.isSuccessful) {
-                return response.body()?.toDomain()
-            } else {
-                Log.e("ChatRepository", "Failed to get chat $chatId: ${response.message()}")
-            }
-        } catch (e: Exception) {
-            Log.e("ChatRepository", "Error getting chat $chatId", e)
-        }
-        return null
-    }
-    
     fun getMessagesFlow(
         senderId: Long,
         chatId: Long,
@@ -128,32 +119,29 @@ class ChatRepository @Inject constructor(
         offset: Int
     ): Flow<List<Message>> {
         return when (ChatType.fromId(chatId)) {
-            ChatType.PRIVATE -> messageDao.getMessages(senderId, chatId, limit, offset)
-                .map { messages ->
-                    messages.map { message ->
-                        val attachments = attachmentDao.getAttachmentsByMessageId(message.id)
-                        val domainAttachments = attachments.mapNotNull { att ->
-                            val d = fileDao.getById(att.fileId)
-                            
-                            d?.let { file ->
+            ChatType.CHANNEL -> messageDao.getMessagesWithAttachments(chatId, chatId, limit, offset)
+                .map { list ->
+                    list.map { messageWithAttachments ->
+                        val attachments = messageWithAttachments.attachments.mapNotNull { att ->
+                            fileDao.getById(att.fileId)?.let { file ->
                                 att.toDomain(file)
                             }
                         }
-                        message.toDomain(domainAttachments)
+                        messageWithAttachments.message.toDomain(attachments)
                     }
                 }
             
-            else -> messageDao.getMessages(chatId, limit, offset).map { messages ->
-                messages.map { message ->
-                    val attachments = attachmentDao.getAttachmentsByMessageId(message.id)
-                    val domainAttachments = attachments.mapNotNull { att ->
-                        fileDao.getById(att.fileId)?.let { file ->
-                            att.toDomain(file)
+            else -> messageDao.getMessagesWithAttachments(senderId, chatId, limit, offset)
+                .map { list ->
+                    list.map { messageWithAttachments ->
+                        val attachments = messageWithAttachments.attachments.mapNotNull { att ->
+                            fileDao.getById(att.fileId)?.let { file ->
+                                att.toDomain(file)
+                            }
                         }
+                        messageWithAttachments.message.toDomain(attachments)
                     }
-                    message.toDomain(domainAttachments)
                 }
-            }
         }
     }
     
@@ -181,8 +169,9 @@ class ChatRepository @Inject constructor(
     }
     
     fun getById(chatId: Long): Flow<Chat?> {
-        return chatDao.getChatByIdFlow(chatId)
-            .map { it?.toDomain(UiText.DynamicString(""), null) }
+        return chatDao.getChatByIdFlow(chatId).map {
+            it?.toDomain(UiText.DynamicString(""), null)
+        }
     }
     
     suspend fun sendMessage(chatId: Long, message: String): Message? {
@@ -204,8 +193,10 @@ class ChatRepository @Inject constructor(
     }
     
     suspend fun markMessageAsRead(chatId: Long, messageId: Int) {
-        messageDao.updateMessageReadStatus(messageId, true)
-        // Не вызываем API тут, т.к. это задача синхронизатора или ViewModel (в зависимости от логики)
+        messageDao.updateMessageReadStatus(
+            messageId,
+            true
+        ) // Не вызываем API тут, т.к. это задача синхронизатора или ViewModel (в зависимости от логики)
         // Однако для текущей реализации лучше оставить API вызов в makeAsRead,
         // а этот метод использовать для локального обновления.
     }
@@ -356,8 +347,7 @@ class ChatRepository @Inject constructor(
             val response = chatApi.unarchiveChat(chatId)
             if (!response.isSuccessful) {
                 Log.e(
-                    "ChatRepository",
-                    "Failed to unarchive chat $chatId: ${response.message()}"
+                    "ChatRepository", "Failed to unarchive chat $chatId: ${response.message()}"
                 )
             }
         } catch (e: Exception) {

@@ -27,8 +27,8 @@ fun ChannelEntity.toDomain() = Channel(
     name = name,
     bio = bio,
     subscribers = subscribers,
-    removedUser = removedUser,
-    channelType = ChannelType.fromOrdinal(channelType),
+    removedUser = null,
+    channelType = channelType,
     username = username,
     isSubscribed = isSubscribed
 )
@@ -39,8 +39,7 @@ fun Channel.toEntity() = ChannelEntity(
     bio = bio,
     ownerId = ownerId,
     subscribers = subscribers,
-    removedUser = removedUser,
-    channelType = channelType.ordinal,
+    channelType = channelType,
     username = username,
     isSubscribed = isSubscribed
 )

@@ -7,7 +7,6 @@ package com.aiwazian.messenger.mappers
 import com.aiwazian.messenger.database.entity.MessageEntity
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
-import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.network.dto.MessageAttachmentDto
 import com.aiwazian.messenger.network.dto.MessageDto
@@ -44,10 +43,8 @@ fun MessageEntity.toDomain(attachments: List<MessageAttachment> = emptyList()) =
     text = text,
     sendTime = sendTime,
     isRead = isRead,
-    messageType = MessageType.fromOrdinal(messageType),
-    systemMessageEventType = if (systemMessageEventType != null) SystemMessageEventType.fromOrdinal(
-        systemMessageEventType
-    ) else null,
+    messageType = messageType,
+    systemMessageEventType = systemMessageEventType,
     attachments = attachments
 )
 
@@ -58,6 +55,6 @@ fun Message.toEntity() = MessageEntity(
     text = text,
     sendTime = sendTime,
     isRead = isRead,
-    messageType = messageType.ordinal,
-    systemMessageEventType = systemMessageEventType?.ordinal
+    messageType = messageType,
+    systemMessageEventType = systemMessageEventType
 )

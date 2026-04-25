@@ -35,7 +35,7 @@ class ThemeManager @Inject constructor(
         
         coroutineScope.launch {
             val theme = dataStorage.getTheme().first()
-            _currentTheme.update { ThemeOption.fromString(theme) }
+            _currentTheme.update { ThemeOption.valueOf(theme) }
         }
         
         coroutineScope.launch {
