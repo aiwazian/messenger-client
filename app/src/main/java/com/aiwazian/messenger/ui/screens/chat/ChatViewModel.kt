@@ -111,7 +111,6 @@ class ChatViewModel @Inject constructor(
         limitFlow.value = 50
         
         setupUserObserver()
-        setupWebSocketListeners()
         loadChatData()
     }
     
@@ -122,9 +121,6 @@ class ChatViewModel @Inject constructor(
                 updateUiContent()
             }
         }
-    }
-    
-    private fun setupWebSocketListeners() {
         viewModelScope.launch {
             downloaderManager.downloads.collect { downloads ->
                 updateDownloadsInUi(downloads)
@@ -764,7 +760,7 @@ class ChatViewModel @Inject constructor(
         }
     }
     
-    fun uploadFiles(uris: List<Uri>) {
+    fun sendFiles(uris: List<Uri>) {
         uris.forEach { uri ->
             viewModelScope.launch {
                 val fileName = getFileName(

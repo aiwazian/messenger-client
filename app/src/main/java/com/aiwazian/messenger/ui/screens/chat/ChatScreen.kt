@@ -216,9 +216,8 @@ fun ChatScreen(
                 onTextChanged = chatViewModel::changeText,
                 onSendClicked = chatViewModel::onSendMessageClicked,
                 onJoinClicked = chatViewModel::onJoinClicked,
-                onFilesSelected = { uris ->
-                    chatViewModel.uploadFiles(uris)
-                })
+                onFilesSelected = chatViewModel::sendFiles
+            )
         },
     ) { innerPadding ->
         Box(
