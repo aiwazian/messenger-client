@@ -5,6 +5,6 @@
 package com.aiwazian.messenger.ui.screens.logout
 
 
-sealed class LogoutSideEffect {
-    object LogoutSuccess : LogoutSideEffect()
+sealed interface LogoutSideEffect {
+    object LogoutSuccess : LogoutSideEffect
 }

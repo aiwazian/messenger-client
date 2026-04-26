@@ -4,15 +4,15 @@
 
 package com.aiwazian.messenger.ui.screens.login
 
-sealed class AuthUiEffect {
-    data class ShowLoginDialog(val result: Boolean?) : AuthUiEffect()
-    data object HideLoginDialog : AuthUiEffect()
-    data object NavigateToPassword : AuthUiEffect()
+sealed interface AuthUiEffect {
+    data class ShowLoginDialog(val result: Boolean?) : AuthUiEffect
+    data object HideLoginDialog : AuthUiEffect
+    data object NavigateToPassword : AuthUiEffect
     data class ShowPasswordDialog(
         val type: String,
         val errorMessage: String? = null
-    ) : AuthUiEffect()
+    ) : AuthUiEffect
     
-    data object HidePasswordDialog : AuthUiEffect()
-    data object NavigateToMain : AuthUiEffect()
+    data object HidePasswordDialog : AuthUiEffect
+    data object NavigateToMain : AuthUiEffect
 }

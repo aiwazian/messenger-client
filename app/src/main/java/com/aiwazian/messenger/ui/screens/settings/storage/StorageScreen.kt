@@ -111,7 +111,7 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                         text = stringResource(category.category.title),
                         selected = category.isSelected,
                         color = AppPrimaryColor.entries[index].color,
-                        primaryText = cacheSize,
+                        primaryText = category.totalSize.formatFileSize(),
                         onClick = {
                             storageViewModel.toggleCategory(category.category)
                         },

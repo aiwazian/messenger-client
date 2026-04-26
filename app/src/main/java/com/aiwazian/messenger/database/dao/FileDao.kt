@@ -22,6 +22,9 @@ interface FileDao {
     @Query("UPDATE file SET status = :status, path = :path WHERE id = :id")
     suspend fun updateStatusAndPath(id: String, status: DownloadStatus, path: String?)
     
+    @Query("SELECT * FROM file")
+    suspend fun getAllFiles(): List<FileEntity>
+    
     @Query("DELETE FROM file WHERE id = :fileId")
     suspend fun deleteFile(fileId: String)
 }
