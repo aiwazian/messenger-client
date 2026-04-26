@@ -236,6 +236,14 @@ class ChatRepository @Inject constructor(
         }
     }
     
+    suspend fun updateFileStatus(fileId: String, status: DownloadStatus, path: String? = null) {
+        fileDao.updateStatusAndPath(fileId, status, path)
+    }
+    
+    suspend fun deleteFile(fileId: String) {
+        fileDao.deleteFile(fileId)
+    }
+    
     suspend fun initFileUpload(chatId: Long, dto: FileInitRequestDto): FileInitResponseDto? {
         return try {
             val response = messageApi.initFileUpload(chatId, dto)

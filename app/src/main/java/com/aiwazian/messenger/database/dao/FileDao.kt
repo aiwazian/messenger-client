@@ -9,6 +9,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.aiwazian.messenger.database.entity.FileEntity
+import com.aiwazian.messenger.enums.DownloadStatus
 
 @Dao
 interface FileDao {
@@ -17,4 +18,10 @@ interface FileDao {
 
     @Query("SELECT * FROM file WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): FileEntity?
+
+    @Query("UPDATE file SET status = :status, path = :path WHERE id = :id")
+    suspend fun updateStatusAndPath(id: String, status: DownloadStatus, path: String?)
+    
+    @Query("DELETE FROM file WHERE id = :fileId")
+    suspend fun deleteFile(fileId: String)
 }

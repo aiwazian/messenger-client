@@ -71,7 +71,7 @@ fun ChannelTypeSettingsScreen(
         listOf(
             TopBarAction(
                 icon = Icons.Rounded.Check,
-                onClick = { viewModel.save() }
+                onClick = viewModel::save
             )
         )
     } else {
@@ -127,7 +127,7 @@ fun ChannelTypeSettingsScreen(
                         }) {
                             FramelessTextBox(
                                 placeholder = stringResource(R.string.username),
-                                value = uiState.publicLink.orEmpty(),
+                                value = uiState.username.orEmpty(),
                                 onValueChange = { viewModel.changePublicLink(it) }
                             )
                         }

@@ -10,6 +10,7 @@ import com.aiwazian.messenger.database.dao.UserDao
 import com.aiwazian.messenger.domain.Group
 import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.domain.User
+import com.aiwazian.messenger.enums.GroupType
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.network.api.GroupApi
@@ -163,6 +164,31 @@ class GroupRepository @Inject constructor(
             if (response.isSuccessful) {
                 groupDao.insert(group.toEntity())
                 Result.success(Unit)
+            } else {
+                Result.failure(Exception("Update failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("GroupRepository", "Ошибка при обновлении группы", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun updateGroupType(
+        groupId: Long,
+        groupType: GroupType,
+        username: String?
+    ): Result<Unit> {
+        return try {
+            val request = UpdateGroupRequestDto(groupType = groupType, username = username)
+            val response = groupApi.updateGroup(groupId, request)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    groupDao.insert(body.toDomain().toEntity())
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception("Update failed"))
+                }
             } else {
                 Result.failure(Exception("Update failed"))
             }

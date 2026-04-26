@@ -96,8 +96,6 @@ class ChatViewModel @Inject constructor(
     
     private val _selectedMessageId = MutableStateFlow<Long?>(null)
     
-    private var profileCollectionJob: Job? = null
-    private var messagesCollectionJob: Job? = null
     private var isFirstLoadDone = false
     private val limitFlow = MutableStateFlow(50)
     
@@ -134,56 +132,21 @@ class ChatViewModel @Inject constructor(
     }
     
     private fun updateDownloadsInUi(downloads: List<DownloadItem>) {
-        val currentItems = _uiState.value.chatItems.map { item ->
+        _uiState.value.chatItems.forEach { item ->
             if (item is ChatItem.MessageItem) {
-                val updatedAttachments = item.message.attachments.map { file ->
-                    val download =
-                        downloads.findLast { it.fileId == file.fileId || (it.messageId == item.message.id && it.name == file.name) }
-                    if (download != null) {
-                        if (download.status == DownloadStatus.COMPLETED && file.status != DownloadStatus.COMPLETED) {
-                            val updatedFile = file.copy(
-                                status = download.status,
-                                progress = 100,
-                                localUri = download.localUri
-                            )
-                            viewModelScope.launch {
-                                val messageToUpdate = item.message
-                                val finalAttachments = messageToUpdate.attachments.map {
-                                    if (it.fileId == updatedFile.fileId) updatedFile else it
-                                }
-                                chatRepository.saveMessage(messageToUpdate.copy(attachments = finalAttachments))
-                            }
-                            updatedFile
-                        } else {
-                            file.copy(
-                                status = download.status,
-                                progress = download.progress,
-                                localUri = download.localUri ?: file.localUri
+                item.message.attachments.forEach { file ->
+                    downloads.findLast { it.fileId == file.fileId }?.let { download ->
+                        viewModelScope.launch {
+                            chatRepository.updateFileStatus(
+                                file.fileId,
+                                download.status,
+                                download.localUri
                             )
                         }
-                    } else if (downloaderManager.isDownloaded(
-                            file.fileId, file.extension
-                        )
-                    ) {
-                        file.copy(
-                            status = DownloadStatus.COMPLETED,
-                            progress = 100,
-                            localUri = downloaderManager.getFile(
-                                file.fileId, file.extension
-                            ).absolutePath
-                        )
-                    } else file
+                    }
                 }
-                item.copy(message = item.message.copy(attachments = updatedAttachments))
-            } else item
+            }
         }
-        _uiState.update { it.copy(chatItems = currentItems) }
-    }
-    
-    override fun onCleared() {
-        super.onCleared()
-        profileCollectionJob?.cancel()
-        messagesCollectionJob?.cancel()
     }
     
     private fun getRawMessages(): List<Message> {
@@ -191,15 +154,9 @@ class ChatViewModel @Inject constructor(
     }
     
     private fun loadChatData() {
-        _uiState.update {
-            it.copy(
-                isLoading = true, profile = null
-            )
-        }
+        _uiState.update { it.copy(isLoading = true, profile = null) }
         
-        val chatType = ChatType.fromId(_uiState.value.chatId)
-        
-        profileCollectionJob = when (chatType) {
+        when (ChatType.fromId(_uiState.value.chatId)) {
             ChatType.CHANNEL -> {
                 viewModelScope.launch {
                     channelRepository.getById(_uiState.value.chatId).collectLatest { channel ->
@@ -244,7 +201,7 @@ class ChatViewModel @Inject constructor(
             
             ChatType.PRIVATE -> {
                 viewModelScope.launch {
-                    if (_uiState.value.chatId == userRepository.getMe().first().id) {
+                    if (_uiState.value.chatId == _uiState.value.currentUserId) {
                         userRepository.getMe().collectLatest { user ->
                             val profile = Profile.User(
                                 id = user.id,
@@ -276,10 +233,10 @@ class ChatViewModel @Inject constructor(
                 }
             }
             
-            else -> null
+            else -> {}
         }
         
-        messagesCollectionJob = viewModelScope.launch {
+        viewModelScope.launch {
             val userId = userRepository.getMe().first().id
             limitFlow.collectLatest { limit ->
                 chatRepository.getMessagesFlow(userId, _uiState.value.chatId, limit, 0)
@@ -511,11 +468,10 @@ class ChatViewModel @Inject constructor(
             val isFirstInGroup = message.senderId != lastSenderId
             
             val updatedAttachments = message.attachments.map { file ->
-                val localFile =
-                    if (file.fileId.isNotBlank()) downloaderManager.getFile(
-                        file.fileId,
-                        file.extension
-                    ) else null
+                val localFile = if (file.fileId.isNotBlank()) downloaderManager.getFile(
+                    file.fileId,
+                    file.extension
+                ) else null
                 
                 if (file.status == DownloadStatus.UPLOADED) {
                     file
@@ -652,6 +608,10 @@ class ChatViewModel @Inject constructor(
     fun showLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = true) }
     
     fun hideLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = false) }
+    
+    fun vibrate() {
+        vibrationManager.vibrate(VibrationPattern.Error)
+    }
     
     fun onDeleteChatConfirmed() {
         viewModelScope.launch {
@@ -804,11 +764,11 @@ class ChatViewModel @Inject constructor(
                     )
                 )
                 
-                updateChatItems(getRawMessages() + tempMessage)
+                viewModelScope.launch {
+                    chatRepository.saveMessage(tempMessage)
+                }
                 
-                downloaderManager.registerUpload(
-                    tempId.toInt(), fileName, fileSize
-                )
+                downloaderManager.registerUpload(tempId.toInt(), fileName, fileSize)
                 
                 val initResponse = chatRepository.initFileUpload(
                     _uiState.value.chatId, FileInitRequestDto(
@@ -818,27 +778,17 @@ class ChatViewModel @Inject constructor(
                 
                 try {
                     if (initResponse != null) {
-                        performUpload(
-                            uri, initResponse.signedUrl, tempId, context
-                        ) {
+                        performUpload(uri, initResponse.signedUrl, tempId, context) {
                             viewModelScope.launch {
                                 val confirmedMessage = chatRepository.confirmFileUpload(
                                     _uiState.value.chatId, FileConfirmRequestDto(
-                                        fileId = initResponse.fileId, text = null, type = attachmentType
+                                        fileId = initResponse.fileId,
+                                        text = null,
+                                        type = attachmentType
                                     )
                                 )
                                 if (confirmedMessage != null) {
-                                    val messageWithUploadedStatus = confirmedMessage.copy(
-                                        attachments = confirmedMessage.attachments.map {
-                                            it.copy(
-                                                status = DownloadStatus.UPLOADED
-                                            )
-                                        }
-                                    )
                                     downloaderManager.completeUpload(tempId.toInt())
-                                    val updated =
-                                        getRawMessages().map { if (it.id == tempId) messageWithUploadedStatus else it }
-                                    updateChatItems(updated)
                                 }
                             }
                         }
@@ -877,6 +827,7 @@ class ChatViewModel @Inject constructor(
                 val response = okHttpClient.newCall(request).execute()
                 if (response.isSuccessful) {
                     downloaderManager.completeUpload(id.toInt())
+                    chatRepository.deleteFile("temp_${id}")
                     onSuccess()
                 } else {
                     withContext(Dispatchers.Main) {

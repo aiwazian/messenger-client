@@ -30,9 +30,9 @@ data class CreateGroupRequestDto(
 @Serializable
 data class UpdateGroupRequestDto(
     @SerialName("name") val name: String? = null,
-    @SerialName("bio") val bio: String?,
-    @SerialName("username") val username: String?,
-    @SerialName("groupType") val groupType: GroupType,
+    @SerialName("bio") val bio: String? = null,
+    @SerialName("username") val username: String? = null,
+    @SerialName("groupType") val groupType: GroupType? = null,
 )
 
 @Serializable

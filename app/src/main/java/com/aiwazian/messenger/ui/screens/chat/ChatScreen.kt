@@ -109,6 +109,7 @@ import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
+import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
@@ -444,7 +445,8 @@ private fun Dialogs(
     if (uiState.showClearHistoryDialog) {
         ClearHistoryDialog(
             onDismissRequest = chatViewModel::hideClearHistoryDialog,
-            onConfirm = chatViewModel::onDeleteMessagesConfirmed
+            onConfirm = chatViewModel::onDeleteMessagesConfirmed,
+            vibrate = chatViewModel::vibrate
         )
     }
     
@@ -581,7 +583,9 @@ private fun DeleteChatDialog(onDismissRequest: () -> Unit, onConfirm: () -> Unit
 
 @Composable
 private fun ClearHistoryDialog(
-    onDismissRequest: () -> Unit, onConfirm: () -> Unit
+    onDismissRequest: () -> Unit,
+    onConfirm: () -> Unit,
+    vibrate: () -> Unit
 ) {
     CustomDialog(
         title = stringResource(R.string.clear_history),
@@ -593,11 +597,18 @@ private fun ClearHistoryDialog(
             )
         },
         buttons = {
-            TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
-            TextButton(
-                onClick = onConfirm,
-                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            ) { Text(stringResource(R.string.delete)) }
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(R.string.cancel))
+            }
+            CountdownTextButton(
+                text = stringResource(R.string.delete),
+                seconds = 5,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
+                onClickAfterFinish = onConfirm,
+                onClickWhileRunning = vibrate
+            )
         })
 }
 

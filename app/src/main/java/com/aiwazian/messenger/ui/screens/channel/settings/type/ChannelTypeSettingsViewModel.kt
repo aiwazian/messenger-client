@@ -6,9 +6,11 @@ package com.aiwazian.messenger.ui.screens.channel.settings.type
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.SearchRepository
+import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,7 +31,6 @@ class ChannelTypeSettingsViewModel @Inject constructor(
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
-    private var _channelId: Long = -1L
     private var checkLinkJob: Job? = null
     
     private val _uiState = MutableStateFlow(ChannelTypeSettingsUiState())
@@ -39,31 +40,16 @@ class ChannelTypeSettingsViewModel @Inject constructor(
     val uiEffect = _uiEffect.asSharedFlow()
     
     fun init(channelId: Long) {
-        _channelId = channelId
-        
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            
-            try {
-                channelRepository.getByIdFlow(channelId).collect { channel ->
-                    _uiState.update {
-                        it.copy(
-                            channelId = channel.id,
-                            isLoading = false,
-                            channelType = channel.channelType,
-                            publicLink = channel.username,
-                            canSave = true,
-                            linkCheckStatus = LinkCheckStatus.Idle
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false) }
-                _uiEffect.emit(
-                    ChannelTypeSettingsEffect.ShowSnackbar(
-                        e.message ?: "Ошибка загрузки канала"
+            channelRepository.getByIdFlow(channelId).collect { channel ->
+                _uiState.update {
+                    it.copy(
+                        channelId = channel.id,
+                        channelType = channel.channelType,
+                        username = channel.username.orEmpty(),
+                        canSave = true
                     )
-                )
+                }
             }
         }
     }
@@ -72,18 +58,15 @@ class ChannelTypeSettingsViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 channelType = channelType,
-                canSave = canSaveChannelType(channelType, it.publicLink, it.linkCheckStatus)
+                canSave = canSaveChannelType(channelType, it.username, it.linkCheckStatus)
             )
         }
     }
     
-    /**
-     * Изменение публичной ссылки (username)
-     */
     fun changePublicLink(publicLink: String) {
         _uiState.update {
             it.copy(
-                publicLink = publicLink,
+                username = publicLink,
                 linkCheckStatus = LinkCheckStatus.Idle,
                 canSave = canSaveChannelType(it.channelType, publicLink, LinkCheckStatus.Idle)
             )
@@ -96,9 +79,6 @@ class ChannelTypeSettingsViewModel @Inject constructor(
         }
     }
     
-    /**
-     * Проверка доступности публичной ссылки через SearchRepository
-     */
     fun checkPublicLinkAvailability(publicLink: String) {
         if (publicLink.isBlank()) {
             _uiState.update {
@@ -120,7 +100,7 @@ class ChannelTypeSettingsViewModel @Inject constructor(
             return
         }
         
-        if (publicLink == _uiState.value.publicLink) {
+        if (publicLink == _uiState.value.username) {
             _uiState.update {
                 it.copy(linkCheckStatus = LinkCheckStatus.Available, canSave = true)
             }
@@ -133,20 +113,11 @@ class ChannelTypeSettingsViewModel @Inject constructor(
             try {
                 val isAvailable = searchRepository.checkUsernameAvailable(publicLink)
                 
-                if (isAvailable) {
-                    _uiState.update {
-                        it.copy(
-                            linkCheckStatus = LinkCheckStatus.Available,
-                            canSave = true
-                        )
-                    }
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            linkCheckStatus = LinkCheckStatus.Busy,
-                            canSave = false
-                        )
-                    }
+                _uiState.update {
+                    it.copy(
+                        linkCheckStatus = if (isAvailable) LinkCheckStatus.Available else LinkCheckStatus.Busy,
+                        canSave = isAvailable
+                    )
                 }
             } catch (_: Exception) {
                 _uiState.update {
@@ -159,16 +130,13 @@ class ChannelTypeSettingsViewModel @Inject constructor(
         }
     }
     
-    /**
-     * Сохранение изменений типа канала
-     */
     fun save() {
         viewModelScope.launch {
             val currentState = _uiState.value
             
             if (!canSaveChannelType(
                     currentState.channelType,
-                    currentState.publicLink,
+                    currentState.username,
                     currentState.linkCheckStatus
                 )
             ) {
@@ -177,33 +145,36 @@ class ChannelTypeSettingsViewModel @Inject constructor(
             }
             
             try {
-                channelRepository.updateChannelType(_channelId, currentState.channelType)
+                channelRepository.updateChannelType(
+                    currentState.channelId,
+                    currentState.channelType,
+                    currentState.username
+                )
                     .onSuccess {
                         _uiEffect.emit(ChannelTypeSettingsEffect.NavigateBack)
                     }
                     .onFailure {
                         vibrationManager.vibrate(VibrationPattern.Error)
-                        _uiEffect.emit(ChannelTypeSettingsEffect.ShowSnackbar("Не удалось сохранить"))
+                        _uiEffect.emit(
+                            ChannelTypeSettingsEffect.ShowSnackbar(
+                                UiText.StringResource(R.string.failed_to_save_changes)
+                            )
+                        )
                     }
             } catch (_: Exception) {
                 vibrationManager.vibrate(VibrationPattern.Error)
-                _uiEffect.emit(ChannelTypeSettingsEffect.ShowSnackbar("Ошибка сохранения"))
+                _uiEffect.emit(ChannelTypeSettingsEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
             }
         }
     }
     
-    /**
-     * Проверка возможности сохранения типа канала
-     */
     private fun canSaveChannelType(
         channelType: ChannelType,
-        publicLink: String?,
+        publicLink: String,
         status: LinkCheckStatus
     ): Boolean {
         if (channelType == ChannelType.PUBLIC) {
-            if (publicLink.isNullOrBlank()) return false
-            if (status == LinkCheckStatus.Busy) return false
-            if (status is LinkCheckStatus.Error) return false
+            return publicLink.isNotBlank() && status == LinkCheckStatus.Available
         }
         return true
     }

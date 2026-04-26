@@ -628,7 +628,7 @@ private fun DrawerContent(onClose: () -> Unit, user: User) {
                 onAdFailedToLoad = { error ->
                     Log.e("YandexAds", error.description)
                     scope.launch {
-                        delay(5_000)
+                        delay(1_000)
                         loadTrigger++
                     }
                 },

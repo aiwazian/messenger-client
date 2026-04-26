@@ -114,17 +114,22 @@ class ChannelRepository @Inject constructor(
         }
     }
     
-    suspend fun updateChannelType(channelId: Long, channelType: ChannelType): Result<Unit> {
+    suspend fun updateChannelType(
+        channelId: Long,
+        channelType: ChannelType,
+        username: String?
+    ): Result<Unit> {
         return try {
-            val request = UpdateChannelRequestDto(channelType = channelType)
+            val request = UpdateChannelRequestDto(channelType = channelType, username = username)
             val response = channelApi.updateChannel(channelId, request)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
                     channelDao.insert(body.toDomain().toEntity())
                     Result.success(Unit)
+                } else {
+                    Result.failure(Exception("Update failed"))
                 }
-                Result.failure(Exception("Update failed"))
             } else {
                 Result.failure(Exception("Update failed"))
             }
