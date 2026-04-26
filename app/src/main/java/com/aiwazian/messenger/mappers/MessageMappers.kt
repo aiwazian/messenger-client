@@ -7,7 +7,6 @@ package com.aiwazian.messenger.mappers
 import com.aiwazian.messenger.database.entity.MessageEntity
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
-import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.network.dto.MessageAttachmentDto
 import com.aiwazian.messenger.network.dto.MessageDto
 
@@ -15,7 +14,7 @@ fun MessageDto.toDomain(): Message = Message(
     id = id,
     senderId = senderId,
     chatId = chatId,
-    text = if (text == "null") null else text,
+    text = text,
     sendTime = sendTime,
     isRead = isRead ?: false,
     messageType = messageType,

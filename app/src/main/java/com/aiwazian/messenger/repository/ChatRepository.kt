@@ -20,7 +20,6 @@ import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.network.api.ChatApi
 import com.aiwazian.messenger.network.api.MessageApi
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
-import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
@@ -74,11 +73,10 @@ class ChatRepository @Inject constructor(
                     
                     val lastMessage = chatEntity.lastMessageId?.let {
                         messageDao.getMessageById(it)?.let { messageWithAttachments ->
-                            val attachments = messageWithAttachments.attachments.mapNotNull { att ->
-                                fileDao.getById(att.fileId)?.let { file ->
-                                    att.toDomain(file)
+                            val attachments =
+                                messageWithAttachments.attachments.map { attWithFile ->
+                                    attWithFile.toDomain()
                                 }
-                            }
                             messageWithAttachments.message.toDomain(attachments)
                         }
                     }
@@ -95,7 +93,7 @@ class ChatRepository @Inject constructor(
             val response = chatApi.getAllChats()
             if (response.isSuccessful) {
                 val dtos = response.body().orEmpty()
-                val chatIds = dtos.map { it.id.toLong() }
+                val chatIds = dtos.map { it.id }
                 
                 chatDao.deleteChatsNotIn(chatIds)
                 messageDao.deleteMessagesNotInChatIds(chatIds)
@@ -122,10 +120,8 @@ class ChatRepository @Inject constructor(
             ChatType.CHANNEL -> messageDao.getMessagesWithAttachments(chatId, chatId, limit, offset)
                 .map { list ->
                     list.map { messageWithAttachments ->
-                        val attachments = messageWithAttachments.attachments.mapNotNull { att ->
-                            fileDao.getById(att.fileId)?.let { file ->
-                                att.toDomain(file)
-                            }
+                        val attachments = messageWithAttachments.attachments.map { attWithFile ->
+                            attWithFile.toDomain()
                         }
                         messageWithAttachments.message.toDomain(attachments)
                     }
@@ -134,10 +130,8 @@ class ChatRepository @Inject constructor(
             else -> messageDao.getMessagesWithAttachments(senderId, chatId, limit, offset)
                 .map { list ->
                     list.map { messageWithAttachments ->
-                        val attachments = messageWithAttachments.attachments.mapNotNull { att ->
-                            fileDao.getById(att.fileId)?.let { file ->
-                                att.toDomain(file)
-                            }
+                        val attachments = messageWithAttachments.attachments.map { attWithFile ->
+                            attWithFile.toDomain()
                         }
                         messageWithAttachments.message.toDomain(attachments)
                     }
@@ -276,11 +270,11 @@ class ChatRepository @Inject constructor(
     
     suspend fun getDownloadUrl(
         chatId: Long, messageId: Long, fileId: String
-    ): FileDownloadResponseDto? {
+    ): String? {
         return try {
             val response = messageApi.getFileDownloadUrl(chatId, messageId, fileId)
             if (response.isSuccessful) {
-                response.body()
+                response.body()?.downloadUrl
             } else {
                 Log.e("ChatRepository", "Failed to get download url: ${response.message()}")
                 null

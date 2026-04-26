@@ -38,7 +38,7 @@ class FileHandler @Inject constructor(
                 val response = chatRepository.getDownloadUrl(chatId, messageId, fileId)
                 if (response != null) {
                     downloaderManager.download(
-                        url = response.downloadUrl,
+                        url = response,
                         fileName = fileName,
                         chatId = chatId,
                         messageId = messageId,

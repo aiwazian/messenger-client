@@ -4,6 +4,9 @@
 
 package com.aiwazian.messenger.enums
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class AttachmentType {
     IMAGE,
     VIDEO,

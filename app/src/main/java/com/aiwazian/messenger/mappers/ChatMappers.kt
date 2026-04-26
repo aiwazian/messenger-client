@@ -11,14 +11,14 @@ import com.aiwazian.messenger.network.dto.ChatResponseDto
 import com.aiwazian.messenger.utils.UiText
 
 fun ChatResponseDto.toDomain(): Chat = Chat(
-    id = id.toLong(),
+    id = id,
     chatName = UiText.DynamicString(name),
     isPinned = isPinned,
     lastMessage = lastMessage?.toDomain()
 )
 
 fun ChatResponseDto.toEntity(): ChatEntity = ChatEntity(
-    chatId = id.toLong(),
+    chatId = id,
     isPinned = isPinned,
     lastMessageId = lastMessage?.id
 )

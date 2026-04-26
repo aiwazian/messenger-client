@@ -669,9 +669,9 @@ class ChatViewModel @Inject constructor(
                 viewModelScope.launch {
                     try {
                         chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
-                            ?.let {
+                            ?.let { url ->
                                 downloaderManager.download(
-                                    url = it.downloadUrl,
+                                    url = url,
                                     fileName = file.name,
                                     chatId = message.chatId,
                                     messageId = message.id,

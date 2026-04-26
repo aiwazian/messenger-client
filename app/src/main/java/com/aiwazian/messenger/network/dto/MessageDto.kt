@@ -65,6 +65,6 @@ data class FileConfirmRequestDto(
 data class FileDownloadResponseDto(
     @SerialName("downloadUrl") val downloadUrl: String,
     @SerialName("name") val name: String,
-    @SerialName("size") val size: String,
+    @SerialName("size") val size: Long,
     @SerialName("mimeType") val mimeType: String
 )

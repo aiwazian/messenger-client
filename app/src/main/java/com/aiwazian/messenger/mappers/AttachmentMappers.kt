@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.mappers
 
 import com.aiwazian.messenger.database.entity.AttachmentEntity
+import com.aiwazian.messenger.database.entity.AttachmentWithFile
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.MessageAttachment
 
@@ -20,6 +21,8 @@ fun AttachmentEntity.toDomain(file: FileEntity) = MessageAttachment(
     type = type,
     sortOrder = sortOrder
 )
+
+fun AttachmentWithFile.toDomain() = attachment.toDomain(file)
 
 fun MessageAttachment.toEntity(file: FileEntity) = AttachmentEntity(
     fileId = file.id,
