@@ -100,6 +100,7 @@ class ChatViewModel @Inject constructor(
     private val limitFlow = MutableStateFlow(50)
     
     private val uploadJobs = mutableMapOf<Long, Job>()
+    private val autoResumedFileIds = mutableSetOf<String>()
     
     fun init(chatId: Long, chatName: String? = null) {
         _uiState.update {
@@ -107,6 +108,7 @@ class ChatViewModel @Inject constructor(
         }
         isFirstLoadDone = false
         limitFlow.value = 50
+        autoResumedFileIds.clear()
         
         setupUserObserver()
         loadChatData()
@@ -490,6 +492,31 @@ class ChatViewModel @Inject constructor(
                 } else {
                     val download =
                         downloaderManager.downloads.value.findLast { it.fileId == file.fileId }
+                    
+                    if (file.status == DownloadStatus.DOWNLOADING &&
+                        download == null &&
+                        !autoResumedFileIds.contains(file.fileId)
+                    ) {
+                        autoResumedFileIds.add(file.fileId)
+                        viewModelScope.launch {
+                            try {
+                                chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
+                                    ?.let { url ->
+                                        downloaderManager.download(
+                                            url = url,
+                                            fileName = file.name,
+                                            chatId = message.chatId,
+                                            messageId = message.id,
+                                            fileId = file.fileId,
+                                            size = file.size
+                                        )
+                                    }
+                            } catch (e: Exception) {
+                                Log.e("ChatVM", "Error auto-resuming download for ${file.fileId}", e)
+                            }
+                        }
+                    }
+                    
                     if (download != null) {
                         file.copy(
                             status = download.status,
