@@ -186,4 +186,5 @@
     </plurals>
     <string name="gallery">갱도</string>
     <string name="to_send_images_without_compression">압축하지 않고 이미지를 보내려면</string>
+    <string name="photo">사진</string>
 </resources>

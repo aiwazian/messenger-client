@@ -6,8 +6,6 @@ package com.aiwazian.messenger.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.selection.TextSelectionColors
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -20,25 +18,19 @@ fun FramelessTextBox(
     placeholder: String,
     value: String,
     onValueChange: (String) -> Unit,
+    maxLines: Int = Int.MAX_VALUE,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     trailingIcon: @Composable (() -> Unit)? = null
 ) {
-    val selectionColor = TextSelectionColors(
-        handleColor = MaterialTheme.colorScheme.primary,
-        backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-    )
-
     TextField(
         modifier = Modifier.fillMaxWidth(),
         value = value,
-        singleLine = true,
+        maxLines = maxLines,
         placeholder = { Text(placeholder) },
         onValueChange = onValueChange,
         trailingIcon = trailingIcon,
         keyboardOptions = keyboardOptions,
         colors = TextFieldDefaults.colors(
-            selectionColors = selectionColor,
-            cursorColor = MaterialTheme.colorScheme.primary,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
             focusedContainerColor = Color.Transparent,

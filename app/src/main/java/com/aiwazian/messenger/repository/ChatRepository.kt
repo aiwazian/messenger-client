@@ -10,7 +10,6 @@ import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.MessageDao
-import com.aiwazian.messenger.database.entity.AttachmentWithFile
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
@@ -22,7 +21,6 @@ import com.aiwazian.messenger.network.api.ChatApi
 import com.aiwazian.messenger.network.api.MessageApi
 import com.aiwazian.messenger.network.dto.AttachmentInputDto
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
-import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
@@ -272,10 +270,6 @@ class ChatRepository @Inject constructor(
             Log.e("ChatRepository", "Error confirming file upload", e)
             null
         }
-    }
-    
-    suspend fun sendMessage(chatId: Long, message: String, attachments: List<AttachmentInputDto>): Message? {
-        return confirmFileUpload(chatId, attachments, message)
     }
     
     suspend fun getDownloadUrl(

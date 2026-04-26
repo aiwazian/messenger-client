@@ -49,6 +49,10 @@ class DevicesViewModel @Inject constructor(
         }
     }
     
+    fun vibrate() {
+        vibrationManager.vibrate(VibrationPattern.Error)
+    }
+    
     fun openSession(session: Session) {
         _uiState.update { 
             it.copy(

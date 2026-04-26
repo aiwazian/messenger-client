@@ -188,4 +188,5 @@
     </plurals>
     <string name="gallery">Պատկերասրահ</string>
     <string name="to_send_images_without_compression">Պատկերներն առանց սեղմման ուղարկելու համար</string>
+    <string name="photo">Լուսանկարը</string>
 </resources>

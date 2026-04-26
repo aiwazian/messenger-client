@@ -69,8 +69,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -92,7 +90,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -681,20 +678,11 @@ private fun InputMessage(
             }
         })
     
-    TextField(
-        shape = RectangleShape,
+    FramelessTextBox(
+        placeholder = stringResource(R.string.message),
         value = value,
         onValueChange = onValueChange,
         maxLines = 5,
-        textStyle = TextStyle(lineHeight = 14.sp),
-        modifier = Modifier.fillMaxWidth(),
-        placeholder = { Text(stringResource(R.string.message)) },
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-        ),
         trailingIcon = {
             Row {
                 IconButton(onClick = attachmentModal::show) {
@@ -712,7 +700,8 @@ private fun InputMessage(
                     )
                 }
             }
-        })
+        }
+    )
     
     if (attachmentModal.isVisible) {
         AttachmentBottomSheet(

@@ -190,4 +190,5 @@
     </plurals>
     <string name="gallery">Galerie</string>
     <string name="to_send_images_without_compression">Pour envoyer des images sans compression</string>
+    <string name="photo">Photo</string>
 </resources>

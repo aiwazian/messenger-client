@@ -54,6 +54,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Session
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateTime
+import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -65,13 +66,13 @@ import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
-fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) {
+fun SettingsDevicesScreen(viewModel: DevicesViewModel = hiltViewModel()) {
     val navBackStack = LocalNavBackStack.current
-    val uiState by devicesViewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     
     LaunchedEffect(Unit) {
-        devicesViewModel.sideEffect.collect { effect ->
+        viewModel.sideEffect.collect { effect ->
             when (effect) {
                 is DevicesSideEffect.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(effect.message)
@@ -113,13 +114,13 @@ fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) 
                 }) {
                     DeviceCard(
                         session = currentSession,
-                        onClick = { devicesViewModel.openSession(currentSession) }
+                        onClick = { viewModel.openSession(currentSession) }
                     )
                     SectionItem(
                         leadingIcon = Icons.Outlined.BackHand,
                         headlineText = stringResource(R.string.terminate_all_other_sessions),
                         contentColor = MaterialTheme.colorScheme.error,
-                        onClick = devicesViewModel::showTerminateAllOtherSessionsDialog
+                        onClick = viewModel::showTerminateAllOtherSessionsDialog
                     )
                 }
             }
@@ -133,7 +134,7 @@ fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) 
                     otherSessions.forEach { session ->
                         DeviceCard(
                             session = session,
-                            onClick = { devicesViewModel.openSession(session) }
+                            onClick = { viewModel.openSession(session) }
                         )
                     }
                 }
@@ -144,8 +145,9 @@ fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) 
             TerminateSessionDialog(
                 title = stringResource(R.string.terminate_session),
                 message = stringResource(R.string.terminate_session_confirm_message),
-                onDismiss = devicesViewModel::hideTerminateSessionDialog,
-                onConfirm = devicesViewModel::terminateSession
+                onDismiss = viewModel::hideTerminateSessionDialog,
+                onConfirm = viewModel::terminateSession,
+                vibrate = viewModel::vibrate
             )
         }
         
@@ -153,16 +155,17 @@ fun SettingsDevicesScreen(devicesViewModel: DevicesViewModel = hiltViewModel()) 
             TerminateSessionDialog(
                 title = stringResource(R.string.terminate_all_other_sessions),
                 message = stringResource(R.string.terminate_all_other_sessions_confirm_message),
-                onDismiss = devicesViewModel::hideTerminateAllOtherSessionsDialog,
-                onConfirm = devicesViewModel::terminateAllOtherSessions
+                onDismiss = viewModel::hideTerminateAllOtherSessionsDialog,
+                onConfirm = viewModel::terminateAllOtherSessions,
+                vibrate = viewModel::vibrate
             )
         }
         
         if (uiState.showSessionInfoBottomSheet && uiState.openedSession != null) {
             SessionInfoBottomSheet(
                 session = uiState.openedSession!!,
-                onDismissRequest = devicesViewModel::closeSessionInfo,
-                onTerminateClick = devicesViewModel::showTerminateSessionDialog
+                onDismissRequest = viewModel::closeSessionInfo,
+                onTerminateClick = viewModel::showTerminateSessionDialog
             )
         }
     }
@@ -304,7 +307,8 @@ private fun TerminateSessionDialog(
     title: String,
     message: String,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    vibrate: () -> Unit
 ) {
     CustomDialog(
         title = title,
@@ -316,13 +320,14 @@ private fun TerminateSessionDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.cancel))
             }
-            TextButton(
-                onClick = onConfirm,
+            CountdownTextButton(
+                text = stringResource(R.string.terminate),
+                seconds = 5,
                 colors = ButtonDefaults.textButtonColors(
                     contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Text(stringResource(R.string.terminate))
-            }
+                ),
+                onClickAfterFinish = onConfirm,
+                onClickWhileRunning = vibrate
+            )
         })
 }

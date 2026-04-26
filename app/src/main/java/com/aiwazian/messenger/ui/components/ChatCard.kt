@@ -5,17 +5,17 @@
 package com.aiwazian.messenger.ui.components
 
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.DoneAll
-import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -26,13 +26,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.sharedElement
@@ -62,6 +61,7 @@ fun ChatCard(
                 text = chat.chatName.asString(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.sharedElement(key = "chat-name-${chat.id}")
             )
         },
@@ -69,7 +69,12 @@ fun ChatCard(
             if (chat.lastMessage != null) {
                 var color = Color.Unspecified
                 val text = if (chat.lastMessage.attachments.isNotEmpty()) {
-                    UiText.DynamicString(chat.lastMessage.attachments.first().name)
+                    if (chat.lastMessage.attachments.first().type == AttachmentType.IMAGE) {
+                        color = MaterialTheme.colorScheme.primary
+                        UiText.StringResource(R.string.photo)
+                    } else {
+                        UiText.DynamicString(chat.lastMessage.attachments.first().name)
+                    }
                 } else if (!chat.lastMessage.text.isNullOrBlank()) {
                     UiText.DynamicString(chat.lastMessage.text)
                 } else if (chat.lastMessage.systemMessageEventType != null) {
@@ -87,7 +92,8 @@ fun ChatCard(
                     text = text.asString(),
                     maxLines = 1,
                     color = color,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         },
@@ -95,17 +101,18 @@ fun ChatCard(
             Leading(chat.id)
         },
         trailingContent = {
-            Column {
-                if (chat.lastMessage != null) {
-                    LastMessageSendTime(chat.lastMessage)
-                }
-                
-                Box(modifier = Modifier.size(40.dp)) {
-                    if (unreadMessageCount > 0) {
-                        UnreadMessageCount(unreadMessageCount)
-                    } else if (pinned) {
+            Column(verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.End) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (chat.lastMessage != null) {
+                        LastMessageSendTime(chat.lastMessage)
+                    }
+                    if (pinned) {
                         PinIcon()
                     }
+                }
+                
+                if (unreadMessageCount > 0) {
+                    UnreadMessageCount(unreadMessageCount)
                 }
             }
         })
@@ -117,42 +124,37 @@ private fun LastMessageSendTime(lastMessage: Message) {
     
     val sendTime = lastMessage.sendTime.toInstance().toPrettyTime()
     
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
         Icon(
             imageVector = if (isRead) Icons.Rounded.DoneAll else Icons.Rounded.Done,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(16.dp)
+            modifier = Modifier.size(14.dp)
         )
-        Text(sendTime)
+        Text(text = sendTime, style = MaterialTheme.typography.labelSmall)
     }
 }
 
 @Composable
 private fun PinIcon() {
-    Badge(
-        containerColor = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurface
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.PushPin,
-            contentDescription = null,
-            modifier = Modifier.rotate(45f),
-        )
-    }
+    Icon(
+        imageVector = Icons.Outlined.PushPin,
+        contentDescription = null,
+        modifier = Modifier
+            .rotate(45f)
+            .size(12.dp),
+    )
 }
 
 @Composable
 private fun UnreadMessageCount(count: Int) {
-    Badge(
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = Color.White
-    ) {
+    Badge(containerColor = MaterialTheme.colorScheme.primary) {
         Text(
             text = count.toString(),
-            fontSize = 14.sp,
-            modifier = Modifier.padding(2.dp),
-            textAlign = TextAlign.End
+            style = MaterialTheme.typography.bodySmall
         )
     }
 }

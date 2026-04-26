@@ -192,4 +192,5 @@
     </plurals>
     <string name="gallery">Галерея</string>
     <string name="to_send_images_without_compression">Отправка изображений без сжатия</string>
+    <string name="photo">Фото</string>
 </resources>

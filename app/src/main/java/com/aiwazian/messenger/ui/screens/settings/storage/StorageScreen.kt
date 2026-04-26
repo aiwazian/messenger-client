@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.AppPrimaryColor
+import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -75,10 +76,7 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
     }
     
     val sizeBytes = storageViewModel.appSize
-    val sizeMb = sizeBytes / (1024.0 * 1024.0)
-    val sizeMbRounded = BigDecimal(sizeMb).setScale(
-        2, RoundingMode.HALF_UP
-    ).toDouble()
+    val cacheSize = sizeBytes.formatFileSize()
     
     Scaffold(
         topBar = { TopBar(storageViewModel) }) { padding ->
@@ -100,7 +98,7 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                     fontWeight = FontWeight.W500
                 )
                 Text(
-                    text = "$sizeMbRounded MB",
+                    text = cacheSize,
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -109,16 +107,11 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                 SectionDescription("Все медиа останутся в облаке, при необходимости Вы сможете загрузить их.")
             }) {
                 uiState.categories.forEachIndexed { index, category ->
-                    val sizeMb = category.totalSize / (1024.0 * 1024.0)
-                    val sizeMbRounded = BigDecimal(sizeMb).setScale(
-                        2, RoundingMode.HALF_UP
-                    ).toDouble()
-                    
                     StorageCategory(
                         text = stringResource(category.category.title),
                         selected = category.isSelected,
                         color = AppPrimaryColor.entries[index].color,
-                        primaryText = "$sizeMbRounded MB",
+                        primaryText = cacheSize,
                         onClick = {
                             storageViewModel.toggleCategory(category.category)
                         },
@@ -309,7 +302,7 @@ private fun TopBar(viewModel: StorageViewModel) {
             icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navBackStack::removeLastOrNull
         ), actions = listOf(
             TopBarAction(
-                icon = Icons.Rounded.MoreVert, onClick = {}, dropdownActions = listOf(
+                icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
                     DropdownMenuAction(
                         icon = Icons.Rounded.DeleteOutline,
                         textResId = R.string.clear_database,
