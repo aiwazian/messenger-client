@@ -25,11 +25,21 @@ import com.aiwazian.messenger.enums.ThemeOption
 private fun darkColorSchemeMaterial(customPrimaryColor: Color) =
     darkColorScheme(
         primary = customPrimaryColor,
+        primaryContainer = customPrimaryColor.copy(
+            red = customPrimaryColor.red - 0.2f,
+            green = customPrimaryColor.green - 0.2f,
+            blue = customPrimaryColor.blue - 0.2f
+        )
     )
 
 private fun lightColorSchemeMaterial(customPrimaryColor: Color) =
     lightColorScheme(
-        primary = customPrimaryColor
+        primary = customPrimaryColor,
+        primaryContainer = customPrimaryColor.copy(
+            red = customPrimaryColor.red - 0.2f,
+            green = customPrimaryColor.green - 0.2f,
+            blue = customPrimaryColor.blue - 0.2f
+        )
     )
 
 @Composable

@@ -27,7 +27,7 @@ import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
-import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
+import com.aiwazian.messenger.network.dto.AttachmentInputDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
@@ -781,21 +781,27 @@ class ChatViewModel @Inject constructor(
                         performUpload(uri, initResponse.signedUrl, tempId, context) {
                             viewModelScope.launch {
                                 val confirmedMessage = chatRepository.confirmFileUpload(
-                                    _uiState.value.chatId, FileConfirmRequestDto(
-                                        fileId = initResponse.fileId,
-                                        text = null,
-                                        type = attachmentType
-                                    )
+                                    _uiState.value.chatId,
+                                    attachments = listOf(
+                                        AttachmentInputDto(
+                                            fileId = initResponse.fileId,
+                                            type = attachmentType
+                                        )
+                                    ),
+                                    text = null
                                 )
                                 if (confirmedMessage != null) {
+                                    chatRepository.deleteLocalMessage(tempId)
                                     downloaderManager.completeUpload(tempId.toInt())
                                 }
                             }
                         }
                     } else {
+                        chatRepository.deleteLocalMessage(tempId)
                         handleUploadError(tempId.toInt())
                     }
                 } catch (_: Exception) {
+                    chatRepository.deleteLocalMessage(tempId)
                     handleUploadError(tempId.toInt())
                 }
             }

@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Downloading
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -44,7 +47,9 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
+import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
+import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
 
@@ -111,18 +116,49 @@ fun MessageBubble(
                 }
                 
                 ImageGridCustomLayout(
-                    Modifier.heightIn(max = 400.dp),
-                    content = {
+                    Modifier.heightIn(max = 400.dp), content = {
                         message.attachments.filter { it.type == AttachmentType.IMAGE }
                             .forEach { attachment ->
                                 if (attachment.localUri == null) {
                                     Box(
                                         modifier = Modifier.clickable {
-                                            onFileAction(attachment, FileAction.DOWNLOAD)
+                                            val action = when (attachment.status) {
+                                                DownloadStatus.DOWNLOADING -> FileAction.PAUSE
+                                                DownloadStatus.PAUSED -> FileAction.RESUME
+                                                DownloadStatus.IDLE,
+                                                DownloadStatus.CANCELLED,
+                                                DownloadStatus.FAILED,
+                                                DownloadStatus.UPLOADED -> FileAction.DOWNLOAD
+                                                
+                                                DownloadStatus.UPLOADING -> FileAction.CANCEL
+                                                DownloadStatus.COMPLETED -> FileAction.OPEN
+                                            }
+                                            onFileAction(attachment, action)
                                         },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(Icons.Rounded.Download, null)
+                                        Text(
+                                            text = attachment.size.formatFileSize(),
+                                            modifier = Modifier
+                                                .align(Alignment.TopStart)
+                                                .padding(4.dp),
+                                            fontSize = 12.sp,
+                                            lineHeight = 12.sp
+                                        )
+                                        when (attachment.status) {
+                                            DownloadStatus.DOWNLOADING -> {
+                                                CircularWavyProgressIndicator()
+                                                Icon(Icons.Rounded.Pause, null)
+                                            }
+                                            
+                                            DownloadStatus.PAUSED -> {
+                                                Icon(Icons.Rounded.Downloading, null)
+                                            }
+                                            
+                                            else -> {
+                                                Icon(Icons.Rounded.Download, null)
+                                            }
+                                        }
                                     }
                                 } else {
                                     AsyncImage(
@@ -139,24 +175,14 @@ fun MessageBubble(
                                     )
                                 }
                             }
-                    }
-                )
+                    })
                 
                 message.attachments.filter { it.type != AttachmentType.IMAGE }
                     .forEach { attachment ->
                         when (attachment.type) {
-                            AttachmentType.VIDEO -> {
-                            
-                            }
-                            
-                            AttachmentType.VOICE -> {
-                            
-                            }
-                            
-                            AttachmentType.FILE -> {
+                            AttachmentType.VIDEO, AttachmentType.VOICE, AttachmentType.FILE -> {
                                 MessageFile(
-                                    file = attachment,
-                                    onAction = { action ->
+                                    file = attachment, onAction = { action ->
                                         onFileAction(attachment, action)
                                     })
                             }
@@ -187,15 +213,12 @@ fun MessageBubble(
 
 @Composable
 fun ImageGridCustomLayout(
-    modifier: Modifier = Modifier,
-    spacing: Dp = 2.dp,
-    content: @Composable () -> Unit
+    modifier: Modifier = Modifier, spacing: Dp = 2.dp, content: @Composable () -> Unit
 ) {
     val gap = with(LocalDensity.current) { spacing.toPx() }
     
     Layout(
-        content = content,
-        modifier = modifier
+        content = content, modifier = modifier
             .padding(spacing)
             .clip(MaterialTheme.shapes.large)
     ) { measurables, constraints ->

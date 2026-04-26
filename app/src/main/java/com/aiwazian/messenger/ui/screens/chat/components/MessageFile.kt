@@ -45,17 +45,18 @@ fun MessageFile(file: MessageAttachment, onAction: (FileAction) -> Unit) {
     Row(
         modifier = Modifier
             .clickable {
-                when (file.status) {
-                    DownloadStatus.DOWNLOADING -> onAction(FileAction.PAUSE)
-                    DownloadStatus.PAUSED -> onAction(FileAction.RESUME)
+                val action = when (file.status) {
+                    DownloadStatus.DOWNLOADING -> FileAction.PAUSE
+                    DownloadStatus.PAUSED -> FileAction.RESUME
                     DownloadStatus.IDLE,
                     DownloadStatus.CANCELLED,
                     DownloadStatus.FAILED,
-                    DownloadStatus.UPLOADED -> onAction(FileAction.DOWNLOAD)
+                    DownloadStatus.UPLOADED -> FileAction.DOWNLOAD
                     
-                    DownloadStatus.UPLOADING -> onAction(FileAction.CANCEL)
-                    DownloadStatus.COMPLETED -> onAction(FileAction.OPEN)
+                    DownloadStatus.UPLOADING -> FileAction.CANCEL
+                    DownloadStatus.COMPLETED -> FileAction.OPEN
                 }
+                onAction(action)
             }
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,

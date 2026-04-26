@@ -55,9 +55,14 @@ data class FileInitResponseDto(
 )
 
 @Serializable
-data class FileConfirmRequestDto(
+data class AttachmentInputDto(
     @SerialName("fileId") val fileId: String,
-    @SerialName("type") val type: AttachmentType? = null,
+    @SerialName("type") val type: AttachmentType
+)
+
+@Serializable
+data class FileConfirmRequestDto(
+    @SerialName("attachments") val attachments: List<AttachmentInputDto>,
     @SerialName("text") val text: String? = null
 )
 
