@@ -12,6 +12,7 @@ import com.aiwazian.messenger.utils.AppLockManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -21,20 +22,31 @@ class SettingsSecurityViewModel @Inject constructor(
     appLockManager: AppLockManager,
     private val sessionRepository: SessionRepository
 ) : ViewModel() {
-
-    private val _deviceCount = MutableStateFlow(1)
-    val deviceCount = _deviceCount.asStateFlow()
-
-    val isEnablePasscode = appLockManager.hasPasscode
-
-    fun init() {
+    
+    private val _uiState = MutableStateFlow(SettingsUiState())
+    val uiState = _uiState.asStateFlow()
+    
+    init {
         viewModelScope.launch {
             try {
                 val count = sessionRepository.getDeviceCount()
-                _deviceCount.update { count }
+                _uiState.update { it.copy(deviceCount = count) }
             } catch (e: Exception) {
                 Log.e("SettingsSecurityViewModel", "Error init", e)
             }
         }
+        viewModelScope.launch {
+            appLockManager.hasPasscode.collectLatest { passcode ->
+                _uiState.update { it.copy(passcodeEnabled = passcode) }
+            }
+        }
+    }
+    
+    fun showBottomSheet() {
+        _uiState.update { it.copy(showPasscodeBottomSheet = true) }
+    }
+    
+    fun hideBottomSheet() {
+        _uiState.update { it.copy(showPasscodeBottomSheet = false) }
     }
 }

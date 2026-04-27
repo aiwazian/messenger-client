@@ -20,6 +20,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,12 +43,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Menu
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AppBarWithSearch
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -103,6 +104,7 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ConnectionState
+import com.aiwazian.messenger.enums.ThemeOption
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -178,6 +180,7 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
         }
     }
     
+    val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     
@@ -195,7 +198,8 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
                     scope.launch {
                         drawerState.close()
                     }
-                }, user = viewModel.user.collectAsState().value
+                }, user = uiState.me,
+                theme = uiState.theme
             )
         },
     ) {
@@ -282,15 +286,13 @@ private fun Content(
 ) {
     val navBackStack = LocalNavBackStack.current
     
-    val chats by mainViewModel.chats.collectAsState()
-    
-    val hasPasscode by mainViewModel.hasPasscode.collectAsState()
+    val uiState by mainViewModel.uiState.collectAsState()
     
     val scope = rememberCoroutineScope()
     
     Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
         DefaultTopBar(
-            drawerState = drawerState, isLockApp = hasPasscode, onLockClick = {
+            drawerState = drawerState, isLockApp = uiState.hasPasscode, onLockClick = {
                 scope.launch {
                     mainViewModel.lockApp()
                 }
@@ -304,11 +306,11 @@ private fun Content(
         Column(
             modifier = Modifier.padding(innerPadding),
         ) {
-            if (chats.isEmpty()) {
+            if (uiState.chats.isEmpty()) {
                 EmptyChatPlaceholder(text = "Чтобы начать общение нажмите на поле поиска сверху экрана и найдите пользователя по его @username")
             } else {
                 LazyColumn {
-                    items(chats) { chat ->
+                    items(uiState.chats) { chat ->
                         val chatName = chat.chatName.asString()
                         ChatCard(chat = chat, onClickChat = {
                             navBackStack.add(
@@ -562,7 +564,7 @@ private fun DefaultTopBar(
 }
 
 @Composable
-private fun DrawerContent(onClose: () -> Unit, user: User) {
+private fun DrawerContent(onClose: () -> Unit, user: User, theme: ThemeOption) {
     val navBackStack = LocalNavBackStack.current
     
     ModalDrawerSheet(
@@ -588,7 +590,7 @@ private fun DrawerContent(onClose: () -> Unit, user: User) {
             )
             
             DrawerItem(
-                label = stringResource(R.string.profile), icon = Icons.Rounded.AccountCircle
+                label = stringResource(R.string.profile), icon = Icons.Outlined.AccountCircle
             ) {
                 onClose.invoke()
                 navBackStack.add(AppRoute.Profile(user.id))
@@ -607,7 +609,7 @@ private fun DrawerContent(onClose: () -> Unit, user: User) {
             }
             
             DrawerItem(
-                label = stringResource(R.string.settings), icon = Icons.Rounded.Settings
+                label = stringResource(R.string.settings), icon = Icons.Outlined.Settings
             ) {
                 onClose.invoke()
                 navBackStack.add(AppRoute.Settings)
@@ -618,9 +620,12 @@ private fun DrawerContent(onClose: () -> Unit, user: User) {
         
         val scope = rememberCoroutineScope()
         var loadTrigger by remember { mutableLongStateOf(0L) }
-        val adRequest = AdRequest.Builder("R-M-15520718-1")
-            .setPreferredTheme(AdTheme.DARK)
-            .build()
+        val adTheme = if (theme == ThemeOption.DARK || isSystemInDarkTheme()) {
+            AdTheme.DARK
+        } else {
+            AdTheme.LIGHT
+        }
+        val adRequest = AdRequest.Builder("R-M-15520718-1").setPreferredTheme(adTheme).build()
         
         val bannerState = rememberBannerAdState(
             adSize = BannerSize.Inline(width = 300.dp, maxHeight = 300.dp),

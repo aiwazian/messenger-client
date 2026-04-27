@@ -5,7 +5,6 @@
 package com.aiwazian.messenger.ui.screens.settings.security.passcode
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,8 +36,8 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.AnimatedIntroScreen
 import com.aiwazian.messenger.ui.components.CodeBlocks
+import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomNumberBoard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -52,21 +51,18 @@ import com.aiwazian.messenger.utils.LottieAnimation
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun SettingsPasscodeScreen() {
-    val securityViewModel = hiltViewModel<SettingsSecurityViewModel>()
-    val passcodeEnabled by securityViewModel.isEnablePasscode.collectAsState()
+fun SettingsPasscodeScreen(viewModel: SettingsSecurityViewModel = hiltViewModel()) {
+    val uiState by viewModel.uiState.collectAsState()
     
-    if (passcodeEnabled) {
+    if (uiState.passcodeEnabled) {
         SettingsPasscodeLockScreen()
     } else {
-        PasscodeLockMainScreen()
+        SettingsPasscodeCreateScreen()
     }
 }
 
 @Composable
-fun SettingsPasscodeCreateScreen(
-    passcodeViewModel: PasscodeViewModel = hiltViewModel()
-) {
+fun SettingsPasscodeCreateScreen(passcodeViewModel: PasscodeViewModel = hiltViewModel()) {
     val navBackStack = LocalNavBackStack.current
     
     val uiState by passcodeViewModel.uiState.collectAsState()
@@ -154,9 +150,7 @@ fun SettingsPasscodeCreateScreen(
 }
 
 @Composable
-fun SettingsPasscodeChangeScreen(
-    passcodeViewModel: PasscodeViewModel = hiltViewModel()
-) {
+fun SettingsPasscodeChangeScreen(passcodeViewModel: PasscodeViewModel = hiltViewModel()) {
     val navBackStack = LocalNavBackStack.current
     
     val uiState by passcodeViewModel.uiState.collectAsState()
@@ -249,30 +243,6 @@ fun SettingsPasscodeChangeScreen(
 }
 
 @Composable
-private fun PasscodeLockMainScreen() {
-    val navBackStack = LocalNavBackStack.current
-    
-    Scaffold(
-        topBar = {
-            TopBarMain()
-        },
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            AnimatedIntroScreen(
-                animation = LottieAnimation.KEY_LOCK,
-                title = stringResource(R.string.passcode_lock),
-                description = stringResource(R.string.passcode_lock_description),
-                buttonText = stringResource(R.string.enable_passcode),
-                buttonClick = {
-                    navBackStack.add(AppRoute.SettingsPasscodeCreate)
-                })
-        }
-    }
-}
-
-@Composable
 private fun TopBar() {
     val navBackStack = LocalNavBackStack.current
     PageTopBar(
@@ -284,9 +254,7 @@ private fun TopBar() {
 }
 
 @Composable
-private fun SettingsPasscodeLockScreen(
-    passcodeViewModel: PasscodeViewModel = hiltViewModel()
-) {
+private fun SettingsPasscodeLockScreen(passcodeViewModel: PasscodeViewModel = hiltViewModel()) {
     val navBackStack = LocalNavBackStack.current
     
     val disablePasscodeDialog = passcodeViewModel.disablePasscodeDialog
@@ -361,7 +329,8 @@ private fun SettingsPasscodeLockScreen(
                     onConfirm = {
                         passcodeViewModel.disablePasscode()
                         disablePasscodeDialog.hide()
-                    })
+                    },
+                    vibrate = passcodeViewModel::vibrate)
             }
         }
     }
@@ -370,7 +339,8 @@ private fun SettingsPasscodeLockScreen(
 @Composable
 private fun DisablePasscodeDialog(
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    vibrate: () -> Unit
 ) {
     CustomDialog(
         title = stringResource(R.string.turn_passcode_off),
@@ -384,25 +354,14 @@ private fun DisablePasscodeDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.cancel))
             }
-            TextButton(
-                onClick = onConfirm,
+            CountdownTextButton(
+                text = stringResource(R.string.turn_off),
+                seconds = 5,
+                onClickWhileRunning = vibrate,
+                onClickAfterFinish = onConfirm,
                 colors = ButtonDefaults.textButtonColors(
                     contentColor = MaterialTheme.colorScheme.error
                 )
-            ) {
-                Text(stringResource(R.string.turn_off))
-            }
+            )
         })
-}
-
-@Composable
-private fun TopBarMain() {
-    val navBackStack = LocalNavBackStack.current
-    PageTopBar(
-        title = { Text(stringResource(R.string.passcode_lock)) },
-        navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navBackStack::removeLastOrNull
-        )
-    )
 }

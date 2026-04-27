@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.utils.AppLockManager
 import com.aiwazian.messenger.utils.DialogController
 import com.aiwazian.messenger.utils.VibrationManager
+import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,14 +31,14 @@ class PasscodeViewModel @Inject constructor(
     
     private val _uiState = MutableStateFlow(PasscodeUiState())
     val uiState = _uiState.asStateFlow()
-
+    
     private val _uiEffect = MutableSharedFlow<PasscodeUiEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
     
     val disablePasscodeDialog = DialogController()
-
-    fun vibrate(pattern: LongArray) {
-        vibrationManager.vibrate(pattern)
+    
+    fun vibrate() {
+        vibrationManager.vibrate(VibrationPattern.Error)
     }
     
     fun onPasscodeChanged(newPasscode: String) {
