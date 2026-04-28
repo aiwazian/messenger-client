@@ -859,8 +859,23 @@ class ChatViewModel @Inject constructor(
                 
                 val response = okHttpClient.newCall(request).execute()
                 if (response.isSuccessful) {
+                    val targetFile = downloaderManager.getFile("temp_${id}", "")
+                    
+                    if (!targetFile.exists()) {
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            targetFile.outputStream().use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                    }
+                    
+                    chatRepository.updateFileStatus(
+                        "temp_${id}",
+                        DownloadStatus.COMPLETED,
+                        targetFile.absolutePath
+                    )
+
                     downloaderManager.completeUpload(id.toInt())
-                    chatRepository.deleteFile("temp_${id}")
                     onSuccess()
                 } else {
                     withContext(Dispatchers.Main) {
