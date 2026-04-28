@@ -58,9 +58,7 @@ fun MessageBubble(
     item: ChatItem.MessageItem,
     onSeen: () -> Unit,
     onFileAction: (MessageAttachment, FileAction) -> Unit,
-    onLinkClicked: ((String) -> Unit)? = null,
-    onImageClick: (String) -> Unit,
-    currentImageUrl: String? = null
+    onLinkClicked: ((String) -> Unit)? = null
 ) {
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
@@ -115,10 +113,11 @@ fun MessageBubble(
                     )
                 }
                 
-                ImageGridCustomLayout(
-                    Modifier.heightIn(max = 400.dp), content = {
-                        message.attachments.filter { it.type == AttachmentType.IMAGE }
-                            .forEach { attachment ->
+                val images = message.attachments.filter { it.type == AttachmentType.IMAGE }
+                if (images.isNotEmpty()) {
+                    ImageGridCustomLayout(
+                        Modifier.heightIn(max = 400.dp), content = {
+                            images.forEach { attachment ->
                                 if (attachment.localUri == null) {
                                     Box(
                                         modifier = Modifier.clickable {
@@ -170,12 +169,13 @@ fun MessageBubble(
                                             .fillMaxSize()
                                             .clip(MaterialTheme.shapes.extraSmall)
                                             .clickable(onClick = {
-                                                onImageClick(attachment.localUri)
+                                                onFileAction(attachment, FileAction.OPEN)
                                             })
                                     )
                                 }
                             }
-                    })
+                        })
+                }
                 
                 message.attachments.filter { it.type != AttachmentType.IMAGE }
                     .forEach { attachment ->

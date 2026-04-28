@@ -264,11 +264,7 @@ fun ChatScreen(
                                     } else {
                                         chatViewModel.onFileAction(item.message, file, action)
                                     }
-                                }, onLinkClicked = chatViewModel::onLinkClicked,
-                                onImageClick = {
-                                    imageUrl = it
-                                },
-                                currentImageUrl = imageUrl
+                                }, onLinkClicked = chatViewModel::onLinkClicked
                             )
                         }
                     }
@@ -345,10 +341,12 @@ fun ChatScreen(
         }
     }
     
-    if (!imageUrl.isNullOrBlank()) {
-        FullScreenViewer(imageUrl!!) { imageUrl = null }
+    if (!uiState.currentMediaUrl.isNullOrBlank()) {
+        FullScreenViewer(uiState.currentMediaUrl!!) {
+            chatViewModel.clearMediaUrl()
+        }
         BackHandler {
-            imageUrl = null
+            chatViewModel.clearMediaUrl()
         }
     }
 }

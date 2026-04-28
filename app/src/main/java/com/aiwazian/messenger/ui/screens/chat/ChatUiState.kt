@@ -36,5 +36,6 @@ data class ChatUiState(
     val showInviteBottomSheet: Boolean = false,
     val isProcessingInvite: Boolean = false,
     val inviteLinkError: String? = null,
-    val showBannedDialog: Boolean = false
+    val showBannedDialog: Boolean = false,
+    val currentMediaUrl: String? = null
 )

@@ -733,15 +733,19 @@ class ChatViewModel @Inject constructor(
             }
             
             FileAction.OPEN -> {
-                viewModelScope.launch {
-                    fileHandler.openFile(
-                        chatId = message.chatId,
-                        messageId = message.id,
-                        fileId = file.fileId,
-                        fileName = file.name,
-                        fileSize = file.size,
-                        localUri = file.localUri
-                    )
+                if (file.type == AttachmentType.IMAGE) {
+                    _uiState.update { it.copy(currentMediaUrl = file.localUri) }
+                } else {
+                    viewModelScope.launch {
+                        fileHandler.openFile(
+                            chatId = message.chatId,
+                            messageId = message.id,
+                            fileId = file.fileId,
+                            fileName = file.name,
+                            fileSize = file.size,
+                            localUri = file.localUri
+                        )
+                    }
                 }
             }
         }
@@ -1059,5 +1063,9 @@ class ChatViewModel @Inject constructor(
                 isProcessingInvite = false
             )
         }
+    }
+
+    fun clearMediaUrl() {
+        _uiState.update { it.copy(currentMediaUrl = null) }
     }
 }
