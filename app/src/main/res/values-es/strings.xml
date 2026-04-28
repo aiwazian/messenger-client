@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Buscar</string>
@@ -191,4 +187,7 @@
     <string name="gallery">Galería</string>
     <string name="to_send_images_without_compression">Para enviar imágenes sin compresión</string>
     <string name="photo">Foto</string>
+    <string name="file">Archivo</string>
+    <string name="video">Video</string>
+    <string name="voice">Voz</string>
 </resources>

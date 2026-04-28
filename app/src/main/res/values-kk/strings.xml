@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Іздеу</string>
@@ -189,4 +185,7 @@
     <string name="gallery">Галерея</string>
     <string name="to_send_images_without_compression">Суреттерді қыспай жіберу үшін</string>
     <string name="photo">Фото</string>
+    <string name="file">Файл</string>
+    <string name="video">Бейне</string>
+    <string name="voice">Дауыс</string>
 </resources>

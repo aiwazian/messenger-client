@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Որոնում</string>
@@ -189,4 +185,7 @@
     <string name="gallery">Պատկերասրահ</string>
     <string name="to_send_images_without_compression">Պատկերներն առանց սեղմման ուղարկելու համար</string>
     <string name="photo">Լուսանկարը</string>
+    <string name="file">Ֆայլ</string>
+    <string name="video">Տեսանյութ</string>
+    <string name="voice">Ձայն</string>
 </resources>

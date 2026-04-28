@@ -69,11 +69,23 @@ fun ChatCard(
             if (chat.lastMessage != null) {
                 var color = Color.Unspecified
                 val text = if (chat.lastMessage.attachments.isNotEmpty()) {
-                    if (chat.lastMessage.attachments.first().type == AttachmentType.IMAGE) {
-                        color = MaterialTheme.colorScheme.primary
-                        UiText.StringResource(R.string.photo)
-                    } else {
-                        UiText.DynamicString(chat.lastMessage.attachments.first().name)
+                    color = MaterialTheme.colorScheme.primary
+                    when (chat.lastMessage.attachments.first().type) {
+                        AttachmentType.IMAGE -> {
+                            UiText.StringResource(R.string.photo)
+                        }
+                        
+                        AttachmentType.FILE -> {
+                            UiText.StringResource(R.string.file)
+                        }
+                        
+                        AttachmentType.VIDEO -> {
+                            UiText.StringResource(R.string.video)
+                        }
+                        
+                        AttachmentType.VOICE -> {
+                            UiText.StringResource(R.string.voice)
+                        }
                     }
                 } else if (!chat.lastMessage.text.isNullOrBlank()) {
                     UiText.DynamicString(chat.lastMessage.text)
