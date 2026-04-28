@@ -89,7 +89,13 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
                     leadingIcon = Icons.Outlined.Lock,
                     headlineText = stringResource(R.string.passcode_lock),
                     trailingText = passcodeEnabledText,
-                    onClick = viewModel::showBottomSheet
+                    onClick = {
+                        if (uiState.passcodeEnabled) {
+                            navBackStack.add(AppRoute.SettingsPasscode)
+                        } else {
+                            viewModel.showBottomSheet()
+                        }
+                    }
                 )
                 
                 SectionItem(

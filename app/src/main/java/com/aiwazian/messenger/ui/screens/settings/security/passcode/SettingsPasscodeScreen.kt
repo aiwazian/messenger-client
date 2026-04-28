@@ -83,8 +83,8 @@ fun SettingsPasscodeCreateScreen(passcodeViewModel: PasscodeViewModel = hiltView
     ) {
         Column(
             modifier = Modifier
-                .padding(it)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .padding(it),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -330,7 +330,8 @@ private fun SettingsPasscodeLockScreen(passcodeViewModel: PasscodeViewModel = hi
                         passcodeViewModel.disablePasscode()
                         disablePasscodeDialog.hide()
                     },
-                    vibrate = passcodeViewModel::vibrate)
+                    vibrate = passcodeViewModel::vibrate
+                )
             }
         }
     }

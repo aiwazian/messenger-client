@@ -620,11 +620,12 @@ private fun DrawerContent(onClose: () -> Unit, user: User, theme: ThemeOption) {
         
         val scope = rememberCoroutineScope()
         var loadTrigger by remember { mutableLongStateOf(0L) }
-        val adTheme = if (theme == ThemeOption.DARK || isSystemInDarkTheme()) {
-            AdTheme.DARK
-        } else {
-            AdTheme.LIGHT
-        }
+        val adTheme =
+            if (theme == ThemeOption.DARK || theme == ThemeOption.SYSTEM && isSystemInDarkTheme()) {
+                AdTheme.DARK
+            } else {
+                AdTheme.LIGHT
+            }
         val adRequest = AdRequest.Builder("R-M-15520718-1").setPreferredTheme(adTheme).build()
         
         val bannerState = rememberBannerAdState(
