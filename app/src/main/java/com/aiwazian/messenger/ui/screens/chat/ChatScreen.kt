@@ -187,8 +187,6 @@ fun ChatScreen(
         }
     }
     
-    var imageUrl by remember { mutableStateOf<String?>(null) }
-    
     Scaffold(
         modifier = Modifier.sharedBounds(key = "chat-${chatId}"),
         snackbarHost = {

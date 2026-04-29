@@ -127,10 +127,10 @@ fun MessageBubble(
                                                 DownloadStatus.IDLE,
                                                 DownloadStatus.CANCELLED,
                                                 DownloadStatus.FAILED,
-                                                DownloadStatus.UPLOADED -> FileAction.DOWNLOAD
+                                                DownloadStatus.UPLOADED,
+                                                DownloadStatus.COMPLETED -> FileAction.DOWNLOAD
                                                 
                                                 DownloadStatus.UPLOADING -> FileAction.CANCEL
-                                                DownloadStatus.COMPLETED -> FileAction.OPEN
                                             }
                                             onFileAction(attachment, action)
                                         },

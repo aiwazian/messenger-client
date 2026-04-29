@@ -18,8 +18,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -36,22 +43,18 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import coil.compose.AsyncImage
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.sharedBounds
-import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import kotlin.math.abs
 
 @Composable
 fun FullScreenViewer(
-    imageUrl: String,
-    onDismiss: () -> Unit
+    imageUrl: String, onDismiss: () -> Unit
 ) {
     var isUiVisible by remember { mutableStateOf(true) }
     var dragOffsetY by remember { mutableFloatStateOf(0f) }
@@ -171,21 +174,40 @@ fun FullScreenViewer(
                 .fillMaxWidth()
                 .align(Alignment.TopCenter),
         ) {
-            PageTopBar(
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = onDismiss
-                ),
-                actions = listOf(
-                    TopBarAction(
-                        icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
-                            DropdownMenuAction(
-                                icon = Icons.Rounded.Download,
-                                textResId = R.string.save_to_downloads,
-                                onClick = {})
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    IconButton(
+                        onClick = onDismiss,
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
                         )
-                    )
-                ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack, null
+                        )
+                    }
+                },
+                actions = {
+                    var expand by remember { mutableStateOf(false) }
+                    IconButton(
+                        onClick = { expand = true },
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        )
+                    ) {
+                        Icon(Icons.Rounded.MoreVert, null)
+                    }
+                    
+                    DropdownMenu(
+                        expanded = expand,
+                        shape = MaterialTheme.shapes.large,
+                        onDismissRequest = { expand = false }) {
+                        DropdownMenuItem(text = {
+                            Text(stringResource(R.string.save_to_downloads))
+                        }, onClick = {})
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
