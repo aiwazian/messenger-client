@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Downloading
 import androidx.compose.material.icons.rounded.Pause
@@ -36,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
@@ -120,20 +122,22 @@ fun MessageBubble(
                             images.forEach { attachment ->
                                 if (attachment.localUri == null) {
                                     Box(
-                                        modifier = Modifier.clickable {
-                                            val action = when (attachment.status) {
-                                                DownloadStatus.DOWNLOADING -> FileAction.PAUSE
-                                                DownloadStatus.PAUSED -> FileAction.RESUME
-                                                DownloadStatus.IDLE,
-                                                DownloadStatus.CANCELLED,
-                                                DownloadStatus.FAILED,
-                                                DownloadStatus.UPLOADED,
-                                                DownloadStatus.COMPLETED -> FileAction.DOWNLOAD
-                                                
-                                                DownloadStatus.UPLOADING -> FileAction.CANCEL
-                                            }
-                                            onFileAction(attachment, action)
-                                        },
+                                        modifier = Modifier
+                                            .clip(MaterialTheme.shapes.extraSmall)
+                                            .clickable {
+                                                val action = when (attachment.status) {
+                                                    DownloadStatus.DOWNLOADING -> FileAction.PAUSE
+                                                    DownloadStatus.PAUSED -> FileAction.RESUME
+                                                    DownloadStatus.IDLE,
+                                                    DownloadStatus.CANCELLED,
+                                                    DownloadStatus.FAILED,
+                                                    DownloadStatus.UPLOADED,
+                                                    DownloadStatus.COMPLETED -> FileAction.DOWNLOAD
+                                                    
+                                                    DownloadStatus.UPLOADING -> FileAction.CANCEL
+                                                }
+                                                onFileAction(attachment, action)
+                                            },
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
@@ -148,6 +152,11 @@ fun MessageBubble(
                                             DownloadStatus.DOWNLOADING -> {
                                                 CircularWavyProgressIndicator()
                                                 Icon(Icons.Rounded.Pause, null)
+                                            }
+                                            
+                                            DownloadStatus.UPLOADING -> {
+                                                CircularWavyProgressIndicator()
+                                                Icon(Icons.Rounded.Close, null)
                                             }
                                             
                                             DownloadStatus.PAUSED -> {
@@ -273,11 +282,41 @@ fun ImageGridCustomLayout(
                     }
                 }
                 
+                5 -> {
+                    val rows = listOf(2, 3)
+                    placeGrid(measurables, rows, width, height, gap)
+                }
+                
+                6 -> {
+                    val rows = listOf(3, 3)
+                    placeGrid(measurables, rows, width, height, gap)
+                }
+                
+                7 -> {
+                    val rows = listOf(4, 3)
+                    placeGrid(measurables, rows, width, height, gap)
+                }
+                
+                8 -> {
+                    val rows = listOf(2, 3, 3)
+                    placeGrid(measurables, rows, width, height, gap)
+                }
+                
+                9 -> {
+                    val rows = listOf(3, 3, 3)
+                    placeGrid(measurables, rows, width, height, gap)
+                }
+                
+                10 -> {
+                    val rows = listOf(3, 4, 3)
+                    placeGrid(measurables, rows, width, height, gap)
+                }
+                
                 else -> {
                     val columns = 3
-                    val rows = (count + columns - 1) / columns
+                    val rowsCount = (count + columns - 1) / columns
                     val itemW = (width - gap * (columns - 1)) / columns
-                    val itemH = (height - gap * (rows - 1)) / rows
+                    val itemH = (height - gap * (rowsCount - 1)) / rowsCount
                     val itemConstraints = Constraints.fixed(itemW.toInt(), itemH.toInt())
                     
                     measurables.take(count).forEachIndexed { i, m ->
@@ -287,6 +326,33 @@ fun ImageGridCustomLayout(
                         p.place(x.toInt(), y.toInt())
                     }
                 }
+            }
+        }
+    }
+}
+
+private fun Placeable.PlacementScope.placeGrid(
+    measurables: List<androidx.compose.ui.layout.Measurable>,
+    rows: List<Int>,
+    totalWidth: Int,
+    totalHeight: Int,
+    gap: Float
+) {
+    var currentIndex = 0
+    val rowCount = rows.size
+    val rowH = (totalHeight - gap * (rowCount - 1)) / rowCount
+    
+    rows.forEachIndexed { rowIndex, itemCount ->
+        val y = (rowIndex * (rowH + gap)).toInt()
+        val rowW = (totalWidth - gap * (itemCount - 1)) / itemCount
+        
+        for (i in 0 until itemCount) {
+            if (currentIndex < measurables.size) {
+                val p =
+                    measurables[currentIndex].measure(Constraints.fixed(rowW.toInt(), rowH.toInt()))
+                val x = (i * (rowW + gap)).toInt()
+                p.place(x, y)
+                currentIndex++
             }
         }
     }
