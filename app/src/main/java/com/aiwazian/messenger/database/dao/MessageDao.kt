@@ -44,6 +44,9 @@ interface MessageDao {
     @Query("DELETE FROM message WHERE id = :id")
     suspend fun deleteMessageById(id: Long)
     
+    @Query("UPDATE message SET id = :newId WHERE id = :oldId")
+    suspend fun updateMessageId(oldId: Long, newId: Long)
+    
     @Query("DELETE FROM message WHERE chatId NOT IN (:chatIds)")
     suspend fun deleteMessagesNotInChatIds(chatIds: List<Long>)
     

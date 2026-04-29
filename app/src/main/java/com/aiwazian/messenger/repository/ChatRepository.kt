@@ -170,12 +170,30 @@ class ChatRepository @Inject constructor(
     }
     
     suspend fun sendMessage(chatId: Long, message: String): Message? {
+        val tempId = -System.currentTimeMillis()
+        val localMessage = Message(
+            id = tempId,
+            senderId = userRepository.getMe().first().id,
+            chatId = chatId,
+            text = message,
+            sendTime = System.currentTimeMillis(),
+            isRead = false,
+            messageType = com.aiwazian.messenger.enums.MessageType.TEXT,
+            systemMessageEventType = null,
+            attachments = emptyList()
+        )
+        
+        saveMessage(localMessage)
+        
         return try {
             val request = TextMessageRequestDto(text = message)
             val response = messageApi.sendTextMessage(chatId, request)
             if (response.isSuccessful) {
                 val sentMessage = response.body()?.toDomain()
-                sentMessage?.let { saveMessagesToDb(listOf(it)) }
+                sentMessage?.let {
+                    messageDao.updateMessageId(tempId, it.id)
+                    saveMessagesToDb(listOf(it))
+                }
                 sentMessage
             } else {
                 Log.e("ChatRepository", "Failed to send message: ${response.message()}")
@@ -233,10 +251,6 @@ class ChatRepository @Inject constructor(
     
     suspend fun updateFileStatus(fileId: String, status: DownloadStatus, path: String? = null) {
         fileDao.updateStatusAndPath(fileId, status, path)
-    }
-    
-    suspend fun deleteFile(fileId: String) {
-        fileDao.deleteFile(fileId)
     }
     
     suspend fun initFileUpload(chatId: Long, dto: FileInitRequestDto): FileInitResponseDto? {
