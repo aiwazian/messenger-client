@@ -180,7 +180,7 @@ fun FullScreenViewer(
                     IconButton(
                         onClick = onDismiss,
                         colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f)
                         )
                     ) {
                         Icon(
@@ -193,7 +193,7 @@ fun FullScreenViewer(
                     IconButton(
                         onClick = { expand = true },
                         colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f)
                         )
                     ) {
                         Icon(Icons.Rounded.MoreVert, null)

@@ -2,7 +2,7 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.screens.login
+package com.aiwazian.messenger.ui.screens.auth
 
 import android.app.Activity
 import android.content.Intent
@@ -15,7 +15,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,8 +29,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,6 +51,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.screens.auth.components.InputTextField
 
 @Composable
 fun PasswordScreen(
@@ -137,7 +135,8 @@ fun PasswordScreen(
                     value = password,
                     onValueChange = authViewModel::onPasswordChanged,
                     label = passwordFieldError ?: "Пароль",
-                    isError = passwordFieldError != null
+                    isError = passwordFieldError != null,
+                    onSendClick = authViewModel::onPasswordNextClicked
                 )
             }
         }
@@ -190,24 +189,14 @@ private fun PasswordField(
     onValueChange: (String) -> Unit,
     label: String,
     isError: Boolean,
+    onSendClick: () -> Unit
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
     
-    OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            focusedLabelColor = MaterialTheme.colorScheme.primary,
-            cursorColor = MaterialTheme.colorScheme.primary,
-            errorLabelColor = MaterialTheme.colorScheme.error,
-            errorBorderColor = MaterialTheme.colorScheme.error,
-            errorTextColor = MaterialTheme.colorScheme.error
-        ),
+    InputTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label) },
-        singleLine = true,
+        label = label,
         isError = isError,
         visualTransformation = if (!passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
         trailingIcon = {
@@ -232,5 +221,7 @@ private fun PasswordField(
                     }
                 }
             }
+        }, onSendClick = {
+        
         })
 }

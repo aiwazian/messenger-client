@@ -14,6 +14,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -30,7 +31,8 @@ interface MessageApi {
     @POST("chats/{chatId}/messages")
     suspend fun sendTextMessage(
         @Path("chatId") chatId: Long,
-        @Body request: TextMessageRequestDto
+        @Body request: TextMessageRequestDto,
+        @Header("x-socket-id") socketId: String
     ): Response<MessageDto>
     
     @POST("chats/{chatId}/messages/files/init")
@@ -42,7 +44,8 @@ interface MessageApi {
     @POST("chats/{chatId}/messages/files/confirm")
     suspend fun confirmFileUpload(
         @Path("chatId") chatId: Long,
-        @Body request: FileConfirmRequestDto
+        @Body request: FileConfirmRequestDto,
+        @Header("x-socket-id") socketId: String
     ): Response<MessageDto>
     
     @GET("chats/{chatId}/messages/{messageId}/files/{fileId}/download")

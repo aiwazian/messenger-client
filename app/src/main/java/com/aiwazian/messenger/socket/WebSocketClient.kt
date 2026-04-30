@@ -30,7 +30,7 @@ class WebSocketClient @Inject constructor(
         const val TAG = "WebSocketClient"
         private const val MAX_RECONNECT_DELAY_MS = 10000L
         private const val RECONNECTION_DELAY_MS = 1000L
-
+        
         val defaultJson = Json {
             ignoreUnknownKeys = true
             isLenient = true
@@ -38,20 +38,23 @@ class WebSocketClient @Inject constructor(
             encodeDefaults = true
         }
     }
-
+    
     private var _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
     val connectionState = _connectionState.asStateFlow()
-
+    
     private val messageHandlers = mutableMapOf<String, MutableList<(JsonObject) -> Unit>>()
-
+    
+    private var socket: Socket? = null
+    var socketId: String? = null
+    
     fun connect() {
         if (_connectionState.value == ConnectionState.CONNECTED ||
             _connectionState.value == ConnectionState.CONNECTING
         ) return
-
+        
         establishConnection()
     }
-
+    
     fun <Dto : Any, Domain : Any> subscribeToEvent(
         event: WebSocketEvent<Dto, Domain>,
         handler: (Domain) -> Unit
@@ -62,10 +65,10 @@ class WebSocketClient @Inject constructor(
             handler(event.mapper(dto))
         }
     }
-
+    
     private fun establishConnection() {
         _connectionState.value = ConnectionState.CONNECTING
-
+        
         val opts = IO.Options.builder()
             .setAuth(mapOf("token" to sessionManager.getToken()))
             .setTransports(arrayOf("websocket"))
@@ -73,8 +76,8 @@ class WebSocketClient @Inject constructor(
             .setReconnectionDelay(RECONNECTION_DELAY_MS)
             .setReconnectionDelayMax(MAX_RECONNECT_DELAY_MS)
             .build()
-
-        IO.socket(BuildConfig.WS_URL, opts).apply {
+        
+        socket = IO.socket(BuildConfig.WS_URL, opts).apply {
             on(Socket.EVENT_CONNECT) { onConnect() }
             on(Socket.EVENT_CONNECT_ERROR) { onConnectError(it.firstOrNull() as? Exception) }
             on(Socket.EVENT_DISCONNECT) { onDisconnect() }
@@ -82,37 +85,38 @@ class WebSocketClient @Inject constructor(
                 Log.e(TAG, "Received Unauthorized event from server")
                 SessionManager.getUnauthorizedCallback()?.invoke()
             }
-
+            
             onAnyIncoming { args ->
                 val eventName = args.getOrNull(0) as? String ?: return@onAnyIncoming
                 val data = args.getOrNull(1) as? JSONObject ?: return@onAnyIncoming
                 handleIncomingEvent(eventName, data.toJsonObject())
                 Log.d(TAG, "Received incoming event: $eventName $data")
             }
-
+            
             connect()
         }
     }
-
+    
     private fun onConnect() {
         Log.d(TAG, "Connected")
+        socketId = socket?.id()
         _connectionState.value = ConnectionState.CONNECTED
     }
-
+    
     private fun onConnectError(e: Exception?) {
         Log.e(TAG, "Connect error: ${e?.message}")
         _connectionState.value = ConnectionState.DISCONNECTED
     }
-
+    
     private fun onDisconnect() {
         Log.d(TAG, "Disconnected")
         _connectionState.value = ConnectionState.DISCONNECTED
     }
-
+    
     private fun handleIncomingEvent(eventName: String, jsonObject: JsonObject) {
         messageHandlers[eventName]?.forEach { it(jsonObject) }
     }
-
+    
     private fun JSONObject.toJsonObject(): JsonObject {
         val map = mutableMapOf<String, JsonElement>()
         keys().forEach { key ->
@@ -131,7 +135,7 @@ class WebSocketClient @Inject constructor(
         }
         return JsonObject(map)
     }
-
+    
     private fun JSONArray.toJsonArray(): JsonArray {
         val list = mutableListOf<JsonElement>()
         for (i in 0 until length()) {

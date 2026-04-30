@@ -17,13 +17,15 @@ import com.aiwazian.messenger.enums.AttachmentType
             entity = MessageEntity::class,
             parentColumns = ["id"],
             childColumns = ["messageId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE,
+            onUpdate = ForeignKey.CASCADE
         ),
         ForeignKey(
             entity = FileEntity::class,
             parentColumns = ["id"],
             childColumns = ["fileId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE,
+            onUpdate = ForeignKey.CASCADE
         )
     ],
     indices = [

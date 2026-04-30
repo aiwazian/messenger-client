@@ -25,6 +25,9 @@ import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
+import com.aiwazian.messenger.extensions.getFileName
+import com.aiwazian.messenger.extensions.getFileSize
+import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.network.dto.AttachmentInputDto
@@ -63,6 +66,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import java.io.IOException
 import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
@@ -499,7 +503,11 @@ class ChatViewModel @Inject constructor(
                         autoResumedFileIds.add(file.fileId)
                         viewModelScope.launch {
                             try {
-                                chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
+                                chatRepository.getDownloadUrl(
+                                    message.chatId,
+                                    message.id,
+                                    file.fileId
+                                )
                                     ?.let { url ->
                                         downloaderManager.download(
                                             url = url,
@@ -511,7 +519,11 @@ class ChatViewModel @Inject constructor(
                                         )
                                     }
                             } catch (e: Exception) {
-                                Log.e("ChatVM", "Error auto-resuming download for ${file.fileId}", e)
+                                Log.e(
+                                    "ChatVM",
+                                    "Error auto-resuming download for ${file.fileId}",
+                                    e
+                                )
                             }
                         }
                     }
@@ -754,18 +766,18 @@ class ChatViewModel @Inject constructor(
         uris.chunked(10).forEach { fileGroup ->
             viewModelScope.launch {
                 val tempId = Random.nextLong(1000000, Long.MAX_VALUE)
-
+                
                 val attachments = fileGroup.mapIndexed { index, uri ->
-                    val fileName = getFileName(context, uri) ?: "file"
-                    val fileSize = getFileSize(context, uri)
-                    val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
-
+                    val fileName = uri.getFileName(context) ?: "file"
+                    val fileSize = uri.getFileSize(context) ?: 0
+                    val mimeType = uri.getFileType(context)
+                    
                     val attachmentType = when {
                         mimeType.startsWith("image/") -> AttachmentType.IMAGE
                         mimeType.startsWith("video/") -> AttachmentType.VIDEO
                         else -> AttachmentType.FILE
                     }
-
+                    
                     MessageAttachment(
                         fileId = "temp_${tempId}_$index",
                         messageId = tempId,
@@ -779,7 +791,7 @@ class ChatViewModel @Inject constructor(
                         sortOrder = index
                     )
                 }
-
+                
                 val tempMessage = Message(
                     id = tempId,
                     text = null,
@@ -791,136 +803,109 @@ class ChatViewModel @Inject constructor(
                     systemMessageEventType = null,
                     attachments = attachments
                 )
-
+                
                 chatRepository.saveMessage(tempMessage)
-
+                
                 val uploadResults = mutableListOf<Pair<AttachmentInputDto, Uri>>()
                 
                 var success = true
                 fileGroup.forEachIndexed { index, uri ->
-                    val fileId = "temp_${tempId}_$index"
+                    val fileId = attachments[index].fileId
                     val fileName = attachments[index].name
                     val fileSize = attachments[index].size
-                    val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
-
-                    downloaderManager.registerUpload(fileId.hashCode(), fileName, fileSize)
-
+                    val mimeType = uri.getFileType(context)
+                    
                     val initResponse = chatRepository.initFileUpload(
                         _uiState.value.chatId, FileInitRequestDto(
                             name = fileName, size = fileSize, mimeType = mimeType
                         )
                     )
-
-                    if (initResponse != null) {
-                        try {
-                            val uploaded = performUploadSync(uri, initResponse.signedUrl, fileId, context)
-                            if (uploaded) {
-                                uploadResults.add(AttachmentInputDto(fileId = initResponse.fileId, type = attachments[index].type) to uri)
-                            } else {
-                                success = false
-                            }
-                        } catch (e: Exception) {
-                            Log.e("ChatVM", "Upload failed", e)
+                    
+                    if (initResponse == null) {
+                        return@forEachIndexed
+                    }
+                    
+                    chatRepository.updateFileId(fileId, initResponse.fileId)
+                    
+                    try {
+                        val uploaded =
+                            performUploadSync(uri, initResponse.signedUrl, initResponse.fileId)
+                        if (uploaded) {
+                            uploadResults.add(
+                                AttachmentInputDto(
+                                    fileId = initResponse.fileId,
+                                    type = attachments[index].type
+                                ) to uri
+                            )
+                        } else {
                             success = false
                         }
-                    } else {
+                    } catch (e: Exception) {
+                        Log.e("ChatVM", "Upload failed", e)
                         success = false
                     }
                 }
-
+                
                 if (success) {
-                    val confirmedMessage = chatRepository.confirmFileUpload(
+                    chatRepository.confirmFileUpload(
                         _uiState.value.chatId,
                         attachments = uploadResults.map { it.first },
                         text = null
-                    )
-                    if (confirmedMessage != null) {
-                        chatRepository.deleteLocalMessage(tempId)
-                        fileGroup.forEach { _ -> downloaderManager.completeUpload(tempId.toInt()) }
-                    } else {
-                        chatRepository.deleteLocalMessage(tempId)
+                    ).onSuccess {
+                        chatRepository.updateMessageId(tempMessage.id, it.id)
+                    }.onFailure {
+                        Log.e("ChatVM", "Error", it)
+                        //  chatRepository.deleteLocalMessage(tempId)
                     }
-                } else {
-                    chatRepository.deleteLocalMessage(tempId)
                 }
             }
         }
     }
-
-    private suspend fun performUploadSync(
-        uri: Uri, url: String, fileId: String, context: Context
-    ): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val fileSize = getFileSize(context, uri)
-            val mimeType = context.contentResolver.getType(uri)?.toMediaTypeOrNull()
-
-            val requestBody = ProgressRequestBody(mimeType, fileSize, { progress ->
-                downloaderManager.updateUploadProgress(fileId.hashCode(), progress)
-            }) {
-                context.contentResolver.openInputStream(uri)
-                    ?: throw java.io.IOException("Unable to open input stream")
-            }
-
-            val request = Request.Builder().url(url).put(requestBody).build()
-            val response = okHttpClient.newCall(request).execute()
-
-            if (response.isSuccessful) {
-                val targetFile = downloaderManager.getFile(fileId, "")
-                if (!targetFile.exists()) {
-                    context.contentResolver.openInputStream(uri)?.use { input ->
-                        targetFile.outputStream().use { output ->
-                            input.copyTo(output)
+    
+    private suspend fun performUploadSync(uri: Uri, url: String, fileId: String): Boolean =
+        withContext(Dispatchers.IO) {
+            try {
+                val fileSize = uri.getFileSize(context) ?: 0
+                val mimeType = uri.getFileType(context).toMediaTypeOrNull()
+                
+                val requestBody = ProgressRequestBody(mimeType, fileSize, { progress ->
+                    //                downloaderManager.updateUploadProgress(fileId.hashCode(), progress) TODO
+                }) {
+                    context.contentResolver.openInputStream(uri)
+                        ?: throw IOException("Unable to open input stream")
+                }
+                
+                val request = Request.Builder().url(url).put(requestBody).build()
+                val response = okHttpClient.newCall(request).execute()
+                
+                if (response.isSuccessful) {
+                    val targetFile = downloaderManager.getFile(fileId, "")
+                    if (!targetFile.exists()) {
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            targetFile.outputStream().use { output ->
+                                input.copyTo(output)
+                            }
                         }
                     }
+                    chatRepository.updateFileStatus(
+                        fileId,
+                        DownloadStatus.COMPLETED,
+                        targetFile.absolutePath
+                    )
+                    true
+                } else {
+                    false
                 }
-                chatRepository.updateFileStatus(fileId, DownloadStatus.COMPLETED, targetFile.absolutePath)
-                true
-            } else {
+            } catch (e: Exception) {
+                Log.e("ChatVM", "Upload error", e)
                 false
             }
-        } catch (e: Exception) {
-            Log.e("ChatVM", "Upload error", e)
-            false
         }
-    }
-    
-    private fun getFileName(
-        context: Context, uri: Uri
-    ): String? {
-        var name: String? = null
-        context.contentResolver.query(
-            uri, null, null, null, null
-        )?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                name =
-                    cursor.getString(cursor.getColumnIndexOrThrow(android.provider.OpenableColumns.DISPLAY_NAME))
-            }
-        }
-        return name
-    }
-    
-    private fun getFileSize(
-        context: Context, uri: Uri
-    ): Long {
-        var size: Long = 0
-        context.contentResolver.query(
-            uri, null, null, null, null
-        )?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                size =
-                    cursor.getLong(cursor.getColumnIndexOrThrow(android.provider.OpenableColumns.SIZE))
-            }
-        }
-        return size
-    }
     
     fun markAsReadMessage(message: Message) {
         if (message.senderId == _uiState.value.currentUserId || message.isRead) return
         viewModelScope.launch {
-            if (chatRepository.makeAsRead(
-                    _uiState.value.chatId, message.id
-                )
-            ) {
+            if (chatRepository.makeAsRead(_uiState.value.chatId, message.id)) {
                 readMessage(message.id)
             }
         }
@@ -933,12 +918,9 @@ class ChatViewModel @Inject constructor(
                 userRepository.getById(userId).collect { user ->
                     val name = "${user.firstName} ${user.lastName.orEmpty()}".trim()
                     _uiState.update { it.copy(userNamesCache = it.userNamesCache + (userId to name)) }
-                    updateChatItems(getRawMessages())
                 }
             } catch (e: Exception) {
-                Log.e(
-                    "ChatVM", "Error loading user name", e
-                )
+                Log.e("ChatVM", "Error loading user name", e)
             }
         }
     }
@@ -1046,7 +1028,7 @@ class ChatViewModel @Inject constructor(
             )
         }
     }
-
+    
     fun clearMediaUrl() {
         _uiState.update { it.copy(currentMediaUrl = null) }
     }

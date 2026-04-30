@@ -25,6 +25,9 @@ interface FileDao {
     @Query("SELECT * FROM file")
     suspend fun getAllFiles(): List<FileEntity>
     
+    @Query("UPDATE file SET id = :newId WHERE id = :oldId")
+    suspend fun updateFileId(oldId: String, newId: String)
+    
     @Query("DELETE FROM file WHERE id = :fileId")
     suspend fun deleteFile(fileId: String)
 }

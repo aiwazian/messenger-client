@@ -2,13 +2,12 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.screens.login
+package com.aiwazian.messenger.ui.screens.auth
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,8 +19,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,6 +39,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.screens.auth.components.InputTextField
 
 @Composable
 fun LoginScreen(
@@ -116,11 +114,12 @@ fun LoginScreen(
                 fontSize = 28.sp
             )
             Column(Modifier.width(300.dp)) {
-                LoginField(
+                InputTextField(
                     value = login,
                     onValueChange = authViewModel::onLoginChanged,
                     label = loginFieldError ?: "Логин",
-                    isError = loginFieldError != null
+                    isError = loginFieldError != null,
+                    onSendClick = authViewModel::onLoginNextClicked
                 )
                 checkError?.let { error ->
                     Text(
@@ -204,30 +203,4 @@ fun LoginScreen(
         }
         
     }
-}
-
-@Composable
-private fun LoginField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    isError: Boolean = false
-) {
-    OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            focusedLabelColor = MaterialTheme.colorScheme.primary,
-            cursorColor = MaterialTheme.colorScheme.primary,
-            errorLabelColor = MaterialTheme.colorScheme.error,
-            errorBorderColor = MaterialTheme.colorScheme.error,
-            errorTextColor = MaterialTheme.colorScheme.error
-        ),
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        singleLine = true,
-        isError = isError
-    )
 }

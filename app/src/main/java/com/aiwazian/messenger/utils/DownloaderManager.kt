@@ -11,6 +11,7 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.enums.DownloadStatus
+import com.aiwazian.messenger.extensions.getFileType
 import com.ketch.DownloadConfig
 import com.ketch.Ketch
 import com.ketch.Status
@@ -154,49 +155,6 @@ class DownloaderManager @Inject constructor(
         _downloads.update { it - id }
     }
     
-    fun registerUpload(
-        id: Int,
-        name: String,
-        size: Long
-    ) {
-        val item = DownloadItem(
-            id = id,
-            name = name,
-            size = size,
-            progress = 0,
-            status = DownloadStatus.UPLOADING,
-            isUpload = true
-        )
-        _downloads.update { it + (id to item) }
-    }
-    
-    fun updateUploadProgress(
-        id: Int,
-        progress: Int
-    ) {
-        _downloads.update { current ->
-            val existing = current[id] ?: return@update current
-            current + (id to existing.copy(progress = progress))
-        }
-    }
-    
-    fun completeUpload(id: Int) {
-        _downloads.update { current ->
-            val existing = current[id] ?: return@update current
-            current + (id to existing.copy(
-                status = DownloadStatus.COMPLETED,
-                progress = 100
-            ))
-        }
-    }
-    
-    fun failUpload(id: Int) {
-        _downloads.update { current ->
-            val existing = current[id] ?: return@update current
-            current + (id to existing.copy(status = DownloadStatus.FAILED))
-        }
-    }
-    
     fun isDownloaded(fileId: String, extension: String): Boolean {
         val file = getFile(fileId, extension)
         return file.exists() && file.length() > 0
@@ -262,7 +220,7 @@ class DownloaderManager @Inject constructor(
         )
         
         val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, context.contentResolver.getType(uri) ?: "*/*")
+            setDataAndType(uri, uri.getFileType(context))
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }

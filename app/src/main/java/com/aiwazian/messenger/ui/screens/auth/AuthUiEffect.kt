@@ -2,7 +2,7 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.screens.login
+package com.aiwazian.messenger.ui.screens.auth
 
 sealed interface AuthUiEffect {
     data class ShowLoginDialog(val result: Boolean?) : AuthUiEffect

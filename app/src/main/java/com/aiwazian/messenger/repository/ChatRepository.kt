@@ -24,6 +24,7 @@ import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
+import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -42,7 +43,8 @@ class ChatRepository @Inject constructor(
     private val chatDao: ChatDao,
     private val userRepository: UserRepository,
     private val channelRepository: ChannelRepository,
-    private val groupRepository: GroupRepository
+    private val groupRepository: GroupRepository,
+    private val socket: WebSocketClient
 ) {
     
     fun getAllChats(): Flow<List<Chat>> = channelFlow {
@@ -187,13 +189,13 @@ class ChatRepository @Inject constructor(
         
         return try {
             val request = TextMessageRequestDto(text = message)
-            val response = messageApi.sendTextMessage(chatId, request)
+            val response = messageApi.sendTextMessage(chatId, request, socket.socketId.orEmpty())
             if (response.isSuccessful) {
                 val sentMessage = response.body()?.toDomain()
                 sentMessage?.let {
-                    messageDao.updateMessageId(tempId, it.id)
-                    saveMessagesToDb(listOf(it))
+                    updateMessageId(tempId, it.id)
                 }
+                deleteLocalMessage(tempId)
                 sentMessage
             } else {
                 Log.e("ChatRepository", "Failed to send message: ${response.message()}")
@@ -224,7 +226,9 @@ class ChatRepository @Inject constructor(
             val attachments = message.attachments.map { attachment ->
                 val existingFile = fileDao.getById(attachment.fileId)
                 
-                val file = if (existingFile == null) {
+                val file = if (existingFile != null) {
+                    existingFile
+                } else {
                     val newFile = FileEntity(
                         id = attachment.fileId,
                         name = attachment.name,
@@ -234,8 +238,6 @@ class ChatRepository @Inject constructor(
                     )
                     fileDao.save(newFile)
                     newFile
-                } else {
-                    existingFile
                 }
                 
                 attachment.toEntity(file)
@@ -253,6 +255,10 @@ class ChatRepository @Inject constructor(
         fileDao.updateStatusAndPath(fileId, status, path)
     }
     
+    suspend fun updateFileId(oldId: String, newId: String) {
+        fileDao.updateFileId(oldId, newId)
+    }
+    
     suspend fun initFileUpload(chatId: Long, dto: FileInitRequestDto): FileInitResponseDto? {
         return try {
             val response = messageApi.initFileUpload(chatId, dto)
@@ -268,27 +274,36 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    suspend fun confirmFileUpload(chatId: Long, attachments: List<AttachmentInputDto>, text: String? = null): Message? {
+    suspend fun confirmFileUpload(
+        chatId: Long,
+        attachments: List<AttachmentInputDto>,
+        text: String? = null
+    ): Result<Message> {
         return try {
             val dto = FileConfirmRequestDto(attachments = attachments, text = text)
-            val response = messageApi.confirmFileUpload(chatId, dto)
+            val response = messageApi.confirmFileUpload(chatId, dto, socket.socketId.orEmpty())
             if (response.isSuccessful) {
                 val sentMessage = response.body()?.toDomain()
-                sentMessage?.let { saveMessagesToDb(listOf(it)) }
-                sentMessage
+                if (sentMessage != null) {
+                    Result.success(sentMessage)
+                } else {
+                    Result.failure(Exception(""))
+                }
             } else {
                 Log.e("ChatRepository", "Failed to confirm file upload: ${response.message()}")
-                null
+                Result.failure(Exception(""))
             }
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error confirming file upload", e)
-            null
+            Result.failure(e)
         }
     }
     
-    suspend fun getDownloadUrl(
-        chatId: Long, messageId: Long, fileId: String
-    ): String? {
+    suspend fun updateMessageId(oldId: Long, newId: Long) {
+        messageDao.updateMessageId(oldId, newId)
+    }
+    
+    suspend fun getDownloadUrl(chatId: Long, messageId: Long, fileId: String): String? {
         return try {
             val response = messageApi.getFileDownloadUrl(chatId, messageId, fileId)
             if (response.isSuccessful) {

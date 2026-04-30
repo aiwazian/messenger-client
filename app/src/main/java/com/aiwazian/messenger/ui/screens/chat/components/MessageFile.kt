@@ -45,6 +45,11 @@ fun MessageFile(file: MessageAttachment, onAction: (FileAction) -> Unit) {
     Row(
         modifier = Modifier
             .clickable {
+                if (file.localUri != null) {
+                    onAction(FileAction.OPEN)
+                    return@clickable
+                }
+                
                 val action = when (file.status) {
                     DownloadStatus.DOWNLOADING -> FileAction.PAUSE
                     DownloadStatus.PAUSED -> FileAction.RESUME
@@ -68,21 +73,29 @@ fun MessageFile(file: MessageAttachment, onAction: (FileAction) -> Unit) {
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
-            StatusIcon(file)
-            if (file.status == DownloadStatus.DOWNLOADING || file.status == DownloadStatus.UPLOADING) {
-                if (file.progress == 0) {
-                    CircularWavyProgressIndicator(
-                        modifier = Modifier.size(48.dp)
-                    )
-                } else {
-                    val animatedProgress by animateFloatAsState(
-                        targetValue = file.progress / 100f,
-                        animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
-                    )
-                    
-                    CircularWavyProgressIndicator(
-                        progress = { animatedProgress }, modifier = Modifier.size(48.dp)
-                    )
+            if (file.localUri == null && file.status != DownloadStatus.UPLOADING) {
+                Icon(
+                    imageVector = Icons.Rounded.Download,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            } else {
+                StatusIcon(file)
+                if (file.status == DownloadStatus.DOWNLOADING || file.status == DownloadStatus.UPLOADING) {
+                    if (file.progress == 0) {
+                        CircularWavyProgressIndicator(
+                            modifier = Modifier.size(48.dp)
+                        )
+                    } else {
+                        val animatedProgress by animateFloatAsState(
+                            targetValue = file.progress / 100f,
+                            animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+                        )
+                        
+                        CircularWavyProgressIndicator(
+                            progress = { animatedProgress }, modifier = Modifier.size(48.dp)
+                        )
+                    }
                 }
             }
         }
