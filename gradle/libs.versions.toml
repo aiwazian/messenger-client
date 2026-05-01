@@ -41,7 +41,7 @@ graphicsShapes = "1.1.0"
 material3 = "1.5.0-alpha18"
 uiTooling = "1.11.0"
 socketio = "2.1.2"
-serialization = "2.3.20"
+serialization = "2.3.21"
 hilt = "2.59.2"
 ksp = "2.3.5"
 
