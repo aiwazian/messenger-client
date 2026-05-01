@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.mappers
 
+import androidx.core.net.toUri
 import com.aiwazian.messenger.database.entity.AttachmentEntity
 import com.aiwazian.messenger.database.entity.AttachmentWithFile
 import com.aiwazian.messenger.database.entity.FileEntity
@@ -17,7 +18,7 @@ fun AttachmentEntity.toDomain(file: FileEntity) = MessageAttachment(
     extension = file.name.substringAfterLast('.'),
     status = file.status,
     progress = 0,
-    localUri = file.path,
+    localUri = file.path?.toUri(),
     type = type,
     sortOrder = sortOrder
 )

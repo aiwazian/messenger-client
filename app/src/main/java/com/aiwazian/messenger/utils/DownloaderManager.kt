@@ -5,13 +5,8 @@
 package com.aiwazian.messenger.utils
 
 import android.content.Context
-import android.content.Intent
-import android.util.Log
-import androidx.core.content.FileProvider
-import androidx.core.net.toUri
 import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.enums.DownloadStatus
-import com.aiwazian.messenger.extensions.getFileType
 import com.ketch.DownloadConfig
 import com.ketch.Ketch
 import com.ketch.Status
@@ -61,18 +56,16 @@ class DownloaderManager @Inject constructor(
     fun download(
         url: String,
         fileName: String,
-        chatId: Long,
         messageId: Long,
         fileId: String,
         size: Long
     ): Int {
         val folderName = getFolderNameForExtension(fileName.substringAfterLast('.', ""))
-        val path =
-            File(context.getExternalFilesDir(null) ?: context.filesDir, folderName).absolutePath
+        val path = File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
+        path.mkdirs()
         val extension = fileName.substringAfterLast('.', "")
         val finalFileName = if (extension.isNotEmpty()) "$fileId.$extension" else fileId
         
-        // Remove existing download for this fileId if it exists
         _downloads.value.values.find { it.fileId == fileId }?.let { existing ->
             ketch.cancel(existing.id)
             _downloads.update { it - existing.id }
@@ -81,8 +74,7 @@ class DownloaderManager @Inject constructor(
         val id = ketch.download(
             url = url,
             fileName = finalFileName,
-            path = path,
-            tag = "chat_$chatId"
+            path = path.absolutePath,
         )
         
         val item = DownloadItem(
@@ -155,80 +147,11 @@ class DownloaderManager @Inject constructor(
         _downloads.update { it - id }
     }
     
-    fun isDownloaded(fileId: String, extension: String): Boolean {
-        val file = getFile(fileId, extension)
-        return file.exists() && file.length() > 0
-    }
-    
     fun getFile(fileId: String, extension: String): File {
         val folderName = getFolderNameForExtension(extension)
         val path = File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
         if (!path.exists()) path.mkdirs()
         val finalFileName = if (extension.isNotEmpty()) "$fileId.$extension" else fileId
         return File(path, finalFileName)
-    }
-    
-    fun openFile(path: String) {
-        val file = File(path)
-        if (!file.exists()) {
-            Log.e("DownloaderManager", "File does not exist at path: $path")
-            return
-        }
-        
-        if (file.extension.equals("apk", ignoreCase = true)) {
-            openApkFile(file)
-        } else {
-            openGenericFile(file)
-        }
-    }
-    
-    private fun openApkFile(file: File) {
-        val fileUri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
-        
-        if (!context.packageManager.canRequestPackageInstalls()) {
-            val intent = Intent(
-                android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                "package:${context.packageName}".toUri()
-            )
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-            return
-        }
-        
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(fileUri, "application/vnd.android.package-archive")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        
-        try {
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            Log.e("DownloaderManager", "Error opening APK file", e)
-        }
-    }
-    
-    private fun openGenericFile(file: File) {
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
-        
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, uri.getFileType(context))
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        
-        try {
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            Log.e("DownloaderManager", "Error opening generic file", e)
-        }
     }
 }

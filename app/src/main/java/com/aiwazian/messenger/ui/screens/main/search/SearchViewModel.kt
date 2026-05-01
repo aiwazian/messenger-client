@@ -138,14 +138,9 @@ class SearchViewModel @Inject constructor(
                 search.name.substringAfterLast('.', "")
             ).let { if (it.exists()) it.absolutePath else null }
 
-            fileHandler.openFile(
-                chatId = search.chatId,
-                messageId = search.messageId ?: 0,
-                fileId = search.fileId,
-                fileName = search.name,
-                fileSize = search.size ?: 0L,
-                localUri = localUri
-            )
+//            fileHandler.openFile(
+//                localUri = localUri
+//            )
         }
     }
 }

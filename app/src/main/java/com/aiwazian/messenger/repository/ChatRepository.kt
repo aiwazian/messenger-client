@@ -234,7 +234,7 @@ class ChatRepository @Inject constructor(
                         name = attachment.name,
                         size = attachment.size,
                         path = null,
-                        status = DownloadStatus.COMPLETED
+                        status = attachment.status
                     )
                     fileDao.save(newFile)
                     newFile

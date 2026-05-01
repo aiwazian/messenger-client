@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.domain
 
+import android.net.Uri
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.DownloadStatus
 
@@ -15,7 +16,7 @@ data class MessageAttachment(
     val extension: String,
     val status: DownloadStatus,
     val progress: Int,
-    val localUri: String?,
+    val localUri: Uri?,
     val type: AttachmentType,
     val sortOrder: Int
 )

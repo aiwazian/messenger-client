@@ -120,7 +120,7 @@ fun MessageBubble(
                     ImageGridCustomLayout(
                         Modifier.heightIn(max = 400.dp), content = {
                             images.forEach { attachment ->
-                                if (attachment.localUri == null) {
+                                if (attachment.localUri == null || attachment.status == DownloadStatus.UPLOADING) {
                                     Box(
                                         modifier = Modifier
                                             .clip(MaterialTheme.shapes.extraSmall)
