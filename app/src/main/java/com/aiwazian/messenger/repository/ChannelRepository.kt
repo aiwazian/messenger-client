@@ -6,7 +6,6 @@ package com.aiwazian.messenger.repository
 
 import android.util.Log
 import com.aiwazian.messenger.database.dao.ChannelDao
-import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.domain.Channel
 import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.domain.User
@@ -24,8 +23,7 @@ import javax.inject.Inject
 
 class ChannelRepository @Inject constructor(
     private val channelApi: ChannelApi,
-    private val channelDao: ChannelDao,
-    private val chatDao: ChatDao
+    private val channelDao: ChannelDao
 ) {
     
     suspend fun create(name: String, bio: String): Result<Long> {
@@ -144,7 +142,6 @@ class ChannelRepository @Inject constructor(
             val response = channelApi.deleteChannel(channelId)
             if (response.isSuccessful) {
                 channelDao.delete(channelId)
-                chatDao.deleteChat(channelId)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Delete failed"))

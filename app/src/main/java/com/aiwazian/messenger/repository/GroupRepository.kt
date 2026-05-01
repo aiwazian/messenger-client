@@ -6,7 +6,6 @@ package com.aiwazian.messenger.repository
 
 import android.util.Log
 import com.aiwazian.messenger.database.dao.GroupDao
-import com.aiwazian.messenger.database.dao.UserDao
 import com.aiwazian.messenger.domain.Group
 import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.domain.User
@@ -27,8 +26,7 @@ import javax.inject.Inject
 
 class GroupRepository @Inject constructor(
     private val groupApi: GroupApi,
-    private val groupDao: GroupDao,
-    private val userDao: UserDao
+    private val groupDao: GroupDao
 ) {
     
     fun getById(id: Long): Flow<Group> = channelFlow {

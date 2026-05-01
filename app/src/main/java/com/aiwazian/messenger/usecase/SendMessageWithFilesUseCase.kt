@@ -124,6 +124,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
             val result = chatRepository.confirmFileUpload(chatId, uploadResults, text)
             result.onSuccess {
                 chatRepository.updateMessageId(tempId, it.id)
+                chatRepository.refreshChats()
             }.onFailure {
                 Log.e("SendMessageWithFiles", "Confirmation failed", it)
             }
