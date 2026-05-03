@@ -16,7 +16,8 @@ data class MainUiState(
         bio = null,
         username = null,
         dateOfBirth = null,
-        lastSeen = null
+        lastSeen = null,
+        avatars = emptyList()
     ),
     val hasPasscode: Boolean = false,
     val chats: List<Chat> = emptyList(),

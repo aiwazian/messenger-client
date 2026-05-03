@@ -5,6 +5,8 @@
 package com.aiwazian.messenger.network.api
 
 import com.aiwazian.messenger.network.dto.ChangePasswordRequestDto
+import com.aiwazian.messenger.network.dto.FileInitRequestDto
+import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.UpdateUserRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
 import retrofit2.Response
@@ -12,6 +14,7 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
+import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface UserApi {
@@ -30,4 +33,10 @@ interface UserApi {
 
     @DELETE("users/me")
     suspend fun deleteMe(): Response<Unit>
+
+    @POST("users/me/avatar/init")
+    suspend fun initUploadAvatar(@Body body: FileInitRequestDto): Response<FileInitResponseDto>
+
+    @POST("users/me/avatar/confirm/{fileId}")
+    suspend fun confirmUploadAvatar(@Path("fileId") fileId: String): Response<Unit>
 }

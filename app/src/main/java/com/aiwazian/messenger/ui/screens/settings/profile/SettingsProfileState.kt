@@ -18,8 +18,8 @@ data class SettingsProfileUiState(
         bio = null,
         username = null,
         dateOfBirth = null,
-        lastSeen = null
+        lastSeen = null,
+        avatars = emptyList()
     ),
-    val isSaving: Boolean = false,
     val showDatePicker: Boolean = false
 )

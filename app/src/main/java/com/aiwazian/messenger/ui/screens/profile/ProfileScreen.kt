@@ -13,10 +13,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
+import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.extensions.sharedElement
@@ -204,6 +208,7 @@ private fun ChannelProfile(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UserProfile(
     user: Profile.User, actions: List<TopBarAction>
@@ -226,29 +231,28 @@ private fun UserProfile(
                 .padding(it)
                 .verticalScroll(scrollState)
         ) {
+            val state = rememberCarouselState { user.avatars.size }
+            HorizontalCenteredHeroCarousel(state = state) { index ->
+                AsyncImage(model = user.avatars[index], contentDescription = null)
+            }
+            
             SectionContainer {
-                val userBio = user.bio
-                
-                if (!userBio.isNullOrBlank()) {
+                if (!user.bio.isNullOrBlank()) {
                     SectionItem(
-                        headlineText = userBio, supportingText = stringResource(R.string.bio)
+                        headlineText = user.bio, supportingText = stringResource(R.string.bio)
                     )
                 }
                 
-                val username = user.username
-                
-                if (!username.isNullOrBlank()) {
+                if (!user.username.isNullOrBlank()) {
                     SectionItem(
-                        headlineText = ("@$username"),
+                        headlineText = ("@${user.username}"),
                         supportingText = stringResource(R.string.username)
                     )
                 }
                 
-                val dateOfBirth = user.dateOfBirth
-                
-                if (dateOfBirth != null) {
+                if (user.dateOfBirth != null) {
                     SectionItem(
-                        headlineText = dateOfBirth.toInstance().toPrettyDateWithYear(),
+                        headlineText = user.dateOfBirth.toInstance().toPrettyDateWithYear(),
                         supportingText = stringResource(R.string.date_of_birth)
                     )
                 }

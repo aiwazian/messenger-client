@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.mappers
 
 import com.aiwazian.messenger.database.entity.UserEntity
+import com.aiwazian.messenger.domain.Avatar
 import com.aiwazian.messenger.domain.PrivacySettings
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.network.dto.PrivacySettingsResponseDto
@@ -18,7 +19,8 @@ fun UserResponseDto.toDomain(): User = User(
     username = username,
     bio = bio,
     dateOfBirth = dateOfBirth,
-    lastSeen = lastSeen
+    lastSeen = lastSeen,
+    avatars = avatars.map { Avatar(it.fileId, it.sortOrder) }
 )
 
 fun UserResponseDto.toEntity(): UserEntity = UserEntity(
@@ -54,7 +56,8 @@ fun UserEntity.toDomain(): User = User(
     username = username,
     bio = bio,
     dateOfBirth = dateOfBirth,
-    lastSeen = lastSeen
+    lastSeen = lastSeen,
+    avatars = emptyList()
 )
 
 fun User.toEntity(): UserEntity = UserEntity(

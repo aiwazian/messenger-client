@@ -11,5 +11,11 @@ data class User(
     val username: String?,
     val bio: String?,
     val dateOfBirth: Long?,
-    val lastSeen: Long?
+    val lastSeen: Long?,
+    val avatars: List<Avatar>
+)
+
+data class Avatar(
+    val fileId: String,
+    val sortOrder: Int
 )

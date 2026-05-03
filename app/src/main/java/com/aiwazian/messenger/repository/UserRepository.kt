@@ -11,6 +11,8 @@ import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.mappers.toUpdateRequest
 import com.aiwazian.messenger.network.api.UserApi
+import com.aiwazian.messenger.network.dto.FileInitRequestDto
+import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -90,6 +92,45 @@ class UserRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e("UserRepository", "Ошибка при сохранении username", e)
             false
+        }
+    }
+    
+    suspend fun initUploadAvatar(
+        fileName: String,
+        fileSize: Long,
+        mimeType: String
+    ): Result<FileInitResponseDto> {
+        return try {
+            val requestBody = FileInitRequestDto(fileName, fileSize, mimeType)
+            val response = userApi.initUploadAvatar(requestBody)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body)
+                } else {
+                    throw Exception("Empty body")
+                }
+            } else {
+                throw Exception("Unsuccessful request")
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Ошибка при удалении аватара", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun confirmUploadAvatar(fileId: String): Result<Unit> {
+        return try {
+            val response = userApi.confirmUploadAvatar(fileId)
+            if (response.isSuccessful) {
+                //                response.body()?.let { userDao.insert() }
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Upload failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Ошибка при загрузке аватара", e)
+            Result.failure(e)
         }
     }
 }

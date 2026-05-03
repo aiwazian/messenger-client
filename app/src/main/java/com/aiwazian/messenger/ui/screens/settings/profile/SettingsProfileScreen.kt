@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.settings.profile
 
 import android.graphics.Bitmap
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -66,6 +67,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.aiwazian.messenger.R
@@ -81,6 +83,8 @@ import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import java.io.File
+import java.io.FileOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,8 +102,6 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
     
     val scrollState = rememberScrollState()
     var uri by remember { mutableStateOf<Uri?>(null) }
-    
-    var carouselItems by remember { mutableStateOf(emptyList<Bitmap>()) }
     
     Scaffold(
         topBar = {
@@ -134,7 +136,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                 SectionHeader(title = "Profile photo")
             }
             
-            val carouselState = rememberCarouselState { carouselItems.count() + 1 }
+            val carouselState = rememberCarouselState { uiState.user.avatars.size + 1 }
             
             HorizontalCenteredHeroCarousel(
                 state = carouselState,
@@ -144,8 +146,8 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                 itemSpacing = 8.dp,
                 contentPadding = PaddingValues(horizontal = 10.dp)
             ) { i ->
-                if (i < carouselItems.size) {
-                    val item = carouselItems[i]
+                if (i < uiState.user.avatars.size) {
+                    val avatar = uiState.user.avatars[i]
                     Box {
                         var expanded by remember { mutableStateOf(false) }
                         val isCentered = carouselState.currentItem == i
@@ -159,7 +161,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                                 .aspectRatio(1f)
                                 .fillMaxWidth()
                                 .maskClip(MaterialTheme.shapes.large),
-                            model = item,
+                            model = avatar.fileId,
                             contentDescription = null,
                             contentScale = ContentScale.Crop
                         )
@@ -190,8 +192,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                                                 top = 10.dp,
                                                 end = 10.dp,
                                                 bottom = 6.dp
-                                            ),
-                                            horizontalAlignment = Alignment.End
+                                            ), horizontalAlignment = Alignment.End
                                         ) {
                                             Text(
                                                 text = "Удалить это фото?",
@@ -202,8 +203,10 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                                                     Text(stringResource(R.string.no))
                                                 }
                                                 TextButton(
-                                                    onClick = { expanded = false },
-                                                    colors = ButtonDefaults.textButtonColors(
+                                                    onClick = {
+                                                        viewModel.deleteAvatar(avatar.fileId)
+                                                        expanded = false
+                                                    }, colors = ButtonDefaults.textButtonColors(
                                                         contentColor = MaterialTheme.colorScheme.error
                                                     )
                                                 ) {
@@ -373,11 +376,30 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
     }
     
     if (uri != null) {
-        AvatarCropScreen(imageUri = uri!!, onCropConfirmed = { bitmap ->
-            carouselItems = carouselItems.plus(bitmap)
-            uri = null
-        }, onDismiss = {
-            uri = null
-        })
+        val context = androidx.compose.ui.platform.LocalContext.current
+        AvatarCropScreen(
+            imageUri = uri!!,
+            onCropConfirmed = { bitmap ->
+                val file =
+                    File(context.cacheDir, "avatar_${System.currentTimeMillis()}.png")
+                FileOutputStream(file).use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                }
+
+                val contentUri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    file
+                )
+                
+                Log.d("FDS", contentUri.toString())
+                
+                viewModel.uploadAvatar(contentUri)
+                uri = null
+            },
+            onDismiss = {
+                uri = null
+            }
+        )
     }
 }

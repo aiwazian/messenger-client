@@ -7,10 +7,8 @@ package com.aiwazian.messenger.utils
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
-import com.aiwazian.messenger.repository.ChatRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -25,10 +23,9 @@ import javax.inject.Singleton
 class UploadManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val okHttpClient: OkHttpClient,
-    private val chatRepository: ChatRepository,
     private val downloaderManager: DownloaderManager
 ) {
-    suspend fun performUpload(uri: Uri, uploadUrl: String, fileId: String): Boolean =
+    suspend fun upload(uri: Uri, uploadUrl: String, fileId: String): Result<String> =
         withContext(Dispatchers.IO) {
             try {
                 val fileSize = uri.getFileSize(context) ?: 0
@@ -53,18 +50,13 @@ class UploadManager @Inject constructor(
                             }
                         }
                     }
-                    chatRepository.updateFileStatus(
-                        fileId,
-                        DownloadStatus.COMPLETED,
-                        targetFile.absolutePath
-                    )
-                    true
+                    Result.success(targetFile.absolutePath)
                 } else {
-                    false
+                    Result.failure(Exception("UploadManager request unsuccessful"))
                 }
             } catch (e: Exception) {
                 Log.e("UploadManager", "Upload error", e)
-                false
+                Result.failure(e)
             }
         }
 }

@@ -16,7 +16,14 @@ data class UserResponseDto(
     @SerialName("username") val username: String? = null,
     @SerialName("bio") val bio: String? = null,
     @SerialName("dateOfBirth") val dateOfBirth: Long? = null,
-    @SerialName("lastSeen") val lastSeen: Long? = null
+    @SerialName("lastSeen") val lastSeen: Long? = null,
+    @SerialName("avatars") val avatars: List<AvatarDto> = emptyList()
+)
+
+@Serializable
+data class AvatarDto(
+    @SerialName("fileId") val fileId: String,
+    @SerialName("sortOrder") val sortOrder: Int
 )
 
 @Serializable

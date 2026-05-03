@@ -98,20 +98,23 @@ class SendMessageWithFilesUseCase @Inject constructor(
             chatRepository.updateFileId(fileId, initResponse.fileId)
             
             try {
-                val uploaded =
-                    uploadManager.performUpload(
-                        attachment.localUri,
-                        initResponse.signedUrl,
-                        initResponse.fileId
+                uploadManager.upload(
+                    attachment.localUri,
+                    initResponse.signedUrl,
+                    initResponse.fileId
+                ).onSuccess { filePath ->
+                    chatRepository.updateFileStatus(
+                        fileId = fileId,
+                        status = DownloadStatus.COMPLETED,
+                        path = filePath
                     )
-                if (uploaded) {
                     uploadResults.add(
                         AttachmentInputDto(
                             fileId = initResponse.fileId,
                             type = attachment.type
                         )
                     )
-                } else {
+                }.onFailure {
                     success = false
                 }
             } catch (e: Exception) {

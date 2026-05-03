@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.profile
 
+import android.net.Uri
 import com.aiwazian.messenger.enums.ChannelType
 
 sealed interface Profile {
@@ -19,6 +20,7 @@ sealed interface Profile {
         override val bio: String? = null,
         val dateOfBirth: Long? = null,
         val lastSeen: Long? = null,
+        val avatars: List<Uri> = emptyList()
     ) : Profile
     
     data class Channel(

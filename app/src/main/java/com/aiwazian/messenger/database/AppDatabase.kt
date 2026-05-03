@@ -9,6 +9,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.database.dao.AttachmentDao
+import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.FileDao
@@ -17,6 +18,7 @@ import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.database.dao.UserDao
 import com.aiwazian.messenger.database.entity.AccountEntity
 import com.aiwazian.messenger.database.entity.AttachmentEntity
+import com.aiwazian.messenger.database.entity.AvatarEntity
 import com.aiwazian.messenger.database.entity.ChannelEntity
 import com.aiwazian.messenger.database.entity.ChatEntity
 import com.aiwazian.messenger.database.entity.FileEntity
@@ -33,10 +35,11 @@ import com.aiwazian.messenger.database.entity.UserEntity
         GroupEntity::class,
         AttachmentEntity::class,
         FileEntity::class,
-        ChatEntity::class
+        ChatEntity::class,
+        AvatarEntity::class
     ],
     exportSchema = false,
-    version = 30
+    version = 31
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -55,4 +58,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun attachmentDao(): AttachmentDao
 
     abstract fun fileDao(): FileDao
+
+    abstract fun avatarDao(): AvatarDao
 }
