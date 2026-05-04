@@ -4,9 +4,13 @@
 
 package com.aiwazian.messenger.ui.screens.profile
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,7 +22,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.carousel.CarouselDefaults
+import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,6 +34,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -35,6 +45,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
@@ -142,14 +153,9 @@ private fun GroupProfile(
 ) {
     Scaffold(topBar = {
         TopBar(
-            chatId = group.id,
-            title = group.name,
-            subTitle = pluralStringResource(
-                R.plurals.members_count,
-                group.members,
-                group.members
-            ),
-            actions = actions
+            chatId = group.id, title = group.name, subTitle = pluralStringResource(
+                R.plurals.members_count, group.members, group.members
+            ), actions = actions
         )
     }) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
@@ -178,14 +184,9 @@ private fun ChannelProfile(
 ) {
     Scaffold(topBar = {
         TopBar(
-            chatId = channel.id,
-            title = channel.name,
-            subTitle = pluralStringResource(
-                R.plurals.subscribers_count,
-                channel.subscribers,
-                channel.subscribers
-            ),
-            actions = actions
+            chatId = channel.id, title = channel.name, subTitle = pluralStringResource(
+                R.plurals.subscribers_count, channel.subscribers, channel.subscribers
+            ), actions = actions
         )
     }) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
@@ -215,46 +216,73 @@ private fun UserProfile(
 ) {
     val scrollState = rememberScrollState()
     
-    Scaffold(
-        topBar = {
-            TopBar(
-                chatId = user.id,
-                title = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-                subTitle = user.lastSeen?.toInstance()?.toPrettyTime() ?: "в сети недавно",
-                actions = actions
-            )
-        },
-    ) {
+    Scaffold { innerPadding ->
         Column(
-            Modifier
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(it)
                 .verticalScroll(scrollState)
         ) {
-            val state = rememberCarouselState { user.avatars.size }
-            HorizontalCenteredHeroCarousel(state = state) { index ->
-                AsyncImage(model = user.avatars[index], contentDescription = null)
+            Box {
+                val state = rememberCarouselState { user.avatars.size }
+                val width = LocalWindowInfo.current.containerDpSize
+                HorizontalUncontainedCarousel(
+                    state = state,
+                    itemWidth = width.width,
+                    flingBehavior = CarouselDefaults.singleAdvanceFlingBehavior(
+                        state
+                    )
+                ) { index ->
+                    AsyncImage(
+                        model = user.avatars[index],
+                        contentDescription = null,
+                        modifier = Modifier.aspectRatio(1f),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(TopAppBarDefaults.LargeAppBarCollapsedHeight + innerPadding.calculateTopPadding())
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Black.copy(alpha = 0.5f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+                
+                TopBar(
+                    chatId = user.id,
+                    title = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                    subTitle = user.lastSeen?.toInstance()?.toPrettyTime() ?: "в сети недавно",
+                    actions = actions
+                )
             }
             
-            SectionContainer {
-                if (!user.bio.isNullOrBlank()) {
-                    SectionItem(
-                        headlineText = user.bio, supportingText = stringResource(R.string.bio)
-                    )
-                }
-                
-                if (!user.username.isNullOrBlank()) {
-                    SectionItem(
-                        headlineText = ("@${user.username}"),
-                        supportingText = stringResource(R.string.username)
-                    )
-                }
-                
-                if (user.dateOfBirth != null) {
-                    SectionItem(
-                        headlineText = user.dateOfBirth.toInstance().toPrettyDateWithYear(),
-                        supportingText = stringResource(R.string.date_of_birth)
-                    )
+            Column(modifier = Modifier.padding(top = 10.dp)) {
+                SectionContainer {
+                    if (!user.bio.isNullOrBlank()) {
+                        SectionItem(
+                            headlineText = user.bio, supportingText = stringResource(R.string.bio)
+                        )
+                    }
+                    
+                    if (!user.username.isNullOrBlank()) {
+                        SectionItem(
+                            headlineText = ("@${user.username}"),
+                            supportingText = stringResource(R.string.username)
+                        )
+                    }
+                    
+                    if (user.dateOfBirth != null) {
+                        SectionItem(
+                            headlineText = user.dateOfBirth.toInstance().toPrettyDateWithYear(),
+                            supportingText = stringResource(R.string.date_of_birth)
+                        )
+                    }
                 }
             }
         }
@@ -284,15 +312,22 @@ private fun TopBar(
                     text = subTitle,
                     fontSize = 12.sp,
                     lineHeight = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .fillMaxWidth()
                         .sharedElement(key = "chat-sub-title-$chatId")
                 )
             }
-        }, navigationIcon = NavigationIcon(
+        },
+        navigationIcon = NavigationIcon(
             icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navBackStack::removeLastOrNull
-        ), actions = actions
+        ),
+        actions = actions,
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.Transparent,
+            navigationIconContentColor = Color.White,
+            actionIconContentColor = Color.White,
+            titleContentColor = Color.White,
+        )
     )
 }
 

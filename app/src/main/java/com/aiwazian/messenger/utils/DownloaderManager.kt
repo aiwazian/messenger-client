@@ -56,9 +56,7 @@ class DownloaderManager @Inject constructor(
     fun download(
         url: String,
         fileName: String,
-        messageId: Long,
-        fileId: String,
-        size: Long
+        fileId: String
     ): Int {
         val folderName = getFolderNameForExtension(fileName.substringAfterLast('.', ""))
         val path = File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
@@ -79,10 +77,9 @@ class DownloaderManager @Inject constructor(
         
         val item = DownloadItem(
             id = id,
-            messageId = messageId,
             fileId = fileId,
             name = fileName,
-            size = size,
+            size = 0,
             progress = 0,
             status = DownloadStatus.DOWNLOADING
         )
@@ -118,6 +115,7 @@ class DownloaderManager @Inject constructor(
                         current + (id to existing.copy(
                             progress = model.progress,
                             status = finalStatus,
+                            size = model.total,
                             speed = model.speedInBytePerMs.toString(),
                             localUri = finalUri
                         ))

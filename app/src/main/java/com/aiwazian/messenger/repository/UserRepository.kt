@@ -5,6 +5,9 @@
 package com.aiwazian.messenger.repository
 
 import android.util.Log
+import androidx.core.net.toUri
+import com.aiwazian.messenger.database.dao.AvatarDao
+import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.UserDao
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.mappers.toDomain
@@ -24,15 +27,32 @@ import javax.inject.Inject
 
 class UserRepository @Inject constructor(
     private val userApi: UserApi,
-    private val userDao: UserDao
+    private val userDao: UserDao,
+    private val avatarDao: AvatarDao,
+    private val fileDao: FileDao
 ) {
-    fun getMe(): Flow<User> = userDao.getMe().filterNotNull().map { it.toDomain() }.onStart {
+    fun getMe(): Flow<User> = userDao.getMe().filterNotNull().map { userEntity ->
+        val avatarsEntity = avatarDao.getAvatarsByUserId(userEntity.id)
+        val avatars = avatarsEntity.mapNotNull { avatar ->
+            val file = fileDao.getById(avatar.fileId)
+            if (!file?.path.isNullOrBlank()) {
+                avatar.toDomain(file.path.toUri())
+            } else null
+        }
+        
+        userEntity.toDomain(avatars)
+    }.onStart {
         val localUser = userDao.getMe().first()
         if (localUser == null) {
             try {
                 val response = userApi.getMe()
                 if (response.isSuccessful) {
-                    response.body()?.let { userDao.insert(it.toEntity()) }
+                    response.body()?.let { user ->
+                        userDao.insert(user.toEntity())
+                        
+                        val avatars = user.avatars.map { it.toEntity(user.id) }
+                        avatarDao.insertAvatars(avatars)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("UserRepository", "Ошибка при загрузке профиля при старте", e)
@@ -43,7 +63,14 @@ class UserRepository @Inject constructor(
     fun getById(id: Long): Flow<User> = flow {
         val localUser = userDao.get(id)
         if (localUser != null) {
-            emit(localUser.toDomain())
+            val avatarsEntity = avatarDao.getAvatarsByUserId(localUser.id)
+            val avatars = avatarsEntity.mapNotNull { avatar ->
+                val file = fileDao.getById(avatar.fileId)
+                if (!file?.path.isNullOrBlank()) {
+                    avatar.toDomain(file.path.toUri())
+                } else null
+            }
+            emit(localUser.toDomain(avatars))
         }
         
         try {
@@ -53,6 +80,10 @@ class UserRepository @Inject constructor(
                 if (dto != null) {
                     val user = dto.toDomain()
                     userDao.insert(user.toEntity())
+                    
+                    val avatars = dto.avatars.map { it.toEntity(user.id) }
+                    avatarDao.insertAvatars(avatars)
+                    
                     emit(user)
                 }
             }
@@ -127,6 +158,25 @@ class UserRepository @Inject constructor(
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Upload failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Ошибка при загрузке аватара", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun getAvatarDownloadUrl(fileId: String): Result<String> {
+        return try {
+            val response = userApi.getAvatarDownloadUrl(fileId)
+            if (response.isSuccessful) {
+                val url = response.body()
+                if (url != null) {
+                    Result.success(url)
+                } else {
+                    throw Exception("Empty body")
+                }
+            } else {
+                throw Exception("Unsuccessful request")
             }
         } catch (e: Exception) {
             Log.e("UserRepository", "Ошибка при загрузке аватара", e)

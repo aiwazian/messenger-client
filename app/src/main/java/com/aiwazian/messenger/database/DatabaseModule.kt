@@ -8,6 +8,7 @@ import android.content.Context
 import androidx.room.Room
 import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.database.dao.AttachmentDao
+import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.FileDao
@@ -63,4 +64,7 @@ object DatabaseModule {
 
     @Provides
     fun provideFileDao(database: AppDatabase): FileDao = database.fileDao()
+    
+    @Provides
+    fun provideAvatarDao(database: AppDatabase): AvatarDao = database.avatarDao()
 }

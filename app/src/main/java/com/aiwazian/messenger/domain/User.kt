@@ -4,6 +4,8 @@
 
 package com.aiwazian.messenger.domain
 
+import android.net.Uri
+
 data class User(
     val id: Long,
     val firstName: String,
@@ -16,6 +18,7 @@ data class User(
 )
 
 data class Avatar(
+    val uri: Uri?,
     val fileId: String,
     val sortOrder: Int
 )

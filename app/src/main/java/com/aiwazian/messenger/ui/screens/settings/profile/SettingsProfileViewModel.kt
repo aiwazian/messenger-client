@@ -110,6 +110,7 @@ class SettingsProfileViewModel @Inject constructor(
                                 user = state.user.copy(
                                     avatars = state.user.avatars.plus(
                                         Avatar(
+                                            uri = uri,
                                             fileId = uploadInfo.fileId,
                                             sortOrder = state.user.avatars.size + 1
                                         )

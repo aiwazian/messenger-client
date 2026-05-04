@@ -16,11 +16,13 @@ import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.repository.ChannelRepository
+import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.utils.ClipboardService
+import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.ShortcutManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -40,7 +42,9 @@ class ProfileViewModel @Inject constructor(
     private val channelRepository: ChannelRepository,
     private val groupRepository: GroupRepository,
     private val shortcutManager: ShortcutManager,
-    private val clipboardService: ClipboardService
+    private val clipboardService: ClipboardService,
+    private val downloadManager: DownloaderManager,
+    private val chatRepository: ChatRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -63,12 +67,9 @@ class ProfileViewModel @Inject constructor(
         }
     }
     
-    fun createChatShortcut(
-        chatId: Long,
-        chatName: String
-    ) {
+    private fun createChatShortcut(chatName: String) {
         shortcutManager.createChatShortcut(
-            chatId,
+            chatId = _uiState.value.profile!!.id,
             chatName
         )
     }
@@ -89,12 +90,23 @@ class ProfileViewModel @Inject constructor(
                                 lastName = user.lastName,
                                 username = user.username,
                                 bio = user.bio,
-                                dateOfBirth = user.dateOfBirth
+                                dateOfBirth = user.dateOfBirth,
+                                avatars = user.avatars.mapNotNull { it.uri }
                             )
                             _uiState.update {
                                 it.copy(profile = profile)
                             }
                             recalculateActions()
+                            user.avatars.forEach { avatar ->
+                                userRepository.getAvatarDownloadUrl(avatar.fileId)
+                                    .onSuccess { downloadUrl ->
+                                        downloadManager.download(
+                                            url = downloadUrl,
+                                            fileId = avatar.fileId,
+                                            fileName = avatar.fileId
+                                        )
+                                    }
+                            }
                         }
                     } else {
                         userRepository.getById(profileId).collectLatest { user ->
@@ -202,10 +214,7 @@ class ProfileViewModel @Inject constructor(
                 textResId = R.string.add_to_home_screen,
                 onClick = {
                     val chatName = "${user.firstName} ${user.lastName}"
-                    createChatShortcut(
-                        user.id,
-                        chatName
-                    )
+                    createChatShortcut(chatName)
                 }
             )
         )
@@ -242,10 +251,7 @@ class ProfileViewModel @Inject constructor(
                 icon = Icons.Rounded.AddHome,
                 textResId = R.string.add_to_home_screen,
                 onClick = {
-                    createChatShortcut(
-                        channel.id,
-                        channel.name
-                    )
+                    createChatShortcut(channel.name)
                 }
             )
         )
@@ -297,10 +303,7 @@ class ProfileViewModel @Inject constructor(
                 icon = Icons.Rounded.AddHome,
                 textResId = R.string.add_to_home_screen,
                 onClick = {
-                    createChatShortcut(
-                        group.id,
-                        group.name
-                    )
+                    createChatShortcut(group.name)
                 }
             )
         )

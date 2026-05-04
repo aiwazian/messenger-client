@@ -4,10 +4,13 @@
 
 package com.aiwazian.messenger.mappers
 
+import android.net.Uri
+import com.aiwazian.messenger.database.entity.AvatarEntity
 import com.aiwazian.messenger.database.entity.UserEntity
 import com.aiwazian.messenger.domain.Avatar
 import com.aiwazian.messenger.domain.PrivacySettings
 import com.aiwazian.messenger.domain.User
+import com.aiwazian.messenger.network.dto.AvatarDto
 import com.aiwazian.messenger.network.dto.PrivacySettingsResponseDto
 import com.aiwazian.messenger.network.dto.UpdateUserRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
@@ -20,7 +23,7 @@ fun UserResponseDto.toDomain(): User = User(
     bio = bio,
     dateOfBirth = dateOfBirth,
     lastSeen = lastSeen,
-    avatars = avatars.map { Avatar(it.fileId, it.sortOrder) }
+    avatars = emptyList()
 )
 
 fun UserResponseDto.toEntity(): UserEntity = UserEntity(
@@ -49,7 +52,7 @@ fun PrivacySettingsResponseDto.toDomain() = PrivacySettings(
     invites = invites
 )
 
-fun UserEntity.toDomain(): User = User(
+fun UserEntity.toDomain(avatars: List<Avatar> = emptyList()): User = User(
     id = id,
     firstName = firstName,
     lastName = lastName,
@@ -57,7 +60,7 @@ fun UserEntity.toDomain(): User = User(
     bio = bio,
     dateOfBirth = dateOfBirth,
     lastSeen = lastSeen,
-    avatars = emptyList()
+    avatars = avatars
 )
 
 fun User.toEntity(): UserEntity = UserEntity(
@@ -68,4 +71,22 @@ fun User.toEntity(): UserEntity = UserEntity(
     bio = bio,
     dateOfBirth = dateOfBirth,
     lastSeen = lastSeen
+)
+
+fun AvatarEntity.toDomain(uri: Uri) = Avatar(
+    uri = uri,
+    fileId = fileId,
+    sortOrder = sortOrder
+)
+
+fun AvatarDto.toDomain(uri: Uri) = Avatar(
+    uri = uri,
+    fileId = fileId,
+    sortOrder = sortOrder
+)
+
+fun AvatarDto.toEntity(userId: Long) = AvatarEntity(
+    fileId = fileId,
+    userId = userId,
+    sortOrder = sortOrder
 )

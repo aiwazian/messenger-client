@@ -623,9 +623,7 @@ class ChatViewModel @Inject constructor(
                                 downloaderManager.download(
                                     url = url,
                                     fileName = file.name,
-                                    messageId = message.id,
-                                    fileId = file.fileId,
-                                    size = file.size
+                                    fileId = file.fileId
                                 )
                             }
                     } catch (e: Exception) {

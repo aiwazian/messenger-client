@@ -18,25 +18,28 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface UserApi {
-
+    
     @GET("users/me")
     suspend fun getMe(): Response<UserResponseDto>
-
+    
     @PATCH("users/me")
     suspend fun updateMe(@Body request: UpdateUserRequestDto): Response<UserResponseDto>
-
+    
     @PATCH("users/me/password")
     suspend fun changePassword(@Body request: ChangePasswordRequestDto): Response<Unit>
-
+    
     @GET("users/{userId}")
     suspend fun getUserById(@Path("userId") userId: Long): Response<UserResponseDto>
-
+    
     @DELETE("users/me")
     suspend fun deleteMe(): Response<Unit>
-
+    
     @POST("users/me/avatar/init")
     suspend fun initUploadAvatar(@Body body: FileInitRequestDto): Response<FileInitResponseDto>
-
+    
     @POST("users/me/avatar/confirm/{fileId}")
     suspend fun confirmUploadAvatar(@Path("fileId") fileId: String): Response<Unit>
+    
+    @GET("users/avatar/{fileId}")
+    suspend fun getAvatarDownloadUrl(@Path("fileId") fileId: String): Response<String>
 }
