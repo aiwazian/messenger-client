@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
@@ -27,18 +26,20 @@ import javax.inject.Inject
 class UserRepository @Inject constructor(
     private val userApi: UserApi,
     private val userDao: UserDao,
-    private val avatarDao: AvatarDao,
-    private val fileRepository: FileRepository
+    private val avatarDao: AvatarDao
 ) {
-    fun getMe(): Flow<User> = userDao.getMe().filterNotNull().map { userEntity ->
-        val avatarsEntity = avatarDao.getAvatarsByUserId(userEntity.id)
-        val avatars = avatarsEntity.map { avatar ->
-            val file = fileRepository.getById(avatar.fileId)
-            val uri = if (!file?.path.isNullOrBlank()) file.path.toUri() else null
-            avatar.toDomain(uri)
-        }
+    fun getMe(): Flow<User> = userDao.getMeWithAvatars().filterNotNull().map { userWithAvatars ->
+        val avatars =
+            userWithAvatars.avatars.sortedBy { it.avatar.sortOrder }.map { avatarWithFile ->
+                val uri = if (!avatarWithFile.file?.path.isNullOrBlank()) {
+                    avatarWithFile.file.path.toUri()
+                } else {
+                    null
+                }
+                avatarWithFile.avatar.toDomain(uri)
+            }
         
-        userEntity.toDomain(avatars)
+        userWithAvatars.user.toDomain(avatars)
     }.onStart {
         val localUser = userDao.getMe().first()
         if (localUser == null) {
@@ -58,36 +59,34 @@ class UserRepository @Inject constructor(
         }
     }
     
-    fun getById(id: Long): Flow<User> = flow {
-        val localUser = userDao.get(id)
-        if (localUser != null) {
-            val avatarsEntity = avatarDao.getAvatarsByUserId(localUser.id)
-            val avatars = avatarsEntity.map { avatar ->
-                val file = fileRepository.getById(avatar.fileId)
-                val uri = if (!file?.path.isNullOrBlank()) file.path.toUri() else null
-                avatar.toDomain(uri)
-            }
-            emit(localUser.toDomain(avatars))
-        }
-        
-        try {
-            val response = userApi.getUserById(id)
-            if (response.isSuccessful) {
-                val dto = response.body()
-                if (dto != null) {
-                    val user = dto.toDomain()
-                    userDao.insert(user.toEntity())
-                    
-                    val avatars = dto.avatars.map { it.toEntity(user.id) }
-                    avatarDao.insertAvatars(avatars)
-                    
-                    emit(user)
+    fun getById(id: Long): Flow<User> =
+        userDao.getWithAvatarsFlow(id).filterNotNull().map { userWithAvatars ->
+            val avatars =
+                userWithAvatars.avatars.sortedBy { it.avatar.sortOrder }.map { avatarWithFile ->
+                    val uri = if (!avatarWithFile.file?.path.isNullOrBlank()) {
+                        avatarWithFile.file.path.toUri()
+                    } else {
+                        null
+                    }
+                    avatarWithFile.avatar.toDomain(uri)
                 }
+            userWithAvatars.user.toDomain(avatars)
+        }.onStart {
+            try {
+                val response = userApi.getUserById(id)
+                if (response.isSuccessful) {
+                    response.body()?.let { dto ->
+                        val user = dto.toDomain()
+                        userDao.insert(user.toEntity())
+                        
+                        val avatars = dto.avatars.map { it.toEntity(user.id) }
+                        avatarDao.insertAvatars(avatars)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("UserRepository", "Ошибка при получении профиля", e)
             }
-        } catch (e: Exception) {
-            Log.e("UserRepository", "Ошибка при получении профиля", e)
         }
-    }
     
     suspend fun updateProfile(user: User): Result<Unit> {
         return try {

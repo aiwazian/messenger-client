@@ -17,11 +17,11 @@ import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.UploadManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -36,8 +36,8 @@ class SettingsProfileViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SettingsProfileUiState())
     val uiState = _uiState.asStateFlow()
     
-    private val _sideEffect = Channel<SettingsProfileSideEffect>(Channel.BUFFERED)
-    val sideEffect = _sideEffect.receiveAsFlow()
+    private val _sideEffect = MutableSharedFlow<SettingsProfileSideEffect>()
+    val sideEffect = _sideEffect.asSharedFlow()
     
     init {
         viewModelScope.launch {
@@ -79,7 +79,7 @@ class SettingsProfileViewModel @Inject constructor(
     fun onSaveAndBack() {
         viewModelScope.launch {
             userRepository.updateProfile(_uiState.value.user)
-            _sideEffect.send(SettingsProfileSideEffect.NavigateBack)
+            _sideEffect.emit(SettingsProfileSideEffect.NavigateBack)
         }
     }
     
