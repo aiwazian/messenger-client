@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.profile
 
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
@@ -100,11 +101,14 @@ class ProfileViewModel @Inject constructor(
                             user.avatars.forEach { avatar ->
                                 userRepository.getAvatarDownloadUrl(avatar.fileId)
                                     .onSuccess { downloadUrl ->
+                                        Log.d("ProfileViewModel", "Download $downloadUrl")
                                         downloadManager.download(
                                             url = downloadUrl,
                                             fileId = avatar.fileId,
                                             fileName = avatar.fileId
                                         )
+                                    }.onFailure {
+                                        Log.e("ProfileViewModel", "Error download avatar: ", it)
                                     }
                             }
                         }

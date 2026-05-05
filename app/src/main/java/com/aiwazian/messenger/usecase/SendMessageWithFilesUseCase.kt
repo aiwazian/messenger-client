@@ -19,6 +19,7 @@ import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.network.dto.AttachmentInputDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.repository.ChatRepository
+import com.aiwazian.messenger.repository.FileRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.UploadManager
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -29,6 +30,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val chatRepository: ChatRepository,
     private val userRepository: UserRepository,
+    private val fileRepository: FileRepository,
     private val uploadManager: UploadManager
 ) {
     suspend operator fun invoke(chatId: Long, uris: List<Uri>, text: String?): Result<Message> {
@@ -95,30 +97,23 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 return@forEach
             }
             
-            chatRepository.updateFileId(fileId, initResponse.fileId)
+            fileRepository.updateFileId(fileId, initResponse.fileId)
             
-            try {
-                uploadManager.upload(
-                    attachment.localUri,
-                    initResponse.signedUrl,
-                    initResponse.fileId
-                ).onSuccess { filePath ->
-                    chatRepository.updateFileStatus(
-                        fileId = fileId,
-                        status = DownloadStatus.COMPLETED,
-                        path = filePath
+            uploadManager.upload(
+                attachment.localUri,
+                initResponse.signedUrl,
+                initResponse.fileId
+            ).onSuccess { filePath ->
+                fileRepository.updateFileStatus(fileId, DownloadStatus.COMPLETED)
+                fileRepository.updateFilePath(fileId, filePath)
+                uploadResults.add(
+                    AttachmentInputDto(
+                        fileId = initResponse.fileId,
+                        type = attachment.type
                     )
-                    uploadResults.add(
-                        AttachmentInputDto(
-                            fileId = initResponse.fileId,
-                            type = attachment.type
-                        )
-                    )
-                }.onFailure {
-                    success = false
-                }
-            } catch (e: Exception) {
-                Log.e("SendMessageWithFiles", "Upload failed", e)
+                )
+            }.onFailure {
+                Log.e("SendMessageWithFiles", "Upload failed", it)
                 success = false
             }
         }

@@ -5,7 +5,6 @@
 package com.aiwazian.messenger.repository
 
 import com.aiwazian.messenger.database.AppDatabase
-import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.ui.screens.settings.storage.CategoryStats
 import com.aiwazian.messenger.ui.screens.settings.storage.FileCategory
@@ -19,7 +18,7 @@ import javax.inject.Singleton
 @Singleton
 class StorageRepository @Inject constructor(
     private val appDatabase: AppDatabase,
-    private val fileDao: FileDao
+    private val fileRepository: FileRepository
 ) {
     
     suspend fun clearDatabaseExceptAccount() {
@@ -27,7 +26,7 @@ class StorageRepository @Inject constructor(
     }
     
     suspend fun getStorageStats(): List<CategoryStats> = withContext(Dispatchers.IO) {
-        val allFiles = fileDao.getAllFiles()
+        val allFiles = fileRepository.getAllFiles()
         
         val categoryMap = mutableMapOf<FileCategory, Pair<Int, Long>>()
         
@@ -56,7 +55,7 @@ class StorageRepository @Inject constructor(
     
     suspend fun getFilesForCategories(categories: List<FileCategory>): List<StorageFile> =
         withContext(Dispatchers.IO) {
-            val allFiles = fileDao.getAllFiles()
+            val allFiles = fileRepository.getAllFiles()
             
             allFiles.filter { fileEntity ->
                 fileEntity.status == DownloadStatus.COMPLETED &&
@@ -88,11 +87,7 @@ class StorageRepository @Inject constructor(
                 file.delete()
             }
             
-            fileDao.updateStatusAndPath(
-                id = storageFile.id,
-                status = DownloadStatus.IDLE,
-                path = null
-            )
+            fileRepository.deleteFile(fileId = storageFile.id)
         }
     }
 }

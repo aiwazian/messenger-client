@@ -19,8 +19,11 @@ interface FileDao {
     @Query("SELECT * FROM file WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): FileEntity?
 
-    @Query("UPDATE file SET status = :status, path = :path WHERE id = :id")
-    suspend fun updateStatusAndPath(id: String, status: DownloadStatus, path: String?)
+    @Query("UPDATE file SET status = :status WHERE id = :id")
+    suspend fun updateStatus(id: String, status: DownloadStatus)
+    
+    @Query("UPDATE file SET path = :path WHERE id = :id")
+    suspend fun updatePath(id: String, path: String?)
     
     @Query("SELECT * FROM file")
     suspend fun getAllFiles(): List<FileEntity>

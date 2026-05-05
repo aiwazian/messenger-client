@@ -108,31 +108,8 @@ class ChatViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            downloaderManager.downloads.collect { downloads ->
-                updateDownloadsInUi(downloads)
-            }
-        }
-        viewModelScope.launch {
             webSocketClient.connectionState.collect { state ->
                 _uiState.update { it.copy(isConnected = state == ConnectionState.CONNECTED) }
-            }
-        }
-    }
-    
-    private fun updateDownloadsInUi(downloads: List<DownloadItem>) {
-        _uiState.value.chatItems.forEach { item ->
-            if (item is ChatItem.MessageItem) {
-                item.message.attachments.forEach { file ->
-                    downloads.findLast { it.fileId == file.fileId }?.let { download ->
-                        viewModelScope.launch {
-                            chatRepository.updateFileStatus(
-                                file.fileId,
-                                download.status,
-                                download.localUri
-                            )
-                        }
-                    }
-                }
             }
         }
     }

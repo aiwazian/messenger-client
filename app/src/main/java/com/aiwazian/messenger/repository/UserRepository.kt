@@ -7,7 +7,6 @@ package com.aiwazian.messenger.repository
 import android.util.Log
 import androidx.core.net.toUri
 import com.aiwazian.messenger.database.dao.AvatarDao
-import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.UserDao
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.mappers.toDomain
@@ -29,12 +28,12 @@ class UserRepository @Inject constructor(
     private val userApi: UserApi,
     private val userDao: UserDao,
     private val avatarDao: AvatarDao,
-    private val fileDao: FileDao
+    private val fileRepository: FileRepository
 ) {
     fun getMe(): Flow<User> = userDao.getMe().filterNotNull().map { userEntity ->
         val avatarsEntity = avatarDao.getAvatarsByUserId(userEntity.id)
         val avatars = avatarsEntity.mapNotNull { avatar ->
-            val file = fileDao.getById(avatar.fileId)
+            val file = fileRepository.getById(avatar.fileId)
             if (!file?.path.isNullOrBlank()) {
                 avatar.toDomain(file.path.toUri())
             } else null
@@ -65,7 +64,7 @@ class UserRepository @Inject constructor(
         if (localUser != null) {
             val avatarsEntity = avatarDao.getAvatarsByUserId(localUser.id)
             val avatars = avatarsEntity.mapNotNull { avatar ->
-                val file = fileDao.getById(avatar.fileId)
+                val file = fileRepository.getById(avatar.fileId)
                 if (!file?.path.isNullOrBlank()) {
                     avatar.toDomain(file.path.toUri())
                 } else null
@@ -154,7 +153,6 @@ class UserRepository @Inject constructor(
         return try {
             val response = userApi.confirmUploadAvatar(fileId)
             if (response.isSuccessful) {
-                //                response.body()?.let { userDao.insert() }
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Upload failed"))

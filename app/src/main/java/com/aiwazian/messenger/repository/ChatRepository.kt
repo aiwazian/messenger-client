@@ -8,7 +8,6 @@ import android.util.Log
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChatDao
-import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.Chat
@@ -39,7 +38,7 @@ class ChatRepository @Inject constructor(
     private val messageApi: MessageApi,
     private val messageDao: MessageDao,
     private val attachmentDao: AttachmentDao,
-    private val fileDao: FileDao,
+    private val fileRepository: FileRepository,
     private val chatDao: ChatDao,
     private val userRepository: UserRepository,
     private val channelRepository: ChannelRepository,
@@ -224,7 +223,7 @@ class ChatRepository @Inject constructor(
         messageDao.saveMessages(messages.map { it.toEntity() })
         messages.forEach { message ->
             val attachments = message.attachments.map { attachment ->
-                val existingFile = fileDao.getById(attachment.fileId)
+                val existingFile = fileRepository.getById(attachment.fileId)
                 
                 val file = if (existingFile != null) {
                     existingFile
@@ -236,7 +235,7 @@ class ChatRepository @Inject constructor(
                         path = null,
                         status = attachment.status
                     )
-                    fileDao.save(newFile)
+                    fileRepository.save(newFile)
                     newFile
                 }
                 
@@ -249,14 +248,6 @@ class ChatRepository @Inject constructor(
                 chatDao.updateLastMessageId(message.chatId, message.id)
             }
         }
-    }
-    
-    suspend fun updateFileStatus(fileId: String, status: DownloadStatus, path: String? = null) {
-        fileDao.updateStatusAndPath(fileId, status, path)
-    }
-    
-    suspend fun updateFileId(oldId: String, newId: String) {
-        fileDao.updateFileId(oldId, newId)
     }
     
     suspend fun initFileUpload(chatId: Long, dto: FileInitRequestDto): FileInitResponseDto? {

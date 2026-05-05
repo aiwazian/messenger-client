@@ -7,6 +7,7 @@ package com.aiwazian.messenger.utils
 import android.content.Context
 import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.enums.DownloadStatus
+import com.aiwazian.messenger.repository.FileRepository
 import com.ketch.DownloadConfig
 import com.ketch.Ketch
 import com.ketch.Status
@@ -30,6 +31,7 @@ import javax.inject.Singleton
 class DownloaderManager @Inject constructor(
     @param:ApplicationContext
     private val context: Context,
+    private val fileRepository: FileRepository,
     okHttpClient: OkHttpClient
 ) {
     private val ketch = Ketch.builder()
@@ -102,17 +104,29 @@ class DownloaderManager @Inject constructor(
         scope.launch {
             ketch.observeDownloadById(id).collect { model ->
                 if (model != null) {
+                    val existing = _downloads.value[id] ?: return@collect
+                    val fileId = existing.fileId
+                    val finalStatus = model.status.toDomain()
+                    val finalUri = if (finalStatus == DownloadStatus.COMPLETED) {
+                        "${model.path}/${model.fileName}"
+                    } else {
+                        existing.localUri
+                    }
+                    
+                    if (
+                        finalStatus == DownloadStatus.COMPLETED &&
+                        fileId != null &&
+                        !finalUri.isNullOrBlank() &&
+                        (existing.status != DownloadStatus.COMPLETED || existing.localUri != finalUri)
+                    ) {
+                        fileRepository.updateFileStatus(fileId, finalStatus)
+                        fileRepository.updateFilePath(fileId, finalUri)
+                    }
+                    
                     _downloads.update { current ->
-                        val existing = current[id] ?: return@update current
+                        val currentItem = current[id] ?: return@update current
                         
-                        val finalStatus = mapKetchStatus(model.status)
-                        val finalUri = if (finalStatus == DownloadStatus.COMPLETED) {
-                            "${model.path}/${model.fileName}"
-                        } else {
-                            existing.localUri
-                        }
-                        
-                        current + (id to existing.copy(
+                        current + (id to currentItem.copy(
                             progress = model.progress,
                             status = finalStatus,
                             size = model.total,
@@ -125,17 +139,15 @@ class DownloaderManager @Inject constructor(
         }
     }
     
-    private fun mapKetchStatus(status: Status): DownloadStatus {
-        return when (status) {
-            Status.DEFAULT -> DownloadStatus.IDLE
-            Status.QUEUED -> DownloadStatus.DOWNLOADING
-            Status.PROGRESS -> DownloadStatus.DOWNLOADING
-            Status.PAUSED -> DownloadStatus.PAUSED
-            Status.SUCCESS -> DownloadStatus.COMPLETED
-            Status.FAILED -> DownloadStatus.FAILED
-            Status.CANCELLED -> DownloadStatus.CANCELLED
-            Status.STARTED -> DownloadStatus.DOWNLOADING
-        }
+    private fun Status.toDomain() = when (this) {
+        Status.DEFAULT -> DownloadStatus.IDLE
+        Status.QUEUED -> DownloadStatus.DOWNLOADING
+        Status.PROGRESS -> DownloadStatus.DOWNLOADING
+        Status.PAUSED -> DownloadStatus.PAUSED
+        Status.SUCCESS -> DownloadStatus.COMPLETED
+        Status.FAILED -> DownloadStatus.FAILED
+        Status.CANCELLED -> DownloadStatus.CANCELLED
+        Status.STARTED -> DownloadStatus.DOWNLOADING
     }
     
     fun pause(id: Int) = ketch.pause(id)
