@@ -20,7 +20,7 @@ sealed interface Profile {
         override val bio: String? = null,
         val dateOfBirth: Long? = null,
         val lastSeen: Long? = null,
-        val avatars: List<Uri> = emptyList()
+        val avatars: List<Uri?> = emptyList()
     ) : Profile
     
     data class Channel(

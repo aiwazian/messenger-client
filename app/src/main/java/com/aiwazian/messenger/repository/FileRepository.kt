@@ -34,7 +34,11 @@ class FileRepository @Inject constructor(
         fileDao.updatePath(fileId, path)
     }
 
+    suspend fun updateFileSize(fileId:String, size: Long) {
+        fileDao.updateSize(fileId, size)
+    }
+    
     suspend fun deleteFile(fileId: String) {
-        fileDao.deleteFile(fileId)
+        fileDao.deleteById(fileId)
     }
 }

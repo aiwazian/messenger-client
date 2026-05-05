@@ -14,7 +14,6 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
@@ -594,18 +593,14 @@ class ChatViewModel @Inject constructor(
         when (action) {
             FileAction.DOWNLOAD -> {
                 viewModelScope.launch {
-                    try {
-                        chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
-                            ?.let { url ->
-                                downloaderManager.download(
-                                    url = url,
-                                    fileName = file.name,
-                                    fileId = file.fileId
-                                )
-                            }
-                    } catch (e: Exception) {
-                        Log.e("ChatVM", "Error getting download URL", e)
-                    }
+                    chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
+                        ?.let { url ->
+                            downloaderManager.download(
+                                url = url,
+                                fileName = file.name,
+                                fileId = file.fileId
+                            )
+                        }
                 }
             }
             

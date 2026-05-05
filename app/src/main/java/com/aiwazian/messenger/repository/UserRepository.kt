@@ -32,11 +32,10 @@ class UserRepository @Inject constructor(
 ) {
     fun getMe(): Flow<User> = userDao.getMe().filterNotNull().map { userEntity ->
         val avatarsEntity = avatarDao.getAvatarsByUserId(userEntity.id)
-        val avatars = avatarsEntity.mapNotNull { avatar ->
+        val avatars = avatarsEntity.map { avatar ->
             val file = fileRepository.getById(avatar.fileId)
-            if (!file?.path.isNullOrBlank()) {
-                avatar.toDomain(file.path.toUri())
-            } else null
+            val uri = if (!file?.path.isNullOrBlank()) file.path.toUri() else null
+            avatar.toDomain(uri)
         }
         
         userEntity.toDomain(avatars)
@@ -63,11 +62,10 @@ class UserRepository @Inject constructor(
         val localUser = userDao.get(id)
         if (localUser != null) {
             val avatarsEntity = avatarDao.getAvatarsByUserId(localUser.id)
-            val avatars = avatarsEntity.mapNotNull { avatar ->
+            val avatars = avatarsEntity.map { avatar ->
                 val file = fileRepository.getById(avatar.fileId)
-                if (!file?.path.isNullOrBlank()) {
-                    avatar.toDomain(file.path.toUri())
-                } else null
+                val uri = if (!file?.path.isNullOrBlank()) file.path.toUri() else null
+                avatar.toDomain(uri)
             }
             emit(localUser.toDomain(avatars))
         }
@@ -167,14 +165,14 @@ class UserRepository @Inject constructor(
         return try {
             val response = userApi.getAvatarDownloadUrl(fileId)
             if (response.isSuccessful) {
-                val url = response.body()
-                if (url != null) {
-                    Result.success(url)
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body.downloadUrl)
                 } else {
                     throw Exception("Empty body")
                 }
             } else {
-                throw Exception("Unsuccessful request")
+                throw Exception("Unsuccessful request: ${response.errorBody()}")
             }
         } catch (e: Exception) {
             Log.e("UserRepository", "Ошибка при загрузке аватара", e)

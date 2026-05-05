@@ -17,7 +17,6 @@ import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.repository.ChannelRepository
-import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
@@ -44,8 +43,7 @@ class ProfileViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val shortcutManager: ShortcutManager,
     private val clipboardService: ClipboardService,
-    private val downloadManager: DownloaderManager,
-    private val chatRepository: ChatRepository
+    private val downloadManager: DownloaderManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -92,24 +90,25 @@ class ProfileViewModel @Inject constructor(
                                 username = user.username,
                                 bio = user.bio,
                                 dateOfBirth = user.dateOfBirth,
-                                avatars = user.avatars.mapNotNull { it.uri }
+                                avatars = user.avatars.map { it.uri }
                             )
                             _uiState.update {
                                 it.copy(profile = profile)
                             }
                             recalculateActions()
-                            user.avatars.forEach { avatar ->
-                                userRepository.getAvatarDownloadUrl(avatar.fileId)
-                                    .onSuccess { downloadUrl ->
-                                        Log.d("ProfileViewModel", "Download $downloadUrl")
-                                        downloadManager.download(
-                                            url = downloadUrl,
-                                            fileId = avatar.fileId,
-                                            fileName = avatar.fileId
-                                        )
-                                    }.onFailure {
-                                        Log.e("ProfileViewModel", "Error download avatar: ", it)
-                                    }
+                            user.avatars.filter { it.uri == null }.forEach { avatar ->
+                                launch {
+                                    userRepository.getAvatarDownloadUrl(avatar.fileId)
+                                        .onSuccess { downloadUrl ->
+                                            downloadManager.download(
+                                                url = downloadUrl,
+                                                fileId = avatar.fileId,
+                                                fileName = avatar.fileId
+                                            )
+                                        }.onFailure {
+                                            Log.e("ProfileViewModel", "Error download avatar: ", it)
+                                        }
+                                }
                             }
                         }
                     } else {
@@ -120,12 +119,29 @@ class ProfileViewModel @Inject constructor(
                                 lastName = user.lastName,
                                 username = user.username,
                                 bio = user.bio,
-                                dateOfBirth = user.dateOfBirth
+                                dateOfBirth = user.dateOfBirth,
+                                avatars = user.avatars.mapNotNull { it.uri }
                             )
                             _uiState.update {
                                 it.copy(profile = profile)
                             }
                             recalculateActions()
+                            
+                            user.avatars.forEach { avatar ->
+                                if (avatar.uri == null) {
+                                    userRepository.getAvatarDownloadUrl(avatar.fileId)
+                                        .onSuccess { downloadUrl ->
+                                            Log.d("ProfileViewModel", "Download $downloadUrl")
+                                            downloadManager.download(
+                                                url = downloadUrl,
+                                                fileId = avatar.fileId,
+                                                fileName = avatar.fileId
+                                            )
+                                        }.onFailure {
+                                            Log.e("ProfileViewModel", "Error download avatar: ", it)
+                                        }
+                                }
+                            }
                         }
                     }
                 }

@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.network.api
 
 import com.aiwazian.messenger.network.dto.ChangePasswordRequestDto
+import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.UpdateUserRequestDto
@@ -40,6 +41,6 @@ interface UserApi {
     @POST("users/me/avatar/confirm/{fileId}")
     suspend fun confirmUploadAvatar(@Path("fileId") fileId: String): Response<Unit>
     
-    @GET("users/avatar/{fileId}")
-    suspend fun getAvatarDownloadUrl(@Path("fileId") fileId: String): Response<String>
+    @GET("users/avatars/{fileId}")
+    suspend fun getAvatarDownloadUrl(@Path("fileId") fileId: String): Response<FileDownloadResponseDto>
 }

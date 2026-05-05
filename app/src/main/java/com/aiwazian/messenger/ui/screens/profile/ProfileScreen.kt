@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.profile
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -33,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -232,12 +235,25 @@ private fun UserProfile(
                         state
                     )
                 ) { index ->
-                    AsyncImage(
-                        model = user.avatars[index],
-                        contentDescription = null,
-                        modifier = Modifier.aspectRatio(1f),
-                        contentScale = ContentScale.Crop
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AnimatedContent(user.avatars[index]) { uri ->
+                            if (uri == null) {
+                                CircularWavyProgressIndicator()
+                            } else {
+                                AsyncImage(
+                                    model = uri,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
                 }
                 
                 Box(

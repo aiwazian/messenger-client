@@ -73,13 +73,13 @@ fun User.toEntity(): UserEntity = UserEntity(
     lastSeen = lastSeen
 )
 
-fun AvatarEntity.toDomain(uri: Uri) = Avatar(
+fun AvatarEntity.toDomain(uri: Uri?) = Avatar(
     uri = uri,
     fileId = fileId,
     sortOrder = sortOrder
 )
 
-fun AvatarDto.toDomain(uri: Uri) = Avatar(
+fun AvatarDto.toDomain(uri: Uri?) = Avatar(
     uri = uri,
     fileId = fileId,
     sortOrder = sortOrder

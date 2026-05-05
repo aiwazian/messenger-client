@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.utils
 
 import android.content.Context
+import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.repository.FileRepository
@@ -21,7 +22,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.io.File
 import javax.inject.Inject
@@ -55,7 +55,7 @@ class DownloaderManager @Inject constructor(
     
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
-    fun download(
+    suspend fun download(
         url: String,
         fileName: String,
         fileId: String
@@ -86,6 +86,15 @@ class DownloaderManager @Inject constructor(
             status = DownloadStatus.DOWNLOADING
         )
         
+        fileRepository.save(
+            FileEntity(
+                fileId,
+                fileName,
+                size = 1,
+                path = null,
+                status = DownloadStatus.DOWNLOADING
+            )
+        )
         _downloads.update { it + (id to item) }
         observeDownload(id)
         return id
@@ -100,41 +109,42 @@ class DownloaderManager @Inject constructor(
         }
     }
     
-    private fun observeDownload(id: Int) {
-        scope.launch {
-            ketch.observeDownloadById(id).collect { model ->
-                if (model != null) {
-                    val existing = _downloads.value[id] ?: return@collect
-                    val fileId = existing.fileId
-                    val finalStatus = model.status.toDomain()
-                    val finalUri = if (finalStatus == DownloadStatus.COMPLETED) {
-                        "${model.path}/${model.fileName}"
-                    } else {
-                        existing.localUri
-                    }
-                    
-                    if (
-                        finalStatus == DownloadStatus.COMPLETED &&
-                        fileId != null &&
-                        !finalUri.isNullOrBlank() &&
-                        (existing.status != DownloadStatus.COMPLETED || existing.localUri != finalUri)
-                    ) {
-                        fileRepository.updateFileStatus(fileId, finalStatus)
-                        fileRepository.updateFilePath(fileId, finalUri)
-                    }
-                    
-                    _downloads.update { current ->
-                        val currentItem = current[id] ?: return@update current
-                        
-                        current + (id to currentItem.copy(
-                            progress = model.progress,
-                            status = finalStatus,
-                            size = model.total,
-                            speed = model.speedInBytePerMs.toString(),
-                            localUri = finalUri
-                        ))
-                    }
-                }
+    private suspend fun observeDownload(id: Int) {
+        ketch.observeDownloadById(id).collect { model ->
+            if (model == null) {
+                return@collect
+            }
+            
+            val existing = _downloads.value[id] ?: return@collect
+            val fileId = existing.fileId
+            val finalStatus = model.status.toDomain()
+            val finalUri = if (finalStatus == DownloadStatus.COMPLETED) {
+                "${model.path}/${model.fileName}"
+            } else {
+                existing.localUri
+            }
+            
+            if (
+                finalStatus == DownloadStatus.COMPLETED &&
+                fileId != null &&
+                !finalUri.isNullOrBlank() &&
+                (existing.status != DownloadStatus.COMPLETED || existing.localUri != finalUri)
+            ) {
+                fileRepository.updateFileStatus(fileId, finalStatus)
+                fileRepository.updateFilePath(fileId, finalUri)
+                fileRepository.updateFileSize(fileId, model.total)
+            }
+            
+            _downloads.update { current ->
+                val currentItem = current[id] ?: return@update current
+                
+                current + (id to currentItem.copy(
+                    progress = model.progress,
+                    status = finalStatus,
+                    size = model.total,
+                    speed = model.speedInBytePerMs.toString(),
+                    localUri = finalUri
+                ))
             }
         }
     }

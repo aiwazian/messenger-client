@@ -25,6 +25,9 @@ interface FileDao {
     @Query("UPDATE file SET path = :path WHERE id = :id")
     suspend fun updatePath(id: String, path: String?)
     
+    @Query("UPDATE file SET size = :size WHERE id = :id")
+    suspend fun updateSize(id: String, size: Long)
+    
     @Query("SELECT * FROM file")
     suspend fun getAllFiles(): List<FileEntity>
     
@@ -32,5 +35,5 @@ interface FileDao {
     suspend fun updateFileId(oldId: String, newId: String)
     
     @Query("DELETE FROM file WHERE id = :fileId")
-    suspend fun deleteFile(fileId: String)
+    suspend fun deleteById(fileId: String)
 }
