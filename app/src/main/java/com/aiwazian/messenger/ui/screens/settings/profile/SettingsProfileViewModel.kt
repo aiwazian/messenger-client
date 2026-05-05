@@ -14,6 +14,7 @@ import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.repository.UserRepository
+import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.UploadManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -30,7 +31,8 @@ import javax.inject.Inject
 class SettingsProfileViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val userRepository: UserRepository,
-    private val uploadManager: UploadManager
+    private val uploadManager: UploadManager,
+    private val downloadManager: DownloaderManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(SettingsProfileUiState())
@@ -43,6 +45,21 @@ class SettingsProfileViewModel @Inject constructor(
         viewModelScope.launch {
             userRepository.getMe().collectLatest { user ->
                 _uiState.update { it.copy(user = user) }
+                
+                user.avatars.filter { it.uri == null }.forEach { avatar ->
+                    launch {
+                        userRepository.getAvatarDownloadUrl(avatar.fileId)
+                            .onSuccess { downloadUrl ->
+                                downloadManager.download(
+                                    url = downloadUrl,
+                                    fileId = avatar.fileId,
+                                    fileName = avatar.fileId
+                                )
+                            }.onFailure {
+                                Log.e("SettingsProfileViewModel", "Error download avatar: ", it)
+                            }
+                    }
+                }
             }
         }
     }
@@ -85,10 +102,9 @@ class SettingsProfileViewModel @Inject constructor(
     
     fun deleteAvatar(fileId: String) {
         viewModelScope.launch {
-            //            val success = userRepository.deleteAvatar(fileId)
-            //            if (success) {
-            // Refresh logic would go here
-            //            }
+            userRepository.deleteAvatar(fileId).onFailure {
+                Log.e("SettingsProfileViewModel", "error delete avatar", it)
+            }
         }
     }
     

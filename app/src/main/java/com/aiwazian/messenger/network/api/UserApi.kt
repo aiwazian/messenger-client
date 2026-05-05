@@ -41,6 +41,9 @@ interface UserApi {
     @POST("users/me/avatar/confirm/{fileId}")
     suspend fun confirmUploadAvatar(@Path("fileId") fileId: String): Response<Unit>
     
+    @DELETE("users/me/avatars/{fileId}")
+    suspend fun deleteAvatar(@Path("fileId") fileId: String): Response<Unit>
+    
     @GET("users/avatars/{fileId}")
     suspend fun getAvatarDownloadUrl(@Path("fileId") fileId: String): Response<FileDownloadResponseDto>
 }

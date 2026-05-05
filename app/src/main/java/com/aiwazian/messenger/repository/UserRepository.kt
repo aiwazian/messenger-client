@@ -178,4 +178,19 @@ class UserRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun deleteAvatar(fileId: String): Result<Unit> {
+        return try {
+            val response = userApi.deleteAvatar(fileId)
+            if (response.isSuccessful) {
+                avatarDao.deleteAvatarByFileId(fileId)
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Delete failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Ошибка при удалении аватара", e)
+            Result.failure(e)
+        }
+    }
 }

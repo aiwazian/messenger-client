@@ -161,7 +161,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                                 .aspectRatio(1f)
                                 .fillMaxWidth()
                                 .maskClip(MaterialTheme.shapes.large),
-                            model = avatar.fileId,
+                            model = avatar.uri,
                             contentDescription = null,
                             contentScale = ContentScale.Crop
                         )
@@ -184,7 +184,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                                             .align(Alignment.Center)
                                             .padding(bottom = 4.dp)
                                             .clip(MaterialTheme.shapes.extraLarge)
-                                            .background(MaterialTheme.colorScheme.surface)
+                                            .background(MaterialTheme.colorScheme.surfaceContainer)
                                     ) {
                                         Column(
                                             modifier = Modifier.padding(
