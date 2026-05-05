@@ -52,6 +52,8 @@ class ProfileViewModel @Inject constructor(
     private val _uiEffect = MutableSharedFlow<ProfileUiEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
     
+    private val downloadingAvatars = mutableSetOf<String>()
+    
     fun init(profileId: Long) {
         setupUserObserver()
         loadProfile(profileId)
@@ -96,20 +98,26 @@ class ProfileViewModel @Inject constructor(
                                 it.copy(profile = profile)
                             }
                             recalculateActions()
-                            user.avatars.filter { it.uri == null }.forEach { avatar ->
-                                launch {
-                                    userRepository.getAvatarDownloadUrl(avatar.fileId)
-                                        .onSuccess { downloadUrl ->
-                                            downloadManager.download(
-                                                url = downloadUrl,
-                                                fileId = avatar.fileId,
-                                                fileName = avatar.fileId
-                                            )
-                                        }.onFailure {
-                                            Log.e("ProfileViewModel", "Error download avatar: ", it)
-                                        }
+                            user.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
+                                .forEach { avatar ->
+                                    launch {
+                                        userRepository.getAvatarDownloadUrl(avatar.fileId)
+                                            .onSuccess { downloadUrl ->
+                                                downloadManager.download(
+                                                    url = downloadUrl,
+                                                    fileId = avatar.fileId,
+                                                    fileName = avatar.fileId
+                                                )
+                                            }.onFailure {
+                                                downloadingAvatars.remove(avatar.fileId)
+                                                Log.e(
+                                                    "ProfileViewModel",
+                                                    "Error download avatar: ",
+                                                    it
+                                                )
+                                            }
+                                    }
                                 }
-                            }
                         }
                     } else {
                         userRepository.getById(profileId).collectLatest { user ->

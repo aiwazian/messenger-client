@@ -42,7 +42,6 @@ import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -84,8 +83,6 @@ class ChatViewModel @Inject constructor(
     private var isFirstLoadDone = false
     private val limitFlow = MutableStateFlow(50)
     
-    private val uploadJobs = mutableMapOf<Long, Job>()
-    private val autoResumedFileIds = mutableSetOf<String>()
     
     fun init(chatId: Long, chatName: String? = null) {
         _uiState.update {
@@ -93,7 +90,6 @@ class ChatViewModel @Inject constructor(
         }
         isFirstLoadDone = false
         limitFlow.value = 50
-        autoResumedFileIds.clear()
         
         setupUserObserver()
         loadChatData()
@@ -579,8 +575,6 @@ class ChatViewModel @Inject constructor(
     }
     
     fun cancelUpload(tempMessageId: Long) {
-        uploadJobs[tempMessageId]?.cancel()
-        uploadJobs.remove(tempMessageId)
         downloaderManager.cancel(tempMessageId.toInt())
         
         val updatedMessages = getRawMessages().filter { it.id != tempMessageId }

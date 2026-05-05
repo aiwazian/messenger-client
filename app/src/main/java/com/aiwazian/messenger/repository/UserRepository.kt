@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.core.net.toUri
 import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.UserDao
+import com.aiwazian.messenger.database.entity.AvatarEntity
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
@@ -17,7 +18,6 @@ import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
@@ -41,7 +41,7 @@ class UserRepository @Inject constructor(
         
         userWithAvatars.user.toDomain(avatars)
     }.onStart {
-        val localUser = userDao.getMe().first()
+        val localUser = userDao.getMe().firstOrNull()
         if (localUser == null) {
             try {
                 val response = userApi.getMe()
@@ -135,10 +135,10 @@ class UserRepository @Inject constructor(
                 if (body != null) {
                     Result.success(body)
                 } else {
-                    throw Exception("Empty body")
+                    Result.failure(Exception("Empty body"))
                 }
             } else {
-                throw Exception("Unsuccessful request")
+                Result.failure(Exception("Unsuccessful request"))
             }
         } catch (e: Exception) {
             Log.e("UserRepository", "Ошибка при удалении аватара", e)
@@ -168,10 +168,10 @@ class UserRepository @Inject constructor(
                 if (body != null) {
                     Result.success(body.downloadUrl)
                 } else {
-                    throw Exception("Empty body")
+                    Result.failure(Exception("Empty body"))
                 }
             } else {
-                throw Exception("Unsuccessful request: ${response.errorBody()}")
+                Result.failure(Exception("Unsuccessful request: ${response.errorBody()}"))
             }
         } catch (e: Exception) {
             Log.e("UserRepository", "Ошибка при загрузке аватара", e)
@@ -191,6 +191,22 @@ class UserRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e("UserRepository", "Ошибка при удалении аватара", e)
             Result.failure(e)
+        }
+    }
+    
+    suspend fun addAvatarLocal(fileId: String) {
+        val user = userDao.getMe().firstOrNull()
+        if (user != null) {
+            val currentAvatars = avatarDao.getAvatarsByUserId(user.id)
+            val newSortOrder = (currentAvatars.maxOfOrNull { it.sortOrder } ?: 0) + 1
+            
+            avatarDao.insertAvatars(listOf(
+                AvatarEntity(
+                    fileId = fileId,
+                    userId = user.id,
+                    sortOrder = newSortOrder
+                )
+            ))
         }
     }
 }

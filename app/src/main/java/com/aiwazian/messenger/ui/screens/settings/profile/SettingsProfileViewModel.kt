@@ -9,7 +9,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.domain.Avatar
 import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
@@ -41,13 +40,15 @@ class SettingsProfileViewModel @Inject constructor(
     private val _sideEffect = MutableSharedFlow<SettingsProfileSideEffect>()
     val sideEffect = _sideEffect.asSharedFlow()
     
+    private val downloadingAvatars = mutableSetOf<String>()
+    
     init {
         viewModelScope.launch {
             userRepository.getMe().collectLatest { user ->
                 _uiState.update { it.copy(user = user) }
                 
-                user.avatars.filter { it.uri == null }.forEach { avatar ->
-                    launch {
+                user.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }.forEach { avatar ->
+                    viewModelScope.launch {
                         userRepository.getAvatarDownloadUrl(avatar.fileId)
                             .onSuccess { downloadUrl ->
                                 downloadManager.download(
@@ -56,6 +57,7 @@ class SettingsProfileViewModel @Inject constructor(
                                     fileName = avatar.fileId
                                 )
                             }.onFailure {
+                                downloadingAvatars.remove(avatar.fileId)
                                 Log.e("SettingsProfileViewModel", "Error download avatar: ", it)
                             }
                     }
@@ -121,19 +123,7 @@ class SettingsProfileViewModel @Inject constructor(
                     fileId = uploadInfo.fileId
                 ).onSuccess {
                     userRepository.confirmUploadAvatar(uploadInfo.fileId).onSuccess {
-                        _uiState.update { state ->
-                            state.copy(
-                                user = state.user.copy(
-                                    avatars = state.user.avatars.plus(
-                                        Avatar(
-                                            uri = uri,
-                                            fileId = uploadInfo.fileId,
-                                            sortOrder = state.user.avatars.size + 1
-                                        )
-                                    )
-                                )
-                            )
-                        }
+                        userRepository.addAvatarLocal(uploadInfo.fileId)
                     }.onFailure {
                         Log.e("SettingsProfileViewModel", "error confirm", it)
                     }

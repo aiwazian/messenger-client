@@ -4,11 +4,9 @@
 
 package com.aiwazian.messenger.ui.screens.profile
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,16 +16,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.carousel.CarouselDefaults
-import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
-import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,12 +29,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -51,7 +42,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import coil.compose.AsyncImage
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.extensions.sharedElement
@@ -226,35 +216,7 @@ private fun UserProfile(
                 .verticalScroll(scrollState)
         ) {
             Box {
-                val state = rememberCarouselState { user.avatars.size }
-                val width = LocalWindowInfo.current.containerDpSize
-                HorizontalUncontainedCarousel(
-                    state = state,
-                    itemWidth = width.width,
-                    flingBehavior = CarouselDefaults.singleAdvanceFlingBehavior(
-                        state
-                    )
-                ) { index ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1f),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AnimatedContent(user.avatars[index]) { uri ->
-                            if (uri == null) {
-                                CircularWavyProgressIndicator()
-                            } else {
-                                AsyncImage(
-                                    model = uri,
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
-                        }
-                    }
-                }
+                ProfileImageCarousel(avatars = user.avatars)
                 
                 Box(
                     modifier = Modifier

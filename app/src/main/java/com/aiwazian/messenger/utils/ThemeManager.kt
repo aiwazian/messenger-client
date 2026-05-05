@@ -61,6 +61,6 @@ class ThemeManager @Inject constructor(
     
     suspend fun setPrimaryColor(color: AppPrimaryColor) {
         _appPrimaryColor.update { color }
-        dataStorage.savePrimaryColor(color.name)
+        dataStorage.savePrimaryColor(color)
     }
 }

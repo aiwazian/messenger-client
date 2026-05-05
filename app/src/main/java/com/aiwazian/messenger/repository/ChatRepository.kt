@@ -13,7 +13,6 @@ import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.enums.ChatType
-import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.network.api.ChatApi
@@ -29,6 +28,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -49,25 +49,27 @@ class ChatRepository @Inject constructor(
     fun getAllChats(): Flow<List<Chat>> = channelFlow {
         launch {
             chatDao.getAllChatsFlow().collectLatest { chatEntities ->
-                val myId = userRepository.getMe().first().id
+                val myId = userRepository.getMe().firstOrNull()?.id ?: return@collectLatest
                 val result = chatEntities.map { chatEntity ->
                     val name: UiText = when (ChatType.fromId(chatEntity.chatId)) {
                         ChatType.PRIVATE -> {
                             if (chatEntity.chatId == myId) {
                                 UiText.StringResource(R.string.saved_messages)
                             } else {
-                                userRepository.getById(chatEntity.chatId)
-                                    .first()
-                                    .let { UiText.DynamicString("${it.firstName} ${it.lastName.orEmpty()}".trim()) }
+                                val user = userRepository.getById(chatEntity.chatId)
+                                    .firstOrNull() ?: return@collectLatest
+                                UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim())
                             }
                         }
                         
                         ChatType.GROUP -> UiText.DynamicString(
-                            groupRepository.getById(chatEntity.chatId).first().name
+                            (groupRepository.getById(chatEntity.chatId).firstOrNull()
+                                ?: return@collectLatest).name
                         )
                         
                         ChatType.CHANNEL -> UiText.DynamicString(
-                            channelRepository.getById(chatEntity.chatId).first().name
+                            (channelRepository.getById(chatEntity.chatId).firstOrNull()
+                                ?: return@collectLatest).name
                         )
                         
                         else -> UiText.DynamicString("")

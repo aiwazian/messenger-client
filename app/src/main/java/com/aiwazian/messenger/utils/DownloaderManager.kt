@@ -15,7 +15,6 @@ import com.ketch.Status
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -52,8 +51,6 @@ class DownloaderManager @Inject constructor(
             SharingStarted.Eagerly,
             emptyList()
         )
-    
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
     suspend fun download(
         url: String,
