@@ -41,7 +41,7 @@ class ChannelTypeSettingsViewModel @Inject constructor(
     
     fun init(channelId: Long) {
         viewModelScope.launch {
-            channelRepository.getByIdFlow(channelId).collect { channel ->
+            channelRepository.getById(channelId).collect { channel ->
                 _uiState.update {
                     it.copy(
                         channelId = channel.id,
@@ -144,26 +144,19 @@ class ChannelTypeSettingsViewModel @Inject constructor(
                 return@launch
             }
             
-            try {
-                channelRepository.updateChannelType(
-                    currentState.channelId,
-                    currentState.channelType,
-                    currentState.username
-                )
-                    .onSuccess {
-                        _uiEffect.emit(ChannelTypeSettingsEffect.NavigateBack)
-                    }
-                    .onFailure {
-                        vibrationManager.vibrate(VibrationPattern.Error)
-                        _uiEffect.emit(
-                            ChannelTypeSettingsEffect.ShowSnackbar(
-                                UiText.StringResource(R.string.failed_to_save_changes)
-                            )
-                        )
-                    }
-            } catch (_: Exception) {
+            channelRepository.updateChannelType(
+                currentState.channelId,
+                currentState.channelType,
+                currentState.username
+            ).onSuccess {
+                _uiEffect.emit(ChannelTypeSettingsEffect.NavigateBack)
+            }.onFailure {
                 vibrationManager.vibrate(VibrationPattern.Error)
-                _uiEffect.emit(ChannelTypeSettingsEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
+                _uiEffect.emit(
+                    ChannelTypeSettingsEffect.ShowSnackbar(
+                        UiText.StringResource(R.string.failed_to_save_changes)
+                    )
+                )
             }
         }
     }
@@ -174,7 +167,7 @@ class ChannelTypeSettingsViewModel @Inject constructor(
         status: LinkCheckStatus
     ): Boolean {
         if (channelType == ChannelType.PUBLIC) {
-            return publicLink.isNotBlank() && status == LinkCheckStatus.Available
+            return publicLink.isNotBlank() && (status == LinkCheckStatus.Available || status == LinkCheckStatus.Idle)
         }
         return true
     }

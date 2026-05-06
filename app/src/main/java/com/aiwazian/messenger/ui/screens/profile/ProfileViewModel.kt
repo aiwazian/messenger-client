@@ -167,7 +167,7 @@ class ProfileViewModel @Inject constructor(
             
             ChatType.CHANNEL -> {
                 viewModelScope.launch {
-                    channelRepository.getByIdFlow(profileId).collectLatest { channel ->
+                    channelRepository.getById(profileId).collectLatest { channel ->
                         val profile = Profile.Channel(
                             id = channel.id,
                             ownerId = channel.ownerId,
@@ -185,10 +185,6 @@ class ProfileViewModel @Inject constructor(
                         recalculateActions()
                     }
                 }
-                
-                viewModelScope.launch {
-                    channelRepository.getById(profileId).collect {}
-                }
             }
             
             ChatType.GROUP -> {
@@ -201,7 +197,8 @@ class ProfileViewModel @Inject constructor(
                                 name = group.name,
                                 bio = group.bio,
                                 username = group.username,
-                                members = group.members
+                                members = group.members,
+                                isMember = group.isMember
                             )
                             _uiState.update {
                                 it.copy(profile = profile)

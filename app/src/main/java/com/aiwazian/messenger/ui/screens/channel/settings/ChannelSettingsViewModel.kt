@@ -38,7 +38,7 @@ class ChannelSettingsViewModel @Inject constructor(
     
     fun init(channelId: Long) {
         viewModelScope.launch {
-            channelRepository.getByIdFlow(channelId).collectLatest { channel ->
+            channelRepository.getById(channelId).collectLatest { channel ->
                 _uiState.update { it.copy(channel = channel, originalChannelData = channel) }
             }
         }

@@ -41,21 +41,18 @@ class UserRepository @Inject constructor(
         
         userWithAvatars.user.toDomain(avatars)
     }.onStart {
-        val localUser = userDao.getMe().firstOrNull()
-        if (localUser == null) {
-            try {
-                val response = userApi.getMe()
-                if (response.isSuccessful) {
-                    response.body()?.let { user ->
-                        userDao.insert(user.toEntity())
-                        
-                        val avatars = user.avatars.map { it.toEntity(user.id) }
-                        avatarDao.insertAvatars(avatars)
-                    }
+        try {
+            val response = userApi.getMe()
+            if (response.isSuccessful) {
+                response.body()?.let { user ->
+                    userDao.insert(user.toEntity())
+                    
+                    val avatars = user.avatars.map { it.toEntity(user.id) }
+                    avatarDao.insertAvatars(avatars)
                 }
-            } catch (e: Exception) {
-                Log.e("UserRepository", "Ошибка при загрузке профиля при старте", e)
             }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Ошибка при загрузке профиля в onStart", e)
         }
     }
     
@@ -178,7 +175,7 @@ class UserRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun deleteAvatar(fileId: String): Result<Unit> {
         return try {
             val response = userApi.deleteAvatar(fileId)
@@ -200,13 +197,15 @@ class UserRepository @Inject constructor(
             val currentAvatars = avatarDao.getAvatarsByUserId(user.id)
             val newSortOrder = (currentAvatars.maxOfOrNull { it.sortOrder } ?: 0) + 1
             
-            avatarDao.insertAvatars(listOf(
-                AvatarEntity(
-                    fileId = fileId,
-                    userId = user.id,
-                    sortOrder = newSortOrder
+            avatarDao.insertAvatars(
+                listOf(
+                    AvatarEntity(
+                        fileId = fileId,
+                        userId = user.id,
+                        sortOrder = newSortOrder
+                    )
                 )
-            ))
+            )
         }
     }
 }

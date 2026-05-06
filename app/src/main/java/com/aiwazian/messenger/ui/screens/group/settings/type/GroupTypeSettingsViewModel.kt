@@ -165,7 +165,7 @@ class GroupTypeSettingsViewModel @Inject constructor(
         status: LinkCheckStatus
     ): Boolean {
         if (groupType == GroupType.PUBLIC) {
-            return publicLink.isNotBlank() && status == LinkCheckStatus.Available
+            return publicLink.isNotBlank() && (status == LinkCheckStatus.Available || status == LinkCheckStatus.Idle)
         }
         return true
     }

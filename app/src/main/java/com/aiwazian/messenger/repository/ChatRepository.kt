@@ -13,6 +13,7 @@ import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.network.api.ChatApi
@@ -27,6 +28,7 @@ import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -131,7 +133,7 @@ class ChatRepository @Inject constructor(
                     }
                 }
             
-            else -> messageDao.getMessagesWithAttachments(senderId, chatId, limit, offset)
+            ChatType.GROUP -> messageDao.getMessagesWithAttachments(chatId, limit, offset)
                 .map { list ->
                     list.map { messageWithAttachments ->
                         val attachments = messageWithAttachments.attachments.map { attWithFile ->
@@ -140,6 +142,20 @@ class ChatRepository @Inject constructor(
                         messageWithAttachments.message.toDomain(attachments)
                     }
                 }
+            
+            ChatType.PRIVATE -> messageDao.getMessagesWithAttachments(
+                senderId, chatId, limit, offset
+            )
+                .map { list ->
+                    list.map { messageWithAttachments ->
+                        val attachments = messageWithAttachments.attachments.map { attWithFile ->
+                            attWithFile.toDomain()
+                        }
+                        messageWithAttachments.message.toDomain(attachments)
+                    }
+                }
+            
+            else -> emptyFlow()
         }
     }
     
@@ -174,14 +190,17 @@ class ChatRepository @Inject constructor(
     
     suspend fun sendMessage(chatId: Long, message: String): Message? {
         val tempId = -System.currentTimeMillis()
+        val senderId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
+        else userRepository.getMe().first().id
+        
         val localMessage = Message(
             id = tempId,
-            senderId = userRepository.getMe().first().id,
+            senderId = senderId,
             chatId = chatId,
             text = message,
             sendTime = System.currentTimeMillis(),
             isRead = false,
-            messageType = com.aiwazian.messenger.enums.MessageType.TEXT,
+            messageType = MessageType.TEXT,
             systemMessageEventType = null,
             attachments = emptyList()
         )

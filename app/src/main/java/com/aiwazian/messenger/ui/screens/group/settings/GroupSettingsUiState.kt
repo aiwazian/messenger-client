@@ -15,7 +15,8 @@ data class GroupSettingsUiState(
         bio = null,
         username = null,
         groupType = GroupType.PRIVATE,
-        members = 0
+        members = 0,
+        isMember = false
     ),
     val originalChannelData: Group? = null,
     val hasChanges: Boolean = false,

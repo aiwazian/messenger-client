@@ -6,17 +6,17 @@ package com.aiwazian.messenger.mappers
 
 import com.aiwazian.messenger.database.entity.GroupEntity
 import com.aiwazian.messenger.domain.Group
-import com.aiwazian.messenger.enums.GroupType
 import com.aiwazian.messenger.network.dto.GroupResponseDto
 
 fun GroupResponseDto.toDomain(): Group = Group(
-    id = id.toLongOrNull() ?: 0L,
-    ownerId = ownerId?.toLong(),
+    id = id,
+    ownerId = ownerId,
     name = name,
     bio = bio,
     username = username,
     groupType = groupType,
-    members = membersCount ?: 0
+    members = membersCount ?: 0,
+    isMember = isMember
 )
 
 fun GroupEntity.toDomain(): Group = Group(
@@ -26,7 +26,8 @@ fun GroupEntity.toDomain(): Group = Group(
     bio = bio,
     username = username,
     groupType = groupType,
-    members = members
+    members = members,
+    isMember = isMember
 )
 
 fun Group.toEntity() = GroupEntity(
@@ -36,5 +37,6 @@ fun Group.toEntity() = GroupEntity(
     username = username,
     ownerId = ownerId,
     groupType = groupType,
-    members = members
+    members = members,
+    isMember = isMember
 )

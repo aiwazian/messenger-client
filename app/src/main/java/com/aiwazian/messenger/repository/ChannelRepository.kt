@@ -17,8 +17,9 @@ import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 
 class ChannelRepository @Inject constructor(
@@ -47,29 +48,22 @@ class ChannelRepository @Inject constructor(
         }
     }
     
-    fun getById(channelId: Long): Flow<Channel> = flow {
-        val localChannel = channelDao.get(channelId)
-        if (localChannel != null) {
-            emit(localChannel.toDomain())
-        }
-        
-        try {
-            val response = channelApi.getChannelById(channelId)
-            if (response.isSuccessful) {
-                val dto = response.body()
-                if (dto != null) {
-                    val channel = dto.toDomain()
-                    channelDao.insert(channel.toEntity())
-                    emit(channel)
+    fun getById(channelId: Long): Flow<Channel> =
+        channelDao.getFlow(channelId).filterNotNull().mapNotNull { it.toDomain() }.onStart {
+            try {
+                val response = channelApi.getChannelById(channelId)
+                if (response.isSuccessful) {
+                    val dto = response.body()
+                    if (dto != null) {
+                        val channel = dto.toDomain()
+                        channelDao.insert(channel.toEntity())
+                        emit(channel)
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e("ChannelRepository", "Error getting channel in onStart", e)
             }
-        } catch (e: Exception) {
-            Log.e("ChannelRepository", "Error getting channel", e)
         }
-    }
-    
-    fun getByIdFlow(channelId: Long): Flow<Channel> = channelDao.getFlow(channelId)
-        .mapNotNull { it?.toDomain() }
     
     suspend fun getSubscribers(
         channelId: Long,

@@ -8,12 +8,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.InviteLink
-import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.UserRepository
+import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DialogController
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -131,7 +131,7 @@ class ChannelInviteLinksViewModel @Inject constructor(
                         ChatType.PRIVATE -> true
                         ChatType.GROUP -> true
                         ChatType.CHANNEL -> {
-                            val channel = channelRepository.getByIdFlow(chat.id).first()
+                            val channel = channelRepository.getById(chat.id).first()
                             channel.ownerId == me.id
                         }
                         else -> false

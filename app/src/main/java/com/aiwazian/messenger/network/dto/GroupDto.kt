@@ -10,15 +10,15 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class GroupResponseDto(
-    @SerialName("id") val id: String,
+    @SerialName("id") val id: Long,
     @SerialName("name") val name: String,
     @SerialName("bio") val bio: String? = null,
     @SerialName("username") val username: String? = null,
     @SerialName("groupType") val groupType: GroupType = GroupType.PRIVATE,
-    @SerialName("ownerId") val ownerId: String? = null,
+    @SerialName("ownerId") val ownerId: Long? = null,
     @SerialName("membersCount") val membersCount: Int? = null,
-    @SerialName("isMember") val isMember: Boolean? = null,
-    @SerialName("isOwner") val isOwner: Boolean? = null
+    @SerialName("isMember") val isMember: Boolean = false,
+    @SerialName("isOwner") val isOwner: Boolean? = false
 )
 
 @Serializable

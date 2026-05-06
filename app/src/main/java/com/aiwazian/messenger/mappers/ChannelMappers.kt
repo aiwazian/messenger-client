@@ -6,16 +6,15 @@ package com.aiwazian.messenger.mappers
 
 import com.aiwazian.messenger.database.entity.ChannelEntity
 import com.aiwazian.messenger.domain.Channel
-import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.network.dto.ChannelResponseDto
 
 fun ChannelResponseDto.toDomain() = Channel(
-    id = id.toLongOrNull() ?: 0L,
-    ownerId = ownerId?.toLongOrNull() ?: 0L,
+    id = id,
+    ownerId = ownerId,
     name = name,
-    bio = bio ?: "",
-    subscribers = subscribers?.toIntOrNull() ?: 0,
-    removedUser = removedUser?.toIntOrNull() ?: 0,
+    bio = bio,
+    subscribers = subscribers,
+    removedUser = removedUser,
     channelType = channelType,
     username = username,
     isSubscribed = isSubscribed

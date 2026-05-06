@@ -17,6 +17,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.serializer
 import org.json.JSONArray
 import org.json.JSONObject
 import javax.inject.Inject
@@ -63,6 +64,24 @@ class WebSocketClient @Inject constructor(
             val jsonString = defaultJson.encodeToString(JsonObject.serializer(), jsonObject)
             val dto = defaultJson.decodeFromString(event.deserializer, jsonString)
             handler(event.mapper(dto))
+        }
+    }
+    
+    fun emitEvent(eventName: String, data: Any) {
+        if (socket?.connected() == true) {
+            val jsonString = try {
+                when (data) {
+                    is Map<*, *> -> defaultJson.encodeToString(data)
+                    else -> defaultJson.encodeToString(serializer(data::class.java), data)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Serialization failed", e)
+                return
+            }
+            socket?.emit(eventName, JSONObject(jsonString))
+            Log.d(TAG, "Emitted event: $eventName with data: $jsonString")
+        } else {
+            Log.w(TAG, "Cannot emit event $eventName: socket is not connected")
         }
     }
     

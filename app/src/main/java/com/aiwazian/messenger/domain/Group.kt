@@ -13,5 +13,6 @@ data class Group(
     val bio: String?,
     val username: String?,
     val groupType: GroupType,
-    val members: Int
+    val members: Int,
+    val isMember: Boolean
 )

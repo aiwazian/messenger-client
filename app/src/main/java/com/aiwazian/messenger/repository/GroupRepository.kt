@@ -18,10 +18,10 @@ import com.aiwazian.messenger.network.dto.CreateGroupRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import com.aiwazian.messenger.network.dto.UpdateGroupRequestDto
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 
 class GroupRepository @Inject constructor(
@@ -29,13 +29,9 @@ class GroupRepository @Inject constructor(
     private val groupDao: GroupDao
 ) {
     
-    fun getById(id: Long): Flow<Group> = channelFlow {
-        launch {
-            groupDao.get(id).collectLatest { entity ->
-                entity?.let { send(it.toDomain()) }
-            }
-        }
-        
+    fun getById(id: Long): Flow<Group> = groupDao.get(id).filterNotNull().map {
+        it.toDomain()
+    }.onStart {
         try {
             val response = groupApi.getGroupById(id)
             if (response.isSuccessful) {

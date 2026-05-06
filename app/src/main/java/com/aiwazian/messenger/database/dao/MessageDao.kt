@@ -30,6 +30,17 @@ interface MessageDao {
     ): Flow<List<MessageWithAttachments>>
     
     @Transaction
+    @Query("SELECT * FROM message " +
+                   "WHERE chatId = :chatId " +
+                   "OR senderId = :chatId " +
+                   "ORDER BY sendTime ASC " +
+                   "LIMIT :limit " +
+                   "OFFSET :offset")
+    fun getMessagesWithAttachments(
+        chatId: Long, limit: Int, offset: Int
+    ): Flow<List<MessageWithAttachments>>
+    
+    @Transaction
     @Query("SELECT * FROM message WHERE id = :messageId LIMIT 1")
     suspend fun getMessageById(messageId: Long): MessageWithAttachments?
     

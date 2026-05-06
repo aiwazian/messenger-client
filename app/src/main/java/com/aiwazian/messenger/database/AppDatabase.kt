@@ -39,7 +39,7 @@ import com.aiwazian.messenger.database.entity.UserEntity
         AvatarEntity::class
     ],
     exportSchema = false,
-    version = 31
+    version = 32
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {

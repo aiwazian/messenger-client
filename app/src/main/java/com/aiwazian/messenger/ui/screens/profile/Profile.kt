@@ -41,6 +41,7 @@ sealed interface Profile {
         val name: String = "",
         override val bio: String? = null,
         override val username: String? = null,
-        val members: Int = 0
+        val members: Int = 0,
+        val isMember: Boolean = false
     ) : Profile
 }

@@ -93,6 +93,8 @@ class ChatViewModel @Inject constructor(
         isFirstLoadDone = false
         limitFlow.value = 50
         
+        webSocketClient.emitEvent("chat_open", mapOf("chatId" to chatId.toString()))
+        
         setupUserObserver()
         loadChatData()
     }
@@ -134,9 +136,7 @@ class ChatViewModel @Inject constructor(
                             isSubscribed = channel.isSubscribed
                         )
                         _uiState.update {
-                            it.copy(
-                                profile = profile, isJoined = channel.isSubscribed
-                            )
+                            it.copy(profile = profile, isJoined = channel.isSubscribed)
                         }
                         updateUiContent()
                     }
@@ -152,9 +152,10 @@ class ChatViewModel @Inject constructor(
                                 ownerId = group.ownerId,
                                 name = group.name,
                                 bio = group.bio,
-                                members = group.members
+                                members = group.members,
+                                isMember = group.isMember
                             )
-                            _uiState.update { it.copy(profile = profile) }
+                            _uiState.update { it.copy(profile = profile, isJoined = group.isMember) }
                             updateUiContent()
                         }
                     }
@@ -490,8 +491,19 @@ class ChatViewModel @Inject constructor(
     
     fun onJoinClicked() {
         viewModelScope.launch {
-            channelRepository.join(_uiState.value.chatId).onSuccess {
-                _uiState.update { it.copy(isJoined = true) }
+            val chatId = _uiState.value.chatId
+            when (_uiState.value.profile) {
+                is Profile.Channel -> {
+                    channelRepository.join(chatId).onSuccess {
+                        _uiState.update { it.copy(isJoined = true) }
+                    }
+                }
+                is Profile.Group -> {
+                    groupRepository.join(chatId).onSuccess {
+                        _uiState.update { it.copy(isJoined = true) }
+                    }
+                }
+                else -> {}
             }
         }
     }
