@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.components.navigation
 
-import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -17,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
@@ -67,13 +67,18 @@ import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPass
 import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeScreen
 import com.aiwazian.messenger.ui.screens.settings.storage.StorageScreen
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun AppNavDisplay(startRoute: AppRoute? = null) {
+fun AppNavDisplay(
+    startRoute: AppRoute? = null,
+    onRouteConsumed: () -> Unit = {}
+) {
     val backStack = rememberNavBackStack(AppRoute.Main)
     
-    startRoute?.let {
-        backStack.add(it)
+    LaunchedEffect(startRoute) {
+        startRoute?.let {
+            backStack.add(it)
+            onRouteConsumed()
+        }
     }
     
     SharedTransitionLayout {

@@ -13,7 +13,9 @@ import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -34,8 +36,8 @@ class SettingsInvitesViewModel @Inject constructor(
     private val _showSaveButton = MutableStateFlow(false)
     val showSaveButton = _showSaveButton.asStateFlow()
 
-    private val _effect = Channel<SettingsInvitesEffect>()
-    val effect = _effect.receiveAsFlow()
+    private val _effect = MutableSharedFlow<SettingsInvitesEffect>()
+    val effect = _effect.asSharedFlow()
 
     fun vibrate(pattern: LongArray) {
         vibrationManager.vibrate(pattern)
@@ -63,7 +65,7 @@ class SettingsInvitesViewModel @Inject constructor(
                 val success = privacyRepository.updateInvitesPrivacy(_currentLevel.value)
 
                 if (success) {
-                    _effect.send(SettingsInvitesEffect.Back)
+                    _effect.emit(SettingsInvitesEffect.Back)
                 } else {
                     vibrate(VibrationPattern.Error)
                 }

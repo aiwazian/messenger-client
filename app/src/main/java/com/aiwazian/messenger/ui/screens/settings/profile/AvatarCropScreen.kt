@@ -87,17 +87,13 @@ fun AvatarCropScreen(
             CircularWavyProgressIndicator(color = MaterialTheme.colorScheme.primary)
         }
     } else {
-        AvatarCropContent(
-            bitmap = bitmap!!, onCropConfirmed = onCropConfirmed, onDismiss = onDismiss
-        )
+        AvatarCropContent(bitmap = bitmap!!, onCropConfirmed = onCropConfirmed)
     }
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun AvatarCropContent(
-    bitmap: Bitmap, onCropConfirmed: (Bitmap) -> Unit, onDismiss: () -> Unit
-) {
+private fun AvatarCropContent(bitmap: Bitmap, onCropConfirmed: (Bitmap) -> Unit) {
     var displayBitmap by remember { mutableStateOf(bitmap) }
     
     var scale by remember { mutableFloatStateOf(1f) }

@@ -12,10 +12,10 @@ import com.aiwazian.messenger.repository.SessionRepository
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -29,8 +29,8 @@ class DevicesViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(DevicesUiState())
     val uiState = _uiState.asStateFlow()
     
-    private val _sideEffect = Channel<DevicesSideEffect>(Channel.BUFFERED)
-    val sideEffect = _sideEffect.receiveAsFlow()
+    private val _sideEffect = MutableSharedFlow<DevicesSideEffect>()
+    val sideEffect = _sideEffect.asSharedFlow()
     
     init {
         getSessions()
@@ -54,7 +54,7 @@ class DevicesViewModel @Inject constructor(
     }
     
     fun openSession(session: Session) {
-        _uiState.update { 
+        _uiState.update {
             it.copy(
                 openedSession = session,
                 showSessionInfoBottomSheet = true
@@ -93,7 +93,7 @@ class DevicesViewModel @Inject constructor(
                     _uiState.update { state ->
                         state.copy(sessions = state.sessions.filter { it.id != sessionId })
                     }
-                    _sideEffect.send(DevicesSideEffect.ShowSnackbar("Сессия завершена"))
+                    _sideEffect.emit(DevicesSideEffect.ShowSnackbar("Сессия завершена"))
                 } else {
                     handleError("Не удалось завершить сессию")
                 }
@@ -112,7 +112,7 @@ class DevicesViewModel @Inject constructor(
                     _uiState.update { state ->
                         state.copy(sessions = state.sessions.filter { it.isCurrent })
                     }
-                    _sideEffect.send(DevicesSideEffect.ShowSnackbar("Сессии завершены"))
+                    _sideEffect.emit(DevicesSideEffect.ShowSnackbar("Сессии завершены"))
                 } else {
                     handleError("Не удалось завершить сессии")
                 }
@@ -124,6 +124,6 @@ class DevicesViewModel @Inject constructor(
     
     private suspend fun handleError(message: String) {
         vibrationManager.vibrate(VibrationPattern.Error)
-        _sideEffect.send(DevicesSideEffect.ShowSnackbar(message))
+        _sideEffect.emit(DevicesSideEffect.ShowSnackbar(message))
     }
 }

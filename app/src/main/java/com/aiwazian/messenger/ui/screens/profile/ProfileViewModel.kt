@@ -54,7 +54,12 @@ class ProfileViewModel @Inject constructor(
     
     private val downloadingAvatars = mutableSetOf<String>()
     
+    private var isInit = false
+    
     fun init(profileId: Long) {
+        if(isInit) return
+        isInit = true
+        
         setupUserObserver()
         loadProfile(profileId)
     }
@@ -100,7 +105,7 @@ class ProfileViewModel @Inject constructor(
                             recalculateActions()
                             user.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
                                 .forEach { avatar ->
-                                    launch {
+                                    viewModelScope.launch {
                                         userRepository.getAvatarDownloadUrl(avatar.fileId)
                                             .onSuccess { downloadUrl ->
                                                 downloadManager.download(
@@ -135,21 +140,26 @@ class ProfileViewModel @Inject constructor(
                             }
                             recalculateActions()
                             
-                            user.avatars.forEach { avatar ->
-                                if (avatar.uri == null) {
-                                    userRepository.getAvatarDownloadUrl(avatar.fileId)
-                                        .onSuccess { downloadUrl ->
-                                            Log.d("ProfileViewModel", "Download $downloadUrl")
-                                            downloadManager.download(
-                                                url = downloadUrl,
-                                                fileId = avatar.fileId,
-                                                fileName = avatar.fileId
-                                            )
-                                        }.onFailure {
-                                            Log.e("ProfileViewModel", "Error download avatar: ", it)
-                                        }
+                            user.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
+                                .forEach { avatar ->
+                                    viewModelScope.launch {
+                                        userRepository.getAvatarDownloadUrl(avatar.fileId)
+                                            .onSuccess { downloadUrl ->
+                                                downloadManager.download(
+                                                    url = downloadUrl,
+                                                    fileId = avatar.fileId,
+                                                    fileName = avatar.fileId
+                                                )
+                                            }.onFailure {
+                                                downloadingAvatars.remove(avatar.fileId)
+                                                Log.e(
+                                                    "ProfileViewModel",
+                                                    "Error download avatar: ",
+                                                    it
+                                                )
+                                            }
+                                    }
                                 }
-                            }
                         }
                     }
                 }

@@ -78,13 +78,15 @@ class ChatViewModel @Inject constructor(
     private val _uiEffect = MutableSharedFlow<ChatUiEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
     
-    private val _selectedMessageId = MutableStateFlow<Long?>(null)
-    
     private var isFirstLoadDone = false
     private val limitFlow = MutableStateFlow(50)
     
+    private var isInit = false
     
     fun init(chatId: Long, chatName: String? = null) {
+        if (isInit) return
+        isInit = true
+        
         _uiState.update {
             it.copy(chatId = chatId, chatName = UiText.DynamicString(chatName.orEmpty()))
         }
@@ -437,7 +439,7 @@ class ChatViewModel @Inject constructor(
             actions.add(
                 DropdownMenuAction(
                     Icons.Rounded.DeleteOutline, R.string.delete, onClick = {
-                        showDeleteMessageDialog(message.id)
+                        showDeleteMessageDialog()
                         selectMessage(message)
                     }, isDestructive = true
                 )
@@ -517,13 +519,11 @@ class ChatViewModel @Inject constructor(
     
     fun hideClearHistoryDialog() = _uiState.update { it.copy(showClearHistoryDialog = false) }
     
-    fun showDeleteMessageDialog(messageId: Long) {
-        _selectedMessageId.value = messageId
+    fun showDeleteMessageDialog() {
         _uiState.update { it.copy(showDeleteMessageDialog = true) }
     }
     
     fun hideDeleteMessageDialog() {
-        _selectedMessageId.value = null
         _uiState.update { it.copy(showDeleteMessageDialog = false) }
     }
     

@@ -116,7 +116,10 @@ class MainActivity : AppCompatActivity() {
                 dynamicColor = isDynamicColorEnable,
                 appPrimaryColor = primaryColor.color
             ) {
-                AppNavDisplay(startRoute = startRoute)
+                AppNavDisplay(
+                    startRoute = startRoute,
+                    onRouteConsumed = { startRoute = null }
+                )
                 
                 AnimatedVisibility(
                     visible = isLockApp,
@@ -135,8 +138,8 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun handleIntent(intent: Intent) {
-        val chatId = intent.getStringExtra("chatId")?.toLongOrNull() ?: -1L
-        if (chatId != -1L) {
+        val chatId = intent.getStringExtra("chatId")?.toLongOrNull()
+        if (chatId != null) {
             startRoute = AppRoute.Chat(chatId, null)
             return
         }

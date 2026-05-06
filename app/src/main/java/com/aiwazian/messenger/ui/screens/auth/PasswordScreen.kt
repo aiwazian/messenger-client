@@ -221,7 +221,7 @@ private fun PasswordField(
                     }
                 }
             }
-        }, onSendClick = {
-        
-        })
+        },
+        onSendClick = onSendClick
+    )
 }

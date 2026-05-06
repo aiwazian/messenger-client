@@ -12,10 +12,10 @@ import com.aiwazian.messenger.repository.PrivacyRepository
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -25,45 +25,45 @@ class SettingsLastSeenViewModel @Inject constructor(
     private val vibrationManager: VibrationManager,
     private val privacyRepository: PrivacyRepository
 ) : ViewModel() {
-
+    
     private val _initialLevel = MutableStateFlow(PrivacyLevel.EVERYBODY)
-
+    
     private val _currentLevel = MutableStateFlow(PrivacyLevel.EVERYBODY)
     val currentLevel = _currentLevel.asStateFlow()
-
+    
     private val _showSaveButton = MutableStateFlow(false)
     val showSaveButton = _showSaveButton.asStateFlow()
-
-    private val _effect = Channel<SettingsLastSeenEffect>()
-    val effect = _effect.receiveAsFlow()
-
+    
+    private val _effect = MutableSharedFlow<SettingsLastSeenEffect>()
+    val effect = _effect.asSharedFlow()
+    
     fun vibrate(pattern: LongArray) {
         vibrationManager.vibrate(pattern)
     }
-
+    
     fun init(initialValue: PrivacyLevel) {
         _initialLevel.update { initialValue }
         _currentLevel.update { initialValue }
         hideSaveButton()
     }
-
+    
     fun selectValue(value: PrivacyLevel) {
         _currentLevel.update { value }
-
+        
         if (_currentLevel.value == _initialLevel.value) {
             hideSaveButton()
         } else {
             showSaveButton()
         }
     }
-
+    
     fun onSaveClick() {
         viewModelScope.launch {
             try {
                 val success = privacyRepository.updateLastSeenPrivacy(_currentLevel.value)
-
+                
                 if (success) {
-                    _effect.send(SettingsLastSeenEffect.Back)
+                    _effect.emit(SettingsLastSeenEffect.Back)
                 } else {
                     vibrate(VibrationPattern.Error)
                 }
@@ -77,11 +77,11 @@ class SettingsLastSeenViewModel @Inject constructor(
             }
         }
     }
-
+    
     private fun showSaveButton() {
         _showSaveButton.update { true }
     }
-
+    
     private fun hideSaveButton() {
         _showSaveButton.update { false }
     }
