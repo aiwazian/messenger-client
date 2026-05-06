@@ -33,6 +33,8 @@ import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.profile.Profile
+import com.aiwazian.messenger.usecase.JoinChannelUseCase
+import com.aiwazian.messenger.usecase.JoinGroupUseCase
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.usecase.SendMessageWithFilesUseCase
 import com.aiwazian.messenger.utils.ClipboardService
@@ -69,7 +71,9 @@ class ChatViewModel @Inject constructor(
     private val vibrationManager: VibrationManager,
     private val fileHandler: FileHandler,
     private val sendMessageUseCase: SendMessageUseCase,
-    private val sendMessageWithFilesUseCase: SendMessageWithFilesUseCase
+    private val sendMessageWithFilesUseCase: SendMessageWithFilesUseCase,
+    private val joinChannelUseCase: JoinChannelUseCase,
+    private val joinGroupUseCase: JoinGroupUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -494,12 +498,12 @@ class ChatViewModel @Inject constructor(
             val chatId = _uiState.value.chatId
             when (_uiState.value.profile) {
                 is Profile.Channel -> {
-                    channelRepository.join(chatId).onSuccess {
+                    joinChannelUseCase(chatId).onSuccess {
                         _uiState.update { it.copy(isJoined = true) }
                     }
                 }
                 is Profile.Group -> {
-                    groupRepository.join(chatId).onSuccess {
+                    joinGroupUseCase(chatId).onSuccess {
                         _uiState.update { it.copy(isJoined = true) }
                     }
                 }
