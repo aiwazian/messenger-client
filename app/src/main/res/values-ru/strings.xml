@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Поиск</string>
@@ -57,7 +61,7 @@
     <string name="date_of_birth">Дата рождения</string>
     <string name="connecting">Соединение</string>
     <string name="invites">Приглашения</string>
-    <string name="dynamic_color">Динамичные цвета</string>
+    <string name="dynamic_color">Динамические цвета</string>
     <string name="create_new_folder">Создать новую папку</string>
     <string name="all_chats">Все чаты</string>
     <string name="save">Сохранить</string>
@@ -192,4 +196,9 @@
     <string name="file">Файл</string>
     <string name="video">Видео</string>
     <string name="voice">Голос</string>
+    <string name="chat_not_found">Чат не найден</string>
+    <string name="you_are_already_in_this_chat">Вы уже в этом чате</string>
+    <string name="invalid_link">Ссылка недействительна.</string>
+    <string name="failed_to_join">Не смог вступить</string>
+    <string name="error_searching_for_chat">Ошибка при поиске чата</string>
 </resources>

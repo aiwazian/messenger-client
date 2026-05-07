@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Пошук</string>
@@ -192,4 +196,11 @@
     <string name="file">Файл</string>
     <string name="video">Відэа</string>
     <string name="voice">Голас</string>
+    <string name="chat_not_found">Чат не знойдзены</string>
+    <string name="you_are_already_in_this_chat">Вы ўжо ў гэтым чаце</string>
+    <string name="invalid_link">Спасылка несапраўдная.</string>
+    <string name="failed_to_join">Не ўдалося далучыцца</string>
+    <string name="error_searching_for_chat">Памылка пошуку чата</string>
+    <string name="profile_photos">Фота профілю</string>
+    <string name="add_photo">Дадаць фота</string>
 </resources>

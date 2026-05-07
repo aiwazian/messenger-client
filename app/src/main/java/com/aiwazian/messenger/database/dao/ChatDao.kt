@@ -17,7 +17,7 @@ interface ChatDao {
     @Query(
         """
         SELECT * FROM chats 
-        ORDER BY isPinned DESC, lastMessageId DESC
+        ORDER BY isPinned DESC
     """
     )
     fun getAllChatsFlow(): Flow<List<ChatEntity>>
@@ -30,9 +30,6 @@ interface ChatDao {
     
     @Query("DELETE FROM chats WHERE chatId NOT IN (:chatIds)")
     suspend fun deleteChatsNotIn(chatIds: List<Long>)
-    
-    @Query("UPDATE chats SET lastMessageId = :messageId WHERE chatId = :chatId")
-    suspend fun updateLastMessageId(chatId: Long, messageId: Long)
     
     @Query("SELECT * FROM chats WHERE chatId = :chatId")
     fun getChatByIdFlow(chatId: Long): Flow<ChatEntity?>

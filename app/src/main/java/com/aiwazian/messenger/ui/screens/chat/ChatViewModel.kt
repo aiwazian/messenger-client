@@ -28,6 +28,7 @@ import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
+import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
@@ -65,6 +66,7 @@ class ChatViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val userRepository: UserRepository,
     private val inviteLinkRepository: InviteLinkRepository,
+    private val searchRepository: SearchRepository,
     private val clipboardService: ClipboardService,
     private val webSocketClient: WebSocketClient,
     private val downloaderManager: DownloaderManager,
@@ -83,7 +85,7 @@ class ChatViewModel @Inject constructor(
     val uiEffect = _uiEffect.asSharedFlow()
     
     private var isFirstLoadDone = false
-    private val limitFlow = MutableStateFlow(50)
+    private val limitFlow = MutableStateFlow(30)
     
     private var isInit = false
     
@@ -159,7 +161,12 @@ class ChatViewModel @Inject constructor(
                                 members = group.members,
                                 isMember = group.isMember
                             )
-                            _uiState.update { it.copy(profile = profile, isJoined = group.isMember) }
+                            _uiState.update {
+                                it.copy(
+                                    profile = profile,
+                                    isJoined = group.isMember
+                                )
+                            }
                             updateUiContent()
                         }
                     }
@@ -502,11 +509,13 @@ class ChatViewModel @Inject constructor(
                         _uiState.update { it.copy(isJoined = true) }
                     }
                 }
+                
                 is Profile.Group -> {
                     joinGroupUseCase(chatId).onSuccess {
                         _uiState.update { it.copy(isJoined = true) }
                     }
                 }
+                
                 else -> {}
             }
         }
@@ -591,10 +600,15 @@ class ChatViewModel @Inject constructor(
     }
     
     fun cancelUpload(tempMessageId: Long) {
-        downloaderManager.cancel(tempMessageId.toInt())
-        
-        val updatedMessages = getRawMessages().filter { it.id != tempMessageId }
-        updateChatItems(updatedMessages)
+        viewModelScope.launch {
+            val tempMessage = getRawMessages().find { it.id == tempMessageId }
+            tempMessage?.attachments?.forEach { attachment ->
+                downloaderManager.cancel(attachment.fileId)
+            }
+            
+            val updatedMessages = getRawMessages().filter { it.id != tempMessageId }
+            updateChatItems(updatedMessages)
+        }
     }
     
     fun onFileAction(
@@ -615,20 +629,20 @@ class ChatViewModel @Inject constructor(
             }
             
             FileAction.PAUSE -> {
-                downloaderManager.downloads.value.find { it.fileId == file.fileId }?.let {
-                    downloaderManager.pause(it.id)
+                viewModelScope.launch {
+                    downloaderManager.pause(file.fileId)
                 }
             }
             
             FileAction.RESUME -> {
-                downloaderManager.downloads.value.find { it.fileId == file.fileId }?.let {
-                    downloaderManager.resume(it.id)
+                viewModelScope.launch {
+                    downloaderManager.resume(file.fileId)
                 }
             }
             
             FileAction.CANCEL -> {
-                downloaderManager.downloads.value.find { it.fileId == file.fileId }?.let {
-                    downloaderManager.cancel(it.id)
+                viewModelScope.launch {
+                    downloaderManager.cancel(file.fileId)
                 }
             }
             
@@ -704,7 +718,7 @@ class ChatViewModel @Inject constructor(
             inviteLinkRepository.getInviteLinkInfo(code).onSuccess { linkInfo ->
                 if (_uiState.value.chatId == linkInfo.chatId) {
                     _uiState.update { it.copy(isProcessingInvite = false) }
-                    _uiEffect.emit(ChatUiEffect.ShowSnackbar("Вы уже в этом чате"))
+                    _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.you_are_already_in_this_chat)))
                     vibrationManager.vibrate(VibrationPattern.Error)
                 } else if (linkInfo.isJoined != null) {
                     _uiState.update { it.copy(isProcessingInvite = false) }
@@ -729,7 +743,27 @@ class ChatViewModel @Inject constructor(
                 }
             }.onFailure {
                 _uiState.update { it.copy(isProcessingInvite = false) }
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar("Ссылка недействительна"))
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.invalid_link)))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
+    }
+    
+    fun onUsernameClicked(username: String) {
+        viewModelScope.launch {
+            val cleanUsername = username.removePrefix("@")
+            searchRepository.resolveUsername(cleanUsername).onSuccess { result ->
+                if (result == null) {
+                    _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.chat_not_found)))
+                    vibrationManager.vibrate(VibrationPattern.Error)
+                } else if (result.isBanned) {
+                    _uiState.update { it.copy(showBannedDialog = true) }
+                    vibrationManager.vibrate(VibrationPattern.Error)
+                } else {
+                    _uiEffect.emit(ChatUiEffect.NavigateToChat(result.chatId))
+                }
+            }.onFailure {
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.error_searching_for_chat)))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }
@@ -759,7 +793,7 @@ class ChatViewModel @Inject constructor(
                 _uiEffect.emit(ChatUiEffect.NavigateToChat(info.chatId))
             } else {
                 _uiState.update { it.copy(isProcessingInvite = false) }
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar("Ошибка при вступлении"))
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_join)))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }

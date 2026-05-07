@@ -33,14 +33,6 @@ class SearchViewModel @Inject constructor(
     private var searchJob: Job? = null
     private val PAGE_SIZE = 20
 
-    init {
-        viewModelScope.launch {
-            downloaderManager.downloads.collect { downloads ->
-                _uiState.update { it.copy(downloads = downloads) }
-            }
-        }
-    }
-
     fun onQueryChange(newQuery: String) {
         _uiState.update { it.copy(query = newQuery) }
         resetAndSearch()

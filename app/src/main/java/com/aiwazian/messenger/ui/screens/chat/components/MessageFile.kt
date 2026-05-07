@@ -73,7 +73,7 @@ fun MessageFile(file: MessageAttachment, onAction: (FileAction) -> Unit) {
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
-            if (file.localUri == null && file.status != DownloadStatus.UPLOADING) {
+            if (file.localUri == null && file.status != DownloadStatus.UPLOADING && file.status != DownloadStatus.DOWNLOADING) {
                 Icon(
                     imageVector = Icons.Rounded.Download,
                     contentDescription = null,

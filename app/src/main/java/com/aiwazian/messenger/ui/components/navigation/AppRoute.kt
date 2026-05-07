@@ -135,5 +135,8 @@ sealed interface AppRoute : NavKey {
     data object Login : AppRoute
     
     @Serializable
-    data object Password : AppRoute
+    data class Password(val login: String) : AppRoute
+    
+    @Serializable
+    data class Register(val login: String) : AppRoute
 }

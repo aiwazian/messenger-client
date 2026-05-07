@@ -12,9 +12,11 @@ import com.aiwazian.messenger.domain.ChangePasswordRequest
 import com.aiwazian.messenger.domain.SignInRequest
 import com.aiwazian.messenger.domain.SignInResponse
 import com.aiwazian.messenger.domain.SignUpRequest
+import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toDto
 import com.aiwazian.messenger.network.api.AuthApi
 import com.aiwazian.messenger.network.api.UserApi
+import com.aiwazian.messenger.network.dto.ChangePasswordRequestDto
 import com.aiwazian.messenger.utils.DataStoreManager
 import com.aiwazian.messenger.utils.SessionManager
 import javax.inject.Inject
@@ -144,27 +146,17 @@ class AuthRepository @Inject constructor(
         }
     }
     
-    suspend fun checkLoginAvailable(login: String): Boolean? {
+    suspend fun checkLoginAvailable(login: String): Result<Boolean> {
         return try {
             val response = authApi.checkLoginAvailable(login)
             when (response.code()) {
-                200 -> true
-                409 -> false
-                else -> {
-                    Log.e(
-                        "AuthRepository",
-                        "Неожиданный статус при проверке логина: ${response.code()}"
-                    )
-                    null
-                }
+                200 -> Result.success(true)
+                409 -> Result.success(false)
+                else -> Result.failure(Exception("Unsuccessful request ${response.body()}"))
             }
         } catch (e: Exception) {
-            Log.e(
-                "AuthRepository",
-                "Ошибка сети при проверке логина",
-                e
-            )
-            null
+            Log.e("AuthRepository", "Ошибка при проверке логина", e)
+            Result.failure(e)
         }
     }
     
@@ -173,47 +165,37 @@ class AuthRepository @Inject constructor(
             val dto = request.toDto()
             val response = authApi.signIn(dto)
             if (response.isSuccessful) {
-                val apiResponse = response.body()
-                if (apiResponse != null) {
-                    Result.success(
-                        SignInResponse(
-                            userId = apiResponse.userId.toLong(),
-                            token = apiResponse.token,
-                            createdAt = apiResponse.createdAt.toLong()
-                        )
-                    )
-                }
- else {
-                    Result.failure(Exception("Пустой токен в ответе"))
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body.toDomain())
+                } else {
+                    Result.failure(Exception("Empty body"))
                 }
             } else {
-                Result.failure(Exception("Ошибка входа: ${response.code()}"))
+                Result.failure(Exception("Unsuccessful request ${response.code()}"))
             }
         } catch (e: Exception) {
-            Log.e(
-                "AuthRepository",
-                "Ошибка при входе",
-                e
-            )
+            Log.e("AuthRepository", "Ошибка при входе", e)
             Result.failure(e)
         }
     }
     
-    suspend fun signUp(request: SignUpRequest): Result<Unit> {
+    suspend fun signUp(request: SignUpRequest): Result<SignInResponse> {
         return try {
             val dto = request.toDto()
             val response = authApi.signUp(dto)
             if (response.isSuccessful) {
-                Result.success(Unit)
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body.toDomain())
+                } else {
+                    Result.failure(Exception("Empty body"))
+                }
             } else {
-                Result.failure(Exception("Пустой токен в ответе"))
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
             }
         } catch (e: Exception) {
-            Log.e(
-                "AuthRepository",
-                "Ошибка при регистрации",
-                e
-            )
+            Log.e("AuthRepository", "Ошибка при регистрации", e)
             Result.failure(e)
         }
     }
@@ -228,19 +210,14 @@ class AuthRepository @Inject constructor(
                 Result.failure(Exception("Ошибка выхода: ${response.code()}"))
             }
         } catch (e: Exception) {
-            Log.e(
-                "AuthRepository",
-                "Ошибка при выходе",
-                e
-            )
+            Log.e("AuthRepository", "Ошибка при выходе", e)
             Result.failure(e)
         }
     }
     
     suspend fun changePassword(request: ChangePasswordRequest): Result<Unit> {
         return try {
-            val dto =
-                com.aiwazian.messenger.network.dto.ChangePasswordRequestDto(password = request.password)
+            val dto = ChangePasswordRequestDto(password = request.password)
             val response = userApi.changePassword(dto)
             if (response.isSuccessful) {
                 Result.success(Unit)
@@ -248,11 +225,7 @@ class AuthRepository @Inject constructor(
                 Result.failure(Exception("Ошибка смены пароля: ${response.code()}"))
             }
         } catch (e: Exception) {
-            Log.e(
-                "AuthRepository",
-                "Ошибка при смене пароля",
-                e
-            )
+            Log.e("AuthRepository", "Ошибка при смене пароля", e)
             Result.failure(e)
         }
     }

@@ -10,7 +10,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.GroupType
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.SearchRepository
-import com.aiwazian.messenger.ui.screens.channel.settings.type.LinkCheckStatus
+import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -42,10 +43,10 @@ class GroupTypeSettingsViewModel @Inject constructor(
     
     fun init(groupId: Long) {
         viewModelScope.launch {
-            groupRepository.getById(groupId).collect { group ->
+            groupRepository.getById(groupId).firstOrNull()?.let { group ->
                 _uiState.update {
                     it.copy(
-                        groupId = groupId,
+                        groupId = group.id,
                         groupType = group.groupType,
                         username = group.username.orEmpty(),
                         canSave = true
@@ -59,114 +60,100 @@ class GroupTypeSettingsViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 groupType = groupType,
-                canSave = canSaveGroupType(groupType, it.username, it.linkCheckStatus)
+                canSave = groupType == GroupType.PRIVATE
             )
         }
     }
     
-    fun changePublicLink(publicLink: String) {
+    fun onChangeUsername(newUsername: String) {
+        val filteredUsername = newUsername.filter { it.toString().matches(RegexPatterns.USERNAME) }
+        _uiState.update { it.copy(username = filteredUsername) }
+        
+        if (filteredUsername.isBlank()) {
+            _uiState.update { it.copy(isError = false, canSave = true, statusText = null) }
+            return
+        }
+        
+        if (filteredUsername.length < 5) {
+            _uiState.update {
+                it.copy(
+                    isError = true,
+                    canSave = false,
+                    statusText = UiText.StringResource(R.string.min_length_5_characters),
+                )
+            }
+            return
+        }
+        
+        if (filteredUsername == _uiState.value.originalName) {
+            _uiState.update { it.copy(isError = false, canSave = true, statusText = null) }
+            return
+        }
+        
         _uiState.update {
             it.copy(
-                username = publicLink,
-                linkCheckStatus = LinkCheckStatus.Idle,
-                canSave = canSaveGroupType(it.groupType, publicLink, LinkCheckStatus.Idle)
+                isError = false,
+                canSave = false,
+                statusText = UiText.DynamicString("Проверка")
             )
         }
         
         checkLinkJob?.cancel()
         checkLinkJob = viewModelScope.launch {
             delay(500)
-            checkPublicLinkAvailability(publicLink)
-        }
-    }
-    
-    private fun checkPublicLinkAvailability(publicLink: String) {
-        if (publicLink.isBlank()) {
-            _uiState.update {
-                it.copy(
-                    linkCheckStatus = LinkCheckStatus.Idle,
-                    canSave = canSaveGroupType(it.groupType, publicLink, LinkCheckStatus.Idle)
-                )
-            }
-            return
-        }
-        
-        if (publicLink.length < 3) {
-            _uiState.update {
-                it.copy(
-                    linkCheckStatus = LinkCheckStatus.Error("Минимальная длина 3 символа"),
-                    canSave = false
-                )
-            }
-            return
-        }
-        
-        if (publicLink == _uiState.value.username) {
-            _uiState.update {
-                it.copy(linkCheckStatus = LinkCheckStatus.Available, canSave = true)
-            }
-            return
-        }
-        
-        viewModelScope.launch {
-            _uiState.update { it.copy(linkCheckStatus = LinkCheckStatus.Checking) }
-            
-            try {
-                val isAvailable = searchRepository.checkUsernameAvailable(publicLink)
+            searchRepository.checkUsernameAvailable(filteredUsername).onSuccess { available ->
+                if (available) {
+                    _uiState.update {
+                        it.copy(
+                            canSave = true,
+                            isError = false,
+                            statusText = UiText.StringResource(R.string.username_available)
+                        )
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            canSave = false,
+                            isError = true,
+                            statusText = UiText.StringResource(R.string.username_taken)
+                        )
+                    }
+                }
+            }.onFailure {
                 _uiState.update {
                     it.copy(
-                        linkCheckStatus = if (isAvailable) LinkCheckStatus.Available else LinkCheckStatus.Busy,
-                        canSave = isAvailable
+                        isError = true,
+                        canSave = false,
+                        statusText = UiText.StringResource(R.string.unexpected_error)
                     )
                 }
-            } catch (_: Exception) {
-                _uiState.update { it.copy(linkCheckStatus = LinkCheckStatus.Error("Ошибка проверки")) }
             }
         }
     }
     
     fun save() {
         viewModelScope.launch {
-            val currentState = _uiState.value
-            
-            if (!canSaveGroupType(
-                    currentState.groupType,
-                    currentState.username,
-                    currentState.linkCheckStatus
-                )
-            ) {
-                vibrationManager.vibrate(VibrationPattern.Error)
+            if (_uiState.value.username == _uiState.value.originalName) {
+                _uiEffect.emit(GroupTypeSettingsEffect.NavigateBack)
                 return@launch
             }
             
-            try {
-                groupRepository.updateGroupType(
-                    currentState.groupId,
-                    currentState.groupType,
-                    currentState.username
-                )
-                    .onSuccess {
-                        _uiEffect.emit(GroupTypeSettingsEffect.NavigateBack)
-                    }
-                    .onFailure {
-                        vibrationManager.vibrate(VibrationPattern.Error)
-                        _uiEffect.emit(GroupTypeSettingsEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
-                    }
-            } catch (_: Exception) {
+            val currentState = _uiState.value
+            groupRepository.updateGroupType(
+                currentState.groupId,
+                currentState.groupType,
+                currentState.username
+            ).onSuccess {
+                _uiEffect.emit(GroupTypeSettingsEffect.NavigateBack)
+            }.onFailure {
                 vibrationManager.vibrate(VibrationPattern.Error)
-                _uiEffect.emit(GroupTypeSettingsEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
+                _uiEffect.emit(
+                    GroupTypeSettingsEffect.ShowSnackbar
+                        (
+                        UiText.StringResource(R.string.failed_to_save_changes)
+                    )
+                )
             }
         }
-    }
-    
-    private fun canSaveGroupType(
-        groupType: GroupType,
-        publicLink: String,
-        status: LinkCheckStatus
-    ): Boolean {
-        if (groupType == GroupType.PUBLIC) {
-            return publicLink.isNotBlank() && (status == LinkCheckStatus.Available || status == LinkCheckStatus.Idle)
-        }
-        return true
     }
 }

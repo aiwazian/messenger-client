@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Іздеу</string>
@@ -188,4 +192,9 @@
     <string name="file">Файл</string>
     <string name="video">Бейне</string>
     <string name="voice">Дауыс</string>
+    <string name="chat_not_found">Чат табылмады</string>
+    <string name="you_are_already_in_this_chat">Сіз бұл чатта бұрыннан барсыз</string>
+    <string name="invalid_link">Сілтеме жарамсыз.</string>
+    <string name="failed_to_join">Қосыла алмады</string>
+    <string name="error_searching_for_chat">Чат іздеуде қате</string>
 </resources>

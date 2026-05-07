@@ -16,15 +16,4 @@ enum class AppPrimaryColor(val color: Color) {
     Coral(Color(0xFFD27570)),
     Gray(Color(0xFF7B8799)),
     Yellow(Color(0xFFCBAC67));
-    
-    companion object {
-        fun fromString(value: String): AppPrimaryColor {
-            return entries.firstOrNull {
-                it.name.equals(
-                    value,
-                    ignoreCase = true
-                )
-            } ?: Blue
-        }
-    }
 }

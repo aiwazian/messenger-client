@@ -21,7 +21,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
@@ -55,33 +55,25 @@ fun ChannelSubscribersScreen(
 ) {
     val navBackStack = LocalNavBackStack.current
     
-    val uiState by viewModel.uiState.collectAsState()
-    
-    val snackbarHostState = remember { SnackbarHostState() }
-    
     LaunchedEffect(channelId) {
         viewModel.init(channelId)
     }
+    
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
     
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is ChannelSubscribersSideEffect.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(effect.message)
+                    snackbarHostState.showSnackbar(effect.message.asString(context))
                 }
             }
         }
     }
     
     Scaffold(
-        snackbarHost = {
-            SnackbarHost(snackbarHostState) {
-                CustomSnackbar(
-                    text = it.visuals.message,
-                    onDismiss = it::dismiss
-                )
-            }
-        },
         topBar = {
             PageTopBar(
                 title = { Text(stringResource(R.string.subscribers)) },
@@ -90,6 +82,9 @@ fun ChannelSubscribersScreen(
                     onClick = navBackStack::removeLastOrNull
                 )
             )
+        },
+        snackbarHost = {
+            CustomSnackbar(snackbarHostState)
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
@@ -161,7 +156,7 @@ fun ChannelSubscribersScreen(
                                 navBackStack.add(
                                     AppRoute.Chat(
                                         user.id,
-                                        "${user.firstName} ${user.lastName.orEmpty()}"
+                                        "${user.firstName} ${user.lastName.orEmpty()}".trim()
                                     )
                                 )
                             })

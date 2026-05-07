@@ -32,7 +32,5 @@ class Application : Application() {
         SessionManager.init(authRepository)
         FirebaseApp.initializeApp(this)
         YandexAds.initialize(this) { }
-        
-        realtimeEventSyncService.start()
     }
 }

@@ -96,9 +96,7 @@ fun GroupMembersScreen(
             )
         },
         snackbarHost = {
-            SnackbarHost(snackbarHostState) { data ->
-                CustomSnackbar(text = data.visuals.message, onDismiss = data::dismiss)
-            }
+            CustomSnackbar(snackbarHostState)
         }
     ) { innerPadding ->
         Column(

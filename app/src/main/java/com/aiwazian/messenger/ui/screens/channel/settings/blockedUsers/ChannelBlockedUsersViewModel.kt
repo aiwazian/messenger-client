@@ -8,21 +8,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
-import com.aiwazian.messenger.repository.GroupRepository
+import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ChannelBlockedUsersViewModel @Inject constructor(
-    private val groupRepository: GroupRepository
+    private val channelRepository: ChannelRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ChannelBlockedUsersState())
@@ -33,9 +32,9 @@ class ChannelBlockedUsersViewModel @Inject constructor(
     
     private var selectedUser: User? = null
     
-    fun init(groupId: Long) {
+    fun init(channelId: Long) {
         viewModelScope.launch {
-            groupRepository.getBlackList(groupId).collectLatest { users ->
+            channelRepository.getBannedUsers(channelId).onSuccess { users ->
                 _uiState.update { it.copy(blockedUsers = users) }
             }
         }
@@ -49,7 +48,7 @@ class ChannelBlockedUsersViewModel @Inject constructor(
     fun confirmUnblock() {
         val user = selectedUser ?: return
         viewModelScope.launch {
-            groupRepository.unban(_uiState.value.channelId, user.id).onSuccess {
+            channelRepository.unbanUser(_uiState.value.channelId, user.id).onSuccess {
                 _uiState.update { state ->
                     state.copy(blockedUsers = state.blockedUsers.filter { it.id != user.id })
                 }

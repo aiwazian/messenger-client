@@ -10,8 +10,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.aiwazian.messenger.ui.components.navigation.AppNavDisplay
-import com.aiwazian.messenger.ui.theme.ApplicationTheme
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
+import com.aiwazian.messenger.ui.theme.ApplicationTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -26,7 +26,7 @@ class AuthActivity : ComponentActivity() {
         
         setContent {
             ApplicationTheme {
-                AppNavDisplay(startRoute = AppRoute.Login)
+                AppNavDisplay(AppRoute.Login)
             }
         }
     }

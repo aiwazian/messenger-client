@@ -11,15 +11,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.People
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -92,13 +91,7 @@ fun ChannelSettingsScreen(
             
             TopBar(actions)
         }, snackbarHost = {
-            SnackbarHost(snackbarHostState) {
-                CustomSnackbar(
-                    text = it.visuals.message,
-                    onDismiss = it::dismiss,
-                    leadingIcon = Icons.Outlined.Info
-                )
-            }
+            CustomSnackbar(snackbarHostState)
         }, modifier = Modifier.imePadding()
     ) { innerPadding ->
         Column(
@@ -131,6 +124,14 @@ fun ChannelSettingsScreen(
                     onClick = {
                         navBackStack.add(AppRoute.ChannelTypeSettings(channelId = uiState.channel.id))
                     })
+                
+                SectionItem(
+                    leadingIcon = Icons.Rounded.Link,
+                    headlineText = stringResource(R.string.invite_links),
+                    onClick = {
+                        navBackStack.add(AppRoute.ChannelInviteLinks(channelId = uiState.channel.id))
+                    }
+                )
             }
             
             SectionContainer {

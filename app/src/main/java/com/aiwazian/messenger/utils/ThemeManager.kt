@@ -40,7 +40,7 @@ class ThemeManager @Inject constructor(
         
         coroutineScope.launch {
             val primaryColor = dataStorage.getPrimaryColor().first()
-            _appPrimaryColor.update { AppPrimaryColor.fromString(primaryColor) }
+            _appPrimaryColor.update { AppPrimaryColor.valueOf(primaryColor) }
         }
         
         coroutineScope.launch {

@@ -82,9 +82,7 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
     
     Scaffold(
         snackbarHost = {
-            SnackbarHost(snackbarHostState) {
-                CustomSnackbar(text = it.visuals.message, onDismiss = it::dismiss)
-            }
+            CustomSnackbar(snackbarHostState)
         },
         topBar = {
             TopBar()
@@ -92,9 +90,7 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
         floatingActionButton = {
             FloatingActionButton(
                 modifier = Modifier.imePadding(),
-                onClick = {
-                    viewModel.createGroup()
-                },
+                onClick = viewModel::createGroup,
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
@@ -135,7 +131,6 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
         }
     }
 }
-
 
 @Composable
 private fun TopBar() {

@@ -44,6 +44,16 @@ interface MessageDao {
     @Query("SELECT * FROM message WHERE id = :messageId LIMIT 1")
     suspend fun getMessageById(messageId: Long): MessageWithAttachments?
     
+    @Transaction
+    @Query(
+        "SELECT * FROM message " +
+                "WHERE chatId = :chatId " +
+                "OR (senderId = :chatId AND chatId = :userId) " +
+                "ORDER BY sendTime DESC " +
+                "LIMIT 1"
+    )
+    fun getLastMessageForChatFlow(userId: Long, chatId: Long): Flow<MessageWithAttachments?>
+    
     @Query(
         "DELETE FROM message " +
                 "WHERE (senderId = :userId AND chatId = :chatId) " +

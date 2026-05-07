@@ -82,25 +82,23 @@ class GroupRepository @Inject constructor(
         }
     }
     
-    fun getBlackList(
+    suspend fun getBannedUsers(
         id: Long,
         skip: Int = 0,
         take: Int = 100,
         search: String? = null
-    ): Flow<List<User>> = flow {
-        try {
+    ): Result<List<User>> {
+        return try {
             val response = groupApi.getBlackList(id, skip, take, search)
             if (response.isSuccessful) {
                 val dtos = response.body().orEmpty()
-                emit(dtos.map { it.toDomain() })
+                Result.success(dtos.map { it.toDomain() })
             } else {
-                Log.e(
-                    "GroupRepository",
-                    "Failed to get blacklist for group $id: ${response.message()}"
-                )
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
             }
         } catch (e: Exception) {
             Log.e("GroupRepository", "Error fetching blacklist for group $id", e)
+            Result.failure(e)
         }
     }
     
@@ -297,12 +295,12 @@ class GroupRepository @Inject constructor(
     suspend fun createInviteLink(
         groupId: Long,
         maxUses: Int?,
-        expiresInSeconds: Int? = null
+        expiresAt: Long? = null
     ): Result<InviteLink> {
         return try {
             val request = CreateInviteLinkRequestDto(
                 maxUses = maxUses,
-                expiresInSeconds = expiresInSeconds
+                expiresAt = expiresAt
             )
             val response = groupApi.createInviteLink(groupId, request)
             if (response.isSuccessful) {
@@ -317,6 +315,20 @@ class GroupRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e("GroupRepository", "Error creating invite link", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun deleteInviteLink(groupId: Long, inviteLinkId: Long): Result<Unit> {
+        return try {
+            val response = groupApi.deleteInviteLink(groupId, inviteLinkId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Delete invite link failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("GroupRepository", "Error deleting invite link", e)
             Result.failure(e)
         }
     }

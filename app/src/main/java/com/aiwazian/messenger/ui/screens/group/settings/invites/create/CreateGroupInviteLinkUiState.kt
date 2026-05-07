@@ -2,10 +2,9 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.screens.channel.settings.invites
+package com.aiwazian.messenger.ui.screens.group.settings.invites.create
 
-
-data class CreateInviteLinkUiState(
+data class CreateGroupInviteLinkUiState(
     val maxUses: String = "",
     val expirationDate: Long? = null,
     val showDatePicker: Boolean = false,

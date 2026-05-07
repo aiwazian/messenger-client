@@ -24,3 +24,9 @@ data class SearchResponseDto(
 data class UsernameAvailableResponseDto(
     @SerialName("available") val available: Boolean
 )
+
+@Serializable
+data class ResolveUsernameResponseDto(
+    @SerialName("chatId") val chatId: Long,
+    @SerialName("isBanned") val isBanned: Boolean = false
+)

@@ -19,8 +19,7 @@ fun ChatResponseDto.toDomain(): Chat = Chat(
 
 fun ChatResponseDto.toEntity(): ChatEntity = ChatEntity(
     chatId = id,
-    isPinned = isPinned,
-    lastMessageId = lastMessage?.id
+    isPinned = isPinned
 )
 
 fun ChatEntity.toDomain(name: UiText, lastMessage: Message? = null): Chat = Chat(
@@ -32,6 +31,5 @@ fun ChatEntity.toDomain(name: UiText, lastMessage: Message? = null): Chat = Chat
 
 fun Chat.toEntity(): ChatEntity = ChatEntity(
     chatId = id,
-    isPinned = isPinned,
-    lastMessageId = lastMessage?.id
+    isPinned = isPinned
 )

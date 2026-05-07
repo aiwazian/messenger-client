@@ -18,24 +18,32 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aiwazian.messenger.utils.RegexPatterns
 
 private val URL_REGEX = Regex("(https?://)?([\\w-]+\\.)+[\\w-]+(:\\d+)?(/\\S*)?")
 
 @Composable
 fun MessageText(
     text: String,
-    onLinkClicked: ((String) -> Unit)? = null
+    onLinkClicked: ((String) -> Unit)? = null,
+    onUsernameClicked: ((String) -> Unit)? = null
 ) {
     val annotatedString = buildAnnotatedString {
         var lastIndex = 0
-        val matches = URL_REGEX.findAll(text).toList()
         
-        if (matches.isEmpty()) {
+        val urlMatches = URL_REGEX.findAll(text).map { it to "url" }
+        val usernameMatches = RegexPatterns.USERNAME.findAll(text).map { it to "username" }
+        
+        val allMatches = (urlMatches + usernameMatches)
+            .sortedBy { it.first.range.first }
+            .toList()
+        
+        if (allMatches.isEmpty()) {
             append(text)
             return@buildAnnotatedString
         }
         
-        matches.forEach { matchResult ->
+        allMatches.forEach { (matchResult, type) ->
             val startIndex = matchResult.range.first
             val endIndex = matchResult.range.last + 1
             
@@ -43,36 +51,67 @@ fun MessageText(
                 append(text.substring(lastIndex, startIndex))
             }
             
-            val matchedUrl = matchResult.value
+            val matchedValue = matchResult.value
             
-            if (onLinkClicked != null) {
-                withLink(
-                    link = LinkAnnotation.Clickable(
-                        tag = matchedUrl,
-                        styles = TextLinkStyles(
-                            style = SpanStyle(
-                                color = MaterialTheme.colorScheme.primary,
-                                textDecoration = TextDecoration.Underline
+            when (type) {
+                "url" if onLinkClicked != null -> {
+                    withLink(
+                        link = LinkAnnotation.Clickable(
+                            tag = matchedValue,
+                            styles = TextLinkStyles(
+                                style = SpanStyle(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    textDecoration = TextDecoration.Underline
+                                ),
+                                pressedStyle = SpanStyle(
+                                    background = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                                )
                             ),
-                            pressedStyle = SpanStyle(
-                                background = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                            )
-                        ),
-                        linkInteractionListener = {
-                            onLinkClicked(matchedUrl)
-                        }
-                    )
-                ) {
-                    append(matchedUrl)
+                            linkInteractionListener = {
+                                onLinkClicked(matchedValue)
+                            }
+                        )
+                    ) {
+                        append(matchedValue)
+                    }
                 }
-            } else {
-                withStyle(
-                    style = SpanStyle(
-                        color = MaterialTheme.colorScheme.primary,
-                        textDecoration = TextDecoration.Underline
-                    )
-                ) {
-                    append(matchedUrl)
+                
+                "username" if onUsernameClicked != null -> {
+                    withLink(
+                        link = LinkAnnotation.Clickable(
+                            tag = matchedValue,
+                            styles = TextLinkStyles(
+                                style = SpanStyle(
+                                    color = MaterialTheme.colorScheme.primary,
+                                ),
+                                pressedStyle = SpanStyle(
+                                    background = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                                )
+                            ),
+                            linkInteractionListener = {
+                                onUsernameClicked(matchedValue)
+                            }
+                        )
+                    ) {
+                        append(matchedValue)
+                    }
+                }
+                
+                else -> {
+                    val style = if (type == "url") {
+                        SpanStyle(
+                            color = MaterialTheme.colorScheme.primary,
+                            textDecoration = TextDecoration.Underline
+                        )
+                    } else {
+                        SpanStyle(
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    
+                    withStyle(style = style) {
+                        append(matchedValue)
+                    }
                 }
             }
             

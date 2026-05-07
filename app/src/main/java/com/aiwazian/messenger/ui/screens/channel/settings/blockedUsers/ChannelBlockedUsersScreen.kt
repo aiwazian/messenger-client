@@ -65,12 +65,7 @@ fun ChannelBlockedUsersScreen(
     
     Scaffold(
         snackbarHost = {
-            SnackbarHost(snackbarHostState) {
-                CustomSnackbar(
-                    text = it.visuals.message,
-                    onDismiss = it::dismiss
-                )
-            }
+            CustomSnackbar(snackbarHostState)
         },
         topBar = {
             PageTopBar(

@@ -49,7 +49,7 @@ object DatabaseModule {
     
     @Provides
     fun provideGroupDao(database: AppDatabase): GroupDao = database.groupDao()
-
+    
     @Provides
     fun provideChat(database: AppDatabase): ChatDao = database.chatDao()
     
@@ -61,7 +61,7 @@ object DatabaseModule {
     
     @Provides
     fun provideAttachmentDao(database: AppDatabase): AttachmentDao = database.attachmentDao()
-
+    
     @Provides
     fun provideFileDao(database: AppDatabase): FileDao = database.fileDao()
     

@@ -2,11 +2,15 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.screens.channel.settings.invites
+package com.aiwazian.messenger.ui.screens.group.settings.invites.create
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.repository.ChannelRepository
+import com.aiwazian.messenger.R
+import com.aiwazian.messenger.repository.GroupRepository
+import com.aiwazian.messenger.utils.UiText
+import com.aiwazian.messenger.utils.VibrationManager
+import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,20 +21,21 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class CreateInviteLinkViewModel @Inject constructor(
-    private val channelRepository: ChannelRepository
+class CreateGroupInviteLinkViewModel @Inject constructor(
+    private val groupRepository: GroupRepository,
+    private val vibrationManager: VibrationManager
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(CreateInviteLinkUiState())
+    private val _uiState = MutableStateFlow(CreateGroupInviteLinkUiState())
     val uiState = _uiState.asStateFlow()
 
-    private val _effect = MutableSharedFlow<CreateInviteLinkEffect>()
+    private val _effect = MutableSharedFlow<CreateGroupInviteLinkEffect>()
     val effect = _effect.asSharedFlow()
 
-    private var channelId: Long = -1
+    private var groupId: Long = -1
 
-    fun init(channelId: Long) {
-        this.channelId = channelId
+    fun init(groupId: Long) {
+        this.groupId = groupId
     }
 
     fun onMaxUsesChange(value: String) {
@@ -51,22 +56,15 @@ class CreateInviteLinkViewModel @Inject constructor(
 
     fun createLink() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            
             val maxUses = _uiState.value.maxUses.toIntOrNull()
             val expirationDate = _uiState.value.expirationDate
             
-            val expiresInSeconds = if (expirationDate != null) {
-                ((expirationDate - System.currentTimeMillis()) / 1000).toInt().coerceAtLeast(0)
-            } else null
-            
-            val result = channelRepository.createInviteLink(channelId, maxUses, expiresInSeconds)
-            
-            if (result.isSuccess) {
-                _effect.emit(CreateInviteLinkEffect.Success)
+            groupRepository.createInviteLink(groupId, maxUses, expirationDate).onSuccess {
+                _effect.emit(CreateGroupInviteLinkEffect.Success)
+            }.onFailure {
+                _effect.emit(CreateGroupInviteLinkEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
+                vibrationManager.vibrate(VibrationPattern.Error)
             }
-            
-            _uiState.update { it.copy(isLoading = false) }
         }
     }
 }

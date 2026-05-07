@@ -8,7 +8,6 @@ import com.aiwazian.messenger.network.dto.ChannelResponseDto
 import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import com.aiwazian.messenger.network.dto.InviteLinkResponseDto
-import com.aiwazian.messenger.network.dto.IsBannedResponseDto
 import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
 import retrofit2.Response
@@ -91,9 +90,4 @@ interface ChannelApi {
         @Path("channelId") channelId: Long,
         @Path("userId") userId: Long
     ): Response<Unit>
-
-    @GET("channels/{channelId}/is-banned")
-    suspend fun isUserBanned(
-        @Path("channelId") channelId: Long
-    ): Response<IsBannedResponseDto>
 }

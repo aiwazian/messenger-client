@@ -20,7 +20,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -83,9 +82,7 @@ fun CreateChannelScreen(viewModel: CreateChannelViewModel = hiltViewModel()) {
     
     Scaffold(
         snackbarHost = {
-            SnackbarHost(snackbarHostState) {
-                CustomSnackbar(text = it.visuals.message, onDismiss = it::dismiss)
-            }
+            CustomSnackbar(snackbarHostState)
         },
         topBar = {
             TopBar()
@@ -93,9 +90,7 @@ fun CreateChannelScreen(viewModel: CreateChannelViewModel = hiltViewModel()) {
         floatingActionButton = {
             FloatingActionButton(
                 modifier = Modifier.imePadding(),
-                onClick = {
-                    viewModel.createChannel()
-                },
+                onClick = viewModel::createChannel,
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
@@ -117,8 +112,8 @@ fun CreateChannelScreen(viewModel: CreateChannelViewModel = hiltViewModel()) {
         }) { innerPadding ->
         Column(
             Modifier
-                .padding(innerPadding)
                 .fillMaxSize()
+                .padding(innerPadding)
         ) {
             SectionContainer(footer = {
                 SectionDescription("Можете указать дополнительное описание канала.")
@@ -132,7 +127,7 @@ fun CreateChannelScreen(viewModel: CreateChannelViewModel = hiltViewModel()) {
                 FramelessTextBox(
                     value = uiState.bio,
                     onValueChange = viewModel::changeBio,
-                    placeholder = stringResource(R.string.description),
+                    placeholder = stringResource(R.string.description)
                 )
             }
         }

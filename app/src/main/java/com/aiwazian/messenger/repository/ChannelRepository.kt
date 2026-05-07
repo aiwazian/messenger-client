@@ -206,12 +206,12 @@ class ChannelRepository @Inject constructor(
     suspend fun createInviteLink(
         channelId: Long,
         maxUses: Int?,
-        expiresInSeconds: Int? = null
+        expiresAt: Long? = null
     ): Result<InviteLink> {
         return try {
             val request = CreateInviteLinkRequestDto(
                 maxUses = maxUses,
-                expiresInSeconds = expiresInSeconds
+                expiresAt = expiresAt
             )
             val response = channelApi.createInviteLink(channelId, request)
             if (response.isSuccessful) {
@@ -230,8 +230,22 @@ class ChannelRepository @Inject constructor(
         }
     }
     
+    suspend fun deleteInviteLink(channelId: Long, inviteLinkId: Long): Result<Unit> {
+        return try {
+            val response = channelApi.deleteInviteLink(channelId, inviteLinkId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Delete invite link failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChannelRepository", "Error deleting invite link", e)
+            Result.failure(e)
+        }
+    }
+    
     suspend fun getBannedUsers(
-        id: Long,
+        channelId: Long,
         skip: Int = 0,
         take: Int = 100,
         search: String? = null
@@ -239,7 +253,7 @@ class ChannelRepository @Inject constructor(
         return try {
             val response =
                 channelApi.getBannedUsers(
-                    id,
+                    channelId,
                     skip,
                     take,
                     search
@@ -303,24 +317,6 @@ class ChannelRepository @Inject constructor(
             Log.e(
                 "ChannelRepository",
                 "Ошибка при блокировке пользователя",
-                e
-            )
-            Result.failure(e)
-        }
-    }
-    
-    suspend fun isUserBanned(channelId: Long): Result<Boolean> {
-        return try {
-            val response = channelApi.isUserBanned(channelId)
-            if (response.isSuccessful) {
-                Result.success(response.body()?.isBanned ?: false)
-            } else {
-                Result.success(false)
-            }
-        } catch (e: Exception) {
-            Log.e(
-                "ChannelRepository",
-                "Ошибка при проверке блокировки пользователя",
                 e
             )
             Result.failure(e)

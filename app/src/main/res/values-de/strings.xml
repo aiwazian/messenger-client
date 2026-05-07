@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Suchen</string>
@@ -188,4 +192,9 @@
     <string name="file">Datei</string>
     <string name="video">Video</string>
     <string name="voice">Stimme</string>
+    <string name="chat_not_found">Chat nicht gefunden</string>
+    <string name="you_are_already_in_this_chat">Sie befinden sich bereits in diesem Chat</string>
+    <string name="invalid_link">Der Link ist ungültig.</string>
+    <string name="failed_to_join">Nicht aufgenommen</string>
+    <string name="error_searching_for_chat">Fehler Suche nach Chat</string>
 </resources>

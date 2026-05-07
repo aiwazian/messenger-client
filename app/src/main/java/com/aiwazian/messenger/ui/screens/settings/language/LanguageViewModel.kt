@@ -4,27 +4,29 @@
 
 package com.aiwazian.messenger.ui.screens.settings.language
 
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import com.aiwazian.messenger.enums.AppLanguage
-import com.aiwazian.messenger.utils.LanguageManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 @HiltViewModel
-class LanguageViewModel @Inject constructor(
-    private val languageManager: LanguageManager
-) : ViewModel() {
-
-    val currentLanguage = languageManager.currentLanguage.asStateFlow()
-
+class LanguageViewModel @Inject constructor() : ViewModel() {
+    
+    private val _currentLanguage = MutableStateFlow(
+        AppLanguage.fromString(AppCompatDelegate.getApplicationLocales().toLanguageTags())
+    )
+    val currentLanguage = _currentLanguage.asStateFlow()
+    
     fun selectLanguage(language: AppLanguage) {
-        if (currentLanguage.value == language) {
+        if (_currentLanguage.value == language) {
             return
         }
-        languageManager.selLanguage(language)
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(language.code))
+        _currentLanguage.update { language }
     }
 }
-
-
-

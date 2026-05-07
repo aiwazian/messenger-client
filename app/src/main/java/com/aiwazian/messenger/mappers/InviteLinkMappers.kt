@@ -9,8 +9,8 @@ import com.aiwazian.messenger.network.dto.InviteLinkResponseDto
 import okhttp3.internal.toLongOrDefault
 
 fun InviteLinkResponseDto.toDomain() = InviteLink(
-    id = id.toLongOrDefault(0),
-    chatId = chatId.toLongOrDefault(0),
+    id = id,
+    chatId = chatId,
     code = code,
     link = link,
     expiresAt = expiresAt,

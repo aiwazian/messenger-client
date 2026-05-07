@@ -5,7 +5,10 @@
 package com.aiwazian.messenger.domain
 
 data class SignUpRequest(
+    val firstName: String,
     val login: String,
-    val password: String
+    val password: String,
+    val deviceModel: String,
+    val osVersion: String,
+    val osName: String
 )
-

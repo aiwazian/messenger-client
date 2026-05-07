@@ -4,6 +4,9 @@
 
 package com.aiwazian.messenger.ui.screens.channel.settings.invites
 
+import android.os.VibrationEffect
+import android.os.vibrator.HapticFeedbackRequest
+import android.view.HapticFeedbackConstants
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -54,6 +57,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -61,6 +66,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
+import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -96,7 +102,7 @@ fun ChannelInviteLinksScreen(
     val availableChats by viewModel.availableChats.collectAsState()
     val selectedChatIds by viewModel.selectedChatIds.collectAsState()
     val navBackStack = LocalNavBackStack.current
-    
+    val view = LocalView.current
     if (viewModel.deleteDialog.isVisible) {
         CustomDialog(
             title = stringResource(R.string.delete),
@@ -105,12 +111,12 @@ fun ChannelInviteLinksScreen(
                 TextButton(onClick = viewModel.deleteDialog::hide) {
                     Text(stringResource(R.string.cancel))
                 }
-                TextButton(
-                    onClick = viewModel::confirmDelete,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(stringResource(R.string.delete))
-                }
+                CountdownTextButton(
+                    text = stringResource(R.string.delete), seconds = 5,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    onClickAfterFinish = viewModel::confirmDelete,
+                    onClickWhileRunning = viewModel::vibrate
+                )
             },
             content = {
                 Text("Вы уверены, что хотите удалить эту ссылку?")
@@ -240,7 +246,7 @@ private fun InviteLinkItem(
     viewModel: ChannelInviteLinksViewModel,
     expandedMenuId: Long?
 ) {
-    val remainingUsesText = if (link.maxUses == null) {
+    val remainingUsesText = if (link.maxUses == null || link.uses == null) {
         "∞"
     } else {
         (link.maxUses - link.uses).toString()
@@ -249,7 +255,7 @@ private fun InviteLinkItem(
     val expirationText = if (link.expiresAt == null) {
         "Бессрочна"
     } else {
-        link.expiresAt.toLongOrNull()?.toInstance()?.toPrettyDateWithYear() ?: "Бессрочна"
+        link.expiresAt.toInstance().toPrettyDateWithYear()
     }
     
     val supportingText = "Осталось $remainingUsesText • $expirationText"

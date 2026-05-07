@@ -1,0 +1,173 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
+package com.aiwazian.messenger.ui.screens.auth.login
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.screens.auth.components.InputTextField
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+
+@Composable
+fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
+    val context = LocalContext.current
+    val navBackStack = LocalNavBackStack.current
+    
+    val uiState by viewModel.uiState.collectAsState()
+    
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var snackbarJob by remember { mutableStateOf<Job?>(null) }
+    
+    LaunchedEffect(Unit) {
+        viewModel.uiEffect.collect { effect ->
+            when (effect) {
+                is LoginUiEffect.ShowSnackbar -> {
+                    snackbarJob?.cancel()
+                    snackbarJob = scope.launch {
+                        snackbarHostState.showSnackbar(effect.message.asString(context))
+                    }
+                }
+            }
+        }
+    }
+    
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = viewModel::checkLogin,
+                modifier = Modifier.imePadding(),
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                containerColor = MaterialTheme.colorScheme.primary,
+                shape = CircleShape
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+        },
+        snackbarHost = {
+            CustomSnackbar(snackbarHostState)
+        }) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(it),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(50.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.user_login),
+                modifier = Modifier.padding(top = 50.dp),
+                fontSize = 28.sp
+            )
+            Column(Modifier.width(300.dp)) {
+                InputTextField(
+                    value = uiState.login,
+                    onValueChange = viewModel::changeLogin,
+                    label = stringResource(R.string.login),
+                    isError = uiState.errorText != null,
+                    supportingText = uiState.errorText?.asString(),
+                    onSendClick = viewModel::checkLogin
+                )
+            }
+        }
+        
+        if (uiState.showFoundDialog) {
+            CustomDialog(
+                title = stringResource(R.string.app_name),
+                onDismissRequest = viewModel::hideFoundDialog,
+                content = {
+                    Text(
+                        text = "Пользователь найден. Продолжить?",
+                        lineHeight = 18.sp
+                    )
+                },
+                buttons = {
+                    TextButton(onClick = viewModel::hideFoundDialog) {
+                        Text(stringResource(R.string.no))
+                    }
+                    TextButton(onClick = {
+                        viewModel.hideFoundDialog()
+                        navBackStack.add(AppRoute.Password(uiState.login))
+                    }) {
+                        Text(stringResource(R.string.yes))
+                    }
+                }
+            )
+        }
+        
+        if (uiState.showNotFoundDialog) {
+            CustomDialog(
+                title = stringResource(R.string.app_name),
+                onDismissRequest = viewModel::hideNotFoundDialog,
+                content = {
+                    Text(
+                        text = "Пользователь не найден. Создать?",
+                        lineHeight = 18.sp
+                    )
+                },
+                buttons = {
+                    TextButton(onClick = viewModel::hideNotFoundDialog) {
+                        Text(stringResource(R.string.no))
+                    }
+                    TextButton(onClick = {
+                        viewModel.hideNotFoundDialog()
+                        navBackStack.add(AppRoute.Register(uiState.login))
+                    }) {
+                        Text(stringResource(R.string.yes))
+                    }
+                }
+            )
+        }
+    }
+}

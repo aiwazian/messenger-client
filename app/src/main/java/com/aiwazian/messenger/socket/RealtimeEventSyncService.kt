@@ -14,12 +14,12 @@ import javax.inject.Singleton
 
 @Singleton
 class RealtimeEventSyncService @Inject constructor(
-    private val webSocketClient: WebSocketClient,
+    webSocketClient: WebSocketClient,
     private val chatRepository: ChatRepository
 ) {
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
-    fun start() {
+    init {
         webSocketClient.subscribeToEvent(WebSocketEvent.NewMessage) { message ->
             serviceScope.launch {
                 chatRepository.saveMessage(message)

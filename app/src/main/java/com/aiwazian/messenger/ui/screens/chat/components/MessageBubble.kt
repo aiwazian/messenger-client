@@ -52,7 +52,7 @@ import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.extensions.formatFileSize
-import com.aiwazian.messenger.extensions.sharedBounds
+import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
 
 @Composable
@@ -60,7 +60,8 @@ fun MessageBubble(
     item: ChatItem.MessageItem,
     onSeen: () -> Unit,
     onFileAction: (MessageAttachment, FileAction) -> Unit,
-    onLinkClicked: ((String) -> Unit)? = null
+    onLinkClicked: ((String) -> Unit)? = null,
+    onUsernameClicked: ((String) -> Unit)? = null
 ) {
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
@@ -120,7 +121,10 @@ fun MessageBubble(
                     ImageGridCustomLayout(
                         Modifier.heightIn(max = 400.dp), content = {
                             images.forEach { attachment ->
-                                if (attachment.localUri == null || attachment.status == DownloadStatus.UPLOADING) {
+                                if (attachment.localUri == null ||
+                                    attachment.status == DownloadStatus.UPLOADING ||
+                                    attachment.status == DownloadStatus.DOWNLOADING
+                                ) {
                                     Box(
                                         modifier = Modifier
                                             .clip(MaterialTheme.shapes.extraSmall)
@@ -174,7 +178,7 @@ fun MessageBubble(
                                         contentDescription = null,
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier
-                                            .sharedBounds(key = attachment.localUri)
+                                            .sharedElement(key = attachment.localUri)
                                             .fillMaxSize()
                                             .clip(MaterialTheme.shapes.extraSmall)
                                             .clickable(onClick = {
@@ -201,7 +205,11 @@ fun MessageBubble(
                     }
                 
                 if (!message.text.isNullOrBlank()) {
-                    MessageText(message.text, onLinkClicked = onLinkClicked)
+                    MessageText(
+                        text = message.text,
+                        onLinkClicked = onLinkClicked,
+                        onUsernameClicked = onUsernameClicked
+                    )
                 }
             }
             

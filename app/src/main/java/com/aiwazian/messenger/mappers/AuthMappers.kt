@@ -7,30 +7,29 @@ package com.aiwazian.messenger.mappers
 import com.aiwazian.messenger.domain.SignInRequest
 import com.aiwazian.messenger.domain.SignInResponse
 import com.aiwazian.messenger.domain.SignUpRequest
-import com.aiwazian.messenger.network.dto.SignInResponseDto
 import com.aiwazian.messenger.network.dto.SignInRequestDto
-import com.aiwazian.messenger.network.dto.SignupRequestDto
+import com.aiwazian.messenger.network.dto.SignInResponseDto
+import com.aiwazian.messenger.network.dto.SignUpRequestDto
 
-fun SignInResponseDto.toAuthResult(): SignInResponse {
-    return SignInResponse(
-        userId = this.userId.toLong(),
-        token = this.token
-    )
-}
+fun SignInRequest.toDto() = SignInRequestDto(
+    login = login,
+    password = password,
+    deviceModel = deviceModel,
+    osVersion = osVersion,
+    osName = osName
+)
 
-fun SignInRequest.toDto(): SignInRequestDto {
-    return SignInRequestDto(
-        login = this.login,
-        password = this.password,
-        deviceModel = this.deviceModel,
-        osVersion = this.osVersion,
-        osName = this.osName
-    )
-}
+fun SignUpRequest.toDto() = SignUpRequestDto(
+    firstName = firstName,
+    login = login,
+    password = password,
+    deviceModel = deviceModel,
+    osVersion = osVersion,
+    osName = osName
+)
 
-fun SignUpRequest.toDto(): SignupRequestDto {
-    return SignupRequestDto(
-        login = login,
-        password = password
-    )
-}
+fun SignInResponseDto.toDomain() = SignInResponse(
+    userId = userId,
+    token = token,
+    createdAt = createdAt
+)

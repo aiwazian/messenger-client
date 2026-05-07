@@ -200,4 +200,24 @@
     <string name="file">File</string>
     <string name="video">Video</string>
     <string name="voice">Voice</string>
+    <string name="chat_not_found">Chat not found</string>
+    <string name="you_are_already_in_this_chat">You are already in this chat</string>
+    <string name="invalid_link">The link is invalid.</string>
+    <string name="failed_to_join">Failed to join</string>
+    <string name="error_searching_for_chat">Error searching for chat</string>
+    <string name="profile_photos">Profile Photos</string>
+    <string name="add_photo">Add Photo</string>
+    <string name="failed_to_connect">Failed to connect</string>
+    <string name="enter_login">Enter login</string>
+    <string name="login">Login</string>
+    <string name="password">Password</string>
+    <string name="min_length_5_characters">Minimum length: 5 characters</string>
+    <string name="enter_first_name">Enter first name</string>
+    <string name="user_login">User login</string>
+    <string name="registration">Registration</string>
+    <string name="unexpected_error">Unexpected error</string>
+    <string name="username_taken">Username taken</string>
+    <string name="Username_available">Username available</string>
+    <string name="username_available">Username available</string>
+    <string name="authorization">Authorization</string>
 </resources>

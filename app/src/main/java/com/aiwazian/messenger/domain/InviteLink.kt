@@ -9,7 +9,7 @@ data class InviteLink(
     val chatId: Long,
     val code: String,
     val link: String,
-    val expiresAt: String? = null,
-    val maxUses: Int? = null,
-    val uses: Int
+    val expiresAt: Long?,
+    val maxUses: Int?,
+    val uses: Int?
 )

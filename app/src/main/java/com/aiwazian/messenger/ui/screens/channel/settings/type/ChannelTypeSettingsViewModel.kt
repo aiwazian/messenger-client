@@ -10,6 +10,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.SearchRepository
+import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -41,12 +43,13 @@ class ChannelTypeSettingsViewModel @Inject constructor(
     
     fun init(channelId: Long) {
         viewModelScope.launch {
-            channelRepository.getById(channelId).collect { channel ->
+            channelRepository.getById(channelId).firstOrNull()?.let { channel ->
                 _uiState.update {
                     it.copy(
                         channelId = channel.id,
                         channelType = channel.channelType,
                         username = channel.username.orEmpty(),
+                        originalName = channel.username.orEmpty(),
                         canSave = true
                     )
                 }
@@ -58,72 +61,71 @@ class ChannelTypeSettingsViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 channelType = channelType,
-                canSave = canSaveChannelType(channelType, it.username, it.linkCheckStatus)
+                canSave = channelType == ChannelType.PRIVATE
             )
         }
     }
     
-    fun changePublicLink(publicLink: String) {
+    fun onChangeUsername(newUsername: String) {
+        val filteredUsername = newUsername.filter { it.toString().matches(RegexPatterns.USERNAME) }
+        _uiState.update { it.copy(username = filteredUsername) }
+        
+        if (filteredUsername.isBlank()) {
+            _uiState.update { it.copy(isError = false, canSave = true, statusText = null) }
+            return
+        }
+        
+        if (filteredUsername.length < 5) {
+            _uiState.update {
+                it.copy(
+                    isError = true,
+                    canSave = false,
+                    statusText = UiText.StringResource(R.string.min_length_5_characters),
+                )
+            }
+            return
+        }
+        
+        if (filteredUsername == _uiState.value.originalName) {
+            _uiState.update { it.copy(isError = false, canSave = true, statusText = null) }
+            return
+        }
+        
         _uiState.update {
             it.copy(
-                username = publicLink,
-                linkCheckStatus = LinkCheckStatus.Idle,
-                canSave = canSaveChannelType(it.channelType, publicLink, LinkCheckStatus.Idle)
+                isError = false,
+                canSave = false,
+                statusText = UiText.DynamicString("Проверка")
             )
         }
         
         checkLinkJob?.cancel()
         checkLinkJob = viewModelScope.launch {
             delay(500)
-            checkPublicLinkAvailability(publicLink)
-        }
-    }
-    
-    fun checkPublicLinkAvailability(publicLink: String) {
-        if (publicLink.isBlank()) {
-            _uiState.update {
-                it.copy(
-                    linkCheckStatus = LinkCheckStatus.Idle,
-                    canSave = canSaveChannelType(it.channelType, publicLink, LinkCheckStatus.Idle)
-                )
-            }
-            return
-        }
-        
-        if (publicLink.length < 3) {
-            _uiState.update {
-                it.copy(
-                    linkCheckStatus = LinkCheckStatus.Error("Минимальная длина 3 символа"),
-                    canSave = false
-                )
-            }
-            return
-        }
-        
-        if (publicLink == _uiState.value.username) {
-            _uiState.update {
-                it.copy(linkCheckStatus = LinkCheckStatus.Available, canSave = true)
-            }
-            return
-        }
-        
-        viewModelScope.launch {
-            _uiState.update { it.copy(linkCheckStatus = LinkCheckStatus.Checking) }
-            
-            try {
-                val isAvailable = searchRepository.checkUsernameAvailable(publicLink)
-                
-                _uiState.update {
-                    it.copy(
-                        linkCheckStatus = if (isAvailable) LinkCheckStatus.Available else LinkCheckStatus.Busy,
-                        canSave = isAvailable
-                    )
+            searchRepository.checkUsernameAvailable(filteredUsername).onSuccess { available ->
+                if (available) {
+                    _uiState.update {
+                        it.copy(
+                            canSave = true,
+                            isError = false,
+                            statusText = UiText.StringResource(R.string.username_available)
+                        )
+                    }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            canSave = false,
+                            isError = true,
+                            statusText = UiText.StringResource(R.string.username_taken)
+                        )
+                    }
                 }
-            } catch (_: Exception) {
+            }.onFailure {
                 _uiState.update {
                     it.copy(
-                        linkCheckStatus = LinkCheckStatus.Error("Не удалось проверить"),
-                        canSave = false
+                        isError = true,
+                        canSave = false,
+                        statusText = UiText.StringResource(R.string.unexpected_error)
                     )
                 }
             }
@@ -132,18 +134,12 @@ class ChannelTypeSettingsViewModel @Inject constructor(
     
     fun save() {
         viewModelScope.launch {
-            val currentState = _uiState.value
-            
-            if (!canSaveChannelType(
-                    currentState.channelType,
-                    currentState.username,
-                    currentState.linkCheckStatus
-                )
-            ) {
-                vibrationManager.vibrate(VibrationPattern.Error)
+            if (_uiState.value.username == _uiState.value.originalName) {
+                _uiEffect.emit(ChannelTypeSettingsEffect.NavigateBack)
                 return@launch
             }
             
+            val currentState = _uiState.value
             channelRepository.updateChannelType(
                 currentState.channelId,
                 currentState.channelType,
@@ -159,16 +155,5 @@ class ChannelTypeSettingsViewModel @Inject constructor(
                 )
             }
         }
-    }
-    
-    private fun canSaveChannelType(
-        channelType: ChannelType,
-        publicLink: String,
-        status: LinkCheckStatus
-    ): Boolean {
-        if (channelType == ChannelType.PUBLIC) {
-            return publicLink.isNotBlank() && (status == LinkCheckStatus.Available || status == LinkCheckStatus.Idle)
-        }
-        return true
     }
 }

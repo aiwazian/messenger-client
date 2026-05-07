@@ -15,6 +15,9 @@ interface SearchApi {
 
     @GET("search/check/{username}")
     suspend fun checkUsernameAvailable(@Path("username") username: String): Response<UsernameAvailableResponseDto>
+    
+    @GET("search/resolve/{username}")
+    suspend fun resolveUsername(@Path("username") username: String): Response<com.aiwazian.messenger.network.dto.ResolveUsernameResponseDto>
 
     @GET("search")
     suspend fun search(

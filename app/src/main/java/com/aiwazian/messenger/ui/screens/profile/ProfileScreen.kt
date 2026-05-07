@@ -39,6 +39,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -112,20 +113,42 @@ fun ProfileScreen(
         }
     }
     
-    when (val profile = uiState.profile) {
-        is Profile.User -> {
-            UserProfile(user = profile, actions = uiState.actions)
+    val scrollState = rememberScrollState()
+    
+    Scaffold { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+        ) {
+            when (val profile = uiState.profile) {
+                is Profile.User -> {
+                    UserProfile(
+                        user = profile,
+                        actions = uiState.actions,
+                        innerPadding.calculateTopPadding()
+                    )
+                }
+                
+                is Profile.Channel -> {
+                    ChannelProfile(
+                        channel = profile,
+                        actions = uiState.actions,
+                        innerPadding.calculateTopPadding()
+                    )
+                }
+                
+                is Profile.Group -> {
+                    GroupProfile(
+                        group = profile,
+                        actions = uiState.actions,
+                        innerPadding.calculateTopPadding()
+                    )
+                }
+                
+                else -> {}
+            }
         }
-        
-        is Profile.Channel -> {
-            ChannelProfile(channel = profile, actions = uiState.actions)
-        }
-        
-        is Profile.Group -> {
-            GroupProfile(group = profile, actions = uiState.actions)
-        }
-        
-        else -> {}
     }
     
     if (showLeaveDialog && leaveDialogData != null) {
@@ -142,30 +165,45 @@ fun ProfileScreen(
 
 @Composable
 private fun GroupProfile(
-    group: Profile.Group, actions: List<TopBarAction>
+    group: Profile.Group, actions: List<TopBarAction>, innerPadding: Dp
 ) {
-    Scaffold(topBar = {
-        TopBar(
-            chatId = group.id, title = group.name, subTitle = pluralStringResource(
-                R.plurals.members_count, group.members, group.members
-            ), actions = actions
+    Box {
+        ProfileImageCarousel(avatars = group.avatars)
+        
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(TopAppBarDefaults.LargeAppBarCollapsedHeight + innerPadding)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.5f), Color.Transparent
+                        )
+                    )
+                )
         )
-    }) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
-            SectionContainer {
-                if (!group.bio.isNullOrBlank()) {
-                    SectionItem(
-                        headlineText = group.bio,
-                        supportingText = stringResource(R.string.description)
-                    )
-                }
-                
-                if (!group.username.isNullOrBlank()) {
-                    SectionItem(
-                        headlineText = "@" + group.username,
-                        supportingText = stringResource(R.string.public_link)
-                    )
-                }
+        
+        TopBar(
+            chatId = group.id,
+            title = group.name,
+            subTitle = pluralStringResource(R.plurals.members_count, group.members, group.members),
+            actions = actions
+        )
+    }
+    
+    Column(modifier = Modifier.padding(innerPadding)) {
+        SectionContainer {
+            if (!group.bio.isNullOrBlank()) {
+                SectionItem(
+                    headlineText = group.bio, supportingText = stringResource(R.string.description)
+                )
+            }
+            
+            if (!group.username.isNullOrBlank()) {
+                SectionItem(
+                    headlineText = "@" + group.username,
+                    supportingText = stringResource(R.string.public_link)
+                )
             }
         }
     }
@@ -173,30 +211,45 @@ private fun GroupProfile(
 
 @Composable
 private fun ChannelProfile(
-    channel: Profile.Channel, actions: List<TopBarAction>
+    channel: Profile.Channel, actions: List<TopBarAction>, innerPadding: Dp
 ) {
-    Scaffold(topBar = {
+    Box {
+        ProfileImageCarousel(avatars = channel.avatars)
+        
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(TopAppBarDefaults.LargeAppBarCollapsedHeight + innerPadding)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.5f), Color.Transparent
+                        )
+                    )
+                )
+        )
+        
         TopBar(
             chatId = channel.id, title = channel.name, subTitle = pluralStringResource(
                 R.plurals.subscribers_count, channel.subscribers, channel.subscribers
             ), actions = actions
         )
-    }) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
-            SectionContainer {
-                if (!channel.bio.isNullOrBlank()) {
-                    SectionItem(
-                        headlineText = channel.bio,
-                        supportingText = stringResource(R.string.description)
-                    )
-                }
-                
-                if (!channel.username.isNullOrBlank()) {
-                    SectionItem(
-                        headlineText = "@" + channel.username,
-                        supportingText = stringResource(R.string.public_link)
-                    )
-                }
+    }
+    
+    Column {
+        SectionContainer {
+            if (!channel.bio.isNullOrBlank()) {
+                SectionItem(
+                    headlineText = channel.bio,
+                    supportingText = stringResource(R.string.description)
+                )
+            }
+            
+            if (!channel.username.isNullOrBlank()) {
+                SectionItem(
+                    headlineText = "@" + channel.username,
+                    supportingText = stringResource(R.string.public_link)
+                )
             }
         }
     }
@@ -205,63 +258,52 @@ private fun ChannelProfile(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UserProfile(
-    user: Profile.User, actions: List<TopBarAction>
+    user: Profile.User, actions: List<TopBarAction>, innerPadding: Dp
 ) {
-    val scrollState = rememberScrollState()
-    
-    Scaffold { innerPadding ->
-        Column(
+    Box {
+        ProfileImageCarousel(avatars = user.avatars)
+        
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-        ) {
-            Box {
-                ProfileImageCarousel(avatars = user.avatars)
-                
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(TopAppBarDefaults.LargeAppBarCollapsedHeight + innerPadding.calculateTopPadding())
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Black.copy(alpha = 0.5f),
-                                    Color.Transparent
-                                )
-                            )
+                .fillMaxWidth()
+                .height(TopAppBarDefaults.LargeAppBarCollapsedHeight + innerPadding)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.5f), Color.Transparent
                         )
+                    )
                 )
-                
-                TopBar(
-                    chatId = user.id,
-                    title = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-                    subTitle = user.lastSeen?.toInstance()?.toPrettyTime() ?: "в сети недавно",
-                    actions = actions
+        )
+        
+        TopBar(
+            chatId = user.id,
+            title = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+            subTitle = user.lastSeen?.toInstance()?.toPrettyTime() ?: "в сети недавно",
+            actions = actions
+        )
+    }
+    
+    Column(modifier = Modifier.padding(top = 10.dp)) {
+        SectionContainer {
+            if (!user.bio.isNullOrBlank()) {
+                SectionItem(
+                    headlineText = user.bio, supportingText = stringResource(R.string.bio)
                 )
             }
             
-            Column(modifier = Modifier.padding(top = 10.dp)) {
-                SectionContainer {
-                    if (!user.bio.isNullOrBlank()) {
-                        SectionItem(
-                            headlineText = user.bio, supportingText = stringResource(R.string.bio)
-                        )
-                    }
-                    
-                    if (!user.username.isNullOrBlank()) {
-                        SectionItem(
-                            headlineText = "@" + user.username,
-                            supportingText = stringResource(R.string.username)
-                        )
-                    }
-                    
-                    if (user.dateOfBirth != null) {
-                        SectionItem(
-                            headlineText = user.dateOfBirth.toInstance().toPrettyDateWithYear(),
-                            supportingText = stringResource(R.string.date_of_birth)
-                        )
-                    }
-                }
+            if (!user.username.isNullOrBlank()) {
+                SectionItem(
+                    headlineText = "@" + user.username,
+                    supportingText = stringResource(R.string.username)
+                )
+            }
+            
+            if (user.dateOfBirth != null) {
+                SectionItem(
+                    headlineText = user.dateOfBirth.toInstance().toPrettyDateWithYear(),
+                    supportingText = stringResource(R.string.date_of_birth)
+                )
             }
         }
     }
@@ -295,12 +337,9 @@ private fun TopBar(
                         .sharedElement(key = "chat-sub-title-$chatId")
                 )
             }
-        },
-        navigationIcon = NavigationIcon(
+        }, navigationIcon = NavigationIcon(
             icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navBackStack::removeLastOrNull
-        ),
-        actions = actions,
-        colors = TopAppBarDefaults.topAppBarColors(
+        ), actions = actions, colors = TopAppBarDefaults.topAppBarColors(
             containerColor = Color.Transparent,
             navigationIconContentColor = Color.White,
             actionIconContentColor = Color.White,

@@ -5,9 +5,6 @@
 package com.aiwazian.messenger.ui.components.navigation
 
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -16,21 +13,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.metadata
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import com.aiwazian.messenger.ui.screens.auth.LoginScreen
-import com.aiwazian.messenger.ui.screens.auth.PasswordScreen
+import com.aiwazian.messenger.ui.screens.auth.login.LoginScreen
+import com.aiwazian.messenger.ui.screens.auth.password.PasswordScreen
+import com.aiwazian.messenger.ui.screens.auth.register.RegisterScreen
 import com.aiwazian.messenger.ui.screens.channel.create.CreateChannelScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.ChannelSettingsScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.blockedUsers.ChannelBlockedUsersScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.invites.ChannelInviteLinksScreen
-import com.aiwazian.messenger.ui.screens.channel.settings.invites.CreateInviteLinkScreen
+import com.aiwazian.messenger.ui.screens.channel.settings.invites.create.CreateInviteLinkScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.subscribers.ChannelSubscribersScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.type.ChannelTypeSettingsScreen
 import com.aiwazian.messenger.ui.screens.chat.ChatScreen
@@ -38,8 +34,8 @@ import com.aiwazian.messenger.ui.screens.group.create.CreateGroupScreen
 import com.aiwazian.messenger.ui.screens.group.settings.GroupSettingsScreen
 import com.aiwazian.messenger.ui.screens.group.settings.addMember.AddMemberScreen
 import com.aiwazian.messenger.ui.screens.group.settings.blockedUsers.GroupBlockedUsersScreen
-import com.aiwazian.messenger.ui.screens.group.settings.invites.CreateGroupInviteLinkScreen
 import com.aiwazian.messenger.ui.screens.group.settings.invites.GroupInviteLinksScreen
+import com.aiwazian.messenger.ui.screens.group.settings.invites.create.CreateGroupInviteLinkScreen
 import com.aiwazian.messenger.ui.screens.group.settings.members.GroupMembersScreen
 import com.aiwazian.messenger.ui.screens.group.settings.type.GroupTypeSettingsScreen
 import com.aiwazian.messenger.ui.screens.logout.LogoutScreen
@@ -56,9 +52,8 @@ import com.aiwazian.messenger.ui.screens.settings.privacy.bio.SettingsBioScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.invites.SettingsInvitesScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.lastSeen.SettingsLastSeenScreen
-import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileColorScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileScreen
-import com.aiwazian.messenger.ui.screens.settings.profile.SettingsUsernameScreen
+import com.aiwazian.messenger.ui.screens.settings.profile.username.SettingsUsernameScreen
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsCloudPasswordScreen
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsSecurityScreen
 import com.aiwazian.messenger.ui.screens.settings.security.devices.SettingsDevicesScreen
@@ -68,18 +63,8 @@ import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPass
 import com.aiwazian.messenger.ui.screens.settings.storage.StorageScreen
 
 @Composable
-fun AppNavDisplay(
-    startRoute: AppRoute? = null,
-    onRouteConsumed: () -> Unit = {}
-) {
-    val backStack = rememberNavBackStack(AppRoute.Main)
-    
-    LaunchedEffect(startRoute) {
-        startRoute?.let {
-            backStack.add(it)
-            onRouteConsumed()
-        }
-    }
+fun AppNavDisplay(vararg startRoute: AppRoute) {
+    val backStack = rememberNavBackStack(elements = startRoute)
     
     SharedTransitionLayout {
         CompositionLocalProvider(
@@ -94,52 +79,12 @@ fun AppNavDisplay(
                 onBack = backStack::removeLastOrNull,
                 entryProvider = entryProvider {
                     entry<AppRoute.Main> { MainScreen() }
-                    entry<AppRoute.Chat>(metadata = metadata {
-                        put(NavDisplay.TransitionKey) {
-                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
-                                animationSpec = tween(
-                                    500
-                                )
-                            )
-                        }
-                        put(NavDisplay.PopTransitionKey) {
-                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
-                                animationSpec = tween(
-                                    500
-                                )
-                            )
-                        }
-                        put(NavDisplay.PredictivePopTransitionKey) {
-                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
-                                animationSpec = tween(
-                                    500
-                                )
-                            )
-                        }
-                    }) { ChatScreen(chatId = it.chatId, chatName = it.chatName) }
-                    entry<AppRoute.Profile>(metadata = metadata {
-                        put(NavDisplay.TransitionKey) {
-                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
-                                animationSpec = tween(
-                                    500
-                                )
-                            )
-                        }
-                        put(NavDisplay.PopTransitionKey) {
-                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
-                                animationSpec = tween(
-                                    500
-                                )
-                            )
-                        }
-                        put(NavDisplay.PredictivePopTransitionKey) {
-                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
-                                animationSpec = tween(
-                                    500
-                                )
-                            )
-                        }
-                    }) { ProfileScreen(profileId = it.profileId) }
+                    entry<AppRoute.Chat>(metadata = PredictiveBackMetadata) {
+                        ChatScreen(chatId = it.chatId, chatName = it.chatName)
+                    }
+                    entry<AppRoute.Profile>(metadata = PredictiveBackMetadata) {
+                        ProfileScreen(profileId = it.profileId)
+                    }
                     entry<AppRoute.Settings> { SettingsScreen() }
                     entry<AppRoute.SettingsLanguage> { SettingsLanguageScreen() }
                     entry<AppRoute.SettingsDesign> { SettingsDarkThemeScreen() }
@@ -159,7 +104,6 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsCloudPassword> { SettingsCloudPasswordScreen() }
                     entry<AppRoute.SettingsNotifications> { SettingsNotificationsScreen() }
                     entry<AppRoute.SettingsDataAndStorage> { StorageScreen() }
-                    entry<AppRoute.SettingsProfileColor> { SettingsProfileColorScreen() }
                     entry<AppRoute.NewMessage> { NewMessageScreen() }
                     entry<AppRoute.CreateGroup> { CreateGroupScreen() }
                     entry<AppRoute.CreateChannel> { CreateChannelScreen() }
@@ -177,8 +121,9 @@ fun AppNavDisplay(
                     entry<AppRoute.GroupBlackList> { GroupBlockedUsersScreen(groupId = it.groupId) }
                     entry<AppRoute.AddMember> { AddMemberScreen(groupId = it.groupId) }
                     entry<AppRoute.Logout> { LogoutScreen() }
-                    entry<AppRoute.Login> { LoginScreen() }
-                    entry<AppRoute.Password> { PasswordScreen() }
+                    entry<AppRoute.Login>(metadata = HorizontalMetadata) { LoginScreen() }
+                    entry<AppRoute.Password>(metadata = HorizontalMetadata) { PasswordScreen(login = it.login) }
+                    entry<AppRoute.Register>(metadata = HorizontalMetadata) { RegisterScreen(login = it.login) }
                 },
                 entryDecorators = listOf(
                     rememberSaveableStateHolderNavEntryDecorator(),

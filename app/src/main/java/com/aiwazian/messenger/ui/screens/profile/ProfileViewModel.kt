@@ -248,7 +248,7 @@ class ProfileViewModel @Inject constructor(
                 icon = Icons.Rounded.AddHome,
                 textResId = R.string.add_to_home_screen,
                 onClick = {
-                    val chatName = "${user.firstName} ${user.lastName}"
+                    val chatName = "${user.firstName} ${user.lastName.orEmpty()}"
                     createChatShortcut(chatName)
                 }
             )

@@ -4,10 +4,10 @@
 
 package com.aiwazian.messenger.network.api
 
-import com.aiwazian.messenger.network.dto.SignInResponseDto
 import com.aiwazian.messenger.network.dto.LoginAvailableResponseDto
 import com.aiwazian.messenger.network.dto.SignInRequestDto
-import com.aiwazian.messenger.network.dto.SignupRequestDto
+import com.aiwazian.messenger.network.dto.SignInResponseDto
+import com.aiwazian.messenger.network.dto.SignUpRequestDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -23,7 +23,7 @@ interface AuthApi {
     suspend fun signIn(@Body request: SignInRequestDto): Response<SignInResponseDto>
 
     @POST("auth/signup")
-    suspend fun signUp(@Body request: SignupRequestDto): Response<Unit>
+    suspend fun signUp(@Body request: SignUpRequestDto): Response<SignInResponseDto>
 
     @POST("auth/logout")
     suspend fun logout(): Response<Unit>

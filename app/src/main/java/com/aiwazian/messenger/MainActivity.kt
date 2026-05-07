@@ -116,10 +116,14 @@ class MainActivity : AppCompatActivity() {
                 dynamicColor = isDynamicColorEnable,
                 appPrimaryColor = primaryColor.color
             ) {
-                AppNavDisplay(
-                    startRoute = startRoute,
-                    onRouteConsumed = { startRoute = null }
-                )
+                val startRoutes = mutableListOf<AppRoute>(AppRoute.Main)
+                
+                startRoute?.let {
+                    startRoutes.add(it)
+                    startRoute = null
+                }
+                
+                AppNavDisplay(*startRoutes.toTypedArray())
                 
                 AnimatedVisibility(
                     visible = isLockApp,

@@ -101,21 +101,22 @@ class UserRepository @Inject constructor(
         }
     }
     
-    suspend fun saveUsername(username: String): Boolean {
+    suspend fun saveUsername(username: String): Result<Unit> {
         return try {
-            val currentUser = getMe().firstOrNull() ?: return false
-            val updatedUser = currentUser.copy(username = username.ifEmpty { null })
+            val currentUser =
+                getMe().firstOrNull() ?: return Result.failure(Exception("User not initialized"))
+            val updatedUser = currentUser.copy(username = username.ifBlank { null })
             val request = updatedUser.toUpdateRequest()
             val response = userApi.updateMe(request)
             if (response.isSuccessful) {
                 userDao.insert(updatedUser.toEntity())
-                true
+                Result.success(Unit)
             } else {
-                false
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
             }
         } catch (e: Exception) {
             Log.e("UserRepository", "Ошибка при сохранении username", e)
-            false
+            Result.failure(e)
         }
     }
     

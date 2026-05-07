@@ -5,7 +5,6 @@
 package com.aiwazian.messenger.utils
 
 import android.content.Context
-import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.repository.FileRepository
@@ -15,12 +14,7 @@ import com.ketch.Status
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.io.File
 import javax.inject.Inject
@@ -43,30 +37,18 @@ class DownloaderManager @Inject constructor(
         )
         .build(context)
     
-    private val _downloads = MutableStateFlow<Map<Int, DownloadItem>>(emptyMap())
-    val downloads: StateFlow<List<DownloadItem>> = _downloads
-        .map { it.values.toList() }
-        .stateIn(
-            CoroutineScope(Dispatchers.Default),
-            SharingStarted.Eagerly,
-            emptyList()
-        )
+    private val _downloads = mutableListOf<DownloadItem>()
     
     suspend fun download(
         url: String,
         fileName: String,
         fileId: String
-    ): Int {
+    ) {
         val folderName = getFolderNameForExtension(fileName.substringAfterLast('.', ""))
         val path = File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
         path.mkdirs()
         val extension = fileName.substringAfterLast('.', "")
         val finalFileName = if (extension.isNotEmpty()) "$fileId.$extension" else fileId
-        
-        _downloads.value.values.find { it.fileId == fileId }?.let { existing ->
-            ketch.cancel(existing.id)
-            _downloads.update { it - existing.id }
-        }
         
         val id = ketch.download(
             url = url,
@@ -83,18 +65,88 @@ class DownloaderManager @Inject constructor(
             status = DownloadStatus.DOWNLOADING
         )
         
-        fileRepository.save(
-            FileEntity(
-                fileId,
-                fileName,
-                size = 1,
-                path = null,
-                status = DownloadStatus.DOWNLOADING
-            )
-        )
-        _downloads.update { it + (id to item) }
-        observeDownload(id)
-        return id
+        _downloads.add(item)
+        
+        fileRepository.updateFileStatus(fileId, DownloadStatus.DOWNLOADING)
+        
+        observeDownload(id, fileId)
+    }
+    
+    private fun observeDownload(downloadId: Int, fileId: String) {
+        CoroutineScope(Dispatchers.Main).launch {
+            ketch.observeDownloadById(downloadId).collect { model ->
+                if (model == null) {
+                    return@collect
+                }
+                
+                val existing = _downloads.firstOrNull { it.fileId == fileId } ?: return@collect
+                val fileId = existing.fileId
+                val finalStatus = model.status.toDomain()
+                val finalUri = if (finalStatus == DownloadStatus.COMPLETED) {
+                    "${model.path}/${model.fileName}"
+                } else {
+                    existing.localUri
+                }
+                
+                if (
+                    finalStatus == DownloadStatus.COMPLETED &&
+                    !finalUri.isNullOrBlank() &&
+                    existing.status != DownloadStatus.COMPLETED
+                ) {
+                    fileRepository.updateFileStatus(fileId, finalStatus)
+                    fileRepository.updateFilePath(fileId, finalUri)
+                    fileRepository.updateFileSize(fileId, model.total)
+                    _downloads.remove(existing)
+                } else {
+                    _downloads[_downloads.indexOfFirst { it.id == downloadId }] = DownloadItem(
+                        id = downloadId,
+                        fileId = fileId,
+                        name = model.fileName,
+                        progress = model.progress,
+                        status = finalStatus,
+                        size = model.total,
+                        speed = model.speedInBytePerMs.toString(),
+                        localUri = finalUri
+                    )
+                }
+            }
+        }
+    }
+    
+    suspend fun pause(fileId: String) {
+        val index = _downloads.indexOfFirst { it.fileId == fileId }
+        if (index != -1) {
+            ketch.pause(_downloads[index].id)
+            _downloads[index] = _downloads[index].copy(status = DownloadStatus.PAUSED)
+        }
+        fileRepository.updateFileStatus(fileId, DownloadStatus.PAUSED)
+    }
+    
+    suspend fun resume(fileId: String) {
+        val index = _downloads.indexOfFirst { it.fileId == fileId }
+        if (index != -1) {
+            ketch.resume(_downloads[index].id)
+            _downloads[index] =
+                _downloads[index].copy(status = DownloadStatus.DOWNLOADING)
+        }
+        fileRepository.updateFileStatus(fileId, DownloadStatus.DOWNLOADING)
+    }
+    
+    suspend fun cancel(fileId: String) {
+        val index = _downloads.indexOfFirst { it.fileId == fileId }
+        if (index != -1) {
+            ketch.cancel(_downloads[index].id)
+            _downloads.remove(_downloads[index])
+        }
+        fileRepository.updateFileStatus(fileId, DownloadStatus.CANCELLED)
+    }
+    
+    fun getFile(fileId: String, extension: String): File {
+        val folderName = getFolderNameForExtension(extension)
+        val path = File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
+        if (!path.exists()) path.mkdirs()
+        val finalFileName = if (extension.isNotEmpty()) "$fileId.$extension" else fileId
+        return File(path, finalFileName)
     }
     
     private fun getFolderNameForExtension(extension: String): String {
@@ -103,46 +155,6 @@ class DownloaderManager @Inject constructor(
             "mp4", "mkv", "avi", "mov", "3gp", "webm" -> "Video"
             "pdf", "doc", "docx", "txt", "xls", "xlsx", "ppt", "pptx" -> "Documents"
             else -> "Other"
-        }
-    }
-    
-    private suspend fun observeDownload(id: Int) {
-        ketch.observeDownloadById(id).collect { model ->
-            if (model == null) {
-                return@collect
-            }
-            
-            val existing = _downloads.value[id] ?: return@collect
-            val fileId = existing.fileId
-            val finalStatus = model.status.toDomain()
-            val finalUri = if (finalStatus == DownloadStatus.COMPLETED) {
-                "${model.path}/${model.fileName}"
-            } else {
-                existing.localUri
-            }
-            
-            if (
-                finalStatus == DownloadStatus.COMPLETED &&
-                fileId != null &&
-                !finalUri.isNullOrBlank() &&
-                (existing.status != DownloadStatus.COMPLETED || existing.localUri != finalUri)
-            ) {
-                fileRepository.updateFileStatus(fileId, finalStatus)
-                fileRepository.updateFilePath(fileId, finalUri)
-                fileRepository.updateFileSize(fileId, model.total)
-            }
-            
-            _downloads.update { current ->
-                val currentItem = current[id] ?: return@update current
-                
-                current + (id to currentItem.copy(
-                    progress = model.progress,
-                    status = finalStatus,
-                    size = model.total,
-                    speed = model.speedInBytePerMs.toString(),
-                    localUri = finalUri
-                ))
-            }
         }
     }
     
@@ -155,20 +167,5 @@ class DownloaderManager @Inject constructor(
         Status.FAILED -> DownloadStatus.FAILED
         Status.CANCELLED -> DownloadStatus.CANCELLED
         Status.STARTED -> DownloadStatus.DOWNLOADING
-    }
-    
-    fun pause(id: Int) = ketch.pause(id)
-    fun resume(id: Int) = ketch.resume(id)
-    fun cancel(id: Int) {
-        ketch.cancel(id)
-        _downloads.update { it - id }
-    }
-    
-    fun getFile(fileId: String, extension: String): File {
-        val folderName = getFolderNameForExtension(extension)
-        val path = File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
-        if (!path.exists()) path.mkdirs()
-        val finalFileName = if (extension.isNotEmpty()) "$fileId.$extension" else fileId
-        return File(path, finalFileName)
     }
 }

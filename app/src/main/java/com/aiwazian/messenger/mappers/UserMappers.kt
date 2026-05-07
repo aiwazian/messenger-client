@@ -17,7 +17,7 @@ import com.aiwazian.messenger.network.dto.UserResponseDto
 
 fun UserResponseDto.toDomain(): User = User(
     id = id,
-    firstName = firstName ?: "",
+    firstName = firstName,
     lastName = lastName,
     username = username,
     bio = bio,
@@ -28,7 +28,7 @@ fun UserResponseDto.toDomain(): User = User(
 
 fun UserResponseDto.toEntity(): UserEntity = UserEntity(
     id = id,
-    firstName = firstName ?: "",
+    firstName = firstName,
     lastName = lastName,
     username = username,
     bio = bio,

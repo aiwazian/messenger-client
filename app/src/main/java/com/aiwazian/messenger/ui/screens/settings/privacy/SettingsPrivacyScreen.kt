@@ -97,9 +97,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
     }
     
     Scaffold(topBar = { TopBar() }, snackbarHost = {
-        SnackbarHost(snackbarHostState) { data ->
-            CustomSnackbar(text = data.visuals.message, onDismiss = data::dismiss)
-        }
+        CustomSnackbar(snackbarHostState)
     }) {
         Column(
             modifier = Modifier

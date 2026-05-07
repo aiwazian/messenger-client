@@ -22,7 +22,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,8 +39,8 @@ import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
-import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 
 @Composable
 fun AddMemberScreen(
@@ -51,11 +50,11 @@ fun AddMemberScreen(
     val navBackStack = LocalNavBackStack.current
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-
+    
     LaunchedEffect(groupId) {
         viewModel.init(groupId)
     }
-
+    
     LaunchedEffect(Unit) {
         viewModel.sideEffect.collect { effect ->
             when (effect) {
@@ -65,7 +64,7 @@ fun AddMemberScreen(
             }
         }
     }
-
+    
     Scaffold(
         topBar = {
             PageTopBar(
@@ -87,9 +86,7 @@ fun AddMemberScreen(
             )
         },
         snackbarHost = {
-            SnackbarHost(snackbarHostState) { data ->
-                CustomSnackbar(text = data.visuals.message, onDismiss = data::dismiss)
-            }
+            CustomSnackbar(snackbarHostState)
         },
         floatingActionButton = {
             if (state.selectedUserIds.isNotEmpty()) {

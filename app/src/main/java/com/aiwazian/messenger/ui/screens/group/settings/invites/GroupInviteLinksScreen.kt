@@ -61,6 +61,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
+import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
@@ -106,12 +107,12 @@ fun GroupInviteLinksScreen(
                 TextButton(onClick = viewModel.deleteDialog::hide) {
                     Text(stringResource(R.string.cancel))
                 }
-                TextButton(
-                    onClick = viewModel::confirmDelete,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(stringResource(R.string.delete))
-                }
+                CountdownTextButton(
+                    text = stringResource(R.string.delete), seconds = 5,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    onClickAfterFinish = viewModel::confirmDelete,
+                    onClickWhileRunning = viewModel::vibrate
+                )
             },
             content = {
                 Text("Вы уверены, что хотите удалить эту ссылку?")
@@ -180,9 +181,7 @@ fun GroupInviteLinksScreen(
     
     Scaffold(
         snackbarHost = {
-            SnackbarHost(snackbarHostState) {
-                CustomSnackbar(text = it.visuals.message)
-            }
+            CustomSnackbar(snackbarHostState)
         },
         topBar = {
             PageTopBar(
@@ -245,7 +244,7 @@ private fun InviteLinkItem(
     viewModel: GroupInviteLinksViewModel,
     expandedMenuId: Long?
 ) {
-    val remainingUsesText = if (link.maxUses == null) {
+    val remainingUsesText = if (link.maxUses == null || link.uses == null) {
         "∞"
     } else {
         (link.maxUses - link.uses).toString()
@@ -254,7 +253,7 @@ private fun InviteLinkItem(
     val expirationText = if (link.expiresAt == null) {
         "Бессрочна"
     } else {
-        link.expiresAt.toLongOrNull()?.toInstance()?.toPrettyDateWithYear() ?: "Бессрочна"
+        link.expiresAt.toInstance().toPrettyDateWithYear()
     }
     
     val supportingText = "Осталось $remainingUsesText • $expirationText"

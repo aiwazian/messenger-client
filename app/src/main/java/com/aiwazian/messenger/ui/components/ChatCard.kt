@@ -4,16 +4,16 @@
 
 package com.aiwazian.messenger.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PushPin
-import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material3.Badge
@@ -24,13 +24,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.extensions.sharedBounds
@@ -110,7 +114,7 @@ fun ChatCard(
             }
         },
         leadingContent = {
-            Leading(chat.id)
+            ChatAvatar(id = chat.id, chatName = chat.chatName.asString())
         },
         trailingContent = {
             Column(verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.End) {
@@ -172,14 +176,24 @@ private fun UnreadMessageCount(count: Int) {
 }
 
 @Composable
-private fun Leading(id: Long) {
-    Box(modifier = Modifier.size(40.dp)) {
-        Icon(
-            imageVector = Icons.Rounded.AccountCircle,
-            contentDescription = null,
+fun ChatAvatar(id: Long, chatName: String, modifier: Modifier = Modifier) {
+    Box(
+        modifier = Modifier
+            .sharedElement(key = "chat-avatar-$id")
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(AppPrimaryColor.entries[(id.toString().first().code % 5) + 1].color),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = chatName.firstOrNull().toString().uppercase(),
+            fontSize = 20.sp,
+            lineHeight = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
             modifier = Modifier
-                .fillMaxSize()
-                .sharedElement(key = "avatar-$id")
+                .sharedElement(key = "chat-avatar-letter-$id")
+                .then(modifier)
         )
     }
 }

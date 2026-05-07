@@ -8,7 +8,7 @@ import android.os.Build
 import javax.inject.Inject
 
 class DeviceInfoProvider @Inject constructor() {
-    fun getDeviceName(): String {
+    fun getDeviceModel(): String {
         val manufacturer = Build.MANUFACTURER
         val model = Build.MODEL
 
@@ -22,8 +22,6 @@ class DeviceInfoProvider @Inject constructor() {
     fun getOsVersion(): String {
         return Build.VERSION.RELEASE
     }
-
-    fun getOsName(): String {
-        return "Android"
-    }
+    
+    fun getOsName() = "Android"
 }

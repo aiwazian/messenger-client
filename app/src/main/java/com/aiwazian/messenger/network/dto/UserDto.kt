@@ -11,7 +11,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class UserResponseDto(
     @SerialName("id") val id: Long,
-    @SerialName("firstName") val firstName: String? = null,
+    @SerialName("firstName") val firstName: String,
     @SerialName("lastName") val lastName: String? = null,
     @SerialName("username") val username: String? = null,
     @SerialName("bio") val bio: String? = null,

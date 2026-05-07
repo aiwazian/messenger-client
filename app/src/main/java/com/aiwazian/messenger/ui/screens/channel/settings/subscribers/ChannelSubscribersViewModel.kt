@@ -4,9 +4,12 @@
 
 package com.aiwazian.messenger.ui.screens.channel.settings.subscribers
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.repository.ChannelRepository
+import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,10 +38,10 @@ class ChannelSubscribersViewModel @Inject constructor(
     fun init(channelId: Long) {
         _channelId = channelId
         viewModelScope.launch {
-            if (channelId != -1L) {
-                channelRepository.getSubscribers(_channelId).onSuccess {
-                    _uiState.update { it.copy(subscribers = it.subscribers) }
-                }
+            channelRepository.getSubscribers(_channelId).onSuccess { subscribers ->
+                _uiState.update { it.copy(subscribers = subscribers) }
+            }.onFailure {
+                Log.e("ChannelSubscribersViewModel", "Error: ", it)
             }
         }
     }
@@ -49,16 +52,12 @@ class ChannelSubscribersViewModel @Inject constructor(
     
     fun kickUser() {
         viewModelScope.launch {
-            val userId = _uiState.value.selectedUserId
-            if (userId == null) {
-                _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar("Пользователь не выбран"))
-                return@launch
-            }
+            val userId = _uiState.value.selectedUserId ?: return@launch
             
             channelRepository.kickUser(_channelId, userId).onSuccess {
-                _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar("Пользователь удален"))
+                _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar(UiText.StringResource(R.string.user_blocked)))
             }.onFailure {
-                _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar("Не удалось удалить пользователя"))
+                _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }
@@ -66,16 +65,12 @@ class ChannelSubscribersViewModel @Inject constructor(
     
     fun blockUser() {
         viewModelScope.launch {
-            val userId = _uiState.value.selectedUserId
-            if (userId == null) {
-                _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar("Пользователь не выбран"))
-                return@launch
-            }
+            val userId = _uiState.value.selectedUserId ?: return@launch
             
             channelRepository.banUser(_channelId, userId).onSuccess {
-                _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar("Пользователь заблокирован"))
+                _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar(UiText.StringResource(R.string.user_blocked)))
             }.onFailure {
-                _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar("Не удалось заблокировать пользователя"))
+                _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }

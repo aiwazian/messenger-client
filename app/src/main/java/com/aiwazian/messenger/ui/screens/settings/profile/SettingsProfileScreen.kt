@@ -133,7 +133,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
             }
             
             Box(modifier = Modifier.padding(start = 10.dp)) {
-                SectionHeader(title = "Profile photo")
+                SectionHeader(title = stringResource(R.string.profile_photos))
             }
             
             val carouselState = rememberCarouselState { uiState.user.avatars.size + 1 }
@@ -255,7 +255,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                                 ),
                                 modifier = Modifier.graphicsLayer(scaleX = scale, scaleY = scale),
                             ) {
-                                Text("Add Photo")
+                                Text(stringResource(R.string.add_photo))
                                 Icon(
                                     Icons.Outlined.AddAPhoto, null,
                                     modifier = Modifier

@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -35,7 +34,7 @@ class GroupBlockedUsersViewModel @Inject constructor(
     
     fun init(groupId: Long) {
         viewModelScope.launch {
-            groupRepository.getBlackList(groupId).collectLatest { users ->
+            groupRepository.getBannedUsers(groupId).onSuccess { users ->
                 _uiState.update { it.copy(blockedUsers = users) }
             }
         }

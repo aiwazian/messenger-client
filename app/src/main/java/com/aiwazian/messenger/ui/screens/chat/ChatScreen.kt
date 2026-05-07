@@ -26,31 +26,22 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Attachment
 import androidx.compose.material.icons.rounded.Photo
-import androidx.compose.material.icons.rounded.PlayCircleFilled
-import androidx.compose.material.icons.rounded.PlayCircleOutline
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -61,12 +52,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -75,9 +63,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -90,12 +78,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
@@ -106,6 +94,7 @@ import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
+import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
@@ -113,7 +102,6 @@ import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -123,6 +111,8 @@ import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.profile.Profile
 import com.aiwazian.messenger.utils.DialogController
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @Composable
@@ -150,6 +140,8 @@ fun ChatScreen(
     }
     
     var fileToCancelId by remember { mutableStateOf<Long?>(null) }
+    val scope = rememberCoroutineScope()
+    var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     LaunchedEffect(Unit) {
         chatViewModel.uiEffect.collect { effect ->
@@ -167,9 +159,13 @@ fun ChatScreen(
                 }
                 
                 is ChatUiEffect.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(
-                        message = effect.message, duration = SnackbarDuration.Short
-                    )
+                    snackbarJob?.cancel()
+                    snackbarJob = scope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = effect.message.asString(context),
+                            duration = SnackbarDuration.Short
+                        )
+                    }
                 }
                 
                 is ChatUiEffect.NavigateToChat -> {
@@ -190,11 +186,7 @@ fun ChatScreen(
     Scaffold(
         modifier = Modifier.sharedBounds(key = "chat-${chatId}"),
         snackbarHost = {
-            SnackbarHost(snackbarHostState) {
-                CustomSnackbar(
-                    text = it.visuals.message, onDismiss = it::dismiss
-                )
-            }
+            CustomSnackbar(snackbarHostState)
         },
         topBar = {
             TopBar(
@@ -262,7 +254,8 @@ fun ChatScreen(
                                     } else {
                                         chatViewModel.onFileAction(item.message, file, action)
                                     }
-                                }, onLinkClicked = chatViewModel::onLinkClicked
+                                }, onLinkClicked = chatViewModel::onLinkClicked,
+                                onUsernameClicked = chatViewModel::onUsernameClicked
                             )
                         }
                     }
@@ -498,10 +491,7 @@ private fun TopBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.AccountCircle, contentDescription = null,
-                        modifier = Modifier.sharedElement(key = "avatar-$chatId")
-                    )
+                    ChatAvatar(id = chatId, chatName = title)
                     
                     Column(
                         modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center
@@ -539,8 +529,8 @@ private fun TopBar(
                                     lineHeight = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier
-                                        .fillMaxWidth()
                                         .sharedElement(key = "chat-sub-title-$chatId")
+                                        .fillMaxWidth()
                                 )
                             }
                         }
@@ -679,6 +669,8 @@ private fun InputMessage(
         value = value,
         onValueChange = onValueChange,
         maxLines = 5,
+        singleLine = false,
+        textStyle = TextStyle(lineHeight = 16.sp),
         trailingIcon = {
             Row {
                 IconButton(onClick = attachmentModal::show) {
@@ -715,217 +707,97 @@ private fun InputMessage(
 private fun AttachmentBottomSheet(
     onDismissRequest: () -> Unit, onFileSystemClick: () -> Unit, onFileSelected: (List<Uri>) -> Unit
 ) {
-    var selectedIndex by remember { mutableIntStateOf(0) }
-    val pagerState = rememberPagerState(pageCount = { 2 })
     val sheetState = rememberModalBottomSheetState()
     
-    LaunchedEffect(selectedIndex) {
-        pagerState.animateScrollToPage(selectedIndex)
-    }
-    
-    LaunchedEffect(pagerState.currentPage) {
-        selectedIndex = pagerState.currentPage
-    }
-    
     ModalBottomSheet(
-        sheetState = sheetState, onDismissRequest = onDismissRequest, dragHandle = null
+        sheetState = sheetState,
+        onDismissRequest = onDismissRequest,
+        dragHandle = null
     ) {
-        Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.BottomCenter) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .padding(top = 10.dp, bottom = 60.dp)
-                    .align(Alignment.TopCenter),
-                verticalAlignment = Alignment.Top
-            ) { page ->
-                when (page) {
-                    0 -> {
-                        Column(Modifier.fillMaxSize()) {
-                            SectionContainer {
-                                Card(
-                                    onClick = onFileSystemClick,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RectangleShape,
-                                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(10.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(CircleShape)
-                                                .background(MaterialTheme.colorScheme.primaryContainer)
-                                        ) {
-                                            Icon(
-                                                modifier = Modifier.padding(10.dp),
-                                                imageVector = Icons.Rounded.Storage,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                            )
-                                        }
-                                        
-                                        Column {
-                                            Text(
-                                                text = stringResource(R.string.internal_storage),
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                            Text(
-                                                text = stringResource(R.string.file_system_search),
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                fontSize = 12.sp,
-                                                lineHeight = 12.sp
-                                            )
-                                        }
-                                    }
-                                }
-                                
-                                val d = rememberLauncherForActivityResult(
-                                    ActivityResultContracts.PickMultipleVisualMedia(
-                                        10
-                                    )
-                                ) { uris ->
-                                    if (uris.isNotEmpty()) {
-                                        onFileSelected(uris)
-                                    }
-                                }
-                                Card(
-                                    onClick = {
-                                        d.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RectangleShape,
-                                    colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(10.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(CircleShape)
-                                                .background(MaterialTheme.colorScheme.secondaryContainer)
-                                        ) {
-                                            Icon(
-                                                modifier = Modifier.padding(10.dp),
-                                                imageVector = Icons.Rounded.Photo,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                            )
-                                        }
-                                        
-                                        Column {
-                                            Text(
-                                                text = stringResource(R.string.gallery),
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                            Text(
-                                                text = stringResource(R.string.to_send_images_without_compression),
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                fontSize = 12.sp,
-                                                lineHeight = 12.sp
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
+        Spacer(Modifier.height(10.dp))
+        SectionContainer {
+            Card(
+                onClick = onFileSystemClick,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RectangleShape,
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+            ) {
+                Row(
+                    modifier = Modifier.padding(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                    ) {
+                        Icon(
+                            modifier = Modifier.padding(10.dp),
+                            imageVector = Icons.Rounded.Storage,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     }
                     
-                    1 -> {
-                        Column {
-                            SectionContainer {
-                                FramelessTextBox(
-                                    placeholder = stringResource(R.string.search),
-                                    value = "",
-                                    onValueChange = {})
-                            }
-                            
-                            SectionContainer {
-                                LazyColumn(
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .weight(1f)
-                                ) {
-                                    items(30) {
-                                        SectionItem(headlineText = "ds")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-            PrimaryTabRow(
-                selectedTabIndex = selectedIndex,
-                modifier = Modifier
-                    .navigationBarsPadding()
-                    .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) }
-                    .padding(10.dp)
-                    .clip(CircleShape),
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                indicator = {},
-                divider = {},
-            ) {
-                Tab(
-                    selected = selectedIndex == 0,
-                    onClick = { selectedIndex = 0 },
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .clip(CircleShape),
-                    selectedContentColor = MaterialTheme.colorScheme.primary,
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ) {
-                    Column(
-                        modifier = Modifier.padding(2.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        AnimatedContent(
-                            targetState = selectedIndex,
-                            transitionSpec = { fadeIn() togetherWith fadeOut() }) { index ->
-                            if (index == 0) {
-                                Icon(Icons.AutoMirrored.Rounded.InsertDriveFile, null)
-                            } else {
-                                Icon(Icons.AutoMirrored.Outlined.InsertDriveFile, null)
-                            }
-                        }
+                    Column {
                         Text(
-                            stringResource(R.string.files),
+                            text = stringResource(R.string.internal_storage),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = stringResource(R.string.file_system_search),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             lineHeight = 12.sp
                         )
                     }
                 }
-                Tab(
-                    selected = selectedIndex == 1,
-                    onClick = { selectedIndex = 1 },
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .padding(start = 0.dp)
-                        .clip(CircleShape),
-                    selectedContentColor = MaterialTheme.colorScheme.primary,
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            }
+            
+            val d = rememberLauncherForActivityResult(
+                ActivityResultContracts.PickMultipleVisualMedia(
+                    10
+                )
+            ) { uris ->
+                if (uris.isNotEmpty()) {
+                    onFileSelected(uris)
+                }
+            }
+            Card(
+                onClick = {
+                    d.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RectangleShape,
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+            ) {
+                Row(
+                    modifier = Modifier.padding(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        modifier = Modifier.padding(2.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
                     ) {
-                        AnimatedContent(
-                            selectedIndex,
-                            transitionSpec = { fadeIn() togetherWith fadeOut() }) { index ->
-                            if (index == 1) {
-                                Icon(Icons.Rounded.PlayCircleFilled, null)
-                            } else {
-                                Icon(Icons.Rounded.PlayCircleOutline, null)
-                            }
-                        }
+                        Icon(
+                            modifier = Modifier.padding(10.dp),
+                            imageVector = Icons.Rounded.Photo,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                    
+                    Column {
                         Text(
-                            stringResource(R.string.music),
+                            text = stringResource(R.string.gallery),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = stringResource(R.string.to_send_images_without_compression),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             lineHeight = 12.sp
                         )

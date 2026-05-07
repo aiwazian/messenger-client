@@ -10,6 +10,5 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "chats")
 data class ChatEntity(
     @PrimaryKey val chatId: Long,
-    val isPinned: Boolean,
-    val lastMessageId: Long?
+    val isPinned: Boolean
 )

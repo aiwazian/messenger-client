@@ -4,6 +4,9 @@
 
 package com.aiwazian.messenger.ui.screens.auth.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -22,9 +25,10 @@ fun InputTextField(
     onValueChange: (String) -> Unit,
     label: String,
     isError: Boolean = false,
+    supportingText: String? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     trailingIcon: @Composable (() -> Unit)? = null,
-    onSendClick: () -> Unit
+    onSendClick: () -> Unit = {}
 ) {
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth(),
@@ -42,6 +46,17 @@ fun InputTextField(
         label = { Text(label) },
         singleLine = true,
         isError = isError,
+        supportingText = {
+            AnimatedVisibility(
+                modifier = Modifier.fillMaxWidth(),
+                visible = !supportingText.isNullOrBlank(),
+                enter = slideInVertically() + fadeIn()
+            ) {
+                if (!supportingText.isNullOrBlank()) {
+                    Text(text = supportingText, color = MaterialTheme.colorScheme.error)
+                }
+            }
+        },
         visualTransformation = visualTransformation,
         trailingIcon = trailingIcon,
         keyboardOptions = KeyboardOptions(

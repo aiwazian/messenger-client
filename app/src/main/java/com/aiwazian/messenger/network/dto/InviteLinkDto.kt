@@ -9,17 +9,27 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CreateInviteLinkRequestDto(
-    @SerialName("expiresInSeconds") val expiresInSeconds: Int? = null,
+    @SerialName("expiresAt") val expiresAt: Long? = null,
     @SerialName("maxUses") val maxUses: Int? = null
 )
 
 @Serializable
 data class InviteLinkResponseDto(
-    @SerialName("id") val id: String,
-    @SerialName("chatId") val chatId: String,
+    @SerialName("id") val id: Long,
+    @SerialName("chatId") val chatId: Long,
     @SerialName("code") val code: String,
     @SerialName("link") val link: String,
-    @SerialName("expiresAt") val expiresAt: String? = null,
+    @SerialName("expiresAt") val expiresAt: Long? = null,
     @SerialName("maxUses") val maxUses: Int? = null,
-    @SerialName("uses") val uses: Int = 0
+    @SerialName("uses") val uses: Int? = null
+)
+
+@Serializable
+data class InviteLinkInfoDto(
+    @SerialName("chatId") val chatId: Long,
+    @SerialName("name") val name: String? = null,
+    @SerialName("description") val description: String? = null,
+    @SerialName("membersCount") val membersCount: Int? = null,
+    @SerialName("isBanned") val isBanned: Boolean? = null,
+    @SerialName("isJoined") val isJoined: Boolean? = null
 )

@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.settings.security.devices
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,7 +30,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -95,9 +95,7 @@ fun SettingsDevicesScreen(viewModel: DevicesViewModel = hiltViewModel()) {
             )
         },
         snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { data ->
-                CustomSnackbar(text = data.visuals.message, onDismiss = data::dismiss)
-            }
+            CustomSnackbar(snackbarHostState)
         }) { paddingValues ->
         Column(
             Modifier
@@ -110,18 +108,22 @@ fun SettingsDevicesScreen(viewModel: DevicesViewModel = hiltViewModel()) {
                 SectionContainer(header = {
                     SectionHeader(stringResource(R.string.this_device))
                 }, footer = {
-                    SectionDescription(text = stringResource(R.string.terminate_all_other_sessions_description))
+                    if (otherSessions.isNotEmpty()) {
+                        SectionDescription(text = stringResource(R.string.terminate_all_other_sessions_description))
+                    }
                 }) {
                     DeviceCard(
                         session = currentSession,
                         onClick = { viewModel.openSession(currentSession) }
                     )
-                    SectionItem(
-                        leadingIcon = Icons.Outlined.BackHand,
-                        headlineText = stringResource(R.string.terminate_all_other_sessions),
-                        contentColor = MaterialTheme.colorScheme.error,
-                        onClick = viewModel::showTerminateAllOtherSessionsDialog
-                    )
+                    AnimatedVisibility(otherSessions.isNotEmpty()) {
+                        SectionItem(
+                            leadingIcon = Icons.Outlined.BackHand,
+                            headlineText = stringResource(R.string.terminate_all_other_sessions),
+                            contentColor = MaterialTheme.colorScheme.error,
+                            onClick = viewModel::showTerminateAllOtherSessionsDialog
+                        )
+                    }
                 }
             }
             

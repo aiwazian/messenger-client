@@ -49,7 +49,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import coil.compose.AsyncImage
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.extensions.sharedBounds
+import com.aiwazian.messenger.extensions.sharedElement
 import kotlin.math.abs
 
 @Composable
@@ -105,8 +105,8 @@ fun FullScreenViewer(
             contentDescription = null,
             contentScale = ContentScale.Fit,
             modifier = Modifier
+                .sharedElement(key = imageUrl)
                 .fillMaxSize()
-                .sharedBounds(key = imageUrl)
                 .pointerInput(Unit) {
                     awaitEachGesture {
                         // Ловим нажатие

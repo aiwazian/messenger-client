@@ -9,6 +9,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.MessageDao
+import com.aiwazian.messenger.database.entity.ChatEntity
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
@@ -25,14 +26,16 @@ import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.utils.UiText
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 
 class ChatRepository @Inject constructor(
@@ -48,50 +51,67 @@ class ChatRepository @Inject constructor(
     private val socket: WebSocketClient
 ) {
     
-    fun getAllChats(): Flow<List<Chat>> = channelFlow {
-        launch {
-            chatDao.getAllChatsFlow().collectLatest { chatEntities ->
-                val myId = userRepository.getMe().firstOrNull()?.id ?: return@collectLatest
-                val result = chatEntities.map { chatEntity ->
-                    val name: UiText = when (ChatType.fromId(chatEntity.chatId)) {
-                        ChatType.PRIVATE -> {
-                            if (chatEntity.chatId == myId) {
-                                UiText.StringResource(R.string.saved_messages)
-                            } else {
-                                val user = userRepository.getById(chatEntity.chatId)
-                                    .firstOrNull() ?: return@collectLatest
-                                UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim())
-                            }
-                        }
-                        
-                        ChatType.GROUP -> UiText.DynamicString(
-                            (groupRepository.getById(chatEntity.chatId).firstOrNull()
-                                ?: return@collectLatest).name
-                        )
-                        
-                        ChatType.CHANNEL -> UiText.DynamicString(
-                            (channelRepository.getById(chatEntity.chatId).firstOrNull()
-                                ?: return@collectLatest).name
-                        )
-                        
-                        else -> UiText.DynamicString("")
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun getAllChats(): Flow<List<Chat>> = chatDao.getAllChatsFlow().flatMapLatest { chatEntities ->
+        val myId =
+            userRepository.getMe().firstOrNull()?.id ?: return@flatMapLatest flowOf(emptyList())
+        
+        if (chatEntities.isEmpty()) return@flatMapLatest flowOf(emptyList())
+        
+        val flows = chatEntities.map { chatEntity ->
+            messageDao.getLastMessageForChatFlow(myId, chatEntity.chatId)
+                .map { messageWithAttachments ->
+                    val name = resolveChatName(chatEntity, myId) ?: return@map null
+                    
+                    val lastMessage = messageWithAttachments?.let {
+                        val attachments = it.attachments.map { att -> att.toDomain() }
+                        it.message.toDomain(attachments)
                     }
                     
-                    val lastMessage = chatEntity.lastMessageId?.let {
-                        messageDao.getMessageById(it)?.let { messageWithAttachments ->
-                            val attachments =
-                                messageWithAttachments.attachments.map { attWithFile ->
-                                    attWithFile.toDomain()
-                                }
-                            messageWithAttachments.message.toDomain(attachments)
-                        }
-                    }
                     chatEntity.toDomain(name, lastMessage)
                 }
-                send(result)
-            }
         }
-        refreshChats()
+        
+        combine(flows) { chatsArray ->
+            chatsArray.filterNotNull().sortedWith(
+                compareByDescending<Chat> { it.isPinned }
+                    .thenByDescending { it.lastMessage?.sendTime ?: 0L }
+            )
+        }
+    }.onStart {
+        try {
+            refreshChats()
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Ошибка обновления чатов в onStart", e)
+        }
+    }
+    
+    private suspend fun resolveChatName(chatEntity: ChatEntity, myId: Long): UiText? {
+        return when (ChatType.fromId(chatEntity.chatId)) {
+            ChatType.PRIVATE -> {
+                if (chatEntity.chatId == myId) {
+                    UiText.StringResource(R.string.saved_messages)
+                } else {
+                    userRepository.getById(chatEntity.chatId).firstOrNull()?.let { user ->
+                        UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim())
+                    }
+                }
+            }
+            
+            ChatType.GROUP -> {
+                groupRepository.getById(chatEntity.chatId).firstOrNull()?.let {
+                    UiText.DynamicString(it.name)
+                }
+            }
+            
+            ChatType.CHANNEL -> {
+                channelRepository.getById(chatEntity.chatId).firstOrNull()?.let {
+                    UiText.DynamicString(it.name)
+                }
+            }
+            
+            else -> UiText.DynamicString("")
+        }
     }
     
     suspend fun refreshChats() {
@@ -263,11 +283,6 @@ class ChatRepository @Inject constructor(
                 attachment.toEntity(file)
             }
             attachmentDao.upsertAttachments(attachments)
-            if (ChatType.fromId(message.chatId) == ChatType.PRIVATE) {
-                chatDao.updateLastMessageId(message.senderId, message.id)
-            } else {
-                chatDao.updateLastMessageId(message.chatId, message.id)
-            }
         }
     }
     

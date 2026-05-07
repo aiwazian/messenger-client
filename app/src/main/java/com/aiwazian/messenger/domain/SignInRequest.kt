@@ -11,4 +11,3 @@ data class SignInRequest(
     val osVersion: String,
     val osName: String
 )
-
