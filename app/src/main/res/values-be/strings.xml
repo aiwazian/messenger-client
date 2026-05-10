@@ -93,6 +93,7 @@
     <string name="delete_message">Выдаліць паведамленне</string>
     <string name="also_delete_for">Таксама выдаліць для</string>
     <string name="delete_message_description">Вы ўпэўнены, што хочаце выдаліць гэтае паведамленне\?</string>
+    <string name="delete_for_recipient">Выдаліць для атрымальніка</string>
     <string name="block_user">Заблакіраваць карыстальніка</string>
     <string name="start_secret_chat">Пачніце сакрэтны чат</string>
     <string name="add_to_home_screen">Дадаць на галоўны экран</string>
@@ -203,4 +204,20 @@
     <string name="error_searching_for_chat">Памылка пошуку чата</string>
     <string name="profile_photos">Фота профілю</string>
     <string name="add_photo">Дадаць фота</string>
+    <string name="failed_to_connect">Не ўдалося падключыцца</string>
+    <string name="enter_login">Увядзіце лагін</string>
+    <string name="login">Увайсці</string>
+    <string name="password">Пароль</string>
+    <string name="min_length_5_characters">Мінімальная даўжыня: 5 сімвалаў</string>
+    <string name="enter_first_name">Увядзіце імя</string>
+    <string name="user_login">Уваход карыстальніка</string>
+    <string name="registration">Рэгістрацыя</string>
+    <string name="unexpected_error">Нечаканая памылка</string>
+    <string name="username_taken">Імя карыстальніка прынята</string>
+    <string name="Username_available">Імя карыстальніка даступна</string>
+    <string name="username_available">Імя карыстальніка даступна</string>
+    <string name="authorization">Аўтарызацыя</string>
+    <string name="group">Група</string>
+    <string name="channel">Канал</string>
+    <string name="user">Карыстальнік</string>
 </resources>

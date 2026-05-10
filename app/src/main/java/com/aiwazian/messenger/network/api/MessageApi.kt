@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.network.api
 
+import com.aiwazian.messenger.network.dto.DeleteMessageRequestDto
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
 import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
@@ -14,6 +15,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -66,10 +68,15 @@ interface MessageApi {
         @Path("chatId") chatId: Long
     ): Response<Unit>
     
-    @DELETE("chats/{chatId}/messages/{messageId}")
+    @HTTP(
+        method = "DELETE",
+        path = "chats/{chatId}/messages/{messageId}",
+        hasBody = true
+    )
     suspend fun deleteMessage(
         @Path("chatId") chatId: Long,
-        @Path("messageId") messageId: Long
+        @Path("messageId") messageId: Long,
+        @Body request: DeleteMessageRequestDto = DeleteMessageRequestDto()
     ): Response<Unit>
     
     @DELETE("chats/{chatId}/messages")

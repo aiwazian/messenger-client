@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -47,6 +46,7 @@ import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -438,9 +438,14 @@ private fun Dialogs(
     }
     
     if (uiState.showDeleteMessageDialog) {
+        val isPrivateChat =
+            ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.chatId != uiState.currentUserId
         DeleteMessageDialog(
             onDismissRequest = chatViewModel::hideDeleteMessageDialog,
-            onConfirm = chatViewModel::onDeleteMessageConfirmed
+            onConfirm = chatViewModel::onDeleteMessageConfirmed,
+            deleteForRecipient = uiState.deleteForRecipient,
+            onDeleteForRecipientChanged = chatViewModel::setDeleteForRecipient,
+            isPrivateChat = isPrivateChat
         )
     }
     
@@ -597,14 +602,38 @@ private fun ClearHistoryDialog(
 }
 
 @Composable
-private fun DeleteMessageDialog(onDismissRequest: () -> Unit, onConfirm: () -> Unit) {
+private fun DeleteMessageDialog(
+    onDismissRequest: () -> Unit,
+    onConfirm: () -> Unit,
+    deleteForRecipient: Boolean,
+    onDeleteForRecipientChanged: (Boolean) -> Unit,
+    isPrivateChat: Boolean
+) {
     CustomDialog(
         title = stringResource(R.string.delete_message),
         onDismissRequest = onDismissRequest,
         content = {
-            Text(
-                text = stringResource(R.string.delete_message_description), lineHeight = 16.sp
-            )
+            Column {
+                Text(
+                    text = stringResource(R.string.delete_message_description), lineHeight = 16.sp
+                )
+                if (isPrivateChat) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { onDeleteForRecipientChanged(!deleteForRecipient) }
+                    ) {
+                        Checkbox(
+                            checked = deleteForRecipient,
+                            onCheckedChange = onDeleteForRecipientChanged
+                        )
+                        Text(
+                            text = stringResource(R.string.delete_for_recipient),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
         },
         buttons = {
             TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }

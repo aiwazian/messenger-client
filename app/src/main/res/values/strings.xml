@@ -93,6 +93,7 @@
     <string name="delete_message">Delete message</string>
     <string name="also_delete_for">Also delete for</string>
     <string name="delete_message_description">Are you sure you want to delete this message?</string>
+    <string name="delete_for_recipient">Delete for recipient</string>
     <string name="block_user">Block user</string>
     <string name="start_secret_chat">Start Secret Chat</string>
     <string name="add_to_home_screen">Add to Home Screen</string>

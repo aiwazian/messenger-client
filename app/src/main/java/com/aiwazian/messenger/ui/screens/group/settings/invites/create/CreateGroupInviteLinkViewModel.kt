@@ -60,7 +60,7 @@ class CreateGroupInviteLinkViewModel @Inject constructor(
             val expirationDate = _uiState.value.expirationDate
             
             groupRepository.createInviteLink(groupId, maxUses, expirationDate).onSuccess {
-                _effect.emit(CreateGroupInviteLinkEffect.Success)
+                _effect.emit(CreateGroupInviteLinkEffect.NavigateBack)
             }.onFailure {
                 _effect.emit(CreateGroupInviteLinkEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
                 vibrationManager.vibrate(VibrationPattern.Error)

@@ -75,7 +75,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
             attachments = attachments
         )
         
-        chatRepository.saveMessage(tempMessage)
+        chatRepository.saveLocalMessage(tempMessage)
         
         val uploadResults = mutableListOf<AttachmentInputDto>()
         var success = true

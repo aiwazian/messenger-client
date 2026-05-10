@@ -20,6 +20,7 @@ import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.network.api.ChatApi
 import com.aiwazian.messenger.network.api.MessageApi
 import com.aiwazian.messenger.network.dto.AttachmentInputDto
+import com.aiwazian.messenger.network.dto.DeleteMessageRequestDto
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
@@ -226,7 +227,7 @@ class ChatRepository @Inject constructor(
             attachments = emptyList()
         )
         
-        saveMessage(localMessage)
+        saveLocalMessage(localMessage)
         
         return try {
             val request = TextMessageRequestDto(text = message)
@@ -257,7 +258,7 @@ class ChatRepository @Inject constructor(
         // а этот метод использовать для локального обновления.
     }
     
-    suspend fun saveMessage(message: Message) {
+    suspend fun saveLocalMessage(message: Message) {
         saveMessagesToDb(listOf(message))
     }
     
@@ -366,14 +367,26 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    suspend fun deleteMessage(chatId: Long, messageId: Long): Boolean {
+    suspend fun deleteMessage(
+        chatId: Long,
+        messageId: Long,
+        deleteForRecipient: Boolean = false
+    ): Result<Unit> {
         return try {
-            messageDao.deleteMessageById(messageId)
-            val response = messageApi.deleteMessage(chatId, messageId)
-            response.isSuccessful
+            val response = messageApi.deleteMessage(
+                chatId,
+                messageId,
+                DeleteMessageRequestDto(deleteForRecipient)
+            )
+            if (response.isSuccessful) {
+                deleteLocalMessage(messageId)
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error deleting message", e)
-            false
+            Result.failure(e)
         }
     }
     
@@ -382,7 +395,7 @@ class ChatRepository @Inject constructor(
     }
     
     suspend fun clearLocalHistory(chatId: Long) {
-        userRepository.getMe().first().id.let { userId ->
+        userRepository.getMe().firstOrNull()?.id?.let { userId ->
             messageDao.clearChatHistory(userId, chatId)
         }
     }
@@ -422,6 +435,11 @@ class ChatRepository @Inject constructor(
         }
     }
     
+    suspend fun deleteLocalChat(chatId: Long) {
+        chatDao.deleteChat(chatId)
+        clearLocalHistory(chatId)
+    }
+    
     suspend fun deleteChat(chatId: Long): Boolean {
         return try {
             val response = chatApi.deleteChat(chatId)
@@ -433,7 +451,7 @@ class ChatRepository @Inject constructor(
             false
         }
     }
-
+    
     suspend fun pinChats(chatIds: List<Long>): Boolean {
         return try {
             val request = PinChatsRequestDto(chatIds.map { it.toString() })
@@ -450,7 +468,7 @@ class ChatRepository @Inject constructor(
             false
         }
     }
-
+    
     suspend fun unpinChats(chatIds: List<Long>): Boolean {
         return try {
             val request = PinChatsRequestDto(chatIds.map { it.toString() })

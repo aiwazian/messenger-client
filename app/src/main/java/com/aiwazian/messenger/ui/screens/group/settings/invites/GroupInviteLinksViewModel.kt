@@ -6,21 +6,20 @@ package com.aiwazian.messenger.ui.screens.group.settings.invites
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.domain.Chat
-import com.aiwazian.messenger.domain.InviteLink
-import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.R
+import com.aiwazian.messenger.extensions.isNetworkError
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.utils.ClipboardService
-import com.aiwazian.messenger.utils.DialogController
-import com.aiwazian.messenger.utils.VibrationManager
-import com.aiwazian.messenger.utils.VibrationPattern
+import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -29,52 +28,23 @@ class GroupInviteLinksViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val chatRepository: ChatRepository,
     private val clipboardService: ClipboardService,
-    private val sendMessageUseCase: SendMessageUseCase,
-    private val vibrationManager: VibrationManager
+    private val sendMessageUseCase: SendMessageUseCase
 ) : ViewModel() {
     
-    private val _activeInviteLinks = MutableStateFlow<List<InviteLink>>(emptyList())
-    val activeInviteLinks = _activeInviteLinks.asStateFlow()
+    private val _uiState = MutableStateFlow(GroupInviteLinkUiState())
+    val uiState = _uiState.asStateFlow()
     
-    private val _inactiveInviteLinks = MutableStateFlow<List<InviteLink>>(emptyList())
-    val inactiveInviteLinks = _inactiveInviteLinks.asStateFlow()
-    
-    private var groupId: Long = -1
-    
-    val deleteDialog = DialogController()
-    private var linkToDelete: Long? = null
-    
-    private val _expandedMenuId = MutableStateFlow<Long?>(null)
-    val expandedMenuId = _expandedMenuId.asStateFlow()
-    
-    private val _isShareSheetVisible = MutableStateFlow(false)
-    val isShareSheetVisible = _isShareSheetVisible.asStateFlow()
-    
-    private val _availableChats = MutableStateFlow<List<Chat>>(emptyList())
-    val availableChats = _availableChats.asStateFlow()
-    
-    private val _selectedChatIds = MutableStateFlow<Set<Long>>(emptySet())
-    val selectedChatIds = _selectedChatIds.asStateFlow()
-    
-    private val _linkToShare = MutableStateFlow<String?>(null)
-    
-    private val _snackbarMessage = MutableSharedFlow<String>()
-    val snackbarMessage = _snackbarMessage.asSharedFlow()
+    private val _uiEffect = MutableSharedFlow<GroupInviteLinkUiEffect>()
+    val uiEffect = _uiEffect.asSharedFlow()
     
     fun init(groupId: Long) {
-        this.groupId = groupId
+        _uiState.update { it.copy(groupId = groupId) }
         loadLinks()
-    }
-    
-    fun vibrate() {
-        vibrationManager.vibrate(VibrationPattern.Error)
     }
     
     private fun loadLinks() {
         viewModelScope.launch {
-            val result = groupRepository.getInviteLinks(groupId)
-            if (result.isSuccess) {
-                val links = result.getOrNull() ?: emptyList()
+            groupRepository.getInviteLinks(_uiState.value.groupId).onSuccess { links ->
                 val now = System.currentTimeMillis()
                 
                 val (active, inactive) = links.partition { link ->
@@ -84,74 +54,86 @@ class GroupInviteLinksViewModel @Inject constructor(
                     !isExpired && !isExhausted
                 }
                 
-                _activeInviteLinks.value = active
-                _inactiveInviteLinks.value = inactive
+                _uiState.update { it.copy(activeLinks = active, inactiveLinks = inactive) }
+            }.onFailure {
+                if (it.isNetworkError()) {
+                    _uiEffect.emit(GroupInviteLinkUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_connect)))
+                }
             }
         }
     }
     
-    fun deleteLink(inviteLinkId: Long) {
-        viewModelScope.launch {
-            val result = groupRepository.deleteInviteLink(groupId, inviteLinkId)
-            if (result.isSuccess) {
-                loadLinks()
-            }
-        }
-    }
-    
-    fun toggleMenu(inviteLinkId: Long?) {
-        _expandedMenuId.value = inviteLinkId
-    }
-    
-    fun showDeleteConfirmation(inviteLinkId: Long) {
-        linkToDelete = inviteLinkId
-        deleteDialog.show()
-        toggleMenu(null)
+    fun showDeleteConfirmation(linkId: Long) {
+        _uiState.update { it.copy(expandedMenuId = null, linkIdToDelete = linkId) }
     }
     
     fun confirmDelete() {
-        linkToDelete?.let { id ->
-            deleteLink(id)
-            linkToDelete = null
-            deleteDialog.hide()
+        val linkId = _uiState.value.linkIdToDelete ?: return
+        viewModelScope.launch {
+            groupRepository.deleteInviteLink(_uiState.value.groupId, linkId)
+                .onSuccess {
+                    _uiState.update {
+                        it.copy(
+                            activeLinks = it.activeLinks.filter { link -> link.id != linkId },
+                            inactiveLinks = it.inactiveLinks.filter { link -> link.id != linkId },
+                            linkIdToDelete = null
+                        )
+                    }
+                }
+                .onFailure {
+                    if (it.isNetworkError()) {
+                        _uiEffect.emit(
+                            GroupInviteLinkUiEffect.ShowSnackbar(
+                                UiText.StringResource(
+                                    R.string.failed_to_connect
+                                )
+                            )
+                        )
+                    }
+                    _uiEffect.emit(
+                        GroupInviteLinkUiEffect.ShowSnackbar(
+                            UiText.StringResource(
+                                R.string.unexpected_error
+                            )
+                        )
+                    )
+                    _uiState.update { state -> state.copy(linkIdToDelete = null) }
+                }
         }
     }
     
-    fun shareLink(link: String) {
-        _linkToShare.value = link
-        toggleMenu(null)
+    fun shareLink(linkId: Long) {
+        _uiState.update { it.copy(expandedMenuId = null) }
+        val link = _uiState.value.activeLinks.find { it.id == linkId }
+            ?: _uiState.value.inactiveLinks.find { it.id == linkId } ?: return
+        val fullLink = "aiwazian.ru/${link.code}"
+        
+        _uiState.update { it.copy(linkToShare = fullLink, showShareSheet = true) }
         loadAvailableChats()
-        _isShareSheetVisible.value = true
     }
     
     private fun loadAvailableChats() {
         viewModelScope.launch {
-            chatRepository.getAllChats().collect { chats ->
-                val filtered = chats.filter { chat ->
-                    val type = ChatType.fromId(chat.id)
-                    when (type) {
-                        ChatType.PRIVATE -> true
-                        ChatType.GROUP -> true
-                        ChatType.CHANNEL -> true
-                        else -> false
-                    }
-                }
-                _availableChats.value = filtered
+            chatRepository.getAllChats().firstOrNull()?.let { chats ->
+                _uiState.update { it.copy(availableChats = chats) }
             }
         }
     }
     
     fun toggleChatSelection(chatId: Long) {
-        _selectedChatIds.value = if (_selectedChatIds.value.contains(chatId)) {
-            _selectedChatIds.value - chatId
-        } else {
-            _selectedChatIds.value + chatId
+        _uiState.update { state ->
+            val newSelected = if (state.selectedChatIds.contains(chatId)) {
+                state.selectedChatIds - chatId
+            } else {
+                state.selectedChatIds + chatId
+            }
+            state.copy(selectedChatIds = newSelected)
         }
     }
     
     fun sendLink() {
-        val link = _linkToShare.value ?: return
-        val chatIds = _selectedChatIds.value
+        val link = _uiState.value.linkToShare ?: return
+        val chatIds = _uiState.value.selectedChatIds
         if (chatIds.isEmpty()) return
         
         viewModelScope.launch {
@@ -159,19 +141,40 @@ class GroupInviteLinksViewModel @Inject constructor(
                 sendMessageUseCase(chatId, link)
             }
             val count = chatIds.size
-            _isShareSheetVisible.value = false
-            _selectedChatIds.value = emptySet()
-            _snackbarMessage.emit("Ссылка отправлена в $count чата")
+            _uiState.update {
+                it.copy(
+                    showShareSheet = false,
+                    linkToShare = null,
+                    selectedChatIds = emptySet()
+                )
+            }
+            _uiEffect.emit(GroupInviteLinkUiEffect.ShowSnackbar(UiText.DynamicString("Ссылка отправлена в $count чата")))
         }
     }
     
     fun hideShareSheet() {
-        _isShareSheetVisible.value = false
-        _selectedChatIds.value = emptySet()
+        _uiState.update {
+            it.copy(
+                showShareSheet = false,
+                linkToShare = null,
+                selectedChatIds = emptySet()
+            )
+        }
     }
     
-    fun copyLink(link: String) {
-        clipboardService.copy(link)
-        toggleMenu(null)
+    fun copyLink(linkId: Long) {
+        _uiState.update { it.copy(expandedMenuId = null) }
+        val link = _uiState.value.activeLinks.find { it.id == linkId }
+            ?: _uiState.value.inactiveLinks.find { it.id == linkId } ?: return
+        val fullLink = "aiwazian.ru/${link.code}"
+        clipboardService.copy(fullLink)
+    }
+    
+    fun hideDeleteDialog() {
+        _uiState.update { it.copy(linkIdToDelete = null) }
+    }
+    
+    fun setExpandedMenuId(menuId: Long?) {
+        _uiState.update { it.copy(expandedMenuId = menuId) }
     }
 }

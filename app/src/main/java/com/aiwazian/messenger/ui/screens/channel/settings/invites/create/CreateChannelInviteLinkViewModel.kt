@@ -26,10 +26,10 @@ class CreateChannelInviteLinkViewModel @Inject constructor(
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
-    private val _uiState = MutableStateFlow(CreateInviteLinkUiState())
+    private val _uiState = MutableStateFlow(CreateChannelInviteLinkUiState())
     val uiState = _uiState.asStateFlow()
     
-    private val _effect = MutableSharedFlow<CreateInviteLinkEffect>()
+    private val _effect = MutableSharedFlow<CreateChannelInviteLinkEffect>()
     val effect = _effect.asSharedFlow()
     
     private var channelId: Long = -1
@@ -60,9 +60,9 @@ class CreateChannelInviteLinkViewModel @Inject constructor(
             val expirationDate = _uiState.value.expirationDate
             
             channelRepository.createInviteLink(channelId, maxUses, expirationDate).onSuccess {
-                _effect.emit(CreateInviteLinkEffect.Success)
+                _effect.emit(CreateChannelInviteLinkEffect.NavigateBack)
             }.onFailure {
-                _effect.emit(CreateInviteLinkEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
+                _effect.emit(CreateChannelInviteLinkEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }

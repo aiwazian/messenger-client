@@ -4,8 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.channel.settings.invites.create
 
-
-data class CreateInviteLinkUiState(
+data class CreateChannelInviteLinkUiState(
     val maxUses: String = "",
     val expirationDate: Long? = null,
     val showDatePicker: Boolean = false

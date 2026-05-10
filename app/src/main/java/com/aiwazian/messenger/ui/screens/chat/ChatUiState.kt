@@ -24,6 +24,7 @@ data class ChatUiState(
     val showDeleteChatDialog: Boolean = false,
     val showClearHistoryDialog: Boolean = false,
     val showDeleteMessageDialog: Boolean = false,
+    val deleteForRecipient: Boolean = false,
     val showLeaveDialog: Boolean = false,
     val selectedMessages: Set<Message> = emptySet(),
     val userNamesCache: Map<Long, String> = emptyMap(),

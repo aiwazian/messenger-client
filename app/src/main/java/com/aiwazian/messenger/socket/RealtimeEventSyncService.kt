@@ -22,13 +22,13 @@ class RealtimeEventSyncService @Inject constructor(
     init {
         webSocketClient.subscribeToEvent(WebSocketEvent.NewMessage) { message ->
             serviceScope.launch {
-                chatRepository.saveMessage(message)
+                chatRepository.saveLocalMessage(message)
             }
         }
         
         webSocketClient.subscribeToEvent(WebSocketEvent.DeleteMessage) { payload ->
             serviceScope.launch {
-                chatRepository.deleteMessage(payload.chatId, payload.messageId)
+                chatRepository.deleteLocalMessage(payload.messageId)
             }
         }
         
@@ -40,13 +40,13 @@ class RealtimeEventSyncService @Inject constructor(
         
         webSocketClient.subscribeToEvent(WebSocketEvent.DeleteChat) { payload ->
             serviceScope.launch {
-                chatRepository.deleteChat(payload.chatId)
+                chatRepository.deleteLocalChat(payload.chatId)
             }
         }
         
         webSocketClient.subscribeToEvent(WebSocketEvent.ChatRemoved) { payload ->
             serviceScope.launch {
-                chatRepository.deleteChat(payload.chatId)
+                chatRepository.deleteLocalChat(payload.chatId)
             }
         }
         

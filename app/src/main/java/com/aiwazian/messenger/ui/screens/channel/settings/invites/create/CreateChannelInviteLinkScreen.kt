@@ -7,6 +7,7 @@ package com.aiwazian.messenger.ui.screens.channel.settings.invites.create
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -73,8 +74,8 @@ fun CreateInviteLinkScreen(
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
-                is CreateInviteLinkEffect.Success -> navBackStack.removeLastOrNull()
-                is CreateInviteLinkEffect.ShowSnackbar -> {
+                is CreateChannelInviteLinkEffect.NavigateBack -> navBackStack.removeLastOrNull()
+                is CreateChannelInviteLinkEffect.ShowSnackbar -> {
                     snackbarJob?.cancel()
                     snackbarJob = scope.launch {
                         snackbarHostState.showSnackbar(
@@ -119,6 +120,7 @@ fun CreateInviteLinkScreen(
     }
     
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             PageTopBar(
                 title = { Text(stringResource(R.string.new_link)) },

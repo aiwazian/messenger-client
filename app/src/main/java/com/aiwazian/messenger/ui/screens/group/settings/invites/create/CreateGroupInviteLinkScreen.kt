@@ -7,6 +7,7 @@ package com.aiwazian.messenger.ui.screens.group.settings.invites.create
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -73,13 +74,13 @@ fun CreateGroupInviteLinkScreen(
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
-                is CreateGroupInviteLinkEffect.Success -> navBackStack.removeLastOrNull()
+                is CreateGroupInviteLinkEffect.NavigateBack -> navBackStack.removeLastOrNull()
                 
                 is CreateGroupInviteLinkEffect.ShowSnackbar -> {
                     snackbarJob?.cancel()
                     snackbarJob = scope.launch {
                         snackbarHostState.showSnackbar(
-                            message = effect.text.asString(context),
+                            message = effect.message.asString(context),
                             duration = SnackbarDuration.Short
                         )
                     }
@@ -120,6 +121,7 @@ fun CreateGroupInviteLinkScreen(
     }
     
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             PageTopBar(
                 title = { Text(stringResource(R.string.new_link)) },

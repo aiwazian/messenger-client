@@ -28,11 +28,11 @@ class WebSocketClient @Inject constructor(
     private val sessionManager: SessionManager
 ) {
     companion object {
-        const val TAG = "WebSocketClient"
+        private const val TAG = "WebSocketClient"
         private const val MAX_RECONNECT_DELAY_MS = 10000L
         private const val RECONNECTION_DELAY_MS = 1000L
         
-        val defaultJson = Json {
+        private val defaultJson = Json {
             ignoreUnknownKeys = true
             isLenient = true
             prettyPrint = false
@@ -139,8 +139,7 @@ class WebSocketClient @Inject constructor(
     private fun JSONObject.toJsonObject(): JsonObject {
         val map = mutableMapOf<String, JsonElement>()
         keys().forEach { key ->
-            val value = get(key)
-            map[key] = when (value) {
+            map[key] = when (val value = get(key)) {
                 is JSONObject -> value.toJsonObject()
                 is JSONArray -> value.toJsonArray()
                 is String -> JsonPrimitive(value)
@@ -158,9 +157,8 @@ class WebSocketClient @Inject constructor(
     private fun JSONArray.toJsonArray(): JsonArray {
         val list = mutableListOf<JsonElement>()
         for (i in 0 until length()) {
-            val value = get(i)
             list.add(
-                when (value) {
+                when (val value = get(i)) {
                     is JSONObject -> value.toJsonObject()
                     is JSONArray -> value.toJsonArray()
                     is String -> JsonPrimitive(value)

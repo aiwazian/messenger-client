@@ -16,9 +16,7 @@ data class CreateInviteLinkRequestDto(
 @Serializable
 data class InviteLinkResponseDto(
     @SerialName("id") val id: Long,
-    @SerialName("chatId") val chatId: Long,
     @SerialName("code") val code: String,
-    @SerialName("link") val link: String,
     @SerialName("expiresAt") val expiresAt: Long? = null,
     @SerialName("maxUses") val maxUses: Int? = null,
     @SerialName("uses") val uses: Int? = null

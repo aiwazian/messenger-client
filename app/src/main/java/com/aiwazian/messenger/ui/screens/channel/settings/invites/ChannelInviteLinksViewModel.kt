@@ -6,23 +6,23 @@ package com.aiwazian.messenger.ui.screens.channel.settings.invites
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.domain.Chat
-import com.aiwazian.messenger.domain.InviteLink
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.extensions.isNetworkError
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.utils.ClipboardService
-import com.aiwazian.messenger.utils.DialogController
-import com.aiwazian.messenger.utils.VibrationManager
-import com.aiwazian.messenger.utils.VibrationPattern
+import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -32,52 +32,26 @@ class ChannelInviteLinksViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     private val userRepository: UserRepository,
     private val clipboardService: ClipboardService,
-    private val sendMessageUseCase: SendMessageUseCase,
-    private val vibrationManager: VibrationManager
+    private val sendMessageUseCase: SendMessageUseCase
 ) : ViewModel() {
     
-    private val _activeInviteLinks = MutableStateFlow<List<InviteLink>>(emptyList())
-    val activeInviteLinks = _activeInviteLinks.asStateFlow()
+    private val _uiState = MutableStateFlow(ChannelInviteLinkUiState())
+    val uiState = _uiState.asStateFlow()
     
-    private val _inactiveInviteLinks = MutableStateFlow<List<InviteLink>>(emptyList())
-    val inactiveInviteLinks = _inactiveInviteLinks.asStateFlow()
-    
-    private var channelId: Long = -1
-    
-    val deleteDialog = DialogController()
-    private var linkToDelete: Long? = null
-    
-    private val _expandedMenuId = MutableStateFlow<Long?>(null)
-    val expandedMenuId = _expandedMenuId.asStateFlow()
-    
-    private val _isShareSheetVisible = MutableStateFlow(false)
-    val isShareSheetVisible = _isShareSheetVisible.asStateFlow()
-    
-    private val _availableChats = MutableStateFlow<List<Chat>>(emptyList())
-    val availableChats = _availableChats.asStateFlow()
-    
-    private val _selectedChatIds = MutableStateFlow<Set<Long>>(emptySet())
-    val selectedChatIds = _selectedChatIds.asStateFlow()
-    
-    private val _linkToShare = MutableStateFlow<String?>(null)
+    private val _uiEffect = MutableSharedFlow<ChannelInviteLinkUiEffect>()
+    val uiEffect = _uiEffect.asSharedFlow()
     
     private val _snackbarMessage = MutableSharedFlow<String>()
     val snackbarMessage = _snackbarMessage.asSharedFlow()
     
     fun init(channelId: Long) {
-        this.channelId = channelId
+        _uiState.update { it.copy(channelId = channelId) }
         loadLinks()
-    }
-    
-    fun vibrate() {
-        vibrationManager.vibrate(VibrationPattern.Error)
     }
     
     private fun loadLinks() {
         viewModelScope.launch {
-            val result = channelRepository.getInviteLinks(channelId)
-            if (result.isSuccess) {
-                val links = result.getOrNull() ?: emptyList()
+            channelRepository.getInviteLinks(_uiState.value.channelId).onSuccess { links ->
                 val now = System.currentTimeMillis()
                 
                 val (active, inactive) = links.partition { link ->
@@ -87,79 +61,98 @@ class ChannelInviteLinksViewModel @Inject constructor(
                     !isExpired && !isExhausted
                 }
                 
-                _activeInviteLinks.value = active
-                _inactiveInviteLinks.value = inactive
+                _uiState.update { it.copy(activeLinks = active, inactiveLinks = inactive) }
+            }.onFailure {
+                if (it.isNetworkError()) {
+                    _uiEffect.emit(ChannelInviteLinkUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_connect)))
+                }
             }
         }
     }
     
-    fun deleteLink(inviteLinkId: Long) {
-        viewModelScope.launch {
-            val result = channelRepository.deleteInviteLink(channelId, inviteLinkId)
-            if (result.isSuccess) {
-                loadLinks()
-            }
-        }
-    }
-    
-    fun toggleMenu(inviteLinkId: Long?) {
-        _expandedMenuId.value = inviteLinkId
-    }
-    
-    fun showDeleteConfirmation(inviteLinkId: Long) {
-        linkToDelete = inviteLinkId
-        deleteDialog.show()
-        toggleMenu(null)
+    fun showDeleteConfirmation(linkId: Long) {
+        _uiState.update { it.copy(expandedMenuId = null, linkIdToDelete = linkId) }
     }
     
     fun confirmDelete() {
-        linkToDelete?.let { id ->
-            deleteLink(id)
-            linkToDelete = null
-            deleteDialog.hide()
+        val linkId = _uiState.value.linkIdToDelete ?: return
+        viewModelScope.launch {
+            channelRepository.deleteInviteLink(_uiState.value.channelId, linkId)
+                .onSuccess {
+                    _uiState.update {
+                        it.copy(
+                            activeLinks = it.activeLinks.filter { link -> link.id != linkId },
+                            inactiveLinks = it.inactiveLinks.filter { link -> link.id != linkId },
+                            linkIdToDelete = null
+                        )
+                    }
+                }
+                .onFailure {
+                    if (it.isNetworkError()) {
+                        _uiEffect.emit(
+                            ChannelInviteLinkUiEffect.ShowSnackbar(
+                                UiText.StringResource(
+                                    R.string.failed_to_connect
+                                )
+                            )
+                        )
+                    }
+                    _uiEffect.emit(
+                        ChannelInviteLinkUiEffect.ShowSnackbar(
+                            UiText.StringResource(
+                                R.string.unexpected_error
+                            )
+                        )
+                    )
+                    _uiState.update { state -> state.copy(linkIdToDelete = null) }
+                }
         }
     }
     
-    fun shareLink(link: String) {
-        _linkToShare.value = link
-        toggleMenu(null)
+    fun shareLink(linkId: Long) {
+        _uiState.update { it.copy(expandedMenuId = null) }
+        val link = _uiState.value.activeLinks.find { it.id == linkId }
+            ?: _uiState.value.inactiveLinks.find { it.id == linkId } ?: return
+        val fullLink = "aiwazian.ru/${link.code}"
+        
+        _uiState.update { it.copy(linkToShare = fullLink, showShareSheet = true) }
         loadAvailableChats()
-        _isShareSheetVisible.value = true
     }
     
     private fun loadAvailableChats() {
         viewModelScope.launch {
             val me = userRepository.getMe().first()
-            chatRepository.getAllChats().collect { chats ->
+            chatRepository.getAllChats().firstOrNull()?.let { chats ->
                 val filtered = chats.filter { chat ->
                     val type = ChatType.fromId(chat.id)
                     when (type) {
-                        ChatType.PRIVATE -> true
-                        ChatType.GROUP -> true
+                        ChatType.PRIVATE, ChatType.GROUP -> true
                         ChatType.CHANNEL -> {
-                            val channel = channelRepository.getById(chat.id).first()
-                            channel.ownerId == me.id
+                            val channel = channelRepository.getById(chat.id).firstOrNull()
+                            channel?.ownerId == me.id
                         }
-                        
                         else -> false
                     }
                 }
-                _availableChats.value = filtered
+                _uiState.update { it.copy(availableChats = filtered) }
             }
         }
     }
     
     fun toggleChatSelection(chatId: Long) {
-        _selectedChatIds.value = if (_selectedChatIds.value.contains(chatId)) {
-            _selectedChatIds.value - chatId
-        } else {
-            _selectedChatIds.value + chatId
+        _uiState.update { state ->
+            val newSelected = if (state.selectedChatIds.contains(chatId)) {
+                state.selectedChatIds - chatId
+            } else {
+                state.selectedChatIds + chatId
+            }
+            state.copy(selectedChatIds = newSelected)
         }
     }
     
     fun sendLink() {
-        val link = _linkToShare.value ?: return
-        val chatIds = _selectedChatIds.value
+        val link = _uiState.value.linkToShare ?: return
+        val chatIds = _uiState.value.selectedChatIds
         if (chatIds.isEmpty()) return
         
         viewModelScope.launch {
@@ -167,19 +160,40 @@ class ChannelInviteLinksViewModel @Inject constructor(
                 sendMessageUseCase(chatId, link)
             }
             val count = chatIds.size
-            _isShareSheetVisible.value = false
-            _selectedChatIds.value = emptySet()
+            _uiState.update {
+                it.copy(
+                    showShareSheet = false,
+                    linkToShare = null,
+                    selectedChatIds = emptySet()
+                )
+            }
             _snackbarMessage.emit("Ссылка отправлена в $count чата")
         }
     }
     
     fun hideShareSheet() {
-        _isShareSheetVisible.value = false
-        _selectedChatIds.value = emptySet()
+        _uiState.update {
+            it.copy(
+                showShareSheet = false,
+                linkToShare = null,
+                selectedChatIds = emptySet()
+            )
+        }
     }
     
-    fun copyLink(link: String) {
-        clipboardService.copy(link)
-        toggleMenu(null)
+    fun copyLink(linkId: Long) {
+        _uiState.update { it.copy(expandedMenuId = null) }
+        val link = _uiState.value.activeLinks.find { it.id == linkId }
+            ?: _uiState.value.inactiveLinks.find { it.id == linkId } ?: return
+        val fullLink = "aiwazian.ru/${link.code}"
+        clipboardService.copy(fullLink)
+    }
+    
+    fun hideDeleteDialog() {
+        _uiState.update { it.copy(linkIdToDelete = null) }
+    }
+    
+    fun setExpandedMenuId(menuId: Long?) {
+        _uiState.update { it.copy(expandedMenuId = menuId) }
     }
 }

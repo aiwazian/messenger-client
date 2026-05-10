@@ -40,7 +40,6 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,11 +48,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -61,7 +63,6 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
-import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
@@ -80,39 +81,40 @@ fun GroupInviteLinksScreen(
     viewModel: GroupInviteLinksViewModel = hiltViewModel()
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    val uiState by viewModel.uiState.collectAsState()
     
     LaunchedEffect(groupId) {
         viewModel.init(groupId)
     }
     
+    val context = LocalContext.current
+    
     LaunchedEffect(Unit) {
-        viewModel.snackbarMessage.collect { message ->
-            snackbarHostState.showSnackbar(message)
+        viewModel.uiEffect.collect { effect ->
+            when (effect) {
+                is GroupInviteLinkUiEffect.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(effect.message.asString(context))
+                }
+            }
         }
     }
     
-    val activeInviteLinks by viewModel.activeInviteLinks.collectAsState()
-    val inactiveInviteLinks by viewModel.inactiveInviteLinks.collectAsState()
-    val expandedMenuId by viewModel.expandedMenuId.collectAsState()
-    val isShareSheetVisible by viewModel.isShareSheetVisible.collectAsState()
-    val availableChats by viewModel.availableChats.collectAsState()
-    val selectedChatIds by viewModel.selectedChatIds.collectAsState()
     val navBackStack = LocalNavBackStack.current
     
-    if (viewModel.deleteDialog.isVisible) {
+    if (uiState.linkIdToDelete != null) {
         CustomDialog(
             title = stringResource(R.string.delete),
-            onDismissRequest = viewModel.deleteDialog::hide,
+            onDismissRequest = viewModel::hideDeleteDialog,
             buttons = {
-                TextButton(onClick = viewModel.deleteDialog::hide) {
+                TextButton(onClick = viewModel::hideDeleteDialog) {
                     Text(stringResource(R.string.cancel))
                 }
-                CountdownTextButton(
-                    text = stringResource(R.string.delete), seconds = 5,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                    onClickAfterFinish = viewModel::confirmDelete,
-                    onClickWhileRunning = viewModel::vibrate
-                )
+                TextButton(
+                    onClick = viewModel::confirmDelete,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(stringResource(R.string.delete))
+                }
             },
             content = {
                 Text("Вы уверены, что хотите удалить эту ссылку?")
@@ -120,7 +122,7 @@ fun GroupInviteLinksScreen(
         )
     }
     
-    if (isShareSheetVisible) {
+    if (uiState.showShareSheet) {
         ModalBottomSheet(
             onDismissRequest = viewModel::hideShareSheet,
             sheetState = rememberModalBottomSheetState(),
@@ -128,8 +130,8 @@ fun GroupInviteLinksScreen(
         ) {
             Box {
                 LazyColumn {
-                    items(availableChats) { chat ->
-                        val isSelected = selectedChatIds.contains(chat.id)
+                    items(uiState.availableChats) { chat ->
+                        val isSelected = uiState.selectedChatIds.contains(chat.id)
                         ListItem(
                             modifier = Modifier.clickable { viewModel.toggleChatSelection(chat.id) },
                             headlineContent = { Text(chat.chatName.asString()) },
@@ -157,7 +159,7 @@ fun GroupInviteLinksScreen(
                 
                 Column(modifier = Modifier.align(Alignment.BottomCenter)) {
                     AnimatedVisibility(
-                        visible = selectedChatIds.isNotEmpty(),
+                        visible = uiState.selectedChatIds.isNotEmpty(),
                         enter = scaleIn() + fadeIn(),
                         exit = scaleOut() + fadeOut()
                     ) {
@@ -211,25 +213,25 @@ fun GroupInviteLinksScreen(
                 }
             }
             
-            if (activeInviteLinks.isNotEmpty()) {
+            if (uiState.activeLinks.isNotEmpty()) {
                 item {
                     SectionContainer(header = {
                         SectionHeader(title = stringResource(R.string.active_links))
                     }) {
-                        activeInviteLinks.forEach { link ->
-                            InviteLinkItem(link, viewModel, expandedMenuId)
+                        uiState.activeLinks.forEach { link ->
+                            InviteLinkItem(link, viewModel, uiState.expandedMenuId)
                         }
                     }
                 }
             }
             
-            if (inactiveInviteLinks.isNotEmpty()) {
+            if (uiState.inactiveLinks.isNotEmpty()) {
                 item {
                     SectionContainer(header = {
                         SectionHeader(title = stringResource(R.string.inactive_links))
                     }) {
-                        inactiveInviteLinks.forEach { link ->
-                            InviteLinkItem(link, viewModel, expandedMenuId)
+                        uiState.inactiveLinks.forEach { link ->
+                            InviteLinkItem(link, viewModel, uiState.expandedMenuId)
                         }
                     }
                 }
@@ -259,25 +261,34 @@ private fun InviteLinkItem(
     val supportingText = "Осталось $remainingUsesText • $expirationText"
     
     SectionItem(
-        headlineText = link.link.removePrefix("https://"),
+        headlineText = link.code,
         supportingText = supportingText,
         trailingContent = {
             Box {
-                IconButton(onClick = { viewModel.toggleMenu(link.id) }) {
+                var expanded by remember { mutableStateOf(false) }
+                val isMenuExpanded = expandedMenuId == link.id
+                
+                IconButton(onClick = {
+                    expanded = true
+                    viewModel.setExpandedMenuId(link.id)
+                }) {
                     Icon(Icons.Rounded.MoreVert, contentDescription = null)
                 }
                 CustomDropdownMenu(
-                    expanded = expandedMenuId == link.id,
-                    onDismissRequest = { viewModel.toggleMenu(null) }
+                    expanded = isMenuExpanded && expanded,
+                    onDismissRequest = {
+                        expanded = false
+                        viewModel.setExpandedMenuId(null)
+                    }
                 ) {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.share)) },
-                        onClick = { viewModel.shareLink(link.link) },
+                        onClick = { viewModel.shareLink(link.id) },
                         leadingIcon = { Icon(Icons.Rounded.Share, null) }
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.copy)) },
-                        onClick = { viewModel.copyLink(link.link) },
+                        onClick = { viewModel.copyLink(link.id) },
                         leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }
                     )
                     DropdownMenuItem(
@@ -290,8 +301,8 @@ private fun InviteLinkItem(
                         onClick = { viewModel.showDeleteConfirmation(link.id) },
                         leadingIcon = {
                             Icon(
-                                Icons.Rounded.DeleteOutline,
-                                null,
+                                imageVector = Icons.Rounded.DeleteOutline,
+                                contentDescription = null,
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }

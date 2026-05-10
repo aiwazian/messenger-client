@@ -438,6 +438,7 @@ class ChatViewModel @Inject constructor(
                 message.senderId == myId && ChatType.fromId(_uiState.value.chatId) != ChatType.CHANNEL
             val isSingleEmoji = isSingleEmoji(message.text ?: "")
             val isFirstInGroup = message.senderId != lastSenderId
+            val chatType = ChatType.fromId(_uiState.value.chatId)
             
             val actions = mutableListOf<DropdownMenuAction>()
             if (!message.text.isNullOrBlank()) {
@@ -448,14 +449,24 @@ class ChatViewModel @Inject constructor(
                         onClick = { copyToClipboard(message.text) })
                 )
             }
-            actions.add(
-                DropdownMenuAction(
-                    Icons.Rounded.DeleteOutline, R.string.delete, onClick = {
-                        showDeleteMessageDialog()
-                        selectMessage(message)
-                    }, isDestructive = true
+            
+            val canDelete = when (chatType) {
+                ChatType.PRIVATE -> true
+                ChatType.CHANNEL -> _uiState.value.profile is Profile.Channel && (_uiState.value.profile as Profile.Channel).ownerId == myId
+                ChatType.GROUP -> _uiState.value.profile is Profile.Group && ((_uiState.value.profile as Profile.Group).ownerId == myId || isMine)
+                else -> false
+            }
+            
+            if (canDelete) {
+                actions.add(
+                    DropdownMenuAction(
+                        Icons.Rounded.DeleteOutline, R.string.delete, onClick = {
+                            showDeleteMessageDialog()
+                            selectMessage(message)
+                        }, isDestructive = true
+                    )
                 )
-            )
+            }
             
             chatItems.add(
                 ChatItem.MessageItem(
@@ -545,11 +556,15 @@ class ChatViewModel @Inject constructor(
     fun hideClearHistoryDialog() = _uiState.update { it.copy(showClearHistoryDialog = false) }
     
     fun showDeleteMessageDialog() {
-        _uiState.update { it.copy(showDeleteMessageDialog = true) }
+        _uiState.update { it.copy(showDeleteMessageDialog = true, deleteForRecipient = false) }
+    }
+
+    fun hideDeleteMessageDialog() {
+        _uiState.update { it.copy(showDeleteMessageDialog = false, deleteForRecipient = false) }
     }
     
-    fun hideDeleteMessageDialog() {
-        _uiState.update { it.copy(showDeleteMessageDialog = false) }
+    fun setDeleteForRecipient(delete: Boolean) {
+        _uiState.update { it.copy(deleteForRecipient = delete) }
     }
     
     fun showLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = true) }
@@ -579,8 +594,9 @@ class ChatViewModel @Inject constructor(
     
     fun onDeleteMessageConfirmed() {
         viewModelScope.launch {
+            val deleteForRecipient = _uiState.value.deleteForRecipient
             _uiState.value.selectedMessages.forEach { message ->
-                chatRepository.deleteMessage(_uiState.value.chatId, message.id)
+                chatRepository.deleteMessage(_uiState.value.chatId, message.id, deleteForRecipient)
             }
             _uiState.update { it.copy(selectedMessages = emptySet()) }
             hideDeleteMessageDialog()
