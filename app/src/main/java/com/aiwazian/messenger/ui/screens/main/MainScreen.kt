@@ -14,8 +14,11 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -32,8 +35,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,6 +50,8 @@ import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material3.AppBarWithSearch
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -64,11 +67,9 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBarValue
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberSearchBarState
@@ -76,7 +77,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -109,9 +109,12 @@ import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
+import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.main.search.ChatResultsList
 import com.aiwazian.messenger.ui.screens.main.search.EmptySearchResultsPlaceholder
-import com.aiwazian.messenger.ui.screens.main.search.FileResultsList
 import com.aiwazian.messenger.ui.screens.main.search.LoadingPlaceholder
 import com.aiwazian.messenger.ui.screens.main.search.SearchViewModel
 import com.yandex.mobile.ads.common.AdRequest
@@ -191,21 +194,17 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
     }
     
     ModalNavigationDrawer(
+        gesturesEnabled = uiState.selectedChatIds.isEmpty(),
         drawerState = drawerState,
         drawerContent = {
             DrawerContent(
-                onClose = {
-                    scope.launch {
-                        drawerState.close()
-                    }
-                }, user = uiState.me,
+                drawerState = drawerState,
+                user = uiState.me,
                 theme = uiState.theme
             )
         },
     ) {
-        Content(
-            drawerState, viewModel
-        )
+        Content(drawerState, viewModel)
     }
 }
 
@@ -273,9 +272,7 @@ private fun NotificationBottomModal(
                 containerColor = MaterialTheme.colorScheme.primary
             )
         ) {
-            Text(
-                text = "Открыть настройки", modifier = Modifier.padding(8.dp)
-            )
+            Text(text = "Открыть настройки", modifier = Modifier.padding(8.dp))
         }
     }
 }
@@ -285,24 +282,49 @@ private fun Content(
     drawerState: DrawerState, mainViewModel: MainViewModel
 ) {
     val navBackStack = LocalNavBackStack.current
-    
-    val uiState by mainViewModel.uiState.collectAsState()
-    
     val scope = rememberCoroutineScope()
+    val uiState by mainViewModel.uiState.collectAsState()
+    val hasSelection = uiState.selectedChatIds.isNotEmpty()
+    val socketState by mainViewModel.socketState.collectAsState()
     
-    Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
-        DefaultTopBar(
-            drawerState = drawerState, isLockApp = uiState.hasPasscode, onLockClick = {
-                scope.launch {
-                    mainViewModel.lockApp()
-                }
-            }, socketState = mainViewModel.socketState.collectAsState().value
-        )
-    }, floatingActionButton = {
-        FloatingButton(onClick = {
-            navBackStack.add(AppRoute.NewMessage)
-        })
-    }) { innerPadding ->
+    BackHandler(hasSelection) {
+        mainViewModel.clearSelection()
+    }
+    
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            DefaultTopBar(
+                drawerState = drawerState,
+                isLockApp = uiState.hasPasscode,
+                onLockClick = {
+                    scope.launch {
+                        mainViewModel.lockApp()
+                    }
+                },
+                socketState = socketState
+            )
+            AnimatedVisibility(
+                visible = hasSelection,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                SelectionTopBar(
+                    selectedCount = uiState.selectedChatIds.size,
+                    onClearSelection = mainViewModel::clearSelection,
+                    onPinClick = mainViewModel::pinSelectedChats,
+                    onUnpinClick = mainViewModel::unpinSelectedChats,
+                    hasUnpinnedChats = mainViewModel.hasUnpinnedSelectedChats()
+                )
+            }
+        },
+        floatingActionButton = {
+            if (!hasSelection) {
+                FloatingButton(onClick = {
+                    navBackStack.add(AppRoute.NewMessage)
+                })
+            }
+        }) { innerPadding ->
         Column(
             modifier = Modifier.padding(innerPadding),
         ) {
@@ -312,16 +334,72 @@ private fun Content(
                 LazyColumn {
                     items(uiState.chats) { chat ->
                         val chatName = chat.chatName.asString()
-                        ChatCard(chat = chat, onClickChat = {
-                            navBackStack.add(
-                                AppRoute.Chat(chat.id, chatName)
-                            )
-                        })
+                        val isSelected = chat.id in uiState.selectedChatIds
+                        ChatCard(
+                            chat = chat,
+                            isSelected = isSelected,
+                            onClickChat = {
+                                if (hasSelection) {
+                                    mainViewModel.toggleChatSelection(chat.id)
+                                } else {
+                                    navBackStack.add(
+                                        AppRoute.Chat(chat.id, chatName)
+                                    )
+                                }
+                            },
+                            onLongClickChat = {
+                                mainViewModel.toggleChatSelection(chat.id)
+                            }
+                        )
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun SelectionTopBar(
+    selectedCount: Int,
+    onClearSelection: () -> Unit,
+    onPinClick: () -> Unit,
+    onUnpinClick: () -> Unit,
+    hasUnpinnedChats: Boolean
+) {
+    PageTopBar(
+        title = {
+            AnimatedContent(targetState = selectedCount, transitionSpec = {
+                if (targetState > initialState) {
+                    slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
+                } else {
+                    slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
+                }
+            }) { count ->
+                Text(text = "$count")
+            }
+        },
+        navigationIcon = NavigationIcon(
+            icon = Icons.Rounded.Close,
+            onClick = onClearSelection
+        ),
+        actions = listOf(
+            TopBarAction(
+                icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
+                    DropdownMenuAction(
+                        icon = Icons.Rounded.PushPin,
+                        textResId = if (hasUnpinnedChats) R.string.pin else R.string.unpin,
+                        onClick = {
+                            if (hasUnpinnedChats) {
+                                onPinClick()
+                            } else {
+                                onUnpinClick()
+                            }
+                        }
+                    )
+                )
+            )
+        )
+    )
 }
 
 @Composable
@@ -376,11 +454,11 @@ private fun DefaultTopBar(
     socketState: ConnectionState,
     searchViewModel: SearchViewModel = hiltViewModel()
 ) {
+    val navBackStack = LocalNavBackStack.current
     val searchUiState by searchViewModel.uiState.collectAsState()
     val textFieldState = rememberTextFieldState(searchUiState.query)
     val searchBarState = rememberSearchBarState()
     val scope = rememberCoroutineScope()
-    val navBackStack = LocalNavBackStack.current
     
     LaunchedEffect(textFieldState.text) {
         searchViewModel.onQueryChange(textFieldState.text.toString())
@@ -477,97 +555,36 @@ private fun DefaultTopBar(
         inputField = inputField,
         colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
     ) {
-        var selectedIndex by remember { mutableIntStateOf(searchUiState.activeTab) }
-        val pagerState = rememberPagerState(pageCount = { 2 })
-        
-        LaunchedEffect(selectedIndex) {
-            pagerState.animateScrollToPage(selectedIndex)
-            searchViewModel.onTabChange(selectedIndex)
-        }
-        
-        LaunchedEffect(pagerState.currentPage) {
-            selectedIndex = pagerState.currentPage
-        }
-        
-        PrimaryScrollableTabRow(
-            selectedTabIndex = selectedIndex,
-            containerColor = Color.Transparent,
-            edgePadding = 0.dp,
-            divider = {},
-        ) {
-            Tab(
-                selected = selectedIndex == 0,
-                onClick = { selectedIndex = 0 },
-                modifier = Modifier.clip(MaterialTheme.shapes.medium),
-                selectedContentColor = MaterialTheme.colorScheme.primary,
-                unselectedContentColor = MaterialTheme.colorScheme.onSurface
-            ) {
-                Text(
-                    text = stringResource(R.string.chats), modifier = Modifier.padding(6.dp)
-                )
-            }
-            Tab(
-                selected = selectedIndex == 1,
-                onClick = { selectedIndex = 1 },
-                modifier = Modifier.clip(MaterialTheme.shapes.medium),
-                selectedContentColor = MaterialTheme.colorScheme.primary,
-                unselectedContentColor = MaterialTheme.colorScheme.onSurface
-            ) {
-                Text(
-                    text = stringResource(R.string.files), modifier = Modifier.padding(6.dp)
-                )
-            }
-        }
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.Top,
-        ) { page ->
-            when (page) {
-                0 -> {
-                    if (searchUiState.isChatLoading && searchUiState.chatResults.isEmpty()) {
-                        LoadingPlaceholder()
-                    } else if (searchUiState.chatResults.isEmpty() && searchUiState.query.isNotBlank()) {
-                        EmptySearchResultsPlaceholder()
-                    } else {
-                        ChatResultsList(
-                            results = searchUiState.chatResults,
-                            isLoading = searchUiState.isChatLoading,
-                            onLoadMore = searchViewModel::loadMore,
-                            onChatClick = { chatId, chatName ->
-                                scope.launch {
-                                    searchBarState.animateToCollapsed()
-                                    navBackStack.add(AppRoute.Chat(chatId, chatName))
-                                }
-                            })
+        if (searchUiState.isChatLoading && searchUiState.chatResults.isEmpty()) {
+            LoadingPlaceholder()
+        } else if (searchUiState.chatResults.isEmpty() && searchUiState.query.isNotBlank()) {
+            EmptySearchResultsPlaceholder()
+        } else {
+            ChatResultsList(
+                results = searchUiState.chatResults,
+                isLoading = searchUiState.isChatLoading,
+                onLoadMore = searchViewModel::loadMore,
+                onChatClick = { chatId, chatName ->
+                    scope.launch {
+                        searchBarState.animateToCollapsed()
+                        navBackStack.add(AppRoute.Chat(chatId, chatName))
                     }
-                }
-                
-                1 -> {
-                    if (searchUiState.isFileLoading && searchUiState.fileResults.isEmpty()) {
-                        LoadingPlaceholder()
-                    } else if (searchUiState.fileResults.isEmpty() && searchUiState.query.isNotBlank()) {
-                        EmptySearchResultsPlaceholder()
-                    } else {
-                        FileResultsList(
-                            results = searchUiState.fileResults,
-                            state = searchUiState,
-                            isLoading = searchUiState.isFileLoading,
-                            onLoadMore = searchViewModel::loadMore,
-                            onFileClick = searchViewModel::onFileClicked
-                        )
-                    }
-                }
-            }
+                })
         }
     }
 }
 
 @Composable
-private fun DrawerContent(onClose: () -> Unit, user: User, theme: ThemeOption) {
+private fun DrawerContent(
+    drawerState: DrawerState,
+    user: User,
+    theme: ThemeOption
+) {
     val navBackStack = LocalNavBackStack.current
+    val scope = rememberCoroutineScope()
     
     ModalDrawerSheet(
+        drawerState = drawerState,
         modifier = Modifier
             .width(300.dp)
             .fillMaxHeight()
@@ -592,18 +609,22 @@ private fun DrawerContent(onClose: () -> Unit, user: User, theme: ThemeOption) {
             DrawerItem(
                 label = stringResource(R.string.profile), icon = Icons.Outlined.AccountCircle
             ) {
-                onClose.invoke()
+                scope.launch {
+                    drawerState.close()
+                }
                 navBackStack.add(AppRoute.Profile(user.id))
             }
             
             DrawerItem(
                 label = stringResource(R.string.saved_messages), icon = Icons.Rounded.BookmarkBorder
             ) {
-                onClose.invoke()
+                scope.launch {
+                    drawerState.close()
+                }
                 navBackStack.add(
                     AppRoute.Chat(
                         user.id,
-                        "${user.firstName} ${user.lastName.orEmpty()}"
+                        "${user.firstName} ${user.lastName.orEmpty()}".trim()
                     )
                 )
             }
@@ -611,7 +632,9 @@ private fun DrawerContent(onClose: () -> Unit, user: User, theme: ThemeOption) {
             DrawerItem(
                 label = stringResource(R.string.settings), icon = Icons.Outlined.Settings
             ) {
-                onClose.invoke()
+                scope.launch {
+                    drawerState.close()
+                }
                 navBackStack.add(AppRoute.Settings)
             }
         }

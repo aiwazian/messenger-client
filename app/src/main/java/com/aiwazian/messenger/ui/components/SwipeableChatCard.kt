@@ -91,8 +91,7 @@ fun SwipeableChatCard(
         }) {
         ChatCard(
             chat = chat,
-            selected = selected,
-            pinned = pinned,
+            isSelected = selected,
             onClickChat = onClick,
             onLongClickChat = onLongClick
         )

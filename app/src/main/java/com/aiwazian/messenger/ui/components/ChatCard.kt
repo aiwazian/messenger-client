@@ -4,16 +4,23 @@
 
 package com.aiwazian.messenger.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material3.Badge
@@ -29,6 +36,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.R
@@ -46,8 +54,7 @@ import com.aiwazian.messenger.utils.UiText
 @Composable
 fun ChatCard(
     chat: Chat,
-    selected: Boolean = false,
-    pinned: Boolean = false,
+    isSelected: Boolean = false,
     unreadMessageCount: Int = 0,
     onClickChat: () -> Unit = {},
     onLongClickChat: () -> Unit = {},
@@ -114,7 +121,27 @@ fun ChatCard(
             }
         },
         leadingContent = {
-            ChatAvatar(id = chat.id, chatName = chat.chatName.asString())
+            Box {
+                Box(Modifier.padding(4.dp)) {
+                    ChatAvatar(id = chat.id, chatName = chat.chatName.asString(), size = 50.dp)
+                }
+                AnimatedVisibility(
+                    visible = isSelected,
+                    modifier = Modifier.align(Alignment.BottomEnd),
+                    enter = fadeIn() + scaleIn(),
+                    exit = fadeOut() + scaleOut()
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .padding(2.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surface)
+                    )
+                }
+            }
         },
         trailingContent = {
             Column(verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.End) {
@@ -122,7 +149,7 @@ fun ChatCard(
                     if (chat.lastMessage != null) {
                         LastMessageSendTime(chat.lastMessage)
                     }
-                    if (pinned) {
+                    AnimatedVisibility(chat.isPinned) {
                         PinIcon()
                     }
                 }
@@ -176,11 +203,11 @@ private fun UnreadMessageCount(count: Int) {
 }
 
 @Composable
-fun ChatAvatar(id: Long, chatName: String, modifier: Modifier = Modifier) {
+fun ChatAvatar(id: Long, chatName: String, size: Dp = 40.dp) {
     Box(
         modifier = Modifier
             .sharedElement(key = "chat-avatar-$id")
-            .size(40.dp)
+            .size(size)
             .clip(CircleShape)
             .background(AppPrimaryColor.entries[(id.toString().first().code % 5) + 1].color),
         contentAlignment = Alignment.Center
@@ -191,9 +218,7 @@ fun ChatAvatar(id: Long, chatName: String, modifier: Modifier = Modifier) {
             lineHeight = 18.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White,
-            modifier = Modifier
-                .sharedElement(key = "chat-avatar-letter-$id")
-                .then(modifier)
+            modifier = Modifier.sharedElement(key = "chat-avatar-letter-$id")
         )
     }
 }

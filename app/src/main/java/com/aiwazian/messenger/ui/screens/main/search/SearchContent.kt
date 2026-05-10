@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
@@ -26,15 +25,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Search
 import com.aiwazian.messenger.enums.ChatType
-import com.aiwazian.messenger.enums.DownloadStatus
-import com.aiwazian.messenger.extensions.formatFileSize
-import com.aiwazian.messenger.extensions.getFileIcon
 
 @Composable
 fun LoadingPlaceholder() {
@@ -96,44 +93,6 @@ fun ChatResultsList(
 }
 
 @Composable
-fun FileResultsList(
-    results: List<Search>,
-    state: SearchUiState,
-    isLoading: Boolean,
-    onLoadMore: () -> Unit,
-    onFileClick: (Search) -> Unit
-) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        itemsIndexed(results) { index, file ->
-            if (index >= results.size - 5) {
-                LaunchedEffect(Unit) {
-                    onLoadMore()
-                }
-            }
-            
-            SearchFileItem(
-                file = file,
-                state = state,
-                onClick = { onFileClick(file) }
-            )
-        }
-        
-        if (isLoading) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun SearchChatItem(chat: Search, onClick: () -> Unit) {
     Row(
         modifier = Modifier
@@ -166,82 +125,14 @@ private fun SearchChatItem(chat: Search, onClick: () -> Unit) {
             )
             Text(
                 text = when (ChatType.fromId(chat.chatId)) {
-                    ChatType.PRIVATE -> "Пользователь"
-                    ChatType.CHANNEL -> "Канал"
-                    ChatType.GROUP -> "Группа"
+                    ChatType.PRIVATE -> stringResource(R.string.user)
+                    ChatType.CHANNEL -> stringResource(R.string.channel)
+                    ChatType.GROUP -> stringResource(R.string.group)
                     else -> ""
                 },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 lineHeight = 12.sp
-            )
-        }
-    }
-}
-
-@Composable
-private fun SearchFileItem(
-    file: Search,
-    state: SearchUiState,
-    onClick: () -> Unit
-) {
-    val download = state.downloads.findLast { it.fileId == file.fileId }
-    val progress = download?.progress ?: 0
-    val status = download?.status ?: DownloadStatus.IDLE
-    
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = file.name.getFileIcon(),
-            contentDescription = null,
-            modifier = Modifier.size(32.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        
-        Column(
-            modifier = Modifier
-                .padding(start = 12.dp)
-                .weight(1f)
-        ) {
-            Text(
-                text = file.name,
-                fontSize = 16.sp,
-                lineHeight = 16.sp,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-            )
-            Text(
-                text = (file.size?.formatFileSize() + " • " + file.senderName).trim(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-                lineHeight = 12.sp
-            )
-        }
-        
-        if (status == DownloadStatus.DOWNLOADING || status == DownloadStatus.UPLOADING) {
-            Box(contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    progress = { progress / 100f },
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp
-                )
-                Text(
-                    text = "$progress%",
-                    fontSize = 8.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        } else if (status != DownloadStatus.COMPLETED) {
-            Icon(
-                imageVector = Icons.Rounded.Download,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.primary
             )
         }
     }

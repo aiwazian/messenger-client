@@ -99,6 +99,52 @@ class MainViewModel @Inject constructor(
     }
     
     private fun List<Chat>.sortedByLastMessage(): List<Chat> {
-        return this.sortedByDescending { it.lastMessage?.sendTime ?: 0L }
+        return this.sortedWith(
+            compareByDescending<Chat> { it.isPinned }
+                .thenByDescending { it.lastMessage?.sendTime ?: 0L }
+        )
+    }
+
+    fun toggleChatSelection(chatId: Long) {
+        _uiState.update { state ->
+            val newSelection = if (chatId in state.selectedChatIds) {
+                state.selectedChatIds - chatId
+            } else {
+                state.selectedChatIds + chatId
+            }
+            state.copy(selectedChatIds = newSelection)
+        }
+    }
+
+    fun clearSelection() {
+        _uiState.update { it.copy(selectedChatIds = emptySet()) }
+    }
+
+    fun pinSelectedChats() {
+        val selectedIds = _uiState.value.selectedChatIds.toList()
+        if (selectedIds.isNotEmpty()) {
+            viewModelScope.launch {
+                chatRepository.pinChats(selectedIds)
+                clearSelection()
+            }
+        }
+    }
+
+    fun unpinSelectedChats() {
+        val selectedIds = _uiState.value.selectedChatIds.toList()
+        if (selectedIds.isNotEmpty()) {
+            viewModelScope.launch {
+                chatRepository.unpinChats(selectedIds)
+                clearSelection()
+            }
+        }
+    }
+
+    fun hasUnpinnedSelectedChats(): Boolean {
+        val selectedIds = _uiState.value.selectedChatIds
+        val chats = _uiState.value.chats
+        return selectedIds.any { id ->
+            chats.find { it.id == id }?.isPinned == false
+        }
     }
 }

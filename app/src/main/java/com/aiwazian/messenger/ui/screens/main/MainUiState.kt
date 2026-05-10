@@ -21,5 +21,6 @@ data class MainUiState(
     ),
     val hasPasscode: Boolean = false,
     val chats: List<Chat> = emptyList(),
-    val theme: ThemeOption = ThemeOption.SYSTEM
+    val theme: ThemeOption = ThemeOption.SYSTEM,
+    val selectedChatIds: Set<Long> = emptySet()
 )

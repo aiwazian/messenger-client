@@ -23,6 +23,7 @@ import com.aiwazian.messenger.network.dto.AttachmentInputDto
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
+import com.aiwazian.messenger.network.dto.PinChatsRequestDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.utils.UiText
@@ -429,6 +430,40 @@ class ChatRepository @Inject constructor(
             response.isSuccessful
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error deleting chat $chatId", e)
+            false
+        }
+    }
+
+    suspend fun pinChats(chatIds: List<Long>): Boolean {
+        return try {
+            val request = PinChatsRequestDto(chatIds.map { it.toString() })
+            val response = chatApi.pinChats(request)
+            if (response.isSuccessful) {
+                chatDao.updatePinnedStatus(chatIds, true)
+                true
+            } else {
+                Log.e("ChatRepository", "Failed to pin chats: ${response.message()}")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error pinning chats", e)
+            false
+        }
+    }
+
+    suspend fun unpinChats(chatIds: List<Long>): Boolean {
+        return try {
+            val request = PinChatsRequestDto(chatIds.map { it.toString() })
+            val response = chatApi.unpinChats(request)
+            if (response.isSuccessful) {
+                chatDao.updatePinnedStatus(chatIds, false)
+                true
+            } else {
+                Log.e("ChatRepository", "Failed to unpin chats: ${response.message()}")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error unpinning chats", e)
             false
         }
     }

@@ -6,7 +6,9 @@ package com.aiwazian.messenger.network.api
 
 import com.aiwazian.messenger.network.dto.ChatResponseDto
 import com.aiwazian.messenger.network.dto.InviteLinkInfoDto
+import com.aiwazian.messenger.network.dto.PinChatsRequestDto
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -37,4 +39,10 @@ interface ChatApi {
     
     @DELETE("chats/invite-links/{inviteLinkId}")
     suspend fun deleteInviteLink(@Path("inviteLinkId") inviteLinkId: Long): Response<Unit>
+
+    @POST("chats/pin")
+    suspend fun pinChats(@Body body: PinChatsRequestDto): Response<Unit>
+
+    @POST("chats/unpin")
+    suspend fun unpinChats(@Body body: PinChatsRequestDto): Response<Unit>
 }

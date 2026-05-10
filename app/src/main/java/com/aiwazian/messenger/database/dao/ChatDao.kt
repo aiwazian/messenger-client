@@ -36,4 +36,7 @@ interface ChatDao {
     
     @Query("DELETE FROM chats")
     suspend fun deleteAllChats()
+
+    @Query("UPDATE chats SET isPinned = :isPinned WHERE chatId IN (:chatIds)")
+    suspend fun updatePinnedStatus(chatIds: List<Long>, isPinned: Boolean)
 }
