@@ -430,10 +430,15 @@ private fun Dialogs(
     }
     
     if (uiState.showClearHistoryDialog) {
+        val isPrivateChat =
+            ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.chatId != uiState.currentUserId
         ClearHistoryDialog(
             onDismissRequest = chatViewModel::hideClearHistoryDialog,
             onConfirm = chatViewModel::onDeleteMessagesConfirmed,
-            vibrate = chatViewModel::vibrate
+            vibrate = chatViewModel::vibrate,
+            clearForRecipient = uiState.deleteForRecipient,
+            onClearForRecipientChanged = chatViewModel::setDeleteForRecipient,
+            isPrivateChat = isPrivateChat
         )
     }
     
@@ -574,16 +579,42 @@ private fun DeleteChatDialog(onDismissRequest: () -> Unit, onConfirm: () -> Unit
 private fun ClearHistoryDialog(
     onDismissRequest: () -> Unit,
     onConfirm: () -> Unit,
-    vibrate: () -> Unit
+    vibrate: () -> Unit,
+    clearForRecipient: Boolean,
+    onClearForRecipientChanged: (Boolean) -> Unit,
+    isPrivateChat: Boolean
 ) {
     CustomDialog(
         title = stringResource(R.string.clear_history),
         onDismissRequest = onDismissRequest,
         content = {
-            Text(
-                text = "Удалить все сообщения в чате, без возможности восстановления?",
-                lineHeight = 16.sp
-            )
+            Column {
+                Text(
+                    text = "Удалить все сообщения в чате, без возможности восстановления?",
+                    lineHeight = 16.sp
+                )
+                if (isPrivateChat) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable { onClearForRecipientChanged(!clearForRecipient) }
+                            .padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Checkbox(
+                            checked = clearForRecipient,
+                            onCheckedChange = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        )
+                        Text(
+                            text = stringResource(R.string.delete_for_recipient),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
         },
         buttons = {
             TextButton(onClick = onDismissRequest) {
@@ -620,12 +651,18 @@ private fun DeleteMessageDialog(
                 if (isPrivateChat) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable { onDeleteForRecipientChanged(!deleteForRecipient) }
+                            .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { onDeleteForRecipientChanged(!deleteForRecipient) }
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Checkbox(
                             checked = deleteForRecipient,
-                            onCheckedChange = onDeleteForRecipientChanged
+                            onCheckedChange = null,
+                            interactionSource = remember { MutableInteractionSource() }
                         )
                         Text(
                             text = stringResource(R.string.delete_for_recipient),

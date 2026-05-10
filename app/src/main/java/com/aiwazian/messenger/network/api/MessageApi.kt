@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.network.api
 
 import com.aiwazian.messenger.network.dto.DeleteMessageRequestDto
+import com.aiwazian.messenger.network.dto.ClearHistoryRequestDto
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
 import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
@@ -79,8 +80,13 @@ interface MessageApi {
         @Body request: DeleteMessageRequestDto = DeleteMessageRequestDto()
     ): Response<Unit>
     
-    @DELETE("chats/{chatId}/messages")
+    @HTTP(
+        method = "DELETE",
+        path = "chats/{chatId}/messages",
+        hasBody = true
+    )
     suspend fun clearHistory(
-        @Path("chatId") chatId: Long
+        @Path("chatId") chatId: Long,
+        @Body request: ClearHistoryRequestDto = ClearHistoryRequestDto()
     ): Response<Unit>
 }
