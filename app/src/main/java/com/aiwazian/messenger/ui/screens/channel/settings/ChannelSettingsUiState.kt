@@ -21,5 +21,6 @@ data class ChannelSettingsUiState(
     ),
     val originalChannelData: Channel? = null,
     val hasChanges: Boolean = false,
-    val showDeleteDialog: Boolean = false
+    val showDeleteDialog: Boolean = false,
+    val pendingAvatarUri: android.net.Uri? = null
 )

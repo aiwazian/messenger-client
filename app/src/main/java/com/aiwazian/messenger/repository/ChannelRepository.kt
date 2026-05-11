@@ -5,26 +5,31 @@
 package com.aiwazian.messenger.repository
 
 import android.util.Log
+import androidx.core.net.toUri
+import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.domain.Channel
 import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ChannelType
+import com.aiwazian.messenger.mappers.toChannelEntity
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.network.api.ChannelApi
 import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
+import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 
 class ChannelRepository @Inject constructor(
     private val channelApi: ChannelApi,
-    private val channelDao: ChannelDao
+    private val channelDao: ChannelDao,
+    private val avatarDao: AvatarDao
 ) {
     
     suspend fun create(name: String, bio: String): Result<Long> {
@@ -49,7 +54,18 @@ class ChannelRepository @Inject constructor(
     }
     
     fun getById(channelId: Long): Flow<Channel> =
-        channelDao.getFlow(channelId).filterNotNull().mapNotNull { it.toDomain() }.onStart {
+        channelDao.getWithAvatarsFlow(channelId).filterNotNull().map { channelWithAvatars ->
+            val avatars =
+                channelWithAvatars.avatars.sortedBy { it.avatar.sortOrder }.map { avatarWithFile ->
+                    val uri = if (!avatarWithFile.file?.path.isNullOrBlank()) {
+                        avatarWithFile.file.path.toUri()
+                    } else {
+                        null
+                    }
+                    avatarWithFile.avatar.toDomain(uri)
+                }
+            channelWithAvatars.channel.toDomain(avatars)
+        }.onStart {
             try {
                 val response = channelApi.getChannelById(channelId)
                 if (response.isSuccessful) {
@@ -57,7 +73,9 @@ class ChannelRepository @Inject constructor(
                     if (dto != null) {
                         val channel = dto.toDomain()
                         channelDao.insert(channel.toEntity())
-                        emit(channel)
+                        
+                        val avatars = dto.avatars.map { it.toChannelEntity(channel.id) }
+                        avatarDao.insertAvatars(avatars)
                     }
                 }
             } catch (e: Exception) {
@@ -319,6 +337,73 @@ class ChannelRepository @Inject constructor(
                 "Ошибка при блокировке пользователя",
                 e
             )
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun initUploadAvatar(
+        channelId: Long,
+        name: String,
+        size: Long,
+        mimeType: String
+    ): Result<FileInitResponseDto> {
+        return try {
+            val response = channelApi.initUploadAvatar(
+                channelId,
+                com.aiwazian.messenger.network.dto.FileInitRequestDto(name, size, mimeType)
+            )
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Init upload failed"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun confirmUploadAvatar(channelId: Long, fileId: String): Result<Unit> {
+        return try {
+            val response = channelApi.confirmUploadAvatar(channelId, fileId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Confirm upload failed"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun deleteAvatar(channelId: Long, fileId: String): Result<Unit> {
+        return try {
+            val response = channelApi.deleteAvatar(channelId, fileId)
+            if (response.isSuccessful) {
+                avatarDao.deleteAvatarByFileId(fileId)
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Delete avatar failed"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun getAvatarDownloadUrl(fileId: String): Result<String> {
+        return try {
+            val response = channelApi.getAvatarDownloadUrl(fileId)
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body != null) {
+                    Result.success(body.downloadUrl)
+                } else {
+                    Result.failure(Exception("Empty body"))
+                }
+            } else {
+                Result.failure(Exception("Unsuccessful request: ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Ошибка при загрузке аватара", e)
             Result.failure(e)
         }
     }

@@ -4,16 +4,26 @@
 
 package com.aiwazian.messenger.ui.screens.channel.settings
 
+import android.content.Context
+import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
+import com.aiwazian.messenger.extensions.getFileName
+import com.aiwazian.messenger.extensions.getFileSize
+import com.aiwazian.messenger.extensions.getFileType
+import com.aiwazian.messenger.extensions.isNetworkError
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.usecase.DeleteChannelUseCase
+import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.UiText
+import com.aiwazian.messenger.utils.UploadManager
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -25,9 +35,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChannelSettingsViewModel @Inject constructor(
+    @param:ApplicationContext private val context: Context,
     private val channelRepository: ChannelRepository,
     private val deleteChannelUseCase: DeleteChannelUseCase,
-    private val vibrationManager: VibrationManager
+    private val vibrationManager: VibrationManager,
+    private val uploadManager: UploadManager,
+    private val downloadManager: DownloaderManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ChannelSettingsUiState())
@@ -36,10 +49,86 @@ class ChannelSettingsViewModel @Inject constructor(
     private val _uiEffect = MutableSharedFlow<ChannelSettingsEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
     
+    private val downloadingAvatars = mutableSetOf<String>()
+    
     fun init(channelId: Long) {
         viewModelScope.launch {
             channelRepository.getById(channelId).collectLatest { channel ->
                 _uiState.update { it.copy(channel = channel, originalChannelData = channel) }
+                
+                channel.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
+                    .forEach { avatar ->
+                        viewModelScope.launch {
+                            channelRepository.getAvatarDownloadUrl(avatar.fileId)
+                                .onSuccess { downloadUrl ->
+                                    downloadManager.download(
+                                        url = downloadUrl,
+                                        fileId = avatar.fileId,
+                                        fileName = avatar.fileId
+                                    )
+                                }
+                                .onFailure {
+                                    downloadingAvatars.remove(avatar.fileId)
+                                }
+                        }
+                    }
+            }
+        }
+    }
+    
+    fun setPendingAvatarUri(uri: Uri?) {
+        _uiState.update { it.copy(pendingAvatarUri = uri) }
+    }
+    
+    fun clearPendingAvatarUri() {
+        _uiState.update { it.copy(pendingAvatarUri = null) }
+    }
+    
+    fun deleteAvatar(fileId: String) {
+        viewModelScope.launch {
+            channelRepository.deleteAvatar(_uiState.value.channel.id, fileId).onFailure {
+                Log.e("ChannelSettingsViewModel", "error delete avatar", it)
+            }
+        }
+    }
+    
+    fun uploadAvatar(uri: Uri) {
+        viewModelScope.launch {
+            val channelId = _uiState.value.channel.id
+            channelRepository.initUploadAvatar(
+                channelId,
+                uri.getFileName(context) ?: "",
+                uri.getFileSize(context) ?: 0,
+                uri.getFileType(context)
+            ).onSuccess { uploadInfo ->
+                uploadManager.upload(
+                    uri = uri,
+                    uploadUrl = uploadInfo.signedUrl,
+                    fileId = uploadInfo.fileId
+                ).onSuccess {
+                    channelRepository.confirmUploadAvatar(channelId, uploadInfo.fileId).onFailure {
+                        val error = if (it.isNetworkError()) {
+                            UiText.StringResource(R.string.failed_to_connect)
+                        } else {
+                            UiText.StringResource(R.string.unexpected_error)
+                        }
+                        _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar(error))
+                    }
+                }.onFailure {
+                    val error = if (it.isNetworkError()) {
+                        UiText.StringResource(R.string.failed_to_connect)
+                    } else {
+                        UiText.StringResource(R.string.unexpected_error)
+                    }
+                    _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar(error))
+                }
+            }.onFailure {
+                val error = if (it.isNetworkError()) {
+                    UiText.StringResource(R.string.failed_to_connect)
+                } else {
+                    UiText.StringResource(R.string.unexpected_error)
+                }
+                _uiEffect.emit(ChannelSettingsEffect.ShowSnackbar(error))
             }
         }
     }

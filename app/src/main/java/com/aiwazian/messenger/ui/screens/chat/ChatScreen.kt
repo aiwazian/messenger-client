@@ -192,6 +192,7 @@ fun ChatScreen(
         topBar = {
             TopBar(
                 title = uiState.chatName.asString(),
+                avatarUri = uiState.avatarUri,
                 subTitle = uiState.subTitle.asString(),
                 dropdownActions = uiState.topBarActions,
                 isConnected = uiState.isConnected,
@@ -473,6 +474,7 @@ private fun Dialogs(
 @Composable
 private fun TopBar(
     title: String,
+    avatarUri: Uri?,
     subTitle: String,
     dropdownActions: List<TopBarAction>,
     isConnected: Boolean,
@@ -507,7 +509,7 @@ private fun TopBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    ChatAvatar(id = chatId, chatName = title)
+                    ChatAvatar(id = chatId, chatName = title, avatarUri = avatarUri)
                     
                     Column(
                         modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center

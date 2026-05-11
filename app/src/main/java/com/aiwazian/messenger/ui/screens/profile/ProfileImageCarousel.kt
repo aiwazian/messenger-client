@@ -21,10 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalWindowInfo
 import coil.compose.AsyncImage
+import com.aiwazian.messenger.extensions.sharedElement
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileImageCarousel(
+    id: Long,
     avatars: List<Uri?>,
     modifier: Modifier = Modifier
 ) {
@@ -46,11 +48,18 @@ fun ProfileImageCarousel(
                 if (uri == null) {
                     CircularWavyProgressIndicator()
                 } else {
+                    val modifier = if (index == 1) {
+                        Modifier.sharedElement(key = "chat-avatar-$id")
+                    } else {
+                        Modifier
+                    }
                     AsyncImage(
                         model = uri,
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .then(modifier),
+                        contentScale = ContentScale.Crop,
                     )
                 }
             }

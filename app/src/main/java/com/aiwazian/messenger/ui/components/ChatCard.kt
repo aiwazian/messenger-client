@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.components
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -34,11 +35,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
@@ -123,7 +126,12 @@ fun ChatCard(
         leadingContent = {
             Box {
                 Box(Modifier.padding(4.dp)) {
-                    ChatAvatar(id = chat.id, chatName = chat.chatName.asString(), size = 50.dp)
+                    ChatAvatar(
+                        id = chat.id,
+                        chatName = chat.chatName.asString(),
+                        avatarUri = chat.avatarUri,
+                        size = 50.dp
+                    )
                 }
                 AnimatedVisibility(
                     visible = isSelected,
@@ -203,22 +211,34 @@ private fun UnreadMessageCount(count: Int) {
 }
 
 @Composable
-fun ChatAvatar(id: Long, chatName: String, size: Dp = 40.dp) {
-    Box(
-        modifier = Modifier
-            .sharedElement(key = "chat-avatar-$id")
-            .size(size)
-            .clip(CircleShape)
-            .background(AppPrimaryColor.entries[(id.toString().first().code % 5) + 1].color),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = chatName.firstOrNull().toString().uppercase(),
-            fontSize = 20.sp,
-            lineHeight = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            modifier = Modifier.sharedElement(key = "chat-avatar-letter-$id")
+fun ChatAvatar(id: Long, chatName: String, avatarUri: Uri? = null, size: Dp = 40.dp) {
+    if (avatarUri != null) {
+        AsyncImage(
+            model = avatarUri,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .sharedElement(key = "chat-avatar-$id")
+                .size(size)
+                .clip(CircleShape)
         )
+    } else {
+        Box(
+            modifier = Modifier
+                .sharedElement(key = "chat-avatar-$id")
+                .size(size)
+                .clip(CircleShape)
+                .background(AppPrimaryColor.entries[(id.toString().first().code % 5) + 1].color),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = chatName.firstOrNull().toString().uppercase(),
+                fontSize = 20.sp,
+                lineHeight = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.sharedElement(key = "chat-avatar-letter-$id")
+            )
+        }
     }
 }

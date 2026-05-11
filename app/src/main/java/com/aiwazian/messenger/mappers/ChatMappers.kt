@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.mappers
 
+import android.net.Uri
 import com.aiwazian.messenger.database.entity.ChatEntity
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
@@ -14,6 +15,7 @@ fun ChatResponseDto.toDomain(): Chat = Chat(
     id = id,
     chatName = UiText.DynamicString(name),
     isPinned = isPinned,
+    avatarUri = null,
     lastMessage = lastMessage?.toDomain()
 )
 
@@ -22,10 +24,11 @@ fun ChatResponseDto.toEntity(): ChatEntity = ChatEntity(
     isPinned = isPinned
 )
 
-fun ChatEntity.toDomain(name: UiText, lastMessage: Message? = null): Chat = Chat(
+fun ChatEntity.toDomain(name: UiText, avatarUri: Uri?, lastMessage: Message? = null): Chat = Chat(
     id = chatId,
     chatName = name,
     isPinned = isPinned,
+    avatarUri = avatarUri,
     lastMessage = lastMessage
 )
 

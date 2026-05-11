@@ -15,5 +15,6 @@ data class Channel(
     val removedUser: Int?,
     val channelType: ChannelType,
     val username: String?,
-    val isSubscribed: Boolean
+    val isSubscribed: Boolean,
+    val avatars: List<Avatar> = emptyList()
 )

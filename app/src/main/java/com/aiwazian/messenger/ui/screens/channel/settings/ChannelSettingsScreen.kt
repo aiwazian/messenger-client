@@ -4,6 +4,8 @@
 
 package com.aiwazian.messenger.ui.screens.channel.settings
 
+import android.graphics.Bitmap
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -30,6 +32,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
@@ -40,10 +44,15 @@ import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
+import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.ui.screens.settings.profile.AvatarCropScreen
+import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileImageCarousel
+import java.io.File
+import java.io.FileOutputStream
 
 @Composable
 fun ChannelSettingsScreen(
@@ -99,6 +108,16 @@ fun ChannelSettingsScreen(
                 .padding(innerPadding)
                 .verticalScroll(scrollState)
         ) {
+            Box(modifier = Modifier.padding(start = 10.dp)) {
+                SectionHeader(title = stringResource(R.string.profile_photos))
+            }
+            
+            SettingsProfileImageCarousel(
+                avatars = uiState.channel.avatars,
+                onAddPhoto = viewModel::setPendingAvatarUri,
+                onDeletePhoto = viewModel::deleteAvatar
+            )
+
             SectionContainer {
                 FramelessTextBox(
                     placeholder = stringResource(R.string.channel_name),
@@ -181,6 +200,25 @@ fun ChannelSettingsScreen(
                     })
             }
         }
+    }
+    
+    if (uiState.pendingAvatarUri != null) {
+        val context = androidx.compose.ui.platform.LocalContext.current
+        AvatarCropScreen(
+            imageUri = uiState.pendingAvatarUri!!, onCropConfirmed = { bitmap ->
+                val file = File(context.cacheDir, "avatar_${System.currentTimeMillis()}.png")
+                FileOutputStream(file).use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                }
+                
+                val contentUri = FileProvider.getUriForFile(
+                    context, "${context.packageName}.fileprovider", file
+                )
+                
+                viewModel.uploadAvatar(contentUri)
+                viewModel.clearPendingAvatarUri()
+            }, onDismiss = viewModel::clearPendingAvatarUri
+        )
     }
 }
 

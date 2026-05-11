@@ -79,7 +79,7 @@ fun AvatarEntity.toDomain(uri: Uri?) = Avatar(
     sortOrder = sortOrder
 )
 
-fun AvatarDto.toDomain(uri: Uri?) = Avatar(
+fun AvatarDto.toDomain(uri: Uri? = null) = Avatar(
     uri = uri,
     fileId = fileId,
     sortOrder = sortOrder

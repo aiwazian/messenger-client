@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.chat
 
+import android.net.Uri
 import com.aiwazian.messenger.domain.InviteLinkInfo
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -13,6 +14,7 @@ import com.aiwazian.messenger.utils.UiText
 data class ChatUiState(
     val chatId: Long = -1,
     val chatName: UiText = UiText.DynamicString(""),
+    val avatarUri: Uri? = null,
     val subTitle: UiText = UiText.DynamicString(""),
     val topBarActions: List<TopBarAction> = emptyList(),
     val chatItems: List<ChatItem> = emptyList(),

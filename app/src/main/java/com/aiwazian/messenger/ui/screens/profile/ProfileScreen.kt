@@ -168,7 +168,7 @@ private fun GroupProfile(
     group: Profile.Group, actions: List<TopBarAction>, innerPadding: Dp
 ) {
     Box {
-        ProfileImageCarousel(avatars = group.avatars)
+        ProfileImageCarousel(avatars = group.avatars, id = group.id)
         
         Box(
             modifier = Modifier
@@ -214,7 +214,7 @@ private fun ChannelProfile(
     channel: Profile.Channel, actions: List<TopBarAction>, innerPadding: Dp
 ) {
     Box {
-        ProfileImageCarousel(avatars = channel.avatars)
+        ProfileImageCarousel(avatars = channel.avatars, id = channel.id)
         
         Box(
             modifier = Modifier
@@ -261,7 +261,7 @@ private fun UserProfile(
     user: Profile.User, actions: List<TopBarAction>, innerPadding: Dp
 ) {
     Box {
-        ProfileImageCarousel(avatars = user.avatars)
+        ProfileImageCarousel(avatars = user.avatars, id = user.id)
         
         Box(
             modifier = Modifier

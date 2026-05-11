@@ -4,8 +4,11 @@
 
 package com.aiwazian.messenger.mappers
 
+import com.aiwazian.messenger.database.entity.AvatarEntity
 import com.aiwazian.messenger.database.entity.ChannelEntity
+import com.aiwazian.messenger.domain.Avatar
 import com.aiwazian.messenger.domain.Channel
+import com.aiwazian.messenger.network.dto.AvatarDto
 import com.aiwazian.messenger.network.dto.ChannelResponseDto
 
 fun ChannelResponseDto.toDomain() = Channel(
@@ -17,10 +20,11 @@ fun ChannelResponseDto.toDomain() = Channel(
     removedUser = removedUser,
     channelType = channelType,
     username = username,
-    isSubscribed = isSubscribed
+    isSubscribed = isSubscribed,
+    avatars = avatars.map { it.toDomain() }
 )
 
-fun ChannelEntity.toDomain() = Channel(
+fun ChannelEntity.toDomain(avatars: List<Avatar> = emptyList()) = Channel(
     id = id,
     ownerId = ownerId,
     name = name,
@@ -29,7 +33,8 @@ fun ChannelEntity.toDomain() = Channel(
     removedUser = null,
     channelType = channelType,
     username = username,
-    isSubscribed = isSubscribed
+    isSubscribed = isSubscribed,
+    avatars = avatars
 )
 
 fun Channel.toEntity() = ChannelEntity(
@@ -41,4 +46,10 @@ fun Channel.toEntity() = ChannelEntity(
     channelType = channelType,
     username = username,
     isSubscribed = isSubscribed
+)
+
+fun AvatarDto.toChannelEntity(channelId: Long) = AvatarEntity(
+    fileId = fileId,
+    channelId = channelId,
+    sortOrder = sortOrder
 )

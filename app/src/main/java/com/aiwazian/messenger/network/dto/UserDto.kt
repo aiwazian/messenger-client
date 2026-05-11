@@ -23,7 +23,7 @@ data class UserResponseDto(
 @Serializable
 data class AvatarDto(
     @SerialName("fileId") val fileId: String,
-    @SerialName("sortOrder") val sortOrder: Int
+    @SerialName("sortOrder") val sortOrder: Int = 0
 )
 
 @Serializable
@@ -42,11 +42,11 @@ data class ChangePasswordRequestDto(
 
 @Serializable
 data class PrivacySettingsResponseDto(
-    @SerialName("lastSeen") val lastSeen: PrivacyLevel,
-    @SerialName("messages") val messages: PrivacyLevel,
-    @SerialName("bio") val bio: PrivacyLevel,
-    @SerialName("dateOfBirth") val dateOfBirth: PrivacyLevel,
-    @SerialName("invites") val invites: PrivacyLevel
+    @SerialName("lastSeen") val lastSeen: PrivacyLevel = PrivacyLevel.EVERYBODY,
+    @SerialName("messages") val messages: PrivacyLevel = PrivacyLevel.EVERYBODY,
+    @SerialName("bio") val bio: PrivacyLevel = PrivacyLevel.EVERYBODY,
+    @SerialName("dateOfBirth") val dateOfBirth: PrivacyLevel = PrivacyLevel.EVERYBODY,
+    @SerialName("invites") val invites: PrivacyLevel = PrivacyLevel.EVERYBODY
 )
 
 @Serializable

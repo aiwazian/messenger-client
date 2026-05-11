@@ -14,5 +14,6 @@ data class Group(
     val username: String?,
     val groupType: GroupType,
     val members: Int,
-    val isMember: Boolean
+    val isMember: Boolean,
+    val avatars: List<Avatar> = emptyList()
 )

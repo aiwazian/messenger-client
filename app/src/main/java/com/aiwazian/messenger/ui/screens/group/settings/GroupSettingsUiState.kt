@@ -20,5 +20,6 @@ data class GroupSettingsUiState(
     ),
     val originalChannelData: Group? = null,
     val hasChanges: Boolean = false,
-    val showDeleteDialog: Boolean = false
+    val showDeleteDialog: Boolean = false,
+    val pendingAvatarUri: android.net.Uri? = null
 )

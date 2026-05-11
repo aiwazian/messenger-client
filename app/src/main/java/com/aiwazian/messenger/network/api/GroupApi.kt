@@ -7,6 +7,9 @@ package com.aiwazian.messenger.network.api
 import com.aiwazian.messenger.network.dto.AddMembersRequestDto
 import com.aiwazian.messenger.network.dto.CreateGroupRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
+import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
+import com.aiwazian.messenger.network.dto.FileInitRequestDto
+import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.GroupResponseDto
 import com.aiwazian.messenger.network.dto.InviteLinkResponseDto
 import com.aiwazian.messenger.network.dto.UpdateGroupRequestDto
@@ -15,8 +18,8 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
-import retrofit2.http.POST
 import retrofit2.http.PATCH
+import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -102,4 +105,25 @@ interface GroupApi {
         @Path("groupId") groupId: Long,
         @Path("inviteLinkId") inviteLinkId: Long
     ): Response<Unit>
+    
+    @POST("groups/{groupId}/avatar/init")
+    suspend fun initUploadAvatar(
+        @Path("groupId") groupId: Long,
+        @Body request: FileInitRequestDto
+    ): Response<FileInitResponseDto>
+    
+    @POST("groups/{groupId}/avatar/confirm/{fileId}")
+    suspend fun confirmUploadAvatar(
+        @Path("groupId") groupId: Long,
+        @Path("fileId") fileId: String
+    ): Response<Unit>
+    
+    @DELETE("groups/{groupId}/avatars/{fileId}")
+    suspend fun deleteAvatar(
+        @Path("groupId") groupId: Long,
+        @Path("fileId") fileId: String
+    ): Response<Unit>
+    
+    @GET("groups/avatars/{fileId}")
+    suspend fun getAvatarDownloadUrl(@Path("fileId") fileId: String): Response<FileDownloadResponseDto>
 }

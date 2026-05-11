@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.repository
 
+import android.net.Uri
 import android.util.Log
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.database.dao.AttachmentDao
@@ -65,14 +66,16 @@ class ChatRepository @Inject constructor(
         val flows = chatEntities.map { chatEntity ->
             messageDao.getLastMessageForChatFlow(myId, chatEntity.chatId)
                 .map { messageWithAttachments ->
-                    val name = resolveChatName(chatEntity, myId) ?: return@map null
+                    val info = resolveChatInfo(chatEntity, myId) ?: return@map null
+                    val name = info.first
+                    val avatarUri = info.second
                     
                     val lastMessage = messageWithAttachments?.let {
                         val attachments = it.attachments.map { att -> att.toDomain() }
                         it.message.toDomain(attachments)
                     }
                     
-                    chatEntity.toDomain(name, lastMessage)
+                    chatEntity.toDomain(name, avatarUri, lastMessage)
                 }
         }
         
@@ -90,31 +93,37 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    private suspend fun resolveChatName(chatEntity: ChatEntity, myId: Long): UiText? {
+    private suspend fun resolveChatInfo(chatEntity: ChatEntity, myId: Long): Pair<UiText, Uri?>? {
         return when (ChatType.fromId(chatEntity.chatId)) {
             ChatType.PRIVATE -> {
-                if (chatEntity.chatId == myId) {
-                    UiText.StringResource(R.string.saved_messages)
-                } else {
-                    userRepository.getById(chatEntity.chatId).firstOrNull()?.let { user ->
-                        UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim())
+                userRepository.getById(chatEntity.chatId).firstOrNull()?.let { user ->
+                    if (chatEntity.chatId == myId) {
+                        Pair(
+                            UiText.StringResource(R.string.saved_messages),
+                            user.avatars.firstOrNull()?.uri
+                        )
+                    } else {
+                        Pair(
+                            UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
+                            user.avatars.firstOrNull()?.uri
+                        )
                     }
                 }
             }
             
             ChatType.GROUP -> {
                 groupRepository.getById(chatEntity.chatId).firstOrNull()?.let {
-                    UiText.DynamicString(it.name)
+                    Pair(UiText.DynamicString(it.name), it.avatars.firstOrNull()?.uri)
                 }
             }
             
             ChatType.CHANNEL -> {
                 channelRepository.getById(chatEntity.chatId).firstOrNull()?.let {
-                    UiText.DynamicString(it.name)
+                    Pair(UiText.DynamicString(it.name), it.avatars.firstOrNull()?.uri)
                 }
             }
             
-            else -> UiText.DynamicString("")
+            else -> Pair(UiText.DynamicString(""), null)
         }
     }
     
@@ -208,7 +217,7 @@ class ChatRepository @Inject constructor(
     
     fun getById(chatId: Long): Flow<Chat?> {
         return chatDao.getChatByIdFlow(chatId).map {
-            it?.toDomain(UiText.DynamicString(""), null)
+            it?.toDomain(UiText.DynamicString(""), null, null)
         }
     }
     
@@ -404,7 +413,8 @@ class ChatRepository @Inject constructor(
     
     suspend fun deleteChatMessages(chatId: Long, clearForRecipient: Boolean = false): Boolean {
         return try {
-            val response = messageApi.clearHistory(chatId, ClearHistoryRequestDto(clearForRecipient))
+            val response =
+                messageApi.clearHistory(chatId, ClearHistoryRequestDto(clearForRecipient))
             clearLocalHistory(chatId)
             response.isSuccessful
         } catch (e: Exception) {

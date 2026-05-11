@@ -17,6 +17,8 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.serializer
 import org.json.JSONArray
 import org.json.JSONObject
@@ -68,21 +70,33 @@ class WebSocketClient @Inject constructor(
     }
     
     fun emitEvent(eventName: String, data: Any) {
-        if (socket?.connected() == true) {
-            val jsonString = try {
-                when (data) {
-                    is Map<*, *> -> defaultJson.encodeToString(data)
-                    else -> defaultJson.encodeToString(serializer(data::class.java), data)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Serialization failed", e)
-                return
-            }
-            socket?.emit(eventName, JSONObject(jsonString))
-            Log.d(TAG, "Emitted event: $eventName with data: $jsonString")
-        } else {
+        if (socket?.connected() != true) {
             Log.w(TAG, "Cannot emit event $eventName: socket is not connected")
+            return
         }
+        
+        val jsonString = try {
+            when (data) {
+                is Map<*, *> -> {
+                    val casted = data as Map<String, Any?>
+                    
+                    val jsonObject = buildJsonObject {
+                        casted.forEach { (key, value) ->
+                            put(key, defaultJson.encodeToJsonElement(value))
+                        }
+                    }
+                    
+                    defaultJson.encodeToString(JsonObject.serializer(), jsonObject)
+                }
+                
+                else -> defaultJson.encodeToString(serializer(data::class.java), data)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Serialization failed", e)
+            return
+        }
+        socket?.emit(eventName, JSONObject(jsonString))
+        Log.d(TAG, "Emitted event: $eventName with data: $jsonString")
     }
     
     private fun establishConnection() {

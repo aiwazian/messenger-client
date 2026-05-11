@@ -18,7 +18,8 @@ data class GroupResponseDto(
     @SerialName("ownerId") val ownerId: Long? = null,
     @SerialName("membersCount") val membersCount: Int? = null,
     @SerialName("isMember") val isMember: Boolean = false,
-    @SerialName("isOwner") val isOwner: Boolean? = false
+    @SerialName("isOwner") val isOwner: Boolean? = false,
+    @SerialName("avatars") val avatars: List<AvatarDto> = emptyList()
 )
 
 @Serializable

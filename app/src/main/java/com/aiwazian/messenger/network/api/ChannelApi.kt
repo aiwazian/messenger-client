@@ -7,6 +7,9 @@ package com.aiwazian.messenger.network.api
 import com.aiwazian.messenger.network.dto.ChannelResponseDto
 import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
+import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
+import com.aiwazian.messenger.network.dto.FileInitRequestDto
+import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.InviteLinkResponseDto
 import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
@@ -90,4 +93,25 @@ interface ChannelApi {
         @Path("channelId") channelId: Long,
         @Path("userId") userId: Long
     ): Response<Unit>
+    
+    @POST("channels/{channelId}/avatar/init")
+    suspend fun initUploadAvatar(
+        @Path("channelId") channelId: Long,
+        @Body request: FileInitRequestDto
+    ): Response<FileInitResponseDto>
+    
+    @POST("channels/{channelId}/avatar/confirm/{fileId}")
+    suspend fun confirmUploadAvatar(
+        @Path("channelId") channelId: Long,
+        @Path("fileId") fileId: String
+    ): Response<Unit>
+    
+    @DELETE("channels/{channelId}/avatars/{fileId}")
+    suspend fun deleteAvatar(
+        @Path("channelId") channelId: Long,
+        @Path("fileId") fileId: String
+    ): Response<Unit>
+    
+    @GET("channels/avatars/{fileId}")
+    suspend fun getAvatarDownloadUrl(@Path("fileId") fileId: String): Response<FileDownloadResponseDto>
 }

@@ -4,8 +4,11 @@
 
 package com.aiwazian.messenger.mappers
 
+import com.aiwazian.messenger.database.entity.AvatarEntity
 import com.aiwazian.messenger.database.entity.GroupEntity
+import com.aiwazian.messenger.domain.Avatar
 import com.aiwazian.messenger.domain.Group
+import com.aiwazian.messenger.network.dto.AvatarDto
 import com.aiwazian.messenger.network.dto.GroupResponseDto
 
 fun GroupResponseDto.toDomain(): Group = Group(
@@ -16,10 +19,11 @@ fun GroupResponseDto.toDomain(): Group = Group(
     username = username,
     groupType = groupType,
     members = membersCount ?: 0,
-    isMember = isMember
+    isMember = isMember,
+    avatars = avatars.map { it.toDomain() }
 )
 
-fun GroupEntity.toDomain(): Group = Group(
+fun GroupEntity.toDomain(avatars: List<Avatar> = emptyList()): Group = Group(
     id = id,
     ownerId = ownerId,
     name = name,
@@ -27,7 +31,8 @@ fun GroupEntity.toDomain(): Group = Group(
     username = username,
     groupType = groupType,
     members = members,
-    isMember = isMember
+    isMember = isMember,
+    avatars = avatars
 )
 
 fun Group.toEntity() = GroupEntity(
@@ -39,4 +44,10 @@ fun Group.toEntity() = GroupEntity(
     groupType = groupType,
     members = members,
     isMember = isMember
+)
+
+fun AvatarDto.toGroupEntity(groupId: Long) = AvatarEntity(
+    fileId = fileId,
+    groupId = groupId,
+    sortOrder = sortOrder
 )

@@ -143,7 +143,11 @@ class ChatViewModel @Inject constructor(
                             isSubscribed = channel.isSubscribed
                         )
                         _uiState.update {
-                            it.copy(profile = profile, isJoined = channel.isSubscribed)
+                            it.copy(
+                                profile = profile,
+                                isJoined = channel.isSubscribed,
+                                avatarUri = channel.avatars.firstOrNull()?.uri
+                            )
                         }
                         updateUiContent()
                     }
@@ -165,7 +169,8 @@ class ChatViewModel @Inject constructor(
                             _uiState.update {
                                 it.copy(
                                     profile = profile,
-                                    isJoined = group.isMember
+                                    isJoined = group.isMember,
+                                    avatarUri = group.avatars.firstOrNull()?.uri
                                 )
                             }
                             updateUiContent()
@@ -187,7 +192,12 @@ class ChatViewModel @Inject constructor(
                                 dateOfBirth = user.dateOfBirth,
                                 lastSeen = user.lastSeen
                             )
-                            _uiState.update { it.copy(profile = profile) }
+                            _uiState.update {
+                                it.copy(
+                                    profile = profile,
+                                    avatarUri = user.avatars.firstOrNull()?.uri
+                                )
+                            }
                             updateUiContent()
                         }
                     } else {
@@ -201,7 +211,12 @@ class ChatViewModel @Inject constructor(
                                 dateOfBirth = user.dateOfBirth,
                                 lastSeen = user.lastSeen
                             )
-                            _uiState.update { it.copy(profile = profile) }
+                            _uiState.update {
+                                it.copy(
+                                    profile = profile,
+                                    avatarUri = user.avatars.firstOrNull()?.uri
+                                )
+                            }
                             updateUiContent()
                         }
                     }
@@ -572,14 +587,16 @@ class ChatViewModel @Inject constructor(
     fun hideDeleteChatDialog() =
         _uiState.update { it.copy(showDeleteChatDialog = false, deleteForRecipient = false) }
     
-    fun showClearHistoryDialog() = _uiState.update { it.copy(showClearHistoryDialog = true, deleteForRecipient = false) }
+    fun showClearHistoryDialog() =
+        _uiState.update { it.copy(showClearHistoryDialog = true, deleteForRecipient = false) }
     
-    fun hideClearHistoryDialog() = _uiState.update { it.copy(showClearHistoryDialog = false, deleteForRecipient = false) }
+    fun hideClearHistoryDialog() =
+        _uiState.update { it.copy(showClearHistoryDialog = false, deleteForRecipient = false) }
     
     fun showDeleteMessageDialog() {
         _uiState.update { it.copy(showDeleteMessageDialog = true, deleteForRecipient = false) }
     }
-
+    
     fun hideDeleteMessageDialog() {
         _uiState.update { it.copy(showDeleteMessageDialog = false, deleteForRecipient = false) }
     }

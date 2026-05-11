@@ -57,7 +57,7 @@ class ProfileViewModel @Inject constructor(
     private var isInit = false
     
     fun init(profileId: Long) {
-        if(isInit) return
+        if (isInit) return
         isInit = true
         
         setupUserObserver()
@@ -177,12 +177,30 @@ class ProfileViewModel @Inject constructor(
                             removedUser = channel.removedUser,
                             channelType = channel.channelType,
                             username = channel.username,
-                            isSubscribed = channel.isSubscribed
+                            isSubscribed = channel.isSubscribed,
+                            avatars = channel.avatars.map { it.uri }
                         )
                         _uiState.update {
                             it.copy(profile = profile)
                         }
                         recalculateActions()
+                        
+                        channel.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
+                            .forEach { avatar ->
+                                viewModelScope.launch {
+                                    channelRepository.getAvatarDownloadUrl(avatar.fileId)
+                                        .onSuccess { downloadUrl ->
+                                            downloadManager.download(
+                                                url = downloadUrl,
+                                                fileId = avatar.fileId,
+                                                fileName = avatar.fileId
+                                            )
+                                        }
+                                        .onFailure {
+                                            downloadingAvatars.remove(avatar.fileId)
+                                        }
+                                }
+                            }
                     }
                 }
             }
@@ -198,12 +216,30 @@ class ProfileViewModel @Inject constructor(
                                 bio = group.bio,
                                 username = group.username,
                                 members = group.members,
-                                isMember = group.isMember
+                                isMember = group.isMember,
+                                avatars = group.avatars.map { it.uri }
                             )
                             _uiState.update {
                                 it.copy(profile = profile)
                             }
                             recalculateActions()
+                            
+                            group.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
+                                .forEach { avatar ->
+                                    viewModelScope.launch {
+                                        groupRepository.getAvatarDownloadUrl(avatar.fileId)
+                                            .onSuccess { downloadUrl ->
+                                                downloadManager.download(
+                                                    url = downloadUrl,
+                                                    fileId = avatar.fileId,
+                                                    fileName = avatar.fileId
+                                                )
+                                            }
+                                            .onFailure {
+                                                downloadingAvatars.remove(avatar.fileId)
+                                            }
+                                    }
+                                }
                         }
                     }
                 }
