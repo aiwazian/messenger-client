@@ -423,9 +423,14 @@ private fun Dialogs(
     uiState: ChatUiState, chatViewModel: ChatViewModel
 ) {
     if (uiState.showDeleteChatDialog) {
+        val isPrivateChat =
+            ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.chatId != uiState.currentUserId
         DeleteChatDialog(
             onDismissRequest = chatViewModel::hideDeleteChatDialog,
-            onConfirm = chatViewModel::onDeleteChatConfirmed
+            onConfirm = chatViewModel::onDeleteChatConfirmed,
+            deleteForRecipient = uiState.deleteForRecipient,
+            onDeleteForRecipientChanged = chatViewModel::setDeleteForRecipient,
+            isPrivateChat = isPrivateChat
         )
     }
     
@@ -555,12 +560,36 @@ private fun TopBar(
 }
 
 @Composable
-private fun DeleteChatDialog(onDismissRequest: () -> Unit, onConfirm: () -> Unit) {
+private fun DeleteChatDialog(
+    onDismissRequest: () -> Unit,
+    onConfirm: () -> Unit,
+    deleteForRecipient: Boolean,
+    onDeleteForRecipientChanged: (Boolean) -> Unit,
+    isPrivateChat: Boolean
+) {
     CustomDialog(
         title = stringResource(R.string.delete_chat),
         onDismissRequest = onDismissRequest,
         content = {
-            Text(text = "Удалить чат без возможности восстановления?", lineHeight = 16.sp)
+            Column {
+                Text(text = "Удалить чат без возможности восстановления?", lineHeight = 16.sp)
+                if (isPrivateChat) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { onDeleteForRecipientChanged(!deleteForRecipient) }
+                    ) {
+                        Checkbox(
+                            checked = deleteForRecipient,
+                            onCheckedChange = onDeleteForRecipientChanged
+                        )
+                        Text(
+                            text = stringResource(R.string.delete_for_recipient),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
         },
         buttons = {
             TextButton(onClick = onDismissRequest) {

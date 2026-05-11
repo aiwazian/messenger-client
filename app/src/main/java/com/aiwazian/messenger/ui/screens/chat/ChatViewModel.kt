@@ -8,6 +8,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.outlined.CleaningServices
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.MoreVert
@@ -312,9 +313,15 @@ class ChatViewModel @Inject constructor(
                     TopBarAction(
                         icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
                             DropdownMenuAction(
-                                Icons.Rounded.DeleteOutline,
+                                Icons.Outlined.CleaningServices,
                                 R.string.clear_history,
                                 ::showClearHistoryDialog
+                            ),
+                            DropdownMenuAction(
+                                Icons.Rounded.DeleteOutline,
+                                R.string.delete_chat,
+                                ::showDeleteChatDialog,
+                                isDestructive = true
                             )
                         )
                     )
@@ -335,9 +342,21 @@ class ChatViewModel @Inject constructor(
                         TopBarAction(
                             icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
                                 DropdownMenuAction(
-                                    Icons.Rounded.DeleteOutline,
+                                    Icons.Outlined.CleaningServices,
                                     R.string.clear_history,
                                     ::showClearHistoryDialog
+                                )
+                            )
+                        )
+                    )
+                } else if (state.isJoined) {
+                    listOf(
+                        TopBarAction(
+                            icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
+                                DropdownMenuAction(
+                                    Icons.AutoMirrored.Rounded.Logout,
+                                    R.string.leave_channel,
+                                    ::showLeaveDialog
                                 )
                             )
                         )
@@ -361,7 +380,7 @@ class ChatViewModel @Inject constructor(
                         TopBarAction(
                             icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
                                 DropdownMenuAction(
-                                    Icons.Rounded.DeleteOutline,
+                                    Icons.Outlined.CleaningServices,
                                     R.string.clear_history,
                                     ::showClearHistoryDialog
                                 )
@@ -547,9 +566,11 @@ class ChatViewModel @Inject constructor(
         }
     }
     
-    fun showDeleteChatDialog() = _uiState.update { it.copy(showDeleteChatDialog = true) }
+    fun showDeleteChatDialog() =
+        _uiState.update { it.copy(showDeleteChatDialog = true, deleteForRecipient = false) }
     
-    fun hideDeleteChatDialog() = _uiState.update { it.copy(showDeleteChatDialog = false) }
+    fun hideDeleteChatDialog() =
+        _uiState.update { it.copy(showDeleteChatDialog = false, deleteForRecipient = false) }
     
     fun showClearHistoryDialog() = _uiState.update { it.copy(showClearHistoryDialog = true, deleteForRecipient = false) }
     
@@ -577,7 +598,8 @@ class ChatViewModel @Inject constructor(
     
     fun onDeleteChatConfirmed() {
         viewModelScope.launch {
-            if (chatRepository.deleteChat(_uiState.value.chatId)) {
+            val deleteForRecipient = _uiState.value.deleteForRecipient
+            if (chatRepository.deleteChat(_uiState.value.chatId, deleteForRecipient)) {
                 hideDeleteChatDialog()
                 _uiEffect.emit(ChatUiEffect.NavigateToMain)
             }

@@ -21,6 +21,7 @@ import com.aiwazian.messenger.network.api.ChatApi
 import com.aiwazian.messenger.network.api.MessageApi
 import com.aiwazian.messenger.network.dto.AttachmentInputDto
 import com.aiwazian.messenger.network.dto.ClearHistoryRequestDto
+import com.aiwazian.messenger.network.dto.DeleteChatRequestDto
 import com.aiwazian.messenger.network.dto.DeleteMessageRequestDto
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
@@ -441,9 +442,9 @@ class ChatRepository @Inject constructor(
         clearLocalHistory(chatId)
     }
     
-    suspend fun deleteChat(chatId: Long): Boolean {
+    suspend fun deleteChat(chatId: Long, deleteForRecipient: Boolean = false): Boolean {
         return try {
-            val response = chatApi.deleteChat(chatId)
+            val response = chatApi.deleteChat(chatId, DeleteChatRequestDto(deleteForRecipient))
             chatDao.deleteChat(chatId)
             clearLocalHistory(chatId)
             response.isSuccessful
