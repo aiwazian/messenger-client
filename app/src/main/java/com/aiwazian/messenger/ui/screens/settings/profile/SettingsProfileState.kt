@@ -4,11 +4,8 @@
 
 package com.aiwazian.messenger.ui.screens.settings.profile
 
+import android.net.Uri
 import com.aiwazian.messenger.domain.User
-
-sealed interface SettingsProfileSideEffect {
-    data object NavigateBack : SettingsProfileSideEffect
-}
 
 data class SettingsProfileUiState(
     val user: User = User(
@@ -21,5 +18,6 @@ data class SettingsProfileUiState(
         lastSeen = null,
         avatars = emptyList()
     ),
-    val showDatePicker: Boolean = false
+    val showDatePicker: Boolean = false,
+    val pendingAvatarUri: Uri? = null
 )

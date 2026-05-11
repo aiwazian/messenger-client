@@ -9,11 +9,14 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
+import com.aiwazian.messenger.extensions.isNetworkError
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.DownloaderManager
+import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.UploadManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -47,23 +50,32 @@ class SettingsProfileViewModel @Inject constructor(
             userRepository.getMe().collectLatest { user ->
                 _uiState.update { it.copy(user = user) }
                 
-                user.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }.forEach { avatar ->
-                    viewModelScope.launch {
-                        userRepository.getAvatarDownloadUrl(avatar.fileId)
-                            .onSuccess { downloadUrl ->
-                                downloadManager.download(
-                                    url = downloadUrl,
-                                    fileId = avatar.fileId,
-                                    fileName = avatar.fileId
-                                )
-                            }.onFailure {
-                                downloadingAvatars.remove(avatar.fileId)
-                                Log.e("SettingsProfileViewModel", "Error download avatar: ", it)
-                            }
+                user.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
+                    .forEach { avatar ->
+                        viewModelScope.launch {
+                            userRepository.getAvatarDownloadUrl(avatar.fileId)
+                                .onSuccess { downloadUrl ->
+                                    downloadManager.download(
+                                        url = downloadUrl,
+                                        fileId = avatar.fileId,
+                                        fileName = avatar.fileId
+                                    )
+                                }.onFailure {
+                                    downloadingAvatars.remove(avatar.fileId)
+                                    Log.e("SettingsProfileViewModel", "Error download avatar: ", it)
+                                }
+                        }
                     }
-                }
             }
         }
+    }
+    
+    fun setPendingAvatarUri(uri: Uri?) {
+        _uiState.update { it.copy(pendingAvatarUri = uri) }
+    }
+    
+    fun clearPendingAvatarUri() {
+        _uiState.update { it.copy(pendingAvatarUri = null) }
     }
     
     fun onChangeFirstName(newName: String) {
@@ -125,12 +137,30 @@ class SettingsProfileViewModel @Inject constructor(
                     userRepository.confirmUploadAvatar(uploadInfo.fileId).onSuccess {
                         userRepository.addAvatarLocal(uploadInfo.fileId)
                     }.onFailure {
+                        val error = if (it.isNetworkError()) {
+                            UiText.StringResource(R.string.failed_to_connect)
+                        } else {
+                            UiText.StringResource(R.string.unexpected_error)
+                        }
+                        _sideEffect.emit(SettingsProfileSideEffect.ShowSnackbar(error))
                         Log.e("SettingsProfileViewModel", "error confirm", it)
                     }
                 }.onFailure {
+                    val error = if (it.isNetworkError()) {
+                        UiText.StringResource(R.string.failed_to_connect)
+                    } else {
+                        UiText.StringResource(R.string.unexpected_error)
+                    }
+                    _sideEffect.emit(SettingsProfileSideEffect.ShowSnackbar(error))
                     Log.e("SettingsProfileViewModel", "error upload", it)
                 }
             }.onFailure {
+                val error = if (it.isNetworkError()) {
+                    UiText.StringResource(R.string.failed_to_connect)
+                } else {
+                    UiText.StringResource(R.string.unexpected_error)
+                }
+                _sideEffect.emit(SettingsProfileSideEffect.ShowSnackbar(error))
                 Log.e("SettingsProfileViewModel", "error initUploadAvatar", it)
             }
         }
