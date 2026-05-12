@@ -184,7 +184,7 @@ class ChannelRepository @Inject constructor(
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
-                Result.failure(Exception("Leave failed"))
+                Result.failure(Exception("Leave failed ${response.errorBody()}"))
             }
         } catch (e: Exception) {
             Log.e("ChannelRepository", "Error leaving channel", e)

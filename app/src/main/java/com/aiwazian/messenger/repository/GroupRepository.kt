@@ -242,10 +242,9 @@ class GroupRepository @Inject constructor(
         return try {
             val response = groupApi.leaveGroup(id)
             if (response.isSuccessful) {
-                refreshGroup(id)
                 Result.success(Unit)
             } else {
-                Result.failure(Exception("Leave failed"))
+                Result.failure(Exception("Leave failed ${response.errorBody()}"))
             }
         } catch (e: Exception) {
             Log.e("GroupRepository", "Ошибка при выходе из группы", e)

@@ -21,13 +21,13 @@ import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.usecase.LeaveChatUseCase
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.ShortcutManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -43,11 +43,12 @@ class ProfileViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val shortcutManager: ShortcutManager,
     private val clipboardService: ClipboardService,
-    private val downloadManager: DownloaderManager
+    private val downloadManager: DownloaderManager,
+    private val leaveChatUseCase: LeaveChatUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ProfileUiState())
-    val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
+    val uiState = _uiState.asStateFlow()
     
     private val _uiEffect = MutableSharedFlow<ProfileUiEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
@@ -469,16 +470,7 @@ class ProfileViewModel @Inject constructor(
     fun onLeaveConfirmed() {
         viewModelScope.launch {
             val profile = _uiState.value.profile ?: return@launch
-            val chatId = profile.id
-            val chatType = ChatType.fromId(chatId)
-            
-            val success = when (chatType) {
-                ChatType.CHANNEL -> channelRepository.leave(chatId).isSuccess
-                ChatType.GROUP -> groupRepository.leave(chatId).isSuccess
-                else -> false
-            }
-            
-            if (success) {
+            leaveChatUseCase(profile.id).onSuccess {
                 hideLeaveDialog()
                 _uiEffect.emit(ProfileUiEffect.NavigateToMain)
             }

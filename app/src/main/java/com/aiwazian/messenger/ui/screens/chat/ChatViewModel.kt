@@ -37,6 +37,7 @@ import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.profile.Profile
 import com.aiwazian.messenger.usecase.JoinChannelUseCase
 import com.aiwazian.messenger.usecase.JoinGroupUseCase
+import com.aiwazian.messenger.usecase.LeaveChatUseCase
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.usecase.SendMessageWithFilesUseCase
 import com.aiwazian.messenger.utils.ClipboardService
@@ -76,7 +77,8 @@ class ChatViewModel @Inject constructor(
     private val sendMessageUseCase: SendMessageUseCase,
     private val sendMessageWithFilesUseCase: SendMessageWithFilesUseCase,
     private val joinChannelUseCase: JoinChannelUseCase,
-    private val joinGroupUseCase: JoinGroupUseCase
+    private val joinGroupUseCase: JoinGroupUseCase,
+    private val leaveChatUseCase: LeaveChatUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -568,13 +570,7 @@ class ChatViewModel @Inject constructor(
     
     fun onLeaveClicked() {
         viewModelScope.launch {
-            val chatId = _uiState.value.chatId
-            val success = when (_uiState.value.profile) {
-                is Profile.Channel -> channelRepository.leave(chatId).isSuccess
-                is Profile.Group -> groupRepository.leave(chatId).isSuccess
-                else -> false
-            }
-            if (success) {
+            leaveChatUseCase(_uiState.value.chatId).onSuccess {
                 hideLeaveDialog()
                 _uiEffect.emit(ChatUiEffect.NavigateToMain)
             }
