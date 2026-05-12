@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.aiwazian.messenger.extensions.sharedElement
 
@@ -27,16 +28,25 @@ import com.aiwazian.messenger.extensions.sharedElement
 @Composable
 fun ProfileImageCarousel(
     id: Long,
-    avatars: List<Uri?>,
-    modifier: Modifier = Modifier
+    avatars: List<Uri?>
 ) {
-    val state = rememberCarouselState { avatars.size }
-    val width = LocalWindowInfo.current.containerDpSize
+    val carouselState = rememberCarouselState { avatars.size }
+    val containerWidth = LocalWindowInfo.current.containerDpSize.width
+    
+    val width = if (containerWidth < 400.dp) {
+        containerWidth
+    } else {
+        300.dp
+    }
+    
     HorizontalUncontainedCarousel(
-        state = state,
-        itemWidth = width.width,
-        modifier = modifier,
-        flingBehavior = CarouselDefaults.singleAdvanceFlingBehavior(state)
+        state = carouselState,
+        itemWidth = width,
+        flingBehavior = if (containerWidth < 400.dp) {
+            CarouselDefaults.singleAdvanceFlingBehavior(carouselState)
+        } else {
+            CarouselDefaults.multiBrowseFlingBehavior(carouselState)
+        }
     ) { index ->
         Box(
             modifier = Modifier

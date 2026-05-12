@@ -208,7 +208,11 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    suspend fun getMessages(chatId: Long, limit: Int? = null, offset: Int? = null): List<Message> {
+    suspend fun getMessages(
+        chatId: Long,
+        limit: Int? = null,
+        offset: Int? = null
+    ): Result<List<Message>> {
         return try {
             val response = messageApi.getMessages(chatId, limit, offset)
             if (response.isSuccessful) {
@@ -217,17 +221,17 @@ class ChatRepository @Inject constructor(
                     messageDto.toDomain()
                 }
                 saveMessagesToDb(messages)
-                messages
+                Result.success(messages)
             } else {
                 Log.e(
                     "ChatRepository",
                     "Failed to get messages for chat $chatId: ${response.message()}"
                 )
-                emptyList()
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
             }
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error getting messages for chat $chatId", e)
-            emptyList()
+            Result.failure(e)
         }
     }
     

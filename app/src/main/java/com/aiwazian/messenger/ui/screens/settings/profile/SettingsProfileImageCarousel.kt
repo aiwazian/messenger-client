@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.AddAPhoto
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,6 +40,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.carousel.CarouselDefaults
 import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
@@ -81,88 +83,95 @@ fun SettingsProfileImageCarousel(
             .fillMaxWidth()
             .padding(vertical = 10.dp),
         itemSpacing = 8.dp,
+        maxItemWidth = 300.dp,
+        flingBehavior = CarouselDefaults.multiBrowseFlingBehavior(carouselState),
         contentPadding = PaddingValues(horizontal = 10.dp)
     ) { i ->
         if (i < avatars.size) {
             val avatar = avatars[i]
-            Box {
+            Box(contentAlignment = Alignment.Center) {
                 var expanded by remember { mutableStateOf(false) }
-                val isCentered = carouselState.currentItem == i
                 
                 LaunchedEffect(carouselState.isScrollInProgress) {
                     expanded = false
                 }
                 
-                AsyncImage(
-                    modifier = Modifier
-                        .aspectRatio(1f)
-                        .fillMaxWidth()
-                        .maskClip(MaterialTheme.shapes.large),
-                    model = avatar.uri,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop
-                )
-                
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = isCentered,
-                    enter = fadeIn() + scaleIn(),
-                    exit = fadeOut() + scaleOut(),
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                ) {
-                    AnimatedContent(
-                        targetState = expanded,
-                        transitionSpec = { fadeIn() + scaleIn() togetherWith fadeOut() + scaleOut() },
-                        modifier = Modifier.align(Alignment.BottomCenter),
+                if (avatar.uri == null) {
+                    Box(
+                        modifier = Modifier
+                            .aspectRatio(1f)
+                            .fillMaxWidth()
+                            .maskClip(MaterialTheme.shapes.large)
+                            .background(MaterialTheme.colorScheme.surfaceContainer),
                         contentAlignment = Alignment.Center
-                    ) { expand ->
-                        if (expand) {
+                    ) {
+                        CircularWavyProgressIndicator()
+                    }
+                } else {
+                    AsyncImage(
+                        modifier = Modifier
+                            .aspectRatio(1f)
+                            .fillMaxWidth()
+                            .maskClip(MaterialTheme.shapes.large),
+                        model = avatar.uri,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop
+                    )
+                }
+                
+                AnimatedContent(
+                    targetState = expanded,
+                    transitionSpec = { fadeIn() + scaleIn() togetherWith fadeOut() + scaleOut() },
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    contentAlignment = Alignment.Center
+                ) { expand ->
+                    if (expand) {
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .padding(bottom = 4.dp)
+                                .clip(MaterialTheme.shapes.extraLarge)
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                        ) {
                             Column(
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .padding(bottom = 4.dp)
-                                    .clip(MaterialTheme.shapes.extraLarge)
-                                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                                modifier = Modifier.padding(
+                                    start = 10.dp,
+                                    top = 10.dp,
+                                    end = 10.dp,
+                                    bottom = 6.dp
+                                ), horizontalAlignment = Alignment.End
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(
-                                        start = 10.dp,
-                                        top = 10.dp,
-                                        end = 10.dp,
-                                        bottom = 6.dp
-                                    ), horizontalAlignment = Alignment.End
-                                ) {
-                                    Text(
-                                        text = "Удалить это фото?",
-                                        modifier = Modifier.padding(6.dp)
-                                    )
-                                    Row {
-                                        TextButton(onClick = { expanded = false }) {
-                                            Text(stringResource(R.string.no))
-                                        }
-                                        TextButton(
-                                            onClick = {
-                                                onDeletePhoto(avatar.fileId)
-                                                expanded = false
-                                            }, colors = ButtonDefaults.textButtonColors(
-                                                contentColor = MaterialTheme.colorScheme.error
-                                            )
-                                        ) {
-                                            Text(stringResource(R.string.yes))
-                                        }
+                                Text(
+                                    text = "Удалить это фото?",
+                                    modifier = Modifier.padding(6.dp)
+                                )
+                                Row {
+                                    TextButton(onClick = { expanded = false }) {
+                                        Text(stringResource(R.string.no))
+                                    }
+                                    TextButton(
+                                        onClick = {
+                                            onDeletePhoto(avatar.fileId)
+                                            expanded = false
+                                        }, colors = ButtonDefaults.textButtonColors(
+                                            contentColor = MaterialTheme.colorScheme.error
+                                        )
+                                    ) {
+                                        Text(stringResource(R.string.yes))
                                     }
                                 }
                             }
-                        } else {
-                            IconButton(
-                                onClick = { expanded = true },
-                                modifier = Modifier.align(Alignment.Center),
-                                colors = IconButtonDefaults.iconButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error,
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                )
-                            ) {
-                                Icon(Icons.Rounded.DeleteOutline, null)
-                            }
+                        }
+                    } else {
+                        IconButton(
+                            onClick = { expanded = true },
+                            modifier = Modifier.align(Alignment.Center),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error,
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer
+                            )
+                        ) {
+                            Icon(Icons.Rounded.DeleteOutline, null)
                         }
                     }
                 }

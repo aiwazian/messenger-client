@@ -32,14 +32,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -48,7 +46,6 @@ import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
-import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -121,34 +118,40 @@ fun ProfileScreen(
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
+            Box {
+                ProfileImageCarousel(avatars = uiState.avatars, id = uiState.id)
+                
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(TopAppBarDefaults.LargeAppBarCollapsedHeight + innerPadding.calculateTopPadding())
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Black.copy(alpha = 0.5f), Color.Transparent
+                                )
+                            )
+                        )
+                )
+            }
+            
             when (val profile = uiState.profile) {
-                is Profile.User -> {
-                    UserProfile(
-                        user = profile,
-                        actions = uiState.actions,
-                        innerPadding.calculateTopPadding()
-                    )
-                }
+                is Profile.User -> UserProfile(user = profile)
                 
-                is Profile.Channel -> {
-                    ChannelProfile(
-                        channel = profile,
-                        actions = uiState.actions,
-                        innerPadding.calculateTopPadding()
-                    )
-                }
+                is Profile.Channel -> ChannelProfile(channel = profile)
                 
-                is Profile.Group -> {
-                    GroupProfile(
-                        group = profile,
-                        actions = uiState.actions,
-                        innerPadding.calculateTopPadding()
-                    )
-                }
+                is Profile.Group -> GroupProfile(group = profile)
                 
                 else -> {}
             }
         }
+        
+        TopBar(
+            chatId = uiState.id,
+            title = uiState.title.asString(),
+            subTitle = uiState.subTitle.asString(),
+            actions = uiState.actions
+        )
     }
     
     if (showLeaveDialog && leaveDialogData != null) {
@@ -164,34 +167,8 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun GroupProfile(
-    group: Profile.Group, actions: List<TopBarAction>, innerPadding: Dp
-) {
-    Box {
-        ProfileImageCarousel(avatars = group.avatars, id = group.id)
-        
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(TopAppBarDefaults.LargeAppBarCollapsedHeight + innerPadding)
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Black.copy(alpha = 0.5f), Color.Transparent
-                        )
-                    )
-                )
-        )
-        
-        TopBar(
-            chatId = group.id,
-            title = group.name,
-            subTitle = pluralStringResource(R.plurals.members_count, group.members, group.members),
-            actions = actions
-        )
-    }
-    
-    Column(modifier = Modifier.padding(innerPadding)) {
+private fun GroupProfile(group: Profile.Group) {
+    Column {
         SectionContainer {
             if (!group.bio.isNullOrBlank()) {
                 SectionItem(
@@ -210,32 +187,7 @@ private fun GroupProfile(
 }
 
 @Composable
-private fun ChannelProfile(
-    channel: Profile.Channel, actions: List<TopBarAction>, innerPadding: Dp
-) {
-    Box {
-        ProfileImageCarousel(avatars = channel.avatars, id = channel.id)
-        
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(TopAppBarDefaults.LargeAppBarCollapsedHeight + innerPadding)
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Black.copy(alpha = 0.5f), Color.Transparent
-                        )
-                    )
-                )
-        )
-        
-        TopBar(
-            chatId = channel.id, title = channel.name, subTitle = pluralStringResource(
-                R.plurals.subscribers_count, channel.subscribers, channel.subscribers
-            ), actions = actions
-        )
-    }
-    
+private fun ChannelProfile(channel: Profile.Channel) {
     Column {
         SectionContainer {
             if (!channel.bio.isNullOrBlank()) {
@@ -257,33 +209,7 @@ private fun ChannelProfile(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun UserProfile(
-    user: Profile.User, actions: List<TopBarAction>, innerPadding: Dp
-) {
-    Box {
-        ProfileImageCarousel(avatars = user.avatars, id = user.id)
-        
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(TopAppBarDefaults.LargeAppBarCollapsedHeight + innerPadding)
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Black.copy(alpha = 0.5f), Color.Transparent
-                        )
-                    )
-                )
-        )
-        
-        TopBar(
-            chatId = user.id,
-            title = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-            subTitle = user.lastSeen?.toInstance()?.toPrettyTime() ?: "в сети недавно",
-            actions = actions
-        )
-    }
-    
+private fun UserProfile(user: Profile.User) {
     Column(modifier = Modifier.padding(top = 10.dp)) {
         SectionContainer {
             if (!user.bio.isNullOrBlank()) {
@@ -311,7 +237,11 @@ private fun UserProfile(
 
 @Composable
 private fun TopBar(
-    chatId: Long, title: String, subTitle: String, actions: List<TopBarAction>
+    chatId: Long,
+    title: String,
+    subTitle: String,
+    actions: List<TopBarAction>,
+    modifier: Modifier = Modifier
 ) {
     val navBackStack = LocalNavBackStack.current
     
@@ -344,7 +274,7 @@ private fun TopBar(
             navigationIconContentColor = Color.White,
             actionIconContentColor = Color.White,
             titleContentColor = Color.White,
-        )
+        ), modifier = modifier
     )
 }
 

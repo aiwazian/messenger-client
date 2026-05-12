@@ -34,7 +34,6 @@ import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
-import com.aiwazian.messenger.ui.screens.profile.Profile
 import com.aiwazian.messenger.usecase.JoinChannelUseCase
 import com.aiwazian.messenger.usecase.JoinGroupUseCase
 import com.aiwazian.messenger.usecase.LeaveChatUseCase
@@ -53,13 +52,13 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
 import javax.inject.Inject
-import kotlin.math.abs
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -110,9 +109,8 @@ class ChatViewModel @Inject constructor(
     
     private fun setupUserObserver() {
         viewModelScope.launch {
-            userRepository.getMe().collectLatest { user ->
-                _uiState.update { it.copy(currentUserId = user.id) }
-                updateUiContent()
+            userRepository.getMe().firstOrNull()?.let { user ->
+                _uiState.update { it.copy(myId = user.id) }
             }
         }
         viewModelScope.launch {
@@ -127,31 +125,52 @@ class ChatViewModel @Inject constructor(
     }
     
     private fun loadChatData() {
-        _uiState.update { it.copy(isLoading = true, profile = null) }
+        _uiState.update { it.copy(isLoading = true) }
         
         when (ChatType.fromId(_uiState.value.chatId)) {
             ChatType.CHANNEL -> {
                 viewModelScope.launch {
                     channelRepository.getById(_uiState.value.chatId).collectLatest { channel ->
-                        val profile = Profile.Channel(
-                            id = channel.id,
-                            ownerId = channel.ownerId,
-                            name = channel.name,
-                            bio = channel.bio,
-                            subscribers = channel.subscribers,
-                            removedUser = channel.removedUser,
-                            channelType = channel.channelType,
-                            username = channel.username,
-                            isSubscribed = channel.isSubscribed
-                        )
                         _uiState.update {
                             it.copy(
-                                profile = profile,
+                                chatName = UiText.DynamicString(channel.name),
+                                subTitle = UiText.PluralResource(
+                                    R.plurals.subscribers_count,
+                                    channel.subscribers,
+                                    channel.subscribers
+                                ),
                                 isJoined = channel.isSubscribed,
-                                avatarUri = channel.avatars.firstOrNull()?.uri
+                                isOwner = channel.ownerId == _uiState.value.myId,
+                                avatarUri = channel.avatars.firstOrNull()?.uri,
+                                topBarActions = if (channel.ownerId == _uiState.value.myId) {
+                                    listOf(
+                                        TopBarAction(
+                                            icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
+                                                DropdownMenuAction(
+                                                    Icons.Outlined.CleaningServices,
+                                                    R.string.clear_history,
+                                                    ::showClearHistoryDialog
+                                                )
+                                            )
+                                        )
+                                    )
+                                } else if (channel.isSubscribed) {
+                                    listOf(
+                                        TopBarAction(
+                                            icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
+                                                DropdownMenuAction(
+                                                    Icons.AutoMirrored.Rounded.Logout,
+                                                    R.string.leave_channel,
+                                                    ::showLeaveDialog
+                                                )
+                                            )
+                                        )
+                                    )
+                                } else {
+                                    emptyList()
+                                }
                             )
                         }
-                        updateUiContent()
                     }
                 }
             }
@@ -160,22 +179,46 @@ class ChatViewModel @Inject constructor(
                 viewModelScope.launch {
                     groupRepository.getById(_uiState.value.chatId).collectLatest { group ->
                         group.let {
-                            val profile = Profile.Group(
-                                id = group.id,
-                                ownerId = group.ownerId,
-                                name = group.name,
-                                bio = group.bio,
-                                members = group.members,
-                                isMember = group.isMember
-                            )
                             _uiState.update {
                                 it.copy(
-                                    profile = profile,
+                                    chatName = UiText.DynamicString(group.name),
+                                    subTitle = UiText.PluralResource(
+                                        R.plurals.members_count,
+                                        group.members,
+                                        group.members
+                                    ),
                                     isJoined = group.isMember,
-                                    avatarUri = group.avatars.firstOrNull()?.uri
+                                    isOwner = group.ownerId == _uiState.value.myId,
+                                    avatarUri = group.avatars.firstOrNull()?.uri,
+                                    topBarActions = if (group.ownerId == _uiState.value.myId) {
+                                        listOf(
+                                            TopBarAction(
+                                                icon = Icons.Rounded.MoreVert,
+                                                dropdownActions = listOf(
+                                                    DropdownMenuAction(
+                                                        Icons.Outlined.CleaningServices,
+                                                        R.string.clear_history,
+                                                        ::showClearHistoryDialog
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    } else {
+                                        listOf(
+                                            TopBarAction(
+                                                icon = Icons.Rounded.MoreVert,
+                                                dropdownActions = listOf(
+                                                    DropdownMenuAction(
+                                                        Icons.AutoMirrored.Rounded.Logout,
+                                                        R.string.leave_group,
+                                                        ::showLeaveDialog
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    }
                                 )
                             }
-                            updateUiContent()
                         }
                     }
                 }
@@ -183,43 +226,59 @@ class ChatViewModel @Inject constructor(
             
             ChatType.PRIVATE -> {
                 viewModelScope.launch {
-                    if (_uiState.value.chatId == _uiState.value.currentUserId) {
+                    if (_uiState.value.chatId == _uiState.value.myId) {
                         userRepository.getMe().collectLatest { user ->
-                            val profile = Profile.User(
-                                id = user.id,
-                                firstName = user.firstName,
-                                lastName = user.lastName,
-                                username = user.username,
-                                bio = user.bio,
-                                dateOfBirth = user.dateOfBirth,
-                                lastSeen = user.lastSeen
-                            )
                             _uiState.update {
                                 it.copy(
-                                    profile = profile,
-                                    avatarUri = user.avatars.firstOrNull()?.uri
+                                    chatName = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
+                                    subTitle = UiText.DynamicString("в сети недавно"),
+                                    avatarUri = user.avatars.firstOrNull()?.uri,
+                                    topBarActions = listOf(
+                                        TopBarAction(
+                                            icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
+                                                DropdownMenuAction(
+                                                    Icons.Outlined.CleaningServices,
+                                                    R.string.clear_history,
+                                                    ::showClearHistoryDialog
+                                                ),
+                                                DropdownMenuAction(
+                                                    Icons.Rounded.DeleteOutline,
+                                                    R.string.delete_chat,
+                                                    ::showDeleteChatDialog,
+                                                    isDestructive = true
+                                                )
+                                            )
+                                        )
+                                    )
                                 )
                             }
-                            updateUiContent()
                         }
                     } else {
                         userRepository.getById(_uiState.value.chatId).collectLatest { user ->
-                            val profile = Profile.User(
-                                id = user.id,
-                                firstName = user.firstName,
-                                lastName = user.lastName,
-                                username = user.username,
-                                bio = user.bio,
-                                dateOfBirth = user.dateOfBirth,
-                                lastSeen = user.lastSeen
-                            )
                             _uiState.update {
                                 it.copy(
-                                    profile = profile,
-                                    avatarUri = user.avatars.firstOrNull()?.uri
+                                    chatName = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
+                                    subTitle = UiText.DynamicString("в сети недавно"),
+                                    avatarUri = user.avatars.firstOrNull()?.uri,
+                                    topBarActions = listOf(
+                                        TopBarAction(
+                                            icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
+                                                DropdownMenuAction(
+                                                    Icons.Outlined.CleaningServices,
+                                                    R.string.clear_history,
+                                                    ::showClearHistoryDialog
+                                                ),
+                                                DropdownMenuAction(
+                                                    Icons.Rounded.DeleteOutline,
+                                                    R.string.delete_chat,
+                                                    ::showDeleteChatDialog,
+                                                    isDestructive = true
+                                                )
+                                            )
+                                        )
+                                    )
                                 )
                             }
-                            updateUiContent()
                         }
                     }
                 }
@@ -246,21 +305,17 @@ class ChatViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
-            try {
-                val freshMessages = chatRepository.getMessages(
-                    chatId = _uiState.value.chatId, limit = 50, offset = 0
-                )
+            chatRepository.getMessages(
+                chatId = _uiState.value.chatId, limit = 50, offset = 0
+            ).onSuccess { freshMessages ->
                 if (freshMessages.size < 50) {
                     _uiState.update { it.copy(hasMoreMessages = false) }
                 }
-            } catch (e: Exception) {
-                Log.e(
-                    "ChatVM", "Error fetching fresh messages", e
-                )
-            } finally {
+                _uiState.update { it.copy(isLoading = false) }
+            }.onFailure {
+                Log.e("ChatVM", "Error fetching fresh messages", it)
                 _uiState.update { it.copy(isLoading = false) }
             }
-            updateUiContent()
         }
     }
     
@@ -271,171 +326,28 @@ class ChatViewModel @Inject constructor(
         _uiState.update { it.copy(isLoadingMore = true) }
         
         viewModelScope.launch {
-            try {
-                val offset = limitFlow.value
-                val moreMessages = chatRepository.getMessages(
-                    _uiState.value.chatId, limit = 50, offset = offset
-                )
-                
+            val offset = limitFlow.value
+            chatRepository.getMessages(
+                _uiState.value.chatId, limit = 50, offset = offset
+            ).onSuccess { moreMessages ->
                 if (moreMessages.isEmpty()) {
-                    _uiState.update {
-                        it.copy(
-                            isLoadingMore = false, hasMoreMessages = false
-                        )
-                    }
+                    _uiState.update { it.copy(isLoadingMore = false, hasMoreMessages = false) }
                 } else {
                     if (moreMessages.size < 50) {
                         _uiState.update { it.copy(hasMoreMessages = false) }
                     }
                     limitFlow.value += moreMessages.size
                 }
-            } catch (e: Exception) {
-                Log.e("ChatVM", "Error loading more messages", e)
+                _uiState.update { it.copy(isLoadingMore = false) }
+            }.onFailure {
+                Log.e("ChatVM", "Error loading more messages", it)
                 _uiState.update { it.copy(isLoadingMore = false) }
             }
         }
     }
     
-    private fun updateUiContent() {
-        val state = _uiState.value
-        val profile = state.profile
-        val myId = state.currentUserId
-        var chatName: UiText
-        var subTitle: UiText
-        var actions = listOf<TopBarAction>()
-        
-        when (profile) {
-            is Profile.User -> {
-                chatName = if (profile.id == myId) {
-                    UiText.StringResource(R.string.saved_messages)
-                } else {
-                    UiText.DynamicString("${profile.firstName} ${profile.lastName.orEmpty()}".trim())
-                }
-                
-                subTitle = if (profile.id != myId) {
-                    if (profile.lastSeen != null) {
-                        val isOnline = abs(System.currentTimeMillis() - profile.lastSeen) <= 10_000
-                        if (isOnline) {
-                            UiText.DynamicString("в сети")
-                        } else {
-                            UiText.DynamicString(
-                                "был(а) в " + profile.lastSeen.toInstance().toPrettyTime()
-                            )
-                        }
-                    } else UiText.DynamicString("")
-                } else UiText.DynamicString("")
-                
-                
-                actions = listOf(
-                    TopBarAction(
-                        icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
-                            DropdownMenuAction(
-                                Icons.Outlined.CleaningServices,
-                                R.string.clear_history,
-                                ::showClearHistoryDialog
-                            ),
-                            DropdownMenuAction(
-                                Icons.Rounded.DeleteOutline,
-                                R.string.delete_chat,
-                                ::showDeleteChatDialog,
-                                isDestructive = true
-                            )
-                        )
-                    )
-                )
-            }
-            
-            is Profile.Channel -> {
-                chatName = UiText.DynamicString(profile.name)
-                
-                subTitle = UiText.PluralResource(
-                    R.plurals.subscribers_count,
-                    profile.subscribers,
-                    profile.subscribers
-                )
-                
-                actions = if (profile.ownerId == myId) {
-                    listOf(
-                        TopBarAction(
-                            icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
-                                DropdownMenuAction(
-                                    Icons.Outlined.CleaningServices,
-                                    R.string.clear_history,
-                                    ::showClearHistoryDialog
-                                )
-                            )
-                        )
-                    )
-                } else if (state.isJoined) {
-                    listOf(
-                        TopBarAction(
-                            icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
-                                DropdownMenuAction(
-                                    Icons.AutoMirrored.Rounded.Logout,
-                                    R.string.leave_channel,
-                                    ::showLeaveDialog
-                                )
-                            )
-                        )
-                    )
-                } else {
-                    emptyList()
-                }
-            }
-            
-            is Profile.Group -> {
-                chatName = UiText.DynamicString(profile.name)
-                
-                subTitle = UiText.PluralResource(
-                    R.plurals.members_count,
-                    profile.members,
-                    profile.members
-                )
-                
-                if (profile.ownerId == myId) {
-                    actions = listOf(
-                        TopBarAction(
-                            icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
-                                DropdownMenuAction(
-                                    Icons.Outlined.CleaningServices,
-                                    R.string.clear_history,
-                                    ::showClearHistoryDialog
-                                )
-                            )
-                        )
-                    )
-                } else {
-                    actions = listOf(
-                        TopBarAction(
-                            icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
-                                DropdownMenuAction(
-                                    Icons.AutoMirrored.Rounded.Logout,
-                                    R.string.leave_group,
-                                    ::showLeaveDialog
-                                )
-                            )
-                        )
-                    )
-                }
-            }
-            
-            else -> {
-                chatName = state.chatName
-                subTitle = UiText.DynamicString("")
-            }
-        }
-        
-        _uiState.update {
-            it.copy(
-                chatName = chatName,
-                subTitle = subTitle,
-                topBarActions = actions,
-            )
-        }
-    }
-    
     private fun updateChatItems(messages: List<Message>) {
-        val myId = _uiState.value.currentUserId
+        val myId = _uiState.value.myId
         val chatItems = mutableListOf<ChatItem>()
         var lastDate: java.time.LocalDate? = null
         var lastSenderId: Long? = null
@@ -488,8 +400,7 @@ class ChatViewModel @Inject constructor(
             
             val canDelete = when (chatType) {
                 ChatType.PRIVATE -> true
-                ChatType.CHANNEL -> _uiState.value.profile is Profile.Channel && (_uiState.value.profile as Profile.Channel).ownerId == myId
-                ChatType.GROUP -> _uiState.value.profile is Profile.Group && ((_uiState.value.profile as Profile.Group).ownerId == myId || isMine)
+                ChatType.CHANNEL, ChatType.GROUP -> _uiState.value.isOwner
                 else -> false
             }
             
@@ -550,14 +461,14 @@ class ChatViewModel @Inject constructor(
     fun onJoinClicked() {
         viewModelScope.launch {
             val chatId = _uiState.value.chatId
-            when (_uiState.value.profile) {
-                is Profile.Channel -> {
+            when (ChatType.fromId(chatId)) {
+                ChatType.CHANNEL -> {
                     joinChannelUseCase(chatId).onSuccess {
                         _uiState.update { it.copy(isJoined = true) }
                     }
                 }
                 
-                is Profile.Group -> {
+                ChatType.GROUP -> {
                     joinGroupUseCase(chatId).onSuccess {
                         _uiState.update { it.copy(isJoined = true) }
                     }
@@ -717,7 +628,7 @@ class ChatViewModel @Inject constructor(
     }
     
     fun markAsReadMessage(message: Message) {
-        if (message.senderId == _uiState.value.currentUserId || message.isRead) return
+        if (message.senderId == _uiState.value.myId || message.isRead) return
         viewModelScope.launch {
             if (chatRepository.makeAsRead(_uiState.value.chatId, message.id)) {
                 readMessage(message.id)

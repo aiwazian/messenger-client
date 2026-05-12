@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.profile
 
+import android.content.Context
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
@@ -26,18 +27,21 @@ import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.ShortcutManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
+    @param:ApplicationContext
+    private val context: Context,
     private val userRepository: UserRepository,
     private val channelRepository: ChannelRepository,
     private val groupRepository: GroupRepository,
@@ -60,14 +64,15 @@ class ProfileViewModel @Inject constructor(
     fun init(profileId: Long) {
         if (isInit) return
         isInit = true
+        _uiState.update { it.copy(id = profileId) }
         
         setupUserObserver()
-        loadProfile(profileId)
+        loadProfile()
     }
     
     private fun setupUserObserver() {
         viewModelScope.launch {
-            userRepository.getMe().collectLatest { user ->
+            userRepository.getMe().firstOrNull()?.let { user ->
                 _uiState.update { it.copy(myId = user.id) }
                 recalculateActions()
             }
@@ -76,7 +81,7 @@ class ProfileViewModel @Inject constructor(
     
     private fun createChatShortcut(chatName: String) {
         shortcutManager.createChatShortcut(
-            chatId = _uiState.value.profile!!.id,
+            chatId = _uiState.value.id,
             chatName
         )
     }
@@ -85,23 +90,23 @@ class ProfileViewModel @Inject constructor(
         clipboardService.copy(text)
     }
     
-    private fun loadProfile(profileId: Long) {
+    private fun loadProfile() {
+        val profileId = _uiState.value.id
         when (ChatType.fromId(profileId)) {
             ChatType.PRIVATE -> {
                 viewModelScope.launch {
-                    if (profileId == userRepository.getMe().first().id) {
+                    if (profileId == _uiState.value.myId) {
                         userRepository.getMe().collectLatest { user ->
                             val profile = Profile.User(
-                                id = user.id,
-                                firstName = user.firstName,
-                                lastName = user.lastName,
                                 username = user.username,
                                 bio = user.bio,
                                 dateOfBirth = user.dateOfBirth,
-                                avatars = user.avatars.map { it.uri }
                             )
                             _uiState.update {
-                                it.copy(profile = profile)
+                                it.copy(
+                                    profile = profile,
+                                    avatars = user.avatars.map { avatar -> avatar.uri }
+                                )
                             }
                             recalculateActions()
                             user.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
@@ -128,16 +133,15 @@ class ProfileViewModel @Inject constructor(
                     } else {
                         userRepository.getById(profileId).collectLatest { user ->
                             val profile = Profile.User(
-                                id = user.id,
-                                firstName = user.firstName,
-                                lastName = user.lastName,
                                 username = user.username,
                                 bio = user.bio,
                                 dateOfBirth = user.dateOfBirth,
-                                avatars = user.avatars.mapNotNull { it.uri }
                             )
                             _uiState.update {
-                                it.copy(profile = profile)
+                                it.copy(
+                                    profile = profile,
+                                    avatars = user.avatars.map { avatar -> avatar.uri }
+                                )
                             }
                             recalculateActions()
                             
@@ -170,19 +174,17 @@ class ProfileViewModel @Inject constructor(
                 viewModelScope.launch {
                     channelRepository.getById(profileId).collectLatest { channel ->
                         val profile = Profile.Channel(
-                            id = channel.id,
                             ownerId = channel.ownerId,
-                            name = channel.name,
                             bio = channel.bio,
                             subscribers = channel.subscribers,
-                            removedUser = channel.removedUser,
-                            channelType = channel.channelType,
                             username = channel.username,
                             isSubscribed = channel.isSubscribed,
-                            avatars = channel.avatars.map { it.uri }
                         )
                         _uiState.update {
-                            it.copy(profile = profile)
+                            it.copy(
+                                profile = profile,
+                                avatars = channel.avatars.map { avatar -> avatar.uri }
+                            )
                         }
                         recalculateActions()
                         
@@ -211,17 +213,17 @@ class ProfileViewModel @Inject constructor(
                     groupRepository.getById(profileId).collectLatest { group ->
                         group.let {
                             val profile = Profile.Group(
-                                id = group.id,
                                 ownerId = group.ownerId,
-                                name = group.name,
                                 bio = group.bio,
                                 username = group.username,
                                 members = group.members,
                                 isMember = group.isMember,
-                                avatars = group.avatars.map { it.uri }
                             )
                             _uiState.update {
-                                it.copy(profile = profile)
+                                it.copy(
+                                    profile = profile,
+                                    avatars = group.avatars.map { avatar -> avatar.uri }
+                                )
                             }
                             recalculateActions()
                             
@@ -251,33 +253,20 @@ class ProfileViewModel @Inject constructor(
     }
     
     private fun recalculateActions() {
-        val profile = _uiState.value.profile ?: return
-        val myId = _uiState.value.myId
-        
-        val newActions = when (profile) {
-            is Profile.User -> calculateUserActions(
-                profile,
-                myId
-            )
+        val newActions = when (val profile = _uiState.value.profile) {
+            is Profile.User -> calculateUserActions()
             
-            is Profile.Channel -> calculateChannelActions(
-                profile,
-                myId
-            )
+            is Profile.Channel -> calculateChannelActions(profile)
             
-            is Profile.Group -> calculateGroupActions(
-                profile,
-                myId
-            )
+            is Profile.Group -> calculateGroupActions(profile)
+            
+            else -> emptyList()
         }
         
         _uiState.update { it.copy(actions = newActions) }
     }
     
-    private fun calculateUserActions(
-        user: Profile.User,
-        myId: Long
-    ): List<TopBarAction> {
+    private fun calculateUserActions(): List<TopBarAction> {
         val dropdownActions = mutableListOf<DropdownMenuAction>()
         
         dropdownActions.add(
@@ -285,13 +274,12 @@ class ProfileViewModel @Inject constructor(
                 icon = Icons.Rounded.AddHome,
                 textResId = R.string.add_to_home_screen,
                 onClick = {
-                    val chatName = "${user.firstName} ${user.lastName.orEmpty()}"
-                    createChatShortcut(chatName)
+                    createChatShortcut(_uiState.value.title.asString(context))
                 }
             )
         )
         
-        return if (myId == user.id) {
+        return if (_uiState.value.myId == _uiState.value.id) {
             listOf(
                 TopBarAction(
                     icon = Icons.Filled.Edit,
@@ -312,10 +300,7 @@ class ProfileViewModel @Inject constructor(
         }
     }
     
-    private fun calculateChannelActions(
-        channel: Profile.Channel,
-        myId: Long
-    ): List<TopBarAction> {
+    private fun calculateChannelActions(channel: Profile.Channel): List<TopBarAction> {
         val dropdownActions = mutableListOf<DropdownMenuAction>()
         
         dropdownActions.add(
@@ -323,31 +308,26 @@ class ProfileViewModel @Inject constructor(
                 icon = Icons.Rounded.AddHome,
                 textResId = R.string.add_to_home_screen,
                 onClick = {
-                    createChatShortcut(channel.name)
+                    createChatShortcut(_uiState.value.title.asString(context))
                 }
             )
         )
         
-        if (channel.isSubscribed && channel.ownerId != myId) {
+        if (channel.isSubscribed && channel.ownerId != _uiState.value.myId) {
             dropdownActions.add(
                 createDropdownAction(
                     icon = Icons.AutoMirrored.Rounded.Logout,
                     textResId = R.string.leave_channel,
-                    onClick = {
-                        showLeaveDialog(
-                            channel.name,
-                            ChatType.CHANNEL
-                        )
-                    }
+                    onClick = ::showLeaveDialog
                 )
             )
         }
         
-        return if (channel.ownerId == myId) {
+        return if (channel.ownerId == _uiState.value.myId) {
             listOf(
                 TopBarAction(
                     icon = Icons.Filled.Edit,
-                    onClick = { navigateToChannelSettings(channel.id) }
+                    onClick = { navigateToChannelSettings(_uiState.value.id) }
                 ),
                 TopBarAction(
                     icon = Icons.Rounded.MoreVert,
@@ -364,10 +344,7 @@ class ProfileViewModel @Inject constructor(
         }
     }
     
-    private fun calculateGroupActions(
-        group: Profile.Group,
-        myId: Long
-    ): List<TopBarAction> {
+    private fun calculateGroupActions(group: Profile.Group): List<TopBarAction> {
         val dropdownActions = mutableListOf<DropdownMenuAction>()
         
         dropdownActions.add(
@@ -375,31 +352,26 @@ class ProfileViewModel @Inject constructor(
                 icon = Icons.Rounded.AddHome,
                 textResId = R.string.add_to_home_screen,
                 onClick = {
-                    createChatShortcut(group.name)
+                    createChatShortcut(_uiState.value.title.asString(context))
                 }
             )
         )
         
-        if (group.ownerId != myId) {
+        if (group.ownerId != _uiState.value.myId) {
             dropdownActions.add(
                 createDropdownAction(
                     icon = Icons.AutoMirrored.Rounded.Logout,
                     textResId = R.string.leave_group,
-                    onClick = {
-                        showLeaveDialog(
-                            group.name,
-                            ChatType.GROUP
-                        )
-                    }
+                    onClick = ::showLeaveDialog
                 )
             )
         }
         
-        return if (group.ownerId == myId) {
+        return if (group.ownerId == _uiState.value.myId) {
             listOf(
                 TopBarAction(
                     icon = Icons.Filled.Edit,
-                    onClick = { navigateToGroupSettings(group.id) }
+                    onClick = { navigateToGroupSettings(_uiState.value.id) }
                 ),
                 TopBarAction(
                     icon = Icons.Rounded.MoreVert,
@@ -447,15 +419,12 @@ class ProfileViewModel @Inject constructor(
         }
     }
     
-    fun showLeaveDialog(
-        profileName: String,
-        chatType: ChatType
-    ) {
+    fun showLeaveDialog() {
         viewModelScope.launch {
             _uiEffect.emit(
                 ProfileUiEffect.ShowLeaveDialog(
-                    profileName,
-                    chatType
+                    _uiState.value.title.asString(context),
+                    ChatType.fromId(_uiState.value.id)
                 )
             )
         }
@@ -469,8 +438,7 @@ class ProfileViewModel @Inject constructor(
     
     fun onLeaveConfirmed() {
         viewModelScope.launch {
-            val profile = _uiState.value.profile ?: return@launch
-            leaveChatUseCase(profile.id).onSuccess {
+            leaveChatUseCase(_uiState.value.id).onSuccess {
                 hideLeaveDialog()
                 _uiEffect.emit(ProfileUiEffect.NavigateToMain)
             }

@@ -110,7 +110,6 @@ import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
-import com.aiwazian.messenger.ui.screens.profile.Profile
 import com.aiwazian.messenger.utils.DialogController
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -357,9 +356,9 @@ private fun BottomSection(
             .navigationBarsPadding()
             .imePadding()
     ) {
-        when (uiState.profile) {
-            is Profile.Channel -> {
-                if (uiState.profile.ownerId == uiState.currentUserId) {
+        when (ChatType.fromId(uiState.chatId)) {
+            ChatType.CHANNEL -> {
+                if (uiState.isOwner) {
                     InputMessage(
                         value = uiState.messageText,
                         onValueChange = onTextChanged,
@@ -371,8 +370,8 @@ private fun BottomSection(
                 }
             }
             
-            is Profile.Group -> {
-                if (uiState.profile.ownerId == uiState.currentUserId) {
+            ChatType.GROUP -> {
+                if (uiState.isOwner) {
                     InputMessage(
                         value = uiState.messageText,
                         onValueChange = onTextChanged,
@@ -391,7 +390,7 @@ private fun BottomSection(
                 }
             }
             
-            is Profile.User -> {
+            ChatType.PRIVATE -> {
                 InputMessage(
                     value = uiState.messageText,
                     onValueChange = onTextChanged,
@@ -425,7 +424,7 @@ private fun Dialogs(
 ) {
     if (uiState.showDeleteChatDialog) {
         val isPrivateChat =
-            ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.chatId != uiState.currentUserId
+            ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.chatId != uiState.myId
         DeleteChatDialog(
             onDismissRequest = chatViewModel::hideDeleteChatDialog,
             onConfirm = chatViewModel::onDeleteChatConfirmed,
@@ -437,7 +436,7 @@ private fun Dialogs(
     
     if (uiState.showClearHistoryDialog) {
         val isPrivateChat =
-            ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.chatId != uiState.currentUserId
+            ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.chatId != uiState.myId
         ClearHistoryDialog(
             onDismissRequest = chatViewModel::hideClearHistoryDialog,
             onConfirm = chatViewModel::onDeleteMessagesConfirmed,
@@ -450,7 +449,7 @@ private fun Dialogs(
     
     if (uiState.showDeleteMessageDialog) {
         val isPrivateChat =
-            ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.chatId != uiState.currentUserId
+            ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.chatId != uiState.myId
         DeleteMessageDialog(
             onDismissRequest = chatViewModel::hideDeleteMessageDialog,
             onConfirm = chatViewModel::onDeleteMessageConfirmed,
