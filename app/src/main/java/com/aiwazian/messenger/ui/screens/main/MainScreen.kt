@@ -198,9 +198,7 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
         drawerState = drawerState,
         drawerContent = {
             DrawerContent(
-                drawerState = drawerState,
-                user = uiState.me,
-                theme = uiState.theme
+                drawerState = drawerState, user = uiState.me, theme = uiState.theme
             )
         },
     ) {
@@ -291,40 +289,32 @@ private fun Content(
         mainViewModel.clearSelection()
     }
     
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            DefaultTopBar(
-                drawerState = drawerState,
-                isLockApp = uiState.hasPasscode,
-                onLockClick = {
-                    scope.launch {
-                        mainViewModel.lockApp()
-                    }
-                },
-                socketState = socketState
+    Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
+        DefaultTopBar(
+            drawerState = drawerState, passcodeEnabled = uiState.hasPasscode, onLockClick = {
+                scope.launch {
+                    mainViewModel.lockApp()
+                }
+            }, socketState = socketState
+        )
+        AnimatedVisibility(
+            visible = hasSelection, enter = fadeIn(), exit = fadeOut()
+        ) {
+            SelectionTopBar(
+                selectedCount = uiState.selectedChatIds.size,
+                onClearSelection = mainViewModel::clearSelection,
+                onPinClick = mainViewModel::pinSelectedChats,
+                onUnpinClick = mainViewModel::unpinSelectedChats,
+                hasUnpinnedChats = mainViewModel.hasUnpinnedSelectedChats()
             )
-            AnimatedVisibility(
-                visible = hasSelection,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                SelectionTopBar(
-                    selectedCount = uiState.selectedChatIds.size,
-                    onClearSelection = mainViewModel::clearSelection,
-                    onPinClick = mainViewModel::pinSelectedChats,
-                    onUnpinClick = mainViewModel::unpinSelectedChats,
-                    hasUnpinnedChats = mainViewModel.hasUnpinnedSelectedChats()
-                )
-            }
-        },
-        floatingActionButton = {
-            if (!hasSelection) {
-                FloatingButton(onClick = {
-                    navBackStack.add(AppRoute.NewMessage)
-                })
-            }
-        }) { innerPadding ->
+        }
+    }, floatingActionButton = {
+        if (!hasSelection) {
+            FloatingButton(onClick = {
+                navBackStack.add(AppRoute.NewMessage)
+            })
+        }
+    }) { innerPadding ->
         Column(
             modifier = Modifier.padding(innerPadding),
         ) {
@@ -335,22 +325,17 @@ private fun Content(
                     items(uiState.chats) { chat ->
                         val chatName = chat.chatName.asString()
                         val isSelected = chat.id in uiState.selectedChatIds
-                        ChatCard(
-                            chat = chat,
-                            isSelected = isSelected,
-                            onClickChat = {
-                                if (hasSelection) {
-                                    mainViewModel.toggleChatSelection(chat.id)
-                                } else {
-                                    navBackStack.add(
-                                        AppRoute.Chat(chat.id, chatName)
-                                    )
-                                }
-                            },
-                            onLongClickChat = {
+                        ChatCard(chat = chat, isSelected = isSelected, onClickChat = {
+                            if (hasSelection) {
                                 mainViewModel.toggleChatSelection(chat.id)
+                            } else {
+                                navBackStack.add(
+                                    AppRoute.Chat(chat.id, chatName)
+                                )
                             }
-                        )
+                        }, onLongClickChat = {
+                            mainViewModel.toggleChatSelection(chat.id)
+                        })
                     }
                 }
             }
@@ -379,8 +364,7 @@ private fun SelectionTopBar(
             }
         },
         navigationIcon = NavigationIcon(
-            icon = Icons.Rounded.Close,
-            onClick = onClearSelection
+            icon = Icons.Rounded.Close, onClick = onClearSelection
         ),
         actions = listOf(
             TopBarAction(
@@ -394,8 +378,7 @@ private fun SelectionTopBar(
                             } else {
                                 onUnpinClick()
                             }
-                        }
-                    )
+                        })
                 )
             )
         )
@@ -449,7 +432,7 @@ private fun FloatingButton(onClick: () -> Unit) {
 @Composable
 private fun DefaultTopBar(
     drawerState: DrawerState,
-    isLockApp: Boolean,
+    passcodeEnabled: Boolean,
     onLockClick: () -> Unit,
     socketState: ConnectionState,
     searchViewModel: SearchViewModel = hiltViewModel()
@@ -506,6 +489,9 @@ private fun DefaultTopBar(
                     } else {
                         IconButton(onClick = {
                             scope.launch {
+                                textFieldState.edit {
+                                    replace(0, length, "")
+                                }
                                 searchBarState.animateToCollapsed()
                             }
                         }) {
@@ -516,34 +502,30 @@ private fun DefaultTopBar(
                     }
                 }
             },
-            trailingIcon = if (isLockApp) {
-                {
-                    AnimatedContent(searchBarState.currentValue) {
-                        if (it == SearchBarValue.Collapsed) {
-                            IconButton(onClick = onLockClick) {
-                                Icon(
-                                    imageVector = Icons.Rounded.LockOpen,
-                                    contentDescription = "Lock"
-                                )
+            trailingIcon = {
+                AnimatedContent(searchBarState.currentValue) {
+                    if (it == SearchBarValue.Collapsed && passcodeEnabled) {
+                        IconButton(onClick = onLockClick) {
+                            Icon(
+                                imageVector = Icons.Rounded.LockOpen,
+                                contentDescription = "Lock"
+                            )
+                        }
+                    } else if (textFieldState.text.isNotEmpty()) {
+                        IconButton(onClick = {
+                            scope.launch { searchBarState.animateToCollapsed() }
+                            textFieldState.edit {
+                                replace(0, length, "")
                             }
-                        } else {
-                            IconButton(onClick = {
-                                scope.launch { searchBarState.animateToCollapsed() }
-                                textFieldState.edit {
-                                    replace(
-                                        0, length, ""
-                                    )
-                                }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Close,
-                                    contentDescription = "Close search"
-                                )
-                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "Close search"
+                            )
                         }
                     }
                 }
-            } else null)
+            })
     }
     
     AppBarWithSearch(
@@ -576,9 +558,7 @@ private fun DefaultTopBar(
 
 @Composable
 private fun DrawerContent(
-    drawerState: DrawerState,
-    user: User,
-    theme: ThemeOption
+    drawerState: DrawerState, user: User, theme: ThemeOption
 ) {
     val navBackStack = LocalNavBackStack.current
     val scope = rememberCoroutineScope()
@@ -623,8 +603,7 @@ private fun DrawerContent(
                 }
                 navBackStack.add(
                     AppRoute.Chat(
-                        user.id,
-                        "${user.firstName} ${user.lastName.orEmpty()}".trim()
+                        user.id, "${user.firstName} ${user.lastName.orEmpty()}".trim()
                     )
                 )
             }
@@ -651,25 +630,23 @@ private fun DrawerContent(
             }
         val adRequest = AdRequest.Builder("R-M-15520718-1").setPreferredTheme(adTheme).build()
         
-        val bannerState = rememberBannerAdState(
-            adSize = BannerSize.Inline(width = 300.dp, maxHeight = 300.dp),
-            events = BannerEvents(
-                onAdFailedToLoad = { error ->
+        val bannerState =
+            rememberBannerAdState(
+                adSize = BannerSize.Inline(width = 300.dp, maxHeight = 300.dp),
+                events = BannerEvents(onAdFailedToLoad = { error ->
                     Log.e("YandexAds", error.description)
                     scope.launch {
                         delay(1_000)
                         loadTrigger++
                     }
-                },
-                onImpression = { data ->
+                }, onImpression = { data ->
                     Log.d("YandexAds", "Показ: ${data?.rawData}")
                     scope.launch {
                         delay(30_000)
                         loadTrigger++
                     }
-                }
+                })
             )
-        )
         
         LaunchedEffect(loadTrigger) {
             bannerState.loadAd(adRequest)

@@ -64,19 +64,35 @@ class ChatRepository @Inject constructor(
         if (chatEntities.isEmpty()) return@flatMapLatest flowOf(emptyList())
         
         val flows = chatEntities.map { chatEntity ->
-            messageDao.getLastMessageForChatFlow(myId, chatEntity.chatId)
-                .map { messageWithAttachments ->
-                    val info = resolveChatInfo(chatEntity, myId) ?: return@map null
-                    val name = info.first
-                    val avatarUri = info.second
-                    
-                    val lastMessage = messageWithAttachments?.let {
-                        val attachments = it.attachments.map { att -> att.toDomain() }
-                        it.message.toDomain(attachments)
+            if (ChatType.fromId(chatEntity.chatId) == ChatType.PRIVATE) {
+                messageDao.getChatLastMessageFlow(myId, chatEntity.chatId)
+                    .map { messageWithAttachments ->
+                        val info = resolveChatInfo(chatEntity, myId) ?: return@map null
+                        val name = info.first
+                        val avatarUri = info.second
+                        
+                        val lastMessage = messageWithAttachments?.let {
+                            val attachments = it.attachments.map { att -> att.toDomain() }
+                            it.message.toDomain(attachments)
+                        }
+                        
+                        chatEntity.toDomain(name, avatarUri, lastMessage)
                     }
-                    
-                    chatEntity.toDomain(name, avatarUri, lastMessage)
-                }
+            } else {
+                messageDao.getChatLastMessageFlow(chatEntity.chatId)
+                    .map { messageWithAttachments ->
+                        val info = resolveChatInfo(chatEntity, myId) ?: return@map null
+                        val name = info.first
+                        val avatarUri = info.second
+                        
+                        val lastMessage = messageWithAttachments?.let {
+                            val attachments = it.attachments.map { att -> att.toDomain() }
+                            it.message.toDomain(attachments)
+                        }
+                        
+                        chatEntity.toDomain(name, avatarUri, lastMessage)
+                    }
+            }
         }
         
         combine(flows) { chatsArray ->
@@ -221,6 +237,26 @@ class ChatRepository @Inject constructor(
         }
     }
     
+    suspend fun fetchChatByIdFromServer(chatId: Long): Chat? {
+        return try {
+            val response = chatApi.getChatById(chatId)
+            if (response.isSuccessful) {
+                val dto = response.body()
+                if (dto != null) {
+                    val chatEntity = dto.toEntity()
+                    chatDao.upsertChats(listOf(chatEntity))
+                    dto.toDomain()
+                } else null
+            } else {
+                Log.e("ChatRepository", "Failed to fetch chat $chatId: ${response.message()}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error fetching chat $chatId", e)
+            null
+        }
+    }
+    
     suspend fun sendMessage(chatId: Long, message: String): Message? {
         val tempId = -System.currentTimeMillis()
         val senderId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
@@ -270,6 +306,13 @@ class ChatRepository @Inject constructor(
     }
     
     suspend fun saveLocalMessage(message: Message) {
+        val myId = userRepository.getMe().firstOrNull()?.id
+        val targetChatId = if (message.chatId == myId) message.senderId else message.chatId
+        
+        val existingChat = chatDao.getChatById(targetChatId)
+        if (existingChat == null) {
+            fetchChatByIdFromServer(targetChatId)
+        }
         saveMessagesToDb(listOf(message))
     }
     

@@ -34,6 +34,9 @@ interface ChatDao {
     @Query("SELECT * FROM chats WHERE chatId = :chatId")
     fun getChatByIdFlow(chatId: Long): Flow<ChatEntity?>
     
+    @Query("SELECT * FROM chats WHERE chatId = :chatId")
+    suspend fun getChatById(chatId: Long): ChatEntity?
+    
     @Query("DELETE FROM chats")
     suspend fun deleteAllChats()
 

@@ -47,12 +47,21 @@ interface MessageDao {
     @Transaction
     @Query(
         "SELECT * FROM message " +
-                "WHERE chatId = :chatId " +
-                "OR (senderId = :chatId AND chatId = :userId) " +
+                "WHERE (senderId = :userId AND chatId = :chatId) " +
+                "OR (chatId = :userId AND senderId = :chatId) " +
                 "ORDER BY sendTime DESC " +
                 "LIMIT 1"
     )
-    fun getLastMessageForChatFlow(userId: Long, chatId: Long): Flow<MessageWithAttachments?>
+    fun getChatLastMessageFlow(userId: Long, chatId: Long): Flow<MessageWithAttachments?>
+    
+    @Transaction
+    @Query(
+        "SELECT * FROM message " +
+                "WHERE chatId = :chatId " +
+                "ORDER BY sendTime DESC " +
+                "LIMIT 1"
+    )
+    fun getChatLastMessageFlow(chatId: Long): Flow<MessageWithAttachments?>
     
     @Query(
         "DELETE FROM message " +
