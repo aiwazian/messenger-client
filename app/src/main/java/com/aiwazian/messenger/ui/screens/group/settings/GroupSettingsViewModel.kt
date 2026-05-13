@@ -17,7 +17,7 @@ import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.isNetworkError
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.usecase.DeleteGroupUseCase
-import com.aiwazian.messenger.utils.DownloaderManager
+import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.UploadManager
 import com.aiwazian.messenger.utils.VibrationManager
@@ -40,7 +40,7 @@ class GroupSettingsViewModel @Inject constructor(
     private val deleteGroupUseCase: DeleteGroupUseCase,
     private val vibrationManager: VibrationManager,
     private val uploadManager: UploadManager,
-    private val downloadManager: DownloaderManager
+    private val downloadAvatarUseCase: DownloadAvatarUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(GroupSettingsUiState())
@@ -59,14 +59,7 @@ class GroupSettingsViewModel @Inject constructor(
                 group.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
                     .forEach { avatar ->
                         viewModelScope.launch {
-                            groupRepository.getAvatarDownloadUrl(avatar.fileId)
-                                .onSuccess { downloadUrl ->
-                                    downloadManager.download(
-                                        url = downloadUrl,
-                                        fileId = avatar.fileId,
-                                        fileName = avatar.fileId
-                                    )
-                                }
+                            downloadAvatarUseCase(groupId, avatar.fileId)
                                 .onFailure {
                                     downloadingAvatars.remove(avatar.fileId)
                                 }

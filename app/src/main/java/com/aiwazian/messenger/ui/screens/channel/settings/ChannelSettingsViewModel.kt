@@ -17,7 +17,7 @@ import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.isNetworkError
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.usecase.DeleteChannelUseCase
-import com.aiwazian.messenger.utils.DownloaderManager
+import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.UploadManager
 import com.aiwazian.messenger.utils.VibrationManager
@@ -40,7 +40,7 @@ class ChannelSettingsViewModel @Inject constructor(
     private val deleteChannelUseCase: DeleteChannelUseCase,
     private val vibrationManager: VibrationManager,
     private val uploadManager: UploadManager,
-    private val downloadManager: DownloaderManager
+    private val downloadAvatarUseCase: DownloadAvatarUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ChannelSettingsUiState())
@@ -59,14 +59,7 @@ class ChannelSettingsViewModel @Inject constructor(
                 channel.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
                     .forEach { avatar ->
                         viewModelScope.launch {
-                            channelRepository.getAvatarDownloadUrl(avatar.fileId)
-                                .onSuccess { downloadUrl ->
-                                    downloadManager.download(
-                                        url = downloadUrl,
-                                        fileId = avatar.fileId,
-                                        fileName = avatar.fileId
-                                    )
-                                }
+                            downloadAvatarUseCase(channelId, avatar.fileId)
                                 .onFailure {
                                     downloadingAvatars.remove(avatar.fileId)
                                 }

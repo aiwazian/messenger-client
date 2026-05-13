@@ -33,7 +33,7 @@ fun ProfileImageCarousel(
     val carouselState = rememberCarouselState { avatars.size }
     val containerWidth = LocalWindowInfo.current.containerDpSize.width
     
-    val width = if (containerWidth < 400.dp) {
+    val width = if (containerWidth < 500.dp) {
         containerWidth
     } else {
         300.dp
@@ -42,7 +42,7 @@ fun ProfileImageCarousel(
     HorizontalUncontainedCarousel(
         state = carouselState,
         itemWidth = width,
-        flingBehavior = if (containerWidth < 400.dp) {
+        flingBehavior = if (containerWidth < 500.dp) {
             CarouselDefaults.singleAdvanceFlingBehavior(carouselState)
         } else {
             CarouselDefaults.multiBrowseFlingBehavior(carouselState)

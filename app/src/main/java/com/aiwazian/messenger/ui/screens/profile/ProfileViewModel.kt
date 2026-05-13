@@ -22,10 +22,11 @@ import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
 import com.aiwazian.messenger.usecase.LeaveChatUseCase
 import com.aiwazian.messenger.utils.ClipboardService
-import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.ShortcutManager
+import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -47,7 +48,7 @@ class ProfileViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
     private val shortcutManager: ShortcutManager,
     private val clipboardService: ClipboardService,
-    private val downloadManager: DownloaderManager,
+    private val downloadAvatarUseCase: DownloadAvatarUseCase,
     private val leaveChatUseCase: LeaveChatUseCase
 ) : ViewModel() {
     
@@ -104,6 +105,7 @@ class ProfileViewModel @Inject constructor(
                             )
                             _uiState.update {
                                 it.copy(
+                                    title = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
                                     profile = profile,
                                     avatars = user.avatars.map { avatar -> avatar.uri }
                                 )
@@ -112,14 +114,8 @@ class ProfileViewModel @Inject constructor(
                             user.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
                                 .forEach { avatar ->
                                     viewModelScope.launch {
-                                        userRepository.getAvatarDownloadUrl(avatar.fileId)
-                                            .onSuccess { downloadUrl ->
-                                                downloadManager.download(
-                                                    url = downloadUrl,
-                                                    fileId = avatar.fileId,
-                                                    fileName = avatar.fileId
-                                                )
-                                            }.onFailure {
+                                        downloadAvatarUseCase(profileId, avatar.fileId)
+                                            .onFailure {
                                                 downloadingAvatars.remove(avatar.fileId)
                                                 Log.e(
                                                     "ProfileViewModel",
@@ -139,6 +135,7 @@ class ProfileViewModel @Inject constructor(
                             )
                             _uiState.update {
                                 it.copy(
+                                    title = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
                                     profile = profile,
                                     avatars = user.avatars.map { avatar -> avatar.uri }
                                 )
@@ -148,14 +145,8 @@ class ProfileViewModel @Inject constructor(
                             user.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
                                 .forEach { avatar ->
                                     viewModelScope.launch {
-                                        userRepository.getAvatarDownloadUrl(avatar.fileId)
-                                            .onSuccess { downloadUrl ->
-                                                downloadManager.download(
-                                                    url = downloadUrl,
-                                                    fileId = avatar.fileId,
-                                                    fileName = avatar.fileId
-                                                )
-                                            }.onFailure {
+                                        downloadAvatarUseCase(profileId, avatar.fileId)
+                                            .onFailure {
                                                 downloadingAvatars.remove(avatar.fileId)
                                                 Log.e(
                                                     "ProfileViewModel",
@@ -182,6 +173,7 @@ class ProfileViewModel @Inject constructor(
                         )
                         _uiState.update {
                             it.copy(
+                                title = UiText.DynamicString(channel.name),
                                 profile = profile,
                                 avatars = channel.avatars.map { avatar -> avatar.uri }
                             )
@@ -191,14 +183,7 @@ class ProfileViewModel @Inject constructor(
                         channel.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
                             .forEach { avatar ->
                                 viewModelScope.launch {
-                                    channelRepository.getAvatarDownloadUrl(avatar.fileId)
-                                        .onSuccess { downloadUrl ->
-                                            downloadManager.download(
-                                                url = downloadUrl,
-                                                fileId = avatar.fileId,
-                                                fileName = avatar.fileId
-                                            )
-                                        }
+                                    downloadAvatarUseCase(profileId, avatar.fileId)
                                         .onFailure {
                                             downloadingAvatars.remove(avatar.fileId)
                                         }
@@ -221,6 +206,7 @@ class ProfileViewModel @Inject constructor(
                             )
                             _uiState.update {
                                 it.copy(
+                                    title = UiText.DynamicString(group.name),
                                     profile = profile,
                                     avatars = group.avatars.map { avatar -> avatar.uri }
                                 )
@@ -230,14 +216,7 @@ class ProfileViewModel @Inject constructor(
                             group.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
                                 .forEach { avatar ->
                                     viewModelScope.launch {
-                                        groupRepository.getAvatarDownloadUrl(avatar.fileId)
-                                            .onSuccess { downloadUrl ->
-                                                downloadManager.download(
-                                                    url = downloadUrl,
-                                                    fileId = avatar.fileId,
-                                                    fileName = avatar.fileId
-                                                )
-                                            }
+                                        downloadAvatarUseCase(profileId, avatar.fileId)
                                             .onFailure {
                                                 downloadingAvatars.remove(avatar.fileId)
                                             }

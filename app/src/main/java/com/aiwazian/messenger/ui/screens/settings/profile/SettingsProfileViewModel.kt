@@ -15,7 +15,7 @@ import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.isNetworkError
 import com.aiwazian.messenger.repository.UserRepository
-import com.aiwazian.messenger.utils.DownloaderManager
+import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.UploadManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,7 +34,7 @@ class SettingsProfileViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val userRepository: UserRepository,
     private val uploadManager: UploadManager,
-    private val downloadManager: DownloaderManager
+    private val downloadAvatarUseCase: DownloadAvatarUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(SettingsProfileUiState())
@@ -53,14 +53,8 @@ class SettingsProfileViewModel @Inject constructor(
                 user.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
                     .forEach { avatar ->
                         viewModelScope.launch {
-                            userRepository.getAvatarDownloadUrl(avatar.fileId)
-                                .onSuccess { downloadUrl ->
-                                    downloadManager.download(
-                                        url = downloadUrl,
-                                        fileId = avatar.fileId,
-                                        fileName = avatar.fileId
-                                    )
-                                }.onFailure {
+                            downloadAvatarUseCase(user.id, avatar.fileId)
+                                .onFailure {
                                     downloadingAvatars.remove(avatar.fileId)
                                     Log.e("SettingsProfileViewModel", "Error download avatar: ", it)
                                 }
