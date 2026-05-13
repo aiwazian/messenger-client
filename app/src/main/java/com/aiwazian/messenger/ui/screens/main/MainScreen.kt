@@ -27,9 +27,11 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -71,6 +73,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBarValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
@@ -89,6 +92,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -289,39 +293,22 @@ private fun Content(
         mainViewModel.clearSelection()
     }
     
-    Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
-        DefaultTopBar(
-            drawerState = drawerState, passcodeEnabled = uiState.hasPasscode, onLockClick = {
-                scope.launch {
-                    mainViewModel.lockApp()
-                }
-            }, socketState = socketState
-        )
-        AnimatedVisibility(
-            visible = hasSelection, enter = fadeIn(), exit = fadeOut()
-        ) {
-            SelectionTopBar(
-                selectedCount = uiState.selectedChatIds.size,
-                onClearSelection = mainViewModel::clearSelection,
-                onPinClick = mainViewModel::pinSelectedChats,
-                onUnpinClick = mainViewModel::unpinSelectedChats,
-                hasUnpinnedChats = mainViewModel.hasUnpinnedSelectedChats()
-            )
-        }
-    }, floatingActionButton = {
+    Scaffold(modifier = Modifier.fillMaxSize(), floatingActionButton = {
         if (!hasSelection) {
             FloatingButton(onClick = {
                 navBackStack.add(AppRoute.NewMessage)
             })
         }
     }) { innerPadding ->
-        Column(
-            modifier = Modifier.padding(innerPadding),
-        ) {
+        Column {
             if (uiState.chats.isEmpty()) {
                 EmptyChatPlaceholder(text = "Чтобы начать общение нажмите на поле поиска сверху экрана и найдите пользователя по его @username")
             } else {
                 LazyColumn {
+                    item {
+                        Spacer(modifier = Modifier.height(TopAppBarDefaults.LargeAppBarCollapsedHeight + innerPadding.calculateTopPadding()))
+                    }
+                    
                     items(uiState.chats) { chat ->
                         val chatName = chat.chatName.asString()
                         val isSelected = chat.id in uiState.selectedChatIds
@@ -329,15 +316,34 @@ private fun Content(
                             if (hasSelection) {
                                 mainViewModel.toggleChatSelection(chat.id)
                             } else {
-                                navBackStack.add(
-                                    AppRoute.Chat(chat.id, chatName)
-                                )
+                                navBackStack.add(AppRoute.Chat(chat.id, chatName))
                             }
                         }, onLongClickChat = {
                             mainViewModel.toggleChatSelection(chat.id)
                         })
                     }
                 }
+            }
+        }
+        Box {
+            Spacer(modifier = Modifier.height(innerPadding.calculateTopPadding()))
+            DefaultTopBar(
+                drawerState = drawerState, passcodeEnabled = uiState.hasPasscode, onLockClick = {
+                    scope.launch {
+                        mainViewModel.lockApp()
+                    }
+                }, socketState = socketState
+            )
+            AnimatedVisibility(
+                visible = hasSelection, enter = fadeIn(), exit = fadeOut()
+            ) {
+                SelectionTopBar(
+                    selectedCount = uiState.selectedChatIds.size,
+                    onClearSelection = mainViewModel::clearSelection,
+                    onPinClick = mainViewModel::pinSelectedChats,
+                    onUnpinClick = mainViewModel::unpinSelectedChats,
+                    hasUnpinnedChats = mainViewModel.hasUnpinnedSelectedChats()
+                )
             }
         }
     }
@@ -362,11 +368,9 @@ private fun SelectionTopBar(
             }) { count ->
                 Text(text = "$count")
             }
-        },
-        navigationIcon = NavigationIcon(
+        }, navigationIcon = NavigationIcon(
             icon = Icons.Rounded.Close, onClick = onClearSelection
-        ),
-        actions = listOf(
+        ), actions = listOf(
             TopBarAction(
                 icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
                     DropdownMenuAction(
@@ -529,7 +533,9 @@ private fun DefaultTopBar(
     }
     
     AppBarWithSearch(
-        state = searchBarState, inputField = inputField
+        state = searchBarState,
+        inputField = inputField,
+        colors = SearchBarDefaults.appBarWithSearchColors(appBarContainerColor = Color.Transparent)
     )
     
     ExpandedFullScreenSearchBar(
@@ -562,6 +568,19 @@ private fun DrawerContent(
 ) {
     val navBackStack = LocalNavBackStack.current
     val scope = rememberCoroutineScope()
+    val screenHeight = LocalWindowInfo.current.containerDpSize.height
+    
+    val verticalPadding = if (screenHeight < 400.dp) {
+        20.dp
+    } else {
+        80.dp
+    }
+    
+    val maxAdHeight = if (screenHeight < 400.dp) {
+        100.dp
+    } else {
+        300.dp
+    }
     
     ModalDrawerSheet(
         drawerState = drawerState,
@@ -572,13 +591,13 @@ private fun DrawerContent(
     ) {
         Column(
             modifier = Modifier.padding(
-                top = 80.dp, bottom = 40.dp
+                vertical = verticalPadding
             )
         ) {
             Text(
                 text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
                 modifier = Modifier.padding(
-                    start = 20.dp, end = 20.dp, bottom = 40.dp
+                    start = 20.dp, end = 20.dp, bottom = verticalPadding
                 ),
                 fontSize = 24.sp,
                 maxLines = 1,
@@ -630,23 +649,22 @@ private fun DrawerContent(
             }
         val adRequest = AdRequest.Builder("R-M-15520718-1").setPreferredTheme(adTheme).build()
         
-        val bannerState =
-            rememberBannerAdState(
-                adSize = BannerSize.Inline(width = 300.dp, maxHeight = 300.dp),
-                events = BannerEvents(onAdFailedToLoad = { error ->
-                    Log.e("YandexAds", error.description)
-                    scope.launch {
-                        delay(1_000)
-                        loadTrigger++
-                    }
-                }, onImpression = { data ->
-                    Log.d("YandexAds", "Показ: ${data?.rawData}")
-                    scope.launch {
-                        delay(30_000)
-                        loadTrigger++
-                    }
-                })
-            )
+        val bannerState = rememberBannerAdState(
+            adSize = BannerSize.Inline(width = 300.dp, maxHeight = maxAdHeight),
+            events = BannerEvents(onAdFailedToLoad = { error ->
+                Log.e("YandexAds", error.description)
+                scope.launch {
+                    delay(1_000)
+                    loadTrigger++
+                }
+            }, onImpression = { data ->
+                Log.d("YandexAds", "Показ: ${data?.rawData}")
+                scope.launch {
+                    delay(30_000)
+                    loadTrigger++
+                }
+            })
+        )
         
         LaunchedEffect(loadTrigger) {
             bannerState.loadAd(adRequest)
