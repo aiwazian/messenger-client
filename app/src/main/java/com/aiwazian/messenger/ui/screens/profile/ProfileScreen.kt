@@ -118,7 +118,7 @@ fun ProfileScreen(
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-            Box {
+            Box(modifier = Modifier.padding(bottom = 10.dp)) {
                 ProfileImageCarousel(avatars = uiState.avatars, id = uiState.id)
                 
                 Box(
@@ -210,7 +210,7 @@ private fun ChannelProfile(channel: Profile.Channel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UserProfile(user: Profile.User) {
-    Column(modifier = Modifier.padding(top = 10.dp)) {
+    Column {
         SectionContainer {
             if (!user.bio.isNullOrBlank()) {
                 SectionItem(

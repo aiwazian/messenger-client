@@ -10,8 +10,13 @@ import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.utils.SessionManager
 import io.socket.client.IO
 import io.socket.client.Socket
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -33,6 +38,7 @@ class WebSocketClient @Inject constructor(
         private const val TAG = "WebSocketClient"
         private const val MAX_RECONNECT_DELAY_MS = 10000L
         private const val RECONNECTION_DELAY_MS = 1000L
+        private const val DELAY_UI_UPDATE_MS = 3000L
         
         private val defaultJson = Json {
             ignoreUnknownKeys = true
@@ -45,6 +51,9 @@ class WebSocketClient @Inject constructor(
     private var _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
     val connectionState = _connectionState.asStateFlow()
     
+    private val coroutineScope = CoroutineScope(Dispatchers.Main)
+    private var delayedUpdateJob: Job? = null
+    
     private val messageHandlers = mutableMapOf<String, MutableList<(JsonObject) -> Unit>>()
     
     private var socket: Socket? = null
@@ -55,6 +64,8 @@ class WebSocketClient @Inject constructor(
             _connectionState.value == ConnectionState.CONNECTING
         ) return
         
+        _connectionState.value = ConnectionState.CONNECTING
+        scheduleDelayedUiUpdate(ConnectionState.CONNECTING)
         establishConnection()
     }
     
@@ -100,8 +111,6 @@ class WebSocketClient @Inject constructor(
     }
     
     private fun establishConnection() {
-        _connectionState.value = ConnectionState.CONNECTING
-        
         val opts = IO.Options.builder()
             .setAuth(mapOf("token" to sessionManager.getToken()))
             .setTransports(arrayOf("websocket"))
@@ -134,16 +143,29 @@ class WebSocketClient @Inject constructor(
         Log.d(TAG, "Connected")
         socketId = socket?.id()
         _connectionState.value = ConnectionState.CONNECTED
+        delayedUpdateJob?.cancel()
     }
     
     private fun onConnectError(e: Exception?) {
         Log.e(TAG, "Connect error: ${e?.message}")
         _connectionState.value = ConnectionState.DISCONNECTED
+        scheduleDelayedUiUpdate(ConnectionState.DISCONNECTED)
     }
     
     private fun onDisconnect() {
         Log.d(TAG, "Disconnected")
         _connectionState.value = ConnectionState.DISCONNECTED
+        scheduleDelayedUiUpdate(ConnectionState.DISCONNECTED)
+    }
+    
+    private fun scheduleDelayedUiUpdate(state: ConnectionState) {
+        delayedUpdateJob?.cancel()
+        delayedUpdateJob = coroutineScope.launch {
+            delay(DELAY_UI_UPDATE_MS)
+            if (_connectionState.value != ConnectionState.CONNECTED) {
+                _connectionState.value = state
+            }
+        }
     }
     
     private fun handleIncomingEvent(eventName: String, jsonObject: JsonObject) {

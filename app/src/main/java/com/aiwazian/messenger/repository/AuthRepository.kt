@@ -152,7 +152,7 @@ class AuthRepository @Inject constructor(
             when (response.code()) {
                 200 -> Result.success(true)
                 409 -> Result.success(false)
-                else -> Result.failure(Exception("Unsuccessful request ${response.body()}"))
+                else -> Result.success(false)
             }
         } catch (e: Exception) {
             Log.e("AuthRepository", "Ошибка при проверке логина", e)

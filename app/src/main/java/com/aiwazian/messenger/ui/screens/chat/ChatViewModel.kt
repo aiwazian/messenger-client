@@ -42,6 +42,7 @@ import com.aiwazian.messenger.usecase.SendMessageWithFilesUseCase
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.FileHandler
+import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
@@ -661,7 +662,7 @@ class ChatViewModel @Inject constructor(
     }
     
     fun onLinkClicked(url: String) {
-        val inviteLinkRegex = Regex("(?:https?://)?aiwazian\\.ru/\\+([a-f0-9]+)")
+        val inviteLinkRegex = RegexPatterns.INVITE_LINK
         val match = inviteLinkRegex.find(url)
         
         if (match == null) {

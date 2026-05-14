@@ -106,6 +106,7 @@ class ProfileViewModel @Inject constructor(
                             _uiState.update {
                                 it.copy(
                                     title = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
+                                    subTitle = UiText.DynamicString("в сети недавно"),
                                     profile = profile,
                                     avatars = user.avatars.map { avatar -> avatar.uri }
                                 )
@@ -136,6 +137,7 @@ class ProfileViewModel @Inject constructor(
                             _uiState.update {
                                 it.copy(
                                     title = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
+                                    subTitle = UiText.DynamicString("в сети недавно"),
                                     profile = profile,
                                     avatars = user.avatars.map { avatar -> avatar.uri }
                                 )
@@ -174,6 +176,11 @@ class ProfileViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 title = UiText.DynamicString(channel.name),
+                                subTitle = UiText.PluralResource(
+                                    R.plurals.subscribers_count,
+                                    channel.subscribers,
+                                    channel.subscribers
+                                ),
                                 profile = profile,
                                 avatars = channel.avatars.map { avatar -> avatar.uri }
                             )
@@ -207,6 +214,11 @@ class ProfileViewModel @Inject constructor(
                             _uiState.update {
                                 it.copy(
                                     title = UiText.DynamicString(group.name),
+                                    subTitle = UiText.PluralResource(
+                                        R.plurals.members_count,
+                                        group.members,
+                                        group.members
+                                    ),
                                     profile = profile,
                                     avatars = group.avatars.map { avatar -> avatar.uri }
                                 )

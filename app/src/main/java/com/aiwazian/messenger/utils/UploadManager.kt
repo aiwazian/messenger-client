@@ -11,6 +11,7 @@ import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
@@ -25,8 +26,13 @@ class UploadManager @Inject constructor(
     private val okHttpClient: OkHttpClient,
     private val downloaderManager: DownloaderManager
 ) {
-    suspend fun upload(uri: Uri, uploadUrl: String, fileId: String): Result<String> =
-        withContext(Dispatchers.IO) {
+    suspend fun upload(
+        uri: Uri,
+        uploadUrl: String,
+        fileId: String,
+        maxAttempts: Int = 10
+    ): Result<String> = withContext(Dispatchers.IO) {
+        repeat(maxAttempts) { attempt ->
             try {
                 val fileSize = uri.getFileSize(context) ?: 0
                 val mimeType = uri.getFileType(context).toMediaTypeOrNull()
@@ -50,13 +56,25 @@ class UploadManager @Inject constructor(
                             }
                         }
                     }
-                    Result.success(targetFile.absolutePath)
+                    return@withContext Result.success(targetFile.absolutePath)
                 } else {
-                    Result.failure(Exception("UploadManager request unsuccessful"))
+                    if (attempt < maxAttempts - 1) {
+                        delay(1_000L * (attempt + 1))
+                    } else {
+                        return@withContext Result.failure(
+                            Exception("UploadManager request unsuccessful after $maxAttempts attempts")
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("UploadManager", "Upload error", e)
-                Result.failure(e)
+                if (attempt < maxAttempts - 1) {
+                    delay(1_000L * (attempt + 1))
+                } else {
+                    return@withContext Result.failure(e)
+                }
             }
         }
+        return@withContext Result.failure(Exception("Failed to upload after $maxAttempts attempts"))
+    }
 }

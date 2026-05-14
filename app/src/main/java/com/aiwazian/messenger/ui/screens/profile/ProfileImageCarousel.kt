@@ -5,7 +5,6 @@
 package com.aiwazian.messenger.ui.screens.profile
 
 import android.net.Uri
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,7 +32,7 @@ fun ProfileImageCarousel(
     val carouselState = rememberCarouselState { avatars.size }
     val containerWidth = LocalWindowInfo.current.containerDpSize.width
     
-    val width = if (containerWidth < 500.dp) {
+    val itemWidth = if (containerWidth < 500.dp) {
         containerWidth
     } else {
         300.dp
@@ -41,7 +40,7 @@ fun ProfileImageCarousel(
     
     HorizontalUncontainedCarousel(
         state = carouselState,
-        itemWidth = width,
+        itemWidth = itemWidth,
         flingBehavior = if (containerWidth < 500.dp) {
             CarouselDefaults.singleAdvanceFlingBehavior(carouselState)
         } else {
@@ -54,24 +53,21 @@ fun ProfileImageCarousel(
                 .aspectRatio(1f),
             contentAlignment = Alignment.Center
         ) {
-            AnimatedContent(avatars[index], label = "avatar_anim") { uri ->
-                if (uri == null) {
-                    CircularWavyProgressIndicator()
+            val uri = avatars[index]
+            if (uri == null) {
+                CircularWavyProgressIndicator()
+            } else {
+                val modifier = if (index == 0) {
+                    Modifier.sharedElement(key = "chat-avatar-$id")
                 } else {
-                    val modifier = if (index == 1) {
-                        Modifier.sharedElement(key = "chat-avatar-$id")
-                    } else {
-                        Modifier
-                    }
-                    AsyncImage(
-                        model = uri,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .then(modifier),
-                        contentScale = ContentScale.Crop,
-                    )
+                    Modifier
                 }
+                AsyncImage(
+                    model = uri,
+                    contentDescription = null,
+                    modifier = modifier.then(Modifier.fillMaxSize()),
+                    contentScale = ContentScale.Crop,
+                )
             }
         }
     }

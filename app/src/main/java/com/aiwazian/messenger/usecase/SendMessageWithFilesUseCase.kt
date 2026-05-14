@@ -97,15 +97,14 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 return@forEach
             }
             
-            fileRepository.updateFileId(fileId, initResponse.fileId)
-            
             uploadManager.upload(
                 attachment.localUri,
                 initResponse.signedUrl,
                 initResponse.fileId
             ).onSuccess { filePath ->
-                fileRepository.updateFileStatus(fileId, DownloadStatus.COMPLETED)
-                fileRepository.updateFilePath(fileId, filePath)
+                fileRepository.updateFileId(fileId, initResponse.fileId)
+                fileRepository.updateFileStatus(initResponse.fileId, DownloadStatus.COMPLETED)
+                fileRepository.updateFilePath(initResponse.fileId, filePath)
                 uploadResults.add(
                     AttachmentInputDto(
                         fileId = initResponse.fileId,

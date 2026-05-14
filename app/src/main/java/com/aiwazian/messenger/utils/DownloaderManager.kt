@@ -5,7 +5,6 @@
 package com.aiwazian.messenger.utils
 
 import android.content.Context
-import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.repository.FileRepository
@@ -68,15 +67,7 @@ class DownloaderManager @Inject constructor(
         
         _downloads.add(item)
         
-        val newFile = FileEntity(
-            id = fileId,
-            name = fileName,
-            size = 0,
-            path = null,
-            status = DownloadStatus.DOWNLOADING
-        )
-        
-        fileRepository.save(newFile)
+        fileRepository.updateFileStatus(fileId, DownloadStatus.DOWNLOADING)
         
         observeDownload(id, fileId)
     }
@@ -102,7 +93,7 @@ class DownloaderManager @Inject constructor(
                     !finalUri.isNullOrBlank() &&
                     existing.status != DownloadStatus.COMPLETED
                 ) {
-                    fileRepository.updateFileStatus(fileId, finalStatus)
+                    fileRepository.updateFileStatus(fileId, DownloadStatus.COMPLETED)
                     fileRepository.updateFilePath(fileId, finalUri)
                     fileRepository.updateFileSize(fileId, model.total)
                     _downloads.remove(existing)

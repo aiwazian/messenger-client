@@ -201,4 +201,21 @@
     <string name="invalid_link">Ссылка недействительна.</string>
     <string name="failed_to_join">Не смог вступить</string>
     <string name="error_searching_for_chat">Ошибка при поиске чата</string>
+    <string name="profile_photos">Фотографии профиля</string>
+    <string name="add_photo">Добавить фото</string>
+    <string name="failed_to_connect">Ошибка соединения</string>
+    <string name="enter_login">Введите логин</string>
+    <string name="login">Логин</string>
+    <string name="password">Пароль</string>
+    <string name="min_length_5_characters">Минимальная длинна 5 символов</string>
+    <string name="enter_first_name">Введите имя</string>
+    <string name="user_login">Логин пользователя</string>
+    <string name="registration">Регистрация</string>
+    <string name="unexpected_error">Непредвиденная ошибка</string>
+    <string name="username_taken">Имя пользователя занято</string>
+    <string name="username_available">Имя пользователя доступно</string>
+    <string name="authorization">Авторизация</string>
+    <string name="group">Группа</string>
+    <string name="channel">Канал</string>
+    <string name="user">Пользователь</string>
 </resources>

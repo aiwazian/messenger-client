@@ -17,7 +17,10 @@ class DownloadAvatarUseCase @Inject constructor(
     private val channelRepository: ChannelRepository,
     private val downloaderManager: DownloaderManager
 ) {
-    suspend operator fun invoke(profileId: Long, fileId: String): Result<Unit> {
+    suspend operator fun invoke(
+        profileId: Long,
+        fileId: String
+    ): Result<Unit> {
         val downloadUrlResult = when (ChatType.fromId(profileId)) {
             ChatType.PRIVATE -> userRepository.getAvatarDownloadUrl(fileId)
             ChatType.GROUP -> groupRepository.getAvatarDownloadUrl(fileId)
