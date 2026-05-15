@@ -11,6 +11,9 @@ data class RegisterUiState(
     val login: String = "",
     val password: String = "",
     val firstName: String = "",
+    val lastName: String = "",
+    val checkedPrivacyTerms: Boolean = false,
+    val isPrivacyError: Boolean = false,
     val passwordFieldError: UiText? = null,
     val firstNameFieldError: UiText? = null
 )

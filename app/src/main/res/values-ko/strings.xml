@@ -93,6 +93,7 @@
     <string name="delete_message">메시지 삭제</string>
     <string name="also_delete_for">다음 항목도 삭제:</string>
     <string name="delete_message_description">이 메시지를 삭제하시겠습니까\?</string>
+    <string name="delete_for_recipient">수신자에게 삭제하기</string>
     <string name="block_user">사용자 차단</string>
     <string name="start_secret_chat">비밀대화 시작</string>
     <string name="add_to_home_screen">홈 화면에 추가</string>
@@ -195,4 +196,24 @@
     <string name="invalid_link">링크가 잘못되었습니다.</string>
     <string name="failed_to_join">가입 실패</string>
     <string name="error_searching_for_chat">채팅 검색에 오류가 발생했습니다</string>
+    <string name="profile_photos">프로필 사진</string>
+    <string name="add_photo">사진 추가</string>
+    <string name="failed_to_connect">연결 실패</string>
+    <string name="enter_login">로그인 입력</string>
+    <string name="login">로그인</string>
+    <string name="password">비밀번호</string>
+    <string name="min_length_5_characters">최소 길이: 5자</string>
+    <string name="enter_first_name">이름을 넣으세요</string>
+    <string name="user_login">사용자 로그인</string>
+    <string name="registration">등록</string>
+    <string name="unexpected_error">예상치 못한 오류</string>
+    <string name="username_taken">사용자 이름 사용</string>
+    <string name="username_available">사용자 이름 사용 가능</string>
+    <string name="authorization">승인</string>
+    <string name="group">그룹</string>
+    <string name="channel">채널</string>
+    <string name="user">사용자</string>
+    <string name="optional">선택 사항</string>
+    <string name="terms_of_use">이용 약관</string>
+    <string name="i_agree">나는 동의한다</string>
 </resources>

@@ -117,17 +117,17 @@ fun ChannelSettingsScreen(
                 onAddPhoto = viewModel::setPendingAvatarUri,
                 onDeletePhoto = viewModel::deleteAvatar
             )
-
+            
             SectionContainer {
                 FramelessTextBox(
-                    placeholder = stringResource(R.string.channel_name),
                     value = uiState.channel.name,
-                    onValueChange = viewModel::changeName
+                    onValueChange = viewModel::changeName,
+                    placeholder = stringResource(R.string.channel_name)
                 )
                 FramelessTextBox(
-                    placeholder = stringResource(R.string.description),
                     value = uiState.channel.bio.orEmpty(),
-                    onValueChange = viewModel::changeBio
+                    onValueChange = viewModel::changeBio,
+                    placeholder = "${stringResource(R.string.description)} (${stringResource(R.string.optional)})"
                 )
             }
             

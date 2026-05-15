@@ -219,4 +219,7 @@
     <string name="group">Група</string>
     <string name="channel">Канал</string>
     <string name="user">Карыстальнік</string>
+    <string name="optional">Дадаткова</string>
+    <string name="terms_of_use">Умовы выкарыстання</string>
+    <string name="i_agree">Я згодна</string>
 </resources>

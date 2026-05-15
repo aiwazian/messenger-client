@@ -41,7 +41,6 @@ import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
@@ -115,9 +114,7 @@ fun CreateChannelScreen(viewModel: CreateChannelViewModel = hiltViewModel()) {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            SectionContainer(footer = {
-                SectionDescription("Можете указать дополнительное описание канала.")
-            }) {
+            SectionContainer {
                 FramelessTextBox(
                     value = uiState.name,
                     onValueChange = viewModel::changeName,
@@ -127,7 +124,7 @@ fun CreateChannelScreen(viewModel: CreateChannelViewModel = hiltViewModel()) {
                 FramelessTextBox(
                     value = uiState.bio,
                     onValueChange = viewModel::changeBio,
-                    placeholder = stringResource(R.string.description)
+                    placeholder = "${stringResource(R.string.description)} (${stringResource(R.string.optional)})"
                 )
             }
         }

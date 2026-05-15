@@ -223,4 +223,7 @@
     <string name="group">Group</string>
     <string name="channel">Channel</string>
     <string name="user">User</string>
+    <string name="optional">Optional</string>
+    <string name="terms_of_use">Terms of Use</string>
+    <string name="i_agree">I agree</string>
 </resources>

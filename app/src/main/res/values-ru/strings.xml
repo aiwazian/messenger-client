@@ -93,6 +93,7 @@
     <string name="delete_message">Удалить сообщение</string>
     <string name="also_delete_for">Также удалить для</string>
     <string name="delete_message_description">Вы точно хотите удалить это сообщение?</string>
+    <string name="delete_for_recipient">Удалить для получателя</string>
     <string name="block_user">Заблокировать</string>
     <string name="start_secret_chat">Начать секретный чат</string>
     <string name="add_to_home_screen">Создать ярлык</string>
@@ -218,4 +219,7 @@
     <string name="group">Группа</string>
     <string name="channel">Канал</string>
     <string name="user">Пользователь</string>
+    <string name="optional">Необязательно</string>
+    <string name="terms_of_use">Условия использования</string>
+    <string name="i_agree">Я согласен с</string>
 </resources>

@@ -6,16 +6,23 @@ package com.aiwazian.messenger.ui.screens.auth.register
 
 import android.app.Activity
 import android.content.Intent
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -33,10 +40,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
@@ -81,6 +98,11 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
         }
     }
     
+    val customTabsIntent = CustomTabsIntent.Builder()
+        .setShowTitle(true)
+        .setTranslateLocale(LocalLocale.current.platformLocale)
+        .build()
+    
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         floatingActionButton = {
@@ -112,22 +134,30 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it),
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(50.dp)
         ) {
+            Spacer(modifier = Modifier.height(it.calculateTopPadding() + 50.dp))
             Text(
                 text = stringResource(R.string.registration),
-                modifier = Modifier.padding(top = 50.dp),
                 fontSize = 28.sp
             )
-            Column(Modifier.width(300.dp)) {
+            Column(Modifier
+                       .width(300.dp)
+                       .imePadding()) {
                 InputTextField(
                     value = uiState.firstName,
                     onValueChange = viewModel::changeFirstName,
                     label = stringResource(R.string.first_name),
                     isError = uiState.firstNameFieldError != null,
                     supportingText = uiState.firstNameFieldError?.asString()
+                )
+                
+                InputTextField(
+                    value = uiState.lastName,
+                    onValueChange = viewModel::changeLastName,
+                    label = "${stringResource(R.string.last_name)} (${stringResource(R.string.optional)})"
                 )
                 
                 PasswordField(
@@ -138,6 +168,86 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
                     supportingText = uiState.passwordFieldError?.asString(),
                     onSendClick = viewModel::signUp
                 )
+                
+                Row {
+                    Checkbox(
+                        checked = uiState.checkedPrivacyTerms,
+                        onCheckedChange = viewModel::changePrivacyCheck,
+                        colors = CheckboxDefaults.colors(
+                            uncheckedBorderColor = if (uiState.isPrivacyError) MaterialTheme.colorScheme.error else Color.Unspecified
+                        )
+                    )
+                    Text(
+                        text = buildAnnotatedString {
+                            append(stringResource(R.string.i_agree))
+                            append(" ")
+                            withLink(
+                                LinkAnnotation.Clickable(
+                                    tag = "privacy",
+                                    styles = TextLinkStyles(
+                                        style = SpanStyle(
+                                            color = MaterialTheme.colorScheme.primary,
+                                            textDecoration = TextDecoration.Underline
+                                        ),
+                                        pressedStyle = SpanStyle(
+                                            background = MaterialTheme.colorScheme.primary.copy(
+                                                alpha = 0.4f
+                                            )
+                                        )
+                                    ),
+                                    linkInteractionListener = {
+                                        customTabsIntent.launchUrl(
+                                            context, "https://aiwazian.ru/privacy".toUri()
+                                        )
+                                    }
+                                )
+                            ) {
+                                withStyle(
+                                    SpanStyle(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        textDecoration = TextDecoration.Underline
+                                    )
+                                ) {
+                                    append(stringResource(R.string.privacy_policy))
+                                }
+                            }
+                            append(" & ")
+                            withLink(
+                                LinkAnnotation.Clickable(
+                                    tag = "terms",
+                                    styles = TextLinkStyles(
+                                        style = SpanStyle(
+                                            color = MaterialTheme.colorScheme.primary,
+                                            textDecoration = TextDecoration.Underline
+                                        ),
+                                        pressedStyle = SpanStyle(
+                                            background = MaterialTheme.colorScheme.primary.copy(
+                                                alpha = 0.4f
+                                            )
+                                        )
+                                    ),
+                                    linkInteractionListener = {
+                                        customTabsIntent.launchUrl(
+                                            context, "https://aiwazian.ru/tos".toUri()
+                                        )
+                                    }
+                                )
+                            ) {
+                                withStyle(
+                                    SpanStyle(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        textDecoration = TextDecoration.Underline
+                                    )
+                                ) {
+                                    append(stringResource(R.string.terms_of_use))
+                                }
+                            }
+                        },
+                        fontSize = 14.sp,
+                        lineHeight = 16.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(it.calculateBottomPadding() + 50.dp))
             }
         }
     }

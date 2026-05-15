@@ -93,6 +93,7 @@
     <string name="delete_message">Nachricht löschen</string>
     <string name="also_delete_for">Auch löschen für</string>
     <string name="delete_message_description">Sind Sie sicher, dass Sie diese Nachricht löschen möchten\?</string>
+    <string name="delete_for_recipient">Löschen für Empfänger</string>
     <string name="block_user">Benutzer blockieren</string>
     <string name="start_secret_chat">Starten Sie den geheimen Chat</string>
     <string name="add_to_home_screen">Zum Startbildschirm hinzufügen</string>
@@ -197,4 +198,24 @@
     <string name="invalid_link">Der Link ist ungültig.</string>
     <string name="failed_to_join">Nicht aufgenommen</string>
     <string name="error_searching_for_chat">Fehler Suche nach Chat</string>
+    <string name="profile_photos">Profilfotos</string>
+    <string name="add_photo">Foto hinzufügen</string>
+    <string name="failed_to_connect">Verbindung fehlgeschlagen</string>
+    <string name="enter_login">Enter Login</string>
+    <string name="login">Login</string>
+    <string name="password">Passwort</string>
+    <string name="min_length_5_characters">Mindestlänge: 5 Zeichen</string>
+    <string name="enter_first_name">Vorname eingeben</string>
+    <string name="user_login">Benutzeranmeldung</string>
+    <string name="registration">Registrierung</string>
+    <string name="unexpected_error">Unerwarteter Fehler</string>
+    <string name="username_taken">Benutzername genommen</string>
+    <string name="username_available">Benutzername verfügbar</string>
+    <string name="authorization">Genehmigung</string>
+    <string name="group">Gruppe</string>
+    <string name="channel">Kanal</string>
+    <string name="user">Nutzer</string>
+    <string name="optional">Optional</string>
+    <string name="terms_of_use">Nutzungsbedingungen</string>
+    <string name="i_agree">Ich stimme zu</string>
 </resources>

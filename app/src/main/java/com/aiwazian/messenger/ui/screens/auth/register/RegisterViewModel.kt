@@ -41,6 +41,10 @@ class RegisterViewModel @Inject constructor(
         _uiState.update { it.copy(firstName = name, firstNameFieldError = null) }
     }
     
+    fun changeLastName(name: String) {
+        _uiState.update { it.copy(lastName = name) }
+    }
+    
     fun changePassword(newPassword: String) {
         val password = newPassword.filter { it.toString().matches(RegexPatterns.PASSWORD) }
         _uiState.update { it.copy(password = password, passwordFieldError = null) }
@@ -50,10 +54,18 @@ class RegisterViewModel @Inject constructor(
         _uiState.update { it.copy(login = login) }
     }
     
+    fun changePrivacyCheck(check: Boolean) {
+        _uiState.update {
+            it.copy(
+                checkedPrivacyTerms = check,
+                isPrivacyError = false
+            )
+        }
+    }
+    
     fun signUp() {
         if (_uiState.value.isLoading) return
         
-        val login = _uiState.value.login
         val firstName = _uiState.value.firstName
         if (firstName.isBlank()) {
             _uiState.update { it.copy(firstNameFieldError = UiText.StringResource(R.string.enter_first_name)) }
@@ -74,6 +86,13 @@ class RegisterViewModel @Inject constructor(
             return
         }
         
+        if (!_uiState.value.checkedPrivacyTerms) {
+            _uiState.update { it.copy(isPrivacyError = true) }
+            vibrationManager.vibrate(VibrationPattern.Error)
+            return
+        }
+        
+        val login = _uiState.value.login
         val deviceModel = deviceInfoProvider.getDeviceModel()
         val osVersion = deviceInfoProvider.getOsVersion()
         val osName = deviceInfoProvider.getOsName()

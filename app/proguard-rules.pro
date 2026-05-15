@@ -20,6 +20,52 @@
 
 -keep class com.aiwazian.messenger.BuildConfig { *; }
 
+-keep @kotlinx.serialization.Serializable class * { *; }
+
+-keep class kotlinx.serialization.** { *; }
+-keepclassmembers class ** {
+    @kotlinx.serialization.Serializable *;
+}
+
+# --- Kotlinx Serialization ---
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.AnnotationsKt
+-dontnote kotlinx.serialization.SerializationKt
+
+-keep,includedescriptorclasses class kotlinx.serialization.** { *; }
+-keepclassmembers class kotlinx.serialization.json.** {
+    *** Companion;
+}
+-keepclasseswithmembers class kotlinx.serialization.json.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# --- Твои DTO / Serializable классы ---
+# Укажи пакет, где лежат DTO
+-keep,includedescriptorclasses class com.aiwazian.messenger.**$$serializer { *; }
+
+-keepclassmembers class com.aiwazian.messenger.** {
+    *** Companion;
+}
+-keepclasseswithmembers class com.aiwazian.messenger.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# Сами data-классы (замени на реальный пакет DTO)
+-keep class com.aiwazian.messenger.network.** { *; }
+
+# --- WorkManager ---
+-keep class * extends androidx.work.Worker { *; }
+-keep class * extends androidx.work.CoroutineWorker { *; }
+-keep class * extends androidx.work.ListenableWorker { *; }
+-keep class * extends androidx.work.InputMerger { *; }
+
+-keep class androidx.work.** { *; }
+
+-keepclassmembers class * extends androidx.work.ListenableWorker {
+    public <init>(android.content.Context, androidx.work.WorkerParameters);
+}
+
 # Deleting all calls Log.v, Log.d, Log.i, Log.w, Log.e, Log.wtf
 -assumenosideeffects class android.util.Log {
     public static *** d(...);

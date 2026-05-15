@@ -93,6 +93,7 @@
     <string name="delete_message">Ջնջել ուղերձը</string>
     <string name="also_delete_for">Ջնջել նաեւ</string>
     <string name="delete_message_description">Իրո՞ք ցանկանում եք ջնջել այս ուղերձը:</string>
+    <string name="delete_for_recipient">Ջնջել ստացողի համար</string>
     <string name="block_user">Արգելափակել օգտվողին</string>
     <string name="start_secret_chat">Սկսել գաղտնի զրույցը</string>
     <string name="add_to_home_screen">Ավելացնել գլխավոր էկրանին</string>
@@ -197,4 +198,24 @@
     <string name="invalid_link">Հղումն անվավեր է։</string>
     <string name="failed_to_join">Միացման ձախողում</string>
     <string name="error_searching_for_chat">Զրույցի որոնման սխալ</string>
+    <string name="profile_photos">Պրոֆիլի լուսանկարներ</string>
+    <string name="add_photo">Add Photo</string>
+    <string name="failed_to_connect">Կապակցման ձախողում</string>
+    <string name="enter_login">Մուտքագրեք մուտքը</string>
+    <string name="login">Լրահոս</string>
+    <string name="password">Գաղտնաբառ</string>
+    <string name="min_length_5_characters">Նվազագույն երկարությունը: 5 նիշ</string>
+    <string name="enter_first_name">Մուտքագրեք անունը</string>
+    <string name="user_login">Օգտվողի մուտք</string>
+    <string name="registration">Գրանցում</string>
+    <string name="unexpected_error">Անսպասելի սխալ</string>
+    <string name="username_taken">Օգտվողի անունը վերցված է</string>
+    <string name="username_available">Օգտվողի անունը հասանելի է</string>
+    <string name="authorization">Թույլտվություն</string>
+    <string name="group">Խումբ</string>
+    <string name="channel">Ալիք</string>
+    <string name="user">Օգտվող</string>
+    <string name="optional">Ըստ ցանկության</string>
+    <string name="terms_of_use">Օգտագործման պայմաններ</string>
+    <string name="i_agree">Համաձայն եմ</string>
 </resources>

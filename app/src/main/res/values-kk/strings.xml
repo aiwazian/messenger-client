@@ -93,6 +93,7 @@
     <string name="delete_message">Хабарды жою</string>
     <string name="also_delete_for">үшін де жою</string>
     <string name="delete_message_description">Бұл хабарды шынымен жойғыңыз келе ме\?</string>
+    <string name="delete_for_recipient">Алушы үшін жою</string>
     <string name="block_user">Пайдаланушыны блоктау</string>
     <string name="start_secret_chat">Құпия чатты бастаңыз</string>
     <string name="add_to_home_screen">Негізгі экранға қосу</string>
@@ -197,4 +198,24 @@
     <string name="invalid_link">Сілтеме жарамсыз.</string>
     <string name="failed_to_join">Қосыла алмады</string>
     <string name="error_searching_for_chat">Чат іздеуде қате</string>
+    <string name="profile_photos">Профиль фотосуреттері</string>
+    <string name="add_photo">Сурет қосу</string>
+    <string name="failed_to_connect">Қосылу сәтсіз болды</string>
+    <string name="enter_login">Кіруді енгізіңіз</string>
+    <string name="login">Кіру</string>
+    <string name="password">Құпия сөз</string>
+    <string name="min_length_5_characters">Минималды ұзындығы: 5 таңба</string>
+    <string name="enter_first_name">Есімін енгізіңіз</string>
+    <string name="user_login">Пайдаланушы кіруі</string>
+    <string name="registration">Тіркеу</string>
+    <string name="unexpected_error">Күтпеген қате</string>
+    <string name="username_taken">Пайдаланушы аты алынды</string>
+    <string name="username_available">Пайдаланушы аты қолжетімді</string>
+    <string name="authorization">Рұқсат беру</string>
+    <string name="group">Топ</string>
+    <string name="channel">Арна</string>
+    <string name="user">Пайдаланушы</string>
+    <string name="optional">Қосымша</string>
+    <string name="terms_of_use">Пайдалану шарттары</string>
+    <string name="i_agree">Мен келісемін</string>
 </resources>

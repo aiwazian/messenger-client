@@ -93,6 +93,7 @@
     <string name="delete_message">Cancella messaggio</string>
     <string name="also_delete_for">Eliminare anche per</string>
     <string name="delete_message_description">Sei sicuro di voler cancellare questo messaggio\?</string>
+    <string name="delete_for_recipient">Elimina per destinatario</string>
     <string name="block_user">Blocco utente</string>
     <string name="start_secret_chat">Avvia Secret Chat</string>
     <string name="add_to_home_screen">Aggiungi alla schermata principale</string>
@@ -199,4 +200,24 @@
     <string name="invalid_link">Il collegamento non è valido.</string>
     <string name="failed_to_join">Non si è iscritto</string>
     <string name="error_searching_for_chat">Errore nella ricerca della chat</string>
+    <string name="profile_photos">Foto profilo</string>
+    <string name="add_photo">Aggiungi foto</string>
+    <string name="failed_to_connect">Non è riuscito a collegare</string>
+    <string name="enter_login">Inserisci il login</string>
+    <string name="login">Accedi</string>
+    <string name="password">Password</string>
+    <string name="min_length_5_characters">Lunghezza minima: 5 caratteri</string>
+    <string name="enter_first_name">Entra in gioco il nome di battesimo</string>
+    <string name="user_login">Accesso utente</string>
+    <string name="registration">Registrazione</string>
+    <string name="unexpected_error">Errore inaspettato</string>
+    <string name="username_taken">Nome utente adottato</string>
+    <string name="username_available">Nome utente disponibile</string>
+    <string name="authorization">Autorizzazione</string>
+    <string name="group">Gruppo</string>
+    <string name="channel">Canale</string>
+    <string name="user">Utente</string>
+    <string name="optional">Opzionale</string>
+    <string name="terms_of_use">Termini di utilizzo</string>
+    <string name="i_agree">Sono d\'accordo</string>
 </resources>

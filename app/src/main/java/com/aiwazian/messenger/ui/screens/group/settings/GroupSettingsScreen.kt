@@ -131,7 +131,7 @@ fun GroupSettingsScreen(
                 FramelessTextBox(
                     value = group.bio.orEmpty(),
                     onValueChange = viewModel::changeBio,
-                    placeholder = stringResource(R.string.description)
+                    placeholder = "${stringResource(R.string.description)} (${stringResource(R.string.optional)})",
                 )
             }
             

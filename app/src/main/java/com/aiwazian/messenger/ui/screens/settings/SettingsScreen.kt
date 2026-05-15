@@ -130,11 +130,10 @@ fun SettingsScreen() {
                     leadingIcon = Icons.Outlined.PrivacyTip,
                     headlineText = stringResource(R.string.privacy_policy),
                     onClick = {
-                        val intent =
-                            CustomTabsIntent.Builder()
-                                .setShowTitle(true)
-                                .setTranslateLocale(Locale.getDefault())
-                                .build()
+                        val intent = CustomTabsIntent.Builder()
+                            .setShowTitle(true)
+                            .setTranslateLocale(Locale.getDefault())
+                            .build()
                         intent.launchUrl(context, "https://aiwazian.ru/privacy".toUri())
                     })
             }
