@@ -45,13 +45,6 @@ interface ChatApi {
     @GET("chats/join/{code}")
     suspend fun joinViaInviteCode(@Path("code") code: String): Response<Unit>
     
-    @HTTP(
-        method = "DELETE",
-        path = "chats/invite-links/{inviteLinkId}",
-        hasBody = false
-    )
-    suspend fun deleteInviteLink(@Path("inviteLinkId") inviteLinkId: Long): Response<Unit>
-
     @POST("chats/pin")
     suspend fun pinChats(@Body body: PinChatsRequestDto): Response<Unit>
 

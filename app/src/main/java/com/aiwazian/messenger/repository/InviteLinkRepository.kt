@@ -25,7 +25,7 @@ class InviteLinkRepository @Inject constructor(
                     Result.failure(Exception("No invite link info returned"))
                 }
             } else {
-                Result.failure(Exception("Failed to get invite link info"))
+                Result.failure(Exception("Failed to get invite link info ${response.errorBody()}"))
             }
         } catch (e: Exception) {
             Log.e("InviteLinkRepository", "Error getting invite link info", e)
@@ -39,24 +39,10 @@ class InviteLinkRepository @Inject constructor(
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
-                Result.failure(Exception("Join via invite link failed"))
+                Result.failure(Exception("Join via invite link failed ${response.errorBody()}"))
             }
         } catch (e: Exception) {
             Log.e("InviteLinkRepository", "Error joining via invite link", e)
-            Result.failure(e)
-        }
-    }
-
-    suspend fun deleteInviteLink(inviteLinkId: Long): Result<Unit> {
-        return try {
-            val response = chatApi.deleteInviteLink(inviteLinkId)
-            if (response.isSuccessful) {
-                Result.success(Unit)
-            } else {
-                Result.failure(Exception("Delete invite link failed"))
-            }
-        } catch (e: Exception) {
-            Log.e("InviteLinkRepository", "Error deleting invite link", e)
             Result.failure(e)
         }
     }

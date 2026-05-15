@@ -143,9 +143,11 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
                 text = stringResource(R.string.registration),
                 fontSize = 28.sp
             )
-            Column(Modifier
-                       .width(300.dp)
-                       .imePadding()) {
+            Column(
+                Modifier
+                    .width(300.dp)
+                    .imePadding()
+            ) {
                 InputTextField(
                     value = uiState.firstName,
                     onValueChange = viewModel::changeFirstName,
@@ -169,7 +171,7 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
                     onSendClick = viewModel::signUp
                 )
                 
-                Row {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
                         checked = uiState.checkedPrivacyTerms,
                         onCheckedChange = viewModel::changePrivacyCheck,

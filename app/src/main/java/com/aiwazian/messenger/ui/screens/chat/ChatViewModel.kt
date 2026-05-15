@@ -34,6 +34,7 @@ import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.usecase.CheckInviteLinkUseCase
 import com.aiwazian.messenger.usecase.JoinChannelUseCase
 import com.aiwazian.messenger.usecase.JoinGroupUseCase
 import com.aiwazian.messenger.usecase.LeaveChatUseCase
@@ -78,7 +79,8 @@ class ChatViewModel @Inject constructor(
     private val sendMessageWithFilesUseCase: SendMessageWithFilesUseCase,
     private val joinChannelUseCase: JoinChannelUseCase,
     private val joinGroupUseCase: JoinGroupUseCase,
-    private val leaveChatUseCase: LeaveChatUseCase
+    private val leaveChatUseCase: LeaveChatUseCase,
+    private val checkInviteLinkUseCase: CheckInviteLinkUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -679,12 +681,12 @@ class ChatViewModel @Inject constructor(
             return
         }
         
-        val code = match.groupValues[1]
+        val code = match.groupValues[2]
         
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessingInvite = true) }
             
-            inviteLinkRepository.getInviteLinkInfo(code).onSuccess { linkInfo ->
+            checkInviteLinkUseCase(code).onSuccess { linkInfo ->
                 if (_uiState.value.chatId == linkInfo.chatId) {
                     _uiState.update { it.copy(isProcessingInvite = false) }
                     _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.you_are_already_in_this_chat)))
