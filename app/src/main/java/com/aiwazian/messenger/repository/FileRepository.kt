@@ -1,27 +1,35 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.repository
 
 import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.enums.DownloadStatus
 import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
 class FileRepository @Inject constructor(
     private val fileDao: FileDao
 ) {
-    suspend fun save(file: FileEntity) {
-        fileDao.save(file)
+    suspend fun upsert(file: FileEntity) {
+        if (getById(file.id) == null) {
+            fileDao.save(file)
+        } else {
+            updateFileSize(file.id, file.size)
+            updateFileStatus(file.id, file.status)
+            updateFilePath(file.id, file.path)
+        }
     }
-
+    
     suspend fun getById(id: String): FileEntity? {
         return fileDao.getById(id)
     }
-
+    
     suspend fun getAllFiles(): List<FileEntity> {
         return fileDao.getAllFiles()
     }
-
+    
     suspend fun updateFileId(oldId: String, newId: String) {
         fileDao.updateFileId(oldId, newId)
     }
@@ -33,8 +41,8 @@ class FileRepository @Inject constructor(
     suspend fun updateFilePath(fileId: String, path: String?) {
         fileDao.updatePath(fileId, path)
     }
-
-    suspend fun updateFileSize(fileId:String, size: Long) {
+    
+    suspend fun updateFileSize(fileId: String, size: Long) {
         fileDao.updateSize(fileId, size)
     }
     

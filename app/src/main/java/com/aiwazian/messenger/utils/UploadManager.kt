@@ -7,8 +7,10 @@ package com.aiwazian.messenger.utils
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
+import com.aiwazian.messenger.repository.FileRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -16,6 +18,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.File
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,12 +27,13 @@ import javax.inject.Singleton
 class UploadManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val okHttpClient: OkHttpClient,
-    private val downloaderManager: DownloaderManager
+    private val fileRepository: FileRepository
 ) {
     suspend fun upload(
         uri: Uri,
         uploadUrl: String,
         fileId: String,
+        oldTempFileId: String? = null,
         maxAttempts: Int = 10
     ): Result<String> = withContext(Dispatchers.IO) {
         repeat(maxAttempts) { attempt ->
@@ -48,15 +52,15 @@ class UploadManager @Inject constructor(
                 val response = okHttpClient.newCall(request).execute()
 
                 if (response.isSuccessful) {
-                    val targetFile = downloaderManager.getFile(fileId, "")
-                    if (!targetFile.exists()) {
-                        context.contentResolver.openInputStream(uri)?.use { input ->
-                            targetFile.outputStream().use { output ->
-                                input.copyTo(output)
-                            }
-                        }
+                    val filePath = saveFileLocally(uri, fileId)
+                    
+                    if (oldTempFileId != null) {
+                        fileRepository.updateFileId(oldTempFileId, fileId)
                     }
-                    return@withContext Result.success(targetFile.absolutePath)
+                    fileRepository.updateFileStatus(fileId, DownloadStatus.COMPLETED)
+                    fileRepository.updateFilePath(fileId, filePath)
+                    
+                    return@withContext Result.success(filePath)
                 } else {
                     if (attempt < maxAttempts - 1) {
                         delay(1_000L * (attempt + 1))
@@ -76,5 +80,21 @@ class UploadManager @Inject constructor(
             }
         }
         return@withContext Result.failure(Exception("Failed to upload after $maxAttempts attempts"))
+    }
+    
+    private fun saveFileLocally(uri: Uri, fileId: String): String {
+        val path = File(context.getExternalFilesDir(null) ?: context.filesDir, "Uploads")
+        path.mkdirs()
+        val targetFile = File(path, fileId)
+        
+        if (!targetFile.exists()) {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                targetFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+        }
+        
+        return targetFile.absolutePath
     }
 }

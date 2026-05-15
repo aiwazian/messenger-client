@@ -24,6 +24,7 @@ import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.UploadManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
 class SendMessageWithFilesUseCase @Inject constructor(
@@ -100,11 +101,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
             uploadManager.upload(
                 attachment.localUri,
                 initResponse.signedUrl,
-                initResponse.fileId
-            ).onSuccess { filePath ->
-                fileRepository.updateFileId(fileId, initResponse.fileId)
-                fileRepository.updateFileStatus(initResponse.fileId, DownloadStatus.COMPLETED)
-                fileRepository.updateFilePath(initResponse.fileId, filePath)
+                initResponse.fileId,
+                fileId
+            ).onSuccess {
                 uploadResults.add(
                     AttachmentInputDto(
                         fileId = initResponse.fileId,
@@ -121,7 +120,11 @@ class SendMessageWithFilesUseCase @Inject constructor(
             val result = chatRepository.confirmFileUpload(chatId, uploadResults, text)
             result.onSuccess {
                 chatRepository.updateMessageId(tempId, it.id)
-                chatRepository.refreshChats()
+                val localChat = chatRepository.getById(chatId).firstOrNull()
+                
+                if (localChat == null) {
+                    chatRepository.refreshChats()
+                }
             }.onFailure {
                 Log.e("SendMessageWithFiles", "Confirmation failed", it)
             }

@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.utils
 
 import android.content.Context
+import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.repository.FileRepository
@@ -93,9 +94,14 @@ class DownloaderManager @Inject constructor(
                     !finalUri.isNullOrBlank() &&
                     existing.status != DownloadStatus.COMPLETED
                 ) {
-                    fileRepository.updateFileStatus(fileId, DownloadStatus.COMPLETED)
-                    fileRepository.updateFilePath(fileId, finalUri)
-                    fileRepository.updateFileSize(fileId, model.total)
+                    val file = FileEntity(
+                        id = existing.fileId,
+                        name = existing.name,
+                        size = model.total,
+                        path = finalUri,
+                        status = DownloadStatus.COMPLETED
+                    )
+                    fileRepository.upsert(file)
                     _downloads.remove(existing)
                 } else {
                     _downloads[_downloads.indexOfFirst { it.id == existing.id }] = DownloadItem(
@@ -139,14 +145,6 @@ class DownloaderManager @Inject constructor(
             _downloads.remove(_downloads[index])
         }
         fileRepository.updateFileStatus(fileId, DownloadStatus.CANCELLED)
-    }
-    
-    fun getFile(fileId: String, extension: String): File {
-        val folderName = getFolderNameForExtension(extension)
-        val path = File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
-        if (!path.exists()) path.mkdirs()
-        val finalFileName = if (extension.isNotEmpty()) "$fileId.$extension" else fileId
-        return File(path, finalFileName)
     }
     
     private fun getFolderNameForExtension(extension: String): String {

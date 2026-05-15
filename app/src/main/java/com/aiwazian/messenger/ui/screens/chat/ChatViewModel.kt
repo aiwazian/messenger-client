@@ -231,7 +231,7 @@ class ChatViewModel @Inject constructor(
                         userRepository.getMe().collectLatest { user ->
                             _uiState.update {
                                 it.copy(
-                                    chatName = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
+                                    chatName = UiText.StringResource(R.string.saved_messages),
                                     subTitle = UiText.DynamicString("в сети недавно"),
                                     avatarUri = user.avatars.firstOrNull()?.uri,
                                     topBarActions = listOf(
@@ -581,14 +581,19 @@ class ChatViewModel @Inject constructor(
         when (action) {
             FileAction.DOWNLOAD -> {
                 viewModelScope.launch {
-                    chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
-                        ?.let { url ->
-                            downloaderManager.download(
-                                url = url,
-                                fileName = file.name,
-                                fileId = file.fileId
-                            )
-                        }
+                    val url = chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
+                    if (url == null) {
+                        Log.e(
+                            "ChatVM",
+                            "Download URL is null for file: ${file.fileId}, message: ${message.id}, chat: ${message.chatId}"
+                        )
+                    } else {
+                        downloaderManager.download(
+                            url = url,
+                            fileName = file.name,
+                            fileId = file.fileId
+                        )
+                    }
                 }
             }
             

@@ -130,8 +130,8 @@ fun MessageBubble(
                                             .clip(MaterialTheme.shapes.extraSmall)
                                             .clickable {
                                                 val action = when (attachment.status) {
-                                                    DownloadStatus.DOWNLOADING -> FileAction.PAUSE
-                                                    DownloadStatus.PAUSED -> FileAction.RESUME
+                                                    DownloadStatus.DOWNLOADING -> FileAction.DOWNLOAD
+                                                    DownloadStatus.PAUSED -> FileAction.DOWNLOAD
                                                     DownloadStatus.IDLE,
                                                     DownloadStatus.CANCELLED,
                                                     DownloadStatus.FAILED,

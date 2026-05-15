@@ -294,7 +294,11 @@ private fun Content(
     }
     
     Scaffold(modifier = Modifier.fillMaxSize(), floatingActionButton = {
-        if (!hasSelection) {
+        AnimatedVisibility(
+            visible = !hasSelection,
+            enter = scaleIn() + fadeIn(),
+            exit = scaleOut() + fadeOut()
+        ) {
             FloatingButton(onClick = {
                 navBackStack.add(AppRoute.NewMessage)
             })
@@ -327,23 +331,31 @@ private fun Content(
         }
         Box {
             Spacer(modifier = Modifier.height(innerPadding.calculateTopPadding()))
-            DefaultTopBar(
-                drawerState = drawerState, passcodeEnabled = uiState.hasPasscode, onLockClick = {
-                    scope.launch {
-                        mainViewModel.lockApp()
-                    }
-                }, socketState = socketState
-            )
-            AnimatedVisibility(
-                visible = hasSelection, enter = fadeIn(), exit = fadeOut()
-            ) {
-                SelectionTopBar(
-                    selectedCount = uiState.selectedChatIds.size,
-                    onClearSelection = mainViewModel::clearSelection,
-                    onPinClick = mainViewModel::pinSelectedChats,
-                    onUnpinClick = mainViewModel::unpinSelectedChats,
-                    hasUnpinnedChats = mainViewModel.hasUnpinnedSelectedChats()
-                )
+            AnimatedContent(
+                targetState = hasSelection, transitionSpec = {
+                    fadeIn() togetherWith fadeOut()
+                }
+            ) { hasSelection ->
+                if (!hasSelection) {
+                    DefaultTopBar(
+                        drawerState = drawerState,
+                        passcodeEnabled = uiState.hasPasscode,
+                        onLockClick = {
+                            scope.launch {
+                                mainViewModel.lockApp()
+                            }
+                        },
+                        socketState = socketState
+                    )
+                } else {
+                    SelectionTopBar(
+                        selectedCount = uiState.selectedChatIds.size,
+                        onClearSelection = mainViewModel::clearSelection,
+                        onPinClick = mainViewModel::pinSelectedChats,
+                        onUnpinClick = mainViewModel::unpinSelectedChats,
+                        hasUnpinnedChats = mainViewModel.hasUnpinnedSelectedChats()
+                    )
+                }
             }
         }
     }
@@ -424,7 +436,9 @@ private fun EmptyChatPlaceholder(
 @Composable
 private fun FloatingButton(onClick: () -> Unit) {
     FloatingActionButton(
-        shape = CircleShape, onClick = onClick, containerColor = MaterialTheme.colorScheme.primary
+        shape = CircleShape,
+        onClick = onClick,
+        containerColor = MaterialTheme.colorScheme.primary
     ) {
         Icon(
             imageVector = Icons.Default.Create, contentDescription = null
@@ -615,7 +629,8 @@ private fun DrawerContent(
             }
             
             DrawerItem(
-                label = stringResource(R.string.saved_messages), icon = Icons.Rounded.BookmarkBorder
+                label = stringResource(R.string.saved_messages),
+                icon = Icons.Rounded.BookmarkBorder
             ) {
                 scope.launch {
                     drawerState.close()

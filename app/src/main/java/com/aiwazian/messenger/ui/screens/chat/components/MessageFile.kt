@@ -52,7 +52,7 @@ fun MessageFile(file: MessageAttachment, onAction: (FileAction) -> Unit) {
                 
                 val action = when (file.status) {
                     DownloadStatus.DOWNLOADING -> FileAction.PAUSE
-                    DownloadStatus.PAUSED -> FileAction.RESUME
+                    DownloadStatus.PAUSED -> FileAction.DOWNLOAD
                     DownloadStatus.IDLE,
                     DownloadStatus.CANCELLED,
                     DownloadStatus.FAILED,

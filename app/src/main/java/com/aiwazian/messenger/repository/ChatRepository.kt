@@ -155,8 +155,11 @@ class ChatRepository @Inject constructor(
                 
                 chatDao.upsertChats(dtos.map { it.toEntity() })
                 
-                val lastMessages = dtos.mapNotNull { it.lastMessage?.toDomain() }
-                saveMessagesToDb(lastMessages)
+                dtos.forEach { chatDto ->
+                    chatDto.lastMessage?.let { lastMessageDto ->
+                        saveMessagesToDb(listOf(lastMessageDto.toDomain()))
+                    }
+                }
             } else {
                 Log.e("ChatRepository", "Failed to get all chats: ${response.message()}")
             }
@@ -336,7 +339,7 @@ class ChatRepository @Inject constructor(
                         path = null,
                         status = attachment.status
                     )
-                    fileRepository.save(newFile)
+                    fileRepository.upsert(newFile)
                     newFile
                 }
                 
