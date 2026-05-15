@@ -130,8 +130,7 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
     
-    val firstVisibleItemIndex =
-        remember { derivedStateOf { listState.firstVisibleItemIndex } }
+    val firstVisibleItemIndex = remember { derivedStateOf { listState.firstVisibleItemIndex } }
     
     LaunchedEffect(firstVisibleItemIndex.value) {
         if (firstVisibleItemIndex.value < 10 && uiState.hasMoreMessages && !uiState.isLoadingMore && !uiState.isLoading) {

@@ -102,11 +102,7 @@ class ChatRepository @Inject constructor(
             )
         }
     }.onStart {
-        try {
-            refreshChats()
-        } catch (e: Exception) {
-            Log.e("ChatRepository", "Ошибка обновления чатов в onStart", e)
-        }
+        refreshChats()
     }
     
     private suspend fun resolveChatInfo(chatEntity: ChatEntity, myId: Long): Pair<UiText, Uri?>? {

@@ -52,6 +52,7 @@ class MainViewModel @Inject constructor(
             webSocketClient.connectionState.collectLatest {
                 if (it == ConnectionState.CONNECTED) {
                     SessionManager.loadSession()
+                    userRepository.fetchMe()
                     chatRepository.refreshChats()
                 }
             }

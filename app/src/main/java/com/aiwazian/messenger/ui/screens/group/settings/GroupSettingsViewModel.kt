@@ -53,6 +53,7 @@ class GroupSettingsViewModel @Inject constructor(
     
     fun init(groupId: Long) {
         viewModelScope.launch {
+            groupRepository.fetchById(groupId)
             groupRepository.getById(groupId).collectLatest { group ->
                 _uiState.update { it.copy(group = group, originalChannelData = group) }
                 

@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 
 class UserRepository @Inject constructor(
@@ -40,7 +39,9 @@ class UserRepository @Inject constructor(
             }
         
         userWithAvatars.user.toDomain(avatars)
-    }.onStart {
+    }
+    
+    suspend fun fetchMe() {
         try {
             val response = userApi.getMe()
             if (response.isSuccessful) {
@@ -52,7 +53,7 @@ class UserRepository @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.e("UserRepository", "Ошибка при загрузке профиля в onStart", e)
+            Log.e("UserRepository", "Ошибка при обновлении профиля", e)
         }
     }
     
@@ -68,22 +69,24 @@ class UserRepository @Inject constructor(
                     avatarWithFile.avatar.toDomain(uri)
                 }
             userWithAvatars.user.toDomain(avatars)
-        }.onStart {
-            try {
-                val response = userApi.getUserById(id)
-                if (response.isSuccessful) {
-                    response.body()?.let { dto ->
-                        val user = dto.toDomain()
-                        userDao.insert(user.toEntity())
-                        
-                        val avatars = dto.avatars.map { it.toEntity(user.id) }
-                        avatarDao.insertAvatars(avatars)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("UserRepository", "Ошибка при получении профиля", e)
-            }
         }
+    
+    suspend fun fetchById(id: Long) {
+        try {
+            val response = userApi.getUserById(id)
+            if (response.isSuccessful) {
+                response.body()?.let { dto ->
+                    val user = dto.toDomain()
+                    userDao.insert(user.toEntity())
+                    
+                    val avatars = dto.avatars.map { it.toEntity(user.id) }
+                    avatarDao.insertAvatars(avatars)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Ошибка при получении профиля", e)
+        }
+    }
     
     suspend fun updateProfile(user: User): Result<Unit> {
         return try {

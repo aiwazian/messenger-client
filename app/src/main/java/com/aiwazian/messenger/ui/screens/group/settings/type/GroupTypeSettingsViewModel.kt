@@ -43,6 +43,7 @@ class GroupTypeSettingsViewModel @Inject constructor(
     
     fun init(groupId: Long) {
         viewModelScope.launch {
+            groupRepository.fetchById(groupId)
             groupRepository.getById(groupId).firstOrNull()?.let { group ->
                 _uiState.update {
                     it.copy(

@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 
 class GroupRepository @Inject constructor(
@@ -46,7 +45,9 @@ class GroupRepository @Inject constructor(
                     avatarWithFile.avatar.toDomain(uri)
                 }
             groupWithAvatars.group.toDomain(avatars)
-    }.onStart {
+        }
+    
+    suspend fun fetchById(id: Long) {
         try {
             val response = groupApi.getGroupById(id)
             if (response.isSuccessful) {

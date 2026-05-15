@@ -43,6 +43,7 @@ class ChannelTypeSettingsViewModel @Inject constructor(
     
     fun init(channelId: Long) {
         viewModelScope.launch {
+            channelRepository.fetchById(channelId)
             channelRepository.getById(channelId).firstOrNull()?.let { channel ->
                 _uiState.update {
                     it.copy(

@@ -106,6 +106,15 @@ class ChatViewModel @Inject constructor(
         
         webSocketClient.emitEvent("chat_open", mapOf("chatId" to chatId.toString()))
         
+        viewModelScope.launch {
+            when (ChatType.fromId(chatId)) {
+                ChatType.CHANNEL -> channelRepository.fetchById(chatId)
+                ChatType.GROUP -> groupRepository.fetchById(chatId)
+                ChatType.PRIVATE -> userRepository.fetchById(chatId)
+                else -> {}
+            }
+        }
+        
         setupUserObserver()
         loadChatData()
     }
@@ -317,7 +326,7 @@ class ChatViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = false) }
             }.onFailure {
                 Log.e("ChatVM", "Error fetching fresh messages", it)
-                _uiState.update { it.copy(isLoading = false) }
+                _uiState.update { state -> state.copy(isLoading = false) }
             }
         }
     }
@@ -344,7 +353,7 @@ class ChatViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoadingMore = false) }
             }.onFailure {
                 Log.e("ChatVM", "Error loading more messages", it)
-                _uiState.update { it.copy(isLoadingMore = false) }
+                _uiState.update { state -> state.copy(isLoadingMore = false) }
             }
         }
     }
@@ -553,11 +562,13 @@ class ChatViewModel @Inject constructor(
         }
     }
     
-    fun selectMessage(message: Message) =
+    fun selectMessage(message: Message) {
         _uiState.update { it.copy(selectedMessages = it.selectedMessages + message) }
+    }
     
-    fun unselectMessage(message: Message) =
+    fun unselectMessage(message: Message) {
         _uiState.update { it.copy(selectedMessages = it.selectedMessages - message) }
+    }
     
     fun copyToClipboard(text: String?) = text?.let { clipboardService.copy(it) }
     
@@ -567,13 +578,9 @@ class ChatViewModel @Inject constructor(
     
     fun cancelUpload(tempMessageId: Long) {
         viewModelScope.launch {
-            val tempMessage = getRawMessages().find { it.id == tempMessageId }
-            tempMessage?.attachments?.forEach { attachment ->
+            getRawMessages().find { it.id == tempMessageId }?.attachments?.forEach { attachment ->
                 downloaderManager.cancel(attachment.fileId)
             }
-            
-            val updatedMessages = getRawMessages().filter { it.id != tempMessageId }
-            updateChatItems(updatedMessages)
         }
     }
     
@@ -648,7 +655,7 @@ class ChatViewModel @Inject constructor(
         if (_uiState.value.userNamesCache.containsKey(userId)) return
         viewModelScope.launch {
             try {
-                userRepository.getById(userId).collect { user ->
+                userRepository.getById(userId).firstOrNull()?.let { user ->
                     val name = "${user.firstName} ${user.lastName.orEmpty()}".trim()
                     _uiState.update { it.copy(userNamesCache = it.userNamesCache + (userId to name)) }
                 }

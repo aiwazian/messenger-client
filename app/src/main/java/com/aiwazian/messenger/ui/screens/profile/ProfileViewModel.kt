@@ -67,6 +67,15 @@ class ProfileViewModel @Inject constructor(
         isInit = true
         _uiState.update { it.copy(id = profileId) }
         
+        viewModelScope.launch {
+            when (ChatType.fromId(profileId)) {
+                ChatType.CHANNEL -> channelRepository.fetchById(profileId)
+                ChatType.GROUP -> groupRepository.fetchById(profileId)
+                ChatType.PRIVATE -> userRepository.fetchById(profileId)
+                else -> {}
+            }
+        }
+        
         setupUserObserver()
         loadProfile()
     }
