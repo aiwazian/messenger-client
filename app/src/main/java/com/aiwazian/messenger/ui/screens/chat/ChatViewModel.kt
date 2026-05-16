@@ -45,6 +45,7 @@ import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.FileHandler
 import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.UiText
+import com.aiwazian.messenger.utils.UploadManager
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -73,6 +74,7 @@ class ChatViewModel @Inject constructor(
     private val clipboardService: ClipboardService,
     private val webSocketClient: WebSocketClient,
     private val downloaderManager: DownloaderManager,
+    private val uploadManager: UploadManager,
     private val vibrationManager: VibrationManager,
     private val fileHandler: FileHandler,
     private val sendMessageUseCase: SendMessageUseCase,
@@ -573,7 +575,7 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             val tempMessage = getRawMessages().find { it.id == tempMessageId }
             tempMessage?.attachments?.forEach { attachment ->
-                downloaderManager.cancel(attachment.fileId)
+                uploadManager.cancel(attachment.fileId)
             }
             
             chatRepository.deleteLocalMessage(messageId = tempMessageId)

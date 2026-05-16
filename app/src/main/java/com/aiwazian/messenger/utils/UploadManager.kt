@@ -29,6 +29,8 @@ class UploadManager @Inject constructor(
     private val okHttpClient: OkHttpClient,
     private val fileRepository: FileRepository
 ) {
+    private val activeUploads = mutableMapOf<String, okhttp3.Call>()
+
     suspend fun upload(
         fileUri: Uri,
         uploadUrl: String,
@@ -48,7 +50,10 @@ class UploadManager @Inject constructor(
                 }
 
                 val request = Request.Builder().url(uploadUrl).put(requestBody).build()
-                val response = okHttpClient.newCall(request).execute()
+                val call = okHttpClient.newCall(request)
+                activeUploads[fileId] = call
+                
+                val response = call.execute()
 
                 if (response.isSuccessful) {
                     val filePath = saveFileLocally(fileUri, fileId)
@@ -56,8 +61,10 @@ class UploadManager @Inject constructor(
                     fileRepository.updateFileStatus(fileId, DownloadStatus.COMPLETED)
                     fileRepository.updateFilePath(fileId, filePath)
                     
+                    activeUploads.remove(fileId)
                     return@withContext Result.success(filePath)
                 } else {
+                    activeUploads.remove(fileId)
                     if (attempt < maxAttempts - 1) {
                         delay(1_000L * (attempt + 1))
                     } else {
@@ -67,6 +74,7 @@ class UploadManager @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
+                activeUploads.remove(fileId)
                 Log.e("UploadManager", "Upload error", e)
                 if (attempt < maxAttempts - 1) {
                     delay(1_000L * (attempt + 1))
@@ -76,6 +84,11 @@ class UploadManager @Inject constructor(
             }
         }
         return@withContext Result.failure(Exception("Failed to upload after $maxAttempts attempts"))
+    }
+    
+    fun cancel(fileId: String) {
+        activeUploads[fileId]?.cancel()
+        activeUploads.remove(fileId)
     }
     
     private fun saveFileLocally(uri: Uri, fileId: String): String {
