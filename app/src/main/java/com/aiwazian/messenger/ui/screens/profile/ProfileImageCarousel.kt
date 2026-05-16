@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.carousel.CarouselDefaults
 import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
@@ -23,10 +22,9 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.aiwazian.messenger.extensions.sharedElement
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileImageCarousel(
-    id: Long,
+    profileId: Long,
     avatars: List<Uri?>
 ) {
     val carouselState = rememberCarouselState { avatars.size }
@@ -58,7 +56,7 @@ fun ProfileImageCarousel(
                 CircularWavyProgressIndicator()
             } else {
                 val modifier = if (index == 0) {
-                    Modifier.sharedElement(key = "chat-avatar-$id")
+                    Modifier.sharedElement(key = "chat-avatar-$profileId")
                 } else {
                     Modifier
                 }

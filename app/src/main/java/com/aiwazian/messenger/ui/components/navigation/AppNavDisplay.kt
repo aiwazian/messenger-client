@@ -80,10 +80,18 @@ fun AppNavDisplay(vararg startRoute: AppRoute) {
                 entryProvider = entryProvider {
                     entry<AppRoute.Main> { MainScreen() }
                     entry<AppRoute.Chat>(metadata = PredictiveBackMetadata) {
-                        ChatScreen(chatId = it.chatId, chatName = it.chatName)
+                        ChatScreen(
+                            chatId = it.chatId,
+                            chatName = it.chatName,
+                            avatarUri = it.avatarUri
+                        )
                     }
                     entry<AppRoute.Profile>(metadata = PredictiveBackMetadata) {
-                        ProfileScreen(profileId = it.profileId)
+                        ProfileScreen(
+                            profileId = it.profileId,
+                            profileName = it.profileName,
+                            avatarUri = it.avatarUri
+                        )
                     }
                     entry<AppRoute.Settings> { SettingsScreen() }
                     entry<AppRoute.SettingsLanguage> { SettingsLanguageScreen() }

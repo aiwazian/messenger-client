@@ -4,6 +4,8 @@
 
 package com.aiwazian.messenger.ui.screens.profile
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -40,6 +43,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
@@ -57,22 +61,22 @@ import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 
 @Composable
 fun ProfileScreen(
-    profileId: Long, profileViewModel: ProfileViewModel = hiltViewModel()
+    profileId: Long,
+    profileName: String? = null,
+    avatarUri: String? = null,
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
-    val navBackStack = LocalNavBackStack.current
+    LaunchedEffect(Unit) {
+        viewModel.init(profileId, profileName, avatarUri?.toUri())
+    }
     
-    val uiState by profileViewModel.uiState.collectAsState()
+    val navBackStack = LocalNavBackStack.current
+    val uiState by viewModel.uiState.collectAsState()
     var showLeaveDialog by remember { mutableStateOf(false) }
     var leaveDialogData by remember { mutableStateOf<Pair<String, ChatType>?>(null) }
     
-    LaunchedEffect(profileId) {
-        if (profileId != -1L) {
-            profileViewModel.init(profileId)
-        }
-    }
-    
     LaunchedEffect(Unit) {
-        profileViewModel.uiEffect.collect { effect ->
+        viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is ProfileUiEffect.NavigateBack -> {
                     navBackStack.removeLastOrNull()
@@ -118,8 +122,11 @@ fun ProfileScreen(
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-            Box(modifier = Modifier.padding(bottom = 10.dp)) {
-                ProfileImageCarousel(avatars = uiState.avatars, id = uiState.id)
+            Box(
+                modifier = Modifier.padding(bottom = 10.dp),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                ProfileImageCarousel(avatars = uiState.avatars, profileId = uiState.id)
                 
                 Box(
                     modifier = Modifier
@@ -146,21 +153,23 @@ fun ProfileScreen(
             }
         }
         
-        TopBar(
-            chatId = uiState.id,
-            title = uiState.title.asString(),
-            subTitle = uiState.subTitle.asString(),
-            actions = uiState.actions
-        )
+        AnimatedVisibility(true, enter = fadeIn()) {
+            TopBar(
+                chatId = uiState.id,
+                title = uiState.title.asString(),
+                subTitle = uiState.subTitle.asString(),
+                actions = uiState.actions
+            )
+        }
     }
     
     if (showLeaveDialog && leaveDialogData != null) {
         LeaveProfileDialog(
             onDismiss = {
                 showLeaveDialog = false
-                profileViewModel.hideLeaveDialog()
+                viewModel.hideLeaveDialog()
             }, onConfirm = {
-                profileViewModel.onLeaveConfirmed()
+                viewModel.onLeaveConfirmed()
             }, profileName = leaveDialogData!!.first, chatType = leaveDialogData!!.second
         )
     }
@@ -256,15 +265,15 @@ private fun TopBar(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .sharedElement(key = "chat-name-$chatId")
+                        .sharedElement(key = "chat-name-$chatId", zIndexInOverlay = 1f)
                 )
                 Text(
                     text = subTitle,
                     fontSize = 12.sp,
                     lineHeight = 12.sp,
                     modifier = Modifier
-                        .fillMaxWidth()
                         .sharedElement(key = "chat-sub-title-$chatId")
+                        .fillMaxWidth()
                 )
             }
         }, navigationIcon = NavigationIcon(

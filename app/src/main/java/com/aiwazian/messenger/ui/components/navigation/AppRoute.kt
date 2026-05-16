@@ -15,10 +15,18 @@ sealed interface AppRoute : NavKey {
     data object Main : AppRoute
     
     @Serializable
-    data class Chat(val chatId: Long, val chatName: String?) : AppRoute
+    data class Chat(
+        val chatId: Long,
+        val chatName: String? = null,
+        val avatarUri: String? = null
+    ) : AppRoute
     
     @Serializable
-    data class Profile(val profileId: Long) : AppRoute
+    data class Profile(
+        val profileId: Long,
+        val profileName: String? = null,
+        val avatarUri: String? = null
+    ) : AppRoute
     
     @Serializable
     data object Settings : AppRoute
@@ -76,9 +84,6 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data object SettingsDataAndStorage : AppRoute
-    
-    @Serializable
-    data object SettingsProfileColor : AppRoute
     
     @Serializable
     data object NewMessage : AppRoute

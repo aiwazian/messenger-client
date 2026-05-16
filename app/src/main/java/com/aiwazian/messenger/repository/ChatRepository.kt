@@ -106,9 +106,14 @@ class ChatRepository @Inject constructor(
     }
     
     private suspend fun resolveChatInfo(chatEntity: ChatEntity, myId: Long): Pair<UiText, Uri?>? {
-        return when (ChatType.fromId(chatEntity.chatId)) {
+        val chatType = ChatType.fromId(chatEntity.chatId)
+        val info = when (chatType) {
             ChatType.PRIVATE -> {
-                userRepository.getById(chatEntity.chatId).firstOrNull()?.let { user ->
+                val user = userRepository.getById(chatEntity.chatId).firstOrNull()
+                if (user == null) {
+                    userRepository.fetchById(chatEntity.chatId)
+                    null
+                } else {
                     if (chatEntity.chatId == myId) {
                         Pair(
                             UiText.StringResource(R.string.saved_messages),
@@ -124,19 +129,28 @@ class ChatRepository @Inject constructor(
             }
             
             ChatType.GROUP -> {
-                groupRepository.getById(chatEntity.chatId).firstOrNull()?.let {
-                    Pair(UiText.DynamicString(it.name), it.avatars.firstOrNull()?.uri)
+                val group = groupRepository.getById(chatEntity.chatId).firstOrNull()
+                if (group == null) {
+                    groupRepository.fetchById(chatEntity.chatId)
+                    null
+                } else {
+                    Pair(UiText.DynamicString(group.name), group.avatars.firstOrNull()?.uri)
                 }
             }
             
             ChatType.CHANNEL -> {
-                channelRepository.getById(chatEntity.chatId).firstOrNull()?.let {
-                    Pair(UiText.DynamicString(it.name), it.avatars.firstOrNull()?.uri)
+                val channel = channelRepository.getById(chatEntity.chatId).firstOrNull()
+                if (channel == null) {
+                    channelRepository.fetchById(chatEntity.chatId)
+                    null
+                } else {
+                    Pair(UiText.DynamicString(channel.name), channel.avatars.firstOrNull()?.uri)
                 }
             }
             
             else -> Pair(UiText.DynamicString(""), null)
         }
+        return info
     }
     
     suspend fun refreshChats() {
@@ -151,9 +165,18 @@ class ChatRepository @Inject constructor(
                 
                 chatDao.upsertChats(dtos.map { it.toEntity() })
                 
+                userRepository.fetchMe()
+                
                 dtos.forEach { chatDto ->
                     chatDto.lastMessage?.let { lastMessageDto ->
                         saveMessagesToDb(listOf(lastMessageDto.toDomain()))
+                    }
+                    
+                    when (ChatType.fromId(chatDto.id)) {
+                        ChatType.PRIVATE -> userRepository.fetchById(chatDto.id)
+                        ChatType.GROUP -> groupRepository.fetchById(chatDto.id)
+                        ChatType.CHANNEL -> channelRepository.fetchById(chatDto.id)
+                        else -> {}
                     }
                 }
             } else {
@@ -219,6 +242,13 @@ class ChatRepository @Inject constructor(
                 val messages = dtos.map { messageDto ->
                     messageDto.toDomain()
                 }
+                
+                if ((offset == 0 || offset == null) && messages.isNotEmpty()) {
+                    val minTime = messages.last().sendTime
+                    val receivedIds = messages.map { it.id }
+                    messageDao.deleteMessagesInRangeExcluding(chatId, minTime, receivedIds)
+                }
+
                 saveMessagesToDb(messages)
                 Result.success(messages)
             } else {
@@ -389,18 +419,22 @@ class ChatRepository @Inject constructor(
         messageDao.updateMessageId(oldId, newId)
     }
     
-    suspend fun getDownloadUrl(chatId: Long, messageId: Long, fileId: String): String? {
+    suspend fun getDownloadUrl(chatId: Long, messageId: Long, fileId: String): Result<String> {
         return try {
             val response = messageApi.getFileDownloadUrl(chatId, messageId, fileId)
             if (response.isSuccessful) {
-                response.body()?.downloadUrl
+                val downloadUrl = response.body()
+                if (downloadUrl != null) {
+                    Result.success(downloadUrl.downloadUrl)
+                } else {
+                    Result.failure(Exception("Empty download url"))
+                }
             } else {
-                Log.e("ChatRepository", "Failed to get download url: ${response.message()}")
-                null
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
             }
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error getting download url", e)
-            null
+            Result.failure(e)
         }
     }
     

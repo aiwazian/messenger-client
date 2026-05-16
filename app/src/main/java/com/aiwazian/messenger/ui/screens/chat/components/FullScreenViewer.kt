@@ -18,14 +18,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -43,12 +39,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import coil.compose.AsyncImage
-import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.sharedElement
 import kotlin.math.abs
 
@@ -186,26 +180,6 @@ fun FullScreenViewer(
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack, null
                         )
-                    }
-                },
-                actions = {
-                    var expand by remember { mutableStateOf(false) }
-                    IconButton(
-                        onClick = { expand = true },
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f)
-                        )
-                    ) {
-                        Icon(Icons.Rounded.MoreVert, null)
-                    }
-                    
-                    DropdownMenu(
-                        expanded = expand,
-                        shape = MaterialTheme.shapes.large,
-                        onDismissRequest = { expand = false }) {
-                        DropdownMenuItem(text = {
-                            Text(stringResource(R.string.save_to_downloads))
-                        }, onClick = {})
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)

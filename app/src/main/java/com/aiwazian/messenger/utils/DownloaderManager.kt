@@ -132,8 +132,7 @@ class DownloaderManager @Inject constructor(
         val index = _downloads.indexOfFirst { it.fileId == fileId }
         if (index != -1) {
             ketch.resume(_downloads[index].id)
-            _downloads[index] =
-                _downloads[index].copy(status = DownloadStatus.DOWNLOADING)
+            _downloads[index] = _downloads[index].copy(status = DownloadStatus.DOWNLOADING)
         }
         fileRepository.updateFileStatus(fileId, DownloadStatus.DOWNLOADING)
     }

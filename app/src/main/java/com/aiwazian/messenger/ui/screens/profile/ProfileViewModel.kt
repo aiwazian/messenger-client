@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.profile
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
@@ -62,10 +63,17 @@ class ProfileViewModel @Inject constructor(
     
     private var isInit = false
     
-    fun init(profileId: Long) {
+    fun init(profileId: Long, profileName: String?, avatarUri: Uri?) {
         if (isInit) return
         isInit = true
-        _uiState.update { it.copy(id = profileId) }
+        
+        _uiState.update {
+            it.copy(
+                id = profileId,
+                title = UiText.DynamicString(profileName.orEmpty()),
+                avatars = if (avatarUri != null) listOf(avatarUri) else emptyList()
+            )
+        }
         
         viewModelScope.launch {
             when (ChatType.fromId(profileId)) {
@@ -137,6 +145,7 @@ class ProfileViewModel @Inject constructor(
                                 }
                         }
                     } else {
+                        userRepository.fetchById(profileId)
                         userRepository.getById(profileId).collectLatest { user ->
                             val profile = Profile.User(
                                 username = user.username,
@@ -174,6 +183,7 @@ class ProfileViewModel @Inject constructor(
             
             ChatType.CHANNEL -> {
                 viewModelScope.launch {
+                    channelRepository.fetchById(profileId)
                     channelRepository.getById(profileId).collectLatest { channel ->
                         val profile = Profile.Channel(
                             ownerId = channel.ownerId,
@@ -211,6 +221,7 @@ class ProfileViewModel @Inject constructor(
             
             ChatType.GROUP -> {
                 viewModelScope.launch {
+                    groupRepository.fetchById(profileId)
                     groupRepository.getById(profileId).collectLatest { group ->
                         group.let {
                             val profile = Profile.Group(

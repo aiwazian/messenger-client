@@ -26,9 +26,8 @@ android {
     
     buildTypes {
         debug {
-            buildConfigField("String", "API_URL", "\"http://10.155.204.101:3000/api/\"")
-            
-            buildConfigField("String", "WS_URL", "\"ws://10.155.204.101:3000\"")
+            buildConfigField("String", "API_URL", "\"https://aiwazian.ru/api/\"")
+            buildConfigField("String", "WS_URL", "\"wss://ws.aiwazian.ru\"")
         }
         
         release {
@@ -38,8 +37,7 @@ android {
             signingConfig = signingConfigs.getByName("debug")
             
             buildConfigField("String", "API_URL", "\"https://aiwazian.ru/api/\"")
-            
-            buildConfigField("String", "WS_URL", "\"wss://aiwazian.ru\"")
+            buildConfigField("String", "WS_URL", "\"wss://ws.aiwazian.ru\"")
         }
     }
     compileOptions {

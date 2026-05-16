@@ -4,15 +4,8 @@
 
 package com.aiwazian.messenger.ui.screens.main
 
-import android.Manifest.permission.POST_NOTIFICATIONS
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
-import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -39,13 +32,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.BookmarkBorder
@@ -55,8 +46,6 @@ import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material3.AppBarWithSearch
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExpandedFullScreenSearchBar
@@ -65,7 +54,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
@@ -81,25 +69,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -132,61 +116,6 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
-    val context = LocalContext.current
-    
-    var showPermissionRationale by remember { mutableStateOf(false) }
-    
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (!isGranted) {
-            viewModel.showPermissionRationale()
-        }
-    }
-    
-    LaunchedEffect(Unit) {
-        viewModel.uiEffect.collect { effect ->
-            when (effect) {
-                MainUiEffect.ShowPermissionRationale -> {
-                    showPermissionRationale = true
-                }
-                
-                MainUiEffect.HidePermissionRationale -> {
-                    showPermissionRationale = false
-                }
-                
-                MainUiEffect.OpenNotificationSettings -> {
-                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                        putExtra(
-                            Settings.EXTRA_APP_PACKAGE, context.packageName
-                        )
-                    }
-                    context.startActivity(intent)
-                }
-            }
-        }
-    }
-    
-    if (showPermissionRationale) {
-        NotificationBottomModal(enable = {
-            viewModel.hidePermissionRationale()
-            viewModel.openNotificationSettings()
-        }, disable = {
-            viewModel.hidePermissionRationale()
-        })
-    }
-    
-    LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    context, POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermissionLauncher.launch(POST_NOTIFICATIONS)
-            }
-        }
-    }
-    
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -207,75 +136,6 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
         },
     ) {
         Content(drawerState, viewModel)
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun NotificationBottomModal(
-    enable: () -> Unit, disable: () -> Unit
-) {
-    ModalBottomSheet(
-        onDismissRequest = disable,
-        dragHandle = null,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(70.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
-                    .fillMaxWidth(), contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Notifications,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(10.dp),
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-            
-            Column {
-                Text(
-                    text = "Включите уведомления",
-                    fontSize = 18.sp,
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.W500,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 10.dp)
-                )
-                
-                Text(
-                    text = "Разрешите приложению отправлять Вам уведомления, чтобы не пропустить сообщения от друзей и родных.",
-                    textAlign = TextAlign.Center,
-                    fontSize = 14.sp,
-                    lineHeight = 14.sp,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-        
-        Button(
-            onClick = enable,
-            modifier = Modifier
-                .padding(15.dp)
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(10.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
-        ) {
-            Text(text = "Открыть настройки", modifier = Modifier.padding(8.dp))
-        }
     }
 }
 
@@ -320,7 +180,13 @@ private fun Content(
                             if (hasSelection) {
                                 mainViewModel.toggleChatSelection(chat.id)
                             } else {
-                                navBackStack.add(AppRoute.Chat(chat.id, chatName))
+                                navBackStack.add(
+                                    AppRoute.Chat(
+                                        chatId = chat.id,
+                                        chatName = chatName,
+                                        avatarUri = chat.avatarUri?.toString()
+                                    )
+                                )
                             }
                         }, onLongClickChat = {
                             mainViewModel.toggleChatSelection(chat.id)
@@ -357,6 +223,19 @@ private fun Content(
                     )
                 }
             }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(innerPadding.calculateTopPadding())
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
         }
     }
 }
@@ -625,11 +504,19 @@ private fun DrawerContent(
                 scope.launch {
                     drawerState.close()
                 }
-                navBackStack.add(AppRoute.Profile(user.id))
+                navBackStack.add(
+                    AppRoute.Profile(
+                        profileId = user.id,
+                        profileName = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                        avatarUri = user.avatars.firstOrNull()?.toString()
+                    )
+                )
             }
             
+            val savedMessagesText = stringResource(R.string.saved_messages)
+            
             DrawerItem(
-                label = stringResource(R.string.saved_messages),
+                label = savedMessagesText,
                 icon = Icons.Rounded.BookmarkBorder
             ) {
                 scope.launch {
@@ -637,7 +524,9 @@ private fun DrawerContent(
                 }
                 navBackStack.add(
                     AppRoute.Chat(
-                        user.id, "${user.firstName} ${user.lastName.orEmpty()}".trim()
+                        chatId = user.id,
+                        chatName = savedMessagesText,
+                        avatarUri = user.avatars.firstOrNull()?.toString()
                     )
                 )
             }

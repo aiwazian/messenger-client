@@ -117,10 +117,13 @@ import java.util.Locale
 
 @Composable
 fun ChatScreen(
-    chatId: Long, chatName: String? = null, chatViewModel: ChatViewModel = hiltViewModel()
+    chatId: Long,
+    chatName: String? = null,
+    avatarUri: String? = null,
+    chatViewModel: ChatViewModel = hiltViewModel()
 ) {
     LaunchedEffect(Unit) {
-        chatViewModel.init(chatId, chatName)
+        chatViewModel.init(chatId, chatName, avatarUri?.toUri())
     }
     
     val navBackStack = LocalNavBackStack.current
@@ -500,7 +503,15 @@ private fun TopBar(
                     .clickable(
                         interactionSource = interactionSource,
                         indication = null,
-                        onClick = { navBackStack.add(AppRoute.Profile(chatId)) }),
+                        onClick = {
+                            navBackStack.add(
+                                AppRoute.Profile(
+                                    profileId = chatId,
+                                    profileName = title,
+                                    avatarUri = avatarUri?.toString()
+                                )
+                            )
+                        }),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent)
             ) {
                 Row(
