@@ -99,11 +99,11 @@ class SendMessageWithFilesUseCase @Inject constructor(
             }
             
             uploadManager.upload(
-                attachment.localUri,
-                initResponse.signedUrl,
-                initResponse.fileId,
-                fileId
+                fileUri = attachment.localUri,
+                uploadUrl = initResponse.signedUrl,
+                fileId = initResponse.fileId,
             ).onSuccess {
+                fileRepository.updateFileId(fileId, initResponse.fileId)
                 uploadResults.add(
                     AttachmentInputDto(
                         fileId = initResponse.fileId,

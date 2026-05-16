@@ -94,12 +94,16 @@ class ChatViewModel @Inject constructor(
     
     private var isInit = false
     
-    fun init(chatId: Long, chatName: String? = null) {
+    fun init(chatId: Long, chatName: String? = null, avatarUri: Uri? = null) {
         if (isInit) return
         isInit = true
         
         _uiState.update {
-            it.copy(chatId = chatId, chatName = UiText.DynamicString(chatName.orEmpty()))
+            it.copy(
+                chatId = chatId,
+                chatName = UiText.DynamicString(chatName.orEmpty()),
+                avatarUri = avatarUri
+            )
         }
         isFirstLoadDone = false
         limitFlow.value = 50
@@ -583,19 +587,20 @@ class ChatViewModel @Inject constructor(
         when (action) {
             FileAction.DOWNLOAD -> {
                 viewModelScope.launch {
-                    val url = chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
-                    if (url == null) {
-                        Log.e(
-                            "ChatVM",
-                            "Download URL is null for file: ${file.fileId}, message: ${message.id}, chat: ${message.chatId}"
-                        )
-                    } else {
-                        downloaderManager.download(
-                            url = url,
-                            fileName = file.name,
-                            fileId = file.fileId
-                        )
-                    }
+                    chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
+                        .onSuccess { url ->
+                            downloaderManager.download(
+                                url = url,
+                                fileName = file.name,
+                                fileId = file.fileId
+                            )
+                        }
+                        .onFailure {
+                            Log.e(
+                                "ChatVM",
+                                "Download URL is null for file: ${file.fileId}, message: ${message.id}, chat: ${message.chatId}"
+                            )
+                        }
                 }
             }
             

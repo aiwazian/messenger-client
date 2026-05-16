@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 
 class GroupRepository @Inject constructor(
@@ -46,9 +45,11 @@ class GroupRepository @Inject constructor(
                     avatarWithFile.avatar.toDomain(uri)
                 }
             groupWithAvatars.group.toDomain(avatars)
-        }.onStart {
+        }
+    
+    suspend fun fetchById(groupId: Long) {
         try {
-            val response = groupApi.getGroupById(id)
+            val response = groupApi.getGroupById(groupId)
             if (response.isSuccessful) {
                 val dto = response.body()
                 if (dto != null) {
@@ -59,10 +60,10 @@ class GroupRepository @Inject constructor(
                     avatarDao.insertAvatars(avatars)
                 }
             } else {
-                Log.e("GroupRepository", "Failed to get group $id: ${response.message()}")
+                Log.e("GroupRepository", "Failed to get group $groupId: ${response.message()}")
             }
         } catch (e: Exception) {
-            Log.e("GroupRepository", "Error fetching group $id", e)
+            Log.e("GroupRepository", "Error fetching group $groupId", e)
         }
     }
     

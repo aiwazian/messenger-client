@@ -96,7 +96,7 @@ class ChannelSettingsViewModel @Inject constructor(
                 uri.getFileType(context)
             ).onSuccess { uploadInfo ->
                 uploadManager.upload(
-                    uri = uri,
+                    fileUri = uri,
                     uploadUrl = uploadInfo.signedUrl,
                     fileId = uploadInfo.fileId
                 ).onSuccess {

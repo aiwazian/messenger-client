@@ -30,21 +30,20 @@ class UploadManager @Inject constructor(
     private val fileRepository: FileRepository
 ) {
     suspend fun upload(
-        uri: Uri,
+        fileUri: Uri,
         uploadUrl: String,
         fileId: String,
-        oldTempFileId: String? = null,
         maxAttempts: Int = 10
     ): Result<String> = withContext(Dispatchers.IO) {
         repeat(maxAttempts) { attempt ->
             try {
-                val fileSize = uri.getFileSize(context) ?: 0
-                val mimeType = uri.getFileType(context).toMediaTypeOrNull()
+                val fileSize = fileUri.getFileSize(context) ?: 0
+                val mimeType = fileUri.getFileType(context).toMediaTypeOrNull()
 
                 val requestBody = ProgressRequestBody(mimeType, fileSize, { progress ->
                     // TODO Update progress
                 }) {
-                    context.contentResolver.openInputStream(uri)
+                    context.contentResolver.openInputStream(fileUri)
                         ?: throw IOException("Unable to open input stream")
                 }
 
@@ -52,11 +51,8 @@ class UploadManager @Inject constructor(
                 val response = okHttpClient.newCall(request).execute()
 
                 if (response.isSuccessful) {
-                    val filePath = saveFileLocally(uri, fileId)
+                    val filePath = saveFileLocally(fileUri, fileId)
                     
-                    if (oldTempFileId != null) {
-                        fileRepository.updateFileId(oldTempFileId, fileId)
-                    }
                     fileRepository.updateFileStatus(fileId, DownloadStatus.COMPLETED)
                     fileRepository.updateFilePath(fileId, filePath)
                     

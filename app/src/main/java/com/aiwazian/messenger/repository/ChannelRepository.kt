@@ -23,7 +23,6 @@ import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 
 class ChannelRepository @Inject constructor(
@@ -65,23 +64,25 @@ class ChannelRepository @Inject constructor(
                     avatarWithFile.avatar.toDomain(uri)
                 }
             channelWithAvatars.channel.toDomain(avatars)
-        }.onStart {
-            try {
-                val response = channelApi.getChannelById(channelId)
-                if (response.isSuccessful) {
-                    val dto = response.body()
-                    if (dto != null) {
-                        val channel = dto.toDomain()
-                        channelDao.insert(channel.toEntity())
-                        
-                        val avatars = dto.avatars.map { it.toChannelEntity(channel.id) }
-                        avatarDao.insertAvatars(avatars)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("ChannelRepository", "Error getting channel in onStart", e)
-            }
         }
+    
+    suspend fun fetchById(channelId: Long) {
+        try {
+            val response = channelApi.getChannelById(channelId)
+            if (response.isSuccessful) {
+                val dto = response.body()
+                if (dto != null) {
+                    val channel = dto.toDomain()
+                    channelDao.insert(channel.toEntity())
+                    
+                    val avatars = dto.avatars.map { it.toChannelEntity(channel.id) }
+                    avatarDao.insertAvatars(avatars)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("ChannelRepository", "Error getting channel in onStart", e)
+        }
+    }
     
     suspend fun getSubscribers(
         channelId: Long,

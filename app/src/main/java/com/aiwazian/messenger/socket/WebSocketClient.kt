@@ -24,7 +24,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.serializer
 import org.json.JSONArray
 import org.json.JSONObject
 import javax.inject.Inject
@@ -80,28 +79,20 @@ class WebSocketClient @Inject constructor(
         }
     }
     
-    fun emitEvent(eventName: String, data: Any) {
+    fun emitEvent(eventName: String, data: Map<String, String>) {
         if (socket?.connected() != true) {
             Log.w(TAG, "Cannot emit event $eventName: socket is not connected")
             return
         }
         
         val jsonString = try {
-            when (data) {
-                is Map<*, *> -> {
-                    val casted = data as Map<String, Any?>
-                    
-                    val jsonObject = buildJsonObject {
-                        casted.forEach { (key, value) ->
-                            put(key, defaultJson.encodeToJsonElement(value))
-                        }
-                    }
-                    
-                    defaultJson.encodeToString(JsonObject.serializer(), jsonObject)
+            val jsonObject = buildJsonObject {
+                data.forEach { (key, value) ->
+                    put(key, defaultJson.encodeToJsonElement(value))
                 }
-                
-                else -> defaultJson.encodeToString(serializer(data::class.java), data)
             }
+            
+            defaultJson.encodeToString(JsonObject.serializer(), jsonObject)
         } catch (e: Exception) {
             Log.e(TAG, "Serialization failed", e)
             return
