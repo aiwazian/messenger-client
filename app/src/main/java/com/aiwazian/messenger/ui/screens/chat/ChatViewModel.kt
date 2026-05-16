@@ -576,14 +576,11 @@ class ChatViewModel @Inject constructor(
                 downloaderManager.cancel(attachment.fileId)
             }
             
-            val updatedMessages = getRawMessages().filter { it.id != tempMessageId }
-            updateChatItems(updatedMessages)
+            chatRepository.deleteLocalMessage(messageId = tempMessageId)
         }
     }
     
-    fun onFileAction(
-        message: Message, file: MessageAttachment, action: FileAction
-    ) {
+    fun onFileAction(message: Message, file: MessageAttachment, action: FileAction) {
         when (action) {
             FileAction.DOWNLOAD -> {
                 viewModelScope.launch {

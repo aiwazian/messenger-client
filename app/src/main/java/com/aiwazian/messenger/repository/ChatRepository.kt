@@ -244,10 +244,11 @@ class ChatRepository @Inject constructor(
                     messageDto.toDomain()
                 }
                 
-                if ((offset == 0 || offset == null) && messages.isNotEmpty()) {
+                if (messages.isNotEmpty()) {
+                    val maxTime = messages.first().sendTime
                     val minTime = messages.last().sendTime
                     val receivedIds = messages.map { it.id }
-                    messageDao.deleteMessagesInRangeExcluding(chatId, minTime, receivedIds)
+                    messageDao.deleteMessagesInRangeExcluding(chatId, minTime, maxTime, receivedIds)
                 }
 
                 saveMessagesToDb(messages)
@@ -431,6 +432,9 @@ class ChatRepository @Inject constructor(
                 val downloadUrl = response.body()
                 if (downloadUrl != null) {
                     Result.success(downloadUrl.downloadUrl)
+                } else if (response.code() == 404) {
+                    deleteLocalMessage(messageId)
+                    Result.failure(Exception("Message not found"))
                 } else {
                     Result.failure(Exception("Empty download url"))
                 }
@@ -475,6 +479,9 @@ class ChatRepository @Inject constructor(
                 DeleteMessageRequestDto(deleteForRecipient)
             )
             if (response.isSuccessful) {
+                deleteLocalMessage(messageId)
+                Result.success(Unit)
+            } else if (response.code() == 404) {
                 deleteLocalMessage(messageId)
                 Result.success(Unit)
             } else {
