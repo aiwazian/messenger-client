@@ -145,7 +145,6 @@ class ProfileViewModel @Inject constructor(
                                 }
                         }
                     } else {
-                        userRepository.fetchById(profileId)
                         userRepository.getById(profileId).collectLatest { user ->
                             val profile = Profile.User(
                                 username = user.username,
@@ -183,7 +182,6 @@ class ProfileViewModel @Inject constructor(
             
             ChatType.CHANNEL -> {
                 viewModelScope.launch {
-                    channelRepository.fetchById(profileId)
                     channelRepository.getById(profileId).collectLatest { channel ->
                         val profile = Profile.Channel(
                             ownerId = channel.ownerId,
@@ -221,7 +219,6 @@ class ProfileViewModel @Inject constructor(
             
             ChatType.GROUP -> {
                 viewModelScope.launch {
-                    groupRepository.fetchById(profileId)
                     groupRepository.getById(profileId).collectLatest { group ->
                         group.let {
                             val profile = Profile.Group(

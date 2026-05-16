@@ -57,49 +57,49 @@ class ChatRepository @Inject constructor(
 ) {
     
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun getAllChats(): Flow<List<Chat>> = chatDao.getAllChatsFlow().flatMapLatest { chatEntities ->
-        val myId =
-            userRepository.getMe().firstOrNull()?.id ?: return@flatMapLatest flowOf(emptyList())
-        
-        if (chatEntities.isEmpty()) return@flatMapLatest flowOf(emptyList())
-        
-        val flows = chatEntities.map { chatEntity ->
-            if (ChatType.fromId(chatEntity.chatId) == ChatType.PRIVATE) {
-                messageDao.getChatLastMessageFlow(myId, chatEntity.chatId)
-                    .map { messageWithAttachments ->
-                        val info = resolveChatInfo(chatEntity, myId) ?: return@map null
-                        val name = info.first
-                        val avatarUri = info.second
-                        
-                        val lastMessage = messageWithAttachments?.let {
-                            val attachments = it.attachments.map { att -> att.toDomain() }
-                            it.message.toDomain(attachments)
+    fun getAllChats(): Flow<List<Chat>> = userRepository.getMe().flatMapLatest { me ->
+        val myId = me.id
+        chatDao.getAllChatsFlow(myId).flatMapLatest { chatEntities ->
+            if (chatEntities.isEmpty()) return@flatMapLatest flowOf(emptyList())
+            
+            val flows = chatEntities.map { chatEntity ->
+                if (ChatType.fromId(chatEntity.chatId) == ChatType.PRIVATE) {
+                    messageDao.getChatLastMessageFlow(myId, chatEntity.chatId)
+                        .map { messageWithAttachments ->
+                            val info = resolveChatInfo(chatEntity, myId) ?: return@map null
+                            val name = info.first
+                            val avatarUri = info.second
+                            
+                            val lastMessage = messageWithAttachments?.let {
+                                val attachments = it.attachments.map { att -> att.toDomain() }
+                                it.message.toDomain(attachments)
+                            }
+                            
+                            chatEntity.toDomain(name, avatarUri, lastMessage)
                         }
-                        
-                        chatEntity.toDomain(name, avatarUri, lastMessage)
-                    }
-            } else {
-                messageDao.getChatLastMessageFlow(chatEntity.chatId)
-                    .map { messageWithAttachments ->
-                        val info = resolveChatInfo(chatEntity, myId) ?: return@map null
-                        val name = info.first
-                        val avatarUri = info.second
-                        
-                        val lastMessage = messageWithAttachments?.let {
-                            val attachments = it.attachments.map { att -> att.toDomain() }
-                            it.message.toDomain(attachments)
+                } else {
+                    messageDao.getChatLastMessageFlow(chatEntity.chatId)
+                        .map { messageWithAttachments ->
+                            val info = resolveChatInfo(chatEntity, myId) ?: return@map null
+                            val name = info.first
+                            val avatarUri = info.second
+                            
+                            val lastMessage = messageWithAttachments?.let {
+                                val attachments = it.attachments.map { att -> att.toDomain() }
+                                it.message.toDomain(attachments)
+                            }
+                            
+                            chatEntity.toDomain(name, avatarUri, lastMessage)
                         }
-                        
-                        chatEntity.toDomain(name, avatarUri, lastMessage)
-                    }
+                }
             }
-        }
-        
-        combine(flows) { chatsArray ->
-            chatsArray.filterNotNull().sortedWith(
-                compareByDescending<Chat> { it.isPinned }
-                    .thenByDescending { it.lastMessage?.sendTime ?: 0L }
-            )
+            
+            combine(flows) { chatsArray ->
+                chatsArray.filterNotNull().sortedWith(
+                    compareByDescending<Chat> { it.isPinned }
+                        .thenByDescending { it.lastMessage?.sendTime ?: 0L }
+                )
+            }
         }
     }.onStart {
         refreshChats()
@@ -157,13 +157,14 @@ class ChatRepository @Inject constructor(
         try {
             val response = chatApi.getAllChats()
             if (response.isSuccessful) {
+                val myId = userRepository.getMe().first().id
                 val dtos = response.body().orEmpty()
                 val chatIds = dtos.map { it.id }
                 
-                chatDao.deleteChatsNotIn(chatIds)
+                chatDao.deleteChatsNotIn(myId, chatIds)
                 messageDao.deleteMessagesNotInChatIds(chatIds)
                 
-                chatDao.upsertChats(dtos.map { it.toEntity() })
+                chatDao.upsertChats(dtos.map { it.toEntity(myId) })
                 
                 userRepository.fetchMe()
                 
@@ -264,9 +265,12 @@ class ChatRepository @Inject constructor(
         }
     }
     
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun getById(chatId: Long): Flow<Chat?> {
-        return chatDao.getChatByIdFlow(chatId).map {
-            it?.toDomain(UiText.DynamicString(""), null, null)
+        return userRepository.getMe().flatMapLatest { me ->
+            chatDao.getChatByIdFlow(me.id, chatId).map {
+                it?.toDomain(UiText.DynamicString(""), null, null)
+            }
         }
     }
     
@@ -276,7 +280,8 @@ class ChatRepository @Inject constructor(
             if (response.isSuccessful) {
                 val dto = response.body()
                 if (dto != null) {
-                    val chatEntity = dto.toEntity()
+                    val myId = userRepository.getMe().first().id
+                    val chatEntity = dto.toEntity(myId)
                     chatDao.upsertChats(listOf(chatEntity))
                     dto.toDomain()
                 } else null
@@ -339,10 +344,10 @@ class ChatRepository @Inject constructor(
     }
     
     suspend fun saveLocalMessage(message: Message) {
-        val myId = userRepository.getMe().firstOrNull()?.id
+        val myId = userRepository.getMe().first().id
         val targetChatId = if (message.chatId == myId) message.senderId else message.chatId
         
-        val existingChat = chatDao.getChatById(targetChatId)
+        val existingChat = chatDao.getChatById(myId, targetChatId)
         if (existingChat == null) {
             fetchChatByIdFromServer(targetChatId)
         }
@@ -528,14 +533,16 @@ class ChatRepository @Inject constructor(
     }
     
     suspend fun deleteLocalChat(chatId: Long) {
-        chatDao.deleteChat(chatId)
+        val myId = userRepository.getMe().first().id
+        chatDao.deleteChat(myId, chatId)
         clearLocalHistory(chatId)
     }
     
     suspend fun deleteChat(chatId: Long, deleteForRecipient: Boolean = false): Boolean {
         return try {
+            val myId = userRepository.getMe().first().id
             val response = chatApi.deleteChat(chatId, DeleteChatRequestDto(deleteForRecipient))
-            chatDao.deleteChat(chatId)
+            chatDao.deleteChat(myId, chatId)
             clearLocalHistory(chatId)
             response.isSuccessful
         } catch (e: Exception) {
@@ -546,10 +553,11 @@ class ChatRepository @Inject constructor(
     
     suspend fun pinChats(chatIds: List<Long>): Boolean {
         return try {
+            val myId = userRepository.getMe().first().id
             val request = PinChatsRequestDto(chatIds.map { it.toString() })
             val response = chatApi.pinChats(request)
             if (response.isSuccessful) {
-                chatDao.updatePinnedStatus(chatIds, true)
+                chatDao.updatePinnedStatus(myId, chatIds, true)
                 true
             } else {
                 Log.e("ChatRepository", "Failed to pin chats: ${response.message()}")
@@ -563,10 +571,11 @@ class ChatRepository @Inject constructor(
     
     suspend fun unpinChats(chatIds: List<Long>): Boolean {
         return try {
+            val myId = userRepository.getMe().first().id
             val request = PinChatsRequestDto(chatIds.map { it.toString() })
             val response = chatApi.unpinChats(request)
             if (response.isSuccessful) {
-                chatDao.updatePinnedStatus(chatIds, false)
+                chatDao.updatePinnedStatus(myId, chatIds, false)
                 true
             } else {
                 Log.e("ChatRepository", "Failed to unpin chats: ${response.message()}")

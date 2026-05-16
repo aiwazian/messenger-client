@@ -17,29 +17,30 @@ interface ChatDao {
     @Query(
         """
         SELECT * FROM chats 
+        WHERE userId = :userId
         ORDER BY isPinned DESC
     """
     )
-    fun getAllChatsFlow(): Flow<List<ChatEntity>>
+    fun getAllChatsFlow(userId: Long): Flow<List<ChatEntity>>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertChats(chats: List<ChatEntity>)
     
-    @Query("DELETE FROM chats WHERE chatId = :chatId")
-    suspend fun deleteChat(chatId: Long)
+    @Query("DELETE FROM chats WHERE userId = :userId AND chatId = :chatId")
+    suspend fun deleteChat(userId: Long, chatId: Long)
     
-    @Query("DELETE FROM chats WHERE chatId NOT IN (:chatIds)")
-    suspend fun deleteChatsNotIn(chatIds: List<Long>)
+    @Query("DELETE FROM chats WHERE userId = :userId AND chatId NOT IN (:chatIds)")
+    suspend fun deleteChatsNotIn(userId: Long, chatIds: List<Long>)
     
-    @Query("SELECT * FROM chats WHERE chatId = :chatId")
-    fun getChatByIdFlow(chatId: Long): Flow<ChatEntity?>
+    @Query("SELECT * FROM chats WHERE userId = :userId AND chatId = :chatId")
+    fun getChatByIdFlow(userId: Long, chatId: Long): Flow<ChatEntity?>
     
-    @Query("SELECT * FROM chats WHERE chatId = :chatId")
-    suspend fun getChatById(chatId: Long): ChatEntity?
+    @Query("SELECT * FROM chats WHERE userId = :userId AND chatId = :chatId")
+    suspend fun getChatById(userId: Long, chatId: Long): ChatEntity?
     
-    @Query("DELETE FROM chats")
-    suspend fun deleteAllChats()
-
-    @Query("UPDATE chats SET isPinned = :isPinned WHERE chatId IN (:chatIds)")
-    suspend fun updatePinnedStatus(chatIds: List<Long>, isPinned: Boolean)
+    @Query("DELETE FROM chats WHERE userId = :userId")
+    suspend fun deleteAllChats(userId: Long)
+    
+    @Query("UPDATE chats SET isPinned = :isPinned WHERE userId = :userId AND chatId IN (:chatIds)")
+    suspend fun updatePinnedStatus(userId: Long, chatIds: List<Long>, isPinned: Boolean)
 }

@@ -5,10 +5,13 @@
 package com.aiwazian.messenger.database.entity
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
-@Entity(tableName = "chats")
+@Entity(
+    tableName = "chats",
+    primaryKeys = ["userId", "chatId"]
+)
 data class ChatEntity(
-    @PrimaryKey val chatId: Long,
+    val userId: Long,
+    val chatId: Long,
     val isPinned: Boolean
 )
