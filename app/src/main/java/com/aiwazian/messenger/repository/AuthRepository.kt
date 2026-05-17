@@ -202,9 +202,9 @@ class AuthRepository @Inject constructor(
     
     suspend fun logout(): Result<Unit> {
         return try {
+            clearCurrentToken()
             val response = authApi.logout()
             if (response.isSuccessful) {
-                clearCurrentToken()
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Ошибка выхода: ${response.code()}"))

@@ -8,8 +8,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.repository.AuthRepository
-import com.aiwazian.messenger.utils.VibrationManager
-import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,8 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LogoutViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
-    private val vibrateManager: VibrationManager
+    private val authRepository: AuthRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(LogoutUiState())
@@ -41,15 +38,13 @@ class LogoutViewModel @Inject constructor(
     
     fun logout() {
         viewModelScope.launch {
-            authRepository.logout().onSuccess {
-                _sideEffect.emit(LogoutSideEffect.LogoutSuccess)
-            }.onFailure { e ->
-                vibrateManager.vibrate(VibrationPattern.Error)
+            authRepository.logout().onFailure { e ->
                 Log.e(
                     "AuthManager",
                     "Ошибка при выходе: ${e.message}"
                 )
             }
+            _sideEffect.emit(LogoutSideEffect.LogoutSuccess)
         }
     }
 }
