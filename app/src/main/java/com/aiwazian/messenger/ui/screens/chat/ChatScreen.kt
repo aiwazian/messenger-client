@@ -587,12 +587,18 @@ private fun DeleteChatDialog(
                 if (isPrivateChat) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable { onDeleteForRecipientChanged(!deleteForRecipient) }
+                            .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { onDeleteForRecipientChanged(!deleteForRecipient) }
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Checkbox(
                             checked = deleteForRecipient,
-                            onCheckedChange = onDeleteForRecipientChanged
+                            onCheckedChange = onDeleteForRecipientChanged,
+                            interactionSource = remember { MutableInteractionSource() }
                         )
                         Text(
                             text = stringResource(R.string.delete_for_recipient),
@@ -606,12 +612,13 @@ private fun DeleteChatDialog(
             TextButton(onClick = onDismissRequest) {
                 Text(stringResource(R.string.cancel))
             }
-            TextButton(
-                onClick = onConfirm,
+            CountdownTextButton(
+                text = stringResource(R.string.delete),
+                seconds = 5,
+                onClickAfterFinish = onConfirm,
+                onClickWhileRunning = {},
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            ) {
-                Text(stringResource(R.string.delete))
-            }
+            )
         })
 }
 

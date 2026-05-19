@@ -245,10 +245,17 @@ class ChatRepository @Inject constructor(
                 }
                 
                 if (messages.isNotEmpty()) {
-                    val maxTime = messages.first().sendTime
-                    val minTime = messages.last().sendTime
+                    val maxTime = messages.maxOf { it.sendTime }
+                    val minTime = messages.minOf { it.sendTime }
                     val receivedIds = messages.map { it.id }
-                    messageDao.deleteMessagesInRangeExcluding(chatId, minTime, maxTime, receivedIds)
+                    val userId = userRepository.getMe().first().id
+                    messageDao.deleteMessagesInRangeExcluding(
+                        userId,
+                        chatId,
+                        minTime,
+                        maxTime,
+                        receivedIds
+                    )
                 }
 
                 saveMessagesToDb(messages)

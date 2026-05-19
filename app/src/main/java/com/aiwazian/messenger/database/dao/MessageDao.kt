@@ -80,8 +80,16 @@ interface MessageDao {
     @Query("DELETE FROM message WHERE chatId NOT IN (:chatIds)")
     suspend fun deleteMessagesNotInChatIds(chatIds: List<Long>)
     
-    @Query("DELETE FROM message WHERE chatId = :chatId AND sendTime >= :minTime AND sendTime <= :maxTime AND id NOT IN (:ids)")
+    @Query(
+        "DELETE FROM message " +
+                "WHERE ((senderId = :userId AND chatId = :chatId) " +
+                "OR (senderId = :chatId AND chatId = :userId) " +
+                "OR (chatId = :chatId)) " +
+                "AND sendTime >= :minTime AND sendTime <= :maxTime " +
+                "AND id > 0 AND id NOT IN (:ids)"
+    )
     suspend fun deleteMessagesInRangeExcluding(
+        userId: Long,
         chatId: Long,
         minTime: Long,
         maxTime: Long,
