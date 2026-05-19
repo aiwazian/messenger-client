@@ -94,19 +94,18 @@ fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
                                 .horizontalScroll(rememberScrollState())
                                 .padding(8.dp)
                         ) {
-                            AppPrimaryColor.entries.forEach { option ->
+                            AppPrimaryColor.entries.forEach { color ->
                                 RadioButton(
-                                    enabled = !isDynamicColorEnable,
                                     modifier = Modifier.scale(1.5f),
-                                    selected = primaryColor == option,
+                                    selected = primaryColor == color,
                                     onClick = {
                                         coroutineScope.launch {
-                                            viewModel.setPrimaryColor(option)
+                                            viewModel.setPrimaryColor(color)
                                         }
                                     },
                                     colors = RadioButtonDefaults.colors(
-                                        selectedColor = option.color,
-                                        unselectedColor = option.color,
+                                        selectedColor = color.color,
+                                        unselectedColor = color.color,
                                     )
                                 )
                             }
@@ -120,7 +119,7 @@ fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
                     headlineText = stringResource(R.string.dark_theme),
                     trailingText = theme,
                     onClick = {
-                        navBackStack.add(AppRoute.SettingsDesign)
+                        navBackStack.add(AppRoute.SettingsDarkTheme)
                     })
             }
         }

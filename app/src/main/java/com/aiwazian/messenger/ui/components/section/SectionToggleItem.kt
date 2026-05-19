@@ -10,64 +10,60 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
 fun SectionToggleItem(
-    icon: ImageVector? = null,
     text: String,
-    description: String? = null,
     isChecked: Boolean,
+    icon: ImageVector? = null,
     onCheckedChange: () -> Unit,
 ) {
-    Card(
+    TextButton(
         shape = RectangleShape,
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent,
-        ),
-        onClick = onCheckedChange
+        onClick = onCheckedChange,
+        colors = ButtonDefaults.textButtonColors(
+            contentColor = MaterialTheme.colorScheme.onSurface
+        )
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(start = 8.dp, top = 8.dp, end = 4.dp, bottom = 8.dp)
         ) {
             if (icon != null) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    modifier = Modifier.padding(end = 16.dp)
+                    modifier = Modifier.padding(end = 10.dp)
                 )
             }
             
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = text,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Normal
                 )
-                if (description != null) {
-                    Text(
-                        text = description,
-                        fontSize = 12.sp,
-                    )
-                }
             }
             
             Box(Modifier.pointerInput(Unit) {
@@ -78,15 +74,12 @@ fun SectionToggleItem(
                 }
             }) {
                 Switch(
-                    checked = isChecked,
-                    onCheckedChange = null,
-                    colors = SwitchDefaults.colors(
+                    checked = isChecked, onCheckedChange = null, colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                         checkedTrackColor = MaterialTheme.colorScheme.primary,
-                        uncheckedTrackColor = MaterialTheme.colorScheme.surface
                     )
                 )
             }
         }
     }
 }
-

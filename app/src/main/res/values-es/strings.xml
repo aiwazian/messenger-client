@@ -219,4 +219,6 @@
     <string name="user">Usuario</string>
     <string name="optional">Opcional</string>
     <string name="terms_of_use">Términos de uso</string>
+    <string name="i_agree">Estoy de acuerdo</string>
+    <string name="open_settings">Abrir configuración</string>
 </resources>

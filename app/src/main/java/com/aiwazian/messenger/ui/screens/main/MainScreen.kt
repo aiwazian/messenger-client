@@ -5,7 +5,9 @@
 package com.aiwazian.messenger.ui.screens.main
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -48,6 +50,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material3.AppBarWithSearch
 import androidx.compose.material3.DrawerState
@@ -58,6 +61,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
@@ -65,8 +69,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBarValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -78,10 +84,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -129,18 +137,19 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
             drawerState.close()
         }
     }
+    
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { isGranted: Boolean ->
         if (isGranted) {
-            // RuStore Push SDK (and your app) can post notifications.
+        
         } else {
-            // TODO: Inform user that your app will not show notifications.
+            viewModel.showNotificationSheet()
         }
     }
     
     LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !uiState.askedPermission) {
             requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
@@ -158,18 +167,19 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Content(
-    drawerState: DrawerState, mainViewModel: MainViewModel
+    drawerState: DrawerState, viewModel: MainViewModel
 ) {
     val navBackStack = LocalNavBackStack.current
     val scope = rememberCoroutineScope()
-    val uiState by mainViewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     val hasSelection = uiState.selectedChatIds.isNotEmpty()
-    val socketState by mainViewModel.socketState.collectAsState()
+    val socketState by viewModel.socketState.collectAsState()
     
     BackHandler(hasSelection) {
-        mainViewModel.clearSelection()
+        viewModel.clearSelection()
     }
     
     Scaffold(modifier = Modifier.fillMaxSize(), floatingActionButton = {
@@ -178,9 +188,15 @@ private fun Content(
             enter = scaleIn() + fadeIn(),
             exit = scaleOut() + fadeOut()
         ) {
-            FloatingButton(onClick = {
-                navBackStack.add(AppRoute.NewMessage)
-            })
+            FloatingActionButton(
+                shape = CircleShape,
+                onClick = {
+                    navBackStack.add(AppRoute.NewMessage)
+                },
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(imageVector = Icons.Default.Create, contentDescription = null)
+            }
         }
     }) { innerPadding ->
         Column {
@@ -197,7 +213,7 @@ private fun Content(
                         val isSelected = chat.id in uiState.selectedChatIds
                         ChatCard(chat = chat, isSelected = isSelected, onClickChat = {
                             if (hasSelection) {
-                                mainViewModel.toggleChatSelection(chat.id)
+                                viewModel.toggleChatSelection(chat.id)
                             } else {
                                 navBackStack.add(
                                     AppRoute.Chat(
@@ -208,7 +224,7 @@ private fun Content(
                                 )
                             }
                         }, onLongClickChat = {
-                            mainViewModel.toggleChatSelection(chat.id)
+                            viewModel.toggleChatSelection(chat.id)
                         })
                     }
                 }
@@ -227,7 +243,7 @@ private fun Content(
                         passcodeEnabled = uiState.hasPasscode,
                         onLockClick = {
                             scope.launch {
-                                mainViewModel.lockApp()
+                                viewModel.lockApp()
                             }
                         },
                         socketState = socketState
@@ -235,10 +251,10 @@ private fun Content(
                 } else {
                     SelectionTopBar(
                         selectedCount = uiState.selectedChatIds.size,
-                        onClearSelection = mainViewModel::clearSelection,
-                        onPinClick = mainViewModel::pinSelectedChats,
-                        onUnpinClick = mainViewModel::unpinSelectedChats,
-                        hasUnpinnedChats = mainViewModel.hasUnpinnedSelectedChats()
+                        onClearSelection = viewModel::clearSelection,
+                        onPinClick = viewModel::pinSelectedChats,
+                        onUnpinClick = viewModel::unpinSelectedChats,
+                        hasUnpinnedChats = viewModel.hasUnpinnedSelectedChats()
                     )
                 }
             }
@@ -255,6 +271,46 @@ private fun Content(
                         )
                     )
             )
+        }
+        
+        if (uiState.showNotificationBottomSheet) {
+            val context = LocalContext.current
+            val sheetState = rememberModalBottomSheetState()
+            ModalBottomSheet(
+                onDismissRequest = viewModel::hideNotificationSheet,
+                sheetState = sheetState,
+                dragHandle = null
+            ) {
+                Column(
+                    modifier = Modifier.padding(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(
+                            Icons.Rounded.NotificationsNone,
+                            null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier
+                                .padding(14.dp)
+                                .size(28.dp)
+                        )
+                    }
+                    Text("Включите уведомления, чтобы не пропускать важные сообщения")
+                    TextButton(modifier = Modifier.fillMaxWidth(), onClick = {
+                        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                        }
+                        context.startActivity(intent)
+                    }, shape = MaterialTheme.shapes.medium) {
+                        Text(stringResource(R.string.open_settings))
+                    }
+                }
+            }
         }
     }
 }
@@ -327,19 +383,6 @@ private fun EmptyChatPlaceholder(
         
         Text(
             text = text, textAlign = TextAlign.Center, lineHeight = 16.sp
-        )
-    }
-}
-
-@Composable
-private fun FloatingButton(onClick: () -> Unit) {
-    FloatingActionButton(
-        shape = CircleShape,
-        onClick = onClick,
-        containerColor = MaterialTheme.colorScheme.primary
-    ) {
-        Icon(
-            imageVector = Icons.Default.Create, contentDescription = null
         )
     }
 }

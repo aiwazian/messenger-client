@@ -35,7 +35,7 @@ sealed interface AppRoute : NavKey {
     data object SettingsLanguage : AppRoute
     
     @Serializable
-    data object SettingsDesign : AppRoute
+    data object SettingsDarkTheme : AppRoute
     
     @Serializable
     data object SettingsChat : AppRoute

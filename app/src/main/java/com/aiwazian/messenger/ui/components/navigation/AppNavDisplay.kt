@@ -42,11 +42,11 @@ import com.aiwazian.messenger.ui.screens.logout.LogoutScreen
 import com.aiwazian.messenger.ui.screens.main.MainScreen
 import com.aiwazian.messenger.ui.screens.newmessage.NewMessageScreen
 import com.aiwazian.messenger.ui.screens.profile.ProfileScreen
-import com.aiwazian.messenger.ui.screens.settings.SettingsNotificationsScreen
 import com.aiwazian.messenger.ui.screens.settings.SettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsAppearanceScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsDarkThemeScreen
 import com.aiwazian.messenger.ui.screens.settings.language.SettingsLanguageScreen
+import com.aiwazian.messenger.ui.screens.settings.notification.NotificationSettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsPrivacyScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.bio.SettingsBioScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthScreen
@@ -95,8 +95,9 @@ fun AppNavDisplay(vararg startRoute: AppRoute) {
                     }
                     entry<AppRoute.Settings> { SettingsScreen() }
                     entry<AppRoute.SettingsLanguage> { SettingsLanguageScreen() }
-                    entry<AppRoute.SettingsDesign> { SettingsDarkThemeScreen() }
+                    entry<AppRoute.SettingsDarkTheme> { SettingsDarkThemeScreen() }
                     entry<AppRoute.SettingsChat> { SettingsAppearanceScreen() }
+                    entry<AppRoute.SettingsNotifications> { NotificationSettingsScreen() }
                     entry<AppRoute.SettingsPrivacy> { SettingsPrivacyScreen() }
                     entry<AppRoute.SettingsLastSeen> { SettingsLastSeenScreen(level = it.level) }
                     entry<AppRoute.SettingsSecurity> { SettingsSecurityScreen() }
@@ -110,7 +111,6 @@ fun AppNavDisplay(vararg startRoute: AppRoute) {
                     entry<AppRoute.SettingsPasscodeCreate> { SettingsPasscodeCreateScreen() }
                     entry<AppRoute.SettingsPasscodeChange> { SettingsPasscodeChangeScreen() }
                     entry<AppRoute.SettingsCloudPassword> { SettingsCloudPasswordScreen() }
-                    entry<AppRoute.SettingsNotifications> { SettingsNotificationsScreen() }
                     entry<AppRoute.SettingsDataAndStorage> { StorageScreen() }
                     entry<AppRoute.NewMessage> { NewMessageScreen() }
                     entry<AppRoute.CreateGroup> { CreateGroupScreen() }

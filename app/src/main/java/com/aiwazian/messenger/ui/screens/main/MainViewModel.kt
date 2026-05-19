@@ -15,9 +15,7 @@ import com.aiwazian.messenger.utils.AppLockManager
 import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.ThemeManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
@@ -35,9 +33,6 @@ class MainViewModel @Inject constructor(
     
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState = _uiState.asStateFlow()
-    
-    private val _uiEffect = MutableSharedFlow<MainUiEffect>()
-    val uiEffect = _uiEffect.asSharedFlow()
     
     val socketState = webSocketClient.connectionState
     
@@ -81,22 +76,12 @@ class MainViewModel @Inject constructor(
         appLockManager.lock()
     }
     
-    fun showPermissionRationale() {
-        viewModelScope.launch {
-            _uiEffect.emit(MainUiEffect.ShowPermissionRationale)
-        }
+    fun showNotificationSheet() {
+        _uiState.update { it.copy(showNotificationBottomSheet = true, askedPermission = true) }
     }
     
-    fun hidePermissionRationale() {
-        viewModelScope.launch {
-            _uiEffect.emit(MainUiEffect.HidePermissionRationale)
-        }
-    }
-    
-    fun openNotificationSettings() {
-        viewModelScope.launch {
-            _uiEffect.emit(MainUiEffect.OpenNotificationSettings)
-        }
+    fun hideNotificationSheet() {
+        _uiState.update { it.copy(showNotificationBottomSheet = false) }
     }
     
     private fun List<Chat>.sortedByLastMessage(): List<Chat> {

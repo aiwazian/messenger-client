@@ -216,4 +216,5 @@
     <string name="optional">선택 사항</string>
     <string name="terms_of_use">이용 약관</string>
     <string name="i_agree">나는 동의한다</string>
+    <string name="open_settings">설정 열기</string>
 </resources>

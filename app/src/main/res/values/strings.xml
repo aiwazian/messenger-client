@@ -226,4 +226,8 @@
     <string name="optional">Optional</string>
     <string name="terms_of_use">Terms of Use</string>
     <string name="i_agree">I agree</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="private_chats">Private Chats</string>
+    <string name="channels">Channels</string>
+    <string name="groups">Groups</string>
 </resources>

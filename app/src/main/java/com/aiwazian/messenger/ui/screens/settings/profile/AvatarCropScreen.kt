@@ -81,7 +81,7 @@ fun AvatarCropScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black),
+                .background(MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center
         ) {
             CircularWavyProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -121,7 +121,7 @@ private fun AvatarCropContent(bitmap: Bitmap, onCropConfirmed: (Bitmap) -> Unit)
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(MaterialTheme.colorScheme.surface)
             .transformable(state = transformableState)
     ) {
         val screenW = constraints.maxWidth.toFloat()
@@ -180,11 +180,13 @@ private fun AvatarCropContent(bitmap: Bitmap, onCropConfirmed: (Bitmap) -> Unit)
                     rotationZ = animRotation.value
                 })
         
+        val color = MaterialTheme.colorScheme.surface.copy(alpha = 0.62f)
+        
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) {
-            drawRect(color = Color.Black.copy(alpha = 0.62f))
+            drawRect(color = color)
             drawCircle(
                 color = Color.Transparent,
                 radius = circleRadius,
