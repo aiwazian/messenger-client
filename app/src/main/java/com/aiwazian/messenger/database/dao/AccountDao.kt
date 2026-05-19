@@ -23,6 +23,9 @@ interface AccountDao {
     @Query("SELECT * FROM account WHERE userId = :id LIMIT 1")
     suspend fun getById(id: Long): AccountEntity?
     
+    @Query("SELECT * FROM account WHERE isCurrent = TRUE LIMIT 1")
+    suspend fun getCurrentAccount(): AccountEntity?
+
     @Query("SELECT token FROM account WHERE isCurrent = TRUE ORDER BY id DESC LIMIT 1")
     suspend fun getCurrentToken(): String?
     

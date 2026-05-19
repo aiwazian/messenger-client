@@ -26,8 +26,8 @@ android {
     
     buildTypes {
         debug {
-            buildConfigField("String", "API_URL", "\"https://aiwazian.ru/api/\"")
-            buildConfigField("String", "WS_URL", "\"wss://ws.aiwazian.ru\"")
+            buildConfigField("String", "API_URL", "\"http://10.155.204.101:4000/api/\"")
+            buildConfigField("String", "WS_URL", "\"ws://10.155.204.101:4000\"")
         }
         
         release {
@@ -63,7 +63,6 @@ dependencies {
     
     // Firebase
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.messaging)
     implementation(libs.firebase.analytics)
     
     implementation(platform(libs.androidx.compose.bom))
@@ -105,23 +104,20 @@ dependencies {
     implementation(libs.okhttp)
     
     // Dagger Hilt
+    ksp(libs.hilt.compiler)
     implementation(libs.hilt.android)
     implementation(libs.androidx.graphics.shapes)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
     
     // Room database
-    implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     
     implementation(libs.material.icons.extended)
     
     implementation(libs.socketio.client) {
-        exclude(
-            "org.json", "json"
-        )
+        exclude("org.json", "json")
     }
     
     implementation(libs.androidx.core.splashscreen)
@@ -131,4 +127,6 @@ dependencies {
     implementation(libs.androidx.browser)
     
     implementation(libs.coil.compose)
+    
+    implementation(libs.pushclient)
 }

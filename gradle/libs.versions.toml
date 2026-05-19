@@ -7,8 +7,7 @@ browser = "1.10.0"
 coilCompose = "2.7.0"
 coreSplashscreen = "1.2.0"
 datastorePreferences = "1.2.1"
-firebaseBom = "34.12.0"
-firebaseMessaging = "25.0.1"
+firebaseBom = "34.13.0"
 firebaseAnalytics = "23.2.0"
 foundation = "1.11.1"
 hiltAndroid = "2.59.2"
@@ -34,12 +33,12 @@ mobileads = "8.0.0"
 navigationCompose = "2.9.8"
 okhttp = "5.3.2"
 protobufJavalite = "4.34.1"
+pushclient = "7.2.0"
 retrofit = "3.0.0"
 retrofit2KotlinxSerializationConverter = "1.0.0"
 roomRuntime = "2.8.4"
 graphicsShapes = "1.1.0"
 material3 = "1.5.0-alpha19"
-uiTooling = "1.11.1"
 socketio = "2.1.2"
 serialization = "2.3.21"
 hilt = "2.59.2"
@@ -70,6 +69,7 @@ androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 androidx-material-icons-extended-android = { module = "androidx.compose.material:material-icons-extended-android", version.ref = "materialIconsExtendedAndroid" }
+androidx-graphics-shapes = { group = "androidx.graphics", name = "graphics-shapes", version.ref = "graphicsShapes" }
 
 accompanist-navigation-animation = { module = "com.google.accompanist:accompanist-navigation-animation", version.ref = "accompanistNavigationMaterial" }
 accompanist-navigation-material = { module = "com.google.accompanist:accompanist-navigation-material", version.ref = "accompanistNavigationMaterial" }
@@ -82,12 +82,12 @@ ketch = { module = "com.github.khushpanchal:Ketch", version.ref = "ketch" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
-firebase-messaging = { module = "com.google.firebase:firebase-messaging", version.ref = "firebaseMessaging" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics", version.ref = "firebaseAnalytics" }
 
 mobileads = { module = "com.yandex.android:mobileads", version.ref = "mobileads" }
 mobileads-compose = { module = "com.yandex.android:mobileads-compose", version.ref = "mobileadsCompose" }
 
+pushclient = { module = "ru.rustore.sdk:pushclient", version.ref = "pushclient" }
 socketio-client = { module = "io.socket:socket.io-client", version.ref = "socketio" }
 
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottieCompose" }
@@ -96,9 +96,7 @@ okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobufJavalite" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit2-kotlinx-serialization-converter = { module = "com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter", version.ref = "retrofit2KotlinxSerializationConverter" }
-androidx-graphics-shapes = { group = "androidx.graphics", name = "graphics-shapes", version.ref = "graphicsShapes" }
 material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
-androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "uiTooling" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

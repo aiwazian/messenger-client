@@ -5,41 +5,62 @@
 package com.aiwazian.messenger.repository
 
 import android.util.Log
-import com.aiwazian.messenger.network.api.SessionApi
-import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.domain.Session
+import com.aiwazian.messenger.mappers.toDomain
+import com.aiwazian.messenger.network.api.SessionApi
+import com.aiwazian.messenger.network.dto.UpdateFcmTokenDto
 import javax.inject.Inject
 
 class SessionRepository @Inject constructor(
     private val sessionApi: SessionApi
 ) {
-
-    suspend fun getAllSessions(): List<Session> {
+    
+    suspend fun getAllSessions(): Result<List<Session>> {
         return try {
             val response = sessionApi.getAllSessions()
             if (response.isSuccessful) {
-                val dtos = response.body().orEmpty()
-                dtos.map { it.toDomain() }
+                val dtos = response.body().orEmpty().map { it.toDomain() }
+                Result.success(dtos)
             } else {
                 Log.e("SessionRepository", "Failed to get sessions: ${response.message()}")
-                emptyList()
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
             }
         } catch (e: Exception) {
             Log.e("SessionRepository", "Error getting sessions", e)
-            emptyList()
+            Result.failure(e)
         }
     }
-
-    suspend fun getDeviceCount(): Int {
+    
+    suspend fun updateFcmToken(token: String): Result<Unit> {
         return try {
-            val sessions = getAllSessions()
-            sessions.size
+            val response = sessionApi.updateFcmToken(UpdateFcmTokenDto(token))
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("SessionRepository", "Error updating FCM token", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun getDeviceCount(): Result<Int> {
+        return try {
+            val response = sessionApi.getAllSessions()
+            if (response.isSuccessful) {
+                val dtos = response.body().orEmpty().map { it.toDomain() }
+                Result.success(dtos.size)
+            } else {
+                Log.e("SessionRepository", "Failed to get sessions: ${response.message()}")
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
         } catch (e: Exception) {
             Log.e("SessionRepository", "Error getting device count", e)
-            1
+            Result.failure(e)
         }
     }
-
+    
     suspend fun deleteSession(sessionId: Int): Boolean {
         return try {
             val response = sessionApi.deleteSession(sessionId)
@@ -49,14 +70,18 @@ class SessionRepository @Inject constructor(
             false
         }
     }
-
-    suspend fun deleteAllSessions(): Boolean {
+    
+    suspend fun deleteAllSessions(): Result<Unit> {
         return try {
             val response = sessionApi.deleteAllSessions()
-            response.isSuccessful
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
         } catch (e: Exception) {
             Log.e("SessionRepository", "Error deleting all sessions", e)
-            false
+            Result.failure(e)
         }
     }
 }

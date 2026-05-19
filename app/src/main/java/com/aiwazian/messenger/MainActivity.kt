@@ -6,7 +6,6 @@ package com.aiwazian.messenger
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -26,7 +25,6 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.screens.lock.LockScreen
 import com.aiwazian.messenger.ui.theme.ApplicationTheme
 import com.aiwazian.messenger.utils.AppLockManager
-import com.aiwazian.messenger.utils.NotificationService
 import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.ThemeManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -88,27 +86,7 @@ class MainActivity : AppCompatActivity() {
             val isDynamicColorEnable by themeManager.dynamicColor.collectAsState()
             
             LaunchedEffect(Unit) {
-                try {
-                    webSocketClient.connect()
-                } catch (e: Exception) {
-                    Log.e(
-                        "MainActivity",
-                        "Ошибка подключения вебсокета",
-                        e
-                    )
-                }
-                
-                try {
-                    val notificationService = NotificationService()
-                    val token = notificationService.getFirebaseToken()
-                    notificationService.sendTokenToServer(token)
-                } catch (e: Exception) {
-                    Log.e(
-                        "MainActivity",
-                        "Ошибка при отправке токена для уведомлений на сервер",
-                        e
-                    )
-                }
+                webSocketClient.connect()
             }
             
             ApplicationTheme(

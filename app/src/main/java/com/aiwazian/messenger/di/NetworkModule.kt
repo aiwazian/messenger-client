@@ -2,8 +2,9 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.network
+package com.aiwazian.messenger.di
 
+import com.aiwazian.messenger.network.RetrofitInstance
 import com.aiwazian.messenger.network.api.AuthApi
 import com.aiwazian.messenger.network.api.ChannelApi
 import com.aiwazian.messenger.network.api.ChatApi

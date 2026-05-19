@@ -19,20 +19,13 @@ class VibrationManager @Inject constructor(
     private val context: Context
 ) {
     
-    private val vibrator: Vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val vibratorManager =
-            context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-        vibratorManager.defaultVibrator
+    private val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        context.getSystemService(VibratorManager::class.java).defaultVibrator
     } else {
-        context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        context.getSystemService(Vibrator::class.java)
     }
     
     fun vibrate(pattern: LongArray) {
-        vibrator.vibrate(
-            VibrationEffect.createWaveform(
-                pattern,
-                -1
-            )
-        )
+        vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
     }
 }

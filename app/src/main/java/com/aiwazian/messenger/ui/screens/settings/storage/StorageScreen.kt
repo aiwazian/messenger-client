@@ -75,9 +75,6 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
         }
     }
     
-    val sizeBytes = storageViewModel.appSize
-    val cacheSize = sizeBytes.formatFileSize()
-    
     Scaffold(
         topBar = { TopBar(storageViewModel) }) { padding ->
         Column(
@@ -98,7 +95,7 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
                     fontWeight = FontWeight.W500
                 )
                 Text(
-                    text = cacheSize,
+                    text = uiState.appSize.formatFileSize(),
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

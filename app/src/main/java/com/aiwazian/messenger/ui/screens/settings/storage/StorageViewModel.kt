@@ -33,8 +33,7 @@ class StorageViewModel @Inject constructor(
     private val _uiEvent = MutableSharedFlow<StorageUiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
     
-    var appSize: Long = 0
-        private set
+    private val storageStatsManager = context.getSystemService(StorageStatsManager::class.java)
     
     init {
         loadStorageInfo()
@@ -128,8 +127,6 @@ class StorageViewModel @Inject constructor(
     }
     
     private fun getAppSize(context: Context) {
-        val storageStatsManager =
-            context.getSystemService(Context.STORAGE_STATS_SERVICE) as StorageStatsManager
         val appInfo = context.applicationInfo
         val user = UserHandle.getUserHandleForUid(appInfo.uid)
         
@@ -139,7 +136,7 @@ class StorageViewModel @Inject constructor(
                 context.packageName,
                 user
             )
-            appSize = stats.appBytes + stats.dataBytes + stats.cacheBytes
+            _uiState.update { it.copy(appSize = stats.appBytes + stats.dataBytes + stats.cacheBytes) }
         } catch (e: Exception) {
             e.printStackTrace()
         }

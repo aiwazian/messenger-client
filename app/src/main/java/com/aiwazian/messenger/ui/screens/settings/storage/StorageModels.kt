@@ -59,6 +59,7 @@ data class CategoryStats(
 )
 
 data class StorageUiState(
+    val appSize: Long = 0,
     val categories: List<CategoryStats> = emptyList(),
     val totalCacheSize: Long = 0,
     val selectedSize: Long = 0,

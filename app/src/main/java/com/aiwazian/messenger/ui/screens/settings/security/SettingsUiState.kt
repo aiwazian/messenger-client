@@ -5,7 +5,7 @@
 package com.aiwazian.messenger.ui.screens.settings.security
 
 data class SettingsUiState(
-    val deviceCount: Int = 0,
+    val deviceCount: Int = 1,
     val passcodeEnabled: Boolean = false,
     val showPasscodeBottomSheet: Boolean = false
 )

@@ -38,13 +38,12 @@ class DevicesViewModel @Inject constructor(
     
     private fun getSessions() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
             try {
-                val sessions = sessionRepository.getAllSessions()
-                _uiState.update { it.copy(sessions = sessions, isLoading = false) }
+                sessionRepository.getAllSessions().onSuccess { sessions ->
+                    _uiState.update { it.copy(sessions = sessions) }
+                }
             } catch (e: Exception) {
                 Log.e("DevicesViewModel", "Error getting sessions", e)
-                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
@@ -106,17 +105,12 @@ class DevicesViewModel @Inject constructor(
     fun terminateAllOtherSessions() {
         viewModelScope.launch {
             hideTerminateAllOtherSessionsDialog()
-            try {
-                val success = sessionRepository.deleteAllSessions()
-                if (success) {
-                    _uiState.update { state ->
-                        state.copy(sessions = state.sessions.filter { it.isCurrent })
-                    }
-                    _sideEffect.emit(DevicesSideEffect.ShowSnackbar("Сессии завершены"))
-                } else {
-                    handleError("Не удалось завершить сессии")
+            sessionRepository.deleteAllSessions().onSuccess {
+                _uiState.update { state ->
+                    state.copy(sessions = state.sessions.filter { it.isCurrent })
                 }
-            } catch (e: Exception) {
+                _sideEffect.emit(DevicesSideEffect.ShowSnackbar("Сессии завершены"))
+            }.onFailure {
                 handleError("Не удалось завершить сессии")
             }
         }

@@ -21,6 +21,7 @@ class ShortcutManager @Inject constructor(
     @param:ApplicationContext
     private val context: Context
 ) {
+    
     private val shortcutManager = context.getSystemService(ShortcutManager::class.java)
     
     fun createChatShortcut(

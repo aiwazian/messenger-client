@@ -16,15 +16,10 @@ class ClipboardService @Inject constructor(
     @param:ApplicationContext
     private val context: Context
 ) {
-    private val clipboardManager =
-        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    private val clipboardManager = context.getSystemService(ClipboardManager::class.java)
     
     fun copy(text: String) {
-        val clipData = ClipData.newPlainText(
-            "label",
-            text
-        )
-        
+        val clipData = ClipData.newPlainText("label", text)
         clipboardManager.setPrimaryClip(clipData)
     }
 }

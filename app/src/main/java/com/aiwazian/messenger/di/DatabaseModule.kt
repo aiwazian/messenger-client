@@ -2,10 +2,11 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.database
+package com.aiwazian.messenger.di
 
 import android.content.Context
 import androidx.room.Room
+import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.AvatarDao

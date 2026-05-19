@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.settings.security
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.repository.SessionRepository
@@ -28,13 +27,11 @@ class SettingsSecurityViewModel @Inject constructor(
     
     init {
         viewModelScope.launch {
-            try {
-                val count = sessionRepository.getDeviceCount()
+            sessionRepository.getDeviceCount().onSuccess { count ->
                 _uiState.update { it.copy(deviceCount = count) }
-            } catch (e: Exception) {
-                Log.e("SettingsSecurityViewModel", "Error init", e)
             }
         }
+        
         viewModelScope.launch {
             appLockManager.hasPasscode.collectLatest { passcode ->
                 _uiState.update { it.copy(passcodeEnabled = passcode) }

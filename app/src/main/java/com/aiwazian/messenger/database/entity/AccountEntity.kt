@@ -20,5 +20,6 @@ data class AccountEntity(
     val userId: Long,
     val isCurrent: Boolean,
     val token: String = "",
+    val fcmToken: String? = null,
     val createdAt: Long = 0
 )
