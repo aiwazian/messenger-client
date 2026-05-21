@@ -27,10 +27,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -97,6 +100,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
@@ -105,6 +109,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.ThemeOption
+import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -184,16 +189,12 @@ private fun Content(
     
     Scaffold(modifier = Modifier.fillMaxSize(), floatingActionButton = {
         AnimatedVisibility(
-            visible = !hasSelection,
-            enter = scaleIn() + fadeIn(),
-            exit = scaleOut() + fadeOut()
+            visible = !hasSelection, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()
         ) {
             FloatingActionButton(
-                shape = CircleShape,
-                onClick = {
+                shape = CircleShape, onClick = {
                     navBackStack.add(AppRoute.NewMessage)
-                },
-                containerColor = MaterialTheme.colorScheme.primary
+                }, containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(imageVector = Icons.Default.Create, contentDescription = null)
             }
@@ -235,8 +236,7 @@ private fun Content(
             AnimatedContent(
                 targetState = hasSelection, transitionSpec = {
                     fadeIn() togetherWith fadeOut()
-                }
-            ) { hasSelection ->
+                }) { hasSelection ->
                 if (!hasSelection) {
                     DefaultTopBar(
                         drawerState = drawerState,
@@ -525,16 +525,10 @@ private fun DrawerContent(
     val scope = rememberCoroutineScope()
     val screenHeight = LocalWindowInfo.current.containerDpSize.height
     
-    val verticalPadding = if (screenHeight < 400.dp) {
-        20.dp
-    } else {
-        80.dp
-    }
-    
     val maxAdHeight = if (screenHeight < 400.dp) {
         100.dp
     } else {
-        300.dp
+        200.dp
     }
     
     ModalDrawerSheet(
@@ -542,23 +536,48 @@ private fun DrawerContent(
         modifier = Modifier
             .width(300.dp)
             .fillMaxHeight()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(rememberScrollState()),
+        windowInsets = WindowInsets()
     ) {
-        Column(
-            modifier = Modifier.padding(
-                vertical = verticalPadding
-            )
-        ) {
-            Text(
-                text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-                modifier = Modifier.padding(
-                    start = 20.dp, end = 20.dp, bottom = verticalPadding
-                ),
-                fontSize = 24.sp,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis
-            )
+        Column(modifier = Modifier.navigationBarsPadding()) {
+            Box {
+                Box {
+                    AsyncImage(
+                        model = user.avatars.firstOrNull()?.uri, contentDescription = null,
+                        modifier = Modifier
+                            .sharedElement(key = "chat-avatar-${user.id}")
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                    )
+                    
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .align(Alignment.BottomStart)
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 1f),
+                                    )
+                                )
+                            )
+                    )
+                }
+                
+                Text(
+                    text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 16.dp, bottom = 10.dp),
+                    fontSize = 24.sp,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
             
             DrawerItem(
                 label = stringResource(R.string.profile), icon = Icons.Outlined.AccountCircle
@@ -570,7 +589,7 @@ private fun DrawerContent(
                     AppRoute.Profile(
                         profileId = user.id,
                         profileName = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-                        avatarUri = user.avatars.firstOrNull()?.toString()
+                        avatarUri = user.avatars.firstOrNull()?.uri.toString()
                     )
                 )
             }
@@ -578,8 +597,7 @@ private fun DrawerContent(
             val savedMessagesText = stringResource(R.string.saved_messages)
             
             DrawerItem(
-                label = savedMessagesText,
-                icon = Icons.Rounded.BookmarkBorder
+                label = savedMessagesText, icon = Icons.Rounded.BookmarkBorder
             ) {
                 scope.launch {
                     drawerState.close()
@@ -588,7 +606,7 @@ private fun DrawerContent(
                     AppRoute.Chat(
                         chatId = user.id,
                         chatName = savedMessagesText,
-                        avatarUri = user.avatars.firstOrNull()?.toString()
+                        avatarUri = user.avatars.firstOrNull()?.uri.toString()
                     )
                 )
             }
