@@ -38,9 +38,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Attachment
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Photo
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.ButtonDefaults
@@ -51,6 +52,7 @@ import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -58,8 +60,11 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -72,6 +77,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
@@ -103,13 +109,12 @@ import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
+import com.aiwazian.messenger.utils.ActiveChatTracker
 import com.aiwazian.messenger.utils.DialogController
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -124,6 +129,13 @@ fun ChatScreen(
 ) {
     LaunchedEffect(Unit) {
         chatViewModel.init(chatId, chatName, avatarUri?.toUri())
+    }
+    
+    DisposableEffect(chatId) {
+        ActiveChatTracker.pushChat(chatId)
+        onDispose {
+            ActiveChatTracker.popChat(chatId)
+        }
     }
     
     val navBackStack = LocalNavBackStack.current
@@ -212,9 +224,7 @@ fun ChatScreen(
         },
     ) { innerPadding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier = Modifier.fillMaxSize()
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom
@@ -224,6 +234,10 @@ fun ChatScreen(
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                     overscrollEffect = rememberOverscrollEffect()
                 ) {
+                    item {
+                        Spacer(Modifier.height(innerPadding.calculateTopPadding()))
+                    }
+                    
                     if (uiState.isLoadingMore) {
                         item {
                             Box(
@@ -249,15 +263,25 @@ fun ChatScreen(
                             is ChatItem.DateSeparator -> DateSeparatorItem(item.text)
                             is ChatItem.SystemMessage -> SystemMessageBubble(item.text.asString())
                             is ChatItem.MessageItem -> MessageBubble(
-                                item = item, onSeen = {
-                                    chatViewModel.markAsReadMessage(item.message)
-                                }, onFileAction = { file, action ->
+                                item = item,
+                                onSeen = {
+                                    chatViewModel.markAsReadMessage(
+                                        item.message
+                                    )
+                                },
+                                onFileAction = { file, action ->
                                     if (action == FileAction.CANCEL) {
-                                        fileToCancelId = item.message.id
+                                        fileToCancelId =
+                                            item.message.id
                                     } else {
-                                        chatViewModel.onFileAction(item.message, file, action)
+                                        chatViewModel.onFileAction(
+                                            item.message,
+                                            file,
+                                            action
+                                        )
                                     }
-                                }, onLinkClicked = chatViewModel::onLinkClicked,
+                                },
+                                onLinkClicked = chatViewModel::onLinkClicked,
                                 onUsernameClicked = chatViewModel::onUsernameClicked
                             )
                         }
@@ -265,6 +289,7 @@ fun ChatScreen(
                     
                     item {
                         Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
                     }
                 }
             }
@@ -277,6 +302,19 @@ fun ChatScreen(
                 }
             }
         }
+        
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(innerPadding.calculateTopPadding())
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), Color.Transparent
+                        )
+                    )
+                )
+        )
         
         Dialogs(
             uiState = uiState, chatViewModel = chatViewModel
@@ -491,82 +529,91 @@ private fun TopBar(
         label = "card_scale_animation"
     )
     
-    PageTopBar(
+    TopAppBar(
         title = {
-            Card(
-                shape = RectangleShape,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer(
-                        scaleX = scale, scaleY = scale
-                    )
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = {
-                            navBackStack.add(
-                                AppRoute.Profile(
-                                    profileId = chatId,
-                                    profileName = title,
-                                    avatarUri = avatarUri?.toString()
-                                )
-                            )
-                        }),
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-            ) {
+            Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    modifier = Modifier
+                        .graphicsLayer(scaleX = scale, scaleY = scale)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = {
+                                navBackStack.add(
+                                    AppRoute.Profile(
+                                        profileId = chatId,
+                                        profileName = title,
+                                        avatarUri = avatarUri?.toString()
+                                    )
+                                )
+                            }),
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    ChatAvatar(id = chatId, chatName = title, avatarUri = avatarUri)
-                    
-                    Column(
-                        modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center
+                    Row(
+                        modifier = Modifier.padding(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = title,
-                            maxLines = 1,
-                            fontSize = 18.sp,
-                            lineHeight = 16.sp,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .sharedElement(key = "chat-name-$chatId")
-                        )
+                        ChatAvatar(id = chatId, chatName = title, avatarUri = avatarUri)
                         
-                        AnimatedContent(
-                            modifier = Modifier.fillMaxWidth(),
-                            targetState = isConnected,
-                            transitionSpec = {
-                                slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
-                            },
-                            label = "connection_animation"
-                        ) { connected ->
-                            if (!connected) {
-                                AnimatedDotsText(
-                                    text = stringResource(R.string.connecting),
-                                    fontSize = 12.sp,
-                                    lineHeight = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            } else if (subTitle.isNotBlank()) {
-                                Text(
-                                    text = subTitle,
-                                    fontSize = 12.sp,
-                                    lineHeight = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier
-                                        .sharedElement(key = "chat-sub-title-$chatId")
-                                        .fillMaxWidth()
-                                )
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            Text(
+                                text = title,
+                                maxLines = 1,
+                                fontSize = 18.sp,
+                                lineHeight = 16.sp,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.sharedElement(key = "chat-name-$chatId")
+                            )
+                            
+                            AnimatedContent(
+                                targetState = isConnected,
+                                transitionSpec = {
+                                    slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
+                                },
+                                label = "connection_animation"
+                            ) { connected ->
+                                if (!connected) {
+                                    AnimatedDotsText(
+                                        text = stringResource(R.string.connecting),
+                                        fontSize = 12.sp,
+                                        lineHeight = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                } else if (subTitle.isNotBlank()) {
+                                    Text(
+                                        text = subTitle,
+                                        fontSize = 12.sp,
+                                        lineHeight = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.sharedElement(key = "chat-sub-title-$chatId")
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
-        }, navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = onBackClicked
-        ), actions = dropdownActions
+        }, navigationIcon = {
+            IconButton(
+                onClick = navBackStack::removeLastOrNull,
+                colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+            ) {
+                Icon(Icons.Rounded.ArrowBack, null)
+            }
+        }, actions = {
+            IconButton(
+                onClick = navBackStack::removeLastOrNull,
+                colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+            ) {
+                Icon(Icons.Rounded.MoreVert, null)
+            }
+        }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
     )
 }
 
@@ -593,13 +640,11 @@ private fun DeleteChatDialog(
                             .clickable { onDeleteForRecipientChanged(!deleteForRecipient) }
                             .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Checkbox(
                             checked = deleteForRecipient,
                             onCheckedChange = onDeleteForRecipientChanged,
-                            interactionSource = remember { MutableInteractionSource() }
-                        )
+                            interactionSource = remember { MutableInteractionSource() })
                         Text(
                             text = stringResource(R.string.delete_for_recipient),
                             style = MaterialTheme.typography.bodyMedium
@@ -648,13 +693,11 @@ private fun ClearHistoryDialog(
                             .clickable { onClearForRecipientChanged(!clearForRecipient) }
                             .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Checkbox(
                             checked = clearForRecipient,
                             onCheckedChange = null,
-                            interactionSource = remember { MutableInteractionSource() }
-                        )
+                            interactionSource = remember { MutableInteractionSource() })
                         Text(
                             text = stringResource(R.string.delete_for_recipient),
                             style = MaterialTheme.typography.bodyMedium
@@ -704,13 +747,11 @@ private fun DeleteMessageDialog(
                             .clickable { onDeleteForRecipientChanged(!deleteForRecipient) }
                             .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Checkbox(
                             checked = deleteForRecipient,
                             onCheckedChange = null,
-                            interactionSource = remember { MutableInteractionSource() }
-                        )
+                            interactionSource = remember { MutableInteractionSource() })
                         Text(
                             text = stringResource(R.string.delete_for_recipient),
                             style = MaterialTheme.typography.bodyMedium
@@ -802,8 +843,7 @@ private fun InputMessage(
                     )
                 }
             }
-        }
-    )
+        })
     
     if (attachmentModal.isVisible) {
         AttachmentBottomSheet(
@@ -824,9 +864,7 @@ private fun AttachmentBottomSheet(
     val sheetState = rememberModalBottomSheetState()
     
     ModalBottomSheet(
-        sheetState = sheetState,
-        onDismissRequest = onDismissRequest,
-        dragHandle = null
+        sheetState = sheetState, onDismissRequest = onDismissRequest, dragHandle = null
     ) {
         Spacer(Modifier.height(10.dp))
         SectionContainer {

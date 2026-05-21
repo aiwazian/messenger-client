@@ -28,6 +28,7 @@ import com.aiwazian.messenger.utils.AppLockManager
 import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.ThemeManager
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
@@ -44,6 +45,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var webSocketClient: WebSocketClient
     
     private var startRoute by mutableStateOf<AppRoute?>(null)
+    private val externalRouteFlow = MutableSharedFlow<AppRoute>(extraBufferCapacity = 1)
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,7 +103,10 @@ class MainActivity : AppCompatActivity() {
                     startRoute = null
                 }
                 
-                AppNavDisplay(*startRoutes.toTypedArray())
+                AppNavDisplay(
+                    *startRoutes.toTypedArray(),
+                    externalRouteFlow = externalRouteFlow
+                )
                 
                 AnimatedVisibility(
                     visible = isLockApp,
@@ -116,13 +121,17 @@ class MainActivity : AppCompatActivity() {
     
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleIntent(intent)
+        handleIntent(intent, isNewIntent = true)
     }
     
-    private fun handleIntent(intent: Intent) {
+    private fun handleIntent(intent: Intent, isNewIntent: Boolean = false) {
         val chatId = intent.getStringExtra("chatId")?.toLongOrNull()
         if (chatId != null) {
-            startRoute = AppRoute.Chat(chatId, null)
+            if (isNewIntent) {
+                externalRouteFlow.tryEmit(AppRoute.Chat(chatId, null))
+            } else {
+                startRoute = AppRoute.Chat(chatId, null)
+            }
             return
         }
     }

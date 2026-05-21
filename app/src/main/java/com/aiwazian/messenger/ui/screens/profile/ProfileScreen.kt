@@ -4,8 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.profile
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -116,7 +114,14 @@ fun ProfileScreen(
     
     val scrollState = rememberScrollState()
     
-    Scaffold { innerPadding ->
+    Scaffold(topBar = {
+        TopBar(
+            chatId = uiState.id,
+            title = uiState.title.asString(),
+            subTitle = uiState.subTitle.asString(),
+            actions = uiState.actions
+        )
+    }) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -131,7 +136,7 @@ fun ProfileScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(TopAppBarDefaults.LargeAppBarCollapsedHeight + innerPadding.calculateTopPadding())
+                        .height(innerPadding.calculateTopPadding())
                         .background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
@@ -151,15 +156,6 @@ fun ProfileScreen(
                 
                 else -> {}
             }
-        }
-        
-        AnimatedVisibility(true, enter = fadeIn()) {
-            TopBar(
-                chatId = uiState.id,
-                title = uiState.title.asString(),
-                subTitle = uiState.subTitle.asString(),
-                actions = uiState.actions
-            )
         }
     }
     

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
@@ -61,10 +62,20 @@ import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPass
 import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeCreateScreen
 import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeScreen
 import com.aiwazian.messenger.ui.screens.settings.storage.StorageScreen
+import kotlinx.coroutines.flow.Flow
 
 @Composable
-fun AppNavDisplay(vararg startRoute: AppRoute) {
+fun AppNavDisplay(
+    vararg startRoute: AppRoute,
+    externalRouteFlow: Flow<AppRoute>? = null
+) {
     val backStack = rememberNavBackStack(elements = startRoute)
+    
+    LaunchedEffect(externalRouteFlow) {
+        externalRouteFlow?.collect { route ->
+            backStack.add(route)
+        }
+    }
     
     SharedTransitionLayout {
         CompositionLocalProvider(

@@ -49,19 +49,28 @@ class Application : Application() {
             "private",
             "Private Chats",
             NotificationManager.IMPORTANCE_HIGH
-        )
+        ).apply {
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 300, 100, 300)
+        }
         
         val groupsChannel = NotificationChannel(
             "groups",
             "Groups",
-            NotificationManager.IMPORTANCE_DEFAULT
-        )
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 300, 100, 300)
+        }
         
         val systemChannel = NotificationChannel(
             "channels",
             "Channels",
-            NotificationManager.IMPORTANCE_LOW
-        )
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 300, 100, 300)
+        }
         
         manager.createNotificationChannel(messagesChannel)
         manager.createNotificationChannel(groupsChannel)

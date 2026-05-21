@@ -231,14 +231,16 @@ fun ChatAvatar(id: Long, chatName: String, avatarUri: Uri? = null, size: Dp = 40
                 .background(AppPrimaryColor.entries[(id.toString().first().code % 5) + 1].color),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = chatName.firstOrNull().toString().uppercase(),
-                fontSize = 20.sp,
-                lineHeight = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.sharedElement(key = "chat-avatar-letter-$id")
-            )
+            chatName.firstOrNull()?.let { letter ->
+                Text(
+                    text = letter.uppercase(),
+                    fontSize = 20.sp,
+                    lineHeight = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.sharedElement(key = "chat-avatar-letter-$id")
+                )
+            }
         }
     }
 }
