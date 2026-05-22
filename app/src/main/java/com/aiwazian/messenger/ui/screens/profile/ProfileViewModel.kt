@@ -18,14 +18,20 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.GroupRepository
+import com.aiwazian.messenger.repository.InviteLinkRepository
+import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.usecase.CheckInviteLinkUseCase
 import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
 import com.aiwazian.messenger.usecase.LeaveChatUseCase
 import com.aiwazian.messenger.utils.ClipboardService
+import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.ShortcutManager
 import com.aiwazian.messenger.utils.UiText
+import com.aiwazian.messenger.utils.VibrationManager
+import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -45,10 +51,14 @@ class ProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val channelRepository: ChannelRepository,
     private val groupRepository: GroupRepository,
+    private val searchRepository: SearchRepository,
+    private val inviteLinkRepository: InviteLinkRepository,
     private val shortcutManager: ShortcutManager,
     private val clipboardService: ClipboardService,
+    private val vibrationManager: VibrationManager,
     private val downloadAvatarUseCase: DownloadAvatarUseCase,
-    private val leaveChatUseCase: LeaveChatUseCase
+    private val leaveChatUseCase: LeaveChatUseCase,
+    private val checkInviteLinkUseCase: CheckInviteLinkUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -436,5 +446,118 @@ class ProfileViewModel @Inject constructor(
                 _uiEffect.emit(ProfileUiEffect.NavigateToMain)
             }
         }
+    }
+    
+    fun onLinkClicked(url: String) {
+        val inviteLinkRegex = RegexPatterns.INVITE_LINK
+        val match = inviteLinkRegex.find(url)
+        
+        if (match == null) {
+            val normalizedUrl =
+                if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"
+            viewModelScope.launch {
+                _uiEffect.emit(ProfileUiEffect.OpenUrl(normalizedUrl))
+            }
+            return
+        }
+        
+        val code = match.groupValues[2]
+        
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessingInvite = true) }
+            
+            checkInviteLinkUseCase(code).onSuccess { linkInfo ->
+                if (_uiState.value.id == linkInfo.chatId) {
+                    _uiState.update { it.copy(isProcessingInvite = false) }
+                    _uiEffect.emit(ProfileUiEffect.ShowSnackbar(UiText.StringResource(R.string.you_are_already_in_this_chat)))
+                    vibrationManager.vibrate(VibrationPattern.Error)
+                } else if (linkInfo.isJoined != null) {
+                    _uiState.update { it.copy(isProcessingInvite = false) }
+                    _uiEffect.emit(ProfileUiEffect.NavigateToChat(linkInfo.chatId))
+                } else if (linkInfo.isBanned != null) {
+                    _uiState.update {
+                        it.copy(
+                            showBannedDialog = true,
+                            isProcessingInvite = false
+                        )
+                    }
+                    vibrationManager.vibrate(VibrationPattern.Error)
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            inviteLinkInfo = linkInfo,
+                            inviteLinkCode = code,
+                            showInviteBottomSheet = true,
+                            isProcessingInvite = false
+                        )
+                    }
+                }
+            }.onFailure {
+                _uiState.update { it.copy(isProcessingInvite = false) }
+                _uiEffect.emit(ProfileUiEffect.ShowSnackbar(UiText.StringResource(R.string.invalid_link)))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
+    }
+    
+    fun onUsernameClicked(username: String) {
+        viewModelScope.launch {
+            val cleanUsername = username.removePrefix("@")
+            searchRepository.resolveUsername(cleanUsername).onSuccess { result ->
+                if (result == null) {
+                    _uiEffect.emit(ProfileUiEffect.ShowSnackbar(UiText.StringResource(R.string.chat_not_found)))
+                    vibrationManager.vibrate(VibrationPattern.Error)
+                } else if (result.isBanned) {
+                    _uiState.update { it.copy(showBannedDialog = true) }
+                    vibrationManager.vibrate(VibrationPattern.Error)
+                } else {
+                    _uiEffect.emit(ProfileUiEffect.NavigateToChat(result.chatId))
+                }
+            }.onFailure {
+                _uiEffect.emit(ProfileUiEffect.ShowSnackbar(UiText.StringResource(R.string.error_searching_for_chat)))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
+    }
+    
+    fun onSubscribeViaInviteLink() {
+        val info = _uiState.value.inviteLinkInfo ?: return
+        val code = _uiState.value.inviteLinkCode ?: return
+        
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessingInvite = true) }
+            
+            val result = inviteLinkRepository.joinViaInviteCode(code)
+            if (result.isSuccess) {
+                _uiState.update {
+                    it.copy(
+                        isProcessingInvite = false,
+                        showInviteBottomSheet = false,
+                        inviteLinkInfo = null,
+                        inviteLinkCode = null
+                    )
+                }
+                _uiEffect.emit(ProfileUiEffect.NavigateToChat(info.chatId))
+            } else {
+                _uiState.update { it.copy(isProcessingInvite = false) }
+                _uiEffect.emit(ProfileUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_join)))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
+    }
+    
+    fun dismissInviteBottomSheet() {
+        _uiState.update {
+            it.copy(
+                showInviteBottomSheet = false,
+                inviteLinkInfo = null,
+                inviteLinkCode = null,
+                isProcessingInvite = false
+            )
+        }
+    }
+    
+    fun dismissBannedDialog() {
+        _uiState.update { it.copy(showBannedDialog = false) }
     }
 }

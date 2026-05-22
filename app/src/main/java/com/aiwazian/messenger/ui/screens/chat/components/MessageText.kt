@@ -29,8 +29,8 @@ fun MessageText(
     val annotatedString = buildAnnotatedString {
         var lastIndex = 0
         
-        val urlMatches = RegexPatterns.INVITE_LINK.findAll(text).map { it to "url" }
-        val usernameMatches = RegexPatterns.SEARCH_USERNAME.findAll(text).map { it to "username" }
+        val urlMatches = RegexPatterns.URL.findAll(text).map { it to "url" }
+        val usernameMatches = RegexPatterns.MENTION.findAll(text).map { it to "username" }
         
         val allMatches = (urlMatches + usernameMatches)
             .sortedBy { it.first.range.first }
@@ -44,6 +44,8 @@ fun MessageText(
         allMatches.forEach { (matchResult, type) ->
             val startIndex = matchResult.range.first
             val endIndex = matchResult.range.last + 1
+            
+            if (startIndex < lastIndex) return@forEach
             
             if (startIndex > lastIndex) {
                 append(text.substring(lastIndex, startIndex))

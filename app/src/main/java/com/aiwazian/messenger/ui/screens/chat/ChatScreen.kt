@@ -1030,7 +1030,7 @@ private fun AttachmentBottomSheet(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun InviteLinkBottomSheet(
+fun InviteLinkBottomSheet(
     chatId: Long,
     name: String,
     description: String?,

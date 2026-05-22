@@ -21,13 +21,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aiwazian.messenger.utils.RegexPatterns
 
 @Composable
 fun SectionItem(
-    headlineText: String,
+    headlineContent: @Composable () -> Unit,
     supportingText: String? = null,
     leadingIcon: ImageVector? = null,
     trailingText: String? = null,
@@ -71,12 +78,7 @@ fun SectionItem(
                 }
                 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = headlineText,
-                        color = contentColor,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Normal
-                    )
+                    headlineContent()
                     
                     if (supportingText != null) {
                         Text(
@@ -109,3 +111,122 @@ fun SectionItem(
     }
 }
 
+@Composable
+fun SectionItem(
+    headlineText: String,
+    supportingText: String? = null,
+    leadingIcon: ImageVector? = null,
+    trailingText: String? = null,
+    trailingContent: @Composable (() -> Unit) = {},
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    onLinkClicked: ((String) -> Unit)? = null,
+    onUsernameClicked: ((String) -> Unit)? = null,
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {},
+) {
+    SectionItem(
+        headlineContent = {
+            val annotatedString = buildAnnotatedString {
+                var lastIndex = 0
+                
+                val urlMatches = RegexPatterns.URL.findAll(headlineText).map { it to "url" }
+                val usernameMatches =
+                    RegexPatterns.MENTION.findAll(headlineText).map { it to "username" }
+                
+                val allMatches = (urlMatches + usernameMatches)
+                    .sortedBy { it.first.range.first }
+                    .toList()
+                
+                if (allMatches.isEmpty()) {
+                    append(headlineText)
+                } else {
+                    allMatches.forEach { (matchResult, type) ->
+                        val startIndex = matchResult.range.first
+                        val endIndex = matchResult.range.last + 1
+                        
+                        if (startIndex < lastIndex) return@forEach
+                        
+                        if (startIndex > lastIndex) {
+                            append(headlineText.substring(lastIndex, startIndex))
+                        }
+                        
+                        val matchedValue = matchResult.value
+                        
+                        when (type) {
+                            "url" if onLinkClicked != null -> {
+                                withLink(
+                                    link = LinkAnnotation.Clickable(
+                                        tag = matchedValue,
+                                        styles = TextLinkStyles(
+                                            style = SpanStyle(
+                                                color = MaterialTheme.colorScheme.primary,
+                                                textDecoration = TextDecoration.Underline
+                                            ),
+                                            pressedStyle = SpanStyle(
+                                                background = MaterialTheme.colorScheme.primary.copy(
+                                                    alpha = 0.4f
+                                                )
+                                            )
+                                        ),
+                                        linkInteractionListener = {
+                                            onLinkClicked(matchedValue)
+                                        }
+                                    )
+                                ) {
+                                    append(matchedValue)
+                                }
+                            }
+                            
+                            "username" if onUsernameClicked != null -> {
+                                withLink(
+                                    link = LinkAnnotation.Clickable(
+                                        tag = matchedValue,
+                                        styles = TextLinkStyles(
+                                            style = SpanStyle(
+                                                color = MaterialTheme.colorScheme.primary,
+                                            ),
+                                            pressedStyle = SpanStyle(
+                                                background = MaterialTheme.colorScheme.primary.copy(
+                                                    alpha = 0.4f
+                                                )
+                                            )
+                                        ),
+                                        linkInteractionListener = {
+                                            onUsernameClicked(matchedValue)
+                                        }
+                                    )
+                                ) {
+                                    append(matchedValue)
+                                }
+                            }
+                            
+                            else -> {
+                                append(matchedValue)
+                            }
+                        }
+                        
+                        lastIndex = endIndex
+                    }
+                    
+                    if (lastIndex < headlineText.length) {
+                        append(headlineText.substring(lastIndex))
+                    }
+                }
+            }
+            
+            Text(
+                text = annotatedString,
+                color = contentColor,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Normal
+            )
+        },
+        supportingText = supportingText,
+        leadingIcon = leadingIcon,
+        trailingText = trailingText,
+        trailingContent = trailingContent,
+        contentColor = contentColor,
+        onClick = onClick,
+        onLongClick = onLongClick
+    )
+}

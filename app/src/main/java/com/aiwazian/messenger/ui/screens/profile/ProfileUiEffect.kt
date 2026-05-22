@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.profile
 
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.utils.UiText
 
 sealed interface ProfileUiEffect {
     data object NavigateBack : ProfileUiEffect
@@ -18,4 +19,8 @@ sealed interface ProfileUiEffect {
     ) : ProfileUiEffect
     
     data object HideLeaveDialog : ProfileUiEffect
+    
+    data class ShowSnackbar(val message: UiText) : ProfileUiEffect
+    data class OpenUrl(val url: String) : ProfileUiEffect
+    data class NavigateToChat(val chatId: Long) : ProfileUiEffect
 }

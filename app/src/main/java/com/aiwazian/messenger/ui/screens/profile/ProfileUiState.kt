@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.profile
 
 import android.net.Uri
+import com.aiwazian.messenger.domain.InviteLinkInfo
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.utils.UiText
 
@@ -17,4 +18,9 @@ data class ProfileUiState(
     val actions: List<TopBarAction> = emptyList(),
     val showLeaveDialog: Boolean = false,
     val myId: Long = -1,
+    val inviteLinkInfo: InviteLinkInfo? = null,
+    val inviteLinkCode: String? = null,
+    val showInviteBottomSheet: Boolean = false,
+    val isProcessingInvite: Boolean = false,
+    val showBannedDialog: Boolean = false,
 )

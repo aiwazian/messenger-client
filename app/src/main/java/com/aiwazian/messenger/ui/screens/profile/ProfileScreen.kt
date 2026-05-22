@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.profile
 
 import android.app.Activity
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -35,11 +38,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -59,11 +64,16 @@ import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
+import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.ui.screens.chat.InviteLinkBottomSheet
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import java.util.Locale
 
 @Composable
 fun ProfileScreen(
@@ -80,6 +90,11 @@ fun ProfileScreen(
     val uiState by viewModel.uiState.collectAsState()
     var showLeaveDialog by remember { mutableStateOf(false) }
     var leaveDialogData by remember { mutableStateOf<Pair<String, ChatType>?>(null) }
+    
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
@@ -116,6 +131,28 @@ fun ProfileScreen(
                     showLeaveDialog = false
                     leaveDialogData = null
                 }
+                
+                is ProfileUiEffect.ShowSnackbar -> {
+                    snackbarJob?.cancel()
+                    snackbarJob = scope.launch {
+                        snackbarHostState.showSnackbar(
+                            message = effect.message.asString(context),
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                }
+                
+                is ProfileUiEffect.OpenUrl -> {
+                    CustomTabsIntent.Builder()
+                        .setShowTitle(true)
+                        .setTranslateLocale(Locale.getDefault())
+                        .build()
+                        .launchUrl(context, effect.url.toUri())
+                }
+                
+                is ProfileUiEffect.NavigateToChat -> {
+                    navBackStack.add(AppRoute.Chat(effect.chatId, null))
+                }
             }
         }
     }
@@ -137,15 +174,19 @@ fun ProfileScreen(
         }
     }
     
-    Scaffold(topBar = {
-        TopBar(
-            chatId = uiState.id,
-            title = uiState.title.asString(),
-            subTitle = uiState.subTitle.asString(),
-            actions = uiState.actions,
-            contentColor = if (hasAvatar) Color.White else Color.Unspecified
-        )
-    }) { innerPadding ->
+    Scaffold(
+        snackbarHost = {
+            CustomSnackbar(snackbarHostState)
+        },
+        topBar = {
+            TopBar(
+                chatId = uiState.id,
+                title = uiState.title.asString(),
+                subTitle = uiState.subTitle.asString(),
+                actions = uiState.actions,
+                contentColor = if (hasAvatar) Color.White else Color.Unspecified
+            )
+        }) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -177,11 +218,23 @@ fun ProfileScreen(
             }
             
             when (val profile = uiState.profile) {
-                is Profile.User -> UserProfile(user = profile)
+                is Profile.User -> UserProfile(
+                    user = profile,
+                    onLinkClicked = viewModel::onLinkClicked,
+                    onUsernameClicked = viewModel::onUsernameClicked
+                )
                 
-                is Profile.Channel -> ChannelProfile(channel = profile)
+                is Profile.Channel -> ChannelProfile(
+                    channel = profile,
+                    onLinkClicked = viewModel::onLinkClicked,
+                    onUsernameClicked = viewModel::onUsernameClicked
+                )
                 
-                is Profile.Group -> GroupProfile(group = profile)
+                is Profile.Group -> GroupProfile(
+                    group = profile,
+                    onLinkClicked = viewModel::onLinkClicked,
+                    onUsernameClicked = viewModel::onUsernameClicked
+                )
                 
                 else -> {}
             }
@@ -198,15 +251,49 @@ fun ProfileScreen(
             }, profileName = leaveDialogData!!.first, chatType = leaveDialogData!!.second
         )
     }
+    
+    if (uiState.showInviteBottomSheet && uiState.inviteLinkInfo != null) {
+        val info = uiState.inviteLinkInfo!!
+        InviteLinkBottomSheet(
+            chatId = info.chatId,
+            name = info.name.orEmpty(),
+            description = info.description,
+            count = info.membersCount ?: 0,
+            isLoading = uiState.isProcessingInvite,
+            onDismiss = viewModel::dismissInviteBottomSheet,
+            onJoin = viewModel::onSubscribeViaInviteLink
+        )
+    }
+    
+    if (uiState.showBannedDialog) {
+        CustomDialog(
+            title = "Нет доступа",
+            onDismissRequest = viewModel::dismissBannedDialog,
+            buttons = {
+                TextButton(onClick = viewModel::dismissBannedDialog) {
+                    Text(stringResource(R.string.ok))
+                }
+            },
+            content = {
+                Text("Вас заблокировал администратор этого чата")
+            })
+    }
 }
 
 @Composable
-private fun GroupProfile(group: Profile.Group) {
+private fun GroupProfile(
+    group: Profile.Group,
+    onLinkClicked: (String) -> Unit,
+    onUsernameClicked: (String) -> Unit
+) {
     Column {
         SectionContainer {
             if (!group.bio.isNullOrBlank()) {
                 SectionItem(
-                    headlineText = group.bio, supportingText = stringResource(R.string.description)
+                    headlineText = group.bio,
+                    supportingText = stringResource(R.string.description),
+                    onLinkClicked = onLinkClicked,
+                    onUsernameClicked = onUsernameClicked
                 )
             }
             
@@ -221,13 +308,19 @@ private fun GroupProfile(group: Profile.Group) {
 }
 
 @Composable
-private fun ChannelProfile(channel: Profile.Channel) {
+private fun ChannelProfile(
+    channel: Profile.Channel,
+    onLinkClicked: (String) -> Unit,
+    onUsernameClicked: (String) -> Unit
+) {
     Column {
         SectionContainer {
             if (!channel.bio.isNullOrBlank()) {
                 SectionItem(
                     headlineText = channel.bio,
-                    supportingText = stringResource(R.string.description)
+                    supportingText = stringResource(R.string.description),
+                    onLinkClicked = onLinkClicked,
+                    onUsernameClicked = onUsernameClicked
                 )
             }
             
@@ -243,12 +336,19 @@ private fun ChannelProfile(channel: Profile.Channel) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun UserProfile(user: Profile.User) {
+private fun UserProfile(
+    user: Profile.User,
+    onLinkClicked: (String) -> Unit,
+    onUsernameClicked: (String) -> Unit
+) {
     Column {
         SectionContainer {
             if (!user.bio.isNullOrBlank()) {
                 SectionItem(
-                    headlineText = user.bio, supportingText = stringResource(R.string.bio)
+                    headlineText = user.bio,
+                    supportingText = stringResource(R.string.bio),
+                    onLinkClicked = onLinkClicked,
+                    onUsernameClicked = onUsernameClicked
                 )
             }
             
