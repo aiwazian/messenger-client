@@ -157,7 +157,7 @@ class ChatViewModel @Inject constructor(
                                             icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
                                                 DropdownMenuAction(
                                                     Icons.Outlined.CleaningServices,
-                                                    R.string.clear_history,
+                                                    UiText.StringResource(R.string.clear_history),
                                                     ::showClearHistoryDialog
                                                 )
                                             )
@@ -169,7 +169,7 @@ class ChatViewModel @Inject constructor(
                                             icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
                                                 DropdownMenuAction(
                                                     Icons.AutoMirrored.Rounded.Logout,
-                                                    R.string.leave_channel,
+                                                    UiText.StringResource(R.string.leave_channel),
                                                     ::showLeaveDialog
                                                 )
                                             )
@@ -206,7 +206,7 @@ class ChatViewModel @Inject constructor(
                                                 dropdownActions = listOf(
                                                     DropdownMenuAction(
                                                         Icons.Outlined.CleaningServices,
-                                                        R.string.clear_history,
+                                                        UiText.StringResource(R.string.clear_history),
                                                         ::showClearHistoryDialog
                                                     )
                                                 )
@@ -219,7 +219,7 @@ class ChatViewModel @Inject constructor(
                                                 dropdownActions = listOf(
                                                     DropdownMenuAction(
                                                         Icons.AutoMirrored.Rounded.Logout,
-                                                        R.string.leave_group,
+                                                        UiText.StringResource(R.string.leave_group),
                                                         ::showLeaveDialog
                                                     )
                                                 )
@@ -247,12 +247,12 @@ class ChatViewModel @Inject constructor(
                                             icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
                                                 DropdownMenuAction(
                                                     Icons.Outlined.CleaningServices,
-                                                    R.string.clear_history,
+                                                    UiText.StringResource(R.string.clear_history),
                                                     ::showClearHistoryDialog
                                                 ),
                                                 DropdownMenuAction(
                                                     Icons.Rounded.DeleteOutline,
-                                                    R.string.delete_chat,
+                                                    UiText.StringResource(R.string.delete_chat),
                                                     ::showDeleteChatDialog,
                                                     isDestructive = true
                                                 )
@@ -274,12 +274,12 @@ class ChatViewModel @Inject constructor(
                                             icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
                                                 DropdownMenuAction(
                                                     Icons.Outlined.CleaningServices,
-                                                    R.string.clear_history,
+                                                    UiText.StringResource(R.string.clear_history),
                                                     ::showClearHistoryDialog
                                                 ),
                                                 DropdownMenuAction(
                                                     Icons.Rounded.DeleteOutline,
-                                                    R.string.delete_chat,
+                                                    UiText.StringResource(R.string.delete_chat),
                                                     ::showDeleteChatDialog,
                                                     isDestructive = true
                                                 )
@@ -402,7 +402,7 @@ class ChatViewModel @Inject constructor(
                 actions.add(
                     DropdownMenuAction(
                         Icons.Rounded.ContentCopy,
-                        R.string.copy,
+                        UiText.StringResource(R.string.copy),
                         onClick = { copyToClipboard(message.text) })
                 )
             }
@@ -416,10 +416,13 @@ class ChatViewModel @Inject constructor(
             if (canDelete) {
                 actions.add(
                     DropdownMenuAction(
-                        Icons.Rounded.DeleteOutline, R.string.delete, onClick = {
+                        Icons.Rounded.DeleteOutline,
+                        UiText.StringResource(R.string.delete),
+                        onClick = {
                             showDeleteMessageDialog()
                             selectMessage(message)
-                        }, isDestructive = true
+                        },
+                        isDestructive = true
                     )
                 )
             }
@@ -566,10 +569,6 @@ class ChatViewModel @Inject constructor(
         _uiState.update { it.copy(selectedMessages = it.selectedMessages - message) }
     
     fun copyToClipboard(text: String?) = text?.let { clipboardService.copy(it) }
-    
-    fun onBackClicked() = viewModelScope.launch {
-        _uiEffect.emit(ChatUiEffect.NavigateBack)
-    }
     
     fun cancelUpload(tempMessageId: Long) {
         viewModelScope.launch {

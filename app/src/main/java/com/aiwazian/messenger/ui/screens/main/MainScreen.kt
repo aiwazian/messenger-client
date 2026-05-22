@@ -26,9 +26,9 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -47,6 +48,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Close
@@ -54,15 +56,16 @@ import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.NotificationsNone
-import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material3.AppBarWithSearch
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
@@ -71,23 +74,27 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBarValue
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.rememberDrawerState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -100,7 +107,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import coil.compose.AsyncImage
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
@@ -109,15 +115,11 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.ThemeOption
-import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatCard
+import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
-import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.main.search.ChatResultsList
 import com.aiwazian.messenger.ui.screens.main.search.EmptySearchResultsPlaceholder
 import com.aiwazian.messenger.ui.screens.main.search.LoadingPlaceholder
@@ -187,7 +189,33 @@ private fun Content(
         viewModel.clearSelection()
     }
     
-    Scaffold(modifier = Modifier.fillMaxSize(), floatingActionButton = {
+    Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
+        AnimatedContent(
+            targetState = hasSelection, transitionSpec = {
+                fadeIn() togetherWith fadeOut()
+            }) { hasSelection ->
+            if (!hasSelection) {
+                DefaultTopBar(
+                    drawerState = drawerState,
+                    passcodeEnabled = uiState.hasPasscode,
+                    onLockClick = {
+                        scope.launch {
+                            viewModel.lockApp()
+                        }
+                    },
+                    socketState = socketState
+                )
+            } else {
+                SelectionTopBar(
+                    selectedCount = uiState.selectedChatIds.size,
+                    onClearSelection = viewModel::clearSelection,
+                    onPinClick = viewModel::pinSelectedChats,
+                    onUnpinClick = viewModel::unpinSelectedChats,
+                    hasUnpinnedChats = viewModel.hasUnpinnedSelectedChats()
+                )
+            }
+        }
+    }, floatingActionButton = {
         AnimatedVisibility(
             visible = !hasSelection, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()
         ) {
@@ -206,9 +234,8 @@ private fun Content(
             } else {
                 LazyColumn {
                     item {
-                        Spacer(modifier = Modifier.height(TopAppBarDefaults.LargeAppBarCollapsedHeight + innerPadding.calculateTopPadding()))
+                        Spacer(Modifier.height(innerPadding.calculateTopPadding()))
                     }
-                    
                     items(uiState.chats) { chat ->
                         val chatName = chat.chatName.asString()
                         val isSelected = chat.id in uiState.selectedChatIds
@@ -231,51 +258,23 @@ private fun Content(
                 }
             }
         }
-        Box {
-            Spacer(modifier = Modifier.height(innerPadding.calculateTopPadding()))
-            AnimatedContent(
-                targetState = hasSelection, transitionSpec = {
-                    fadeIn() togetherWith fadeOut()
-                }) { hasSelection ->
-                if (!hasSelection) {
-                    DefaultTopBar(
-                        drawerState = drawerState,
-                        passcodeEnabled = uiState.hasPasscode,
-                        onLockClick = {
-                            scope.launch {
-                                viewModel.lockApp()
-                            }
-                        },
-                        socketState = socketState
-                    )
-                } else {
-                    SelectionTopBar(
-                        selectedCount = uiState.selectedChatIds.size,
-                        onClearSelection = viewModel::clearSelection,
-                        onPinClick = viewModel::pinSelectedChats,
-                        onUnpinClick = viewModel::unpinSelectedChats,
-                        hasUnpinnedChats = viewModel.hasUnpinnedSelectedChats()
-                    )
-                }
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(innerPadding.calculateTopPadding())
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                                Color.Transparent
-                            )
+        
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(innerPadding.calculateTopPadding())
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), Color.Transparent
                         )
                     )
-            )
-        }
+                )
+        )
         
         if (uiState.showNotificationBottomSheet) {
             val context = LocalContext.current
-            val sheetState = rememberModalBottomSheetState()
+            val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
             ModalBottomSheet(
                 onDismissRequest = viewModel::hideNotificationSheet,
                 sheetState = sheetState,
@@ -323,35 +322,61 @@ private fun SelectionTopBar(
     onUnpinClick: () -> Unit,
     hasUnpinnedChats: Boolean
 ) {
-    PageTopBar(
+    TopAppBar(
         title = {
-            AnimatedContent(targetState = selectedCount, transitionSpec = {
-                if (targetState > initialState) {
-                    slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
-                } else {
-                    slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
+            Row(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainer),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onClearSelection) {
+                    Icon(Icons.Rounded.Close, null)
                 }
-            }) { count ->
-                Text(text = "$count")
+                AnimatedContent(
+                    modifier = Modifier.padding(start = 10.dp, end = 18.dp),
+                    targetState = selectedCount,
+                    transitionSpec = {
+                        if (targetState > initialState) {
+                            slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
+                        } else {
+                            slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
+                        }
+                    }) { count ->
+                    Text(text = "$count")
+                }
             }
-        }, navigationIcon = NavigationIcon(
-            icon = Icons.Rounded.Close, onClick = onClearSelection
-        ), actions = listOf(
-            TopBarAction(
-                icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
-                    DropdownMenuAction(
-                        icon = Icons.Rounded.PushPin,
-                        textResId = if (hasUnpinnedChats) R.string.pin else R.string.unpin,
-                        onClick = {
-                            if (hasUnpinnedChats) {
-                                onPinClick()
-                            } else {
-                                onUnpinClick()
-                            }
-                        })
-                )
-            )
-        )
+        }, navigationIcon = {}, actions = {
+            var expand by remember { mutableStateOf(false) }
+            
+            IconButton(
+                onClick = { expand = true },
+                colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+            ) {
+                Icon(Icons.Rounded.MoreVert, null)
+            }
+            
+            CustomDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
+                DropdownMenuItem(
+                    leadingIcon = {
+                        Icon(
+                            Icons.Outlined.PushPin,
+                            null,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .rotate(45f)
+                        )
+                    },
+                    text = { Text(stringResource(if (hasUnpinnedChats) R.string.pin else R.string.unpin)) },
+                    onClick = {
+                        if (hasUnpinnedChats) {
+                            onPinClick()
+                        } else {
+                            onUnpinClick()
+                        }
+                    })
+            }
+        }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
     )
 }
 
@@ -525,10 +550,16 @@ private fun DrawerContent(
     val scope = rememberCoroutineScope()
     val screenHeight = LocalWindowInfo.current.containerDpSize.height
     
+    val verticalPadding = if (screenHeight < 400.dp) {
+        20.dp
+    } else {
+        80.dp
+    }
+    
     val maxAdHeight = if (screenHeight < 400.dp) {
         100.dp
     } else {
-        200.dp
+        300.dp
     }
     
     ModalDrawerSheet(
@@ -539,45 +570,20 @@ private fun DrawerContent(
             .verticalScroll(rememberScrollState()),
         windowInsets = WindowInsets()
     ) {
-        Column(modifier = Modifier.navigationBarsPadding()) {
-            Box {
-                Box {
-                    AsyncImage(
-                        model = user.avatars.firstOrNull()?.uri, contentDescription = null,
-                        modifier = Modifier
-                            .sharedElement(key = "chat-avatar-${user.id}")
-                            .fillMaxWidth()
-                            .aspectRatio(1f)
-                    )
-                    
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .align(Alignment.BottomStart)
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 1f),
-                                    )
-                                )
-                            )
-                    )
-                }
-                
-                Text(
-                    text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(start = 16.dp, bottom = 10.dp),
-                    fontSize = 24.sp,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
+        Column(
+            modifier = Modifier
+                .statusBarsPadding()
+                .navigationBarsPadding()
+        ) {
+            Text(
+                text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = verticalPadding),
+                fontSize = 24.sp,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             
             DrawerItem(
                 label = stringResource(R.string.profile), icon = Icons.Outlined.AccountCircle
@@ -606,7 +612,7 @@ private fun DrawerContent(
                     AppRoute.Chat(
                         chatId = user.id,
                         chatName = savedMessagesText,
-                        avatarUri = user.avatars.firstOrNull()?.uri.toString()
+                        avatarUri = user.avatars.firstOrNull()?.uri?.toString()
                     )
                 )
             }

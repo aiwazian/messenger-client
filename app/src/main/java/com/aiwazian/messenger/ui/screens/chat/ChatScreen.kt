@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -32,16 +33,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Attachment
-import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Photo
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.ButtonDefaults
@@ -49,6 +51,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,13 +59,14 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -80,12 +84,12 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -104,8 +108,8 @@ import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
-import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -207,9 +211,8 @@ fun ChatScreen(
                 title = uiState.chatName.asString(),
                 avatarUri = uiState.avatarUri,
                 subTitle = uiState.subTitle.asString(),
-                dropdownActions = uiState.topBarActions,
+                topBarActions = uiState.topBarActions,
                 isConnected = uiState.isConnected,
-                onBackClicked = chatViewModel::onBackClicked,
                 chatId = uiState.chatId
             )
         },
@@ -223,9 +226,7 @@ fun ChatScreen(
             )
         },
     ) { innerPadding ->
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom
             ) {
@@ -288,7 +289,6 @@ fun ChatScreen(
                     }
                     
                     item {
-                        Spacer(modifier = Modifier.height(2.dp))
                         Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
                     }
                 }
@@ -301,24 +301,41 @@ fun ChatScreen(
                     CircularWavyProgressIndicator()
                 }
             }
-        }
-        
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(innerPadding.calculateTopPadding())
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), Color.Transparent
+            
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .height(innerPadding.calculateTopPadding())
+                    .fillMaxWidth()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                Color.Transparent
+                            )
                         )
                     )
-                )
-        )
+            )
+            
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .height(innerPadding.calculateTopPadding())
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .imePadding()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                            )
+                        )
+                    )
+            )
+        }
         
-        Dialogs(
-            uiState = uiState, chatViewModel = chatViewModel
-        )
+        Dialogs(uiState = uiState, chatViewModel = chatViewModel)
         
         if (fileToCancelId != null) {
             CustomDialog(
@@ -395,6 +412,7 @@ private fun BottomSection(
         modifier = Modifier
             .navigationBarsPadding()
             .imePadding()
+            .padding(8.dp)
     ) {
         when (ChatType.fromId(uiState.chatId)) {
             ChatType.CHANNEL -> {
@@ -468,6 +486,7 @@ private fun Dialogs(
         DeleteChatDialog(
             onDismissRequest = chatViewModel::hideDeleteChatDialog,
             onConfirm = chatViewModel::onDeleteChatConfirmed,
+            vibrate = chatViewModel::vibrate,
             deleteForRecipient = uiState.deleteForRecipient,
             onDeleteForRecipientChanged = chatViewModel::setDeleteForRecipient,
             isPrivateChat = isPrivateChat
@@ -515,9 +534,8 @@ private fun TopBar(
     title: String,
     avatarUri: Uri?,
     subTitle: String,
-    dropdownActions: List<TopBarAction>,
+    topBarActions: List<TopBarAction>,
     isConnected: Boolean,
-    onBackClicked: () -> Unit,
     chatId: Long
 ) {
     val navBackStack = LocalNavBackStack.current
@@ -538,9 +556,7 @@ private fun TopBar(
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceContainer)
                         .clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            onClick = {
+                            interactionSource = interactionSource, indication = null, onClick = {
                                 navBackStack.add(
                                     AppRoute.Profile(
                                         profileId = chatId,
@@ -548,8 +564,7 @@ private fun TopBar(
                                         avatarUri = avatarUri?.toString()
                                     )
                                 )
-                            }),
-                    horizontalArrangement = Arrangement.Center
+                            }), horizontalArrangement = Arrangement.Center
                 ) {
                     Row(
                         modifier = Modifier.padding(4.dp),
@@ -572,11 +587,9 @@ private fun TopBar(
                             )
                             
                             AnimatedContent(
-                                targetState = isConnected,
-                                transitionSpec = {
+                                targetState = isConnected, transitionSpec = {
                                     slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
-                                },
-                                label = "connection_animation"
+                                }, label = "connection_animation"
                             ) { connected ->
                                 if (!connected) {
                                     AnimatedDotsText(
@@ -601,17 +614,38 @@ private fun TopBar(
             }
         }, navigationIcon = {
             IconButton(
+                modifier = Modifier.sharedBounds(key = "back-button"),
                 onClick = navBackStack::removeLastOrNull,
                 colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
             ) {
-                Icon(Icons.Rounded.ArrowBack, null)
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, null)
             }
         }, actions = {
-            IconButton(
-                onClick = navBackStack::removeLastOrNull,
-                colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-            ) {
-                Icon(Icons.Rounded.MoreVert, null)
+            topBarActions.forEach { action ->
+                var expand by remember { mutableStateOf(false) }
+                IconButton(
+                    modifier = Modifier.sharedBounds(key = "top-bar-action-${action.icon.name}"),
+                    onClick = {
+                        expand = true
+                    },
+                    colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                ) {
+                    Icon(action.icon, null)
+                }
+                CustomDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
+                    action.dropdownActions.forEach { action ->
+                        DropdownMenuItem(
+                            leadingIcon = {
+                                Icon(action.icon, null)
+                            },
+                            text = {
+                                Text(action.text.asString())
+                            },
+                            onClick = {
+                                action.onClick()
+                            })
+                    }
+                }
             }
         }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
     )
@@ -621,6 +655,7 @@ private fun TopBar(
 private fun DeleteChatDialog(
     onDismissRequest: () -> Unit,
     onConfirm: () -> Unit,
+    vibrate: () -> Unit,
     deleteForRecipient: Boolean,
     onDeleteForRecipientChanged: (Boolean) -> Unit,
     isPrivateChat: Boolean
@@ -661,7 +696,7 @@ private fun DeleteChatDialog(
                 text = stringResource(R.string.delete),
                 seconds = 5,
                 onClickAfterFinish = onConfirm,
-                onClickWhileRunning = {},
+                onClickWhileRunning = vibrate,
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
             )
         })
@@ -819,31 +854,64 @@ private fun InputMessage(
             }
         })
     
-    FramelessTextBox(
-        placeholder = stringResource(R.string.message),
-        value = value,
-        onValueChange = onValueChange,
-        maxLines = 5,
-        singleLine = false,
-        textStyle = TextStyle(lineHeight = 16.sp),
-        trailingIcon = {
-            Row {
-                IconButton(onClick = attachmentModal::show) {
-                    Icon(
-                        imageVector = Icons.Rounded.Attachment,
-                        contentDescription = null,
-                        modifier = Modifier.rotate(135f)
-                    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.extraLarge)
+            .background(color = MaterialTheme.colorScheme.surfaceContainer)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { },
+        verticalAlignment = Alignment.Bottom
+    ) {
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier
+                .weight(1f)
+                .padding(vertical = 10.dp, horizontal = 14.dp),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                color = MaterialTheme.colorScheme.onSurface
+            ),
+            maxLines = 5,
+            minLines = 1,
+            decorationBox = { innerTextField ->
+                Box {
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = value.isEmpty(),
+                        enter = fadeIn(tween(100)),
+                        exit = fadeOut(tween(100))
+                    ) {
+                        Text(
+                            text = stringResource(R.string.message),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    innerTextField()
                 }
-                IconButton(onClick = onSendMessage) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.Send,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        })
+            },
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
+        )
+        
+        IconButton(onClick = attachmentModal::show) {
+            Icon(
+                imageVector = Icons.Rounded.AttachFile,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.rotate(225f)
+            )
+        }
+        
+        IconButton(onClick = onSendMessage) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.Send,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
     
     if (attachmentModal.isVisible) {
         AttachmentBottomSheet(
@@ -861,7 +929,7 @@ private fun InputMessage(
 private fun AttachmentBottomSheet(
     onDismissRequest: () -> Unit, onFileSystemClick: () -> Unit, onFileSelected: (List<Uri>) -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     
     ModalBottomSheet(
         sheetState = sheetState, onDismissRequest = onDismissRequest, dragHandle = null

@@ -98,9 +98,9 @@ fun MessageBubble(
         Box(
             modifier = Modifier
                 .widthIn(
-                    min = 60.dp, max = 280.dp
+                    min = 80.dp, max = 280.dp
                 )
-                .padding(horizontal = 4.dp)
+                .padding(horizontal = 8.dp)
                 .clip(MaterialTheme.shapes.large)
                 .background(containerColor)
         ) {

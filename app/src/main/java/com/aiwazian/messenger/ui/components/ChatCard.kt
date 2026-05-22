@@ -74,8 +74,9 @@ fun ChatCard(
             Text(
                 text = chat.chatName.asString(),
                 maxLines = 1,
+                fontSize = 16.sp,
+                lineHeight = 16.sp,
                 overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.sharedElement(key = "chat-name-${chat.id}")
             )
         },
@@ -225,7 +226,7 @@ fun ChatAvatar(id: Long, chatName: String, avatarUri: Uri? = null, size: Dp = 40
     } else {
         Box(
             modifier = Modifier
-                .sharedElement(key = "chat-avatar-$id")
+                .sharedBounds(key = "chat-avatar-$id")
                 .size(size)
                 .clip(CircleShape)
                 .background(AppPrimaryColor.entries[(id.toString().first().code % 5) + 1].color),

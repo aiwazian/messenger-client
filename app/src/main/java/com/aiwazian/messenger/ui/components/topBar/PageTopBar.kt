@@ -17,7 +17,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 
 @Composable
@@ -58,7 +57,7 @@ fun PageTopBar(
                     onDismissRequest = { expand = false }) {
                     action.dropdownActions.forEach { item ->
                         DropdownMenuItem(
-                            text = { Text(stringResource(item.textResId)) },
+                            text = { Text(item.text.asString()) },
                             onClick = {
                                 expand = false
                                 item.onClick()

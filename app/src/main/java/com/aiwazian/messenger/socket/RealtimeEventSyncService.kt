@@ -21,7 +21,7 @@ import javax.inject.Singleton
 
 @Singleton
 class RealtimeEventSyncService @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     webSocketClient: WebSocketClient,
     private val chatRepository: ChatRepository,
     private val userRepository: UserRepository

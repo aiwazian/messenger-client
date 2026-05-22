@@ -20,7 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.aiwazian.messenger.extensions.sharedElement
+import com.aiwazian.messenger.extensions.sharedBounds
 
 @Composable
 fun ProfileImageCarousel(
@@ -56,7 +56,7 @@ fun ProfileImageCarousel(
                 CircularWavyProgressIndicator()
             } else {
                 val modifier = if (index == 0) {
-                    Modifier.sharedElement(key = "chat-avatar-$profileId")
+                    Modifier.sharedBounds(key = "chat-avatar-$profileId")
                 } else {
                     Modifier
                 }

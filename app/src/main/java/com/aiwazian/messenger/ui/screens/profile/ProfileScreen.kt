@@ -4,9 +4,11 @@
 
 package com.aiwazian.messenger.ui.screens.profile
 
+import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,13 +18,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -33,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -42,19 +50,19 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
-import com.aiwazian.messenger.extensions.sharedElement
+import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
 import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 
 @Composable
@@ -113,13 +121,29 @@ fun ProfileScreen(
     }
     
     val scrollState = rememberScrollState()
+    val view = LocalView.current
+    val window = (view.context as Activity).window
+    val insetsController = WindowCompat.getInsetsController(window, view)
+    
+    val hasAvatar = uiState.avatars.any { it != null }
+    
+    DisposableEffect(hasAvatar) {
+        val previousState = insetsController.isAppearanceLightStatusBars
+        if (hasAvatar) {
+            insetsController.isAppearanceLightStatusBars = false
+        }
+        onDispose {
+            insetsController.isAppearanceLightStatusBars = previousState
+        }
+    }
     
     Scaffold(topBar = {
         TopBar(
             chatId = uiState.id,
             title = uiState.title.asString(),
             subTitle = uiState.subTitle.asString(),
-            actions = uiState.actions
+            actions = uiState.actions,
+            contentColor = if (hasAvatar) Color.White else Color.Unspecified
         )
     }) { innerPadding ->
         Column(
@@ -133,18 +157,23 @@ fun ProfileScreen(
             ) {
                 ProfileImageCarousel(avatars = uiState.avatars, profileId = uiState.id)
                 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(innerPadding.calculateTopPadding())
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Black.copy(alpha = 0.5f), Color.Transparent
+                if (hasAvatar) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(innerPadding.calculateTopPadding())
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Black.copy(alpha = 0.6f),
+                                        Color.Transparent
+                                    )
                                 )
                             )
-                        )
-                )
+                    )
+                } else {
+                    Spacer(Modifier.padding(top = innerPadding.calculateTopPadding()))
+                }
             }
             
             when (val profile = uiState.profile) {
@@ -246,11 +275,11 @@ private fun TopBar(
     title: String,
     subTitle: String,
     actions: List<TopBarAction>,
-    modifier: Modifier = Modifier
+    contentColor: Color = Color.Unspecified
 ) {
     val navBackStack = LocalNavBackStack.current
     
-    PageTopBar(
+    TopAppBar(
         title = {
             Column {
                 Text(
@@ -260,26 +289,61 @@ private fun TopBar(
                     lineHeight = 16.sp,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
+                        .sharedBounds(key = "chat-name-$chatId", zIndexInOverlay = 1f)
                         .fillMaxWidth()
-                        .sharedElement(key = "chat-name-$chatId", zIndexInOverlay = 1f)
                 )
                 Text(
                     text = subTitle,
                     fontSize = 12.sp,
                     lineHeight = 12.sp,
                     modifier = Modifier
-                        .sharedElement(key = "chat-sub-title-$chatId")
+                        .sharedBounds(key = "chat-sub-title-$chatId")
                         .fillMaxWidth()
                 )
             }
-        }, navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navBackStack::removeLastOrNull
-        ), actions = actions, colors = TopAppBarDefaults.topAppBarColors(
+        }, navigationIcon = {
+            IconButton(
+                modifier = Modifier.sharedBounds(key = "back-button"),
+                onClick = navBackStack::removeLastOrNull
+            ) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, null)
+            }
+        }, actions = {
+            actions.forEach { action ->
+                var expand by remember { mutableStateOf(false) }
+                IconButton(
+                    modifier = Modifier.sharedBounds(key = "top-bar-action-${action.icon.name}"),
+                    onClick = {
+                        if (action.onClick != null) {
+                            action.onClick()
+                        } else {
+                            expand = true
+                        }
+                    }
+                ) {
+                    Icon(action.icon, null)
+                }
+                CustomDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
+                    action.dropdownActions.forEach { action ->
+                        DropdownMenuItem(
+                            leadingIcon = {
+                                Icon(action.icon, null)
+                            },
+                            text = {
+                                Text(action.text.asString())
+                            },
+                            onClick = {
+                                action.onClick()
+                            })
+                    }
+                }
+            }
+        }, colors = TopAppBarDefaults.topAppBarColors(
             containerColor = Color.Transparent,
-            navigationIconContentColor = Color.White,
-            actionIconContentColor = Color.White,
-            titleContentColor = Color.White,
-        ), modifier = modifier
+            navigationIconContentColor = contentColor,
+            actionIconContentColor = contentColor,
+            titleContentColor = contentColor,
+        )
     )
 }
 

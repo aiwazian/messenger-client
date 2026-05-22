@@ -19,7 +19,6 @@ import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -38,6 +37,7 @@ import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.utils.UiText
 import java.util.Locale
 
 @Composable
@@ -80,13 +80,13 @@ fun SettingsScreen() {
                 header = {
                     SectionHeader(stringResource(R.string.settings))
                 }) {
-                SectionItem(
-                    leadingIcon = Icons.Rounded.NotificationsNone,
-                    headlineText = stringResource(R.string.notifications),
-                    onClick = {
-                        navBackStack.add(AppRoute.SettingsNotifications)
-                    }
-                )
+                //                SectionItem(
+                //                    leadingIcon = Icons.Rounded.NotificationsNone,
+                //                    headlineText = stringResource(R.string.notifications),
+                //                    onClick = {
+                //                        navBackStack.add(AppRoute.SettingsNotifications)
+                //                    }
+                //                )
                 
                 SectionItem(
                     leadingIcon = Icons.Rounded.ChatBubbleOutline,
@@ -160,7 +160,7 @@ private fun TopBar() {
             dropdownActions = listOf(
                 DropdownMenuAction(
                     icon = Icons.AutoMirrored.Rounded.Logout,
-                    textResId = R.string.logout,
+                    text = UiText.StringResource(R.string.logout),
                     onClick = {
                         navBackStack.add(AppRoute.Logout)
                     })

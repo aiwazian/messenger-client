@@ -68,7 +68,8 @@ class ChannelTypeSettingsViewModel @Inject constructor(
     }
     
     fun onChangeUsername(newUsername: String) {
-        val filteredUsername = newUsername.filter { it.toString().matches(RegexPatterns.USERNAME) }
+        val filteredUsername =
+            newUsername.filter { it.toString().matches(RegexPatterns.SET_USERNAME) }
         _uiState.update { it.copy(username = filteredUsername) }
         
         if (filteredUsername.isBlank()) {

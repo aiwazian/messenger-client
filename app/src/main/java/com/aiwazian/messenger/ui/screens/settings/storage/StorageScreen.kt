@@ -57,6 +57,7 @@ import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.flow.collectLatest
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -302,7 +303,7 @@ private fun TopBar(viewModel: StorageViewModel) {
                 icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
                     DropdownMenuAction(
                         icon = Icons.Rounded.DeleteOutline,
-                        textResId = R.string.clear_database,
+                        text = UiText.StringResource(R.string.clear_database),
                         onClick = viewModel::showClearDatabaseDialog,
                         isDestructive = true
                     )

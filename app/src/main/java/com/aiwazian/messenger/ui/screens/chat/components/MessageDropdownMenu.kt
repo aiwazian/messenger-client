@@ -13,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
@@ -41,7 +40,7 @@ fun MessageDropdownMenu(
                         modifier = Modifier.size(20.dp)
                     )
                 },
-                text = { Text(stringResource(action.textResId)) },
+                text = { Text(action.text.asString()) },
                 onClick = {
                     onDismissRequest()
                     action.onClick.invoke()

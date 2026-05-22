@@ -20,8 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.utils.RegexPatterns
 
-private val USERNAME_REGEX = Regex("^@[a-zA-Z0-9_]{5,32}$")
-
 @Composable
 fun MessageText(
     text: String,
@@ -32,7 +30,7 @@ fun MessageText(
         var lastIndex = 0
         
         val urlMatches = RegexPatterns.INVITE_LINK.findAll(text).map { it to "url" }
-        val usernameMatches = USERNAME_REGEX.findAll(text).map { it to "username" }
+        val usernameMatches = RegexPatterns.SEARCH_USERNAME.findAll(text).map { it to "username" }
         
         val allMatches = (urlMatches + usernameMatches)
             .sortedBy { it.first.range.first }

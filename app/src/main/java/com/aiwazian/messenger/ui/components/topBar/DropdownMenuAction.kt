@@ -4,12 +4,12 @@
 
 package com.aiwazian.messenger.ui.components.topBar
 
-import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.aiwazian.messenger.utils.UiText
 
 data class DropdownMenuAction(
     val icon: ImageVector,
-    @param:StringRes val textResId: Int,
+    val text: UiText,
     val onClick: () -> Unit,
     val isDestructive: Boolean = false
 )

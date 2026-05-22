@@ -31,9 +31,12 @@ android {
         }
         
         release {
-            isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles("proguard-rules.pro")
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             signingConfig = signingConfigs.getByName("debug")
             
             buildConfigField("String", "API_URL", "\"https://aiwazian.ru/api/\"")
@@ -129,4 +132,7 @@ dependencies {
     implementation(libs.coil.compose)
     
     implementation(libs.pushclient)
+    
+    // Preview Composable
+    debugImplementation(libs.androidx.compose.ui.tooling)
 }

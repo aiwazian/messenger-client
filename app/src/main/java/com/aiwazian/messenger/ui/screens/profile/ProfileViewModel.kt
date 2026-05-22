@@ -7,13 +7,11 @@ package com.aiwazian.messenger.ui.screens.profile
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.rounded.AddHome
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
@@ -278,9 +276,9 @@ class ProfileViewModel @Inject constructor(
         val dropdownActions = mutableListOf<DropdownMenuAction>()
         
         dropdownActions.add(
-            createDropdownAction(
+            DropdownMenuAction(
                 icon = Icons.Rounded.AddHome,
-                textResId = R.string.add_to_home_screen,
+                text = UiText.StringResource(R.string.add_to_home_screen),
                 onClick = {
                     createChatShortcut(_uiState.value.title.asString(context))
                 }
@@ -312,9 +310,9 @@ class ProfileViewModel @Inject constructor(
         val dropdownActions = mutableListOf<DropdownMenuAction>()
         
         dropdownActions.add(
-            createDropdownAction(
+            DropdownMenuAction(
                 icon = Icons.Rounded.AddHome,
-                textResId = R.string.add_to_home_screen,
+                text = UiText.StringResource(R.string.add_to_home_screen),
                 onClick = {
                     createChatShortcut(_uiState.value.title.asString(context))
                 }
@@ -323,9 +321,9 @@ class ProfileViewModel @Inject constructor(
         
         if (channel.isSubscribed && channel.ownerId != _uiState.value.myId) {
             dropdownActions.add(
-                createDropdownAction(
+                DropdownMenuAction(
                     icon = Icons.AutoMirrored.Rounded.Logout,
-                    textResId = R.string.leave_channel,
+                    text = UiText.StringResource(R.string.leave_channel),
                     onClick = ::showLeaveDialog
                 )
             )
@@ -356,9 +354,9 @@ class ProfileViewModel @Inject constructor(
         val dropdownActions = mutableListOf<DropdownMenuAction>()
         
         dropdownActions.add(
-            createDropdownAction(
+            DropdownMenuAction(
                 icon = Icons.Rounded.AddHome,
-                textResId = R.string.add_to_home_screen,
+                text = UiText.StringResource(R.string.add_to_home_screen),
                 onClick = {
                     createChatShortcut(_uiState.value.title.asString(context))
                 }
@@ -367,9 +365,9 @@ class ProfileViewModel @Inject constructor(
         
         if (group.ownerId != _uiState.value.myId) {
             dropdownActions.add(
-                createDropdownAction(
+                DropdownMenuAction(
                     icon = Icons.AutoMirrored.Rounded.Logout,
-                    textResId = R.string.leave_group,
+                    text = UiText.StringResource(R.string.leave_group),
                     onClick = ::showLeaveDialog
                 )
             )
@@ -394,19 +392,6 @@ class ProfileViewModel @Inject constructor(
                 )
             )
         }
-    }
-    
-    private fun createDropdownAction(
-        icon: ImageVector,
-        @StringRes
-        textResId: Int,
-        onClick: () -> Unit
-    ): DropdownMenuAction {
-        return DropdownMenuAction(
-            icon = icon,
-            textResId = textResId,
-            onClick = onClick
-        )
     }
     
     private fun navigateToProfileSettings() {

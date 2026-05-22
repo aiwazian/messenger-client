@@ -127,7 +127,8 @@ fun ChannelSettingsScreen(
                 FramelessTextBox(
                     value = uiState.channel.bio.orEmpty(),
                     onValueChange = viewModel::changeBio,
-                    placeholder = "${stringResource(R.string.description)} (${stringResource(R.string.optional)})"
+                    placeholder = "${stringResource(R.string.description)} (${stringResource(R.string.optional)})",
+                    singleLine = false
                 )
             }
             

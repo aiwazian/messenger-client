@@ -149,7 +149,8 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                 FramelessTextBox(
                     placeholder = stringResource(R.string.write_about_me),
                     value = uiState.user.bio.orEmpty(),
-                    onValueChange = viewModel::onChangeBio
+                    onValueChange = viewModel::onChangeBio,
+                    singleLine = false
                 )
             }
             
