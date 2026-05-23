@@ -13,10 +13,9 @@ class DeleteGroupUseCase @Inject constructor(
     private val chatRepository: ChatRepository
 ) {
     suspend operator fun invoke(chatId: Long): Boolean {
-        val success = groupRepository.delete(chatId).isSuccess
-        if (success) {
+        val success = groupRepository.delete(chatId).onSuccess {
             chatRepository.deleteChat(chatId)
         }
-        return success
+        return success.isSuccess
     }
 }

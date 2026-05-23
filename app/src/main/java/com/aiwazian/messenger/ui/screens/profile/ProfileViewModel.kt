@@ -23,8 +23,8 @@ import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
-import com.aiwazian.messenger.usecase.CheckInviteLinkUseCase
 import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
+import com.aiwazian.messenger.usecase.JoinViaInviteLinkUseCase
 import com.aiwazian.messenger.usecase.LeaveChatUseCase
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.RegexPatterns
@@ -57,8 +57,8 @@ class ProfileViewModel @Inject constructor(
     private val clipboardService: ClipboardService,
     private val vibrationManager: VibrationManager,
     private val downloadAvatarUseCase: DownloadAvatarUseCase,
-    private val leaveChatUseCase: LeaveChatUseCase,
-    private val checkInviteLinkUseCase: CheckInviteLinkUseCase
+    private val joinViaInviteLinkUseCase: JoinViaInviteLinkUseCase,
+    private val leaveChatUseCase: LeaveChatUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -466,7 +466,7 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessingInvite = true) }
             
-            checkInviteLinkUseCase(code).onSuccess { linkInfo ->
+            inviteLinkRepository.getInviteLinkInfo(code).onSuccess { linkInfo ->
                 if (_uiState.value.id == linkInfo.chatId) {
                     _uiState.update { it.copy(isProcessingInvite = false) }
                     _uiEffect.emit(ProfileUiEffect.ShowSnackbar(UiText.StringResource(R.string.you_are_already_in_this_chat)))
@@ -527,7 +527,7 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessingInvite = true) }
             
-            val result = inviteLinkRepository.joinViaInviteCode(code)
+            val result = joinViaInviteLinkUseCase(code, info.chatId)
             if (result.isSuccess) {
                 _uiState.update {
                     it.copy(

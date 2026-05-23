@@ -13,9 +13,8 @@ class CreateGroupUseCase @Inject constructor(
     private val chatRepository: ChatRepository
 ) {
     suspend operator fun invoke(name: String, bio: String): Result<Long> {
-        val result = groupRepository.create(name, bio)
-        result.onSuccess {
-            chatRepository.refreshChats()
+        val result = groupRepository.create(name, bio).onSuccess { groupId ->
+            chatRepository.fetchChatByIdFromServer(groupId)
         }
         return result
     }

@@ -6,6 +6,7 @@ package com.aiwazian.messenger.usecase
 
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository
+import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
 class JoinGroupUseCase @Inject constructor(
@@ -16,7 +17,10 @@ class JoinGroupUseCase @Inject constructor(
         val result = groupRepository.join(groupId)
         
         if (result.isSuccess) {
-            chatRepository.refreshChats()
+            val existingChat = chatRepository.getById(groupId).firstOrNull()
+            if (existingChat == null) {
+                chatRepository.fetchChatByIdFromServer(groupId)
+            }
         }
         
         return result

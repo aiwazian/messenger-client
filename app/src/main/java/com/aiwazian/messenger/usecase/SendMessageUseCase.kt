@@ -18,7 +18,7 @@ class SendMessageUseCase @Inject constructor(
         val localChat = chatRepository.getById(chatId).firstOrNull()
         
         if (result != null && localChat == null) {
-            chatRepository.refreshChats()
+            chatRepository.fetchChatByIdFromServer(chatId)
         }
         
         return result

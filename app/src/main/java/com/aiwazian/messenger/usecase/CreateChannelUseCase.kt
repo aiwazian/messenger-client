@@ -13,9 +13,8 @@ class CreateChannelUseCase @Inject constructor(
     private val chatRepository: ChatRepository
 ) {
     suspend operator fun invoke(name: String, bio: String): Result<Long> {
-        val result = channelRepository.create(name, bio)
-        result.onSuccess {
-            chatRepository.refreshChats()
+        val result = channelRepository.create(name, bio).onSuccess { channelId ->
+            chatRepository.fetchChatByIdFromServer(channelId)
         }
         return result
     }

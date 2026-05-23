@@ -13,10 +13,9 @@ class DeleteChannelUseCase @Inject constructor(
     private val chatRepository: ChatRepository
 ) {
     suspend operator fun invoke(chatId: Long): Boolean {
-        val success = channelRepository.delete(chatId).isSuccess
-        if (success) {
+        val success = channelRepository.delete(chatId).onSuccess {
             chatRepository.deleteChat(chatId)
         }
-        return success
+        return success.isSuccess
     }
 }
