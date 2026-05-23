@@ -11,6 +11,6 @@ import kotlinx.serialization.Serializable
 data class ChatResponseDto(
     @SerialName("id") val id: Long,
     @SerialName("name") val name: String,
-    @SerialName("isPinned") val isPinned: Boolean,
+    @SerialName("isPinned") val isPinned: Boolean = false,
     @SerialName("lastMessage") val lastMessage: MessageDto? = null
 )

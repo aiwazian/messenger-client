@@ -112,6 +112,15 @@ class ChatViewModel @Inject constructor(
         
         webSocketClient.emitEvent("chat_open", mapOf("chatId" to chatId.toString()))
         
+        viewModelScope.launch {
+            when (ChatType.fromId(chatId)) {
+                ChatType.CHANNEL -> channelRepository.fetchById(chatId)
+                ChatType.GROUP -> groupRepository.fetchById(chatId)
+                ChatType.PRIVATE -> userRepository.fetchById(chatId)
+                else -> {}
+            }
+        }
+        
         setupUserObserver()
         loadChatData()
     }

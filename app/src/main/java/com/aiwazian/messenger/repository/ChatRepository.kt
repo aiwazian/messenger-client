@@ -257,7 +257,7 @@ class ChatRepository @Inject constructor(
                         receivedIds
                     )
                 }
-
+                
                 saveMessagesToDb(messages)
                 Result.success(messages)
             } else {
@@ -282,8 +282,8 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    suspend fun fetchChatByIdFromServer(chatId: Long): Chat? {
-        return try {
+    suspend fun fetchChatByIdFromServer(chatId: Long) {
+        try {
             val response = chatApi.getChatById(chatId)
             if (response.isSuccessful) {
                 val dto = response.body()
@@ -291,15 +291,12 @@ class ChatRepository @Inject constructor(
                     val myId = userRepository.getMe().first().id
                     val chatEntity = dto.toEntity(myId)
                     chatDao.upsertChats(listOf(chatEntity))
-                    dto.toDomain()
-                } else null
+                }
             } else {
                 Log.e("ChatRepository", "Failed to fetch chat $chatId: ${response.message()}")
-                null
             }
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error fetching chat $chatId", e)
-            null
         }
     }
     

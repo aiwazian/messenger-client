@@ -57,12 +57,6 @@ class RealtimeEventSyncService @Inject constructor(
             }
         }
         
-        webSocketClient.subscribeToEvent(WebSocketEvent.DeleteChat) { payload ->
-            serviceScope.launch {
-                chatRepository.deleteLocalChat(payload.chatId)
-            }
-        }
-        
         webSocketClient.subscribeToEvent(WebSocketEvent.ChatRemoved) { payload ->
             serviceScope.launch {
                 chatRepository.deleteLocalChat(payload.chatId)

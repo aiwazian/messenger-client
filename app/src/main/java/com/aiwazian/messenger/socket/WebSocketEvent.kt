@@ -50,18 +50,6 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
         override val mapper: (DeleteChatPayload) -> DeleteChatPayload = { it }
     }
     
-    data object ChatUpdated : WebSocketEvent<DeleteChatPayload, DeleteChatPayload> {
-        override val eventName = "chat:updated"
-        override val deserializer = DeleteChatPayload.serializer()
-        override val mapper: (DeleteChatPayload) -> DeleteChatPayload = { it }
-    }
-    
-    data object DeleteChat : WebSocketEvent<DeleteChatPayload, DeleteChatPayload> {
-        override val eventName = "delete_chat"
-        override val deserializer = DeleteChatPayload.serializer()
-        override val mapper: (DeleteChatPayload) -> DeleteChatPayload = { it }
-    }
-    
     data object HistoryClear : WebSocketEvent<DeleteChatPayload, DeleteChatPayload> {
         override val eventName = "chat:history_clear"
         override val deserializer = DeleteChatPayload.serializer()
