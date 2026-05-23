@@ -34,12 +34,13 @@ class RealtimeEventSyncService @Inject constructor(
                 chatRepository.saveLocalMessage(message)
                 
                 val myId = userRepository.getMe().firstOrNull()?.id
-                if (myId != null && message.senderId != myId && ActiveChatTracker.activeChatId.value != message.chatId) {
-                    val chat = chatRepository.getById(message.chatId).firstOrNull()
+                val chatId = if (message.chatId == myId) message.senderId else message.chatId
+                if (myId != null && message.senderId != myId && ActiveChatTracker.activeChatId.value != chatId) {
+                    val chat = chatRepository.getById(chatId).firstOrNull()
                     val title =
                         chat?.chatName?.asString(context) ?: context.getString(R.string.new_message)
                     val body = message.text ?: context.getString(R.string.message)
-                    NotificationHelper.showMessageNotification(context, message.chatId, title, body)
+                    NotificationHelper.showMessageNotification(context, chatId, title, body)
                 }
             }
         }

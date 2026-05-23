@@ -136,3 +136,7 @@ dependencies {
     // Preview Composable
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}

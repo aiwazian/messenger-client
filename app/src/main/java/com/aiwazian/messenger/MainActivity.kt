@@ -125,8 +125,8 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun handleIntent(intent: Intent, isNewIntent: Boolean = false) {
-        val chatId = intent.getStringExtra("chatId")?.toLongOrNull()
-        if (chatId != null) {
+        val chatId = intent.getLongExtra("chatId", -1)
+        if (chatId != -1L) {
             if (isNewIntent) {
                 externalRouteFlow.tryEmit(AppRoute.Chat(chatId, null))
             } else {

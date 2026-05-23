@@ -25,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.stringResource
@@ -42,7 +41,6 @@ import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.section.SectionToggleItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
@@ -51,7 +49,6 @@ fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
     val primaryColor by viewModel.primaryColor.collectAsState()
     val isDynamicColorEnable by viewModel.dynamicColor.collectAsState()
     
-    val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     
     Scaffold(
@@ -79,9 +76,7 @@ fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
                         text = stringResource(R.string.dynamic_color),
                         isChecked = isDynamicColorEnable,
                         onCheckedChange = {
-                            coroutineScope.launch {
-                                viewModel.setDynamicColor(!isDynamicColorEnable)
-                            }
+                            viewModel.setDynamicColor(!isDynamicColorEnable)
                         })
                 }
                 
@@ -99,9 +94,7 @@ fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
                                     modifier = Modifier.scale(1.5f),
                                     selected = primaryColor == color,
                                     onClick = {
-                                        coroutineScope.launch {
-                                            viewModel.setPrimaryColor(color)
-                                        }
+                                        viewModel.setPrimaryColor(color)
                                     },
                                     colors = RadioButtonDefaults.colors(
                                         selectedColor = color.color,

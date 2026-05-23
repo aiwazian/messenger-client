@@ -33,7 +33,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -104,6 +103,7 @@ import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.sharedElement
+import com.aiwazian.messenger.push.NotificationHelper
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.CountdownTextButton
@@ -131,8 +131,11 @@ fun ChatScreen(
     avatarUri: String? = null,
     chatViewModel: ChatViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+
     LaunchedEffect(Unit) {
         chatViewModel.init(chatId, chatName, avatarUri?.toUri())
+        NotificationHelper.clearChatNotifications(context, chatId)
     }
     
     DisposableEffect(chatId) {
@@ -143,8 +146,6 @@ fun ChatScreen(
     }
     
     val navBackStack = LocalNavBackStack.current
-    val context = LocalContext.current
-    
     val uiState by chatViewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -320,9 +321,8 @@ fun ChatScreen(
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .height(innerPadding.calculateTopPadding())
+                    .height(innerPadding.calculateBottomPadding())
                     .fillMaxWidth()
-                    .statusBarsPadding()
                     .imePadding()
                     .background(
                         brush = Brush.verticalGradient(

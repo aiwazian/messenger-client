@@ -397,7 +397,7 @@ private fun TopBar(
                     fontSize = 12.sp,
                     lineHeight = 12.sp,
                     modifier = Modifier
-                        .sharedBounds(key = "chat-sub-title-$chatId")
+                        .sharedBounds(key = "chat-sub-title-$chatId", zIndexInOverlay = 1f)
                         .fillMaxWidth()
                 )
             }

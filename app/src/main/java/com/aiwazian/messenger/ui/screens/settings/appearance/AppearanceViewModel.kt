@@ -5,10 +5,12 @@
 package com.aiwazian.messenger.ui.screens.settings.appearance
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.enums.ThemeOption
 import com.aiwazian.messenger.utils.ThemeManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -21,18 +23,21 @@ class AppearanceViewModel @Inject constructor(private val themeManager: ThemeMan
     
     val currentTheme = themeManager.currentTheme
     
-    suspend fun setDynamicColor(isEnable: Boolean) {
-        themeManager.setDynamicColor(isEnable)
+    fun setDynamicColor(isEnable: Boolean) {
+        viewModelScope.launch {
+            themeManager.setDynamicColor(isEnable)
+        }
     }
     
-    suspend fun setPrimaryColor(color: AppPrimaryColor) {
-        themeManager.setPrimaryColor(color)
+    fun setPrimaryColor(color: AppPrimaryColor) {
+        viewModelScope.launch {
+            themeManager.setPrimaryColor(color)
+        }
     }
     
-    suspend fun setTheme(theme: ThemeOption) {
-        themeManager.setTheme(theme)
+    fun setTheme(theme: ThemeOption) {
+        viewModelScope.launch {
+            themeManager.setTheme(theme)
+        }
     }
 }
-
-
-

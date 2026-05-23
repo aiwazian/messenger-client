@@ -570,11 +570,7 @@ private fun DrawerContent(
             .verticalScroll(rememberScrollState()),
         windowInsets = WindowInsets()
     ) {
-        Column(
-            modifier = Modifier
-                .statusBarsPadding()
-                .navigationBarsPadding()
-        ) {
+        Column(modifier = Modifier.statusBarsPadding()) {
             Text(
                 text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = verticalPadding),
@@ -660,7 +656,11 @@ private fun DrawerContent(
             bannerState.loadAd(adRequest)
         }
         
-        Banner(state = bannerState, modifier = Modifier.fillMaxWidth())
+        Banner(
+            state = bannerState, modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+        )
     }
 }
 

@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.utils
 
+import android.os.Build
 import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.enums.ThemeOption
 import kotlinx.coroutines.CoroutineScope
@@ -43,9 +44,11 @@ class ThemeManager @Inject constructor(
             _appPrimaryColor.update { AppPrimaryColor.valueOf(primaryColor) }
         }
         
-        coroutineScope.launch {
-            val dynamicColor = dataStorage.getDynamicColor().first()
-            _dynamicColor.update { dynamicColor }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            coroutineScope.launch {
+                val dynamicColor = dataStorage.getDynamicColor().first()
+                _dynamicColor.update { dynamicColor }
+            }
         }
     }
     
