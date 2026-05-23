@@ -51,7 +51,7 @@ class PasswordViewModel @Inject constructor(
         
         val login = _uiState.value.login
         val password = _uiState.value.password
-
+        
         if (password.isBlank()) {
             _uiState.update { it.copy(errorText = UiText.StringResource(R.string.enter_password)) }
             vibrationManager.vibrate(VibrationPattern.Error)
@@ -86,7 +86,7 @@ class PasswordViewModel @Inject constructor(
                 if (it.isNetworkError()) {
                     _uiEffect.emit(PasswordUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_connect)))
                 } else {
-                    _uiEffect.emit(PasswordUiEffect.ShowSnackbar(UiText.StringResource(R.string.unexpected_error)))
+                    _uiState.update { state -> state.copy(errorText = UiText.StringResource(R.string.invalid_password)) }
                 }
                 vibrationManager.vibrate(VibrationPattern.Error)
             }

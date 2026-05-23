@@ -223,4 +223,8 @@
     <string name="terms_of_use">Умовы выкарыстання</string>
     <string name="i_agree">Я згодна</string>
     <string name="open_settings">Адкрыйце Налады</string>
+    <string name="private_chats">Прыватныя чаты</string>
+    <string name="channels">Каналы</string>
+    <string name="groups">Групы</string>
+    <string name="invalid_password">Няправільны пароль</string>
 </resources>

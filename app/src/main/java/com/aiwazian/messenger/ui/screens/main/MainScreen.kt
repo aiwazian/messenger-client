@@ -239,21 +239,26 @@ private fun Content(
                     items(uiState.chats) { chat ->
                         val chatName = chat.chatName.asString()
                         val isSelected = chat.id in uiState.selectedChatIds
-                        ChatCard(chat = chat, isSelected = isSelected, onClickChat = {
-                            if (hasSelection) {
-                                viewModel.toggleChatSelection(chat.id)
-                            } else {
-                                navBackStack.add(
-                                    AppRoute.Chat(
-                                        chatId = chat.id,
-                                        chatName = chatName,
-                                        avatarUri = chat.avatarUri?.toString()
+                        ChatCard(
+                            modifier = Modifier.animateItem(),
+                            chat = chat,
+                            isSelected = isSelected,
+                            onClickChat = {
+                                if (hasSelection) {
+                                    viewModel.toggleChatSelection(chat.id)
+                                } else {
+                                    navBackStack.add(
+                                        AppRoute.Chat(
+                                            chatId = chat.id,
+                                            chatName = chatName,
+                                            avatarUri = chat.avatarUri?.toString()
+                                        )
                                     )
-                                )
-                            }
-                        }, onLongClickChat = {
-                            viewModel.toggleChatSelection(chat.id)
-                        })
+                                }
+                            },
+                            onLongClickChat = {
+                                viewModel.toggleChatSelection(chat.id)
+                            })
                     }
                 }
             }

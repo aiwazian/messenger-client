@@ -112,7 +112,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
                     )
                 )
             }.onFailure {
-                Log.e("SendMessageWithFiles", "Upload failed", it)
+                Log.e("SendMessageWithFiles", "Upload failed: ${it.message}", it)
                 success = false
             }
         }

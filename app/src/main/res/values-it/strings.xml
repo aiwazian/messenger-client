@@ -221,4 +221,8 @@
     <string name="terms_of_use">Termini di utilizzo</string>
     <string name="i_agree">Sono d\'accordo</string>
     <string name="open_settings">Apri Impostazioni</string>
+    <string name="private_chats">Chat private</string>
+    <string name="channels">Canali</string>
+    <string name="groups">Gruppi</string>
+    <string name="invalid_password">Password non valida</string>
 </resources>

@@ -222,4 +222,9 @@
     <string name="optional">Необязательно</string>
     <string name="terms_of_use">Условия использования</string>
     <string name="i_agree">Я согласен с</string>
+    <string name="open_settings">Открыть настройки</string>
+    <string name="private_chats">Частные чаты</string>
+    <string name="channels">Каналы</string>
+    <string name="groups">Группы</string>
+    <string name="invalid_password">Неверный пароль</string>
 </resources>

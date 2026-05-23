@@ -265,6 +265,7 @@ fun ChatScreen(
                             is ChatItem.DateSeparator -> DateSeparatorItem(item.text)
                             is ChatItem.SystemMessage -> SystemMessageBubble(item.text.asString())
                             is ChatItem.MessageItem -> MessageBubble(
+                                modifier = Modifier.animateItem(),
                                 item = item,
                                 onSeen = {
                                     chatViewModel.markAsReadMessage(

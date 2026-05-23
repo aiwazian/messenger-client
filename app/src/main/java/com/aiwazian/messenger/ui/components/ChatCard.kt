@@ -56,6 +56,7 @@ import com.aiwazian.messenger.utils.UiText
 
 @Composable
 fun ChatCard(
+    modifier: Modifier = Modifier,
     chat: Chat,
     isSelected: Boolean = false,
     unreadMessageCount: Int = 0,
@@ -64,7 +65,7 @@ fun ChatCard(
     onLongClickChatLogo: () -> Unit = {}
 ) {
     ListItem(
-        modifier = Modifier
+        modifier = modifier
             .combinedClickable(
                 onClick = onClickChat,
                 onLongClick = onLongClickChat

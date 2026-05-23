@@ -113,9 +113,11 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
                 text = stringResource(R.string.user_login),
                 fontSize = 28.sp
             )
-            Column(Modifier
-                       .width(300.dp)
-                       .imePadding()) {
+            Column(
+                Modifier
+                    .width(300.dp)
+                    .imePadding()
+            ) {
                 InputTextField(
                     value = uiState.login,
                     onValueChange = viewModel::changeLogin,
@@ -134,7 +136,7 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
                 onDismissRequest = viewModel::hideFoundDialog,
                 content = {
                     Text(
-                        text = "Пользователь найден. Продолжить?",
+                        text = "Аккаунт с таким логином уже существует. Войти?",
                         lineHeight = 18.sp
                     )
                 },
@@ -158,7 +160,7 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
                 onDismissRequest = viewModel::hideNotFoundDialog,
                 content = {
                     Text(
-                        text = "Пользователь не найден. Создать?",
+                        text = "Аккаунт не найден. Зарегистрироваться?",
                         lineHeight = 18.sp
                     )
                 },

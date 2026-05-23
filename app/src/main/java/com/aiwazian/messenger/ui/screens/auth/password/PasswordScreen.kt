@@ -50,11 +50,11 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun PasswordScreen(login: String, viewModel: PasswordViewModel = hiltViewModel()) {
-    val context = LocalContext.current
-    
     LaunchedEffect(Unit) {
         viewModel.setLogin(login)
     }
+    
+    val context = LocalContext.current
     
     val uiState by viewModel.uiState.collectAsState()
     

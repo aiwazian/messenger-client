@@ -57,6 +57,7 @@ import com.aiwazian.messenger.ui.screens.chat.ChatItem
 
 @Composable
 fun MessageBubble(
+    modifier: Modifier = Modifier,
     item: ChatItem.MessageItem,
     onSeen: () -> Unit,
     onFileAction: (MessageAttachment, FileAction) -> Unit,
@@ -77,7 +78,7 @@ fun MessageBubble(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = alignment,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .onGloballyPositioned { coordinates ->
                 val position = coordinates.positionInParent()

@@ -40,7 +40,13 @@ class RealtimeEventSyncService @Inject constructor(
                     val title =
                         chat?.chatName?.asString(context) ?: context.getString(R.string.new_message)
                     val body = message.text ?: context.getString(R.string.message)
-                    NotificationHelper.showMessageNotification(context, chatId, title, body)
+                    NotificationHelper.showMessageNotification(
+                        context,
+                        chatId,
+                        title,
+                        body,
+                        chat?.avatarUri
+                    )
                 }
             }
         }

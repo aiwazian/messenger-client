@@ -35,7 +35,7 @@ class UploadManager @Inject constructor(
         fileUri: Uri,
         uploadUrl: String,
         fileId: String,
-        maxAttempts: Int = 10
+        maxAttempts: Int = 100
     ): Result<String> = withContext(Dispatchers.IO) {
         repeat(maxAttempts) { attempt ->
             try {
@@ -75,7 +75,7 @@ class UploadManager @Inject constructor(
                 }
             } catch (e: Exception) {
                 activeUploads.remove(fileId)
-                Log.e("UploadManager", "Upload error", e)
+                Log.e("UploadManager", "Upload error: ${e.message}", e)
                 if (attempt < maxAttempts - 1) {
                     delay(1_000L * (attempt + 1))
                 } else {

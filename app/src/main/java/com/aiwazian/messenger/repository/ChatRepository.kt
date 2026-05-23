@@ -277,7 +277,9 @@ class ChatRepository @Inject constructor(
     fun getById(chatId: Long): Flow<Chat?> {
         return userRepository.getMe().flatMapLatest { me ->
             chatDao.getChatByIdFlow(me.id, chatId).map {
-                it?.toDomain(UiText.DynamicString(""), null, null)
+                if (it == null) return@map null
+                val chatInfo = resolveChatInfo(it, me.id) ?: return@map null
+                it.toDomain(chatInfo.first, chatInfo.second, null)
             }
         }
     }
