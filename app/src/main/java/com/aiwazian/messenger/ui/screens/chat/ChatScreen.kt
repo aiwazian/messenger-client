@@ -394,7 +394,8 @@ fun ChatScreen(
     if (uiState.showFullScreenViewer) {
         FullScreenViewer(
             mediaUris = uiState.mediaItems.map { it.localUri },
-            initialPage = uiState.initialMediaIndex
+            initialPage = uiState.initialMediaIndex,
+            onSaveToGallery = chatViewModel::saveImageToGallery
         ) {
             chatViewModel.clearMediaUrl()
         }

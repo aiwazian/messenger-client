@@ -833,4 +833,6 @@ class ChatViewModel @Inject constructor(
     fun clearMediaUrl() {
         _uiState.update { it.copy(showFullScreenViewer = false) }
     }
+
+    suspend fun saveImageToGallery(uri: Uri): Boolean = uploadManager.saveImageToGallery(uri)
 }

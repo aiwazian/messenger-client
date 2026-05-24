@@ -5,13 +5,7 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.app.Activity
-import android.content.ContentValues
-import android.content.Context
 import android.net.Uri
-import android.os.Build
-import android.os.Environment
-import android.provider.MediaStore
-import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -64,17 +58,14 @@ import androidx.core.view.WindowInsetsControllerCompat
 import coil.compose.AsyncImage
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
 import kotlin.math.abs
 
 @Composable
 fun FullScreenViewer(
     mediaUris: List<Uri?>,
     initialPage: Int,
+    onSaveToGallery: suspend (Uri) -> Boolean,
     onDismiss: () -> Unit
 ) {
     var isUiVisible by remember { mutableStateOf(true) }
@@ -276,9 +267,7 @@ fun FullScreenViewer(
                                 menuExpanded = false
                                 val uri = mediaUris.getOrNull(pagerState.currentPage) ?: return@DropdownMenuItem
                                 scope.launch {
-                                    val ok = withContext(Dispatchers.IO) {
-                                        saveImageToGallery(context, uri)
-                                    }
+                                    val ok = onSaveToGallery(uri)
                                     Toast.makeText(
                                         context,
                                         if (ok) savedMessage else failedMessage,
@@ -292,59 +281,5 @@ fun FullScreenViewer(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
-    }
-}
-
-private fun saveImageToGallery(context: Context, source: Uri): Boolean {
-    return try {
-        val resolver = context.contentResolver
-        val mimeType = resolver.getType(source)
-            ?: MimeTypeMap.getSingleton()
-                .getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(source.toString()))
-            ?: "image/jpeg"
-        val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: "jpg"
-        val displayName = "IMG_${System.currentTimeMillis()}.$extension"
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val values = ContentValues().apply {
-                put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
-                put(MediaStore.Images.Media.MIME_TYPE, mimeType)
-                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
-                put(MediaStore.Images.Media.IS_PENDING, 1)
-            }
-            val target = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-                ?: return false
-            resolver.openInputStream(source)?.use { input ->
-                resolver.openOutputStream(target)?.use { output ->
-                    input.copyTo(output)
-                } ?: return false
-            } ?: return false
-            values.clear()
-            values.put(MediaStore.Images.Media.IS_PENDING, 0)
-            resolver.update(target, values, null, null)
-            true
-        } else {
-            @Suppress("DEPRECATION")
-            val picturesDir = Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES
-            )
-            if (!picturesDir.exists()) picturesDir.mkdirs()
-            val target = File(picturesDir, displayName)
-            resolver.openInputStream(source)?.use { input ->
-                FileOutputStream(target).use { output ->
-                    input.copyTo(output)
-                }
-            } ?: return false
-            val values = ContentValues().apply {
-                put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
-                put(MediaStore.Images.Media.MIME_TYPE, mimeType)
-                @Suppress("DEPRECATION")
-                put(MediaStore.Images.Media.DATA, target.absolutePath)
-            }
-            resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-            true
-        }
-    } catch (_: Exception) {
-        false
     }
 }

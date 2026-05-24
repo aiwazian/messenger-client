@@ -4,9 +4,14 @@
 
 package com.aiwazian.messenger.utils
 
+import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
+import android.webkit.MimeTypeMap
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
@@ -19,6 +24,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -90,7 +96,61 @@ class UploadManager @Inject constructor(
         activeUploads[fileId]?.cancel()
         activeUploads.remove(fileId)
     }
-    
+
+    suspend fun saveImageToGallery(uri: Uri): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val resolver = context.contentResolver
+            val mimeType = resolver.getType(uri)
+                ?: MimeTypeMap.getSingleton()
+                    .getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()))
+                ?: "image/jpeg"
+            val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: "jpg"
+            val displayName = "IMG_${System.currentTimeMillis()}.$extension"
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
+                    put(MediaStore.Images.Media.MIME_TYPE, mimeType)
+                    put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                    put(MediaStore.Images.Media.IS_PENDING, 1)
+                }
+                val target = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                    ?: return@withContext false
+                resolver.openInputStream(uri)?.use { input ->
+                    resolver.openOutputStream(target)?.use { output ->
+                        input.copyTo(output)
+                    } ?: return@withContext false
+                } ?: return@withContext false
+                values.clear()
+                values.put(MediaStore.Images.Media.IS_PENDING, 0)
+                resolver.update(target, values, null, null)
+            } else {
+                @Suppress("DEPRECATION")
+                val picturesDir = Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_PICTURES
+                )
+                if (!picturesDir.exists()) picturesDir.mkdirs()
+                val target = File(picturesDir, displayName)
+                resolver.openInputStream(uri)?.use { input ->
+                    FileOutputStream(target).use { output ->
+                        input.copyTo(output)
+                    }
+                } ?: return@withContext false
+                val values = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
+                    put(MediaStore.Images.Media.MIME_TYPE, mimeType)
+                    @Suppress("DEPRECATION")
+                    put(MediaStore.Images.Media.DATA, target.absolutePath)
+                }
+                resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            }
+            true
+        } catch (e: Exception) {
+            Log.e("UploadManager", "saveImageToGallery error: ${e.message}", e)
+            false
+        }
+    }
+
     private fun saveFileLocally(uri: Uri, fileId: String): String {
         val path = File(context.getExternalFilesDir(null) ?: context.filesDir, "Uploads")
         path.mkdirs()
