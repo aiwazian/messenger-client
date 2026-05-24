@@ -5,16 +5,13 @@
 package com.aiwazian.messenger.database.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Transaction
+import androidx.room.Upsert
 import com.aiwazian.messenger.database.entity.AttachmentEntity
-import com.aiwazian.messenger.enums.DownloadStatus
 
 @Dao
 interface AttachmentDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsertAttachments(attachments: List<AttachmentEntity>)
     
     @Query("SELECT * FROM attachment WHERE messageId = :messageId")

@@ -402,17 +402,13 @@ private fun TopBar(
                 )
             }
         }, navigationIcon = {
-            IconButton(
-                modifier = Modifier.sharedBounds(key = "back-button"),
-                onClick = navBackStack::removeLastOrNull
-            ) {
+            IconButton(onClick = navBackStack::removeLastOrNull) {
                 Icon(Icons.AutoMirrored.Rounded.ArrowBack, null)
             }
         }, actions = {
             actions.forEach { action ->
                 var expand by remember { mutableStateOf(false) }
                 IconButton(
-                    modifier = Modifier.sharedBounds(key = "top-bar-action-${action.icon.name}"),
                     onClick = {
                         if (action.onClick != null) {
                             action.onClick()

@@ -5,8 +5,6 @@
 package com.aiwazian.messenger.database.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.aiwazian.messenger.database.entity.MessageEntity
@@ -15,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MessageDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @androidx.room.Upsert
     suspend fun saveMessages(messages: List<MessageEntity>)
     
     @Transaction

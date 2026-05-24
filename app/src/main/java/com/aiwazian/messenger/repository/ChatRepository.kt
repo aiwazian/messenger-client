@@ -6,7 +6,9 @@ package com.aiwazian.messenger.repository
 
 import android.net.Uri
 import android.util.Log
+import androidx.room.withTransaction
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.MessageDao
@@ -44,6 +46,7 @@ import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 
 class ChatRepository @Inject constructor(
+    private val database: AppDatabase,
     private val chatApi: ChatApi,
     private val messageApi: MessageApi,
     private val messageDao: MessageDao,
@@ -362,28 +365,30 @@ class ChatRepository @Inject constructor(
     }
     
     private suspend fun saveMessagesToDb(messages: List<Message>) {
-        messageDao.saveMessages(messages.map { it.toEntity() })
-        messages.forEach { message ->
-            val attachments = message.attachments.map { attachment ->
-                val existingFile = fileRepository.getById(attachment.fileId)
-                
-                val file = if (existingFile != null) {
-                    existingFile
-                } else {
-                    val newFile = FileEntity(
-                        id = attachment.fileId,
-                        name = attachment.name,
-                        size = attachment.size,
-                        path = null,
-                        status = attachment.status
-                    )
-                    fileRepository.upsert(newFile)
-                    newFile
+        database.withTransaction {
+            messageDao.saveMessages(messages.map { it.toEntity() })
+            messages.forEach { message ->
+                val attachments = message.attachments.map { attachment ->
+                    val existingFile = fileRepository.getById(attachment.fileId)
+                    
+                    val file = if (existingFile != null) {
+                        existingFile
+                    } else {
+                        val newFile = FileEntity(
+                            id = attachment.fileId,
+                            name = attachment.name,
+                            size = attachment.size,
+                            path = attachment.localUri?.toString(),
+                            status = attachment.status
+                        )
+                        fileRepository.upsert(newFile)
+                        newFile
+                    }
+                    
+                    attachment.toEntity(file)
                 }
-                
-                attachment.toEntity(file)
+                attachmentDao.upsertAttachments(attachments)
             }
-            attachmentDao.upsertAttachments(attachments)
         }
     }
     

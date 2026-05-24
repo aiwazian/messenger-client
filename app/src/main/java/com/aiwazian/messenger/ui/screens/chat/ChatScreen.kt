@@ -618,7 +618,6 @@ private fun TopBar(
             }
         }, navigationIcon = {
             IconButton(
-                modifier = Modifier.sharedBounds(key = "back-button"),
                 onClick = navBackStack::removeLastOrNull,
                 colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
             ) {
@@ -628,7 +627,6 @@ private fun TopBar(
             topBarActions.forEach { action ->
                 var expand by remember { mutableStateOf(false) }
                 IconButton(
-                    modifier = Modifier.sharedBounds(key = "top-bar-action-${action.icon.name}"),
                     onClick = {
                         expand = true
                     },
