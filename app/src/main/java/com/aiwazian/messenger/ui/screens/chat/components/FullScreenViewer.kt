@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -91,7 +92,7 @@ fun FullScreenViewer(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = backgroundAlpha)),
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = backgroundAlpha)),
         contentAlignment = Alignment.Center
     ) {
         AsyncImage(
@@ -169,12 +170,21 @@ fun FullScreenViewer(
                 .align(Alignment.TopCenter),
         ) {
             TopAppBar(
+                modifier = Modifier
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                Color.Transparent
+                            )
+                        )
+                    ),
                 title = {},
                 navigationIcon = {
                     IconButton(
                         onClick = onDismiss,
                         colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f)
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
                         )
                     ) {
                         Icon(
