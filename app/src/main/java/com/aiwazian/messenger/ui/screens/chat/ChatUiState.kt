@@ -7,6 +7,7 @@ package com.aiwazian.messenger.ui.screens.chat
 import android.net.Uri
 import com.aiwazian.messenger.domain.InviteLinkInfo
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.utils.UiText
 
@@ -39,5 +40,7 @@ data class ChatUiState(
     val isProcessingInvite: Boolean = false,
     val inviteLinkError: String? = null,
     val showBannedDialog: Boolean = false,
-    val currentMediaUrl: String? = null
+    val mediaItems: List<MessageAttachment> = emptyList(),
+    val initialMediaIndex: Int = 0,
+    val showFullScreenViewer: Boolean = false
 )

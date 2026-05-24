@@ -391,8 +391,11 @@ fun ChatScreen(
         }
     }
     
-    if (!uiState.currentMediaUrl.isNullOrBlank()) {
-        FullScreenViewer(uiState.currentMediaUrl!!) {
+    if (uiState.showFullScreenViewer) {
+        FullScreenViewer(
+            mediaUris = uiState.mediaItems.map { it.localUri },
+            initialPage = uiState.initialMediaIndex
+        ) {
             chatViewModel.clearMediaUrl()
         }
         BackHandler {

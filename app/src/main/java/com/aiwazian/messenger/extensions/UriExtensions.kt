@@ -28,13 +28,17 @@ fun Uri.getFileSize(context: Context): Long? {
 }
 
 fun Uri.getFileType(context: Context): String {
-    val type = context.contentResolver.getType(this)
-    if (type != null) return type
+    context.contentResolver.getType(this)?.let { return it }
     
-    val extension = MimeTypeMap.getFileExtensionFromUrl(this.toString())
-    if (extension != null) {
-        val mimeFromExt = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
-        if (mimeFromExt != null) return mimeFromExt
+    val extension = when {
+        scheme == "content" -> lastPathSegment?.substringAfterLast('.', "")?.lowercase()
+        else -> MimeTypeMap.getFileExtensionFromUrl(toString())?.lowercase()
+    }
+    
+    extension?.let {
+        MimeTypeMap.getSingleton().getMimeTypeFromExtension(it)?.let { mimeType ->
+            return mimeType
+        }
     }
     
     return "application/octet-stream"

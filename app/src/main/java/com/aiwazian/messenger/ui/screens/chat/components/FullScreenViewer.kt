@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.app.Activity
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -16,8 +17,11 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -44,12 +48,13 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import coil.compose.AsyncImage
-import com.aiwazian.messenger.extensions.sharedElement
 import kotlin.math.abs
 
 @Composable
 fun FullScreenViewer(
-    imageUrl: String, onDismiss: () -> Unit
+    mediaUris: List<Uri?>,
+    initialPage: Int,
+    onDismiss: () -> Unit
 ) {
     var isUiVisible by remember { mutableStateOf(true) }
     var dragOffsetY by remember { mutableFloatStateOf(0f) }
@@ -61,7 +66,7 @@ fun FullScreenViewer(
         targetValue = dragOffsetY,
         animationSpec = if (isDragging) snap()
         else spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
+            dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessMedium
         ),
         label = "photoOffsetY"
@@ -89,18 +94,17 @@ fun FullScreenViewer(
         onDispose { insetsController.show(WindowInsetsCompat.Type.statusBars()) }
     }
     
+    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { mediaUris.size })
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface.copy(alpha = backgroundAlpha)),
         contentAlignment = Alignment.Center
     ) {
-        AsyncImage(
-            model = imageUrl,
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier
-                .sharedElement(key = imageUrl)
                 .fillMaxSize()
                 .pointerInput(Unit) {
                     awaitEachGesture {
@@ -111,6 +115,8 @@ fun FullScreenViewer(
                         var previousY = down.position.y
                         var dragDetected = false
                         var totalDragY = 0f
+                        var totalDragX = 0f
+                        var isHorizontalScroll = false
                         
                         while (true) {
                             val event = awaitPointerEvent()
@@ -118,18 +124,27 @@ fun FullScreenViewer(
                             
                             // dy вычисляем сами — всегда актуально независимо от consumed
                             val dy = change.position.y - previousY
+                            val dx = change.position.x - down.position.x
                             previousY = change.position.y
                             
-                            if (!dragDetected) {
+                            if (!dragDetected && !isHorizontalScroll) {
                                 // Накапливаем пока не превысили touchSlop
                                 totalDragY += dy
-                                if (abs(totalDragY) > viewConfiguration.touchSlop) {
+                                totalDragX = dx
+                                
+                                if (abs(totalDragX) > viewConfiguration.touchSlop && abs(totalDragX) > abs(
+                                        totalDragY
+                                    )
+                                ) {
+                                    // Это горизонтальный скролл
+                                    isHorizontalScroll = true
+                                } else if (abs(totalDragY) > viewConfiguration.touchSlop) {
                                     dragDetected = true
                                     isDragging = true
                                     dragOffsetY = totalDragY
                                     change.consume()
                                 }
-                            } else {
+                            } else if (dragDetected) {
                                 // Drag уже идёт — обновляем offset
                                 change.consume()
                                 totalDragY += dy
@@ -141,12 +156,12 @@ fun FullScreenViewer(
                         }
                         
                         when {
-                            // Не было drag — это тап, переключаем UI
-                            !dragDetected -> {
+                            // Не было drag и не было горизонтального скролла — это тап, переключаем UI
+                            !dragDetected && !isHorizontalScroll -> {
                                 isUiVisible = !isUiVisible
                             }
                             // Drag был достаточным — закрываем
-                            abs(totalDragY) > dismissThresholdPx -> {
+                            abs(totalDragY) > dismissThresholdPx && dragDetected -> {
                                 onDismiss()
                             }
                             // Drag был мал — возвращаем на место
@@ -162,7 +177,21 @@ fun FullScreenViewer(
                 .graphicsLayer {
                     translationY = animatedOffsetY
                 }
-        )
+        ) { page ->
+            val uri = mediaUris[page]
+            if (uri == null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                AsyncImage(
+                    model = uri,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
         AnimatedVisibility(
             visible = !isDragging && isUiVisible,
             modifier = Modifier

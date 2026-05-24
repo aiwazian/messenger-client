@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.chat
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.compose.material.icons.Icons
@@ -20,9 +21,11 @@ import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
+import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
+import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.repository.ChannelRepository
@@ -49,6 +52,7 @@ import com.aiwazian.messenger.utils.UploadManager
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -65,6 +69,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
+    @param:ApplicationContext private val context: Context,
     private val chatRepository: ChatRepository,
     private val channelRepository: ChannelRepository,
     private val groupRepository: GroupRepository,
@@ -369,6 +374,7 @@ class ChatViewModel @Inject constructor(
         val chatItems = mutableListOf<ChatItem>()
         var lastDate: java.time.LocalDate? = null
         var lastSenderId: Long? = null
+        val newMediaItems = mutableListOf<MessageAttachment>()
         
         messages.forEach { message ->
             val messageDate =
@@ -436,15 +442,41 @@ class ChatViewModel @Inject constructor(
                 )
             }
             
+            val updatedAttachments = message.attachments.map { attachment ->
+                if (attachment.localUri != null) {
+                    val mimeType = attachment.localUri.getFileType(context)
+                    val newType = when {
+                        mimeType.startsWith("image/") -> AttachmentType.IMAGE
+                        mimeType.startsWith("video/") -> AttachmentType.VIDEO
+                        mimeType.startsWith("audio/") -> AttachmentType.VOICE
+                        else -> AttachmentType.FILE
+                    }
+                    attachment.copy(type = newType)
+                } else {
+                    attachment
+                }
+            }
+            
+            val updatedMessage = message.copy(attachments = updatedAttachments)
+            
+            updatedMessage.attachments.sortedBy { it.sortOrder }.forEach { attachment ->
+                if (attachment.type == AttachmentType.IMAGE || attachment.type == AttachmentType.VIDEO) {
+                    newMediaItems.add(attachment)
+                    if (attachment.type == AttachmentType.IMAGE && attachment.status == DownloadStatus.IDLE) {
+                        onFileAction(updatedMessage, attachment, FileAction.DOWNLOAD)
+                    }
+                }
+            }
+            
             chatItems.add(
                 ChatItem.MessageItem(
-                    message = message,
-                    time = message.sendTime.toInstance().toPrettyTime(),
+                    message = updatedMessage,
+                    time = updatedMessage.sendTime.toInstance().toPrettyTime(),
                     isMine = isMine,
-                    isRead = if (isMine) message.isRead else null,
-                    senderName = if (!isMine && ChatType.fromId(message.chatId) == ChatType.GROUP) {
-                        _uiState.value.userNamesCache[message.senderId].also {
-                            if (it == null) loadUserName(message.senderId)
+                    isRead = if (isMine) updatedMessage.isRead else null,
+                    senderName = if (!isMine && ChatType.fromId(updatedMessage.chatId) == ChatType.GROUP) {
+                        _uiState.value.userNamesCache[updatedMessage.senderId].also {
+                            if (it == null) loadUserName(updatedMessage.senderId)
                         }
                     } else null,
                     isFirstInGroup = isFirstInGroup,
@@ -453,7 +485,7 @@ class ChatViewModel @Inject constructor(
             
             lastSenderId = message.senderId
         }
-        _uiState.update { it.copy(chatItems = chatItems) }
+        _uiState.update { it.copy(chatItems = chatItems, mediaItems = newMediaItems) }
     }
     
     fun changeText(newText: String) {
@@ -630,8 +662,14 @@ class ChatViewModel @Inject constructor(
             }
             
             FileAction.OPEN -> {
-                if (file.type == AttachmentType.IMAGE) {
-                    _uiState.update { it.copy(currentMediaUrl = file.localUri.toString()) }
+                if (file.type == AttachmentType.IMAGE || file.type == AttachmentType.VIDEO) {
+                    val index = _uiState.value.mediaItems.indexOfFirst { it.fileId == file.fileId }
+                    _uiState.update {
+                        it.copy(
+                            showFullScreenViewer = true,
+                            initialMediaIndex = if (index >= 0) index else 0
+                        )
+                    }
                 } else {
                     viewModelScope.launch {
                         fileHandler.openFile(path = file.localUri.toString())
@@ -794,6 +832,6 @@ class ChatViewModel @Inject constructor(
     }
     
     fun clearMediaUrl() {
-        _uiState.update { it.copy(currentMediaUrl = null) }
+        _uiState.update { it.copy(showFullScreenViewer = false) }
     }
 }

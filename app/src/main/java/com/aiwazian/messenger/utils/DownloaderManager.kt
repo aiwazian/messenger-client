@@ -45,6 +45,8 @@ class DownloaderManager @Inject constructor(
         fileName: String,
         fileId: String
     ) {
+        if (_downloads.any { it.fileId == fileId }) return
+        
         val folderName = getFolderNameForExtension(fileName.substringAfterLast('.', ""))
         val path = File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
         path.mkdirs()
