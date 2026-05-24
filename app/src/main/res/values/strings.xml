@@ -130,6 +130,9 @@
     <string name="add_member">Add Members</string>
     <string name="delete_group">Delete Group</string>
     <string name="save_to_downloads">Save to Downloads</string>
+    <string name="save_to_gallery">Save to gallery</string>
+    <string name="saved_to_gallery">Saved to gallery</string>
+    <string name="failed_to_save_to_gallery">Failed to save to gallery</string>
     <string name="copied">Copied</string>
     <string name="internal_storage">Internal Storage</string>
     <string name="file_system_search">File system search</string>

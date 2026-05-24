@@ -130,6 +130,9 @@
     <string name="add_member">Добавить участников</string>
     <string name="delete_group">Удалить группу</string>
     <string name="save_to_downloads">Сохранить в загрузки</string>
+    <string name="save_to_gallery">Сохранить в галерею</string>
+    <string name="saved_to_gallery">Сохранено в галерею</string>
+    <string name="failed_to_save_to_gallery">Не удалось сохранить в галерею</string>
     <string name="copied">Скопировано</string>
     <string name="internal_storage">Внутреннее хранилище</string>
     <string name="file_system_search">Поиск в файловой системе</string>
