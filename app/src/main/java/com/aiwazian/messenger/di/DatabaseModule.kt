@@ -37,7 +37,7 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "aiwazian.messenger"
-        ).build()
+        ).fallbackToDestructiveMigration(true).build()
     }
     
     @Provides

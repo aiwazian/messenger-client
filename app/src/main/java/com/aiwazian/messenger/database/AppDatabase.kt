@@ -38,25 +38,26 @@ import com.aiwazian.messenger.database.entity.UserEntity
         ChatEntity::class,
         AvatarEntity::class
     ],
-    version = 38
+    version = 38,
+    exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
-
+    
     abstract fun channelDao(): ChannelDao
-
+    
     abstract fun groupDao(): GroupDao
-
+    
     abstract fun chatDao(): ChatDao
-
+    
     abstract fun accountDao(): AccountDao
-
+    
     abstract fun messageDao(): MessageDao
-
+    
     abstract fun attachmentDao(): AttachmentDao
-
+    
     abstract fun fileDao(): FileDao
-
+    
     abstract fun avatarDao(): AvatarDao
 }
