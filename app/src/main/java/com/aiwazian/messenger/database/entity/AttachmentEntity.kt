@@ -30,7 +30,8 @@ import com.aiwazian.messenger.enums.AttachmentType
     ],
     indices = [
         Index(value = ["messageId"]),
-        Index(value = ["fileId"])
+        Index(value = ["fileId"]),
+        Index(value = ["messageId", "fileId"], unique = true)
     ]
 )
 data class AttachmentEntity(

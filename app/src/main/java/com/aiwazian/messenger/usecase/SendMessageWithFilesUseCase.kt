@@ -40,9 +40,17 @@ class SendMessageWithFilesUseCase @Inject constructor(
         else userRepository.getMe().first().id
         
         val attachments = uris.mapIndexed { index, uri ->
-            val fileName = uri.getFileName(context) ?: "file"
+            var fileName = uri.getFileName(context) ?: "file"
             val fileSize = uri.getFileSize(context) ?: 0
             val mimeType = uri.getFileType(context)
+            
+            if (!fileName.contains('.')) {
+                val extFromMime =
+                    android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
+                if (extFromMime != null) {
+                    fileName = "$fileName.$extFromMime"
+                }
+            }
             
             val attachmentType = when {
                 mimeType.startsWith("image/") -> AttachmentType.IMAGE

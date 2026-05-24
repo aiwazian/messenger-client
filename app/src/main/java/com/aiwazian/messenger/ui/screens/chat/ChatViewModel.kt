@@ -448,8 +448,7 @@ class ChatViewModel @Inject constructor(
                     val newType = when {
                         mimeType.startsWith("image/") -> AttachmentType.IMAGE
                         mimeType.startsWith("video/") -> AttachmentType.VIDEO
-                        mimeType.startsWith("audio/") -> AttachmentType.VOICE
-                        else -> AttachmentType.FILE
+                        else -> attachment.type
                     }
                     attachment.copy(type = newType)
                 } else {

@@ -13,12 +13,15 @@ class FileRepository @Inject constructor(
     private val fileDao: FileDao
 ) {
     suspend fun upsert(file: FileEntity) {
-        if (getById(file.id) == null) {
+        val existing = getById(file.id)
+        if (existing == null) {
             fileDao.save(file)
         } else {
             updateFileSize(file.id, file.size)
             updateFileStatus(file.id, file.status)
-            updateFilePath(file.id, file.path)
+            if (existing.path == null && file.path != null) {
+                updateFilePath(file.id, file.path)
+            }
         }
     }
     
