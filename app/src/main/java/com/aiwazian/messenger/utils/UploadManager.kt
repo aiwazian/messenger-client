@@ -10,6 +10,7 @@ import android.util.Log
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
+import com.aiwazian.messenger.extensions.getFolderNameFromMimeType
 import com.aiwazian.messenger.repository.FileRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -92,7 +93,9 @@ class UploadManager @Inject constructor(
     }
     
     private fun saveFileLocally(uri: Uri, fileId: String): String {
-        val path = File(context.getExternalFilesDir(null) ?: context.filesDir, "Uploads")
+        val mimeType = uri.getFileType(context)
+        val folderName = mimeType.getFolderNameFromMimeType()
+        val path = File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
         path.mkdirs()
         val targetFile = File(path, fileId)
         

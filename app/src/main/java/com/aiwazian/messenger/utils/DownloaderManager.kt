@@ -5,9 +5,12 @@
 package com.aiwazian.messenger.utils
 
 import android.content.Context
+import android.net.Uri
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.enums.DownloadStatus
+import com.aiwazian.messenger.extensions.getFileType
+import com.aiwazian.messenger.extensions.getFolderNameFromMimeType
 import com.aiwazian.messenger.repository.FileRepository
 import com.ketch.DownloadConfig
 import com.ketch.Ketch
@@ -49,7 +52,10 @@ class DownloaderManager @Inject constructor(
             cancel(fileId)
         }
         
-        val folderName = getFolderNameForExtension(fileName.substringAfterLast('.', ""))
+        val uri = Uri.fromFile(File(fileName))
+        val mimeType = uri.getFileType(context)
+        val folderName = mimeType.getFolderNameFromMimeType()
+        
         val path = File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
         path.mkdirs()
         val extension = fileName.substringAfterLast('.', "")
@@ -148,15 +154,6 @@ class DownloaderManager @Inject constructor(
             _downloads.remove(_downloads[index])
         }
         fileRepository.updateFileStatus(fileId, DownloadStatus.CANCELLED)
-    }
-    
-    private fun getFolderNameForExtension(extension: String): String {
-        return when (extension.lowercase()) {
-            "jpg", "jpeg", "png", "webp", "gif", "bmp" -> "Images"
-            "mp4", "mkv", "avi", "mov", "3gp", "webm" -> "Video"
-            "pdf", "doc", "docx", "txt", "xls", "xlsx", "ppt", "pptx" -> "Documents"
-            else -> "Other"
-        }
     }
     
     private fun Status.toDomain() = when (this) {

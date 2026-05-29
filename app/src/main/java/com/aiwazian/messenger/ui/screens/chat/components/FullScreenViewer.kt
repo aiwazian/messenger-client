@@ -21,7 +21,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -33,6 +33,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,11 +44,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.compose.ContentFrame
 import coil.compose.AsyncImage
+import com.aiwazian.messenger.extensions.getFileType
+import com.aiwazian.messenger.ui.components.PlayerUi
+import kotlinx.coroutines.delay
 import kotlin.math.abs
 
 @Composable
@@ -85,6 +94,8 @@ fun FullScreenViewer(
         }
     }
     
+    val context = LocalContext.current
+    
     LaunchedEffect(isUiVisible) {
         if (isUiVisible) insetsController.show(WindowInsetsCompat.Type.statusBars())
         else insetsController.hide(WindowInsetsCompat.Type.statusBars())
@@ -108,27 +119,35 @@ fun FullScreenViewer(
                 .fillMaxSize()
                 .pointerInput(Unit) {
                     awaitEachGesture {
-                        // Ловим нажатие
                         val down = awaitFirstDown(requireUnconsumed = false)
+                        val pointerId = down.id
                         
-                        // Ручной трекинг позиции — не зависим от consume() других обработчиков
                         var previousY = down.position.y
                         var dragDetected = false
                         var totalDragY = 0f
                         var totalDragX = 0f
                         var isHorizontalScroll = false
+                        var wasConsumed = false
                         
                         while (true) {
                             val event = awaitPointerEvent()
-                            val change = event.changes.firstOrNull() ?: break
                             
-                            // dy вычисляем сами — всегда актуально независимо от consumed
+                            val change = event.changes.firstOrNull { it.id == pointerId }
+                                ?: event.changes.firstOrNull()
+                                ?: break
+                            
+                            if (change.isConsumed) {
+                                wasConsumed = true
+                                previousY = change.position.y
+                                if (!change.pressed) break
+                                continue
+                            }
+                            
                             val dy = change.position.y - previousY
                             val dx = change.position.x - down.position.x
                             previousY = change.position.y
                             
                             if (!dragDetected && !isHorizontalScroll) {
-                                // Накапливаем пока не превысили touchSlop
                                 totalDragY += dy
                                 totalDragX = dx
                                 
@@ -136,7 +155,6 @@ fun FullScreenViewer(
                                         totalDragY
                                     )
                                 ) {
-                                    // Это горизонтальный скролл
                                     isHorizontalScroll = true
                                 } else if (abs(totalDragY) > viewConfiguration.touchSlop) {
                                     dragDetected = true
@@ -145,26 +163,23 @@ fun FullScreenViewer(
                                     change.consume()
                                 }
                             } else if (dragDetected) {
-                                // Drag уже идёт — обновляем offset
                                 change.consume()
                                 totalDragY += dy
                                 dragOffsetY = totalDragY
                             }
                             
-                            // Палец поднят — выходим из цикла
                             if (!change.pressed) break
                         }
                         
                         when {
-                            // Не было drag и не было горизонтального скролла — это тап, переключаем UI
-                            !dragDetected && !isHorizontalScroll -> {
+                            !dragDetected && !isHorizontalScroll && !wasConsumed -> {
                                 isUiVisible = !isUiVisible
                             }
-                            // Drag был достаточным — закрываем
+                            
                             abs(totalDragY) > dismissThresholdPx && dragDetected -> {
                                 onDismiss()
                             }
-                            // Drag был мал — возвращаем на место
+                            
                             else -> {
                                 isDragging = false
                                 dragOffsetY = 0f
@@ -179,10 +194,18 @@ fun FullScreenViewer(
                 }
         ) { page ->
             val uri = mediaUris[page]
+            val isCurrentPage = pagerState.currentPage == page
+            
             if (uri == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    CircularWavyProgressIndicator()
                 }
+            } else if (uri.getFileType(context).startsWith("video/")) {
+                VideoPlayerItem(
+                    uri = uri,
+                    isCurrentPage = isCurrentPage,
+                    isUiVisible = isUiVisible
+                )
             } else {
                 AsyncImage(
                     model = uri,
@@ -222,6 +245,99 @@ fun FullScreenViewer(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+        }
+    }
+}
+
+@Composable
+fun VideoPlayerItem(
+    uri: Uri,
+    isCurrentPage: Boolean,
+    isUiVisible: Boolean
+) {
+    val context = LocalContext.current
+    
+    val player = remember {
+        ExoPlayer.Builder(context).build().apply {
+            setMediaItem(MediaItem.fromUri(uri))
+            prepare()
+        }
+    }
+    
+    var isPlaying by remember { mutableStateOf(false) }
+    var currentPosition by remember { mutableLongStateOf(0L) }
+    var duration by remember { mutableLongStateOf(0L) }
+    var isSeeking by remember { mutableStateOf(false) }
+    var isBuffering by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(isCurrentPage) {
+        if (!isCurrentPage && isPlaying) {
+            player.pause()
+        }
+    }
+    
+    DisposableEffect(player) {
+        val listener = object : Player.Listener {
+            override fun onIsPlayingChanged(playing: Boolean) {
+                isPlaying = playing
+            }
+            
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                isBuffering = playbackState == Player.STATE_BUFFERING
+                if (playbackState == Player.STATE_READY) {
+                    duration = player.duration.coerceAtLeast(0L)
+                }
+            }
+        }
+        player.addListener(listener)
+        onDispose {
+            player.removeListener(listener)
+            player.release()
+        }
+    }
+    
+    LaunchedEffect(isPlaying, isSeeking) {
+        while (isPlaying && !isSeeking) {
+            currentPosition = player.currentPosition.coerceAtLeast(0L)
+            delay(16L)
+        }
+    }
+    
+    Box(modifier = Modifier.fillMaxSize()) {
+        ContentFrame(
+            player = player,
+            modifier = Modifier.fillMaxSize()
+        )
+        
+        AnimatedVisibility(
+            visible = isUiVisible,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            PlayerUi(
+                isPlaying = isPlaying,
+                currentPosition = currentPosition,
+                duration = duration,
+                isBuffering = isBuffering,
+                isSeeking = isSeeking,
+                onSeekBarPositionChange = { newPos ->
+                    isSeeking = true
+                    currentPosition = newPos
+                },
+                onSeekBarPositionChangeFinished = {
+                    player.seekTo(currentPosition)
+                    isSeeking = false
+                },
+                onPlayPauseClick = {
+                    if (!isPlaying && player.playbackState == Player.STATE_ENDED) {
+                        player.seekTo(0L)
+                        player.play()
+                    } else if (isPlaying) {
+                        player.pause()
+                    } else {
+                        player.play()
+                    }
+                }
             )
         }
     }

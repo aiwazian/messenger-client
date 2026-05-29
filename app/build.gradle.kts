@@ -133,6 +133,11 @@ dependencies {
     
     implementation(libs.pushclient)
     
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.common.ktx)
+    implementation(libs.androidx.media3.ui.compose)
+    implementation(libs.androidx.media3.ui.compose.material3)
+    
     // Preview Composable
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
