@@ -20,8 +20,8 @@ android {
         applicationId = "com.aiwazian.messenger"
         minSdk = 30
         targetSdk = 37
-        versionCode = 20
-        versionName = "1.7.2"
+        versionCode = 22
+        versionName = "1.7.4"
     }
     
     buildTypes {
@@ -130,6 +130,8 @@ dependencies {
     implementation(libs.androidx.browser)
     
     implementation(libs.coil.compose)
+    implementation(libs.coil.video)
+    implementation(libs.coil.gif)
     
     implementation(libs.pushclient)
     

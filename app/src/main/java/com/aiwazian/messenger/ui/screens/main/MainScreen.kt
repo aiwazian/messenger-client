@@ -260,6 +260,9 @@ private fun Content(
                                 viewModel.toggleChatSelection(chat.id)
                             })
                     }
+                    item {
+                        Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
+                    }
                 }
             }
         }

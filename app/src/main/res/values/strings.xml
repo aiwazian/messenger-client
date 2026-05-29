@@ -231,4 +231,12 @@
     <string name="channels">Channels</string>
     <string name="groups">Groups</string>
     <string name="invalid_password">Invalid password</string>
+    <string name="gif">Gif</string>
+    <string name="loop">Loop</string>
+    <string name="video_settings">Video settings</string>
+    <string name="actions">Actions</string>
+    <string name="save_to_gallery">Save to gallery</string>
+    <string name="successfully_saved_to_gallery">Successfully saved to gallery</string>
+    <string name="failed_to_save_to_gallery">Failed to save to gallery</string>
+    <string name="speed">Speed</string>
 </resources>

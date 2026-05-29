@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">찾다</string>
@@ -221,4 +217,12 @@
     <string name="channels">채널</string>
     <string name="groups">여러 떼</string>
     <string name="invalid_password">잘못된 비밀번호</string>
+    <string name="gif">GIF</string>
+    <string name="loop">루프</string>
+    <string name="video_settings">비디오 설정</string>
+    <string name="actions">작전</string>
+    <string name="save_to_gallery">갤러리로 저장하기</string>
+    <string name="successfully_saved_to_gallery">갤러리에 성공적으로 저장됨</string>
+    <string name="failed_to_save_to_gallery">갤러리에 저장 실패</string>
+    <string name="speed">속도</string>
 </resources>

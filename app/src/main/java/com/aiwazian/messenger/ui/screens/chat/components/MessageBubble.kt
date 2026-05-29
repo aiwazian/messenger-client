@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Download
@@ -37,22 +39,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.decode.GifDecoder
+import coil.decode.VideoFrameDecoder
+import coil.request.ImageRequest
+import coil.request.videoFrameMillis
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.extensions.formatFileSize
+import com.aiwazian.messenger.extensions.getDuration
 import com.aiwazian.messenger.extensions.sharedElement
+import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
 
 @Composable
@@ -117,11 +129,13 @@ fun MessageBubble(
                     )
                 }
                 
-                val images = message.attachments.filter { it.type == AttachmentType.IMAGE }
-                if (images.isNotEmpty()) {
+                val mediaAttachments = message.attachments.filter {
+                    it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF
+                }
+                if (mediaAttachments.isNotEmpty()) {
                     ImageGridCustomLayout(
                         Modifier.heightIn(max = 400.dp), content = {
-                            images.forEach { attachment ->
+                            mediaAttachments.forEach { attachment ->
                                 if (attachment.localUri == null ||
                                     attachment.status == DownloadStatus.UPLOADING ||
                                     attachment.status == DownloadStatus.DOWNLOADING
@@ -142,8 +156,7 @@ fun MessageBubble(
                                                     DownloadStatus.UPLOADING -> FileAction.CANCEL
                                                 }
                                                 onFileAction(attachment, action)
-                                            },
-                                        contentAlignment = Alignment.Center
+                                            }, contentAlignment = Alignment.Center
                                     ) {
                                         Text(
                                             text = attachment.size.formatFileSize(),
@@ -174,36 +187,35 @@ fun MessageBubble(
                                         }
                                     }
                                 } else {
-                                    AsyncImage(
-                                        model = attachment.localUri,
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .sharedElement(key = attachment.localUri)
-                                            .fillMaxSize()
-                                            .clip(MaterialTheme.shapes.extraSmall)
-                                            .clickable(onClick = {
-                                                onFileAction(attachment, FileAction.OPEN)
-                                            })
-                                    )
+                                    if (attachment.type == AttachmentType.VIDEO) {
+                                        VideoThumbnail(attachment.localUri) {
+                                            onFileAction(attachment, FileAction.OPEN)
+                                        }
+                                    } else {
+                                        ImageThumbnail(
+                                            attachment.localUri,
+                                            attachment.type == AttachmentType.GIF
+                                        ) {
+                                            onFileAction(attachment, FileAction.OPEN)
+                                        }
+                                    }
                                 }
                             }
                         })
                 }
                 
-                message.attachments.filter { it.type != AttachmentType.IMAGE }
-                    .forEach { attachment ->
-                        when (attachment.type) {
-                            AttachmentType.VIDEO, AttachmentType.VOICE, AttachmentType.FILE -> {
-                                MessageFile(
-                                    file = attachment, onAction = { action ->
-                                        onFileAction(attachment, action)
-                                    })
-                            }
-                            
-                            else -> {}
+                message.attachments.forEach { attachment ->
+                    when (attachment.type) {
+                        AttachmentType.VOICE, AttachmentType.FILE -> {
+                            MessageFile(
+                                file = attachment, onAction = { action ->
+                                    onFileAction(attachment, action)
+                                })
                         }
+                        
+                        else -> {}
                     }
+                }
                 
                 if (!message.text.isNullOrBlank()) {
                     MessageText(
@@ -341,11 +353,7 @@ fun ImageGridCustomLayout(
 }
 
 private fun Placeable.PlacementScope.placeGrid(
-    measurables: List<androidx.compose.ui.layout.Measurable>,
-    rows: List<Int>,
-    totalWidth: Int,
-    totalHeight: Int,
-    gap: Float
+    measurables: List<Measurable>, rows: List<Int>, totalWidth: Int, totalHeight: Int, gap: Float
 ) {
     var currentIndex = 0
     val rowCount = rows.size
@@ -362,6 +370,79 @@ private fun Placeable.PlacementScope.placeGrid(
                 val x = (i * (rowW + gap)).toInt()
                 p.place(x, y)
                 currentIndex++
+            }
+        }
+    }
+}
+
+@Composable
+private fun VideoThumbnail(videoUri: Uri, onClick: () -> Unit) {
+    val context = LocalContext.current
+    
+    Box(Modifier.clickable(onClick = onClick)) {
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(videoUri)
+                .decoderFactory(VideoFrameDecoder.Factory())
+                .videoFrameMillis(0)
+                .build(),
+            contentDescription = "Thumbnail of the video",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .sharedElement(key = videoUri.toString())
+                .fillMaxSize()
+                .clip(MaterialTheme.shapes.extraSmall)
+        )
+        Box(
+            modifier = Modifier
+                .padding(start = 4.dp, top = 4.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
+        ) {
+            Text(
+                text = formatDuration(videoUri.getDuration(context)),
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(vertical = 2.dp, horizontal = 4.dp),
+                fontSize = 12.sp,
+                lineHeight = 12.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun ImageThumbnail(imageUri: Uri, isGif: Boolean, onClick: () -> Unit) {
+    val context = LocalContext.current
+    
+    Box(Modifier.clickable(onClick = onClick)) {
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(imageUri)
+                .decoderFactory(GifDecoder.Factory())
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .sharedElement(key = imageUri.toString())
+                .fillMaxSize()
+                .clip(MaterialTheme.shapes.extraSmall)
+        )
+        if (isGif) {
+            Box(
+                modifier = Modifier
+                    .padding(start = 4.dp, top = 4.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
+            ) {
+                Text(
+                    text = stringResource(R.string.gif).uppercase(),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(vertical = 2.dp, horizontal = 4.dp),
+                    fontSize = 12.sp,
+                    lineHeight = 12.sp
+                )
             }
         }
     }

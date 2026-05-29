@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Пошук</string>
@@ -227,4 +223,12 @@
     <string name="channels">Каналы</string>
     <string name="groups">Групы</string>
     <string name="invalid_password">Няправільны пароль</string>
+    <string name="gif">Gif</string>
+    <string name="loop">Пятля</string>
+    <string name="video_settings">Налады відэа</string>
+    <string name="actions">Дзеянні</string>
+    <string name="save_to_gallery">Захаваць у галерэю</string>
+    <string name="successfully_saved_to_gallery">Паспяхова захавана ў галерэю</string>
+    <string name="failed_to_save_to_gallery">Не ўдалося захаваць у галерэю</string>
+    <string name="speed">хуткасць</string>
 </resources>

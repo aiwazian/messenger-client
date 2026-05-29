@@ -8,6 +8,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.aiwazian.messenger.enums.DownloadStatus
+import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.getFolderNameFromMimeType
@@ -31,7 +32,7 @@ class UploadManager @Inject constructor(
     private val fileRepository: FileRepository
 ) {
     private val activeUploads = mutableMapOf<String, okhttp3.Call>()
-
+    
     suspend fun upload(
         fileUri: Uri,
         uploadUrl: String,
@@ -41,23 +42,29 @@ class UploadManager @Inject constructor(
         repeat(maxAttempts) { attempt ->
             try {
                 val fileSize = fileUri.getFileSize(context) ?: 0
-                val mimeType = fileUri.getFileType(context).toMediaTypeOrNull()
-
-                val requestBody = ProgressRequestBody(mimeType, fileSize, { progress ->
+                val fileType = fileUri.getFileType(context)
+                val contentType = fileType.toMediaTypeOrNull()
+                
+                val requestBody = ProgressRequestBody(contentType, fileSize, { progress ->
                     // TODO Update progress
                 }) {
                     context.contentResolver.openInputStream(fileUri)
                         ?: throw IOException("Unable to open input stream")
                 }
-
+                
                 val request = Request.Builder().url(uploadUrl).put(requestBody).build()
                 val call = okHttpClient.newCall(request)
                 activeUploads[fileId] = call
                 
                 val response = call.execute()
-
+                
                 if (response.isSuccessful) {
-                    val filePath = saveFileLocally(fileUri, fileId)
+                    val extension = fileUri.getFileName(context)?.substringAfterLast('.', "")
+                    val folderName = fileType.getFolderNameFromMimeType()
+                    val path =
+                        File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
+                    path.mkdirs()
+                    val filePath = saveFileLocally(fileUri, "${path}/${fileId}.${extension}")
                     
                     fileRepository.updateFileStatus(fileId, DownloadStatus.COMPLETED)
                     fileRepository.updateFilePath(fileId, filePath)
@@ -92,12 +99,8 @@ class UploadManager @Inject constructor(
         activeUploads.remove(fileId)
     }
     
-    private fun saveFileLocally(uri: Uri, fileId: String): String {
-        val mimeType = uri.getFileType(context)
-        val folderName = mimeType.getFolderNameFromMimeType()
-        val path = File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
-        path.mkdirs()
-        val targetFile = File(path, fileId)
+    private fun saveFileLocally(uri: Uri, pathName: String): String {
+        val targetFile = File(pathName)
         
         if (!targetFile.exists()) {
             context.contentResolver.openInputStream(uri)?.use { input ->

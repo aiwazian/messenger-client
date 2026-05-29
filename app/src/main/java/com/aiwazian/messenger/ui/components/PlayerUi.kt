@@ -19,9 +19,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -30,7 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import java.util.Locale
@@ -48,27 +48,18 @@ fun PlayerUi(
     modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color.Transparent,
-                        Color.Black
-                    )
-                )
-            ),
-        contentAlignment = Alignment.Center
+        modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center
     ) {
         if (isBuffering) {
-            CircularProgressIndicator(
-                strokeWidth = 2.dp,
-                modifier = Modifier.size(20.dp)
-            )
+            CircularWavyProgressIndicator(modifier = Modifier.size(20.dp))
         } else {
             IconButton(
-                onClick = onPlayPauseClick,
-                modifier = Modifier.size(100.dp)
+                onClick = onPlayPauseClick, modifier = Modifier.size(100.dp),
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(
+                        alpha = 0.2f
+                    )
+                )
             ) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
@@ -89,7 +80,7 @@ fun PlayerUi(
         ) {
             Text(
                 text = formatDuration(currentPosition),
-                color = Color.White
+                color = MaterialTheme.colorScheme.onSurface
             )
             
             Slider(
@@ -123,18 +114,14 @@ fun PlayerUi(
                                 .background(MaterialTheme.colorScheme.primary)
                         )
                     }
-                }
-            )
+                })
             
-            Text(
-                text = formatDuration(duration),
-                color = Color.White
-            )
+            Text(text = formatDuration(duration), color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
 
-private fun formatDuration(milliseconds: Long): String {
+fun formatDuration(milliseconds: Long): String {
     val totalSeconds = milliseconds / 1000
     val hours = totalSeconds / 3600
     val minutes = (totalSeconds % 3600) / 60

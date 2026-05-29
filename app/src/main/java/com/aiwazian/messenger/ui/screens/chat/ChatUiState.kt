@@ -42,5 +42,8 @@ data class ChatUiState(
     val showBannedDialog: Boolean = false,
     val mediaItems: List<MessageAttachment> = emptyList(),
     val initialMediaIndex: Int = 0,
-    val showFullScreenViewer: Boolean = false
+    val showFullScreenViewer: Boolean = false,
+    val isVideoLooping: Boolean = false,
+    val videoPlaybackSpeed: Float = 1.0f,
+    val canDownloadMedia: Boolean = true
 )

@@ -44,6 +44,7 @@ import com.aiwazian.messenger.usecase.LeaveChatUseCase
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.usecase.SendMessageWithFilesUseCase
 import com.aiwazian.messenger.utils.ClipboardService
+import com.aiwazian.messenger.utils.DataStoreManager
 import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.FileHandler
 import com.aiwazian.messenger.utils.RegexPatterns
@@ -87,7 +88,8 @@ class ChatViewModel @Inject constructor(
     private val joinChannelUseCase: JoinChannelUseCase,
     private val joinGroupUseCase: JoinGroupUseCase,
     private val joinViaInviteLinkUseCase: JoinViaInviteLinkUseCase,
-    private val leaveChatUseCase: LeaveChatUseCase
+    private val leaveChatUseCase: LeaveChatUseCase,
+    private val dataStoreManager: DataStoreManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -101,6 +103,19 @@ class ChatViewModel @Inject constructor(
     
     private var isInit = false
     
+    init {
+        viewModelScope.launch {
+            dataStoreManager.getVideoLooping().collect { isLooping ->
+                _uiState.update { it.copy(isVideoLooping = isLooping) }
+            }
+        }
+        viewModelScope.launch {
+            dataStoreManager.getVideoPlaybackSpeed().collect { speed ->
+                _uiState.update { it.copy(videoPlaybackSpeed = speed) }
+            }
+        }
+    }
+
     fun init(chatId: Long, chatName: String? = null, avatarUri: Uri? = null) {
         if (isInit) return
         isInit = true
@@ -446,6 +461,7 @@ class ChatViewModel @Inject constructor(
                 if (attachment.localUri != null) {
                     val mimeType = attachment.localUri.getFileType(context)
                     val newType = when {
+                        mimeType == "image/gif" -> AttachmentType.GIF
                         mimeType.startsWith("image/") -> AttachmentType.IMAGE
                         mimeType.startsWith("video/") -> AttachmentType.VIDEO
                         else -> attachment.type
@@ -459,7 +475,7 @@ class ChatViewModel @Inject constructor(
             val updatedMessage = message.copy(attachments = updatedAttachments)
             
             updatedMessage.attachments.sortedBy { it.sortOrder }.forEach { attachment ->
-                if (attachment.type == AttachmentType.IMAGE || attachment.type == AttachmentType.VIDEO) {
+                if (attachment.type == AttachmentType.IMAGE || attachment.type == AttachmentType.VIDEO || attachment.type == AttachmentType.GIF) {
                     newMediaItems.add(attachment)
                     if (attachment.type == AttachmentType.IMAGE && attachment.status == DownloadStatus.IDLE) {
                         onFileAction(updatedMessage, attachment, FileAction.DOWNLOAD)
@@ -661,7 +677,7 @@ class ChatViewModel @Inject constructor(
             }
             
             FileAction.OPEN -> {
-                if (file.type == AttachmentType.IMAGE || file.type == AttachmentType.VIDEO) {
+                if (file.type == AttachmentType.IMAGE || file.type == AttachmentType.VIDEO || file.type == AttachmentType.GIF) {
                     val index = _uiState.value.mediaItems.indexOfFirst { it.fileId == file.fileId }
                     _uiState.update {
                         it.copy(
@@ -832,5 +848,30 @@ class ChatViewModel @Inject constructor(
     
     fun clearMediaUrl() {
         _uiState.update { it.copy(showFullScreenViewer = false) }
+    }
+    
+    fun setVideoLooping(isLooping: Boolean) {
+        viewModelScope.launch {
+            dataStoreManager.saveVideoLooping(isLooping)
+        }
+    }
+    
+    fun setVideoPlaybackSpeed(speed: Float) {
+        viewModelScope.launch {
+            dataStoreManager.saveVideoPlaybackSpeed(speed)
+        }
+    }
+    
+    fun saveToGallery(uri: Uri) {
+        viewModelScope.launch {
+            val path = uri.path ?: uri.toString()
+            val success = fileHandler.saveToGallery(path)
+            if (success) {
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.successfully_saved_to_gallery)))
+            } else {
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_to_gallery)))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
     }
 }

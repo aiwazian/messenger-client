@@ -4,11 +4,15 @@
 
 package com.aiwazian.messenger.utils
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.getFileType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
@@ -31,6 +35,47 @@ class FileHandler @Inject constructor(
             openApkFile(file)
         } else {
             openGenericFile(file)
+        }
+    }
+    
+    fun saveToGallery(path: String): Boolean {
+        val file = File(path)
+        if (!file.exists()) return false
+        
+        val mimeType = file.toUri().getFileType(context)
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, file.name)
+            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+            val appName = context.getString(R.string.app_name)
+            val dir = if (mimeType.startsWith("video/")) {
+                Environment.DIRECTORY_MOVIES
+            } else {
+                Environment.DIRECTORY_PICTURES
+            }
+            put(MediaStore.MediaColumns.RELATIVE_PATH, "$dir/$appName")
+        }
+        
+        val collection = if (mimeType.startsWith("video/")) {
+            MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        } else {
+            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        }
+        
+        return try {
+            val uri = context.contentResolver.insert(collection, contentValues)
+            if (uri != null) {
+                context.contentResolver.openOutputStream(uri)?.use { out ->
+                    file.inputStream().use { input ->
+                        input.copyTo(out)
+                    }
+                }
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("FileHandler", "Error saving to gallery", e)
+            false
         }
     }
     

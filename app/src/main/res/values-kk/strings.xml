@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Іздеу</string>
@@ -223,4 +219,12 @@
     <string name="channels">Арналар</string>
     <string name="groups">Топтар</string>
     <string name="invalid_password">Жарамсыз құпия сөз</string>
+    <string name="gif">Gif</string>
+    <string name="loop">Цикл</string>
+    <string name="video_settings">Бейне параметрлері</string>
+    <string name="actions">Әрекеттер</string>
+    <string name="save_to_gallery">Галереяға сақтаңыз</string>
+    <string name="successfully_saved_to_gallery">Галереяға сәтті сақталды</string>
+    <string name="failed_to_save_to_gallery">Галереяға сақтай алмады</string>
+    <string name="speed">Жылдамдық</string>
 </resources>

@@ -14,16 +14,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.DataUsage
+import androidx.compose.material.icons.rounded.Gavel
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.PrivacyTip
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import com.aiwazian.messenger.R
@@ -38,7 +40,6 @@ import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.utils.UiText
-import java.util.Locale
 
 @Composable
 fun SettingsScreen() {
@@ -116,11 +117,10 @@ fun SettingsScreen() {
                         navBackStack.add(AppRoute.SettingsLanguage)
                     })
             }
+            val context = LocalContext.current
             SectionContainer(header = {
                 SectionHeader(title = stringResource(R.string.help))
             }, footer = {
-                val context = LocalContext.current
-                
                 val packageInfo = remember {
                     context.packageManager.getPackageInfo(
                         context.packageName,
@@ -133,16 +133,22 @@ fun SettingsScreen() {
                 
                 SectionDescription(text = "${stringResource(R.string.app_name)} v${versionName} (${versionCode})")
             }) {
-                val context = LocalContext.current
+                val intent = CustomTabsIntent.Builder()
+                    .setShowTitle(true)
+                    .setTranslateLocale(LocalLocale.current.platformLocale)
+                    .build()
                 
                 SectionItem(
-                    leadingIcon = Icons.Outlined.PrivacyTip,
+                    leadingIcon = Icons.Rounded.Gavel,
+                    headlineText = stringResource(R.string.terms_of_use),
+                    onClick = {
+                        intent.launchUrl(context, "https://aiwazian.ru/tos".toUri())
+                    })
+                
+                SectionItem(
+                    leadingIcon = Icons.Rounded.PrivacyTip,
                     headlineText = stringResource(R.string.privacy_policy),
                     onClick = {
-                        val intent = CustomTabsIntent.Builder()
-                            .setShowTitle(true)
-                            .setTranslateLocale(Locale.getDefault())
-                            .build()
                         intent.launchUrl(context, "https://aiwazian.ru/privacy".toUri())
                     })
             }

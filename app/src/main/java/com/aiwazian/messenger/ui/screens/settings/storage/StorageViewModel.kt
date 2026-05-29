@@ -9,6 +9,7 @@ import android.content.Context
 import android.os.UserHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.StorageRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -25,6 +26,7 @@ class StorageViewModel @Inject constructor(
     @param:ApplicationContext
     private val context: Context,
     private val storageRepository: StorageRepository,
+    private val chatRepository: ChatRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(StorageUiState())
@@ -123,6 +125,7 @@ class StorageViewModel @Inject constructor(
         viewModelScope.launch {
             storageRepository.clearDatabaseExceptAccount()
             _uiEvent.emit(StorageUiEvent.DatabaseCleared)
+            chatRepository.refreshChats()
         }
     }
     

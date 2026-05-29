@@ -67,11 +67,9 @@ fun ChatCard(
     ListItem(
         modifier = modifier
             .combinedClickable(
-                onClick = onClickChat,
-                onLongClick = onLongClickChat
+                onClick = onClickChat, onLongClick = onLongClickChat
             )
-            .sharedBounds(key = "chat-${chat.id}"),
-        headlineContent = {
+            .sharedBounds(key = "chat-${chat.id}"), headlineContent = {
             Text(
                 text = chat.chatName.asString(),
                 maxLines = 1,
@@ -80,29 +78,20 @@ fun ChatCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.sharedElement(key = "chat-name-${chat.id}")
             )
-        },
-        supportingContent = {
+        }, supportingContent = {
             if (chat.lastMessage != null) {
                 var color = Color.Unspecified
                 val text = if (chat.lastMessage.attachments.isNotEmpty()) {
                     color = MaterialTheme.colorScheme.primary
-                    when (chat.lastMessage.attachments.first().type) {
-                        AttachmentType.IMAGE -> {
-                            UiText.StringResource(R.string.photo)
+                    UiText.StringResource(
+                        when (chat.lastMessage.attachments.first().type) {
+                            AttachmentType.IMAGE -> R.string.photo
+                            AttachmentType.FILE -> R.string.file
+                            AttachmentType.VIDEO -> R.string.video
+                            AttachmentType.VOICE -> R.string.voice
+                            AttachmentType.GIF -> R.string.gif
                         }
-                        
-                        AttachmentType.FILE -> {
-                            UiText.StringResource(R.string.file)
-                        }
-                        
-                        AttachmentType.VIDEO -> {
-                            UiText.StringResource(R.string.video)
-                        }
-                        
-                        AttachmentType.VOICE -> {
-                            UiText.StringResource(R.string.voice)
-                        }
-                    }
+                    )
                 } else if (!chat.lastMessage.text.isNullOrBlank()) {
                     UiText.DynamicString(chat.lastMessage.text)
                 } else if (chat.lastMessage.systemMessageEventType != null) {
@@ -124,8 +113,7 @@ fun ChatCard(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-        },
-        leadingContent = {
+        }, leadingContent = {
             Box {
                 Box(Modifier.padding(4.dp)) {
                     ChatAvatar(
@@ -152,8 +140,7 @@ fun ChatCard(
                     )
                 }
             }
-        },
-        trailingContent = {
+        }, trailingContent = {
             Column(verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.End) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (chat.lastMessage != null) {
@@ -206,8 +193,7 @@ private fun PinIcon() {
 private fun UnreadMessageCount(count: Int) {
     Badge(containerColor = MaterialTheme.colorScheme.primary) {
         Text(
-            text = count.toString(),
-            style = MaterialTheme.typography.bodySmall
+            text = count.toString(), style = MaterialTheme.typography.bodySmall
         )
     }
 }

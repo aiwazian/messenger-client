@@ -41,6 +41,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
@@ -175,6 +178,16 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
                     Checkbox(
                         checked = uiState.checkedPrivacyTerms,
                         onCheckedChange = viewModel::changePrivacyCheck,
+                        checkmarkStroke = Stroke(
+                            width = 4f,
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round
+                        ),
+                        outlineStroke = Stroke(
+                            width = 4f,
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round
+                        ),
                         colors = CheckboxDefaults.colors(
                             uncheckedBorderColor = if (uiState.isPrivacyError) MaterialTheme.colorScheme.error else Color.Unspecified
                         )

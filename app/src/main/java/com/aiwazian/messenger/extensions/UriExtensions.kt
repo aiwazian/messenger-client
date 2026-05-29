@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.extensions
 
 import android.content.Context
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
@@ -31,11 +32,9 @@ fun Uri.getFileSize(context: Context): Long? {
 fun Uri.getFileType(context: Context): String {
     context.contentResolver.getType(this)?.let { return it }
     
-    val extension = when {
-        scheme == "content" -> lastPathSegment?.substringAfterLast('.', "")?.lowercase()
-        else -> MimeTypeMap.getFileExtensionFromUrl(toString())?.lowercase()
-    }
-    
+    val extension = lastPathSegment?.substringAfterLast('.')?.lowercase()
+        ?: MimeTypeMap.getFileExtensionFromUrl(toString())?.lowercase()
+
     extension?.let {
         MimeTypeMap.getSingleton().getMimeTypeFromExtension(it)?.let { mimeType ->
             return mimeType
@@ -46,34 +45,79 @@ fun Uri.getFileType(context: Context): String {
 }
 
 private fun Uri.getMimeTypeFromMagicBytes(context: Context): String {
-    // Если это сетевая ссылка, мы не можем читать поток синхронно
     if (scheme == "http" || scheme == "https") return "application/octet-stream"
     
     try {
-        context.contentResolver.openInputStream(this)?.use { inputStream ->
+        val inputStream = when (scheme) {
+            "content" -> {
+                context.contentResolver.openInputStream(this)
+            }
+            
+            "file" -> {
+                path?.let { java.io.FileInputStream(it) }
+            }
+            
+            null -> {
+                java.io.FileInputStream(toString())
+            }
+            
+            else -> {
+                path?.let { java.io.FileInputStream(it) }
+            }
+        }
+        
+        inputStream?.use { stream ->
             val bytes = ByteArray(12)
-            val bytesRead = inputStream.read(bytes, 0, 12)
+            val bytesRead = stream.read(bytes)
             
             if (bytesRead >= 8) {
-                // JPEG (начинается с FF D8 FF)
-                if (bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() && bytes[2] == 0xFF.toByte()) {
+                // JPEG
+                if (
+                    bytes[0] == 0xFF.toByte() &&
+                    bytes[1] == 0xD8.toByte() &&
+                    bytes[2] == 0xFF.toByte()
+                ) {
                     return "image/jpeg"
                 }
-                // PNG (начинается с 89 50 4E 47)
-                if (bytes[0] == 0x89.toByte() && bytes[1] == 0x50.toByte() && bytes[2] == 0x4E.toByte() && bytes[3] == 0x47.toByte()) {
+                
+                // PNG
+                if (
+                    bytes[0] == 0x89.toByte() &&
+                    bytes[1] == 0x50.toByte() &&
+                    bytes[2] == 0x4E.toByte() &&
+                    bytes[3] == 0x47.toByte()
+                ) {
                     return "image/png"
                 }
-                // GIF (начинается с GIF8)
-                if (bytes[0] == 'G'.code.toByte() && bytes[1] == 'I'.code.toByte() && bytes[2] == 'F'.code.toByte()) {
+                
+                // GIF
+                if (
+                    bytes[0] == 'G'.code.toByte() &&
+                    bytes[1] == 'I'.code.toByte() &&
+                    bytes[2] == 'F'.code.toByte()
+                ) {
                     return "image/gif"
                 }
-                // MP4 / MOV (байты с 4 по 7 содержат ASCII символы "ftyp")
-                if (bytes[4] == 'f'.code.toByte() && bytes[5] == 't'.code.toByte() && bytes[6] == 'y'.code.toByte() && bytes[7] == 'p'.code.toByte()) {
+                
+                // MP4 / MOV
+                if (
+                    bytes[4] == 'f'.code.toByte() &&
+                    bytes[5] == 't'.code.toByte() &&
+                    bytes[6] == 'y'.code.toByte() &&
+                    bytes[7] == 'p'.code.toByte()
+                ) {
                     return "video/mp4"
                 }
-                // WEBP (начинается с RIFF, байты 8-11 содержат WEBP)
-                if (bytesRead >= 12 && bytes[0] == 'R'.code.toByte() && bytes[1] == 'I'.code.toByte() &&
-                    bytes[8] == 'W'.code.toByte() && bytes[9] == 'E'.code.toByte() && bytes[10] == 'B'.code.toByte()
+                
+                // WEBP
+                if (
+                    bytesRead >= 12 &&
+                    bytes[0] == 'R'.code.toByte() &&
+                    bytes[1] == 'I'.code.toByte() &&
+                    bytes[8] == 'W'.code.toByte() &&
+                    bytes[9] == 'E'.code.toByte() &&
+                    bytes[10] == 'B'.code.toByte() &&
+                    bytes[11] == 'P'.code.toByte()
                 ) {
                     return "image/webp"
                 }
@@ -96,5 +140,19 @@ fun String.getFolderNameFromMimeType(): String {
                 startsWith("application/vnd.", ignoreCase = true) -> "Documents"
         
         else -> "Other"
+    }
+}
+
+fun Uri.getDuration(context: Context): Long {
+    val retriever = MediaMetadataRetriever()
+    return try {
+        retriever.setDataSource(context, this)
+        retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+            ?.toLongOrNull() ?: 0L
+    } catch (e: Exception) {
+        e.printStackTrace()
+        0L
+    } finally {
+        retriever.release()
     }
 }

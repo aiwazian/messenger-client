@@ -28,6 +28,9 @@ private object Keys {
     val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
     val FAILED_ATTEMPTS = intPreferencesKey("failed_attempts")
     val BLOCKED_UNTIL = longPreferencesKey("blocked_until")
+    val VIDEO_LOOPING = booleanPreferencesKey("video_looping")
+    val VIDEO_PLAYBACK_SPEED =
+        androidx.datastore.preferences.core.floatPreferencesKey("video_playback_speed")
 }
 
 @Singleton
@@ -62,6 +65,10 @@ class DataStoreManager @Inject constructor(
     
     suspend fun saveDynamicColor(dynamicColor: Boolean) = setValue(Keys.DYNAMIC_COLOR, dynamicColor)
     
+    suspend fun saveVideoLooping(isLooping: Boolean) = setValue(Keys.VIDEO_LOOPING, isLooping)
+    
+    suspend fun saveVideoPlaybackSpeed(speed: Float) = setValue(Keys.VIDEO_PLAYBACK_SPEED, speed)
+    
     fun getPasscode() = getValue(Keys.PASSCODE, "")
     
     fun getIsLockApp() = getValue(Keys.IS_LOCK_APP, false)
@@ -75,6 +82,10 @@ class DataStoreManager @Inject constructor(
     fun getTheme() = getValue(Keys.THEME, ThemeOption.SYSTEM.name)
     
     fun getDynamicColor() = getValue(Keys.DYNAMIC_COLOR, true)
+    
+    fun getVideoLooping() = getValue(Keys.VIDEO_LOOPING, false)
+    
+    fun getVideoPlaybackSpeed() = getValue(Keys.VIDEO_PLAYBACK_SPEED, 1.0f)
     
     suspend fun clear() {
         context.dataStore.edit { it.clear() }

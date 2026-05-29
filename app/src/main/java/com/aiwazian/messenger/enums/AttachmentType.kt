@@ -11,5 +11,6 @@ enum class AttachmentType {
     IMAGE,
     VIDEO,
     VOICE,
+    GIF,
     FILE
 }

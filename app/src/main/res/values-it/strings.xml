@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Ricerca</string>
@@ -225,4 +221,12 @@
     <string name="channels">Canali</string>
     <string name="groups">Gruppi</string>
     <string name="invalid_password">Password non valida</string>
+    <string name="gif">Gif</string>
+    <string name="loop">Ciclo continuo</string>
+    <string name="video_settings">Impostazioni video</string>
+    <string name="actions">Azioni</string>
+    <string name="save_to_gallery">Salva nella galleria</string>
+    <string name="successfully_saved_to_gallery">Salvato nella galleria con successo</string>
+    <string name="failed_to_save_to_gallery">Impossibile salvare nella galleria</string>
+    <string name="speed">Velocità</string>
 </resources>

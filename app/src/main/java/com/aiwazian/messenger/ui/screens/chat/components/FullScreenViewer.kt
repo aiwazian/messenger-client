@@ -11,23 +11,48 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.SaveAlt
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Speed
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -39,46 +64,57 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.compose.ContentFrame
 import coil.compose.AsyncImage
+import coil.decode.GifDecoder
+import coil.request.ImageRequest
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.getFileType
-import com.aiwazian.messenger.ui.components.PlayerUi
+import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import kotlinx.coroutines.delay
+import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 @Composable
 fun FullScreenViewer(
     mediaUris: List<Uri?>,
     initialPage: Int,
+    isVideoLooping: Boolean,
+    videoPlaybackSpeed: Float = 1.0f,
+    canDownloadMedia: Boolean,
+    onVideoLoopingChange: (Boolean) -> Unit,
+    onVideoPlaybackSpeedChange: (Float) -> Unit = {},
+    onSaveToGallery: (Uri) -> Unit,
     onDismiss: () -> Unit
 ) {
     var isUiVisible by remember { mutableStateOf(true) }
     var dragOffsetY by remember { mutableFloatStateOf(0f) }
     var isDragging by remember { mutableStateOf(false) }
+    var showVideoSettings by remember { mutableStateOf(false) }
+    var showSpeedBottomSheet by remember { mutableStateOf(false) }
+    var showMoreActions by remember { mutableStateOf(false) }
+    var isVideoPlaying by remember { mutableStateOf(false) }
+    var lastInteractionTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
     
     val dismissThresholdPx = 300f
     
     val animatedOffsetY by animateFloatAsState(
-        targetValue = dragOffsetY,
-        animationSpec = if (isDragging) snap()
+        targetValue = dragOffsetY, animationSpec = if (isDragging) snap()
         else spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "photoOffsetY"
+            dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium
+        ), label = "photoOffsetY"
     )
     
     val backgroundAlpha by animateFloatAsState(
@@ -102,20 +138,42 @@ fun FullScreenViewer(
     }
     
     DisposableEffect(Unit) {
-        onDispose { insetsController.show(WindowInsetsCompat.Type.statusBars()) }
+        onDispose {
+            insetsController.show(WindowInsetsCompat.Type.statusBars())
+        }
     }
     
     val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { mediaUris.size })
     
+    LaunchedEffect(pagerState.currentPage) {
+        isVideoPlaying = false
+    }
+    
+    LaunchedEffect(
+        isUiVisible, isVideoPlaying, lastInteractionTime, showVideoSettings, showMoreActions
+    ) {
+        if (isUiVisible && isVideoPlaying && !showVideoSettings && !showMoreActions) {
+            delay(2000L)
+            isUiVisible = false
+        }
+    }
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = backgroundAlpha)),
-        contentAlignment = Alignment.Center
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = backgroundAlpha))
+            .navigationBarsPadding()
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        awaitPointerEvent(PointerEventPass.Initial)
+                        lastInteractionTime = System.currentTimeMillis()
+                    }
+                }
+            }, contentAlignment = Alignment.Center
     ) {
         HorizontalPager(
-            state = pagerState,
-            modifier = Modifier
+            state = pagerState, modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(Unit) {
                     awaitEachGesture {
@@ -132,9 +190,9 @@ fun FullScreenViewer(
                         while (true) {
                             val event = awaitPointerEvent()
                             
-                            val change = event.changes.firstOrNull { it.id == pointerId }
-                                ?: event.changes.firstOrNull()
-                                ?: break
+                            val change =
+                                event.changes.firstOrNull { it.id == pointerId }
+                                    ?: event.changes.firstOrNull() ?: break
                             
                             if (change.isConsumed) {
                                 wasConsumed = true
@@ -191,8 +249,7 @@ fun FullScreenViewer(
                 }
                 .graphicsLayer {
                     translationY = animatedOffsetY
-                }
-        ) { page ->
+                }) { page ->
             val uri = mediaUris[page]
             val isCurrentPage = pagerState.currentPage == page
             
@@ -204,11 +261,22 @@ fun FullScreenViewer(
                 VideoPlayerItem(
                     uri = uri,
                     isCurrentPage = isCurrentPage,
-                    isUiVisible = isUiVisible
-                )
+                    isUiVisible = !isDragging && isUiVisible,
+                    isLooping = isVideoLooping,
+                    playbackSpeed = videoPlaybackSpeed,
+                    onPlayingChanged = { playing ->
+                        isVideoPlaying = playing
+                    },
+                    onShowUiRequest = {
+                        isUiVisible = true
+                        lastInteractionTime = System.currentTimeMillis()
+                    })
             } else {
                 AsyncImage(
-                    model = uri,
+                    model = ImageRequest.Builder(context)
+                        .data(uri)
+                        .decoderFactory(GifDecoder.Factory())
+                        .build(),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize()
@@ -220,22 +288,29 @@ fun FullScreenViewer(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter),
+            enter = fadeIn(),
+            exit = fadeOut()
         ) {
+            val currentUri = mediaUris.getOrNull(pagerState.currentPage)
+            val isCurrentVideo = currentUri?.getFileType(context)?.startsWith("video/") == true
+            val showMoreActionsButton = canDownloadMedia && currentUri != null
+            
+            LaunchedEffect(isCurrentVideo) {
+                if (!isCurrentVideo) {
+                    showVideoSettings = false
+                }
+            }
+            
+            LaunchedEffect(showMoreActionsButton) {
+                if (!showMoreActionsButton) {
+                    showMoreActions = false
+                }
+            }
+            
             TopAppBar(
-                modifier = Modifier
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                                Color.Transparent
-                            )
-                        )
-                    ),
-                title = {},
-                navigationIcon = {
+                title = {}, navigationIcon = {
                     IconButton(
-                        onClick = onDismiss,
-                        colors = IconButtonDefaults.filledIconButtonColors(
+                        onClick = onDismiss, colors = IconButtonDefaults.iconButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainer
                         )
                     ) {
@@ -243,102 +318,183 @@ fun FullScreenViewer(
                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack, null
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                }, actions = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AnimatedVisibility(
+                            visible = isCurrentVideo,
+                            enter = fadeIn() + scaleIn(),
+                            exit = fadeOut() + scaleOut()
+                        ) {
+                            Box {
+                                IconButton(
+                                    onClick = { showVideoSettings = true },
+                                    colors = IconButtonDefaults.iconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                    )
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Settings,
+                                        contentDescription = stringResource(R.string.video_settings)
+                                    )
+                                }
+                                CustomDropdownMenu(
+                                    expanded = showVideoSettings,
+                                    onDismissRequest = { showVideoSettings = false }) {
+                                    DropdownMenuItem(text = {
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Text(text = stringResource(R.string.speed))
+                                            
+                                            Text(
+                                                text = String.format(
+                                                    Locale.ROOT, "%.1f", videoPlaybackSpeed
+                                                ) + 'x',
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }, onClick = {
+                                        showVideoSettings = false
+                                        showSpeedBottomSheet = true
+                                    }, leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Speed,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    })
+                                    DropdownMenuItem(text = {
+                                        Text(
+                                            text = stringResource(R.string.loop),
+                                            color = if (isVideoLooping) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }, onClick = {
+                                        onVideoLoopingChange(!isVideoLooping)
+                                        showVideoSettings = false
+                                    }, leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Repeat,
+                                            contentDescription = null,
+                                            tint = if (isVideoLooping) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    })
+                                }
+                            }
+                        }
+                        
+                        AnimatedVisibility(
+                            visible = showMoreActionsButton,
+                            enter = fadeIn() + scaleIn(),
+                            exit = fadeOut() + scaleOut()
+                        ) {
+                            Box {
+                                IconButton(
+                                    onClick = { showMoreActions = true },
+                                    colors = IconButtonDefaults.iconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                    )
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.MoreVert,
+                                        contentDescription = stringResource(R.string.actions)
+                                    )
+                                }
+                                CustomDropdownMenu(
+                                    expanded = showMoreActions,
+                                    onDismissRequest = { showMoreActions = false }) {
+                                    if (canDownloadMedia && currentUri != null) {
+                                        DropdownMenuItem(text = {
+                                            Text(
+                                                text = stringResource(R.string.save_to_gallery),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }, onClick = {
+                                            onSaveToGallery(currentUri)
+                                            showMoreActions = false
+                                        }, leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Rounded.SaveAlt,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        })
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
+    }
+    
+    if (showSpeedBottomSheet) {
+        SpeedBottomSheet(
+            currentSpeed = videoPlaybackSpeed,
+            onSpeedChange = onVideoPlaybackSpeedChange,
+            onDismiss = { showSpeedBottomSheet = false })
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VideoPlayerItem(
-    uri: Uri,
-    isCurrentPage: Boolean,
-    isUiVisible: Boolean
+private fun SpeedBottomSheet(
+    currentSpeed: Float, onSpeedChange: (Float) -> Unit, onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
-    
-    val player = remember {
-        ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(uri))
-            prepare()
-        }
-    }
-    
-    var isPlaying by remember { mutableStateOf(false) }
-    var currentPosition by remember { mutableLongStateOf(0L) }
-    var duration by remember { mutableLongStateOf(0L) }
-    var isSeeking by remember { mutableStateOf(false) }
-    var isBuffering by remember { mutableStateOf(false) }
-    
-    LaunchedEffect(isCurrentPage) {
-        if (!isCurrentPage && isPlaying) {
-            player.pause()
-        }
-    }
-    
-    DisposableEffect(player) {
-        val listener = object : Player.Listener {
-            override fun onIsPlayingChanged(playing: Boolean) {
-                isPlaying = playing
-            }
-            
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                isBuffering = playbackState == Player.STATE_BUFFERING
-                if (playbackState == Player.STATE_READY) {
-                    duration = player.duration.coerceAtLeast(0L)
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = null
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "${String.format(Locale.ROOT, "%.1f", currentSpeed)}x",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = {
+                    val newSpeed = ((currentSpeed - 0.1f) * 10f).roundToInt() / 10f
+                    onSpeedChange(newSpeed.coerceAtLeast(0.1f))
+                }) {
+                    Icon(Icons.Rounded.Remove, contentDescription = "Decrease speed")
+                }
+                Slider(
+                    value = currentSpeed, onValueChange = {
+                        val roundedSpeed = (it * 10f).roundToInt() / 10f
+                        onSpeedChange(roundedSpeed)
+                    }, valueRange = 0.1f..10.0f, modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = {
+                    val newSpeed = ((currentSpeed + 0.1f) * 10f).roundToInt() / 10f
+                    onSpeedChange(newSpeed.coerceAtMost(5.0f))
+                }) {
+                    Icon(Icons.Rounded.Add, contentDescription = "Increase speed")
                 }
             }
-        }
-        player.addListener(listener)
-        onDispose {
-            player.removeListener(listener)
-            player.release()
-        }
-    }
-    
-    LaunchedEffect(isPlaying, isSeeking) {
-        while (isPlaying && !isSeeking) {
-            currentPosition = player.currentPosition.coerceAtLeast(0L)
-            delay(16L)
-        }
-    }
-    
-    Box(modifier = Modifier.fillMaxSize()) {
-        ContentFrame(
-            player = player,
-            modifier = Modifier.fillMaxSize()
-        )
-        
-        AnimatedVisibility(
-            visible = isUiVisible,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            PlayerUi(
-                isPlaying = isPlaying,
-                currentPosition = currentPosition,
-                duration = duration,
-                isBuffering = isBuffering,
-                isSeeking = isSeeking,
-                onSeekBarPositionChange = { newPos ->
-                    isSeeking = true
-                    currentPosition = newPos
-                },
-                onSeekBarPositionChangeFinished = {
-                    player.seekTo(currentPosition)
-                    isSeeking = false
-                },
-                onPlayPauseClick = {
-                    if (!isPlaying && player.playbackState == Player.STATE_ENDED) {
-                        player.seekTo(0L)
-                        player.play()
-                    } else if (isPlaying) {
-                        player.pause()
-                    } else {
-                        player.play()
+            Row(
+                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                val speedValues = remember { listOf(1f, 2.5f, 5f, 7.5f, 10f) }
+                speedValues.forEach { value ->
+                    OutlinedButton(
+                        onClick = {
+                            onSpeedChange(value)
+                        },
+                        shapes = ButtonDefaults.shapes()
+                    ) {
+                        Text(value.toString())
                     }
                 }
-            )
+            }
         }
     }
 }

@@ -132,7 +132,7 @@ fun ChatScreen(
     chatViewModel: ChatViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-
+    
     LaunchedEffect(Unit) {
         chatViewModel.init(chatId, chatName, avatarUri?.toUri())
         NotificationHelper.clearChatNotifications(context, chatId)
@@ -205,7 +205,9 @@ fun ChatScreen(
     Scaffold(
         modifier = Modifier.sharedBounds(key = "chat-${chatId}"),
         snackbarHost = {
-            CustomSnackbar(snackbarHostState)
+            if (!uiState.showFullScreenViewer) {
+                CustomSnackbar(snackbarHostState)
+            }
         },
         topBar = {
             TopBar(
@@ -394,12 +396,26 @@ fun ChatScreen(
     if (uiState.showFullScreenViewer) {
         FullScreenViewer(
             mediaUris = uiState.mediaItems.map { it.localUri },
-            initialPage = uiState.initialMediaIndex
-        ) {
-            chatViewModel.clearMediaUrl()
-        }
+            initialPage = uiState.initialMediaIndex,
+            isVideoLooping = uiState.isVideoLooping,
+            videoPlaybackSpeed = uiState.videoPlaybackSpeed,
+            canDownloadMedia = uiState.canDownloadMedia,
+            onVideoLoopingChange = chatViewModel::setVideoLooping,
+            onVideoPlaybackSpeedChange = chatViewModel::setVideoPlaybackSpeed,
+            onSaveToGallery = chatViewModel::saveToGallery,
+            onDismiss = chatViewModel::clearMediaUrl
+        )
         BackHandler {
             chatViewModel.clearMediaUrl()
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+                .padding(bottom = 16.dp),
+            contentAlignment = Alignment.BottomCenter,
+        ) {
+            CustomSnackbar(snackbarHostState)
         }
     }
 }
