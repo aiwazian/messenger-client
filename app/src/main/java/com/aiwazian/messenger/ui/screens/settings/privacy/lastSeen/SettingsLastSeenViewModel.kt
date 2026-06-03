@@ -60,11 +60,9 @@ class SettingsLastSeenViewModel @Inject constructor(
     fun onSaveClick() {
         viewModelScope.launch {
             try {
-                val success = privacyRepository.updateLastSeenPrivacy(_currentLevel.value)
-                
-                if (success) {
+                privacyRepository.updateLastSeenPrivacy(_currentLevel.value).onSuccess {
                     _effect.emit(SettingsLastSeenEffect.Back)
-                } else {
+                }.onFailure {
                     vibrate(VibrationPattern.Error)
                 }
             } catch (e: Exception) {

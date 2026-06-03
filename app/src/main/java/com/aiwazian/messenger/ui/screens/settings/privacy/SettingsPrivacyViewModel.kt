@@ -37,8 +37,14 @@ class SettingsPrivacyViewModel @Inject constructor(
     
     suspend fun init() {
         try {
-            privacyRepository.getPrivacySettings()?.let { settings ->
+            privacyRepository.getPrivacySettings().onSuccess { settings ->
                 _uiState.update { it.copy(privacy = settings) }
+            }.onFailure { e ->
+                Log.e(
+                    "SettingsPrivacyViewModel",
+                    "Ошибка при получении настроек конфиденциальности",
+                    e
+                )
             }
         } catch (e: Exception) {
             Log.e(
@@ -76,14 +82,14 @@ class SettingsPrivacyViewModel @Inject constructor(
     fun updateDeleteAfterDays(days: Int) {
         viewModelScope.launch {
             try {
-                if (privacyRepository.updateDeleteAfterDays(days)) {
+                privacyRepository.updateDeleteAfterDays(days).onSuccess {
                     _uiState.update {
                         it.copy(
                             privacy = it.privacy.copy(deleteAfterDays = days),
                             showInactivityBottomSheet = false
                         )
                     }
-                } else {
+                }.onFailure {
                     vibrationManager.vibrate(VibrationPattern.Error)
                 }
             } catch (e: Exception) {

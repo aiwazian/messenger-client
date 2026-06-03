@@ -12,12 +12,10 @@ import com.aiwazian.messenger.repository.PrivacyRepository
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -62,11 +60,9 @@ class SettingsDateOfBirthViewModel @Inject constructor(
     fun onSaveClick() {
         viewModelScope.launch {
             try {
-                val success = privacyRepository.updateDateOfBirthPrivacy(_currentLevel.value)
-
-                if (success) {
+                privacyRepository.updateDateOfBirthPrivacy(_currentLevel.value).onSuccess {
                     _effect.emit(SettingsDateOfBirthEffect.Back)
-                } else {
+                }.onFailure {
                     vibrate(VibrationPattern.Error)
                 }
             } catch (e: Exception) {
