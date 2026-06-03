@@ -4,9 +4,9 @@
 
 package com.aiwazian.messenger.ui.screens.settings.privacy
 
-import androidx.annotation.StringRes
+import com.aiwazian.messenger.utils.UiText
 
 sealed interface SettingsPrivacySideEffect {
     object NavigateToLogin : SettingsPrivacySideEffect
-    data class ShowSnackbar(@param:StringRes val message: Int) : SettingsPrivacySideEffect
+    data class ShowSnackbar(val message: UiText) : SettingsPrivacySideEffect
 }

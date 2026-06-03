@@ -13,8 +13,10 @@ data class SettingsPrivacyUiState(
         dateOfBirth = PrivacyLevel.EVERYBODY,
         lastSeen = PrivacyLevel.EVERYBODY,
         messages = PrivacyLevel.EVERYBODY,
-        invites = PrivacyLevel.EVERYBODY
+        invites = PrivacyLevel.EVERYBODY,
+        deleteAfterDays = 365
     ),
     val showDeleteBottomSheet: Boolean = false,
-    val showDeleteDialog: Boolean = false
+    val showDeleteDialog: Boolean = false,
+    val showInactivityBottomSheet: Boolean = false
 )

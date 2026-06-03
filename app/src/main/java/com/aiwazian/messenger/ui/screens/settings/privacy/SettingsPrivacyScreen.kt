@@ -23,7 +23,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,6 +53,7 @@ import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.SessionManager
+import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -83,7 +83,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                     snackbarJob = launch {
                         snackbarHostState.currentSnackbarData?.dismiss()
                         snackbarHostState.showSnackbar(
-                            message = context.getString(effect.message),
+                            message = effect.message.asString(context),
                             duration = SnackbarDuration.Long
                         )
                     }
@@ -153,13 +153,76 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                     })
             }
             
+            SectionContainer(header = {
+                SectionHeader(stringResource(R.string.delete_account))
+            }) {
+                val inactivityText = when (uiState.privacy.deleteAfterDays) {
+                    30 -> UiText.StringResource(R.string.inactive_1_month)
+                    90 -> UiText.StringResource(R.string.inactive_3_months)
+                    180 -> UiText.StringResource(R.string.inactive_6_months)
+                    365 -> UiText.StringResource(R.string.inactive_12_months)
+                    else -> UiText.DynamicString("")
+                }.asString()
+                
+                SectionItem(
+                    headlineText = stringResource(R.string.if_away_for),
+                    trailingText = inactivityText,
+                    onClick = viewModel::showInactivityBottomSheet
+                )
+            }
             SectionContainer {
                 SectionItem(
                     headlineText = stringResource(R.string.delete_account),
                     contentColor = MaterialTheme.colorScheme.error,
-                    onClick = {
-                        viewModel.onDeleteAccountClick()
-                    })
+                    onClick = viewModel::onDeleteAccountClick
+                )
+            }
+        }
+    }
+    
+    if (uiState.showInactivityBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = viewModel::hideInactivityBottomSheet,
+            dragHandle = null
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.delete_account_if_inactive_for),
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Column {
+                    SectionItem(
+                        headlineText = stringResource(R.string.inactive_1_month),
+                        onClick = { viewModel.updateDeleteAfterDays(30) }
+                    )
+                    SectionItem(
+                        headlineText = stringResource(R.string.inactive_3_months),
+                        onClick = { viewModel.updateDeleteAfterDays(90) }
+                    )
+                    SectionItem(
+                        headlineText = stringResource(R.string.inactive_6_months),
+                        onClick = { viewModel.updateDeleteAfterDays(180) }
+                    )
+                    SectionItem(
+                        headlineText = stringResource(R.string.inactive_12_months),
+                        onClick = { viewModel.updateDeleteAfterDays(365) }
+                    )
+                }
+                TextButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    onClick = viewModel::hideInactivityBottomSheet,
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
             }
         }
     }

@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.repository.PrivacyRepository
+import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -64,6 +65,34 @@ class SettingsPrivacyViewModel @Inject constructor(
         _uiState.update { it.copy(showDeleteDialog = false) }
     }
     
+    fun showInactivityBottomSheet() {
+        _uiState.update { it.copy(showInactivityBottomSheet = true) }
+    }
+    
+    fun hideInactivityBottomSheet() {
+        _uiState.update { it.copy(showInactivityBottomSheet = false) }
+    }
+    
+    fun updateDeleteAfterDays(days: Int) {
+        viewModelScope.launch {
+            try {
+                if (privacyRepository.updateDeleteAfterDays(days)) {
+                    _uiState.update {
+                        it.copy(
+                            privacy = it.privacy.copy(deleteAfterDays = days),
+                            showInactivityBottomSheet = false
+                        )
+                    }
+                } else {
+                    vibrationManager.vibrate(VibrationPattern.Error)
+                }
+            } catch (e: Exception) {
+                Log.e("SettingsPrivacyViewModel", "Ошибка при обновлении настроек", e)
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
+    }
+    
     fun vibrate() = vibrationManager.vibrate(VibrationPattern.Error)
     
     fun onDeleteAccountClick() {
@@ -73,7 +102,7 @@ class SettingsPrivacyViewModel @Inject constructor(
             val twentyFourHoursInMs = 24 * 60 * 60 * 1000L
             
             if (currentTime - createdAt < twentyFourHoursInMs) {
-                _sideEffect.emit(SettingsPrivacySideEffect.ShowSnackbar(R.string.delete_account_after_twenty_four_hours))
+                _sideEffect.emit(SettingsPrivacySideEffect.ShowSnackbar(UiText.StringResource(R.string.delete_account_after_twenty_four_hours)))
                 vibrationManager.vibrate(VibrationPattern.Error)
             } else {
                 showDeleteBottomSheet()

@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Recherche</string>
@@ -229,4 +233,10 @@
     <string name="successfully_saved_to_gallery">Enregistré avec succès dans la galerie</string>
     <string name="failed_to_save_to_gallery">Échec de l\'enregistrement dans la galerie</string>
     <string name="speed">Vitesse</string>
+    <string name="inactive_1_month">1 mois</string>
+    <string name="inactive_3_months">3 mois</string>
+    <string name="inactive_6_months">6 mois</string>
+    <string name="inactive_12_months">12 mois</string>
+    <string name="if_away_for">Si vous êtes absent pour</string>
+    <string name="delete_account_if_inactive_for">Autodestruction si inactif pendant...</string>
 </resources>

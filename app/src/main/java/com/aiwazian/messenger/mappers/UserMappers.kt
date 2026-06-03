@@ -49,7 +49,8 @@ fun PrivacySettingsResponseDto.toDomain() = PrivacySettings(
     messages = messages,
     bio = bio,
     dateOfBirth = dateOfBirth,
-    invites = invites
+    invites = invites,
+    deleteAfterDays = deleteAfterDays
 )
 
 fun UserEntity.toDomain(avatars: List<Avatar> = emptyList()): User = User(

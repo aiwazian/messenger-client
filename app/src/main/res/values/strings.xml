@@ -239,4 +239,10 @@
     <string name="successfully_saved_to_gallery">Successfully saved to gallery</string>
     <string name="failed_to_save_to_gallery">Failed to save to gallery</string>
     <string name="speed">Speed</string>
+    <string name="inactive_1_month">1 month</string>
+    <string name="inactive_3_months">3 months</string>
+    <string name="inactive_6_months">6 months</string>
+    <string name="inactive_12_months">12 months</string>
+    <string name="if_away_for">If away for</string>
+    <string name="delete_account_if_inactive_for">Self-Destruct if inactive for...</string>
 </resources>

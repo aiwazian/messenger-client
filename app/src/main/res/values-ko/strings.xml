@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">찾다</string>
@@ -225,4 +229,10 @@
     <string name="successfully_saved_to_gallery">갤러리에 성공적으로 저장됨</string>
     <string name="failed_to_save_to_gallery">갤러리에 저장 실패</string>
     <string name="speed">속도</string>
+    <string name="inactive_1_month">1개월</string>
+    <string name="inactive_3_months">3개월</string>
+    <string name="inactive_6_months">6개월</string>
+    <string name="inactive_12_months">12개월</string>
+    <string name="if_away_for">다음 기간 동안 떨어져 있는 경우</string>
+    <string name="delete_account_if_inactive_for">다음 기간 동안 활동하지 않으면 자폭합니다...</string>
 </resources>

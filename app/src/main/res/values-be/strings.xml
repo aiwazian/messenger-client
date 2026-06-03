@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Пошук</string>
@@ -231,4 +235,10 @@
     <string name="successfully_saved_to_gallery">Паспяхова захавана ў галерэю</string>
     <string name="failed_to_save_to_gallery">Не ўдалося захаваць у галерэю</string>
     <string name="speed">хуткасць</string>
+    <string name="inactive_1_month">1 месяц</string>
+    <string name="inactive_3_months">3 месяцы</string>
+    <string name="inactive_6_months">6 месяцаў</string>
+    <string name="inactive_12_months">12 месяцаў</string>
+    <string name="if_away_for">Калі прэч</string>
+    <string name="delete_account_if_inactive_for">Самазнішчэнне, калі неактыўнае на працягу...</string>
 </resources>

@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Որոնում</string>
@@ -227,4 +231,10 @@
     <string name="successfully_saved_to_gallery">Հաջողությամբ պահվեց պատկերասրահում</string>
     <string name="failed_to_save_to_gallery">Չհաջողվեց պահել պատկերասրահում</string>
     <string name="speed">Արագություն</string>
+    <string name="inactive_1_month">1 ամիս</string>
+    <string name="inactive_3_months">3 ամիս</string>
+    <string name="inactive_6_months">6 ամիս</string>
+    <string name="inactive_12_months">12 ամիս</string>
+    <string name="if_away_for">Եթե ​​հեռու համար</string>
+    <string name="delete_account_if_inactive_for">Ինքնոչնչացվի, եթե ոչ ակտիվ է...</string>
 </resources>
