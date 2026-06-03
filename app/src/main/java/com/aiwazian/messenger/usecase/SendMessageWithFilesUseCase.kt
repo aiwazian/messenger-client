@@ -55,6 +55,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
             val attachmentType = when {
                 mimeType.startsWith("image/") -> AttachmentType.IMAGE
                 mimeType.startsWith("video/") -> AttachmentType.VIDEO
+                mimeType.startsWith("audio/") -> AttachmentType.VOICE
                 else -> AttachmentType.FILE
             }
             

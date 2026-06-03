@@ -45,5 +45,9 @@ data class ChatUiState(
     val showFullScreenViewer: Boolean = false,
     val isVideoLooping: Boolean = false,
     val videoPlaybackSpeed: Float = 1.0f,
-    val canDownloadMedia: Boolean = true
+    val canDownloadMedia: Boolean = true,
+    val isRecording: Boolean = false,
+    val isRecordingLocked: Boolean = false,
+    val recordingDurationMs: Long = 0L,
+    val recordingAmplitude: Float = 0f
 )

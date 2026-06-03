@@ -132,6 +132,7 @@ import com.yandex.mobile.ads.compose.BannerSize
 import com.yandex.mobile.ads.compose.rememberBannerAdState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
@@ -648,13 +649,13 @@ private fun DrawerContent(
             events = BannerEvents(onAdFailedToLoad = { error ->
                 Log.e("YandexAds", error.description)
                 scope.launch {
-                    delay(1_000)
+                    delay(1_000.milliseconds)
                     loadTrigger++
                 }
             }, onImpression = { data ->
                 Log.d("YandexAds", "Показ: ${data?.rawData}")
                 scope.launch {
-                    delay(30_000)
+                    delay(30_000.milliseconds)
                     loadTrigger++
                 }
             })

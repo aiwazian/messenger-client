@@ -23,7 +23,6 @@ lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
 appcompat = "1.7.1"
 media3 = "1.10.1"
-mobileadsCompose = "8.0.0"
 navigation3RunTime = "1.1.2"
 navigation3Ui = "1.1.2"
 navigation3ViewModel = "2.10.0"
@@ -32,10 +31,10 @@ gmsVersion = "4.4.4"
 lifecycleViewmodelComposeVersion = "2.10.0"
 lottieCompose = "6.7.1"
 materialIconsExtendedAndroid = "1.7.8"
-mobileads = "8.0.0"
+mobileads = "8.1.0"
 navigationCompose = "2.9.8"
 okhttp = "5.3.2"
-protobufJavalite = "4.34.1"
+protobufJavalite = "4.35.0"
 pushclient = "7.2.0"
 retrofit = "3.0.0"
 retrofit2KotlinxSerializationConverter = "1.0.0"
@@ -43,9 +42,9 @@ roomRuntime = "2.8.4"
 graphicsShapes = "1.1.0"
 material3 = "1.5.0-alpha20"
 socketio = "2.1.2"
-serialization = "2.3.21"
+serialization = "2.4.0"
 hilt = "2.59.2"
-ksp = "2.3.5"
+ksp = "2.3.9"
 
 [libraries]
 androidx-animation = { module = "androidx.compose.animation:animation", version.ref = "animation" }
@@ -95,7 +94,7 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-analytics = { module = "com.google.firebase:firebase-analytics", version.ref = "firebaseAnalytics" }
 
 mobileads = { module = "com.yandex.android:mobileads", version.ref = "mobileads" }
-mobileads-compose = { module = "com.yandex.android:mobileads-compose", version.ref = "mobileadsCompose" }
+mobileads-compose = { module = "com.yandex.android:mobileads-compose", version.ref = "mobileads" }
 
 pushclient = { module = "ru.rustore.sdk:pushclient", version.ref = "pushclient" }
 socketio-client = { module = "io.socket:socket.io-client", version.ref = "socketio" }

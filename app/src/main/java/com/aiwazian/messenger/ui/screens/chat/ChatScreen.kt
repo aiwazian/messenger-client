@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.chat
 
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -11,7 +12,12 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -20,6 +26,8 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -32,7 +40,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -42,7 +53,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.AttachFile
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.LockOpen
+import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Photo
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.ButtonDefaults
@@ -72,6 +87,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -85,7 +101,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -96,6 +114,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
@@ -222,10 +242,7 @@ fun ChatScreen(
         bottomBar = {
             BottomSection(
                 uiState = uiState,
-                onTextChanged = chatViewModel::changeText,
-                onSendClicked = chatViewModel::onSendMessageClicked,
-                onJoinClicked = chatViewModel::onJoinClicked,
-                onFilesSelected = chatViewModel::sendFiles
+                chatViewModel = chatViewModel
             )
         },
     ) { innerPadding ->
@@ -423,10 +440,7 @@ fun ChatScreen(
 @Composable
 private fun BottomSection(
     uiState: ChatUiState,
-    onTextChanged: (String) -> Unit,
-    onSendClicked: () -> Unit,
-    onJoinClicked: () -> Unit,
-    onFilesSelected: (List<Uri>) -> Unit
+    chatViewModel: ChatViewModel
 ) {
     Box(
         modifier = Modifier
@@ -438,42 +452,34 @@ private fun BottomSection(
             ChatType.CHANNEL -> {
                 if (uiState.isOwner) {
                     InputMessage(
-                        value = uiState.messageText,
-                        onValueChange = onTextChanged,
-                        onSendMessage = onSendClicked,
-                        onFilesSelected = onFilesSelected
+                        uiState = uiState,
+                        chatViewModel = chatViewModel
                     )
                 } else if (!uiState.isJoined) {
-                    JoinButton(onClick = onJoinClicked)
+                    JoinButton(onClick = chatViewModel::onJoinClicked)
                 }
             }
             
             ChatType.GROUP -> {
                 if (uiState.isOwner) {
                     InputMessage(
-                        value = uiState.messageText,
-                        onValueChange = onTextChanged,
-                        onSendMessage = onSendClicked,
-                        onFilesSelected = onFilesSelected
+                        uiState = uiState,
+                        chatViewModel = chatViewModel
                     )
                 } else if (uiState.isJoined) {
                     InputMessage(
-                        value = uiState.messageText,
-                        onValueChange = onTextChanged,
-                        onSendMessage = onSendClicked,
-                        onFilesSelected = onFilesSelected
+                        uiState = uiState,
+                        chatViewModel = chatViewModel
                     )
                 } else {
-                    JoinButton(onClick = onJoinClicked)
+                    JoinButton(onClick = chatViewModel::onJoinClicked)
                 }
             }
             
             ChatType.PRIVATE -> {
                 InputMessage(
-                    value = uiState.messageText,
-                    onValueChange = onTextChanged,
-                    onSendMessage = onSendClicked,
-                    onFilesSelected = onFilesSelected
+                    uiState = uiState,
+                    chatViewModel = chatViewModel
                 )
             }
             
@@ -857,77 +863,328 @@ private fun LeaveDialog(
 
 @Composable
 private fun InputMessage(
-    value: String,
-    onValueChange: (String) -> Unit,
-    onSendMessage: () -> Unit,
-    onFilesSelected: (List<Uri>) -> Unit
+    uiState: ChatUiState,
+    chatViewModel: ChatViewModel
 ) {
     var attachmentModal by remember { mutableStateOf(DialogController()) }
+    var micTranslationX by remember { mutableFloatStateOf(0f) }
+    var micTranslationY by remember { mutableFloatStateOf(0f) }
+    
+    val infiniteTransition = rememberInfiniteTransition(label = "recording_dot_transition")
+    val dotAlpha by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "recording_dot_alpha"
+    )
     
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments(), onResult = { uris: List<Uri> ->
             if (uris.isNotEmpty()) {
                 attachmentModal.hide()
-                onFilesSelected(uris)
+                chatViewModel.sendFiles(uris)
             }
         })
+    
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            chatViewModel.startRecording()
+        }
+    }
+    
+    val animatedAmplitude by animateFloatAsState(
+        targetValue = uiState.recordingAmplitude,
+        animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
+        label = "amplitude_animation"
+    )
+    
+    val swipeScale = 1f - (kotlin.math.abs(micTranslationX) / 250f).coerceIn(0f, 1f) * 0.5f
     
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.extraLarge)
-            .background(color = MaterialTheme.colorScheme.surfaceContainer)
+            .background(
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                shape = MaterialTheme.shapes.extraLarge
+            )
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) { },
-        verticalAlignment = Alignment.Bottom
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier
-                .weight(1f)
-                .padding(vertical = 10.dp, horizontal = 14.dp),
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                color = MaterialTheme.colorScheme.onSurface
-            ),
-            maxLines = 5,
-            minLines = 1,
-            decorationBox = { innerTextField ->
-                Box {
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = value.isEmpty(),
-                        enter = fadeIn(tween(100)),
-                        exit = fadeOut(tween(100))
+        if (uiState.isRecording) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = if (uiState.isRecordingLocked) Arrangement.Start else Arrangement.SpaceBetween
+            ) {
+                val durationText = String.format(
+                    LocalLocale.current.platformLocale,
+                    "%02d:%02d",
+                    uiState.recordingDurationMs / 1000 / 60,
+                    uiState.recordingDurationMs / 1000 % 60
+                )
+                
+                if (uiState.isRecordingLocked) {
+                    TextButton(
+                        onClick = chatViewModel::cancelRecording,
                     ) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.error.copy(alpha = dotAlpha))
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(durationText, style = MaterialTheme.typography.bodyLarge)
+                    }
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.error.copy(alpha = dotAlpha))
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(durationText, style = MaterialTheme.typography.bodyLarge)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Rounded.ArrowBackIosNew,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(12.dp)
+                        )
                         Text(
-                            text = stringResource(R.string.message),
-                            style = MaterialTheme.typography.bodyLarge,
+                            text = "Влево – отмена",
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    innerTextField()
                 }
-            },
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
-        )
-        
-        IconButton(onClick = attachmentModal::show) {
-            Icon(
-                imageVector = Icons.Rounded.AttachFile,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.rotate(225f)
+            }
+        } else {
+            BasicTextField(
+                value = uiState.messageText,
+                onValueChange = chatViewModel::changeText,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 10.dp, horizontal = 14.dp),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                maxLines = 5,
+                minLines = 1,
+                decorationBox = { innerTextField ->
+                    Box {
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = uiState.messageText.isEmpty(),
+                            enter = fadeIn(tween(100)),
+                            exit = fadeOut(tween(100))
+                        ) {
+                            Text(
+                                text = stringResource(R.string.message),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        innerTextField()
+                    }
+                },
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
             )
         }
         
-        IconButton(onClick = onSendMessage) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.Send,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
+        if (!uiState.isRecording) {
+            IconButton(onClick = attachmentModal::show) {
+                Icon(
+                    imageVector = Icons.Rounded.AttachFile,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.rotate(225f)
+                )
+            }
+        }
+        
+        if (uiState.messageText.trim().isEmpty() || uiState.isRecording) {
+            Box(
+                modifier = Modifier
+                    .zIndex(if (uiState.isRecording) 10f else 0f)
+                    .pointerInput(uiState.isRecordingLocked) {
+                        if (uiState.isRecordingLocked) {
+                            detectTapGestures(
+                                onTap = {
+                                    chatViewModel.stopRecordingAndSend()
+                                }
+                            )
+                        } else {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val downEvent = awaitFirstDown()
+                                    downEvent.consume()
+                                    
+                                    if (ContextCompat.checkSelfPermission(
+                                            context,
+                                            android.Manifest.permission.RECORD_AUDIO
+                                        ) == PackageManager.PERMISSION_GRANTED
+                                    ) {
+                                        chatViewModel.startRecording()
+                                    } else {
+                                        permissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+                                        do {
+                                            val event = awaitPointerEvent()
+                                            event.changes.forEach { it.consume() }
+                                        } while (event.changes.any { it.pressed })
+                                        continue
+                                    }
+                                    
+                                    var isCanceled = false
+                                    var isLocked = false
+                                    micTranslationX = 0f
+                                    micTranslationY = 0f
+                                    val startX = downEvent.position.x
+                                    val startY = downEvent.position.y
+                                    
+                                    // Пороги для принятия решения о направлении свайпа
+                                    val directionThreshold = 20f
+                                    
+                                    do {
+                                        val event = awaitPointerEvent()
+                                        event.changes.forEach { it.consume() }
+                                        val position = event.changes.first().position
+                                        val currentX = position.x
+                                        val currentY = position.y
+                                        val deltaX = currentX - startX
+                                        val deltaY = currentY - startY
+                                        
+                                        // Определяем доминирующее направление свайпа
+                                        val isSwipingLeft =
+                                            deltaX < -directionThreshold && deltaX < deltaY
+                                        val isSwipingUp =
+                                            deltaY < -directionThreshold && deltaY < deltaX
+                                        
+                                        if (deltaY < -250f && !isLocked && !isCanceled) {
+                                            chatViewModel.lockRecording()
+                                            isLocked = true
+                                            micTranslationX = 0f
+                                            micTranslationY = 0f
+                                        } else if (deltaX < -250f && !isCanceled && !isLocked) {
+                                            chatViewModel.cancelRecording()
+                                            isCanceled = true
+                                            micTranslationX = 0f
+                                            micTranslationY = 0f
+                                        } else if (!isCanceled && !isLocked) {
+                                            if (isSwipingLeft) {
+                                                micTranslationX = deltaX.coerceAtMost(0f)
+                                                micTranslationY = 0f
+                                            } else if (isSwipingUp) {
+                                                micTranslationY = deltaY.coerceAtMost(0f)
+                                                micTranslationX = 0f
+                                            } else {
+                                                // Если свайп вернулся в начало (меньше порога), сбрасываем смещение
+                                                micTranslationX = 0f
+                                                micTranslationY = 0f
+                                            }
+                                        }
+                                    } while (event.changes.any { it.pressed })
+                                    
+                                    if (!isCanceled && !isLocked) {
+                                        chatViewModel.stopRecordingAndSend()
+                                    }
+                                    micTranslationX = 0f
+                                    micTranslationY = 0f
+                                }
+                            }
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = uiState.isRecording,
+                    enter = fadeIn() + slideInVertically { it / 2 },
+                    exit = fadeOut() + slideOutVertically { it / 2 },
+                    modifier = Modifier.offset(y = (-70).dp + (if (!uiState.isRecordingLocked) micTranslationY * 0.3f else 0f).dp)
+                ) {
+                    val isNearLock = uiState.isRecordingLocked || micTranslationY < -150f
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                            .padding(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isNearLock) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                
+                Box(
+                    modifier = Modifier
+                        .graphicsLayer {
+                            translationX = micTranslationX
+                            scaleX = swipeScale
+                            scaleY = swipeScale
+                        }
+                ) {
+                    // Анимированный фон (увеличивается от громкости)
+                    if (uiState.isRecording) {
+                        val maxBackgroundScale = 1.8f
+                        val currentScale = 1f + (animatedAmplitude * (maxBackgroundScale - 1f))
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(48.dp)
+                                .graphicsLayer {
+                                    scaleX = currentScale
+                                    scaleY = currentScale
+                                }
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                        )
+                    }
+                    
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(if (uiState.isRecording) MaterialTheme.colorScheme.primary else Color.Transparent),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (uiState.isRecordingLocked) Icons.AutoMirrored.Rounded.Send else Icons.Rounded.Mic,
+                            contentDescription = null,
+                            tint = if (uiState.isRecording) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+        } else {
+            IconButton(onClick = chatViewModel::onSendMessageClicked) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.Send,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
     
@@ -937,7 +1194,7 @@ private fun InputMessage(
             onFileSystemClick = { filePickerLauncher.launch(arrayOf("*/*")) },
             onFileSelected = { uris ->
                 attachmentModal.hide()
-                onFilesSelected(uris)
+                chatViewModel.sendFiles(uris)
             })
     }
 }

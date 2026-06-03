@@ -124,7 +124,7 @@ private fun Uri.getMimeTypeFromMagicBytes(context: Context): String {
             }
         }
     } catch (e: Exception) {
-        Log.e(this::class.simpleName, "getMimeTypeFromMagicBytes ${e.message}: ", e)
+        Log.e("UriExtensions", "getMimeTypeFromMagicBytes ${e.message}: ", e)
     }
     
     return "application/octet-stream"

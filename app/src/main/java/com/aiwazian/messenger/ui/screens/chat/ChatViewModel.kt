@@ -43,6 +43,7 @@ import com.aiwazian.messenger.usecase.JoinViaInviteLinkUseCase
 import com.aiwazian.messenger.usecase.LeaveChatUseCase
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.usecase.SendMessageWithFilesUseCase
+import com.aiwazian.messenger.utils.AudioRecorderManager
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DataStoreManager
 import com.aiwazian.messenger.utils.DownloaderManager
@@ -91,6 +92,9 @@ class ChatViewModel @Inject constructor(
     private val leaveChatUseCase: LeaveChatUseCase,
     private val dataStoreManager: DataStoreManager
 ) : ViewModel() {
+    
+    private val audioRecorderManager = AudioRecorderManager(context)
+    private var recordingTimerJob: kotlinx.coroutines.Job? = null
     
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState = _uiState.asStateFlow()
@@ -873,5 +877,76 @@ class ChatViewModel @Inject constructor(
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }
+    }
+    
+    fun startRecording() {
+        if (_uiState.value.isRecording) return
+        val file = audioRecorderManager.startRecording()
+        if (file != null) {
+            _uiState.update {
+                it.copy(
+                    isRecording = true,
+                    isRecordingLocked = false,
+                    recordingDurationMs = 0L,
+                    recordingAmplitude = 0f
+                )
+            }
+            recordingTimerJob?.cancel()
+            recordingTimerJob = viewModelScope.launch {
+                val startTime = System.currentTimeMillis()
+                while (true) {
+                    kotlinx.coroutines.delay(100)
+                    val maxAmplitude = audioRecorderManager.getMaxAmplitude()
+                    val amplitude = (maxAmplitude / 32767f).coerceIn(0f, 1f)
+                    _uiState.update {
+                        it.copy(
+                            recordingDurationMs = System.currentTimeMillis() - startTime,
+                            recordingAmplitude = amplitude
+                        )
+                    }
+                }
+            }
+            vibrate()
+        } else {
+            viewModelScope.launch {
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Не удалось начать запись аудио")))
+            }
+        }
+    }
+    
+    fun lockRecording() {
+        if (_uiState.value.isRecording) {
+            _uiState.update { it.copy(isRecordingLocked = true) }
+        }
+    }
+    
+    fun stopRecordingAndSend() {
+        if (!_uiState.value.isRecording) return
+        val file = audioRecorderManager.stopRecording()
+        recordingTimerJob?.cancel()
+        _uiState.update {
+            it.copy(
+                isRecording = false,
+                isRecordingLocked = false,
+                recordingDurationMs = 0L
+            )
+        }
+        if (file != null) {
+            sendFiles(listOf(Uri.fromFile(file)))
+        }
+    }
+    
+    fun cancelRecording() {
+        if (!_uiState.value.isRecording) return
+        audioRecorderManager.cancelRecording()
+        recordingTimerJob?.cancel()
+        _uiState.update {
+            it.copy(
+                isRecording = false,
+                isRecordingLocked = false,
+                recordingDurationMs = 0L
+            )
+        }
+        vibrate()
     }
 }
