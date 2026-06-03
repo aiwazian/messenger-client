@@ -12,6 +12,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -112,6 +113,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -143,6 +145,7 @@ import com.aiwazian.messenger.utils.DialogController
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.math.abs
 
 @Composable
 fun ChatScreen(
@@ -904,7 +907,7 @@ private fun InputMessage(
         label = "amplitude_animation"
     )
     
-    val swipeScale = 1f - (kotlin.math.abs(micTranslationX) / 250f).coerceIn(0f, 1f) * 0.5f
+    val swipeScale = 1f - (abs(micTranslationX) / 250f).coerceIn(0f, 1f) * 0.5f
     
     Row(
         modifier = Modifier
@@ -912,18 +915,16 @@ private fun InputMessage(
             .background(
                 color = MaterialTheme.colorScheme.surfaceContainer,
                 shape = MaterialTheme.shapes.extraLarge
-            )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { },
-        verticalAlignment = Alignment.CenterVertically
+            ),
+        verticalAlignment = Alignment.Bottom
     ) {
         if (uiState.isRecording) {
             Row(
-                modifier = Modifier.weight(1f),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = if (uiState.isRecordingLocked) Arrangement.Start else Arrangement.SpaceBetween
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 val durationText = String.format(
                     LocalLocale.current.platformLocale,
@@ -932,49 +933,69 @@ private fun InputMessage(
                     uiState.recordingDurationMs / 1000 % 60
                 )
                 
-                if (uiState.isRecordingLocked) {
-                    TextButton(
-                        onClick = chatViewModel::cancelRecording,
-                    ) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(12.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.error.copy(alpha = dotAlpha))
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(durationText, style = MaterialTheme.typography.bodyLarge)
-                    }
-                } else {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(12.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.error.copy(alpha = dotAlpha))
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(durationText, style = MaterialTheme.typography.bodyLarge)
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowBackIosNew,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Text(
-                            text = "Влево – отмена",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.error.copy(alpha = dotAlpha))
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(durationText, style = MaterialTheme.typography.bodyLarge)
+                }
+                
+                Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.Center) {
+                    AnimatedContent(
+                        targetState = uiState.isRecordingLocked,
+                        transitionSpec = {
+                            slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
+                        },
+                        label = "recording_hint_animation",
+                        contentAlignment = Alignment.Center
+                    ) { isLocked ->
+                        if (isLocked) {
+                            TextButton(onClick = chatViewModel::cancelRecording) {
+                                Text(stringResource(R.string.cancel).uppercase())
+                            }
+                        } else {
+                            val infiniteTransition = rememberInfiniteTransition(label = "shake")
+                            
+                            val offsetX by infiniteTransition.animateFloat(
+                                initialValue = -4f,
+                                targetValue = 4f,
+                                animationSpec = infiniteRepeatable(
+                                    animation = tween(
+                                        durationMillis = 1000,
+                                        easing = LinearEasing
+                                    ),
+                                    repeatMode = RepeatMode.Reverse
+                                ),
+                                label = "offsetX"
+                            )
+                            
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.graphicsLayer {
+                                    translationX = micTranslationX * 0.5f
+                                    alpha = (1f - (abs(micTranslationX) / 250f)).coerceIn(0.2f, 1f)
+                                }.offset {
+                                    IntOffset(x = offsetX.dp.roundToPx(), y = 0)
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.ArrowBackIosNew,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = "Влево – отмена",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -984,7 +1005,7 @@ private fun InputMessage(
                 onValueChange = chatViewModel::changeText,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(vertical = 10.dp, horizontal = 14.dp),
+                    .padding(vertical = 12.dp, horizontal = 14.dp),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.onSurface
                 ),
@@ -992,11 +1013,7 @@ private fun InputMessage(
                 minLines = 1,
                 decorationBox = { innerTextField ->
                     Box {
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = uiState.messageText.isEmpty(),
-                            enter = fadeIn(tween(100)),
-                            exit = fadeOut(tween(100))
-                        ) {
+                        if (uiState.messageText.isEmpty()) {
                             Text(
                                 text = stringResource(R.string.message),
                                 style = MaterialTheme.typography.bodyLarge,
@@ -1043,6 +1060,20 @@ private fun InputMessage(
                                             android.Manifest.permission.RECORD_AUDIO
                                         ) == PackageManager.PERMISSION_GRANTED
                                     ) {
+                                        val releasedBeforeLongPress = withTimeoutOrNull(100L) {
+                                            do {
+                                                val event = awaitPointerEvent()
+                                                event.changes.forEach { it.consume() }
+                                            } while (event.changes.any { it.pressed })
+                                            true
+                                        } ?: false
+                                        
+                                        if (releasedBeforeLongPress) {
+                                            micTranslationX = 0f
+                                            micTranslationY = 0f
+                                            continue
+                                        }
+                                        
                                         chatViewModel.startRecording()
                                     } else {
                                         permissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
@@ -1060,8 +1091,7 @@ private fun InputMessage(
                                     val startX = downEvent.position.x
                                     val startY = downEvent.position.y
                                     
-                                    // Пороги для принятия решения о направлении свайпа
-                                    val directionThreshold = 20f
+                                    var lockedAxis: String? = null
                                     
                                     do {
                                         val event = awaitPointerEvent()
@@ -1072,11 +1102,16 @@ private fun InputMessage(
                                         val deltaX = currentX - startX
                                         val deltaY = currentY - startY
                                         
-                                        // Определяем доминирующее направление свайпа
-                                        val isSwipingLeft =
-                                            deltaX < -directionThreshold && deltaX < deltaY
-                                        val isSwipingUp =
-                                            deltaY < -directionThreshold && deltaY < deltaX
+                                        if (lockedAxis == null) {
+                                            if (deltaX < -20f && abs(deltaX) > abs(deltaY)
+                                            ) {
+                                                lockedAxis = "X"
+                                            } else if (deltaY < -20f && abs(deltaY) > abs(deltaX)) {
+                                                lockedAxis = "Y"
+                                            }
+                                        } else if (abs(deltaX) < 20f && abs(deltaY) < 20f) {
+                                            lockedAxis = null
+                                        }
                                         
                                         if (deltaY < -250f && !isLocked && !isCanceled) {
                                             chatViewModel.lockRecording()
@@ -1089,17 +1124,14 @@ private fun InputMessage(
                                             micTranslationX = 0f
                                             micTranslationY = 0f
                                         } else if (!isCanceled && !isLocked) {
-                                            if (isSwipingLeft) {
-                                                micTranslationX = deltaX.coerceAtMost(0f)
-                                                micTranslationY = 0f
-                                            } else if (isSwipingUp) {
-                                                micTranslationY = deltaY.coerceAtMost(0f)
-                                                micTranslationX = 0f
-                                            } else {
-                                                // Если свайп вернулся в начало (меньше порога), сбрасываем смещение
-                                                micTranslationX = 0f
-                                                micTranslationY = 0f
-                                            }
+                                            micTranslationX =
+                                                if (lockedAxis == "X" || lockedAxis == null) deltaX.coerceAtMost(
+                                                    0f
+                                                ) else 0f
+                                            micTranslationY =
+                                                if (lockedAxis == "Y" || lockedAxis == null) deltaY.coerceAtMost(
+                                                    0f
+                                                ) else 0f
                                         }
                                     } while (event.changes.any { it.pressed })
                                     
@@ -1118,13 +1150,20 @@ private fun InputMessage(
                     visible = uiState.isRecording,
                     enter = fadeIn() + slideInVertically { it / 2 },
                     exit = fadeOut() + slideOutVertically { it / 2 },
-                    modifier = Modifier.offset(y = (-70).dp + (if (!uiState.isRecordingLocked) micTranslationY * 0.3f else 0f).dp)
+                    modifier = Modifier.offset {
+                        val y = (-70).dp + if (!uiState.isRecordingLocked) {
+                            (micTranslationY * 0.3f).dp
+                        } else {
+                            0.dp
+                        }
+                        IntOffset(x = 0, y = y.roundToPx())
+                    }
                 ) {
                     val isNearLock = uiState.isRecordingLocked || micTranslationY < -150f
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
                             .padding(8.dp)
                     ) {
                         Icon(
@@ -1144,10 +1183,10 @@ private fun InputMessage(
                             scaleY = swipeScale
                         }
                 ) {
-                    // Анимированный фон (увеличивается от громкости)
                     if (uiState.isRecording) {
-                        val maxBackgroundScale = 1.8f
-                        val currentScale = 1f + (animatedAmplitude * (maxBackgroundScale - 1f))
+                        val maxBackgroundScale = 2.2f
+                        val currentScale =
+                            1f + ((animatedAmplitude * 2.5f).coerceAtMost(1f) * (maxBackgroundScale - 1f))
                         Box(
                             modifier = Modifier
                                 .align(Alignment.Center)
@@ -1165,6 +1204,7 @@ private fun InputMessage(
                         modifier = Modifier
                             .align(Alignment.Center)
                             .size(48.dp)
+                            .padding(2.dp)
                             .clip(CircleShape)
                             .background(if (uiState.isRecording) MaterialTheme.colorScheme.primary else Color.Transparent),
                         contentAlignment = Alignment.Center
