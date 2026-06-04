@@ -12,6 +12,8 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -22,6 +24,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -95,6 +99,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
@@ -284,8 +289,16 @@ fun ChatScreen(
                             }
                         }) { item ->
                         when (item) {
-                            is ChatItem.DateSeparator -> DateSeparatorItem(item.text)
-                            is ChatItem.SystemMessage -> SystemMessageBubble(item.text.asString())
+                            is ChatItem.DateSeparator -> DateSeparatorItem(
+                                item.text,
+                                Modifier.animateItem()
+                            )
+                            
+                            is ChatItem.SystemMessage -> SystemMessageBubble(
+                                item.text.asString(),
+                                Modifier.animateItem()
+                            )
+                            
                             is ChatItem.MessageItem -> MessageBubble(
                                 modifier = Modifier.animateItem(),
                                 item = item,
@@ -918,102 +931,26 @@ private fun InputMessage(
             ),
         verticalAlignment = Alignment.Bottom
     ) {
-        if (uiState.isRecording) {
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp)
-                    .padding(horizontal = 14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val durationText = String.format(
-                    LocalLocale.current.platformLocale,
-                    "%02d:%02d",
-                    uiState.recordingDurationMs / 1000 / 60,
-                    uiState.recordingDurationMs / 1000 % 60
-                )
-                
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.error.copy(alpha = dotAlpha))
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(durationText, style = MaterialTheme.typography.bodyLarge)
-                }
-                
-                Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.Center) {
-                    AnimatedContent(
-                        targetState = uiState.isRecordingLocked,
-                        transitionSpec = {
-                            slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
-                        },
-                        label = "recording_hint_animation",
-                        contentAlignment = Alignment.Center
-                    ) { isLocked ->
-                        if (isLocked) {
-                            TextButton(onClick = chatViewModel::cancelRecording) {
-                                Text(stringResource(R.string.cancel).uppercase())
-                            }
-                        } else {
-                            val infiniteTransition = rememberInfiniteTransition(label = "shake")
-                            
-                            val offsetX by infiniteTransition.animateFloat(
-                                initialValue = -4f,
-                                targetValue = 4f,
-                                animationSpec = infiniteRepeatable(
-                                    animation = tween(
-                                        durationMillis = 1000,
-                                        easing = LinearEasing
-                                    ),
-                                    repeatMode = RepeatMode.Reverse
-                                ),
-                                label = "offsetX"
-                            )
-                            
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.graphicsLayer {
-                                    translationX = micTranslationX * 0.5f
-                                    alpha = (1f - (abs(micTranslationX) / 250f)).coerceIn(0.2f, 1f)
-                                }.offset {
-                                    IntOffset(x = offsetX.dp.roundToPx(), y = 0)
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.ArrowBackIosNew,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(12.dp)
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = "Влево – отмена",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
+        Box(modifier = Modifier.weight(1f).height(48.dp)) {
+            val textFieldAlpha by animateFloatAsState(
+                targetValue = if (uiState.isRecording) 0f else 1f,
+                animationSpec = tween(200)
+            )
+            
             BasicTextField(
                 value = uiState.messageText,
                 onValueChange = chatViewModel::changeText,
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(vertical = 12.dp, horizontal = 14.dp),
+                    .matchParentSize()
+                    .alpha(textFieldAlpha),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.onSurface
                 ),
                 maxLines = 5,
                 minLines = 1,
                 decorationBox = { innerTextField ->
-                    Box {
-                        if (uiState.messageText.isEmpty()) {
+                    Box(modifier = Modifier.padding(vertical = 12.dp, horizontal = 14.dp)) {
+                        if (uiState.messageText.isEmpty() && !uiState.isRecording) {
                             Text(
                                 text = stringResource(R.string.message),
                                 style = MaterialTheme.typography.bodyLarge,
@@ -1025,6 +962,98 @@ private fun InputMessage(
                 },
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
             )
+            
+            androidx.compose.animation.AnimatedVisibility(
+                visible = uiState.isRecording,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.matchParentSize()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .height(48.dp)
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val durationText = String.format(
+                        LocalLocale.current.platformLocale,
+                        "%02d:%02d",
+                        uiState.recordingDurationMs / 1000 / 60,
+                        uiState.recordingDurationMs / 1000 % 60
+                    )
+                    
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.error.copy(alpha = dotAlpha))
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(durationText, style = MaterialTheme.typography.bodyLarge)
+                    }
+                    
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        AnimatedContent(
+                            targetState = uiState.isRecordingLocked,
+                            transitionSpec = {
+                                slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
+                            },
+                            label = "recording_hint_animation",
+                            contentAlignment = Alignment.Center
+                        ) { isLocked ->
+                            if (isLocked) {
+                                TextButton(onClick = chatViewModel::cancelRecording) {
+                                    Text(stringResource(R.string.cancel).uppercase())
+                                }
+                            } else {
+                                val infiniteTransition = rememberInfiniteTransition(label = "shake")
+                                
+                                val offsetX by infiniteTransition.animateFloat(
+                                    initialValue = -4f,
+                                    targetValue = 4f,
+                                    animationSpec = infiniteRepeatable(
+                                        animation = tween(
+                                            durationMillis = 1000,
+                                            easing = LinearEasing
+                                        ),
+                                        repeatMode = RepeatMode.Reverse
+                                    ),
+                                    label = "offsetX"
+                                )
+                                
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.graphicsLayer {
+                                        translationX = micTranslationX * 0.5f
+                                        alpha =
+                                            (1f - (abs(micTranslationX) / 250f)).coerceIn(0.2f, 1f)
+                                    }.offset {
+                                        IntOffset(x = offsetX.dp.roundToPx(), y = 0)
+                                    }.padding(horizontal = 2.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.ArrowBackIosNew,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        text = "Влево – отмена",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         
         if (!uiState.isRecording) {
@@ -1146,17 +1175,20 @@ private fun InputMessage(
                     },
                 contentAlignment = Alignment.Center
             ) {
+                val micIconPosition by animateFloatAsState(
+                    targetValue = -70f + if (!uiState.isRecordingLocked) {
+                        micTranslationY * 0.3f
+                    } else {
+                        0f
+                    }
+                )
+                
                 androidx.compose.animation.AnimatedVisibility(
                     visible = uiState.isRecording,
-                    enter = fadeIn() + slideInVertically { it / 2 },
-                    exit = fadeOut() + slideOutVertically { it / 2 },
+                    enter = fadeIn() + scaleIn() + slideInVertically { it / 2 },
+                    exit = fadeOut() + scaleOut() + slideOutVertically { it / 2 },
                     modifier = Modifier.offset {
-                        val y = (-70).dp + if (!uiState.isRecordingLocked) {
-                            (micTranslationY * 0.3f).dp
-                        } else {
-                            0.dp
-                        }
-                        IntOffset(x = 0, y = y.roundToPx())
+                        IntOffset(x = 0, y = micIconPosition.dp.roundToPx())
                     }
                 ) {
                     val isNearLock = uiState.isRecordingLocked || micTranslationY < -150f
@@ -1166,12 +1198,16 @@ private fun InputMessage(
                             .background(MaterialTheme.colorScheme.surfaceContainer)
                             .padding(8.dp)
                     ) {
-                        Icon(
-                            imageVector = if (isNearLock) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        AnimatedContent(
+                            targetState = isNearLock,
+                            transitionSpec = { fadeIn() togetherWith fadeOut() }) { isNearLock ->
+                            Icon(
+                                imageVector = if (isNearLock) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
                 
@@ -1200,20 +1236,32 @@ private fun InputMessage(
                         )
                     }
                     
+                    val micBackColor by animateColorAsState(
+                        targetValue = if (uiState.isRecording) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        animationSpec = tween(
+                            durationMillis = 200,
+                            easing = FastOutSlowInEasing
+                        )
+                    )
+                    
                     Box(
                         modifier = Modifier
                             .align(Alignment.Center)
                             .size(48.dp)
                             .padding(2.dp)
                             .clip(CircleShape)
-                            .background(if (uiState.isRecording) MaterialTheme.colorScheme.primary else Color.Transparent),
+                            .background(micBackColor),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = if (uiState.isRecordingLocked) Icons.AutoMirrored.Rounded.Send else Icons.Rounded.Mic,
-                            contentDescription = null,
-                            tint = if (uiState.isRecording) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
-                        )
+                        AnimatedContent(
+                            targetState = uiState.isRecordingLocked,
+                            transitionSpec = { scaleIn() togetherWith scaleOut() }) { isLocked ->
+                            Icon(
+                                imageVector = if (isLocked) Icons.AutoMirrored.Rounded.Send else Icons.Rounded.Mic,
+                                contentDescription = null,
+                                tint = if (uiState.isRecording) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             }

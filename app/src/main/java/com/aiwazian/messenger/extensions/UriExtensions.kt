@@ -21,11 +21,24 @@ fun Uri.getFileName(context: Context): String? {
 }
 
 fun Uri.getFileSize(context: Context): Long? {
-    return context.contentResolver.query(this, null, null, null, null)?.use { cursor ->
-        if (cursor.moveToFirst()) {
-            val index = cursor.getColumnIndexOrThrow(OpenableColumns.SIZE)
-            cursor.getLong(index)
-        } else 0L
+    when (scheme) {
+        "file" -> {
+            val path = path ?: return null
+            val file = java.io.File(path)
+            return if (file.exists()) file.length() else null
+        }
+        
+        "content" -> {
+            return context.contentResolver.query(this, null, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val index = cursor.getColumnIndexOrThrow(OpenableColumns.SIZE)
+                    val size = cursor.getLong(index)
+                    if (size > 0) size else null
+                } else null
+            }
+        }
+        
+        else -> return null
     }
 }
 

@@ -18,8 +18,8 @@ class ProgressRequestBody(
 ) : RequestBody() {
 
     override fun contentType() = contentType
-
-    override fun contentLength() = contentLength
+    
+    override fun contentLength(): Long = if (contentLength > 0) contentLength else -1L
 
     override fun isOneShot(): Boolean = true
 
@@ -27,12 +27,17 @@ class ProgressRequestBody(
         var totalBytesRead = 0L
         var read: Int
         
+        val knownLength = contentLength > 0
         streamProvider().source().use { source ->
             while (source.read(sink.buffer, 8192).also { read = it.toInt() } != -1L) {
                 totalBytesRead += read
-                val progress = ((totalBytesRead * 100).coerceAtLeast(0) / contentLength.coerceAtLeast(1)).toInt()
-                onProgress(progress.coerceIn(0, 100))
+                if (knownLength) {
+                    val progress =
+                        ((totalBytesRead * 100).coerceAtLeast(0) / contentLength).toInt()
+                    onProgress(progress.coerceIn(0, 100))
+                }
             }
         }
+        if (!knownLength) onProgress(100)
     }
 }
