@@ -55,6 +55,7 @@ import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -68,6 +69,7 @@ import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -468,6 +470,7 @@ class ChatViewModel @Inject constructor(
                         mimeType == "image/gif" -> AttachmentType.GIF
                         mimeType.startsWith("image/") -> AttachmentType.IMAGE
                         mimeType.startsWith("video/") -> AttachmentType.VIDEO
+                        mimeType.startsWith("audio/") -> AttachmentType.VOICE
                         else -> attachment.type
                     }
                     attachment.copy(type = newType)
@@ -895,7 +898,7 @@ class ChatViewModel @Inject constructor(
             recordingTimerJob = viewModelScope.launch {
                 val startTime = System.currentTimeMillis()
                 while (true) {
-                    kotlinx.coroutines.delay(100)
+                    delay(100.milliseconds)
                     val maxAmplitude = audioRecorderManager.getMaxAmplitude()
                     val amplitude = (maxAmplitude / 32767f).coerceIn(0f, 1f)
                     _uiState.update {
@@ -906,7 +909,7 @@ class ChatViewModel @Inject constructor(
                     }
                 }
             }
-            vibrate()
+            vibrationManager.vibrate(VibrationPattern.TactileResponse)
         } else {
             viewModelScope.launch {
                 _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Не удалось начать запись аудио")))
@@ -917,6 +920,7 @@ class ChatViewModel @Inject constructor(
     fun lockRecording() {
         if (_uiState.value.isRecording) {
             _uiState.update { it.copy(isRecordingLocked = true) }
+            vibrationManager.vibrate(VibrationPattern.TactileResponse)
         }
     }
     
@@ -947,6 +951,6 @@ class ChatViewModel @Inject constructor(
                 recordingDurationMs = 0L
             )
         }
-        vibrate()
+        vibrationManager.vibrate(VibrationPattern.TactileResponse)
     }
 }

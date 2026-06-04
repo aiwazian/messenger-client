@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -926,13 +927,17 @@ private fun InputMessage(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {}
             .background(
                 color = MaterialTheme.colorScheme.surfaceContainer,
                 shape = MaterialTheme.shapes.extraLarge
             ),
         verticalAlignment = Alignment.Bottom
     ) {
-        Box(modifier = Modifier.weight(1f).height(48.dp)) {
+        Box(modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
             val textFieldAlpha by animateFloatAsState(
                 targetValue = if (uiState.isRecording) 0f else 1f,
                 animationSpec = tween(200)
@@ -941,9 +946,7 @@ private fun InputMessage(
             BasicTextField(
                 value = uiState.messageText,
                 onValueChange = chatViewModel::changeText,
-                modifier = Modifier
-                    .matchParentSize()
-                    .alpha(textFieldAlpha),
+                modifier = Modifier.fillMaxWidth().alpha(textFieldAlpha),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.onSurface
                 ),
@@ -973,7 +976,7 @@ private fun InputMessage(
                 Row(
                     modifier = Modifier
                         .matchParentSize()
-                        .height(48.dp)
+                        .heightIn(min = 48.dp)
                         .padding(horizontal = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
