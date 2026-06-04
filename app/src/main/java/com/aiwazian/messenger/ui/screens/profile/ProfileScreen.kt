@@ -369,6 +369,7 @@ private fun UserProfile(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TopBar(
     chatId: Long,

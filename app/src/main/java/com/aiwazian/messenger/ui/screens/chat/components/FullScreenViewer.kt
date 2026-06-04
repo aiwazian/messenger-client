@@ -87,6 +87,7 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FullScreenViewer(
     mediaUris: List<Uri?>,

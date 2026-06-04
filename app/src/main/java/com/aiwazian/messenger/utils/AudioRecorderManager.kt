@@ -17,7 +17,7 @@ class AudioRecorderManager(private val context: Context) {
     
     fun startRecording(): File? {
         val outputDir = context.cacheDir
-        val outputFile = File.createTempFile("audio_record_", ".m4a", outputDir)
+        val outputFile = File.createTempFile("audio_record_", ".ogg", outputDir)
         currentFile = outputFile
         
         recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -27,8 +27,8 @@ class AudioRecorderManager(private val context: Context) {
             MediaRecorder()
         }.apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
-            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            setOutputFormat(MediaRecorder.OutputFormat.OGG)
+            setAudioEncoder(MediaRecorder.AudioEncoder.OPUS)
             setOutputFile(outputFile.absolutePath)
             
             try {

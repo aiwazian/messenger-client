@@ -323,6 +323,7 @@ private fun Content(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SelectionTopBar(
     selectedCount: Int,

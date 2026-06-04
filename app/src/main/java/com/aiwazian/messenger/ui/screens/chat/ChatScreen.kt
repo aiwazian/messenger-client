@@ -571,6 +571,7 @@ private fun Dialogs(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TopBar(
     title: String,
