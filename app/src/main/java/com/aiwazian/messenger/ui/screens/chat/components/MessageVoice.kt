@@ -33,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -87,7 +88,7 @@ fun MessageVoice(
     
     val effectiveMs = dragPositionMs ?: initialSeekPositionMs ?: currentPositionMs
     
-    var extractedDurationMs by remember { mutableStateOf(0) }
+    var extractedDurationMs by remember { mutableIntStateOf(0) }
     LaunchedEffect(file.localUri) {
         if (file.localUri != null) {
             if (amplitudes == null) {
@@ -116,7 +117,13 @@ fun MessageVoice(
     
     Row(
         modifier = Modifier
-            .clickable(interactionSource = null, indication = null) { onAction(FileAction.PLAY) }
+            .clickable(interactionSource = null, indication = null) {
+                if (file.status == DownloadStatus.COMPLETED) {
+                    onAction(FileAction.PLAY)
+                } else {
+                    onAction(FileAction.DOWNLOAD)
+                }
+            }
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -179,7 +186,9 @@ fun MessageVoice(
                             },
                             onDragEnd = {
                                 if (isPlaying) {
-                                    dragPositionMs?.let { currentOnSeek(it) }
+                                    dragPositionMs?.let {
+                                        currentOnSeek(it)
+                                    }
                                 } else {
                                     initialSeekPositionMs = dragPositionMs
                                 }

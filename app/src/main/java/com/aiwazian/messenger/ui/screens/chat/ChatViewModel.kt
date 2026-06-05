@@ -800,7 +800,14 @@ class ChatViewModel @Inject constructor(
     fun onVoiceSeek(file: MessageAttachment, positionMs: Int) {
         if (_uiState.value.currentPlayingVoiceFileId != file.fileId) return
         val player = voicePlayer ?: return
-        runCatching { player.seekTo(positionMs) }
+        runCatching {
+            player.seekTo(positionMs)
+            if (!player.isPlaying) {
+                player.start()
+                _uiState.update { it.copy(isVoicePlaying = true) }
+                startVoicePositionTracking()
+            }
+        }
         _uiState.update { it.copy(voicePositionMs = positionMs) }
     }
     
