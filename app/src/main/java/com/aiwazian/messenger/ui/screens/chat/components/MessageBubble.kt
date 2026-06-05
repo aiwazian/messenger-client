@@ -206,7 +206,14 @@ fun MessageBubble(
                 
                 message.attachments.forEach { attachment ->
                     when (attachment.type) {
-                        AttachmentType.VOICE, AttachmentType.FILE -> {
+                        AttachmentType.VOICE -> {
+                            MessageVoice(
+                                file = attachment, onAction = { action ->
+                                    onFileAction(attachment, action)
+                                })
+                        }
+                        
+                        AttachmentType.FILE -> {
                             MessageFile(
                                 file = attachment, onAction = { action ->
                                     onFileAction(attachment, action)
