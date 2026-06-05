@@ -26,16 +26,15 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,9 +42,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.domain.MessageAttachment
@@ -64,11 +63,16 @@ fun MessageVoice(
     onSeek: (Int) -> Unit
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
     val isReady = file.localUri != null
 
     var amplitudes by remember { mutableStateOf<List<Float>?>(null) }
-    var isDragging by remember { mutableStateOf(false) }
-    var dragOffsetMs by remember { mutableFloatStateOf(0f) }
+    var dragPositionMs by remember { mutableStateOf<Int?>(null) }
+    
+    val currentPositionMs by rememberUpdatedState(positionMs)
+    val currentDurationMs by rememberUpdatedState(durationMs)
+    val currentOnSeek by rememberUpdatedState(onSeek)
+    val currentOnAction by rememberUpdatedState(onAction)
 
     LaunchedEffect(file.localUri) {
         if (file.localUri != null && amplitudes == null) {
@@ -76,31 +80,12 @@ fun MessageVoice(
         }
     }
     
-    val effectiveMs = (positionMs + dragOffsetMs.toInt())
-        .coerceIn(0, durationMs.coerceAtLeast(1))
-    val progress = if (durationMs > 0) effectiveMs.toFloat() / durationMs else 0f
+    val effectiveMs = dragPositionMs ?: currentPositionMs
+    val progress = if (currentDurationMs > 0) effectiveMs.toFloat() / currentDurationMs else 0f
     
     Row(
         modifier = Modifier
-            .clickable {
-                if (file.localUri != null) {
-                    onAction(FileAction.PLAY)
-                    return@clickable
-                }
-                
-                val action = when (file.status) {
-                    DownloadStatus.DOWNLOADING -> FileAction.PAUSE
-                    DownloadStatus.PAUSED -> FileAction.DOWNLOAD
-                    DownloadStatus.IDLE,
-                    DownloadStatus.CANCELLED,
-                    DownloadStatus.FAILED,
-                    DownloadStatus.UPLOADED -> FileAction.DOWNLOAD
-                    
-                    DownloadStatus.UPLOADING -> FileAction.CANCEL
-                    DownloadStatus.COMPLETED -> FileAction.PLAY
-                }
-                onAction(action)
-            }
+            .clickable { onAction(FileAction.PLAY) }
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -113,16 +98,11 @@ fun MessageVoice(
             contentAlignment = Alignment.Center
         ) {
             if (isReady) {
-                IconButton(
-                    onClick = { onAction(FileAction.PLAY) },
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                        contentDescription = if (isPlaying) "Pause" else "Play",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                Icon(
+                    imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             } else if (file.status != DownloadStatus.UPLOADING && file.status != DownloadStatus.DOWNLOADING) {
                 Icon(
                     imageVector = if (file.status == DownloadStatus.FAILED) Icons.Rounded.Refresh else Icons.Rounded.Download,
@@ -157,38 +137,37 @@ fun MessageVoice(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(24.dp)
-                    .pointerInput(durationMs, amplitudes) {
-                        if (durationMs > 0 && amplitudes != null) {
-                            detectHorizontalDragGestures(
-                                onDragStart = { isDragging = true },
-                                onDragEnd = {
-                                    val newPos = (positionMs + dragOffsetMs.toInt())
-                                        .coerceIn(0, durationMs.coerceAtLeast(1))
-                                    onSeek(newPos)
-                                    dragOffsetMs = 0f
-                                    isDragging = false
-                                },
-                                onDragCancel = {
-                                    dragOffsetMs = 0f
-                                    isDragging = false
-                                },
-                                onHorizontalDrag = { _, dragPx ->
-                                    if (durationMs <= 0) return@detectHorizontalDragGestures
-                                    val msPerPx = durationMs.toFloat() / size.width
-                                    val deltaMs = dragPx / msPerPx
-                                    dragOffsetMs = (dragOffsetMs + deltaMs).coerceIn(
-                                        minimumValue = -positionMs.toFloat(),
-                                        maximumValue = (durationMs - positionMs).toFloat()
-                                    )
-                                }
-                            )
-                        }
+                    .pointerInput(durationMs) {
+                        if (currentDurationMs <= 0) return@pointerInput
+                        detectHorizontalDragGestures(
+                            onDragStart = { offset ->
+                                val downX = offset.x.coerceIn(0f, size.width.toFloat())
+                                dragPositionMs = if (size.width > 0) {
+                                    (downX / size.width * currentDurationMs).toInt()
+                                        .coerceIn(0, currentDurationMs)
+                                } else 0
+                            },
+                            onDragEnd = {
+                                dragPositionMs?.let { currentOnSeek(it) }
+                                dragPositionMs = null
+                            },
+                            onDragCancel = {
+                                dragPositionMs = null
+                            },
+                            onHorizontalDrag = { change, _ ->
+                                change.consume()
+                                val currentX = change.position.x.coerceIn(0f, size.width.toFloat())
+                                dragPositionMs = if (size.width > 0) {
+                                    (currentX / size.width * currentDurationMs).toInt()
+                                        .coerceIn(0, currentDurationMs)
+                                } else 0
+                            }
+                        )
                     }
             ) {
                 Waveform(
                     amplitudes = amplitudes ?: emptyList(),
                     progress = progress,
-                    isSeeking = isDragging,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -207,10 +186,9 @@ fun MessageVoice(
 private fun Waveform(
     amplitudes: List<Float>,
     progress: Float,
-    isSeeking: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val activeColor = if (isSeeking) Color(0xFF34C759) else MaterialTheme.colorScheme.primary
+    val activeColor = MaterialTheme.colorScheme.primary
     val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
     val placeholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
 
