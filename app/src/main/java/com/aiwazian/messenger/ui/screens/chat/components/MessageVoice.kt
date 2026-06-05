@@ -84,7 +84,7 @@ fun MessageVoice(
         modifier = Modifier
             .clickable {
                 if (file.localUri != null) {
-                    onAction(FileAction.OPEN)
+                    onAction(FileAction.PLAY)
                     return@clickable
                 }
                 
@@ -97,7 +97,7 @@ fun MessageVoice(
                     DownloadStatus.UPLOADED -> FileAction.DOWNLOAD
                     
                     DownloadStatus.UPLOADING -> FileAction.CANCEL
-                    DownloadStatus.COMPLETED -> FileAction.OPEN
+                    DownloadStatus.COMPLETED -> FileAction.PLAY
                 }
                 onAction(action)
             }
@@ -213,34 +213,27 @@ private fun Waveform(
     val activeColor = if (isSeeking) Color(0xFF34C759) else MaterialTheme.colorScheme.primary
     val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
     val placeholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
-    
+
     Canvas(modifier = modifier) {
-        if (amplitudes.isEmpty()) {
-            val placeholderCount = AmplitudeExtractor.AMPLITUDES_COUNT
-            val barWidth = size.width / placeholderCount
-            val centerY = size.height / 2f
-            val barHeight = (size.height * 0.3f).coerceAtLeast(2f)
-            for (i in 0 until placeholderCount) {
-                val x = i * barWidth
-                drawRoundRect(
-                    color = placeholderColor,
-                    topLeft = Offset(x + barWidth * 0.25f, centerY - barHeight / 2f),
-                    size = Size(barWidth * 0.5f, barHeight),
-                    cornerRadius = CornerRadius(barWidth / 4f, barWidth / 4f)
-                )
-            }
-            return@Canvas
-        }
-        
-        val barCount = amplitudes.size
+        val usePlaceholder = amplitudes.isEmpty()
+        val barCount = if (usePlaceholder) AmplitudeExtractor.AMPLITUDES_COUNT else amplitudes.size
         val barWidth = size.width / barCount
         val centerY = size.height / 2f
         val progressX = size.width * progress.coerceIn(0f, 1f)
+        val placeholderHeight = (size.height * 0.3f).coerceAtLeast(2f)
         
-        amplitudes.forEachIndexed { i, amp ->
-            val barHeight = (size.height * amp).coerceAtLeast(2f)
+        for (i in 0 until barCount) {
+            val barHeight = if (usePlaceholder) {
+                placeholderHeight
+            } else {
+                (size.height * amplitudes[i]).coerceAtLeast(2f)
+            }
             val x = i * barWidth
-            val color = if (x < progressX) activeColor else inactiveColor
+            val color = when {
+                x < progressX -> activeColor
+                usePlaceholder -> placeholderColor
+                else -> inactiveColor
+            }
             drawRoundRect(
                 color = color,
                 topLeft = Offset(x + barWidth * 0.25f, centerY - barHeight / 2f),

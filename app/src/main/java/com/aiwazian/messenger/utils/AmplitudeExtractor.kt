@@ -9,11 +9,11 @@ import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.net.Uri
+import android.util.Log
 import com.aiwazian.messenger.utils.AmplitudeExtractor.AMPLITUDES_COUNT
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.ByteOrder
-import kotlin.math.max
 import kotlin.math.sqrt
 
 /**
@@ -23,33 +23,34 @@ import kotlin.math.sqrt
  */
 object AmplitudeExtractor {
     
+    private const val TAG = "AmplitudeExtractor"
     const val AMPLITUDES_COUNT = 30
-    
+
     suspend fun extract(context: Context, uri: Uri): List<Float> = withContext(Dispatchers.IO) {
-        runCatching { extractInternal(context, uri) }.getOrDefault(emptyList())
+        runCatching { extractInternal(context, uri) }
+            .onFailure { Log.e(TAG, "Failed to extract amplitudes from $uri", it) }
+            .getOrDefault(emptyAmplitudes())
     }
-    
+
     private fun extractInternal(context: Context, uri: Uri): List<Float> {
         val extractor = MediaExtractor()
         var decoder: MediaCodec? = null
-        
+
         try {
-            context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
-                extractor.setDataSource(pfd.fileDescriptor)
-            } ?: return emptyAmplitudes()
+            extractor.setDataSource(context, uri, null)
             
-            val (trackIndex, format) = selectAudioTrack(extractor)
-                ?: return emptyAmplitudes()
-            
+            val (trackIndex, format) = selectAudioTrack(extractor) ?: return emptyAmplitudes()
+
             extractor.selectTrack(trackIndex)
             val mime = format.getString(MediaFormat.KEY_MIME) ?: return emptyAmplitudes()
-            
+
             decoder = MediaCodec.createDecoderByType(mime).apply {
                 configure(format, null, null, 0)
                 start()
             }
-            
+
             val samples = decodeToPcm(extractor, decoder)
+            Log.d(TAG, "Decoded ${samples.size} PCM samples from $uri")
             return computeAmplitudes(samples)
         } finally {
             try {
@@ -63,7 +64,7 @@ object AmplitudeExtractor {
             extractor.release()
         }
     }
-    
+
     private fun selectAudioTrack(extractor: MediaExtractor): Pair<Int, MediaFormat>? {
         for (i in 0 until extractor.trackCount) {
             val format = extractor.getTrackFormat(i)
@@ -74,7 +75,7 @@ object AmplitudeExtractor {
         }
         return null
     }
-    
+
     private fun decodeToPcm(extractor: MediaExtractor, decoder: MediaCodec): ShortArray {
         val samples = ArrayList<Short>()
         val bufferInfo = MediaCodec.BufferInfo()
@@ -127,32 +128,35 @@ object AmplitudeExtractor {
     private fun computeAmplitudes(samples: ShortArray): List<Float> {
         if (samples.isEmpty()) return emptyAmplitudes()
         
-        val chunkSize = max(1, samples.size / AMPLITUDES_COUNT)
+        val totalSamples = samples.size
+        val baseChunkSize = totalSamples / AMPLITUDES_COUNT
+        val remainder = totalSamples % AMPLITUDES_COUNT
         val raw = FloatArray(AMPLITUDES_COUNT)
         
+        var currentStart = 0
         for (i in 0 until AMPLITUDES_COUNT) {
-            val start = i * chunkSize
-            val end = minOf(start + chunkSize, samples.size)
-            if (start >= samples.size) {
-                raw[i] = 0f
-                continue
-            }
+            val chunkSize = baseChunkSize + if (i < remainder) 1 else 0
+            val end = currentStart + chunkSize
+
             var sumSquares = 0.0
-            var count = 0
-            for (j in start until end) {
+            for (j in currentStart until end) {
                 val sample = samples[j].toDouble()
                 sumSquares += sample * sample
-                count++
             }
-            val rms = if (count > 0) sqrt(sumSquares / count) / Short.MAX_VALUE else 0.0
+            val rms = if (chunkSize > 0) sqrt(sumSquares / chunkSize) / Short.MAX_VALUE else 0.0
             raw[i] = rms.toFloat().coerceIn(0f, 1f)
+            
+            currentStart = end
         }
         
         val maxAmp = raw.maxOrNull() ?: 0f
+        val minAmp = raw.minOrNull() ?: 0f
+        Log.d(TAG, "RMS raw range: min=$minAmp max=$maxAmp, sample of values: ${raw.take(5)}")
+
         return if (maxAmp > 0f) {
             raw.map { it / maxAmp }
         } else {
-            raw.toList()
+            emptyAmplitudes()
         }
     }
     
