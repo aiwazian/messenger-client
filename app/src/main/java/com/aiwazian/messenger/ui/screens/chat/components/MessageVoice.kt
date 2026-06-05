@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
+import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -44,7 +45,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.domain.MessageAttachment
@@ -52,6 +52,8 @@ import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.utils.AmplitudeExtractor
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun MessageVoice(
@@ -63,29 +65,58 @@ fun MessageVoice(
     onSeek: (Int) -> Unit
 ) {
     val context = LocalContext.current
-    val density = LocalDensity.current
     val isReady = file.localUri != null
-
+    
     var amplitudes by remember { mutableStateOf<List<Float>?>(null) }
     var dragPositionMs by remember { mutableStateOf<Int?>(null) }
     
     val currentPositionMs by rememberUpdatedState(positionMs)
     val currentDurationMs by rememberUpdatedState(durationMs)
     val currentOnSeek by rememberUpdatedState(onSeek)
-    val currentOnAction by rememberUpdatedState(onAction)
-
-    LaunchedEffect(file.localUri) {
-        if (file.localUri != null && amplitudes == null) {
-            amplitudes = AmplitudeExtractor.extract(context, file.localUri)
+    var initialSeekPositionMs by remember { mutableStateOf<Int?>(null) }
+    
+    LaunchedEffect(isPlaying) {
+        if (isPlaying && initialSeekPositionMs != null) {
+            delay(100.milliseconds)
+            currentOnSeek(initialSeekPositionMs!!)
+            initialSeekPositionMs = null
+        } else if (isPlaying) {
+            initialSeekPositionMs = null
         }
     }
     
-    val effectiveMs = dragPositionMs ?: currentPositionMs
-    val progress = if (currentDurationMs > 0) effectiveMs.toFloat() / currentDurationMs else 0f
+    val effectiveMs = dragPositionMs ?: initialSeekPositionMs ?: currentPositionMs
+    
+    var extractedDurationMs by remember { mutableStateOf(0) }
+    LaunchedEffect(file.localUri) {
+        if (file.localUri != null) {
+            if (amplitudes == null) {
+                amplitudes = AmplitudeExtractor.extract(context, file.localUri)
+            }
+            if (durationMs == 0 && extractedDurationMs == 0) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        val retriever = android.media.MediaMetadataRetriever()
+                        retriever.setDataSource(context, file.localUri)
+                        val durationStr =
+                            retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+                        extractedDurationMs = durationStr?.toIntOrNull() ?: 0
+                        retriever.release()
+                    } catch (e: Exception) {
+                        Log.e("MessageVoice", "LaunchedEffect error ${e.message}", e)
+                    }
+                }
+            }
+        }
+    }
+    
+    val finalDurationMs = if (currentDurationMs > 0) currentDurationMs else extractedDurationMs
+    val finalDurationToUse = if (finalDurationMs > 0) finalDurationMs else 1
+    val finalProgress = effectiveMs.toFloat() / finalDurationToUse
     
     Row(
         modifier = Modifier
-            .clickable { onAction(FileAction.PLAY) }
+            .clickable(interactionSource = null, indication = null) { onAction(FileAction.PLAY) }
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -137,18 +168,21 @@ fun MessageVoice(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(24.dp)
-                    .pointerInput(durationMs) {
-                        if (currentDurationMs <= 0) return@pointerInput
+                    .pointerInput(finalDurationToUse) {
                         detectHorizontalDragGestures(
                             onDragStart = { offset ->
                                 val downX = offset.x.coerceIn(0f, size.width.toFloat())
                                 dragPositionMs = if (size.width > 0) {
-                                    (downX / size.width * currentDurationMs).toInt()
-                                        .coerceIn(0, currentDurationMs)
+                                    (downX / size.width * finalDurationToUse).toInt()
+                                        .coerceIn(0, finalDurationToUse)
                                 } else 0
                             },
                             onDragEnd = {
-                                dragPositionMs?.let { currentOnSeek(it) }
+                                if (isPlaying) {
+                                    dragPositionMs?.let { currentOnSeek(it) }
+                                } else {
+                                    initialSeekPositionMs = dragPositionMs
+                                }
                                 dragPositionMs = null
                             },
                             onDragCancel = {
@@ -158,8 +192,8 @@ fun MessageVoice(
                                 change.consume()
                                 val currentX = change.position.x.coerceIn(0f, size.width.toFloat())
                                 dragPositionMs = if (size.width > 0) {
-                                    (currentX / size.width * currentDurationMs).toInt()
-                                        .coerceIn(0, currentDurationMs)
+                                    (currentX / size.width * finalDurationToUse).toInt()
+                                        .coerceIn(0, finalDurationToUse)
                                 } else 0
                             }
                         )
@@ -167,7 +201,7 @@ fun MessageVoice(
             ) {
                 Waveform(
                     amplitudes = amplitudes ?: emptyList(),
-                    progress = progress,
+                    progress = finalProgress,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -191,7 +225,7 @@ private fun Waveform(
     val activeColor = MaterialTheme.colorScheme.primary
     val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
     val placeholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
-
+    
     Canvas(modifier = modifier) {
         val usePlaceholder = amplitudes.isEmpty()
         val barCount = if (usePlaceholder) AmplitudeExtractor.AMPLITUDES_COUNT else amplitudes.size
