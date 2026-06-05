@@ -12,6 +12,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -61,6 +62,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.AttachFile
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Mic
@@ -73,6 +75,8 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -98,6 +102,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -110,6 +115,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -180,6 +186,52 @@ fun ChatScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     
     val firstVisibleItemIndex = remember { derivedStateOf { listState.firstVisibleItemIndex } }
+    
+    val isAtBottom by remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()
+            lastVisible != null && lastVisible.index >= layoutInfo.totalItemsCount - 1
+        }
+    }
+    
+    val isScrollingUp = remember { mutableStateOf(false) }
+    val scrollAccumulator = remember { mutableFloatStateOf(0f) }
+    val scrollThresholdPx = with(LocalDensity.current) { 20.dp.toPx() }
+    
+    LaunchedEffect(listState) {
+        var lastIndex = listState.firstVisibleItemIndex
+        var lastOffset = listState.firstVisibleItemScrollOffset
+        
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .collect { (index, offset) ->
+                val delta = if (index == lastIndex) {
+                    (offset - lastOffset).toFloat()
+                } else if (index > lastIndex) {
+                    scrollThresholdPx + 1f
+                } else {
+                    -(scrollThresholdPx + 1f)
+                }
+                
+                val newAccumulator = scrollAccumulator.floatValue + delta
+                scrollAccumulator.floatValue = newAccumulator
+                
+                when {
+                    newAccumulator > scrollThresholdPx -> {
+                        isScrollingUp.value = false
+                        scrollAccumulator.floatValue = 0f
+                    }
+                    
+                    newAccumulator < -scrollThresholdPx -> {
+                        isScrollingUp.value = true
+                        scrollAccumulator.floatValue = 0f
+                    }
+                }
+                
+                lastIndex = index
+                lastOffset = offset
+            }
+    }
     
     LaunchedEffect(firstVisibleItemIndex.value) {
         if (firstVisibleItemIndex.value < 10 && uiState.hasMoreMessages && !uiState.isLoadingMore && !uiState.isLoading) {
@@ -254,6 +306,45 @@ fun ChatScreen(
                 chatViewModel = chatViewModel
             )
         },
+        floatingActionButton = {
+            AnimatedVisibility(
+                visible = !isAtBottom && !isScrollingUp.value && !uiState.isRecording,
+                enter = scaleIn() + fadeIn() + slideInVertically { it },
+                exit = scaleOut() + fadeOut() + slideOutVertically { it },
+            ) {
+                val interactionSource = remember { MutableInteractionSource() }
+                val isPressed by interactionSource.collectIsPressedAsState()
+                val scale by animateFloatAsState(
+                    animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+                    targetValue = if (isPressed) 0.9f else 1f,
+                    label = "scroll_bottom_button_scale_animation"
+                )
+                FloatingActionButton(
+                    onClick = {
+                        scope.launch {
+                            val lastIndex = listState.layoutInfo.totalItemsCount - 1
+                            if (lastIndex >= 0) {
+                                listState.animateScrollToItem(lastIndex)
+                            }
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    shape = CircleShape,
+                    modifier = Modifier.size(44.dp).graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    },
+                    interactionSource = interactionSource,
+                    elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.KeyboardArrowDown,
+                        contentDescription = null
+                    )
+                }
+            }
+        }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             Column(

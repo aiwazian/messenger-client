@@ -240,5 +240,5 @@
     <string name="inactive_6_months">6 месяцев</string>
     <string name="inactive_12_months">12 месяцев</string>
     <string name="if_away_for">Если я не захожу</string>
-    <string name="delete_account_if_inactive_for">Самоуничтожение, если неактивно в течение...</string>
+    <string name="delete_account_if_inactive_for">Удаление аккаунта при неактивности...</string>
 </resources>
