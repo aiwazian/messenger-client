@@ -73,6 +73,11 @@ fun MessageBubble(
     item: ChatItem.MessageItem,
     onSeen: () -> Unit,
     onFileAction: (MessageAttachment, FileAction) -> Unit,
+    currentPlayingVoiceFileId: String? = null,
+    isVoicePlaying: Boolean = false,
+    voicePositionMs: Int = 0,
+    voiceDurationMs: Int = 0,
+    onVoiceSeek: (MessageAttachment, Int) -> Unit = { _, _ -> },
     onLinkClicked: ((String) -> Unit)? = null,
     onUsernameClicked: ((String) -> Unit)? = null
 ) {
@@ -208,9 +213,17 @@ fun MessageBubble(
                     when (attachment.type) {
                         AttachmentType.VOICE -> {
                             MessageVoice(
-                                file = attachment, onAction = { action ->
+                                file = attachment,
+                                isPlaying = currentPlayingVoiceFileId == attachment.fileId && isVoicePlaying,
+                                positionMs = if (currentPlayingVoiceFileId == attachment.fileId) voicePositionMs else 0,
+                                durationMs = if (currentPlayingVoiceFileId == attachment.fileId) voiceDurationMs else 0,
+                                onAction = { action ->
                                     onFileAction(attachment, action)
-                                })
+                                },
+                                onSeek = { positionMs ->
+                                    onVoiceSeek(attachment, positionMs)
+                                }
+                            )
                         }
                         
                         AttachmentType.FILE -> {

@@ -9,5 +9,6 @@ enum class FileAction {
     PAUSE,
     RESUME,
     CANCEL,
-    OPEN
+    OPEN,
+    PLAY
 }

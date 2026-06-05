@@ -411,6 +411,13 @@ fun ChatScreen(
                                         )
                                     }
                                 },
+                                currentPlayingVoiceFileId = uiState.currentPlayingVoiceFileId,
+                                isVoicePlaying = uiState.isVoicePlaying,
+                                voicePositionMs = uiState.voicePositionMs,
+                                voiceDurationMs = uiState.voiceDurationMs,
+                                onVoiceSeek = { file, positionMs ->
+                                    chatViewModel.onVoiceSeek(file, positionMs)
+                                },
                                 onLinkClicked = chatViewModel::onLinkClicked,
                                 onUsernameClicked = chatViewModel::onUsernameClicked
                             )

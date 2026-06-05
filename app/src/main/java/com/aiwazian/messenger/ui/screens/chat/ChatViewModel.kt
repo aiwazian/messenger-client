@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.chat
 
 import android.content.Context
+import android.media.MediaPlayer
 import android.net.Uri
 import android.util.Log
 import androidx.compose.material.icons.Icons
@@ -97,6 +98,9 @@ class ChatViewModel @Inject constructor(
     
     private val audioRecorderManager = AudioRecorderManager(context)
     private var recordingTimerJob: kotlinx.coroutines.Job? = null
+    
+    private var voicePlayer: MediaPlayer? = null
+    private var voicePositionJob: kotlinx.coroutines.Job? = null
     
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState = _uiState.asStateFlow()
@@ -698,7 +702,106 @@ class ChatViewModel @Inject constructor(
                     }
                 }
             }
+            
+            FileAction.PLAY -> {
+                if (file.type != AttachmentType.VOICE) return
+                val uri = file.localUri ?: return
+                
+                val currentPlayingId = _uiState.value.currentPlayingVoiceFileId
+                if (currentPlayingId == file.fileId) {
+                    toggleVoicePlayback()
+                } else {
+                    stopVoice()
+                    startVoice(uri, file.fileId)
+                }
+            }
         }
+    }
+    
+    private fun startVoice(uri: Uri, fileId: String) {
+        val player = MediaPlayer()
+        voicePlayer = player
+        
+        runCatching {
+            player.setDataSource(context, uri)
+            player.setOnPreparedListener { mp ->
+                mp.start()
+                _uiState.update {
+                    it.copy(
+                        currentPlayingVoiceFileId = fileId,
+                        isVoicePlaying = true,
+                        voiceDurationMs = mp.duration,
+                        voicePositionMs = 0
+                    )
+                }
+                startVoicePositionTracking()
+            }
+            player.setOnCompletionListener {
+                voicePositionJob?.cancel()
+                voicePositionJob = null
+                _uiState.update {
+                    it.copy(
+                        currentPlayingVoiceFileId = null,
+                        isVoicePlaying = false,
+                        voicePositionMs = 0
+                    )
+                }
+            }
+            player.prepareAsync()
+        }.onFailure {
+            Log.e("ChatVM", "Failed to start voice playback", it)
+            stopVoice()
+        }
+    }
+    
+    private fun toggleVoicePlayback() {
+        val player = voicePlayer ?: return
+        if (player.isPlaying) {
+            player.pause()
+            voicePositionJob?.cancel()
+            _uiState.update { it.copy(isVoicePlaying = false) }
+        } else {
+            player.start()
+            _uiState.update { it.copy(isVoicePlaying = true) }
+            startVoicePositionTracking()
+        }
+    }
+    
+    private fun stopVoice() {
+        voicePositionJob?.cancel()
+        voicePositionJob = null
+        voicePlayer?.let { player ->
+            runCatching { player.stop() }
+            runCatching { player.release() }
+        }
+        voicePlayer = null
+        if (_uiState.value.currentPlayingVoiceFileId != null || _uiState.value.isVoicePlaying) {
+            _uiState.update {
+                it.copy(
+                    currentPlayingVoiceFileId = null,
+                    isVoicePlaying = false,
+                    voicePositionMs = 0
+                )
+            }
+        }
+    }
+    
+    private fun startVoicePositionTracking() {
+        voicePositionJob?.cancel()
+        voicePositionJob = viewModelScope.launch {
+            while (true) {
+                val pos = voicePlayer?.currentPosition ?: break
+                _uiState.update { it.copy(voicePositionMs = pos) }
+                delay(50.milliseconds)
+            }
+        }
+    }
+    
+    fun onVoiceSeek(file: MessageAttachment, positionMs: Int) {
+        if (_uiState.value.currentPlayingVoiceFileId != file.fileId) return
+        val player = voicePlayer ?: return
+        runCatching { player.seekTo(positionMs) }
+        _uiState.update { it.copy(voicePositionMs = positionMs) }
     }
     
     fun sendFiles(uris: List<Uri>) {
@@ -952,5 +1055,10 @@ class ChatViewModel @Inject constructor(
             )
         }
         vibrationManager.vibrate(VibrationPattern.TactileResponse)
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        stopVoice()
     }
 }

@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
-import android.media.MediaPlayer
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -32,11 +31,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,58 +53,28 @@ import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.utils.AmplitudeExtractor
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun MessageVoice(
     file: MessageAttachment,
-    onAction: (FileAction) -> Unit
+    isPlaying: Boolean,
+    positionMs: Int,
+    durationMs: Int,
+    onAction: (FileAction) -> Unit,
+    onSeek: (Int) -> Unit
 ) {
     val context = LocalContext.current
     val isReady = file.localUri != null
-    
+
     var amplitudes by remember { mutableStateOf<List<Float>?>(null) }
-    var isPlaying by remember { mutableStateOf(false) }
-    var durationMs by remember { mutableIntStateOf(0) }
-    var positionMs by remember { mutableIntStateOf(0) }
     var isDragging by remember { mutableStateOf(false) }
     var dragOffsetMs by remember { mutableFloatStateOf(0f) }
-    
-    val player = remember { MediaPlayer() }
-    
+
     LaunchedEffect(file.localUri) {
         if (file.localUri != null && amplitudes == null) {
             amplitudes = AmplitudeExtractor.extract(context, file.localUri)
         }
     }
-    
-    LaunchedEffect(file.localUri) {
-        if (file.localUri != null) {
-            runCatching {
-                player.reset()
-                player.setDataSource(context, file.localUri)
-                player.setOnPreparedListener { mp ->
-                    durationMs = mp.duration
-                }
-                player.setOnCompletionListener {
-                    isPlaying = false
-                    positionMs = 0
-                    it.seekTo(0)
-                }
-                player.prepareAsync()
-            }
-        }
-    }
-    
-    LaunchedEffect(isPlaying) {
-        while (isPlaying) {
-            positionMs = player.currentPosition
-            delay(50.milliseconds)
-        }
-    }
-    
-    DisposableEffect(Unit) { onDispose { player.release() } }
     
     val effectiveMs = (positionMs + dragOffsetMs.toInt())
         .coerceIn(0, durationMs.coerceAtLeast(1))
@@ -147,18 +114,7 @@ fun MessageVoice(
         ) {
             if (isReady) {
                 IconButton(
-                    onClick = {
-                        if (isPlaying) {
-                            player.pause()
-                            isPlaying = false
-                        } else {
-                            runCatching {
-                                player.seekTo(positionMs)
-                                player.start()
-                                isPlaying = true
-                            }
-                        }
-                    },
+                    onClick = { onAction(FileAction.PLAY) },
                     modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
@@ -208,8 +164,7 @@ fun MessageVoice(
                                 onDragEnd = {
                                     val newPos = (positionMs + dragOffsetMs.toInt())
                                         .coerceIn(0, durationMs.coerceAtLeast(1))
-                                    runCatching { player.seekTo(newPos) }
-                                    positionMs = newPos
+                                    onSeek(newPos)
                                     dragOffsetMs = 0f
                                     isDragging = false
                                 },
