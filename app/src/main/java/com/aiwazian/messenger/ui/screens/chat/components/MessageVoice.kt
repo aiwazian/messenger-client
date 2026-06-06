@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -118,7 +119,9 @@ fun MessageVoice(
     Row(
         modifier = Modifier
             .clickable(interactionSource = null, indication = null) {
-                if (file.status == DownloadStatus.COMPLETED) {
+                if (file.status == DownloadStatus.DOWNLOADING || file.status == DownloadStatus.UPLOADING) {
+                    onAction(FileAction.CANCEL)
+                } else if (file.status == DownloadStatus.COMPLETED || isReady) {
                     onAction(FileAction.PLAY)
                 } else {
                     onAction(FileAction.DOWNLOAD)
@@ -135,21 +138,13 @@ fun MessageVoice(
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
-            if (isReady) {
-                Icon(
-                    imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            } else if (file.status != DownloadStatus.UPLOADING && file.status != DownloadStatus.DOWNLOADING) {
-                Icon(
-                    imageVector = if (file.status == DownloadStatus.FAILED) Icons.Rounded.Refresh else Icons.Rounded.Download,
-                    contentDescription = file.status.name,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            
             if (file.status == DownloadStatus.DOWNLOADING || file.status == DownloadStatus.UPLOADING) {
+                Icon(
+                    imageVector = Icons.Rounded.Close,
+                    contentDescription = "Cancel",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
                 if (file.progress == 0) {
                     CircularWavyProgressIndicator(
                         modifier = Modifier.size(48.dp)
@@ -164,6 +159,18 @@ fun MessageVoice(
                         progress = { animatedProgress }, modifier = Modifier.size(48.dp)
                     )
                 }
+            } else if (isReady) {
+                Icon(
+                    imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                    contentDescription = if (isPlaying) "Pause" else "Play",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                Icon(
+                    imageVector = if (file.status == DownloadStatus.FAILED) Icons.Rounded.Refresh else Icons.Rounded.Download,
+                    contentDescription = file.status.name,
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
         }
         
