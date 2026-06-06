@@ -17,23 +17,31 @@ interface MessageDao {
     suspend fun saveMessages(messages: List<MessageEntity>)
     
     @Transaction
-    @Query("SELECT * FROM message " +
-                   "WHERE senderId = :senderId AND chatId = :chatId " +
-                   "OR senderId = :chatId AND chatId = :senderId " +
-                   "ORDER BY sendTime ASC " +
-                   "LIMIT :limit " +
-                   "OFFSET :offset")
+    @Query(
+        "SELECT * FROM (" +
+                "SELECT * FROM message " +
+                "WHERE (senderId = :senderId AND chatId = :chatId) " +
+                "OR (senderId = :chatId AND chatId = :senderId) " +
+                "ORDER BY sendTime DESC " +
+                "LIMIT :limit OFFSET :offset" +
+                ") " +
+                "ORDER BY sendTime ASC"
+    )
     fun getMessagesWithAttachments(
         senderId: Long, chatId: Long, limit: Int, offset: Int
     ): Flow<List<MessageWithAttachments>>
-    
+
     @Transaction
-    @Query("SELECT * FROM message " +
+    @Query(
+        "SELECT * FROM (" +
+                "SELECT * FROM message " +
                    "WHERE chatId = :chatId " +
                    "OR senderId = :chatId " +
-                   "ORDER BY sendTime ASC " +
-                   "LIMIT :limit " +
-                   "OFFSET :offset")
+                "ORDER BY sendTime DESC " +
+                "LIMIT :limit OFFSET :offset" +
+                ") " +
+                "ORDER BY sendTime ASC"
+    )
     fun getMessagesWithAttachments(
         chatId: Long, limit: Int, offset: Int
     ): Flow<List<MessageWithAttachments>>

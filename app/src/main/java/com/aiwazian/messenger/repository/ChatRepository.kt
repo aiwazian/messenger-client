@@ -42,7 +42,6 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 
 class ChatRepository @Inject constructor(
@@ -104,8 +103,6 @@ class ChatRepository @Inject constructor(
                 )
             }
         }
-    }.onStart {
-        refreshChats()
     }
     
     private suspend fun resolveChatInfo(chatEntity: ChatEntity, myId: Long): Pair<UiText, Uri?>? {

@@ -51,6 +51,7 @@ class Application : Application() {
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
             enableVibration(true)
+            setShowBadge(true)
             vibrationPattern = longArrayOf(0, 300, 100, 300)
         }
         
@@ -60,6 +61,7 @@ class Application : Application() {
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
             enableVibration(true)
+            setShowBadge(true)
             vibrationPattern = longArrayOf(0, 300, 100, 300)
         }
         
@@ -69,6 +71,7 @@ class Application : Application() {
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
             enableVibration(true)
+            setShowBadge(true)
             vibrationPattern = longArrayOf(0, 300, 100, 300)
         }
         

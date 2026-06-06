@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.database
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
@@ -38,8 +39,11 @@ import com.aiwazian.messenger.database.entity.UserEntity
         ChatEntity::class,
         AvatarEntity::class
     ],
-    version = 38,
-    exportSchema = true
+    version = 39,
+    exportSchema = true,
+    autoMigrations = [
+        AutoMigration(from = 38, to = 39)
+    ]
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
