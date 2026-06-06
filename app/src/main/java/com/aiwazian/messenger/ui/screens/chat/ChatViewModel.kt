@@ -101,6 +101,7 @@ class ChatViewModel @Inject constructor(
     
     private var voicePlayer: MediaPlayer? = null
     private var voicePositionJob: kotlinx.coroutines.Job? = null
+    private val pendingVoiceStartPositions = mutableMapOf<String, Int>()
     
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState = _uiState.asStateFlow()
@@ -361,7 +362,7 @@ class ChatViewModel @Inject constructor(
                 }
                 _uiState.update { it.copy(isLoading = false) }
             }.onFailure {
-                Log.e("ChatVM", "Error fetching fresh messages", it)
+                Log.e("ChatViewModel", "Error fetching fresh messages", it)
                 _uiState.update { it.copy(isLoading = false) }
             }
         }
@@ -388,7 +389,7 @@ class ChatViewModel @Inject constructor(
                 }
                 _uiState.update { it.copy(isLoadingMore = false) }
             }.onFailure {
-                Log.e("ChatVM", "Error loading more messages", it)
+                Log.e("ChatViewModel", "Error loading more messages", it)
                 _uiState.update { it.copy(isLoadingMore = false) }
             }
         }
@@ -532,7 +533,7 @@ class ChatViewModel @Inject constructor(
                     _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
                 }
             } catch (e: Exception) {
-                Log.e("ChatVM", "Error sending message", e)
+                Log.e("ChatViewModel", "Error sending message", e)
             }
         }
     }
@@ -662,7 +663,7 @@ class ChatViewModel @Inject constructor(
                         }
                         .onFailure {
                             Log.e(
-                                "ChatVM",
+                                "ChatViewModel",
                                 "Download URL is null for file: ${file.fileId}, message: ${message.id}, chat: ${message.chatId}"
                             )
                         }
@@ -712,44 +713,51 @@ class ChatViewModel @Inject constructor(
                     toggleVoicePlayback()
                 } else {
                     stopVoice()
-                    startVoice(uri, file.fileId)
+                    val startPos = pendingVoiceStartPositions.remove(file.fileId) ?: 0
+                    startVoice(uri, file.fileId, startPos)
                 }
             }
         }
     }
     
-    private fun startVoice(uri: Uri, fileId: String) {
+    private fun startVoice(uri: Uri, fileId: String, startPositionMs: Int = 0) {
         val player = MediaPlayer()
         voicePlayer = player
         
         runCatching {
             player.setDataSource(context, uri)
             player.setOnPreparedListener { mp ->
+                if (startPositionMs > 0) {
+                    mp.seekTo(startPositionMs)
+                }
                 mp.start()
                 _uiState.update {
                     it.copy(
                         currentPlayingVoiceFileId = fileId,
                         isVoicePlaying = true,
                         voiceDurationMs = mp.duration,
-                        voicePositionMs = 0
+                        voicePositionMs = startPositionMs
                     )
                 }
                 startVoicePositionTracking()
             }
             player.setOnCompletionListener {
-                voicePositionJob?.cancel()
-                voicePositionJob = null
-                _uiState.update {
-                    it.copy(
-                        currentPlayingVoiceFileId = null,
-                        isVoicePlaying = false,
-                        voicePositionMs = 0
-                    )
+                val next = findNextVoiceAttachment(fileId)
+                stopVoice()
+                if (next?.localUri != null &&
+                    (next.status == DownloadStatus.COMPLETED || next.status == DownloadStatus.UPLOADED)
+                ) {
+                    startVoice(next.localUri, next.fileId)
                 }
+            }
+            player.setOnErrorListener { _, what, extra ->
+                Log.e("ChatViewModel", "MediaPlayer error: $what, $extra")
+                stopVoice()
+                true
             }
             player.prepareAsync()
         }.onFailure {
-            Log.e("ChatVM", "Failed to start voice playback", it)
+            Log.e("ChatViewModel", "Failed to start voice playback", it)
             stopVoice()
         }
     }
@@ -797,16 +805,28 @@ class ChatViewModel @Inject constructor(
         }
     }
     
+    private fun findNextVoiceAttachment(currentFileId: String): MessageAttachment? {
+        val allVoices = getRawMessages().flatMap { msg ->
+            msg.attachments.filter { it.type == AttachmentType.VOICE }
+        }
+        val currentIndex = allVoices.indexOfFirst { it.fileId == currentFileId }
+        if (currentIndex < 0 || currentIndex >= allVoices.size - 1) return null
+        return allVoices[currentIndex + 1]
+    }
+    
     fun onVoiceSeek(file: MessageAttachment, positionMs: Int) {
-        if (_uiState.value.currentPlayingVoiceFileId != file.fileId) return
+        val currentPlayingId = _uiState.value.currentPlayingVoiceFileId
+        
+        if (currentPlayingId != file.fileId) {
+            pendingVoiceStartPositions[file.fileId] = positionMs
+            return
+        }
+        
         val player = voicePlayer ?: return
         runCatching {
             player.seekTo(positionMs)
-            if (!player.isPlaying) {
-                player.start()
-                _uiState.update { it.copy(isVoicePlaying = true) }
-                startVoicePositionTracking()
-            }
+        }.onFailure {
+            Log.e("ChatViewModel", "Error seeking voice player", it)
         }
         _uiState.update { it.copy(voicePositionMs = positionMs) }
     }
@@ -835,7 +855,7 @@ class ChatViewModel @Inject constructor(
                     _uiState.update { it.copy(userNamesCache = it.userNamesCache + (userId to name)) }
                 }
             } catch (e: Exception) {
-                Log.e("ChatVM", "Error loading user name", e)
+                Log.e("ChatViewModel", "Error loading user name", e)
             }
         }
     }

@@ -54,8 +54,6 @@ import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.utils.AmplitudeExtractor
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun MessageVoice(
@@ -75,19 +73,16 @@ fun MessageVoice(
     val currentPositionMs by rememberUpdatedState(positionMs)
     val currentDurationMs by rememberUpdatedState(durationMs)
     val currentOnSeek by rememberUpdatedState(onSeek)
-    var initialSeekPositionMs by remember { mutableStateOf<Int?>(null) }
+    val currentIsPlaying by rememberUpdatedState(isPlaying)
+    var pendingSeekPositionMs by remember { mutableStateOf<Int?>(null) }
     
     LaunchedEffect(isPlaying) {
-        if (isPlaying && initialSeekPositionMs != null) {
-            delay(100.milliseconds)
-            currentOnSeek(initialSeekPositionMs!!)
-            initialSeekPositionMs = null
-        } else if (isPlaying) {
-            initialSeekPositionMs = null
+        if (isPlaying) {
+            pendingSeekPositionMs = null
         }
     }
     
-    val effectiveMs = dragPositionMs ?: initialSeekPositionMs ?: currentPositionMs
+    val effectiveMs = dragPositionMs ?: pendingSeekPositionMs ?: currentPositionMs
     
     var extractedDurationMs by remember { mutableIntStateOf(0) }
     LaunchedEffect(file.localUri) {
@@ -119,12 +114,17 @@ fun MessageVoice(
     Row(
         modifier = Modifier
             .clickable(interactionSource = null, indication = null) {
-                if (file.status == DownloadStatus.DOWNLOADING || file.status == DownloadStatus.UPLOADING) {
-                    onAction(FileAction.CANCEL)
-                } else if (file.status == DownloadStatus.COMPLETED || isReady) {
-                    onAction(FileAction.PLAY)
-                } else {
-                    onAction(FileAction.DOWNLOAD)
+                when (file.status) {
+                    DownloadStatus.UPLOADING -> onAction(FileAction.CANCEL)
+                    DownloadStatus.DOWNLOADING -> onAction(FileAction.PAUSE)
+                    DownloadStatus.PAUSED, DownloadStatus.IDLE, DownloadStatus.CANCELLED, DownloadStatus.FAILED -> onAction(
+                        FileAction.DOWNLOAD
+                    )
+                    
+                    DownloadStatus.COMPLETED, DownloadStatus.UPLOADED -> {
+                        pendingSeekPositionMs?.let { currentOnSeek(it) }
+                        onAction(FileAction.PLAY)
+                    }
                 }
             }
             .padding(8.dp),
@@ -183,6 +183,8 @@ fun MessageVoice(
                     .fillMaxWidth()
                     .height(24.dp)
                     .pointerInput(finalDurationToUse) {
+                        if (file.status != DownloadStatus.COMPLETED && file.status != DownloadStatus.UPLOADED && !isReady) return@pointerInput
+                        
                         detectHorizontalDragGestures(
                             onDragStart = { offset ->
                                 val downX = offset.x.coerceIn(0f, size.width.toFloat())
@@ -192,12 +194,13 @@ fun MessageVoice(
                                 } else 0
                             },
                             onDragEnd = {
-                                if (isPlaying) {
-                                    dragPositionMs?.let {
+                                dragPositionMs?.let {
+                                    if (currentIsPlaying) {
+                                        currentOnSeek(it)
+                                    } else {
+                                        pendingSeekPositionMs = it
                                         currentOnSeek(it)
                                     }
-                                } else {
-                                    initialSeekPositionMs = dragPositionMs
                                 }
                                 dragPositionMs = null
                             },
