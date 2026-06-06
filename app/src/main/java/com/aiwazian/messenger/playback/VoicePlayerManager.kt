@@ -6,13 +6,18 @@ package com.aiwazian.messenger.playback
 
 import android.content.ComponentName
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
+import androidx.core.graphics.drawable.toBitmap
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import coil.imageLoader
+import coil.request.ImageRequest
+import coil.request.SuccessResult
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -25,6 +30,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
@@ -108,32 +115,45 @@ class VoicePlayerManager @Inject constructor(
         )
     }
     
-    fun play(uri: Uri, fileId: String, title: String, startPositionMs: Int = 0) {
+    fun play(
+        uri: Uri,
+        fileId: String,
+        title: String,
+        artworkUri: Uri? = null,
+        startPositionMs: Int = 0
+    ) {
         val ctrl = controller
         if (ctrl == null) {
             connect()
             controllerFuture?.addListener(
                 {
-                    playInternal(uri, fileId, title, startPositionMs)
+                    playInternal(uri, fileId, title, artworkUri, startPositionMs)
                 }, MoreExecutors.directExecutor()
             )
             return
         }
-        playInternal(uri, fileId, title, startPositionMs)
+        playInternal(uri, fileId, title, artworkUri, startPositionMs)
     }
     
-    private fun playInternal(uri: Uri, fileId: String, title: String, startPositionMs: Int) {
+    private fun playInternal(
+        uri: Uri,
+        fileId: String,
+        title: String,
+        artworkUri: Uri?,
+        startPositionMs: Int
+    ) {
         val ctrl = controller ?: return
+        val metadataBuilder = MediaMetadata.Builder()
+            .setTitle(title)
+            .setIsBrowsable(false)
+            .setIsPlayable(true)
+        if (artworkUri != null) {
+            metadataBuilder.setArtworkUri(artworkUri)
+        }
         val mediaItem = MediaItem.Builder()
             .setUri(uri)
             .setMediaId(fileId)
-            .setMediaMetadata(
-                MediaMetadata.Builder()
-                    .setTitle(title)
-                    .setIsBrowsable(false)
-                    .setIsPlayable(true)
-                    .build()
-            )
+            .setMediaMetadata(metadataBuilder.build())
             .build()
         ctrl.setMediaItem(mediaItem, startPositionMs.toLong())
         ctrl.prepare()
@@ -145,6 +165,50 @@ class VoicePlayerManager @Inject constructor(
                 positionMs = startPositionMs,
                 durationMs = 0
             )
+        }
+        
+        if (artworkUri != null) {
+            loadArtwork(artworkUri, fileId)
+        }
+    }
+    
+    private fun loadArtwork(artworkUri: Uri, fileId: String) {
+        scope.launch {
+            val bytes = withContext(Dispatchers.IO) {
+                runCatching { loadArtworkBytes(artworkUri) }.getOrNull()
+            } ?: return@launch
+            
+            val ctrl = controller ?: return@launch
+            if (_state.value.currentFileId != fileId) return@launch
+            
+            val current = ctrl.currentMediaItem ?: return@launch
+            val updatedMetadata = current.mediaMetadata.buildUpon()
+                .setArtworkData(bytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+                .build()
+            val updatedItem = current.buildUpon().setMediaMetadata(updatedMetadata).build()
+            runCatching {
+                ctrl.replaceMediaItem(ctrl.currentMediaItemIndex, updatedItem)
+            }.onFailure { Log.e(TAG, "Failed to replace media item with artwork", it) }
+        }
+    }
+    
+    private suspend fun loadArtworkBytes(uri: Uri): ByteArray? {
+        val request = ImageRequest.Builder(context)
+            .data(uri)
+            .size(ARTWORK_SIZE_PX)
+            .allowHardware(false)
+            .build()
+        val result = context.imageLoader.execute(request)
+        if (result !is SuccessResult) return null
+        val bitmap = result.drawable.toBitmap()
+        val safeBitmap = if (bitmap.config == Bitmap.Config.HARDWARE) {
+            bitmap.copy(Bitmap.Config.ARGB_8888, false)
+        } else {
+            bitmap
+        }
+        return ByteArrayOutputStream().use { stream ->
+            safeBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            stream.toByteArray()
         }
     }
     
@@ -200,5 +264,6 @@ class VoicePlayerManager @Inject constructor(
     
     companion object {
         private const val TAG = "VoicePlayerManager"
+        private const val ARTWORK_SIZE_PX = 512
     }
 }

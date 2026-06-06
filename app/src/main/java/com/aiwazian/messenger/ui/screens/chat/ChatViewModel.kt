@@ -742,7 +742,13 @@ class ChatViewModel @Inject constructor(
     
     private fun playVoice(uri: Uri, fileId: String, startPositionMs: Int = 0) {
         val title = _uiState.value.chatName.asString(context).ifBlank { "Voice message" }
-        voicePlayerManager.play(uri, fileId, title, startPositionMs)
+        voicePlayerManager.play(
+            uri = uri,
+            fileId = fileId,
+            title = title,
+            artworkUri = _uiState.value.avatarUri,
+            startPositionMs = startPositionMs
+        )
     }
     
     private fun findNextVoiceAttachment(currentFileId: String): MessageAttachment? {
