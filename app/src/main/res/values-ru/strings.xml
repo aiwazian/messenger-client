@@ -196,7 +196,7 @@
     <string name="photo">Фото</string>
     <string name="file">Файл</string>
     <string name="video">Видео</string>
-    <string name="voice">Голос</string>
+    <string name="voice_message">Голосовое сообщение</string>
     <string name="chat_not_found">Чат не найден</string>
     <string name="you_are_already_in_this_chat">Вы уже в этом чате</string>
     <string name="invalid_link">Ссылка недействительна.</string>

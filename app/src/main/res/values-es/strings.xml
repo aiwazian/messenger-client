@@ -194,7 +194,7 @@
     <string name="photo">Foto</string>
     <string name="file">Archivo</string>
     <string name="video">Video</string>
-    <string name="voice">Voz</string>
+    <string name="voice_message">Mensaje de voz</string>
     <string name="chat_not_found">Chat no encontrado</string>
     <string name="you_are_already_in_this_chat">Ya estas en este chat</string>
     <string name="invalid_link">El enlace no es válido.</string>

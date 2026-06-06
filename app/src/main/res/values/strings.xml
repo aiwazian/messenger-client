@@ -200,7 +200,7 @@
     <string name="photo">Photo</string>
     <string name="file">File</string>
     <string name="video">Video</string>
-    <string name="voice">Voice</string>
+    <string name="voice_message">Voice message</string>
     <string name="chat_not_found">Chat not found</string>
     <string name="you_are_already_in_this_chat">You are already in this chat</string>
     <string name="invalid_link">The link is invalid.</string>

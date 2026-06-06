@@ -50,6 +50,7 @@ data class ChatUiState(
     val isRecordingLocked: Boolean = false,
     val recordingDurationMs: Long = 0L,
     val recordingAmplitude: Float = 0f,
+    val showMicrophonePermissionSheet: Boolean = false,
     val currentPlayingVoiceFileId: String? = null,
     val isVoicePlaying: Boolean = false,
     val voicePositionMs: Int = 0,

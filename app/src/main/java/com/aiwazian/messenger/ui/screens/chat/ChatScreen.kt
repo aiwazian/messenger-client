@@ -4,8 +4,10 @@
 
 package com.aiwazian.messenger.ui.screens.chat
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -510,6 +512,12 @@ fun ChatScreen(
             )
         }
         
+        if (uiState.showMicrophonePermissionSheet) {
+            MicrophonePermissionBottomSheet(
+                onDismiss = chatViewModel::dismissMicrophonePermissionSheet
+            )
+        }
+        
         if (uiState.showBannedDialog) {
             CustomDialog(
                 title = "Нет доступа",
@@ -1011,6 +1019,8 @@ private fun InputMessage(
     ) { isGranted ->
         if (isGranted) {
             chatViewModel.startRecording()
+        } else {
+            chatViewModel.onMicrophonePermissionDenied()
         }
     }
     
@@ -1488,6 +1498,51 @@ private fun AttachmentBottomSheet(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MicrophonePermissionBottomSheet(
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        dragHandle = null
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary)
+            ) {
+                Icon(
+                    Icons.Rounded.Mic,
+                    null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier
+                        .padding(14.dp)
+                        .size(28.dp)
+                )
+            }
+            Text("Предоставьте доступ к микрофону, чтобы записывать голосовые сообщения")
+            TextButton(modifier = Modifier.fillMaxWidth(), onClick = {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                }
+                context.startActivity(intent)
+            }, shape = MaterialTheme.shapes.medium) {
+                Text(stringResource(R.string.open_settings))
             }
         }
     }

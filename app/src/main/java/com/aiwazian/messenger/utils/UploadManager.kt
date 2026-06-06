@@ -37,7 +37,7 @@ class UploadManager @Inject constructor(
         fileUri: Uri,
         uploadUrl: String,
         fileId: String,
-        maxAttempts: Int = 100
+        maxAttempts: Int = 10
     ): Result<String> = withContext(Dispatchers.IO) {
         repeat(maxAttempts) { attempt ->
             try {

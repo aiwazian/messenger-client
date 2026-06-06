@@ -29,6 +29,7 @@ import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.playback.VoicePlayerManager
+import com.aiwazian.messenger.playback.VoiceQueueItem
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository
@@ -126,14 +127,6 @@ class ChatViewModel @Inject constructor(
         }
         
         voicePlayerManager.connect()
-        voicePlayerManager.setOnCompletionListener { finishedFileId ->
-            val next = findNextVoiceAttachment(finishedFileId)
-            if (next?.localUri != null &&
-                (next.status == DownloadStatus.COMPLETED || next.status == DownloadStatus.UPLOADED)
-            ) {
-                playVoice(next.localUri, next.fileId)
-            }
-        }
         viewModelScope.launch {
             voicePlayerManager.state.collect { state ->
                 _uiState.update {
@@ -143,6 +136,15 @@ class ChatViewModel @Inject constructor(
                         voicePositionMs = state.positionMs,
                         voiceDurationMs = state.durationMs
                     )
+                }
+            }
+        }
+        viewModelScope.launch {
+            _uiState.collect { state ->
+                val playingId = state.currentPlayingVoiceFileId ?: return@collect
+                val queue = buildVoiceQueue(state.chatItems, state.chatName)
+                if (queue.any { it.fileId == playingId }) {
+                    voicePlayerManager.updateQueue(queue)
                 }
             }
         }
@@ -727,37 +729,43 @@ class ChatViewModel @Inject constructor(
             
             FileAction.PLAY -> {
                 if (file.type != AttachmentType.VOICE) return
-                val uri = file.localUri ?: return
+                file.localUri ?: return
                 
                 val currentPlayingId = _uiState.value.currentPlayingVoiceFileId
                 if (currentPlayingId == file.fileId) {
                     voicePlayerManager.togglePlayPause()
                 } else {
                     val startPos = pendingVoiceStartPositions.remove(file.fileId) ?: 0
-                    playVoice(uri, file.fileId, startPos)
+                    playVoice(file.fileId, startPos)
                 }
             }
         }
     }
     
-    private fun playVoice(uri: Uri, fileId: String, startPositionMs: Int = 0) {
-        val title = _uiState.value.chatName.asString(context).ifBlank { "Voice message" }
-        voicePlayerManager.play(
-            uri = uri,
-            fileId = fileId,
-            title = title,
-            artworkUri = _uiState.value.avatarUri,
-            startPositionMs = startPositionMs
-        )
+    private fun playVoice(fileId: String, startPositionMs: Int = 0) {
+        val state = _uiState.value
+        val queue = buildVoiceQueue(state.chatItems, state.chatName)
+        if (queue.none { it.fileId == fileId }) return
+        voicePlayerManager.play(queue, fileId, startPositionMs)
     }
     
-    private fun findNextVoiceAttachment(currentFileId: String): MessageAttachment? {
-        val allVoices = getRawMessages().flatMap { msg ->
-            msg.attachments.filter { it.type == AttachmentType.VOICE }
-        }
-        val currentIndex = allVoices.indexOfFirst { it.fileId == currentFileId }
-        if (currentIndex < 0 || currentIndex >= allVoices.size - 1) return null
-        return allVoices[currentIndex + 1]
+    private fun buildVoiceQueue(items: List<ChatItem>, chatName: UiText): List<VoiceQueueItem> {
+        val title = chatName.asString(context).ifBlank { "Voice message" }
+        val artworkUri = _uiState.value.avatarUri
+        return items.filterIsInstance<ChatItem.MessageItem>()
+            .flatMap { it.message.attachments }
+            .filter { it.type == AttachmentType.VOICE }
+            .map { attachment ->
+                val isReady = attachment.localUri != null &&
+                        (attachment.status == DownloadStatus.COMPLETED || attachment.status == DownloadStatus.UPLOADED)
+                VoiceQueueItem(
+                    uri = if (isReady) attachment.localUri else null,
+                    fileId = attachment.fileId,
+                    title = title,
+                    subtitle = context.getString(R.string.voice_message),
+                    artworkUri = artworkUri
+                )
+            }
     }
     
     fun onVoiceSeek(file: MessageAttachment, positionMs: Int) {
@@ -923,6 +931,14 @@ class ChatViewModel @Inject constructor(
         }
     }
     
+    fun onMicrophonePermissionDenied() {
+        _uiState.update { it.copy(showMicrophonePermissionSheet = true) }
+    }
+    
+    fun dismissMicrophonePermissionSheet() {
+        _uiState.update { it.copy(showMicrophonePermissionSheet = false) }
+    }
+    
     fun clearMediaUrl() {
         _uiState.update { it.copy(showFullScreenViewer = false) }
     }
@@ -1022,11 +1038,5 @@ class ChatViewModel @Inject constructor(
             )
         }
         vibrationManager.vibrate(VibrationPattern.TactileResponse)
-    }
-    
-    override fun onCleared() {
-        super.onCleared()
-        voicePlayerManager.setOnCompletionListener(null)
-        voicePlayerManager.stop()
     }
 }

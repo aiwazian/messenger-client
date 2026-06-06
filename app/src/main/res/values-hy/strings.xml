@@ -192,7 +192,7 @@
     <string name="photo">Լուսանկարը</string>
     <string name="file">Ֆայլ</string>
     <string name="video">Տեսանյութ</string>
-    <string name="voice">Ձայն</string>
+    <string name="voice_message">Ձայնային հաղորդագրություն</string>
     <string name="chat_not_found">Զրույցը չի գտնվել</string>
     <string name="you_are_already_in_this_chat">Դուք արդեն այս զրուցարանում եք</string>
     <string name="invalid_link">Հղումն անվավեր է։</string>

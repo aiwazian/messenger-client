@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
-import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -69,6 +68,7 @@ fun MessageVoice(
     
     var amplitudes by remember { mutableStateOf<List<Float>?>(null) }
     var dragPositionMs by remember { mutableStateOf<Int?>(null) }
+    var extractedDurationMs by remember { mutableIntStateOf(0) }
     
     val currentPositionMs by rememberUpdatedState(positionMs)
     val currentDurationMs by rememberUpdatedState(durationMs)
@@ -84,25 +84,12 @@ fun MessageVoice(
     
     val effectiveMs = dragPositionMs ?: pendingSeekPositionMs ?: currentPositionMs
     
-    var extractedDurationMs by remember { mutableIntStateOf(0) }
     LaunchedEffect(file.localUri) {
-        if (file.localUri != null) {
-            if (amplitudes == null) {
-                amplitudes = AmplitudeExtractor.extract(context, file.localUri)
-            }
-            if (durationMs == 0 && extractedDurationMs == 0) {
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    try {
-                        val retriever = android.media.MediaMetadataRetriever()
-                        retriever.setDataSource(context, file.localUri)
-                        val durationStr =
-                            retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
-                        extractedDurationMs = durationStr?.toIntOrNull() ?: 0
-                        retriever.release()
-                    } catch (e: Exception) {
-                        Log.e("MessageVoice", "LaunchedEffect error ${e.message}", e)
-                    }
-                }
+        if (file.localUri != null && amplitudes == null) {
+            val analysis = AmplitudeExtractor.extract(context, file.localUri)
+            amplitudes = analysis.amplitudes
+            if (analysis.durationMs > 0) {
+                extractedDurationMs = analysis.durationMs
             }
         }
     }
@@ -111,17 +98,23 @@ fun MessageVoice(
     val finalDurationToUse = if (finalDurationMs > 0) finalDurationMs else 1
     val finalProgress = effectiveMs.toFloat() / finalDurationToUse
     
+    val displayMs = when {
+        dragPositionMs != null || pendingSeekPositionMs != null -> effectiveMs
+        currentIsPlaying || currentPositionMs > 0 -> currentPositionMs
+        else -> finalDurationMs
+    }
+    
     Row(
         modifier = Modifier
             .clickable(interactionSource = null, indication = null) {
                 when (file.status) {
                     DownloadStatus.UPLOADING -> onAction(FileAction.CANCEL)
                     DownloadStatus.DOWNLOADING -> onAction(FileAction.PAUSE)
-                    DownloadStatus.PAUSED, DownloadStatus.IDLE, DownloadStatus.CANCELLED, DownloadStatus.FAILED -> onAction(
+                    DownloadStatus.PAUSED, DownloadStatus.UPLOADED, DownloadStatus.IDLE, DownloadStatus.CANCELLED, DownloadStatus.FAILED -> onAction(
                         FileAction.DOWNLOAD
                     )
                     
-                    DownloadStatus.COMPLETED, DownloadStatus.UPLOADED -> {
+                    DownloadStatus.COMPLETED -> {
                         pendingSeekPositionMs?.let { currentOnSeek(it) }
                         onAction(FileAction.PLAY)
                     }
@@ -142,7 +135,7 @@ fun MessageVoice(
                 Icon(
                     imageVector = Icons.Rounded.Close,
                     contentDescription = "Cancel",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.size(24.dp)
                 )
                 if (file.progress == 0) {
@@ -163,13 +156,13 @@ fun MessageVoice(
                 Icon(
                     imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                     contentDescription = if (isPlaying) "Pause" else "Play",
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             } else {
                 Icon(
                     imageVector = if (file.status == DownloadStatus.FAILED) Icons.Rounded.Refresh else Icons.Rounded.Download,
                     contentDescription = file.status.name,
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
         }
@@ -183,7 +176,9 @@ fun MessageVoice(
                     .fillMaxWidth()
                     .height(24.dp)
                     .pointerInput(finalDurationToUse) {
-                        if (file.status != DownloadStatus.COMPLETED && file.status != DownloadStatus.UPLOADED && !isReady) return@pointerInput
+                        if (file.status != DownloadStatus.COMPLETED && file.status != DownloadStatus.UPLOADED && !isReady) {
+                            return@pointerInput
+                        }
                         
                         detectHorizontalDragGestures(
                             onDragStart = { offset ->
@@ -226,7 +221,7 @@ fun MessageVoice(
             }
             
             Text(
-                text = formatDuration(effectiveMs.toLong()),
+                text = formatDuration(displayMs.toLong()),
                 fontSize = 12.sp,
                 lineHeight = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -251,13 +246,13 @@ private fun Waveform(
         val barWidth = size.width / barCount
         val centerY = size.height / 2f
         val progressX = size.width * progress.coerceIn(0f, 1f)
-        val placeholderHeight = (size.height * 0.3f).coerceAtLeast(2f)
+        val placeholderHeight = (size.height * 0.3f).coerceAtLeast(10f)
         
         for (i in 0 until barCount) {
             val barHeight = if (usePlaceholder) {
                 placeholderHeight
             } else {
-                (size.height * amplitudes[i]).coerceAtLeast(2f)
+                (size.height * amplitudes[i]).coerceAtLeast(10f)
             }
             val x = i * barWidth
             val color = when {

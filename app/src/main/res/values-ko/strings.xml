@@ -190,7 +190,7 @@
     <string name="photo">사진</string>
     <string name="file">파일</string>
     <string name="video">동영상</string>
-    <string name="voice">목소리</string>
+    <string name="voice_message">음성 메시지</string>
     <string name="chat_not_found">채팅을 찾을 수 없습니다</string>
     <string name="you_are_already_in_this_chat">이미 이 채팅에 참여하고 있습니다.</string>
     <string name="invalid_link">링크가 잘못되었습니다.</string>

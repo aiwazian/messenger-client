@@ -50,7 +50,8 @@ class VoicePlayerManager @Inject constructor(
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
     
-    private var onCompletionListener: ((finishedFileId: String) -> Unit)? = null
+    private var queue: List<VoiceQueueItem> = emptyList()
+    private var currentIndex: Int = -1
     
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -68,18 +69,17 @@ class VoicePlayerManager @Inject constructor(
                 }
                 
                 Player.STATE_ENDED -> {
-                    val finishedId = _state.value.currentFileId
+                    val finishedFileId = _state.value.currentFileId
                     positionJob?.cancel()
-                    _state.update {
-                        it.copy(
-                            currentFileId = null,
-                            isPlaying = false,
-                            positionMs = 0
-                        )
-                    }
                     ctrl.clearMediaItems()
-                    if (finishedId != null) {
-                        onCompletionListener?.invoke(finishedId)
+                    if (!playNextInQueue(finishedFileId)) {
+                        _state.update {
+                            it.copy(
+                                currentFileId = null,
+                                isPlaying = false,
+                                positionMs = 0
+                            )
+                        }
                     }
                 }
                 
@@ -91,10 +91,6 @@ class VoicePlayerManager @Inject constructor(
             Log.e(TAG, "Player error", error)
             stop()
         }
-    }
-    
-    fun setOnCompletionListener(listener: ((finishedFileId: String) -> Unit)?) {
-        onCompletionListener = listener
     }
     
     fun connect() {
@@ -116,29 +112,65 @@ class VoicePlayerManager @Inject constructor(
     }
     
     fun play(
+        queue: List<VoiceQueueItem>,
+        fileId: String,
+        startPositionMs: Int = 0
+    ) {
+        val index = queue.indexOfFirst { it.fileId == fileId }
+        if (index < 0) return
+        val item = queue[index]
+        val uri = item.uri ?: return
+        this.queue = queue
+        this.currentIndex = index
+        playMediaItem(uri, item.fileId, item.title, item.subtitle, item.artworkUri, startPositionMs)
+    }
+    
+    fun updateQueue(newQueue: List<VoiceQueueItem>) {
+        val currentFileId = _state.value.currentFileId ?: return
+        val newIndex = newQueue.indexOfFirst { it.fileId == currentFileId }
+        if (newIndex < 0) return
+        queue = newQueue
+        currentIndex = newIndex
+    }
+    
+    private fun playNextInQueue(finishedFileId: String?): Boolean {
+        if (finishedFileId == null) return false
+        val baseIndex = queue.indexOfFirst { it.fileId == finishedFileId }
+            .takeIf { it >= 0 } ?: currentIndex
+        val nextIndex = baseIndex + 1
+        val next = queue.getOrNull(nextIndex) ?: return false
+        val nextUri = next.uri ?: return false
+        currentIndex = nextIndex
+        playMediaItem(nextUri, next.fileId, next.title, next.subtitle, next.artworkUri, 0)
+        return true
+    }
+    
+    private fun playMediaItem(
         uri: Uri,
         fileId: String,
         title: String,
-        artworkUri: Uri? = null,
-        startPositionMs: Int = 0
+        subtitle: String?,
+        artworkUri: Uri?,
+        startPositionMs: Int
     ) {
         val ctrl = controller
         if (ctrl == null) {
             connect()
             controllerFuture?.addListener(
                 {
-                    playInternal(uri, fileId, title, artworkUri, startPositionMs)
+                    playMediaItemInternal(uri, fileId, title, subtitle, artworkUri, startPositionMs)
                 }, MoreExecutors.directExecutor()
             )
             return
         }
-        playInternal(uri, fileId, title, artworkUri, startPositionMs)
+        playMediaItemInternal(uri, fileId, title, subtitle, artworkUri, startPositionMs)
     }
     
-    private fun playInternal(
+    private fun playMediaItemInternal(
         uri: Uri,
         fileId: String,
         title: String,
+        subtitle: String?,
         artworkUri: Uri?,
         startPositionMs: Int
     ) {
@@ -147,6 +179,9 @@ class VoicePlayerManager @Inject constructor(
             .setTitle(title)
             .setIsBrowsable(false)
             .setIsPlayable(true)
+        if (subtitle != null) {
+            metadataBuilder.setSubtitle(subtitle)
+        }
         if (artworkUri != null) {
             metadataBuilder.setArtworkUri(artworkUri)
         }
@@ -238,6 +273,8 @@ class VoicePlayerManager @Inject constructor(
                 ctrl.clearMediaItems()
             }
         }
+        queue = emptyList()
+        currentIndex = -1
         _state.update { VoicePlayerState() }
     }
     
@@ -247,6 +284,8 @@ class VoicePlayerManager @Inject constructor(
         controllerFuture?.let { MediaController.releaseFuture(it) }
         controllerFuture = null
         controller = null
+        queue = emptyList()
+        currentIndex = -1
         _state.update { VoicePlayerState() }
     }
     

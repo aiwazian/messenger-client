@@ -88,7 +88,7 @@ fun ChatCard(
                             AttachmentType.IMAGE -> R.string.photo
                             AttachmentType.FILE -> R.string.file
                             AttachmentType.VIDEO -> R.string.video
-                            AttachmentType.VOICE -> R.string.voice
+                            AttachmentType.VOICE -> R.string.voice_message
                             AttachmentType.GIF -> R.string.gif
                         }
                     )

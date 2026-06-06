@@ -25,24 +25,39 @@ object AmplitudeExtractor {
     
     private const val TAG = "AmplitudeExtractor"
     const val AMPLITUDES_COUNT = 30
-
-    suspend fun extract(context: Context, uri: Uri): List<Float> = withContext(Dispatchers.IO) {
+    
+    data class AudioAnalysis(
+        val amplitudes: List<Float>,
+        val durationMs: Int
+    )
+    
+    suspend fun extract(context: Context, uri: Uri): AudioAnalysis = withContext(Dispatchers.IO) {
         runCatching { extractInternal(context, uri) }
-            .onFailure { Log.e(TAG, "Failed to extract amplitudes from $uri", it) }
-            .getOrDefault(emptyAmplitudes())
+            .onFailure { Log.e(TAG, "Failed to extract from $uri", it) }
+            .getOrDefault(AudioAnalysis(emptyAmplitudes(), 0))
     }
-
-    private fun extractInternal(context: Context, uri: Uri): List<Float> {
+    
+    private fun extractInternal(context: Context, uri: Uri): AudioAnalysis {
         val extractor = MediaExtractor()
         var decoder: MediaCodec? = null
 
         try {
             extractor.setDataSource(context, uri, null)
             
-            val (trackIndex, format) = selectAudioTrack(extractor) ?: return emptyAmplitudes()
+            val (trackIndex, format) = selectAudioTrack(extractor)
+                ?: return AudioAnalysis(emptyAmplitudes(), 0)
+            
+            val durationUs = runCatching { format.getLong(MediaFormat.KEY_DURATION) }
+                .getOrDefault(0L)
+            val durationMs = (durationUs / 1000).toInt()
+            if (durationMs <= 0) {
+                Log.w(TAG, "No duration in MediaFormat for $uri")
+                return AudioAnalysis(emptyAmplitudes(), 0)
+            }
 
             extractor.selectTrack(trackIndex)
-            val mime = format.getString(MediaFormat.KEY_MIME) ?: return emptyAmplitudes()
+            val mime = format.getString(MediaFormat.KEY_MIME)
+                ?: return AudioAnalysis(emptyAmplitudes(), durationMs)
 
             decoder = MediaCodec.createDecoderByType(mime).apply {
                 configure(format, null, null, 0)
@@ -50,8 +65,8 @@ object AmplitudeExtractor {
             }
 
             val samples = decodeToPcm(extractor, decoder)
-            Log.d(TAG, "Decoded ${samples.size} PCM samples from $uri")
-            return computeAmplitudes(samples)
+            Log.d(TAG, "Decoded ${samples.size} PCM samples, duration=${durationMs}ms from $uri")
+            return AudioAnalysis(computeAmplitudes(samples), durationMs)
         } finally {
             try {
                 decoder?.stop()
