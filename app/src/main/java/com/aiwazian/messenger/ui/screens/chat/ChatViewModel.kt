@@ -5,7 +5,6 @@
 package com.aiwazian.messenger.ui.screens.chat
 
 import android.content.Context
-import android.media.MediaPlayer
 import android.net.Uri
 import android.util.Log
 import androidx.compose.material.icons.Icons
@@ -29,6 +28,7 @@ import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
+import com.aiwazian.messenger.playback.VoicePlayerManager
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository
@@ -93,14 +93,13 @@ class ChatViewModel @Inject constructor(
     private val joinGroupUseCase: JoinGroupUseCase,
     private val joinViaInviteLinkUseCase: JoinViaInviteLinkUseCase,
     private val leaveChatUseCase: LeaveChatUseCase,
-    private val dataStoreManager: DataStoreManager
+    private val dataStoreManager: DataStoreManager,
+    private val voicePlayerManager: VoicePlayerManager
 ) : ViewModel() {
     
     private val audioRecorderManager = AudioRecorderManager(context)
     private var recordingTimerJob: kotlinx.coroutines.Job? = null
     
-    private var voicePlayer: MediaPlayer? = null
-    private var voicePositionJob: kotlinx.coroutines.Job? = null
     private val pendingVoiceStartPositions = mutableMapOf<String, Int>()
     
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -123,6 +122,28 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             dataStoreManager.getVideoPlaybackSpeed().collect { speed ->
                 _uiState.update { it.copy(videoPlaybackSpeed = speed) }
+            }
+        }
+        
+        voicePlayerManager.connect()
+        voicePlayerManager.setOnCompletionListener { finishedFileId ->
+            val next = findNextVoiceAttachment(finishedFileId)
+            if (next?.localUri != null &&
+                (next.status == DownloadStatus.COMPLETED || next.status == DownloadStatus.UPLOADED)
+            ) {
+                playVoice(next.localUri, next.fileId)
+            }
+        }
+        viewModelScope.launch {
+            voicePlayerManager.state.collect { state ->
+                _uiState.update {
+                    it.copy(
+                        currentPlayingVoiceFileId = state.currentFileId,
+                        isVoicePlaying = state.isPlaying,
+                        voicePositionMs = state.positionMs,
+                        voiceDurationMs = state.durationMs
+                    )
+                }
             }
         }
     }
@@ -710,99 +731,18 @@ class ChatViewModel @Inject constructor(
                 
                 val currentPlayingId = _uiState.value.currentPlayingVoiceFileId
                 if (currentPlayingId == file.fileId) {
-                    toggleVoicePlayback()
+                    voicePlayerManager.togglePlayPause()
                 } else {
-                    stopVoice()
                     val startPos = pendingVoiceStartPositions.remove(file.fileId) ?: 0
-                    startVoice(uri, file.fileId, startPos)
+                    playVoice(uri, file.fileId, startPos)
                 }
             }
         }
     }
     
-    private fun startVoice(uri: Uri, fileId: String, startPositionMs: Int = 0) {
-        val player = MediaPlayer()
-        voicePlayer = player
-        
-        runCatching {
-            player.setDataSource(context, uri)
-            player.setOnPreparedListener { mp ->
-                if (startPositionMs > 0) {
-                    mp.seekTo(startPositionMs)
-                }
-                mp.start()
-                _uiState.update {
-                    it.copy(
-                        currentPlayingVoiceFileId = fileId,
-                        isVoicePlaying = true,
-                        voiceDurationMs = mp.duration,
-                        voicePositionMs = startPositionMs
-                    )
-                }
-                startVoicePositionTracking()
-            }
-            player.setOnCompletionListener {
-                val next = findNextVoiceAttachment(fileId)
-                stopVoice()
-                if (next?.localUri != null &&
-                    (next.status == DownloadStatus.COMPLETED || next.status == DownloadStatus.UPLOADED)
-                ) {
-                    startVoice(next.localUri, next.fileId)
-                }
-            }
-            player.setOnErrorListener { _, what, extra ->
-                Log.e("ChatViewModel", "MediaPlayer error: $what, $extra")
-                stopVoice()
-                true
-            }
-            player.prepareAsync()
-        }.onFailure {
-            Log.e("ChatViewModel", "Failed to start voice playback", it)
-            stopVoice()
-        }
-    }
-    
-    private fun toggleVoicePlayback() {
-        val player = voicePlayer ?: return
-        if (player.isPlaying) {
-            player.pause()
-            voicePositionJob?.cancel()
-            _uiState.update { it.copy(isVoicePlaying = false) }
-        } else {
-            player.start()
-            _uiState.update { it.copy(isVoicePlaying = true) }
-            startVoicePositionTracking()
-        }
-    }
-    
-    private fun stopVoice() {
-        voicePositionJob?.cancel()
-        voicePositionJob = null
-        voicePlayer?.let { player ->
-            runCatching { player.stop() }
-            runCatching { player.release() }
-        }
-        voicePlayer = null
-        if (_uiState.value.currentPlayingVoiceFileId != null || _uiState.value.isVoicePlaying) {
-            _uiState.update {
-                it.copy(
-                    currentPlayingVoiceFileId = null,
-                    isVoicePlaying = false,
-                    voicePositionMs = 0
-                )
-            }
-        }
-    }
-    
-    private fun startVoicePositionTracking() {
-        voicePositionJob?.cancel()
-        voicePositionJob = viewModelScope.launch {
-            while (true) {
-                val pos = voicePlayer?.currentPosition ?: break
-                _uiState.update { it.copy(voicePositionMs = pos) }
-                delay(50.milliseconds)
-            }
-        }
+    private fun playVoice(uri: Uri, fileId: String, startPositionMs: Int = 0) {
+        val title = _uiState.value.chatName.asString(context).ifBlank { "Voice message" }
+        voicePlayerManager.play(uri, fileId, title, startPositionMs)
     }
     
     private fun findNextVoiceAttachment(currentFileId: String): MessageAttachment? {
@@ -822,13 +762,7 @@ class ChatViewModel @Inject constructor(
             return
         }
         
-        val player = voicePlayer ?: return
-        runCatching {
-            player.seekTo(positionMs)
-        }.onFailure {
-            Log.e("ChatViewModel", "Error seeking voice player", it)
-        }
-        _uiState.update { it.copy(voicePositionMs = positionMs) }
+        voicePlayerManager.seekTo(positionMs)
     }
     
     fun sendFiles(uris: List<Uri>) {
@@ -1086,6 +1020,7 @@ class ChatViewModel @Inject constructor(
     
     override fun onCleared() {
         super.onCleared()
-        stopVoice()
+        voicePlayerManager.setOnCompletionListener(null)
+        voicePlayerManager.stop()
     }
 }
