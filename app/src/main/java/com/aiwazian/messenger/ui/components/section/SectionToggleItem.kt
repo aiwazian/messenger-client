@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun SectionToggleItem(
     text: String,
+    supportingText: String? = null,
     isChecked: Boolean,
     icon: ImageVector? = null,
     onCheckedChange: () -> Unit,
@@ -64,6 +65,13 @@ fun SectionToggleItem(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Normal
                 )
+                if (!supportingText.isNullOrBlank()) {
+                    Text(
+                        text = supportingText,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp
+                    )
+                }
             }
             
             Box(Modifier.pointerInput(Unit) {
