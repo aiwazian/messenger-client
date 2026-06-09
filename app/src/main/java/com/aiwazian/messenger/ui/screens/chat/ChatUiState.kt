@@ -54,5 +54,6 @@ data class ChatUiState(
     val currentPlayingVoiceFileId: String? = null,
     val isVoicePlaying: Boolean = false,
     val voicePositionMs: Int = 0,
-    val voiceDurationMs: Int = 0
+    val voiceDurationMs: Int = 0,
+    val isFirstLoadDone: Boolean = false
 )

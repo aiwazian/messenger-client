@@ -236,7 +236,7 @@ fun ChatScreen(
     }
     
     LaunchedEffect(firstVisibleItemIndex.value) {
-        if (firstVisibleItemIndex.value < 10 && uiState.hasMoreMessages && !uiState.isLoadingMore && !uiState.isLoading) {
+        if (firstVisibleItemIndex.value < 10 && uiState.hasMoreMessages && !uiState.isLoadingMore && !uiState.isLoading && uiState.isFirstLoadDone) {
             chatViewModel.loadMoreMessages()
         }
     }
@@ -333,10 +333,12 @@ fun ChatScreen(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     contentColor = MaterialTheme.colorScheme.onSurface,
                     shape = CircleShape,
-                    modifier = Modifier.size(44.dp).graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                    },
+                    modifier = Modifier
+                        .size(44.dp)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        },
                     interactionSource = interactionSource,
                     elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp)
                 ) {
@@ -1045,7 +1047,9 @@ private fun InputMessage(
             ),
         verticalAlignment = Alignment.Bottom
     ) {
-        Box(modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+        Box(modifier = Modifier
+            .weight(1f)
+            .heightIn(min = 48.dp)) {
             val textFieldAlpha by animateFloatAsState(
                 targetValue = if (uiState.isRecording) 0f else 1f,
                 animationSpec = tween(200)
@@ -1054,7 +1058,9 @@ private fun InputMessage(
             BasicTextField(
                 value = uiState.messageText,
                 onValueChange = chatViewModel::changeText,
-                modifier = Modifier.fillMaxWidth().alpha(textFieldAlpha),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .alpha(textFieldAlpha),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.onSurface
                 ),
@@ -1140,13 +1146,19 @@ private fun InputMessage(
                                 
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.graphicsLayer {
-                                        translationX = micTranslationX * 0.5f
-                                        alpha =
-                                            (1f - (abs(micTranslationX) / 250f)).coerceIn(0.2f, 1f)
-                                    }.offset {
-                                        IntOffset(x = offsetX.dp.roundToPx(), y = 0)
-                                    }.padding(horizontal = 2.dp)
+                                    modifier = Modifier
+                                        .graphicsLayer {
+                                            translationX = micTranslationX * 0.5f
+                                            alpha =
+                                                (1f - (abs(micTranslationX) / 250f)).coerceIn(
+                                                    0.2f,
+                                                    1f
+                                                )
+                                        }
+                                        .offset {
+                                            IntOffset(x = offsetX.dp.roundToPx(), y = 0)
+                                        }
+                                        .padding(horizontal = 2.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.ArrowBackIosNew,

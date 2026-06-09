@@ -378,9 +378,11 @@ class ChatViewModel @Inject constructor(
                         _uiState.update { it.copy(isLoading = false, isLoadingMore = false) }
                         if (messages.isNotEmpty() && !isFirstLoadDone) {
                             isFirstLoadDone = true
+                            _uiState.update { it.copy(isFirstLoadDone = true) }
                             _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
                         } else if (messages.isEmpty() && !isFirstLoadDone) {
                             isFirstLoadDone = true
+                            _uiState.update { it.copy(isFirstLoadDone = true) }
                         }
                     }
             }
