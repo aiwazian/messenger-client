@@ -69,7 +69,9 @@ fun SectionToggleItem(
                     Text(
                         text = supportingText,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 14.sp
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
+                        lineHeight = 12.sp
                     )
                 }
             }

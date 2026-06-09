@@ -46,6 +46,8 @@ import com.aiwazian.messenger.ui.screens.profile.ProfileScreen
 import com.aiwazian.messenger.ui.screens.settings.SettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsAppearanceScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsDarkThemeScreen
+import com.aiwazian.messenger.ui.screens.settings.data_storage.AutoDownloadMediaScreen
+import com.aiwazian.messenger.ui.screens.settings.data_storage.DataAndStorageScreen
 import com.aiwazian.messenger.ui.screens.settings.language.SettingsLanguageScreen
 import com.aiwazian.messenger.ui.screens.settings.notification.NotificationSettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsPrivacyScreen
@@ -122,7 +124,9 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsPasscodeCreate> { SettingsPasscodeCreateScreen() }
                     entry<AppRoute.SettingsPasscodeChange> { SettingsPasscodeChangeScreen() }
                     entry<AppRoute.SettingsCloudPassword> { SettingsCloudPasswordScreen() }
-                    entry<AppRoute.SettingsDataAndStorage> { StorageScreen() }
+                    entry<AppRoute.SettingsDataAndStorage> { DataAndStorageScreen() }
+                    entry<AppRoute.SettingsStorage> { StorageScreen() }
+                    entry<AppRoute.SettingsAutoDownloadMedia> { AutoDownloadMediaScreen() }
                     entry<AppRoute.NewMessage> { NewMessageScreen() }
                     entry<AppRoute.CreateGroup> { CreateGroupScreen() }
                     entry<AppRoute.CreateChannel> { CreateChannelScreen() }

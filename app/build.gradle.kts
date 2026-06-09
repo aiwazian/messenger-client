@@ -26,8 +26,8 @@ android {
     
     buildTypes {
         debug {
-            buildConfigField("String", "API_URL", "\"http://10.155.204.101:4000/api/\"")
-            buildConfigField("String", "WS_URL", "\"ws://10.155.204.101:4000\"")
+            buildConfigField("String", "API_URL", "\"http://10.170.67.101:4000/api/\"")
+            buildConfigField("String", "WS_URL", "\"ws://10.170.67.101:4000\"")
         }
         
         release {

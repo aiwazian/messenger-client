@@ -8,6 +8,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -29,8 +30,11 @@ private object Keys {
     val FAILED_ATTEMPTS = intPreferencesKey("failed_attempts")
     val BLOCKED_UNTIL = longPreferencesKey("blocked_until")
     val VIDEO_LOOPING = booleanPreferencesKey("video_looping")
-    val VIDEO_PLAYBACK_SPEED =
-        androidx.datastore.preferences.core.floatPreferencesKey("video_playback_speed")
+    val VIDEO_PLAYBACK_SPEED = floatPreferencesKey("video_playback_speed")
+    val AUTO_DOWNLOAD_MEDIA = booleanPreferencesKey("auto_download_media")
+    val AUTO_DOWNLOAD_PHOTOS = booleanPreferencesKey("auto_download_photos")
+    val AUTO_DOWNLOAD_VIDEOS = booleanPreferencesKey("auto_download_videos")
+    val AUTO_DOWNLOAD_FILES = booleanPreferencesKey("auto_download_files")
 }
 
 @Singleton
@@ -69,6 +73,18 @@ class DataStoreManager @Inject constructor(
     
     suspend fun saveVideoPlaybackSpeed(speed: Float) = setValue(Keys.VIDEO_PLAYBACK_SPEED, speed)
     
+    suspend fun saveAutoDownloadMedia(enabled: Boolean) =
+        setValue(Keys.AUTO_DOWNLOAD_MEDIA, enabled)
+    
+    suspend fun saveAutoDownloadPhotos(enabled: Boolean) =
+        setValue(Keys.AUTO_DOWNLOAD_PHOTOS, enabled)
+    
+    suspend fun saveAutoDownloadVideos(enabled: Boolean) =
+        setValue(Keys.AUTO_DOWNLOAD_VIDEOS, enabled)
+    
+    suspend fun saveAutoDownloadFiles(enabled: Boolean) =
+        setValue(Keys.AUTO_DOWNLOAD_FILES, enabled)
+    
     fun getPasscode() = getValue(Keys.PASSCODE, "")
     
     fun getIsLockApp() = getValue(Keys.IS_LOCK_APP, false)
@@ -86,6 +102,14 @@ class DataStoreManager @Inject constructor(
     fun getVideoLooping() = getValue(Keys.VIDEO_LOOPING, false)
     
     fun getVideoPlaybackSpeed() = getValue(Keys.VIDEO_PLAYBACK_SPEED, 1.0f)
+    
+    fun getAutoDownloadMedia() = getValue(Keys.AUTO_DOWNLOAD_MEDIA, false)
+    
+    fun getAutoDownloadPhotos() = getValue(Keys.AUTO_DOWNLOAD_PHOTOS, true)
+    
+    fun getAutoDownloadVideos() = getValue(Keys.AUTO_DOWNLOAD_VIDEOS, true)
+    
+    fun getAutoDownloadFiles() = getValue(Keys.AUTO_DOWNLOAD_FILES, true)
     
     suspend fun clear() {
         context.dataStore.edit { it.clear() }

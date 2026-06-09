@@ -113,8 +113,18 @@ class ChatViewModel @Inject constructor(
     private val limitFlow = MutableStateFlow(30)
     
     private var isInit = false
+    private var autoDownloadMedia = false
+    private var autoDownloadPhotos = true
+    private var autoDownloadVideos = true
+    private var autoDownloadFiles = true
     
     init {
+        viewModelScope.launch {
+            autoDownloadMedia = dataStoreManager.getAutoDownloadMedia().firstOrNull() ?: false
+            autoDownloadPhotos = dataStoreManager.getAutoDownloadPhotos().firstOrNull() ?: true
+            autoDownloadVideos = dataStoreManager.getAutoDownloadVideos().firstOrNull() ?: true
+            autoDownloadFiles = dataStoreManager.getAutoDownloadFiles().firstOrNull() ?: true
+        }
         viewModelScope.launch {
             dataStoreManager.getVideoLooping().collect { isLooping ->
                 _uiState.update { it.copy(isVideoLooping = isLooping) }
@@ -149,7 +159,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-
+    
     fun init(chatId: Long, chatName: String? = null, avatarUri: Uri? = null) {
         if (isInit) return
         isInit = true
@@ -510,9 +520,17 @@ class ChatViewModel @Inject constructor(
             val updatedMessage = message.copy(attachments = updatedAttachments)
             
             updatedMessage.attachments.sortedBy { it.sortOrder }.forEach { attachment ->
-                if (attachment.type == AttachmentType.IMAGE || attachment.type == AttachmentType.VIDEO || attachment.type == AttachmentType.GIF) {
-                    newMediaItems.add(attachment)
-                    if (attachment.type == AttachmentType.IMAGE && attachment.status == DownloadStatus.IDLE) {
+                newMediaItems.add(attachment)
+                
+                if ((attachment.status == DownloadStatus.IDLE || attachment.status == DownloadStatus.UPLOADED) && autoDownloadMedia) {
+                    val shouldDownload = when (attachment.type) {
+                        AttachmentType.VOICE -> true
+                        AttachmentType.IMAGE, AttachmentType.GIF -> autoDownloadPhotos
+                        AttachmentType.VIDEO -> autoDownloadVideos && attachment.size <= 10 * 1024 * 1024
+                        AttachmentType.FILE -> autoDownloadFiles && attachment.size <= 10 * 1024 * 1024
+                    }
+                    
+                    if (shouldDownload) {
                         onFileAction(updatedMessage, attachment, FileAction.DOWNLOAD)
                     }
                 }

@@ -24,7 +24,7 @@ import kotlin.math.sqrt
 object AmplitudeExtractor {
     
     private const val TAG = "AmplitudeExtractor"
-    const val AMPLITUDES_COUNT = 30
+    const val AMPLITUDES_COUNT = 40
     
     data class AudioAnalysis(
         val amplitudes: List<Float>,

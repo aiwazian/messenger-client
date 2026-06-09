@@ -86,6 +86,12 @@ sealed interface AppRoute : NavKey {
     data object SettingsDataAndStorage : AppRoute
     
     @Serializable
+    data object SettingsStorage : AppRoute
+    
+    @Serializable
+    data object SettingsAutoDownloadMedia : AppRoute
+    
+    @Serializable
     data object NewMessage : AppRoute
     
     @Serializable

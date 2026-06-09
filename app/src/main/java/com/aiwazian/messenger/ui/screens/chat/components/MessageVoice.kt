@@ -238,33 +238,35 @@ private fun Waveform(
 ) {
     val activeColor = MaterialTheme.colorScheme.primary
     val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
-    val placeholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
     
     Canvas(modifier = modifier) {
         val usePlaceholder = amplitudes.isEmpty()
         val barCount = if (usePlaceholder) AmplitudeExtractor.AMPLITUDES_COUNT else amplitudes.size
-        val barWidth = size.width / barCount
+        
+        val spacing = 3f
+        val barWidth = (size.width - spacing * (barCount - 1)) / barCount
         val centerY = size.height / 2f
-        val progressX = size.width * progress.coerceIn(0f, 1f)
-        val placeholderHeight = (size.height * 0.3f).coerceAtLeast(10f)
+        
+        val progressBars = progress.coerceIn(0f, 1f) * barCount
         
         for (i in 0 until barCount) {
-            val barHeight = if (usePlaceholder) {
-                placeholderHeight
+            
+            val amplitude = if (usePlaceholder) {
+                0f
             } else {
-                (size.height * amplitudes[i]).coerceAtLeast(10f)
+                amplitudes.getOrNull(i) ?: 0f
             }
-            val x = i * barWidth
-            val color = when {
-                x < progressX -> activeColor
-                usePlaceholder -> placeholderColor
-                else -> inactiveColor
-            }
+            
+            val barHeight = (size.height * amplitude).coerceAtLeast(10f)
+            val x = i * (barWidth + spacing)
+            
+            val color = if (i < progressBars) activeColor else inactiveColor
+            
             drawRoundRect(
                 color = color,
-                topLeft = Offset(x + barWidth * 0.25f, centerY - barHeight / 2f),
-                size = Size(barWidth * 0.5f, barHeight),
-                cornerRadius = CornerRadius(barWidth / 4f, barWidth / 4f)
+                topLeft = Offset(x, centerY - barHeight / 2f),
+                size = Size(barWidth, barHeight),
+                cornerRadius = CornerRadius(barWidth / 2f, barWidth / 2f)
             )
         }
     }
