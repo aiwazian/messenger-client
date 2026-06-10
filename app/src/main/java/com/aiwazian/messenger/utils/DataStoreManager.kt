@@ -103,7 +103,7 @@ class DataStoreManager @Inject constructor(
     
     fun getVideoPlaybackSpeed() = getValue(Keys.VIDEO_PLAYBACK_SPEED, 1.0f)
     
-    fun getAutoDownloadMedia() = getValue(Keys.AUTO_DOWNLOAD_MEDIA, false)
+    fun getAutoDownloadMedia() = getValue(Keys.AUTO_DOWNLOAD_MEDIA, true)
     
     fun getAutoDownloadPhotos() = getValue(Keys.AUTO_DOWNLOAD_PHOTOS, true)
     

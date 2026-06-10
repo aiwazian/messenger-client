@@ -522,7 +522,9 @@ class ChatViewModel @Inject constructor(
             val updatedMessage = message.copy(attachments = updatedAttachments)
             
             updatedMessage.attachments.sortedBy { it.sortOrder }.forEach { attachment ->
-                newMediaItems.add(attachment)
+                if (attachment.type == AttachmentType.IMAGE || attachment.type == AttachmentType.VIDEO || attachment.type == AttachmentType.GIF) {
+                    newMediaItems.add(attachment)
+                }
                 
                 if ((attachment.status == DownloadStatus.IDLE || attachment.status == DownloadStatus.UPLOADED) && autoDownloadMedia) {
                     val shouldDownload = when (attachment.type) {
