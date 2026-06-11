@@ -134,6 +134,31 @@ class AuthRepository @Inject constructor(
         }
     }
     
+    suspend fun getFirstAccountWithToken(): AccountEntity? {
+        return try {
+            accountDao.getFirstAccountWithToken()
+        } catch (e: Exception) {
+            Log.e(
+                "AuthRepository",
+                "Ошибка при получении первого аккаунта с токеном",
+                e
+            )
+            null
+        }
+    }
+    
+    suspend fun setCurrent(userId: Long) {
+        try {
+            accountDao.setCurrent(userId)
+        } catch (e: Exception) {
+            Log.e(
+                "AuthRepository",
+                "Ошибка при установке текущего аккаунта",
+                e
+            )
+        }
+    }
+
     suspend fun clearCurrentToken() {
         try {
             accountDao.deleteCurrent()

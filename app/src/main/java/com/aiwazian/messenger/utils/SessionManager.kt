@@ -36,7 +36,16 @@ object SessionManager {
     }
 
     suspend fun loadSession() {
-        val currentToken = authRepository?.getCurrentToken() ?: ""
+        var currentToken = authRepository?.getCurrentToken() ?: ""
+        
+        if (currentToken.isEmpty()) {
+            val fallback = authRepository?.getFirstAccountWithToken()
+            if (fallback != null) {
+                authRepository?.setCurrent(fallback.userId)
+                currentToken = fallback.token
+            }
+        }
+
         _token.update { currentToken }
         _isAuthorized = currentToken.isNotEmpty()
         isInit = true

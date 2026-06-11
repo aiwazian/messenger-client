@@ -38,6 +38,9 @@ interface AccountDao {
     @Query("UPDATE account SET isCurrent = FALSE")
     suspend fun resetCurrent()
     
+    @Query("SELECT * FROM account WHERE token != '' AND token IS NOT NULL ORDER BY id ASC LIMIT 1")
+    suspend fun getFirstAccountWithToken(): AccountEntity?
+
     @Query("UPDATE account SET isCurrent = TRUE WHERE userId = :id")
     suspend fun setCurrentInternal(id: Long)
     
