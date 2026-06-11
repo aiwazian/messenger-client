@@ -226,10 +226,11 @@ fun ChatAvatar(
             contentAlignment = Alignment.Center
         ) {
             chatName.firstOrNull()?.let { letter ->
+                val fontSize = (size.value / 2).sp
                 Text(
                     text = letter.uppercase(),
-                    fontSize = 20.sp,
-                    lineHeight = 18.sp,
+                    fontSize = fontSize,
+                    lineHeight = fontSize,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                     modifier = if (sharedTransition) {
