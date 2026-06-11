@@ -24,5 +24,6 @@ data class MainUiState(
     val theme: ThemeOption = ThemeOption.SYSTEM,
     val selectedChatIds: Set<Long> = emptySet(),
     val showNotificationBottomSheet: Boolean = false,
-    val askedPermission: Boolean = false
+    val askedPermission: Boolean = false,
+    val showAccountDialog: Boolean = false
 )

@@ -84,6 +84,14 @@ class MainViewModel @Inject constructor(
         _uiState.update { it.copy(showNotificationBottomSheet = false) }
     }
     
+    fun showAccountDialog() {
+        _uiState.update { it.copy(showAccountDialog = true) }
+    }
+    
+    fun hideAccountDialog() {
+        _uiState.update { it.copy(showAccountDialog = false) }
+    }
+    
     private fun List<Chat>.sortedByLastMessage(): List<Chat> {
         return this.sortedWith(
             compareByDescending<Chat> { it.isPinned }

@@ -156,9 +156,7 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { isGranted: Boolean ->
-        if (isGranted) {
-        
-        } else {
+        if (!isGranted) {
             viewModel.showNotificationSheet()
         }
     }
@@ -192,6 +190,8 @@ private fun Content(
     val uiState by viewModel.uiState.collectAsState()
     val hasSelection = uiState.selectedChatIds.isNotEmpty()
     val socketState by viewModel.socketState.collectAsState()
+    val accountSwitcherViewModel: AccountSwitcherViewModel = hiltViewModel()
+    val accountSwitcherState by accountSwitcherViewModel.uiState.collectAsState()
     
     BackHandler(hasSelection) {
         viewModel.clearSelection()
@@ -211,7 +211,8 @@ private fun Content(
                             viewModel.lockApp()
                         }
                     },
-                    socketState = socketState
+                    socketState = socketState,
+                    onProfileClick = viewModel::showAccountDialog
                 )
             } else {
                 SelectionTopBar(
@@ -328,6 +329,19 @@ private fun Content(
             }
         }
     }
+    
+    if (uiState.showAccountDialog) {
+        AccountSwitcherDialog(
+            currentUser = accountSwitcherState.currentUser,
+            otherAccounts = accountSwitcherState.otherAccounts,
+            onAccountClick = accountSwitcherViewModel::switchAccount,
+            onAddAccount = {
+                viewModel.hideAccountDialog()
+                navBackStack.add(AppRoute.Login)
+            },
+            onDismissRequest = viewModel::hideAccountDialog
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -404,7 +418,7 @@ private fun EmptyChatPlaceholder(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 10.dp),
+            .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -436,6 +450,7 @@ private fun DefaultTopBar(
     passcodeEnabled: Boolean,
     onLockClick: () -> Unit,
     socketState: ConnectionState,
+    onProfileClick: () -> Unit,
     searchViewModel: SearchViewModel = hiltViewModel(),
     accountSwitcherViewModel: AccountSwitcherViewModel = hiltViewModel()
 ) {
@@ -447,8 +462,6 @@ private fun DefaultTopBar(
     val searchBarState = rememberSearchBarState()
     val scope = rememberCoroutineScope()
     
-    var showAccountDialog by remember { mutableStateOf(false) }
-
     LaunchedEffect(textFieldState.text) {
         searchViewModel.onQueryChange(textFieldState.text.toString())
     }
@@ -457,7 +470,6 @@ private fun DefaultTopBar(
         accountSwitcherViewModel.sideEffect.collectLatest { sideEffect ->
             when (sideEffect) {
                 is AccountSwitcherSideEffect.AccountSwitched -> {
-                    showAccountDialog = false
                     val intent = Intent(context, MainActivity::class.java).apply {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     }
@@ -536,7 +548,7 @@ private fun DefaultTopBar(
                                 }
                             }
                             accountSwitcherState.currentUser?.let { currentUser ->
-                                IconButton(onClick = { showAccountDialog = true }) {
+                                IconButton(onClick = onProfileClick) {
                                     ChatAvatar(
                                         id = currentUser.id,
                                         chatName = currentUser.firstName,
@@ -562,19 +574,6 @@ private fun DefaultTopBar(
                     }
                 }
             })
-    }
-    
-    if (showAccountDialog) {
-        AccountSwitcherDialog(
-            currentUser = accountSwitcherState.currentUser,
-            otherAccounts = accountSwitcherState.otherAccounts,
-            onAccountClick = accountSwitcherViewModel::switchAccount,
-            onAddAccount = {
-                showAccountDialog = false
-                navBackStack.add(AppRoute.Login)
-            },
-            onDismissRequest = { showAccountDialog = false }
-        )
     }
     
     AppBarWithSearch(
