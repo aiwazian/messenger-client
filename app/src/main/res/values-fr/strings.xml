@@ -55,6 +55,7 @@
     <string name="enable_passcode">Activer le code d’accès</string>
     <string name="alternative_options">Options alternatives</string>
     <string name="clear_cache">Effacer le cache</string>
+    <string name="add_account">Ajouter un compte</string>
     <string name="archive">Discussions archivées</string>
     <string name="archive_settings">Paramètres des archives</string>
     <string name="how_does_it_work">Comment cela fonctionne-t-il \?</string>

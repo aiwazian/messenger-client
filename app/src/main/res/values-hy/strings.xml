@@ -55,6 +55,7 @@
     <string name="enable_passcode">Միացնել ծածկագիրը</string>
     <string name="alternative_options">Այլընտրանքային տարբերակներ</string>
     <string name="clear_cache">Մաքրել քեշը</string>
+    <string name="add_account">Ավելացնել հաշիվ</string>
     <string name="archive">Արխիվացված զրույցներ</string>
     <string name="archive_settings">Արխիվային կարգավորումներ</string>
     <string name="how_does_it_work">Ինչպե՞ս է այն աշխատում:</string>

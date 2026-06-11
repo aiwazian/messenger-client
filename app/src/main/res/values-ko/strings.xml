@@ -55,6 +55,7 @@
     <string name="enable_passcode">비밀번호 활성화</string>
     <string name="alternative_options">대체 옵션</string>
     <string name="clear_cache">캐시 지우기</string>
+    <string name="add_account">계정 추가</string>
     <string name="archive">보관된 채팅</string>
     <string name="archive_settings">아카이브 설정</string>
     <string name="how_does_it_work">어떻게 작동하나요\?</string>

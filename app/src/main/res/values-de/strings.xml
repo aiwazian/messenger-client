@@ -55,6 +55,7 @@
     <string name="enable_passcode">Passcode aktivieren</string>
     <string name="alternative_options">Alternative Optionen</string>
     <string name="clear_cache">Cache leeren</string>
+    <string name="add_account">Konto hinzufügen</string>
     <string name="archive">Archivierte Chats</string>
     <string name="archive_settings">Archiveinstellungen</string>
     <string name="how_does_it_work">Wie funktioniert es\?</string>

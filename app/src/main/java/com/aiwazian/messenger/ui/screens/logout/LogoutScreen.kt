@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -75,6 +76,13 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
             SectionContainer(header = {
                 SectionHeader(title = stringResource(R.string.alternative_options))
             }) {
+                SectionItem(
+                    leadingIcon = Icons.Rounded.PersonAdd,
+                    headlineText = stringResource(R.string.add_account),
+                    supportingText = "Войдите в другой аккаунт, не выходя из текущего.",
+                    onClick = {
+                        navBackStack.add(AppRoute.Login)
+                    })
                 SectionItem(
                     leadingIcon = Icons.Rounded.DeleteOutline,
                     headlineText = stringResource(R.string.clear_cache),

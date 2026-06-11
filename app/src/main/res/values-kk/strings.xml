@@ -55,6 +55,7 @@
     <string name="enable_passcode">Рұқсат кодын қосыңыз</string>
     <string name="alternative_options">Балама опциялар</string>
     <string name="clear_cache">Кэшті тазалау</string>
+    <string name="add_account">Тіркелгі қосу</string>
     <string name="archive">Мұрағатталған чаттар</string>
     <string name="archive_settings">Мұрағат параметрлері</string>
     <string name="how_does_it_work">Бұл қалай жұмыс істейді\?</string>
