@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 
 @Composable
 fun InputTextField(
+    modifier: Modifier = Modifier,
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
@@ -31,7 +32,7 @@ fun InputTextField(
     onSendClick: () -> Unit = {}
 ) {
     OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,

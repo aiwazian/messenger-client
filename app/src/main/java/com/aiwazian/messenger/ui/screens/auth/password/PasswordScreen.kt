@@ -36,6 +36,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -61,8 +63,11 @@ fun PasswordScreen(login: String, viewModel: PasswordViewModel = hiltViewModel()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
+    val focusRequester = remember { FocusRequester() }
     
     LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+        
         viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is PasswordUiEffect.ShowSnackbar -> {
@@ -127,6 +132,7 @@ fun PasswordScreen(login: String, viewModel: PasswordViewModel = hiltViewModel()
                        .width(300.dp)
                        .imePadding()) {
                 PasswordField(
+                    modifier = Modifier.focusRequester(focusRequester),
                     value = uiState.password,
                     onValueChange = viewModel::changePassword,
                     label = stringResource(R.string.password),

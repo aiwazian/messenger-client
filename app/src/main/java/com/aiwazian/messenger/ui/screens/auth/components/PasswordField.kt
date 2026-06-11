@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun PasswordField(
+    modifier: Modifier = Modifier,
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
@@ -37,6 +38,7 @@ fun PasswordField(
     var passwordVisible by remember { mutableStateOf(false) }
     
     InputTextField(
+        modifier = modifier,
         value = value,
         onValueChange = onValueChange,
         label = label,

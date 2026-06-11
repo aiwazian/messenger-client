@@ -40,6 +40,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -68,19 +70,22 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()) {
-    val context = LocalContext.current
-    
     LaunchedEffect(Unit) {
         viewModel.setLogin(login)
     }
+    
+    val context = LocalContext.current
     
     val uiState by viewModel.uiState.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
+    val focusRequester = remember { FocusRequester() }
     
     LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+        
         viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is RegisterUiEffect.ShowSnackbar -> {
@@ -152,6 +157,7 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
                     .imePadding()
             ) {
                 InputTextField(
+                    modifier = Modifier.focusRequester(focusRequester),
                     value = uiState.firstName,
                     onValueChange = viewModel::changeFirstName,
                     label = stringResource(R.string.first_name),
