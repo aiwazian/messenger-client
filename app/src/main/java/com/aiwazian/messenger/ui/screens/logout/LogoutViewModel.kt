@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.repository.AuthRepository
+import com.aiwazian.messenger.utils.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,13 +39,24 @@ class LogoutViewModel @Inject constructor(
     
     fun logout() {
         viewModelScope.launch {
+            val accounts = authRepository.getAllAccounts()
+            val currentAccount = accounts.find { it.isCurrent }
+            val otherAccounts =
+                accounts.filter { it.userId != currentAccount?.userId && it.token.isNotEmpty() }
+            
             authRepository.logout().onFailure { e ->
                 Log.e(
                     "AuthManager",
                     "Ошибка при выходе: ${e.message}"
                 )
             }
-            _sideEffect.emit(LogoutSideEffect.LogoutSuccess)
+            
+            if (otherAccounts.isNotEmpty()) {
+                SessionManager.switchAccount(otherAccounts.first().userId)
+                _sideEffect.emit(LogoutSideEffect.SwitchToNextAccount)
+            } else {
+                _sideEffect.emit(LogoutSideEffect.NoAccountsLeft)
+            }
         }
     }
 }
