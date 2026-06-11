@@ -23,7 +23,7 @@ import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun CustomDialog(
-    title: String,
+    title: String? = null,
     onDismissRequest: () -> Unit,
     buttons: @Composable () -> Unit,
     content: @Composable () -> Unit
@@ -41,17 +41,19 @@ fun CustomDialog(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
         ) {
             Column {
-                Text(
-                    text = title,
-                    modifier = Modifier.padding(
-                        start = 16.dp,
-                        top = 16.dp,
-                        end = 16.dp,
-                        bottom = 8.dp
-                    ),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.W500
-                )
+                if (title != null) {
+                    Text(
+                        text = title,
+                        modifier = Modifier.padding(
+                            start = 16.dp,
+                            top = 16.dp,
+                            end = 16.dp,
+                            bottom = 8.dp
+                        ),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.W500
+                    )
+                }
                 
                 Column(
                     modifier = Modifier.padding(

@@ -50,6 +50,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.BookmarkBorder
@@ -615,12 +616,33 @@ private fun AccountSwitcherDialog(
     onDismissRequest: () -> Unit
 ) {
     CustomDialog(
-        title = stringResource(R.string.accounts),
         onDismissRequest = onDismissRequest,
         content = {
-            Column {
-                currentUser?.let {
-                    AccountRow(user = it, onClick = {})
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                currentUser?.let { user ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        ChatAvatar(
+                            id = user.id,
+                            chatName = user.firstName,
+                            avatarUri = user.avatars.firstOrNull()?.uri,
+                            size = 64.dp,
+                            sharedTransition = false
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
                 otherAccounts.forEach { account ->
                     AccountRow(
@@ -628,12 +650,10 @@ private fun AccountSwitcherDialog(
                         onClick = { onAccountClick(account.id) }
                     )
                 }
+                AddAccountRow(onClick = onAddAccount)
             }
         },
         buttons = {
-            TextButton(onClick = onAddAccount) {
-                Text(stringResource(R.string.add_account))
-            }
             TextButton(onClick = onDismissRequest) {
                 Text(stringResource(R.string.cancel))
             }
@@ -649,7 +669,7 @@ private fun AccountRow(
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
             .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
+            .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -662,6 +682,39 @@ private fun AccountRow(
         )
         Text(
             text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
+private fun AddAccountRow(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick)
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Add,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+        Text(
+            text = stringResource(R.string.add_account),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             color = MaterialTheme.colorScheme.onSurface
