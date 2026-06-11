@@ -199,21 +199,27 @@ private fun UnreadMessageCount(count: Int) {
 }
 
 @Composable
-fun ChatAvatar(id: Long, chatName: String, avatarUri: Uri? = null, size: Dp = 40.dp) {
+fun ChatAvatar(
+    id: Long,
+    chatName: String,
+    avatarUri: Uri? = null,
+    size: Dp = 40.dp,
+    sharedTransition: Boolean = true
+) {
     if (avatarUri != null) {
         AsyncImage(
             model = avatarUri,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .sharedElement(key = "chat-avatar-$id")
+                .then(if (sharedTransition) Modifier.sharedElement(key = "chat-avatar-$id") else Modifier)
                 .size(size)
                 .clip(CircleShape)
         )
     } else {
         Box(
             modifier = Modifier
-                .sharedBounds(key = "chat-avatar-$id")
+                .then(if (sharedTransition) Modifier.sharedBounds(key = "chat-avatar-$id") else Modifier)
                 .size(size)
                 .clip(CircleShape)
                 .background(AppPrimaryColor.entries[(id.toString().first().code % 5) + 1].color),
@@ -226,7 +232,11 @@ fun ChatAvatar(id: Long, chatName: String, avatarUri: Uri? = null, size: Dp = 40
                     lineHeight = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
-                    modifier = Modifier.sharedElement(key = "chat-avatar-letter-$id")
+                    modifier = if (sharedTransition) {
+                        Modifier.sharedElement(key = "chat-avatar-letter-$id")
+                    } else {
+                        Modifier
+                    }
                 )
             }
         }

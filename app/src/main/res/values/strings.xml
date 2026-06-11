@@ -56,6 +56,7 @@
     <string name="alternative_options">Alternative options</string>
     <string name="clear_cache">Clear Cache</string>
     <string name="add_account">Add Account</string>
+    <string name="accounts">Accounts</string>
     <string name="archive">Archived Chats</string>
     <string name="archive_settings">Archive Settings</string>
     <string name="how_does_it_work">How does it work?</string>

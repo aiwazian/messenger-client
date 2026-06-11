@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.main
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
@@ -22,6 +23,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -111,12 +113,15 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.ThemeOption
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
+import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.ChatCard
+import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -131,6 +136,7 @@ import com.yandex.mobile.ads.compose.BannerEvents
 import com.yandex.mobile.ads.compose.BannerSize
 import com.yandex.mobile.ads.compose.rememberBannerAdState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -429,16 +435,36 @@ private fun DefaultTopBar(
     passcodeEnabled: Boolean,
     onLockClick: () -> Unit,
     socketState: ConnectionState,
-    searchViewModel: SearchViewModel = hiltViewModel()
+    searchViewModel: SearchViewModel = hiltViewModel(),
+    accountSwitcherViewModel: AccountSwitcherViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val navBackStack = LocalNavBackStack.current
     val searchUiState by searchViewModel.uiState.collectAsState()
+    val accountSwitcherState by accountSwitcherViewModel.uiState.collectAsState()
     val textFieldState = rememberTextFieldState(searchUiState.query)
     val searchBarState = rememberSearchBarState()
     val scope = rememberCoroutineScope()
     
+    var showAccountDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(textFieldState.text) {
         searchViewModel.onQueryChange(textFieldState.text.toString())
+    }
+    
+    LaunchedEffect(Unit) {
+        accountSwitcherViewModel.sideEffect.collectLatest { sideEffect ->
+            when (sideEffect) {
+                is AccountSwitcherSideEffect.AccountSwitched -> {
+                    showAccountDialog = false
+                    val intent = Intent(context, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+                    context.startActivity(intent)
+                    (context as? Activity)?.finish()
+                }
+            }
+        }
     }
     
     val inputField = @Composable {
@@ -498,12 +524,27 @@ private fun DefaultTopBar(
             },
             trailingIcon = {
                 AnimatedContent(searchBarState.currentValue) {
-                    if (it == SearchBarValue.Collapsed && passcodeEnabled) {
-                        IconButton(onClick = onLockClick) {
-                            Icon(
-                                imageVector = Icons.Rounded.LockOpen,
-                                contentDescription = "Lock"
-                            )
+                    if (it == SearchBarValue.Collapsed) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (passcodeEnabled) {
+                                IconButton(onClick = onLockClick) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.LockOpen,
+                                        contentDescription = "Lock"
+                                    )
+                                }
+                            }
+                            accountSwitcherState.currentUser?.let { currentUser ->
+                                IconButton(onClick = { showAccountDialog = true }) {
+                                    ChatAvatar(
+                                        id = currentUser.id,
+                                        chatName = currentUser.firstName,
+                                        avatarUri = currentUser.avatars.firstOrNull()?.uri,
+                                        size = 30.dp,
+                                        sharedTransition = false
+                                    )
+                                }
+                            }
                         }
                     } else if (textFieldState.text.isNotEmpty()) {
                         IconButton(onClick = {
@@ -520,6 +561,19 @@ private fun DefaultTopBar(
                     }
                 }
             })
+    }
+    
+    if (showAccountDialog) {
+        AccountSwitcherDialog(
+            currentUser = accountSwitcherState.currentUser,
+            otherAccounts = accountSwitcherState.otherAccounts,
+            onAccountClick = accountSwitcherViewModel::switchAccount,
+            onAddAccount = {
+                showAccountDialog = false
+                navBackStack.add(AppRoute.Login)
+            },
+            onDismissRequest = { showAccountDialog = false }
+        )
     }
     
     AppBarWithSearch(
@@ -549,6 +603,69 @@ private fun DefaultTopBar(
                     }
                 })
         }
+    }
+}
+
+@Composable
+private fun AccountSwitcherDialog(
+    currentUser: User?,
+    otherAccounts: List<User>,
+    onAccountClick: (Long) -> Unit,
+    onAddAccount: () -> Unit,
+    onDismissRequest: () -> Unit
+) {
+    CustomDialog(
+        title = stringResource(R.string.accounts),
+        onDismissRequest = onDismissRequest,
+        content = {
+            Column {
+                currentUser?.let {
+                    AccountRow(user = it, onClick = {})
+                }
+                otherAccounts.forEach { account ->
+                    AccountRow(
+                        user = account,
+                        onClick = { onAccountClick(account.id) }
+                    )
+                }
+            }
+        },
+        buttons = {
+            TextButton(onClick = onAddAccount) {
+                Text(stringResource(R.string.add_account))
+            }
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(R.string.cancel))
+            }
+        })
+}
+
+@Composable
+private fun AccountRow(
+    user: User, onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        ChatAvatar(
+            id = user.id,
+            chatName = user.firstName,
+            avatarUri = user.avatars.firstOrNull()?.uri,
+            size = 40.dp,
+            sharedTransition = false
+        )
+        Text(
+            text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
