@@ -10,9 +10,10 @@ import android.app.NotificationManager
 import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.utils.SessionManager
-import com.google.firebase.FirebaseApp
 import com.yandex.mobile.ads.common.YandexAds
 import dagger.hilt.android.HiltAndroidApp
+import io.appmetrica.analytics.AppMetrica
+import io.appmetrica.analytics.AppMetricaConfig
 import ru.rustore.sdk.pushclient.RuStorePushClient
 import javax.inject.Inject
 
@@ -28,12 +29,14 @@ class Application : Application() {
     override fun onCreate() {
         super.onCreate()
         
-        if (!::authRepository.isInitialized) {
-            throw IllegalStateException("AuthRepository not initialized by Hilt")
-        }
-        
         SessionManager.init(authRepository)
-        FirebaseApp.initializeApp(this)
+        if (!BuildConfig.DEBUG) {
+            val config = AppMetricaConfig.newConfigBuilder("a68ca89d-5f0f-4637-9132-d49550bd5471")
+                .withLocationTracking(true)
+                .build()
+            AppMetrica.activate(this, config)
+            AppMetrica.enableActivityAutoTracking(this)
+        }
         YandexAds.initialize(this) { }
         RuStorePushClient.init(
             application = this,

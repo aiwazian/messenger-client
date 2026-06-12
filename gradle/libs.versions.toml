@@ -2,6 +2,7 @@
 accompanistNavigationMaterial = "0.36.0"
 accompanistSystemuicontroller = "0.36.0"
 agp = "9.2.1"
+analytics = "8.3.0"
 animation = "1.11.2"
 browser = "1.10.0"
 coilCompose = "2.7.0"
@@ -9,8 +10,6 @@ coilGif = "2.7.0"
 coilVideo = "2.7.0"
 coreSplashscreen = "1.2.0"
 datastorePreferences = "1.2.1"
-firebaseBom = "34.14.1"
-firebaseAnalytics = "23.2.0"
 foundation = "1.11.2"
 hiltAndroid = "2.59.2"
 hiltCompiler = "2.59.2"
@@ -27,7 +26,6 @@ navigation3RunTime = "1.1.2"
 navigation3Ui = "1.1.2"
 navigation3ViewModel = "2.10.0"
 composeBom = "2026.05.01"
-gmsVersion = "4.4.4"
 lifecycleViewmodelComposeVersion = "2.10.0"
 lottieCompose = "6.7.1"
 materialIconsExtendedAndroid = "1.7.8"
@@ -47,6 +45,7 @@ hilt = "2.59.2"
 ksp = "2.3.9"
 
 [libraries]
+analytics = { module = "io.appmetrica.analytics:analytics", version.ref = "analytics" }
 androidx-animation = { module = "androidx.compose.animation:animation", version.ref = "animation" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
@@ -91,9 +90,6 @@ hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hil
 ketch = { module = "com.github.khushpanchal:Ketch", version.ref = "ketch" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 
-firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
-firebase-analytics = { module = "com.google.firebase:firebase-analytics", version.ref = "firebaseAnalytics" }
-
 mobileads = { module = "com.yandex.android:mobileads", version.ref = "mobileads" }
 mobileads-compose = { module = "com.yandex.android:mobileads-compose", version.ref = "mobileads" }
 
@@ -106,12 +102,10 @@ okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobufJavalite" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit2-kotlinx-serialization-converter = { module = "com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter", version.ref = "retrofit2KotlinxSerializationConverter" }
-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-gms = { id = "com.google.gms.google-services", version.ref = "gmsVersion" }
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serialization" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

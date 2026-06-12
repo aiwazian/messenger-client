@@ -437,6 +437,9 @@ fun FullScreenViewer(
     }
 }
 
+private const val MIN_PLAYBACK_SPEED = 0.1f
+private const val MAX_PLAYBACK_SPEED = 10.0f
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SpeedBottomSheet(
@@ -464,7 +467,7 @@ private fun SpeedBottomSheet(
             ) {
                 IconButton(onClick = {
                     val newSpeed = ((currentSpeed - 0.1f) * 10f).roundToInt() / 10f
-                    onSpeedChange(newSpeed.coerceAtLeast(0.1f))
+                    onSpeedChange(newSpeed.coerceAtLeast(MIN_PLAYBACK_SPEED))
                 }) {
                     Icon(Icons.Rounded.Remove, contentDescription = "Decrease speed")
                 }
@@ -472,11 +475,13 @@ private fun SpeedBottomSheet(
                     value = currentSpeed, onValueChange = {
                         val roundedSpeed = (it * 10f).roundToInt() / 10f
                         onSpeedChange(roundedSpeed)
-                    }, valueRange = 0.1f..10.0f, modifier = Modifier.weight(1f)
+                    },
+                    valueRange = MIN_PLAYBACK_SPEED..MAX_PLAYBACK_SPEED,
+                    modifier = Modifier.weight(1f)
                 )
                 IconButton(onClick = {
                     val newSpeed = ((currentSpeed + 0.1f) * 10f).roundToInt() / 10f
-                    onSpeedChange(newSpeed.coerceAtMost(5.0f))
+                    onSpeedChange(newSpeed.coerceAtMost(MAX_PLAYBACK_SPEED))
                 }) {
                     Icon(Icons.Rounded.Add, contentDescription = "Increase speed")
                 }

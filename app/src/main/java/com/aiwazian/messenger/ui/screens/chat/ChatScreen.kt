@@ -242,8 +242,21 @@ fun ChatScreen(
     }
     
     var fileToCancelId by remember { mutableStateOf<Long?>(null) }
+    var showCancelRecordingDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
+    
+    val onBackClick: () -> Unit = {
+        if (uiState.isRecording) {
+            showCancelRecordingDialog = true
+        } else {
+            navBackStack.removeLastOrNull()
+        }
+    }
+    
+    BackHandler(enabled = uiState.isRecording) {
+        showCancelRecordingDialog = true
+    }
     
     LaunchedEffect(Unit) {
         chatViewModel.uiEffect.collect { effect ->
@@ -299,7 +312,8 @@ fun ChatScreen(
                 subTitle = uiState.subTitle.asString(),
                 topBarActions = uiState.topBarActions,
                 isConnected = uiState.isConnected,
-                chatId = uiState.chatId
+                chatId = uiState.chatId,
+                onBackClick = onBackClick
             )
         },
         bottomBar = {
@@ -501,6 +515,27 @@ fun ChatScreen(
                 })
         }
         
+        if (showCancelRecordingDialog) {
+            CustomDialog(
+                title = "Отмена голосового сообщения",
+                onDismissRequest = { showCancelRecordingDialog = false },
+                content = { Text("Вы точно хотите прекратить запись и сбросить записанное сообщение?") },
+                buttons = {
+                    TextButton(onClick = { showCancelRecordingDialog = false }) {
+                        Text("Продолжить")
+                    }
+                    TextButton(
+                        onClick = {
+                            chatViewModel.cancelRecording()
+                            showCancelRecordingDialog = false
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Сбросить")
+                    }
+                })
+        }
+
         if (uiState.showInviteBottomSheet && uiState.inviteLinkInfo != null) {
             val info = uiState.inviteLinkInfo!!
             InviteLinkBottomSheet(
@@ -688,7 +723,8 @@ private fun TopBar(
     subTitle: String,
     topBarActions: List<TopBarAction>,
     isConnected: Boolean,
-    chatId: Long
+    chatId: Long,
+    onBackClick: () -> Unit
 ) {
     val navBackStack = LocalNavBackStack.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -766,7 +802,7 @@ private fun TopBar(
             }
         }, navigationIcon = {
             IconButton(
-                onClick = navBackStack::removeLastOrNull,
+                onClick = onBackClick,
                 colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
             ) {
                 Icon(Icons.AutoMirrored.Rounded.ArrowBack, null)

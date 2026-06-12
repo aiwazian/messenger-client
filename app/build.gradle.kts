@@ -5,7 +5,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.gms)
     alias(libs.plugins.serialization)
     
     id("com.google.dagger.hilt.android")
@@ -63,10 +62,7 @@ android {
 dependencies {
     implementation(libs.mobileads)
     implementation(libs.mobileads.compose)
-    
-    // Firebase
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
+    implementation(libs.analytics)
     
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.navigation.compose)
@@ -116,8 +112,6 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    
-    implementation(libs.material.icons.extended)
     
     implementation(libs.socketio.client) {
         exclude("org.json", "json")
