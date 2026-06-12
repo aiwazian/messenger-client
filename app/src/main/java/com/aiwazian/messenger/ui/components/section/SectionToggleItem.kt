@@ -32,13 +32,14 @@ fun SectionToggleItem(
     text: String,
     supportingText: String? = null,
     isChecked: Boolean,
+    enabled: Boolean = true,
     icon: ImageVector? = null,
     onCheckedChange: () -> Unit,
 ) {
     TextButton(
         shape = RectangleShape,
         modifier = Modifier.fillMaxWidth(),
-        onClick = onCheckedChange,
+        onClick = { if (enabled) onCheckedChange() },
         colors = ButtonDefaults.textButtonColors(
             contentColor = MaterialTheme.colorScheme.onSurface
         )
@@ -84,6 +85,7 @@ fun SectionToggleItem(
                 }
             }) {
                 Switch(
+                    enabled = enabled,
                     checked = isChecked, onCheckedChange = null, colors = SwitchDefaults.colors(
                         checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                         checkedTrackColor = MaterialTheme.colorScheme.primary,

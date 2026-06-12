@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Buscar</string>
@@ -90,6 +86,7 @@
     <string name="copy">Copiar</string>
     <string name="new_folder">Nueva carpeta</string>
     <string name="change_passcode">Cambiar contraseña</string>
+    <string name="fingerprint_unlock">Desbloqueo de huellas dactilares</string>
     <string name="ok">DE ACUERDO</string>
     <string name="chat_archived">Chat archivado</string>
     <string name="delete_message">Eliminar mensaje</string>

@@ -31,6 +31,9 @@ class AppLockManager @Inject constructor(
 
     private val _blockedUntil = MutableStateFlow(0L)
     val blockedUntil = _blockedUntil.asStateFlow()
+    
+    private val _fingerprintEnabled = MutableStateFlow(false)
+    val fingerprintEnabled = _fingerprintEnabled.asStateFlow()
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
@@ -46,6 +49,7 @@ class AppLockManager @Inject constructor(
 
             _failedAttempts.update { dataStoreManager.getFailedAttempts().first() }
             _blockedUntil.update { dataStoreManager.getBlockedUntil().first() }
+            _fingerprintEnabled.update { dataStoreManager.getFingerprintEnabled().first() }
         }
     }
 
@@ -93,5 +97,11 @@ class AppLockManager @Inject constructor(
     
     fun checkPasscode(passcode: String): Boolean {
         return passcode == _passcode.value
+    }
+    
+    suspend fun toggleFingerprint() {
+        val newValue = !_fingerprintEnabled.value
+        _fingerprintEnabled.update { newValue }
+        dataStoreManager.saveFingerprintEnabled(newValue)
     }
 }

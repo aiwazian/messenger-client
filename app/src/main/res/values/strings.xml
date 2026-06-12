@@ -90,6 +90,7 @@
     <string name="copy">Copy</string>
     <string name="new_folder">New Folder</string>
     <string name="change_passcode">Change Passcode</string>
+    <string name="fingerprint_unlock">Fingerprint Unlock</string>
     <string name="ok">OK</string>
     <string name="chat_archived">Chat archived</string>
     <string name="delete_message">Delete message</string>

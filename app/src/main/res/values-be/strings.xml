@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Пошук</string>
@@ -90,6 +86,7 @@
     <string name="copy">Копія</string>
     <string name="new_folder">Новая тэчка</string>
     <string name="change_passcode">Змяніць код доступу</string>
+    <string name="fingerprint_unlock">Разблакіроўка адбіткам пальца</string>
     <string name="ok">добра</string>
     <string name="chat_archived">Чат заархіваваны</string>
     <string name="delete_message">Выдаліць паведамленне</string>

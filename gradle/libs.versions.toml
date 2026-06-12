@@ -4,6 +4,7 @@ accompanistSystemuicontroller = "0.36.0"
 agp = "9.2.1"
 analytics = "8.3.0"
 animation = "1.11.2"
+biometric = "1.1.0"
 browser = "1.10.0"
 coilCompose = "2.7.0"
 coilGif = "2.7.0"
@@ -50,6 +51,7 @@ androidx-animation = { module = "androidx.compose.animation:animation", version.
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
+androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }

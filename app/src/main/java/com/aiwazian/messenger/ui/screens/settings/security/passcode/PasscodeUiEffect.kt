@@ -6,4 +6,5 @@ package com.aiwazian.messenger.ui.screens.settings.security.passcode
 
 sealed interface PasscodeUiEffect {
     data object NavigateBack : PasscodeUiEffect
+    data object ShowLockScreen : PasscodeUiEffect
 }

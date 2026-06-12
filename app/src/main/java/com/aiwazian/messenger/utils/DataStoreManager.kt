@@ -35,6 +35,7 @@ private object Keys {
     val AUTO_DOWNLOAD_PHOTOS = booleanPreferencesKey("auto_download_photos")
     val AUTO_DOWNLOAD_VIDEOS = booleanPreferencesKey("auto_download_videos")
     val AUTO_DOWNLOAD_FILES = booleanPreferencesKey("auto_download_files")
+    val FINGERPRINT_ENABLED = booleanPreferencesKey("fingerprint_enabled")
 }
 
 @Singleton
@@ -85,6 +86,9 @@ class DataStoreManager @Inject constructor(
     suspend fun saveAutoDownloadFiles(enabled: Boolean) =
         setValue(Keys.AUTO_DOWNLOAD_FILES, enabled)
     
+    suspend fun saveFingerprintEnabled(enabled: Boolean) =
+        setValue(Keys.FINGERPRINT_ENABLED, enabled)
+    
     fun getPasscode() = getValue(Keys.PASSCODE, "")
     
     fun getIsLockApp() = getValue(Keys.IS_LOCK_APP, false)
@@ -110,6 +114,8 @@ class DataStoreManager @Inject constructor(
     fun getAutoDownloadVideos() = getValue(Keys.AUTO_DOWNLOAD_VIDEOS, true)
     
     fun getAutoDownloadFiles() = getValue(Keys.AUTO_DOWNLOAD_FILES, true)
+    
+    fun getFingerprintEnabled() = getValue(Keys.FINGERPRINT_ENABLED, false)
     
     suspend fun clear() {
         context.dataStore.edit { it.clear() }

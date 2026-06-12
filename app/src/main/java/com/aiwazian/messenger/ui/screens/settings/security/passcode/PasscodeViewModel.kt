@@ -35,10 +35,18 @@ class PasscodeViewModel @Inject constructor(
     private val _uiEffect = MutableSharedFlow<PasscodeUiEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
     
+    val fingerprintEnabled = appLockManager.fingerprintEnabled
+    
     val disablePasscodeDialog = DialogController()
     
     fun vibrate() {
         vibrationManager.vibrate(VibrationPattern.Error)
+    }
+    
+    fun toggleFingerprint() {
+        viewModelScope.launch {
+            appLockManager.toggleFingerprint()
+        }
     }
     
     fun onPasscodeChanged(newPasscode: String) {
@@ -61,7 +69,7 @@ class PasscodeViewModel @Inject constructor(
     private fun setPasscode() {
         viewModelScope.launch {
             appLockManager.changePasscode(_uiState.value.passcode)
-            _uiEffect.emit(PasscodeUiEffect.NavigateBack)
+            _uiEffect.emit(PasscodeUiEffect.ShowLockScreen)
         }
     }
 }

@@ -82,6 +82,9 @@ dependencies {
     // DataStore
     implementation(libs.androidx.datastore.preferences)
     
+    // Biometric
+    implementation(libs.androidx.biometric)
+    
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.accompanist.navigation.material)
     implementation(libs.accompanist.navigation.animation)

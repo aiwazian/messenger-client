@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.settings.security.passcode
 
+import androidx.biometric.BiometricManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,8 +25,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,6 +49,7 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionToggleItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsSecurityViewModel
@@ -54,15 +60,20 @@ import kotlinx.coroutines.flow.collectLatest
 fun SettingsPasscodeScreen(viewModel: SettingsSecurityViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
     
-    if (uiState.passcodeEnabled) {
-        SettingsPasscodeLockScreen()
+    var showLockScreen by remember { mutableStateOf(uiState.passcodeEnabled) }
+    
+    if (showLockScreen) {
+        SettingsPasscodeLockScreen(onBackToCreate = { showLockScreen = false })
     } else {
-        SettingsPasscodeCreateScreen()
+        SettingsPasscodeCreateScreen(onCreated = { showLockScreen = true })
     }
 }
 
 @Composable
-fun SettingsPasscodeCreateScreen(passcodeViewModel: PasscodeViewModel = hiltViewModel()) {
+fun SettingsPasscodeCreateScreen(
+    passcodeViewModel: PasscodeViewModel = hiltViewModel(),
+    onCreated: () -> Unit = {}
+) {
     val navBackStack = LocalNavBackStack.current
     
     val uiState by passcodeViewModel.uiState.collectAsState()
@@ -71,6 +82,7 @@ fun SettingsPasscodeCreateScreen(passcodeViewModel: PasscodeViewModel = hiltView
         passcodeViewModel.uiEffect.collectLatest { effect ->
             when (effect) {
                 PasscodeUiEffect.NavigateBack -> navBackStack.removeLastOrNull()
+                PasscodeUiEffect.ShowLockScreen -> onCreated()
             }
         }
     }
@@ -159,6 +171,7 @@ fun SettingsPasscodeChangeScreen(passcodeViewModel: PasscodeViewModel = hiltView
         passcodeViewModel.uiEffect.collectLatest { effect ->
             when (effect) {
                 PasscodeUiEffect.NavigateBack -> navBackStack.removeLastOrNull()
+                PasscodeUiEffect.ShowLockScreen -> {}
             }
         }
     }
@@ -254,8 +267,21 @@ private fun TopBar() {
 }
 
 @Composable
-private fun SettingsPasscodeLockScreen(passcodeViewModel: PasscodeViewModel = hiltViewModel()) {
+private fun SettingsPasscodeLockScreen(
+    passcodeViewModel: PasscodeViewModel = hiltViewModel(),
+    onBackToCreate: () -> Unit = {}
+) {
     val navBackStack = LocalNavBackStack.current
+    
+    val uiState by passcodeViewModel.uiState.collectAsState()
+    val fingerprintEnabled by passcodeViewModel.fingerprintEnabled.collectAsState()
+    
+    val context = LocalContext.current
+    val hasEnrolledFingerprints = remember {
+        val biometricManager = BiometricManager.from(context)
+        biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
+                BiometricManager.BIOMETRIC_SUCCESS
+    }
     
     val disablePasscodeDialog = passcodeViewModel.disablePasscodeDialog
     
@@ -264,7 +290,11 @@ private fun SettingsPasscodeLockScreen(passcodeViewModel: PasscodeViewModel = hi
     LaunchedEffect(Unit) {
         passcodeViewModel.uiEffect.collectLatest { effect ->
             when (effect) {
-                PasscodeUiEffect.NavigateBack -> navBackStack.removeLastOrNull()
+                PasscodeUiEffect.NavigateBack -> {
+                    onBackToCreate()
+                }
+                
+                PasscodeUiEffect.ShowLockScreen -> {}
             }
         }
     }
@@ -305,6 +335,16 @@ private fun SettingsPasscodeLockScreen(passcodeViewModel: PasscodeViewModel = hi
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
+            }
+            
+            if (hasEnrolledFingerprints) {
+                SectionContainer {
+                    SectionToggleItem(
+                        text = stringResource(R.string.fingerprint_unlock),
+                        isChecked = fingerprintEnabled,
+                        onCheckedChange = passcodeViewModel::toggleFingerprint
+                    )
+                }
             }
             
             SectionContainer {

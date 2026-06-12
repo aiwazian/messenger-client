@@ -27,6 +27,8 @@ class LockViewModel @Inject constructor(
     
     private val _uiState = MutableStateFlow(LockUiState())
     val uiState = _uiState.asStateFlow()
+    
+    val fingerprintEnabled = appLockManager.fingerprintEnabled
 
     init {
         viewModelScope.launch {
@@ -62,6 +64,12 @@ class LockViewModel @Inject constructor(
         
         if (_uiState.value.passcode.length == PasscodeViewModel.MAX_LENGTH_PASSCODE) {
             checkPasscode()
+        }
+    }
+    
+    fun onFingerprintSuccess() {
+        viewModelScope.launch {
+            appLockManager.unlock()
         }
     }
     

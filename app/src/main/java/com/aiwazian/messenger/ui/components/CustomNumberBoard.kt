@@ -4,6 +4,10 @@
 
 package com.aiwazian.messenger.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +31,9 @@ import androidx.compose.ui.unit.sp
 fun CustomNumberBoard(
     value: String = "",
     buttons: List<List<Any?>>,
-    onChange: (String) -> Unit
+    onChange: (String) -> Unit,
+    bottomRightIcon: ImageVector = Icons.AutoMirrored.Rounded.Backspace,
+    onBottomRightClick: (() -> Unit)? = null
 ) {
     Column(
         modifier = Modifier
@@ -46,7 +52,11 @@ fun CustomNumberBoard(
                     NumberButton(
                         onClick = {
                             if (key is ImageVector) {
-                                onChange(value.dropLast(1))
+                                if (onBottomRightClick != null) {
+                                    onBottomRightClick()
+                                } else {
+                                    onChange(value.dropLast(1))
+                                }
                             } else {
                                 onChange(value + key)
                             }
@@ -61,10 +71,16 @@ fun CustomNumberBoard(
                                 lineHeight = 30.sp
                             )
                             
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.Backspace,
-                                contentDescription = null,
-                            )
+                            AnimatedContent(
+                                targetState = bottomRightIcon,
+                                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                                label = "icon_transition"
+                            ) { icon ->
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                )
+                            }
                         } else if (key is String) {
                             Text(
                                 text = key,
