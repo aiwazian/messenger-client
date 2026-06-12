@@ -163,6 +163,9 @@
     <string name="subscribe">Subscribe</string>
     <string name="group_type">Group Type</string>
     <string name="delete_account_after_twenty_four_hours">Account deletion will be available 24 hours after the start of the current session.</string>
+    <string name="change_password_session_age">Password change will be available 24 hours after the start of the current session</string>
+    <string name="terminate_session_session_age">Session termination will be available 24 hours after the start of the current session</string>
+    <string name="change_login_session_age">Login change will be available 24 hours after the start of the current session</string>
     <string name="public_group">Public Group</string>
     <string name="private_group">Private Group</string>
     <string name="clear_database">Clear Database</string>

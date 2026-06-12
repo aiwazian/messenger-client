@@ -56,6 +56,7 @@
     <string name="alternative_options">Options alternatives</string>
     <string name="clear_cache">Effacer le cache</string>
     <string name="add_account">Ajouter un compte</string>
+    <string name="accounts">Comptes</string>
     <string name="archive">Discussions archivées</string>
     <string name="archive_settings">Paramètres des archives</string>
     <string name="how_does_it_work">Comment cela fonctionne-t-il \?</string>
@@ -162,6 +163,9 @@
     <string name="subscribe">S\'abonner</string>
     <string name="group_type">Type de groupe</string>
     <string name="delete_account_after_twenty_four_hours">La suppression du compte sera disponible 24 heures après le début de la session en cours.</string>
+    <string name="change_password_session_age">La modification du mot de passe de votre compte sera disponible 24 heures à compter du début de la session en cours</string>
+    <string name="terminate_session_session_age">La fin de la session sera disponible 24 heures après le début de la session en cours</string>
+    <string name="change_login_session_age">La modification de la connexion à votre compte sera disponible 24 heures à compter du début de la session en cours</string>
     <string name="public_group">Groupe public</string>
     <string name="private_group">Groupe privé</string>
     <string name="clear_database">Effacer la base de données</string>

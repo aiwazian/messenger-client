@@ -80,6 +80,9 @@ sealed interface AppRoute : NavKey {
     data object SettingsCloudPassword : AppRoute
     
     @Serializable
+    data object SettingsLogin : AppRoute
+    
+    @Serializable
     data object SettingsNotifications : AppRoute
     
     @Serializable

@@ -56,6 +56,7 @@
     <string name="alternative_options">Alternative Optionen</string>
     <string name="clear_cache">Cache leeren</string>
     <string name="add_account">Konto hinzufügen</string>
+    <string name="accounts">Konten</string>
     <string name="archive">Archivierte Chats</string>
     <string name="archive_settings">Archiveinstellungen</string>
     <string name="how_does_it_work">Wie funktioniert es\?</string>
@@ -162,6 +163,9 @@
     <string name="subscribe">Abonnieren</string>
     <string name="group_type">Gruppentyp</string>
     <string name="delete_account_after_twenty_four_hours">Die Kontolöschung ist 24 Stunden nach Beginn der aktuellen Sitzung möglich.</string>
+    <string name="change_password_session_age">Das Ändern Ihres Kontopassworts ist 24 Stunden nach Beginn der aktuellen Sitzung möglich</string>
+    <string name="terminate_session_session_age">Das Beenden der Sitzung ist 24 Stunden nach Beginn der aktuellen Sitzung möglich</string>
+    <string name="change_login_session_age">Die Änderung Ihres Konto-Logins ist 24 Stunden nach Beginn der aktuellen Sitzung möglich</string>
     <string name="public_group">Öffentliche Gruppe</string>
     <string name="private_group">Private Gruppe</string>
     <string name="clear_database">Datenbank löschen</string>

@@ -7,7 +7,7 @@ package com.aiwazian.messenger.ui.screens.settings.security
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.domain.ChangePasswordRequest
+import com.aiwazian.messenger.domain.ChangeLoginRequest
 import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.VibrationManager
@@ -22,34 +22,34 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class CloudPasswordViewModel @Inject constructor(
+class SettingsLoginViewModel @Inject constructor(
     private val vibrationManager: VibrationManager,
     private val authRepository: AuthRepository
 ) : ViewModel() {
-
-    private val _newPassword = MutableStateFlow("")
-    val newPassword = _newPassword.asStateFlow()
-
+    
+    private val _newLogin = MutableStateFlow("")
+    val newLogin = _newLogin.asStateFlow()
+    
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage = _errorMessage.asStateFlow()
     
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
     
-    private val _sideEffect = MutableSharedFlow<CloudPasswordSideEffect>()
+    private val _sideEffect = MutableSharedFlow<SettingsLoginSideEffect>()
     val sideEffect = _sideEffect.asSharedFlow()
-
-    fun onInputNewPassword(newPassword: String) {
-        val filtered = newPassword.filter { !it.isWhitespace() }.take(64)
-        _newPassword.update { filtered }
+    
+    fun onInputNewLogin(newLogin: String) {
+        val filtered = newLogin.filter { !it.isWhitespace() }.take(64)
+        _newLogin.update { filtered }
         _errorMessage.update { null }
     }
     
-    fun onChangePassword() {
+    fun onChangeLogin() {
         if (_isLoading.value) return
         
         viewModelScope.launch {
-            if (!checkValidPassword()) {
+            if (!checkValidLogin()) {
                 vibrationManager.vibrate(VibrationPattern.Error)
                 return@launch
             }
@@ -57,35 +57,40 @@ class CloudPasswordViewModel @Inject constructor(
             _isLoading.update { true }
             
             try {
-                val requestBody = ChangePasswordRequest(_newPassword.value)
-                val result = authRepository.changePassword(requestBody)
+                val request = ChangeLoginRequest(_newLogin.value)
+                val result = authRepository.changeLogin(request)
                 if (result.isSuccess) {
-                    _sideEffect.emit(CloudPasswordSideEffect.NavigateBack)
+                    _sideEffect.emit(SettingsLoginSideEffect.NavigateBack)
+                } else {
+                    _errorMessage.update { "Логин уже занят" }
+                    vibrationManager.vibrate(VibrationPattern.Error)
                 }
             } catch (e: Exception) {
-                Log.e("CloudPasswordViewModel", e.message.toString())
+                Log.e("SettingsLoginViewModel", e.message.toString())
+                _errorMessage.update { "Ошибка при смене логина" }
+                vibrationManager.vibrate(VibrationPattern.Error)
             } finally {
                 _isLoading.update { false }
             }
         }
     }
     
-    private fun checkValidPassword(): Boolean {
-        if (_newPassword.value.isEmpty()) {
-            _errorMessage.update { "Введите пароль" }
+    private fun checkValidLogin(): Boolean {
+        if (_newLogin.value.isEmpty()) {
+            _errorMessage.update { "Введите логин" }
             return false
         }
-
-        if (_newPassword.value.length < 5) {
+        
+        if (_newLogin.value.length < 5) {
             _errorMessage.update { "Минимум 5 символов" }
             return false
         }
         
-        if (!RegexPatterns.PASSWORD.matches(_newPassword.value)) {
+        if (!RegexPatterns.LOGIN.matches(_newLogin.value)) {
             _errorMessage.update { "Недопустимые символы" }
             return false
         }
-
+        
         _errorMessage.update { null }
         return true
     }

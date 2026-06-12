@@ -56,6 +56,7 @@
     <string name="alternative_options">대체 옵션</string>
     <string name="clear_cache">캐시 지우기</string>
     <string name="add_account">계정 추가</string>
+    <string name="accounts">계정</string>
     <string name="archive">보관된 채팅</string>
     <string name="archive_settings">아카이브 설정</string>
     <string name="how_does_it_work">어떻게 작동하나요\?</string>
@@ -162,6 +163,9 @@
     <string name="subscribe">구독하다</string>
     <string name="group_type">그룹 유형</string>
     <string name="delete_account_after_twenty_four_hours">계정 삭제는 현재 세션 시작 후 24시간 후에 가능합니다.</string>
+    <string name="change_password_session_age">계정 비밀번호 변경은 현재 세션이 시작된 후 24시간 동안 가능합니다.</string>
+    <string name="terminate_session_session_age">세션 종료는 현재 세션 시작 후 24시간 동안 가능합니다.</string>
+    <string name="change_login_session_age">계정 로그인 변경은 현재 세션 시작 후 24시간 동안 가능합니다.</string>
     <string name="public_group">공개 그룹</string>
     <string name="private_group">비공개 그룹</string>
     <string name="clear_database">데이터베이스 지우기</string>

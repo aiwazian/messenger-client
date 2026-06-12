@@ -56,6 +56,7 @@
     <string name="alternative_options">Այլընտրանքային տարբերակներ</string>
     <string name="clear_cache">Մաքրել քեշը</string>
     <string name="add_account">Ավելացնել հաշիվ</string>
+    <string name="accounts">Հաշիվներ</string>
     <string name="archive">Արխիվացված զրույցներ</string>
     <string name="archive_settings">Արխիվային կարգավորումներ</string>
     <string name="how_does_it_work">Ինչպե՞ս է այն աշխատում:</string>
@@ -162,6 +163,9 @@
     <string name="subscribe">Բաժանորդագրվել</string>
     <string name="group_type">Խմբի տեսակը</string>
     <string name="delete_account_after_twenty_four_hours">Հաշվի ջնջումը հասանելի կլինի ընթացիկ նստաշրջանի մեկնարկից 24 ժամ հետո:</string>
+    <string name="change_password_session_age">Ձեր հաշվի գաղտնաբառը փոխելը հասանելի կլինի ընթացիկ նստաշրջանի մեկնարկից 24 ժամվա ընթացքում</string>
+    <string name="terminate_session_session_age">Նիստի ավարտը հասանելի կլինի ընթացիկ նստաշրջանի մեկնարկից 24 ժամվա ընթացքում</string>
+    <string name="change_login_session_age">Ձեր հաշվի մուտքի փոփոխությունը հասանելի կլինի ընթացիկ նստաշրջանի մեկնարկից 24 ժամվա ընթացքում</string>
     <string name="public_group">Հասարակական խումբ</string>
     <string name="private_group">Մասնավոր խումբ</string>
     <string name="clear_database">Մաքրել տվյալների բազան</string>

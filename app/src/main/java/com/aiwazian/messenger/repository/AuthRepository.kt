@@ -8,6 +8,7 @@ import android.util.Log
 import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.database.entity.AccountEntity
+import com.aiwazian.messenger.domain.ChangeLoginRequest
 import com.aiwazian.messenger.domain.ChangePasswordRequest
 import com.aiwazian.messenger.domain.SignInRequest
 import com.aiwazian.messenger.domain.SignInResponse
@@ -16,6 +17,7 @@ import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toDto
 import com.aiwazian.messenger.network.api.AuthApi
 import com.aiwazian.messenger.network.api.UserApi
+import com.aiwazian.messenger.network.dto.ChangeLoginRequestDto
 import com.aiwazian.messenger.network.dto.ChangePasswordRequestDto
 import com.aiwazian.messenger.utils.DataStoreManager
 import com.aiwazian.messenger.utils.SessionManager
@@ -251,6 +253,21 @@ class AuthRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e("AuthRepository", "Ошибка при смене пароля", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun changeLogin(request: ChangeLoginRequest): Result<Unit> {
+        return try {
+            val dto = ChangeLoginRequestDto(login = request.login)
+            val response = userApi.changeLogin(dto)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Ошибка смены логина: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Ошибка при смене логина", e)
             Result.failure(e)
         }
     }

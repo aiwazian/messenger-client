@@ -56,6 +56,7 @@
     <string name="alternative_options">Балама опциялар</string>
     <string name="clear_cache">Кэшті тазалау</string>
     <string name="add_account">Тіркелгі қосу</string>
+    <string name="accounts">Есептік жазбалар</string>
     <string name="archive">Мұрағатталған чаттар</string>
     <string name="archive_settings">Мұрағат параметрлері</string>
     <string name="how_does_it_work">Бұл қалай жұмыс істейді\?</string>
@@ -162,6 +163,9 @@
     <string name="subscribe">Жазылу</string>
     <string name="group_type">Топ түрі</string>
     <string name="delete_account_after_twenty_four_hours">Есептік жазбаны жою ағымдағы сеанс басталғаннан кейін 24 сағаттан кейін қолжетімді болады.</string>
+    <string name="change_password_session_age">Тіркелгі құпия сөзін өзгерту ағымдағы сеанс басталғаннан кейін 24 сағат ішінде қолжетімді болады</string>
+    <string name="terminate_session_session_age">Сеансты аяқтау ағымдағы сеанс басталғаннан бастап 24 сағат ішінде қолжетімді болады</string>
+    <string name="change_login_session_age">Тіркелгіге кіруді өзгерту ағымдағы сеанс басталғаннан кейін 24 сағат ішінде қолжетімді болады</string>
     <string name="public_group">Қоғамдық топ</string>
     <string name="private_group">Жеке топ</string>
     <string name="clear_database">Дерекқорды тазалау</string>

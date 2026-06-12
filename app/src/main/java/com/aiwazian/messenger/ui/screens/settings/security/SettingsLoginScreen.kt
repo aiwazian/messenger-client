@@ -42,10 +42,10 @@ import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
-fun SettingsCloudPasswordScreen(viewModel: CloudPasswordViewModel = hiltViewModel()) {
+fun SettingsLoginScreen(viewModel: SettingsLoginViewModel = hiltViewModel()) {
     val navBackStack = LocalNavBackStack.current
     
-    val newPassword by viewModel.newPassword.collectAsState()
+    val newLogin by viewModel.newLogin.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     
@@ -58,7 +58,7 @@ fun SettingsCloudPasswordScreen(viewModel: CloudPasswordViewModel = hiltViewMode
     LaunchedEffect(Unit) {
         viewModel.sideEffect.collect { effect ->
             when (effect) {
-                CloudPasswordSideEffect.NavigateBack -> {
+                SettingsLoginSideEffect.NavigateBack -> {
                     navBackStack.removeLastOrNull()
                 }
             }
@@ -68,6 +68,7 @@ fun SettingsCloudPasswordScreen(viewModel: CloudPasswordViewModel = hiltViewMode
     Scaffold(
         topBar = {
             PageTopBar(
+                title = { Text(stringResource(R.string.login)) },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
                     onClick = navBackStack::removeLastOrNull
@@ -76,7 +77,7 @@ fun SettingsCloudPasswordScreen(viewModel: CloudPasswordViewModel = hiltViewMode
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = viewModel::onChangePassword,
+                onClick = viewModel::onChangeLogin,
                 shape = CircleShape,
                 modifier = Modifier.imePadding(),
                 containerColor = MaterialTheme.colorScheme.primary
@@ -109,10 +110,10 @@ fun SettingsCloudPasswordScreen(viewModel: CloudPasswordViewModel = hiltViewMode
                     .fillMaxWidth()
                     .padding(horizontal = 40.dp),
                 shape = MaterialTheme.shapes.medium,
-                value = newPassword,
-                onValueChange = viewModel::onInputNewPassword,
+                value = newLogin,
+                onValueChange = viewModel::onInputNewLogin,
                 label = {
-                    Text(errorMessage ?: stringResource(R.string.enter_password))
+                    Text(errorMessage ?: stringResource(R.string.login))
                 },
                 isError = errorMessage != null,
                 keyboardOptions = KeyboardOptions(

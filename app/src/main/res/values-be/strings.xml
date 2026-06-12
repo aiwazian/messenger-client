@@ -56,6 +56,7 @@
     <string name="alternative_options">Альтэрнатыўныя варыянты</string>
     <string name="clear_cache">Ачысціць кэш</string>
     <string name="add_account">Дадаць уліковы запіс</string>
+    <string name="accounts">Рахункі</string>
     <string name="archive">Архіўныя чаты</string>
     <string name="archive_settings">Налады архіва</string>
     <string name="how_does_it_work">Як гэта працуе\?</string>
@@ -162,6 +163,9 @@
     <string name="subscribe">Падпісвайцеся</string>
     <string name="group_type">Тып групы</string>
     <string name="delete_account_after_twenty_four_hours">Выдаленне ўліковага запісу будзе даступна праз 24 гадзіны пасля пачатку бягучага сеансу.</string>
+    <string name="change_password_session_age">Змена пароля ўліковага запісу будзе даступная праз 24 гадзіны з пачатку бягучай сесіі</string>
+    <string name="terminate_session_session_age">Завяршэнне сесіі будзе даступна праз 24 гадзіны з пачатку бягучай сесіі</string>
+    <string name="change_login_session_age">Змена лагіна ўліковага запісу будзе даступна праз 24 гадзіны з пачатку бягучай сесіі</string>
     <string name="public_group">Публічная група</string>
     <string name="private_group">Прыватная група</string>
     <string name="clear_database">Ачысціць базу даных</string>

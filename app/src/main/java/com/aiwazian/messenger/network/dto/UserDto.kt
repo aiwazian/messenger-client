@@ -41,6 +41,11 @@ data class ChangePasswordRequestDto(
 )
 
 @Serializable
+data class ChangeLoginRequestDto(
+    @SerialName("login") val login: String
+)
+
+@Serializable
 data class PrivacySettingsResponseDto(
     @SerialName("lastSeen") val lastSeen: PrivacyLevel = PrivacyLevel.EVERYBODY,
     @SerialName("messages") val messages: PrivacyLevel = PrivacyLevel.EVERYBODY,

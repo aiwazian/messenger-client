@@ -58,6 +58,7 @@ import com.aiwazian.messenger.ui.screens.settings.privacy.lastSeen.SettingsLastS
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.username.SettingsUsernameScreen
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsCloudPasswordScreen
+import com.aiwazian.messenger.ui.screens.settings.security.SettingsLoginScreen
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsSecurityScreen
 import com.aiwazian.messenger.ui.screens.settings.security.devices.SettingsDevicesScreen
 import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeChangeScreen
@@ -124,6 +125,7 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsPasscodeCreate> { SettingsPasscodeCreateScreen() }
                     entry<AppRoute.SettingsPasscodeChange> { SettingsPasscodeChangeScreen() }
                     entry<AppRoute.SettingsCloudPassword> { SettingsCloudPasswordScreen() }
+                    entry<AppRoute.SettingsLogin> { SettingsLoginScreen() }
                     entry<AppRoute.SettingsDataAndStorage> { DataAndStorageScreen() }
                     entry<AppRoute.SettingsStorage> { StorageScreen() }
                     entry<AppRoute.SettingsAutoDownloadMedia> { AutoDownloadMediaScreen() }

@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.network.api
 
+import com.aiwazian.messenger.network.dto.ChangeLoginRequestDto
 import com.aiwazian.messenger.network.dto.ChangePasswordRequestDto
 import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
@@ -28,6 +29,9 @@ interface UserApi {
     
     @PATCH("users/me/password")
     suspend fun changePassword(@Body request: ChangePasswordRequestDto): Response<Unit>
+    
+    @PATCH("users/me/login")
+    suspend fun changeLogin(@Body request: ChangeLoginRequestDto): Response<Unit>
     
     @GET("users/{userId}")
     suspend fun getUserById(@Path("userId") userId: Long): Response<UserResponseDto>

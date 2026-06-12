@@ -56,6 +56,7 @@
     <string name="alternative_options">Opzioni alternative</string>
     <string name="clear_cache">Svuota la cache</string>
     <string name="add_account">Aggiungi account</string>
+    <string name="accounts">Conti</string>
     <string name="archive">Chat archiviate</string>
     <string name="archive_settings">Impostazioni dell\'archivio</string>
     <string name="how_does_it_work">Come funziona\?</string>
@@ -162,6 +163,9 @@
     <string name="subscribe">Iscriviti</string>
     <string name="group_type">Tipo di gruppo</string>
     <string name="delete_account_after_twenty_four_hours">La cancellazione dell\'account sarà disponibile 24 ore dopo l\'inizio della sessione corrente.</string>
+    <string name="change_password_session_age">La modifica della password del tuo account sarà disponibile 24 ore dall\'inizio della sessione corrente</string>
+    <string name="terminate_session_session_age">La conclusione della sessione sarà disponibile 24 ore dall\'inizio della sessione corrente</string>
+    <string name="change_login_session_age">La modifica dell\'accesso al tuo account sarà disponibile 24 ore dall\'inizio della sessione corrente</string>
     <string name="public_group">Gruppo pubblico</string>
     <string name="private_group">Gruppo privato</string>
     <string name="clear_database">Cancella database</string>

@@ -163,6 +163,9 @@
     <string name="subscribe">Подписаться</string>
     <string name="group_type">Тип группы</string>
     <string name="delete_account_after_twenty_four_hours">Удаление аккаунта будет доступно через 24 часа с начала текущей сессии.</string>
+    <string name="change_password_session_age">Смена пароля учётной записи будет доступна через 24 часа с начала текущей сессии</string>
+    <string name="terminate_session_session_age">Завершение сессии будет доступно через 24 часа с начала текущей сессии</string>
+    <string name="change_login_session_age">Смена логина учётной записи будет доступна через 24 часа с начала текущей сессии</string>
     <string name="public_group">Публичная группа</string>
     <string name="private_group">Частная группа</string>
     <string name="clear_database">Очистить базу данных</string>
