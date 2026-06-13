@@ -61,8 +61,11 @@ class UserRepository @Inject constructor(
         }
     }
     
-    fun getById(id: Long): Flow<User> =
-        userDao.getWithAvatarsFlow(id).filterNotNull().map { userWithAvatars ->
+    fun getById(id: Long): Flow<User> = getByIdOrNull(id).filterNotNull()
+    
+    fun getByIdOrNull(id: Long): Flow<User?> =
+        userDao.getWithAvatarsFlow(id).map { userWithAvatars ->
+            userWithAvatars ?: return@map null
             val avatars =
                 userWithAvatars.avatars.sortedBy { it.avatar.sortOrder }.map { avatarWithFile ->
                     val uri = if (!avatarWithFile.file?.path.isNullOrBlank()) {

@@ -52,8 +52,11 @@ class ChannelRepository @Inject constructor(
         }
     }
     
-    fun getById(channelId: Long): Flow<Channel> =
-        channelDao.getWithAvatarsFlow(channelId).filterNotNull().map { channelWithAvatars ->
+    fun getById(channelId: Long): Flow<Channel> = getByIdOrNull(channelId).filterNotNull()
+    
+    fun getByIdOrNull(channelId: Long): Flow<Channel?> =
+        channelDao.getWithAvatarsFlow(channelId).map { channelWithAvatars ->
+            channelWithAvatars ?: return@map null
             val avatars =
                 channelWithAvatars.avatars.sortedBy { it.avatar.sortOrder }.map { avatarWithFile ->
                     val uri = if (!avatarWithFile.file?.path.isNullOrBlank()) {

@@ -33,8 +33,11 @@ class GroupRepository @Inject constructor(
     private val avatarDao: AvatarDao
 ) {
     
-    fun getById(id: Long): Flow<Group> =
-        groupDao.getWithAvatarsFlow(id).filterNotNull().map { groupWithAvatars ->
+    fun getById(id: Long): Flow<Group> = getByIdOrNull(id).filterNotNull()
+    
+    fun getByIdOrNull(id: Long): Flow<Group?> =
+        groupDao.getWithAvatarsFlow(id).map { groupWithAvatars ->
+            groupWithAvatars ?: return@map null
             val avatars =
                 groupWithAvatars.avatars.sortedBy { it.avatar.sortOrder }.map { avatarWithFile ->
                     val uri = if (!avatarWithFile.file?.path.isNullOrBlank()) {

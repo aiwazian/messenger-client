@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
 class ChatRepository @Inject constructor(
@@ -63,39 +64,31 @@ class ChatRepository @Inject constructor(
         val myId = me.id
         chatDao.getAllChatsFlow(myId).flatMapLatest { chatEntities ->
             if (chatEntities.isEmpty()) return@flatMapLatest flowOf(emptyList())
-            
+
             val flows = chatEntities.map { chatEntity ->
-                if (ChatType.fromId(chatEntity.chatId) == ChatType.PRIVATE) {
+                val lastMessageFlow = if (ChatType.fromId(chatEntity.chatId) == ChatType.PRIVATE) {
                     messageDao.getChatLastMessageFlow(myId, chatEntity.chatId)
-                        .map { messageWithAttachments ->
-                            val info = resolveChatInfo(chatEntity, myId) ?: return@map null
-                            val name = info.first
-                            val avatarUri = info.second
-                            
-                            val lastMessage = messageWithAttachments?.let {
-                                val attachments = it.attachments.map { att -> att.toDomain() }
-                                it.message.toDomain(attachments)
-                            }
-                            
-                            chatEntity.toDomain(name, avatarUri, lastMessage)
-                        }
                 } else {
                     messageDao.getChatLastMessageFlow(chatEntity.chatId)
-                        .map { messageWithAttachments ->
-                            val info = resolveChatInfo(chatEntity, myId) ?: return@map null
-                            val name = info.first
-                            val avatarUri = info.second
-                            
-                            val lastMessage = messageWithAttachments?.let {
-                                val attachments = it.attachments.map { att -> att.toDomain() }
-                                it.message.toDomain(attachments)
-                            }
-                            
-                            chatEntity.toDomain(name, avatarUri, lastMessage)
-                        }
+                }
+                
+                combine(
+                    lastMessageFlow,
+                    resolveChatInfoFlow(chatEntity, myId)
+                ) { messageWithAttachments, info ->
+                    if (info == null) return@combine null
+                    val name = info.first
+                    val avatarUri = info.second
+                    
+                    val lastMessage = messageWithAttachments?.let {
+                        val attachments = it.attachments.map { att -> att.toDomain() }
+                        it.message.toDomain(attachments)
+                    }
+                    
+                    chatEntity.toDomain(name, avatarUri, lastMessage)
                 }
             }
-            
+
             combine(flows) { chatsArray ->
                 chatsArray.filterNotNull().sortedWith(
                     compareByDescending<Chat> { it.isPinned }
@@ -105,52 +98,60 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    private suspend fun resolveChatInfo(chatEntity: ChatEntity, myId: Long): Pair<UiText, Uri?>? {
-        val chatType = ChatType.fromId(chatEntity.chatId)
-        val info = when (chatType) {
-            ChatType.PRIVATE -> {
-                val user = userRepository.getById(chatEntity.chatId).firstOrNull()
-                if (user == null) {
-                    userRepository.fetchById(chatEntity.chatId)
-                    null
-                } else {
-                    if (chatEntity.chatId == myId) {
-                        Pair(
+    private fun resolveChatInfoFlow(
+        chatEntity: ChatEntity,
+        myId: Long
+    ): Flow<Pair<UiText, Uri?>?> {
+        val chatId = chatEntity.chatId
+        return when (ChatType.fromId(chatId)) {
+            ChatType.PRIVATE -> userRepository.getByIdOrNull(chatId)
+                .fetchIfMissing { userRepository.fetchById(chatId) }
+                .map { user ->
+                    when {
+                        user == null -> null
+                        chatId == myId -> Pair(
                             UiText.StringResource(R.string.saved_messages),
                             user.avatars.firstOrNull()?.uri
                         )
-                    } else {
-                        Pair(
+                        
+                        else -> Pair(
                             UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
                             user.avatars.firstOrNull()?.uri
                         )
                     }
                 }
-            }
             
-            ChatType.GROUP -> {
-                val group = groupRepository.getById(chatEntity.chatId).firstOrNull()
-                if (group == null) {
-                    groupRepository.fetchById(chatEntity.chatId)
-                    null
-                } else {
-                    Pair(UiText.DynamicString(group.name), group.avatars.firstOrNull()?.uri)
+            ChatType.GROUP -> groupRepository.getByIdOrNull(chatId)
+                .fetchIfMissing { groupRepository.fetchById(chatId) }
+                .map { group ->
+                    group?.let {
+                        Pair(
+                            UiText.DynamicString(it.name),
+                            it.avatars.firstOrNull()?.uri
+                        )
+                    }
                 }
-            }
             
-            ChatType.CHANNEL -> {
-                val channel = channelRepository.getById(chatEntity.chatId).firstOrNull()
-                if (channel == null) {
-                    channelRepository.fetchById(chatEntity.chatId)
-                    null
-                } else {
-                    Pair(UiText.DynamicString(channel.name), channel.avatars.firstOrNull()?.uri)
+            ChatType.CHANNEL -> channelRepository.getByIdOrNull(chatId)
+                .fetchIfMissing { channelRepository.fetchById(chatId) }
+                .map { channel ->
+                    channel?.let {
+                        Pair(UiText.DynamicString(it.name), it.avatars.firstOrNull()?.uri)
+                    }
                 }
-            }
             
-            else -> Pair(UiText.DynamicString(""), null)
+            else -> flowOf(Pair(UiText.DynamicString(""), null))
         }
-        return info
+    }
+    
+    private fun <T> Flow<T?>.fetchIfMissing(fetch: suspend () -> Unit): Flow<T?> {
+        var fetchTriggered = false
+        return onEach { value ->
+            if (value == null && !fetchTriggered) {
+                fetchTriggered = true
+                fetch()
+            }
+        }
     }
     
     suspend fun refreshChats() {
@@ -276,10 +277,12 @@ class ChatRepository @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     fun getById(chatId: Long): Flow<Chat?> {
         return userRepository.getMe().flatMapLatest { me ->
-            chatDao.getChatByIdFlow(me.id, chatId).map {
-                if (it == null) return@map null
-                val chatInfo = resolveChatInfo(it, me.id) ?: return@map null
-                it.toDomain(chatInfo.first, chatInfo.second, null)
+            chatDao.getChatByIdFlow(me.id, chatId).flatMapLatest { chatEntity ->
+                if (chatEntity == null) return@flatMapLatest flowOf(null)
+                resolveChatInfoFlow(chatEntity, me.id).map { info ->
+                    if (info == null) return@map null
+                    chatEntity.toDomain(info.first, info.second, null)
+                }
             }
         }
     }
