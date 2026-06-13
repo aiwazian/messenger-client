@@ -120,6 +120,17 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                     })
                 
                 SectionItem(
+                    headlineText = stringResource(R.string.profile_photos),
+                    trailingText = if (uiState.privacy.profilePhoto == PrivacyLevel.EVERYBODY) {
+                        stringResource(R.string.everybody)
+                    } else {
+                        stringResource(R.string.nobody)
+                    },
+                    onClick = {
+                        navBackStack.add(AppRoute.SettingsPhoto(uiState.privacy.profilePhoto))
+                    })
+                
+                SectionItem(
                     headlineText = stringResource(R.string.last_seen),
                     trailingText = if (uiState.privacy.lastSeen == PrivacyLevel.EVERYBODY) {
                         stringResource(R.string.everybody)

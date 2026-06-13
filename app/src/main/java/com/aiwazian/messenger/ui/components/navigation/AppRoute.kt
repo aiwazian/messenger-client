@@ -59,6 +59,9 @@ sealed interface AppRoute : NavKey {
     data class SettingsBio(val level: PrivacyLevel) : AppRoute
     
     @Serializable
+    data class SettingsPhoto(val level: PrivacyLevel) : AppRoute
+
+    @Serializable
     data class SettingsDateOfBirth(val level: PrivacyLevel) : AppRoute
     
     @Serializable

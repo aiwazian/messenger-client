@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
+package com.aiwazian.messenger.ui.screens.settings.privacy.photo
+
+import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.enums.PrivacyLevel
+import com.aiwazian.messenger.repository.PrivacyRepository
+import com.aiwazian.messenger.utils.VibrationManager
+import com.aiwazian.messenger.utils.VibrationPattern
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class SettingsPhotoViewModel @Inject constructor(
+    private val vibrationManager: VibrationManager,
+    private val privacyRepository: PrivacyRepository
+) : ViewModel() {
+    
+    private val _initialLevel = MutableStateFlow(PrivacyLevel.EVERYBODY)
+    
+    private val _currentLevel = MutableStateFlow(PrivacyLevel.EVERYBODY)
+    val currentLevel = _currentLevel.asStateFlow()
+    
+    private val _showSaveButton = MutableStateFlow(false)
+    val showSaveButton = _showSaveButton.asStateFlow()
+    
+    private val _effect = MutableSharedFlow<SettingsPhotoEffect>()
+    val effect = _effect.asSharedFlow()
+    
+    fun vibrate(pattern: LongArray) {
+        vibrationManager.vibrate(pattern)
+    }
+    
+    fun init(initialValue: PrivacyLevel) {
+        _initialLevel.update { initialValue }
+        _currentLevel.update { initialValue }
+        hideSaveButton()
+    }
+    
+    fun selectValue(value: PrivacyLevel) {
+        _currentLevel.update { value }
+        
+        if (_currentLevel.value == _initialLevel.value) {
+            hideSaveButton()
+        } else {
+            showSaveButton()
+        }
+    }
+    
+    fun onSaveClick() {
+        viewModelScope.launch {
+            try {
+                privacyRepository.updateProfilePhotoPrivacy(_currentLevel.value).onSuccess {
+                    _effect.emit(SettingsPhotoEffect.Back)
+                }.onFailure {
+                    vibrate(VibrationPattern.Error)
+                }
+            } catch (e: Exception) {
+                Log.e(
+                    "SettingsPhotoViewModel",
+                    "Ошибка при отправке настроек конфиденциальности для фото профиля",
+                    e
+                )
+                vibrate(VibrationPattern.Error)
+            }
+        }
+    }
+    
+    private fun showSaveButton() {
+        _showSaveButton.update { true }
+    }
+    
+    private fun hideSaveButton() {
+        _showSaveButton.update { false }
+    }
+}

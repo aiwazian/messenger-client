@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Recherche</string>
@@ -203,6 +207,7 @@
     <string name="failed_to_join">Échec à rejoindre</string>
     <string name="error_searching_for_chat">Erreur recherche de chat</string>
     <string name="profile_photos">Photos de profil</string>
+    <string name="who_can_see_my_profile_photo">Qui peut voir ma photo de profil ?</string>
     <string name="add_photo">Ajouter une photo</string>
     <string name="failed_to_connect">Échec de connexion</string>
     <string name="enter_login">Entrer la connexion</string>

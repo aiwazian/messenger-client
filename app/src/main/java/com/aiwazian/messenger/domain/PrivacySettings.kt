@@ -12,5 +12,6 @@ data class PrivacySettings(
     val lastSeen: PrivacyLevel,
     val messages: PrivacyLevel,
     val invites: PrivacyLevel,
+    val profilePhoto: PrivacyLevel,
     val deleteAfterDays: Int
 )

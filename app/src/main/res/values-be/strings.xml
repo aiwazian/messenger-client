@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Пошук</string>
@@ -205,6 +209,7 @@
     <string name="failed_to_join">Не ўдалося далучыцца</string>
     <string name="error_searching_for_chat">Памылка пошуку чата</string>
     <string name="profile_photos">Фота профілю</string>
+    <string name="who_can_see_my_profile_photo">Хто можа бачыць маё фота прафілю?</string>
     <string name="add_photo">Дадаць фота</string>
     <string name="failed_to_connect">Не ўдалося падключыцца</string>
     <string name="enter_login">Увядзіце лагін</string>

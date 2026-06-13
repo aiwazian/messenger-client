@@ -50,6 +50,10 @@ class UserRepository @Inject constructor(
                     
                     val avatars = user.avatars.map { it.toEntity(user.id) }
                     avatarDao.insertAvatars(avatars)
+                    
+                    if (user.avatars.isEmpty()) {
+                        avatarDao.deleteAvatarsByUserId(user.id)
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -81,6 +85,10 @@ class UserRepository @Inject constructor(
                     
                     val avatars = dto.avatars.map { it.toEntity(user.id) }
                     avatarDao.insertAvatars(avatars)
+                    
+                    if (dto.avatars.isEmpty()) {
+                        avatarDao.deleteAvatarsByUserId(user.id)
+                    }
                 }
             }
         } catch (e: Exception) {

@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Որոնում</string>
@@ -201,6 +205,7 @@
     <string name="failed_to_join">Միացման ձախողում</string>
     <string name="error_searching_for_chat">Զրույցի որոնման սխալ</string>
     <string name="profile_photos">Պրոֆիլի լուսանկարներ</string>
+    <string name="who_can_see_my_profile_photo">Ով կառող է տեսնել իմ պրոտիլի լուսանկարներ՝?</string>
     <string name="add_photo">Add Photo</string>
     <string name="failed_to_connect">Կապակցման ձախողում</string>
     <string name="enter_login">Մուտքագրեք մուտքը</string>

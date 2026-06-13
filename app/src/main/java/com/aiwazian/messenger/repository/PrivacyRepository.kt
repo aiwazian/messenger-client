@@ -89,6 +89,20 @@ class PrivacyRepository @Inject constructor(
         }
     }
     
+    suspend fun updateProfilePhotoPrivacy(profilePhoto: PrivacyLevel): Result<Unit> {
+        return try {
+            val request = UpdatePrivacySettingsRequestDto(profilePhoto = profilePhoto)
+            val response = privacyApi.updatePrivacySettings(request)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to update profile photo privacy: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
     suspend fun updateDeleteAfterDays(days: Int): Result<Unit> {
         return try {
             val request = UpdatePrivacySettingsRequestDto(deleteAfterDays = days)

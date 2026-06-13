@@ -213,6 +213,7 @@
     <string name="failed_to_join">Failed to join</string>
     <string name="error_searching_for_chat">Error searching for chat</string>
     <string name="profile_photos">Profile Photos</string>
+    <string name="who_can_see_my_profile_photo">Who can see my profile photo?</string>
     <string name="add_photo">Add Photo</string>
     <string name="failed_to_connect">Failed to connect</string>
     <string name="enter_login">Enter login</string>

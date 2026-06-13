@@ -55,6 +55,7 @@ import com.aiwazian.messenger.ui.screens.settings.privacy.bio.SettingsBioScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.invites.SettingsInvitesScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.lastSeen.SettingsLastSeenScreen
+import com.aiwazian.messenger.ui.screens.settings.privacy.photo.SettingsPhotoScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.username.SettingsUsernameScreen
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsCloudPasswordScreen
@@ -118,6 +119,7 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsProfile> { SettingsProfileScreen() }
                     entry<AppRoute.SettingsUsername> { SettingsUsernameScreen(username = it.username) }
                     entry<AppRoute.SettingsBio> { SettingsBioScreen(level = it.level) }
+                    entry<AppRoute.SettingsPhoto> { SettingsPhotoScreen(level = it.level) }
                     entry<AppRoute.SettingsDateOfBirth> { SettingsDateOfBirthScreen(level = it.level) }
                     entry<AppRoute.SettingsInvites> { SettingsInvitesScreen(level = it.level) }
                     entry<AppRoute.SettingsDevices> { SettingsDevicesScreen() }

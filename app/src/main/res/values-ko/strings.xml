@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">찾다</string>
@@ -199,6 +203,7 @@
     <string name="failed_to_join">가입 실패</string>
     <string name="error_searching_for_chat">채팅 검색에 오류가 발생했습니다</string>
     <string name="profile_photos">프로필 사진</string>
+    <string name="who_can_see_my_profile_photo">프로필 사진을 누구나 볼 수 있나요?</string>
     <string name="add_photo">사진 추가</string>
     <string name="failed_to_connect">연결 실패</string>
     <string name="enter_login">로그인 입력</string>

@@ -52,6 +52,7 @@ data class PrivacySettingsResponseDto(
     @SerialName("bio") val bio: PrivacyLevel = PrivacyLevel.EVERYBODY,
     @SerialName("dateOfBirth") val dateOfBirth: PrivacyLevel = PrivacyLevel.EVERYBODY,
     @SerialName("invites") val invites: PrivacyLevel = PrivacyLevel.EVERYBODY,
+    @SerialName("profilePhoto") val profilePhoto: PrivacyLevel = PrivacyLevel.EVERYBODY,
     @SerialName("deleteAfterDays") val deleteAfterDays: Int = 365
 )
 
@@ -62,5 +63,6 @@ data class UpdatePrivacySettingsRequestDto(
     @SerialName("bio") val bio: PrivacyLevel? = null,
     @SerialName("dateOfBirth") val dateOfBirth: PrivacyLevel? = null,
     @SerialName("invites") val invites: PrivacyLevel? = null,
+    @SerialName("profilePhoto") val profilePhoto: PrivacyLevel? = null,
     @SerialName("deleteAfterDays") val deleteAfterDays: Int? = null
 )

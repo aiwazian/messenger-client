@@ -14,6 +14,7 @@ data class SettingsPrivacyUiState(
         lastSeen = PrivacyLevel.EVERYBODY,
         messages = PrivacyLevel.EVERYBODY,
         invites = PrivacyLevel.EVERYBODY,
+        profilePhoto = PrivacyLevel.EVERYBODY,
         deleteAfterDays = 365
     ),
     val showDeleteBottomSheet: Boolean = false,
