@@ -21,12 +21,14 @@ import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
+import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
 import com.aiwazian.messenger.usecase.JoinViaInviteLinkUseCase
 import com.aiwazian.messenger.usecase.LeaveChatUseCase
 import com.aiwazian.messenger.utils.ClipboardService
+import com.aiwazian.messenger.utils.LastSeenHelper
 import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.ShortcutManager
 import com.aiwazian.messenger.utils.UiText
@@ -39,6 +41,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -58,7 +61,8 @@ class ProfileViewModel @Inject constructor(
     private val vibrationManager: VibrationManager,
     private val downloadAvatarUseCase: DownloadAvatarUseCase,
     private val joinViaInviteLinkUseCase: JoinViaInviteLinkUseCase,
-    private val leaveChatUseCase: LeaveChatUseCase
+    private val leaveChatUseCase: LeaveChatUseCase,
+    private val onlineUsersTracker: OnlineUsersTracker
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -131,7 +135,7 @@ class ProfileViewModel @Inject constructor(
                             _uiState.update {
                                 it.copy(
                                     title = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
-                                    subTitle = UiText.DynamicString("в сети недавно"),
+                                    subTitle = UiText.DynamicString(""),
                                     profile = profile,
                                     avatars = user.avatars.map { avatar -> avatar.uri }
                                 )
@@ -153,16 +157,24 @@ class ProfileViewModel @Inject constructor(
                                 }
                         }
                     } else {
-                        userRepository.getById(profileId).collectLatest { user ->
+                        combine(
+                            userRepository.getById(profileId),
+                            onlineUsersTracker.onlineUsers
+                        ) { user, onlineUsers ->
+                            user to onlineUsers.contains(user.id)
+                        }.collectLatest { (user, isOnline) ->
+                            val subTitle =
+                                LastSeenHelper.getSubtitle(context, isOnline, user.lastSeen)
                             val profile = Profile.User(
                                 username = user.username,
                                 bio = user.bio,
                                 dateOfBirth = user.dateOfBirth,
+                                lastSeen = user.lastSeen
                             )
                             _uiState.update {
                                 it.copy(
                                     title = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
-                                    subTitle = UiText.DynamicString("в сети недавно"),
+                                    subTitle = subTitle,
                                     profile = profile,
                                     avatars = user.avatars.map { avatar -> avatar.uri }
                                 )

@@ -48,6 +48,7 @@
     <string name="who_can_see_my_last_seen">Менің соңғы көрген уақытымды кім көре алады\?</string>
     <string name="online">Онлайн</string>
     <string name="last_seen_recently">Жақында желіде</string>
+    <string name="last_seen_at">соңғы рет %s көрген</string>
     <string name="this_device">Бұл құрылғы</string>
     <string name="members">Мүшелер</string>
     <string name="first_name">Аты</string>

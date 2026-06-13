@@ -48,6 +48,7 @@
     <string name="who_can_see_my_last_seen">Chi può vedere il mio ultimo accesso\?</string>
     <string name="online">In linea</string>
     <string name="last_seen_recently">In linea di recente</string>
+    <string name="last_seen_at">visto l\'ultima volta alle %s</string>
     <string name="this_device">Questo dispositivo</string>
     <string name="members">Membri</string>
     <string name="first_name">Nome di battesimo</string>

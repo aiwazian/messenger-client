@@ -31,6 +31,7 @@ import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.PinChatsRequestDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
+import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -56,7 +57,8 @@ class ChatRepository @Inject constructor(
     private val userRepository: UserRepository,
     private val channelRepository: ChannelRepository,
     private val groupRepository: GroupRepository,
-    private val socket: WebSocketClient
+    private val socket: WebSocketClient,
+    private val onlineUsersTracker: OnlineUsersTracker
 ) {
     
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -608,5 +610,17 @@ class ChatRepository @Inject constructor(
     suspend fun updateChatPinnedStatus(chatIds: List<Long>, isPinned: Boolean) {
         val myId = userRepository.getMe().first().id
         chatDao.updatePinnedStatus(myId, chatIds, isPinned)
+    }
+    
+    suspend fun refreshOnlineUsers() {
+        try {
+            val response = chatApi.getOnlineUsers()
+            if (response.isSuccessful) {
+                val onlineIds = response.body().orEmpty().map { it.toLong() }
+                onlineUsersTracker.replaceAll(onlineIds)
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error refreshing online users", e)
+        }
     }
 }

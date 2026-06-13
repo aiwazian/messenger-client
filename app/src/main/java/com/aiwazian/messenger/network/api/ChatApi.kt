@@ -50,4 +50,7 @@ interface ChatApi {
 
     @POST("chats/unpin")
     suspend fun unpinChats(@Body body: PinChatsRequestDto): Response<Unit>
+    
+    @GET("chats/online")
+    suspend fun getOnlineUsers(): Response<List<String>>
 }

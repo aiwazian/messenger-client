@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Done
@@ -59,6 +60,7 @@ fun ChatCard(
     modifier: Modifier = Modifier,
     chat: Chat,
     isSelected: Boolean = false,
+    isOnline: Boolean = false,
     unreadMessageCount: Int = 0,
     onClickChat: () -> Unit = {},
     onLongClickChat: () -> Unit = {},
@@ -121,6 +123,25 @@ fun ChatCard(
                         chatName = chat.chatName.asString(),
                         avatarUri = chat.avatarUri,
                         size = 50.dp
+                    )
+                }
+                AnimatedVisibility(
+                    visible = isOnline,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 2.dp, bottom = 2.dp),
+                    enter = fadeIn() + scaleIn(),
+                    exit = fadeOut() + scaleOut()
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Circle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .padding(2.dp)
+                            .size(14.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surface)
                     )
                 }
                 AnimatedVisibility(

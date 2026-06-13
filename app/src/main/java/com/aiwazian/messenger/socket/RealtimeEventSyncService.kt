@@ -24,7 +24,8 @@ class RealtimeEventSyncService @Inject constructor(
     @param:ApplicationContext private val context: Context,
     webSocketClient: WebSocketClient,
     private val chatRepository: ChatRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val onlineUsersTracker: OnlineUsersTracker
 ) {
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
@@ -85,6 +86,14 @@ class RealtimeEventSyncService @Inject constructor(
             serviceScope.launch {
                 chatRepository.updateChatPinnedStatus(payload.chatIds, false)
             }
+        }
+        
+        webSocketClient.subscribeToEvent(WebSocketEvent.UserOnline) { payload ->
+            onlineUsersTracker.setOnline(payload.userId)
+        }
+        
+        webSocketClient.subscribeToEvent(WebSocketEvent.UserOffline) { payload ->
+            onlineUsersTracker.setOffline(payload.userId)
         }
     }
 }

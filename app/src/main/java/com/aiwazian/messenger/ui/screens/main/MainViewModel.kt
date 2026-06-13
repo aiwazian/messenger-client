@@ -10,6 +10,7 @@ import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.UserRepository
+import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.utils.AppLockManager
 import com.aiwazian.messenger.utils.SessionManager
@@ -28,7 +29,8 @@ class MainViewModel @Inject constructor(
     private val appLockManager: AppLockManager,
     private val themeManager: ThemeManager,
     userRepository: UserRepository,
-    webSocketClient: WebSocketClient
+    webSocketClient: WebSocketClient,
+    private val onlineUsersTracker: OnlineUsersTracker
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(MainUiState())
@@ -49,6 +51,7 @@ class MainViewModel @Inject constructor(
                     SessionManager.loadSession()
                     userRepository.fetchMe()
                     chatRepository.refreshChats()
+                    chatRepository.refreshOnlineUsers()
                 }
             }
         }
@@ -68,6 +71,12 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             userRepository.getMe().collectLatest { me ->
                 _uiState.update { it.copy(me = me) }
+            }
+        }
+        
+        viewModelScope.launch {
+            onlineUsersTracker.onlineUsers.collectLatest { onlineIds ->
+                _uiState.update { it.copy(onlineUserIds = onlineIds) }
             }
         }
     }

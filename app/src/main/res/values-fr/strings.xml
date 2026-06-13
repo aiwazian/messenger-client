@@ -48,6 +48,7 @@
     <string name="who_can_see_my_last_seen"><![CDATA[Qui peut voir ma dernière fois vue \?]]></string>
     <string name="online">En ligne</string>
     <string name="last_seen_recently">En ligne récemment</string>
+    <string name="last_seen_at">vu pour la dernière fois à %s</string>
     <string name="this_device">Cet appareil</string>
     <string name="members">Membres</string>
     <string name="first_name">Prénom</string>

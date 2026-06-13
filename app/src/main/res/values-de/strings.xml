@@ -48,6 +48,7 @@
     <string name="who_can_see_my_last_seen">Wer kann meine zuletzt gesehene Zeit sehen\?</string>
     <string name="online">Online</string>
     <string name="last_seen_recently">Vor Kurzem online</string>
+    <string name="last_seen_at">zuletzt gesehen um %s</string>
     <string name="this_device">Dieses Gerät</string>
     <string name="members">Mitglieder</string>
     <string name="first_name">Vorname</string>

@@ -48,6 +48,7 @@
     <string name="who_can_see_my_last_seen">¿Quién puede ver la última vez que lo vi\?</string>
     <string name="online">En línea</string>
     <string name="last_seen_recently">En línea recientemente</string>
+    <string name="last_seen_at">visto por última vez en %s</string>
     <string name="this_device">este dispositivo</string>
     <string name="members">Miembros</string>
     <string name="first_name">Nombre de pila</string>

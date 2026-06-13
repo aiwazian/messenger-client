@@ -117,6 +117,7 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
+import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.ThemeOption
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
@@ -248,10 +249,14 @@ private fun Content(
                     items(uiState.chats) { chat ->
                         val chatName = chat.chatName.asString()
                         val isSelected = chat.id in uiState.selectedChatIds
+                        val isOnline = ChatType.fromId(chat.id) == ChatType.PRIVATE &&
+                                chat.id != uiState.me.id &&
+                                chat.id in uiState.onlineUserIds
                         ChatCard(
                             modifier = Modifier.animateItem(),
                             chat = chat,
                             isSelected = isSelected,
+                            isOnline = isOnline,
                             onClickChat = {
                                 if (hasSelection) {
                                     viewModel.toggleChatSelection(chat.id)

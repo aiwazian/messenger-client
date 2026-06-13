@@ -14,7 +14,8 @@ data class User(
     val bio: String?,
     val dateOfBirth: Long?,
     val lastSeen: Long?,
-    val avatars: List<Avatar>
+    val avatars: List<Avatar>,
+    val isOnline: Boolean = false
 )
 
 data class Avatar(

@@ -48,6 +48,7 @@
     <string name="who_can_see_my_last_seen">Хто можа бачыць час майго апошняга наведвання\?</string>
     <string name="online">Анлайн</string>
     <string name="last_seen_recently">Нядаўна онлайн</string>
+    <string name="last_seen_at">апошні раз бачылі ў %s</string>
     <string name="this_device">Гэта прылада</string>
     <string name="members">Члены</string>
     <string name="first_name">імя</string>

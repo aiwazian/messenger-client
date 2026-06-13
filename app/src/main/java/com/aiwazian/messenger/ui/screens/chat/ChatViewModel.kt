@@ -36,6 +36,7 @@ import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
+import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -50,6 +51,7 @@ import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DataStoreManager
 import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.FileHandler
+import com.aiwazian.messenger.utils.LastSeenHelper
 import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.UploadManager
@@ -63,6 +65,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
@@ -95,7 +98,8 @@ class ChatViewModel @Inject constructor(
     private val joinViaInviteLinkUseCase: JoinViaInviteLinkUseCase,
     private val leaveChatUseCase: LeaveChatUseCase,
     private val dataStoreManager: DataStoreManager,
-    private val voicePlayerManager: VoicePlayerManager
+    private val voicePlayerManager: VoicePlayerManager,
+    private val onlineUsersTracker: OnlineUsersTracker
 ) : ViewModel() {
     
     private val audioRecorderManager = AudioRecorderManager(context)
@@ -313,7 +317,7 @@ class ChatViewModel @Inject constructor(
                             _uiState.update {
                                 it.copy(
                                     chatName = UiText.StringResource(R.string.saved_messages),
-                                    subTitle = UiText.DynamicString("в сети недавно"),
+                                    subTitle = UiText.DynamicString(""),
                                     avatarUri = user.avatars.firstOrNull()?.uri,
                                     topBarActions = listOf(
                                         TopBarAction(
@@ -336,11 +340,18 @@ class ChatViewModel @Inject constructor(
                             }
                         }
                     } else {
-                        userRepository.getById(_uiState.value.chatId).collectLatest { user ->
+                        combine(
+                            userRepository.getById(_uiState.value.chatId),
+                            onlineUsersTracker.onlineUsers
+                        ) { user, onlineUsers ->
+                            user to onlineUsers.contains(user.id)
+                        }.collectLatest { (user, isOnline) ->
+                            val subTitle =
+                                LastSeenHelper.getSubtitle(context, isOnline, user.lastSeen)
                             _uiState.update {
                                 it.copy(
                                     chatName = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
-                                    subTitle = UiText.DynamicString("в сети недавно"),
+                                    subTitle = subTitle,
                                     avatarUri = user.avatars.firstOrNull()?.uri,
                                     topBarActions = listOf(
                                         TopBarAction(

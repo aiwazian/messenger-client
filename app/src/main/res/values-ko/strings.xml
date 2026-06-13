@@ -48,6 +48,7 @@
     <string name="who_can_see_my_last_seen">내 마지막 접속 시간을 누가 볼 수 있나요\?</string>
     <string name="online">온라인</string>
     <string name="last_seen_recently">최근 온라인</string>
+    <string name="last_seen_at">%s에서 마지막으로 확인됨</string>
     <string name="this_device">이 장치</string>
     <string name="members">회원</string>
     <string name="first_name">이름</string>
