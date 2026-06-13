@@ -74,5 +74,17 @@ class RealtimeEventSyncService @Inject constructor(
                 chatRepository.clearLocalHistory(payload.chatId)
             }
         }
+        
+        webSocketClient.subscribeToEvent(WebSocketEvent.PinChat) { payload ->
+            serviceScope.launch {
+                chatRepository.updateChatPinnedStatus(payload.chatIds, true)
+            }
+        }
+        
+        webSocketClient.subscribeToEvent(WebSocketEvent.UnpinChat) { payload ->
+            serviceScope.launch {
+                chatRepository.updateChatPinnedStatus(payload.chatIds, false)
+            }
+        }
     }
 }

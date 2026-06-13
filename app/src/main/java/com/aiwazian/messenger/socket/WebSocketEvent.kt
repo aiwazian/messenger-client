@@ -8,6 +8,7 @@ import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.DeleteChatPayload
 import com.aiwazian.messenger.domain.DeleteMessagePayload
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.domain.PinChatPayload
 import com.aiwazian.messenger.domain.PresencePayload
 import com.aiwazian.messenger.domain.ReadMessagePayload
 import com.aiwazian.messenger.mappers.toDomain
@@ -78,5 +79,17 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
         override val eventName = "user:offline"
         override val deserializer = PresencePayload.serializer()
         override val mapper: (PresencePayload) -> PresencePayload = { it }
+    }
+    
+    data object PinChat : WebSocketEvent<PinChatPayload, PinChatPayload> {
+        override val eventName = "pin_chat"
+        override val deserializer = PinChatPayload.serializer()
+        override val mapper: (PinChatPayload) -> PinChatPayload = { it }
+    }
+    
+    data object UnpinChat : WebSocketEvent<PinChatPayload, PinChatPayload> {
+        override val eventName = "unpin_chat"
+        override val deserializer = PinChatPayload.serializer()
+        override val mapper: (PinChatPayload) -> PinChatPayload = { it }
     }
 }

@@ -604,4 +604,9 @@ class ChatRepository @Inject constructor(
             false
         }
     }
+    
+    suspend fun updateChatPinnedStatus(chatIds: List<Long>, isPinned: Boolean) {
+        val myId = userRepository.getMe().first().id
+        chatDao.updatePinnedStatus(myId, chatIds, isPinned)
+    }
 }
