@@ -346,13 +346,26 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    suspend fun markMessageAsRead(chatId: Long, messageId: Int) {
-        messageDao.updateMessageReadStatus(
-            messageId,
-            true
-        ) // Не вызываем API тут, т.к. это задача синхронизатора или ViewModel (в зависимости от логики)
-        // Однако для текущей реализации лучше оставить API вызов в makeAsRead,
-        // а этот метод использовать для локального обновления.
+    suspend fun markMessageAsRead(chatId: Long, messageId: Long) {
+        val messageWithAttachments = messageDao.getMessageById(messageId)
+        if (messageWithAttachments != null) {
+            val msg = messageWithAttachments.message
+            messageDao.updateReadStatusBySenderUpTo(
+                chatId = msg.chatId,
+                senderId = msg.senderId,
+                upToSendTime = msg.sendTime,
+                isRead = true
+            )
+        }
+    }
+    
+    suspend fun markReadBySender(chatId: Long, senderId: Long, sendTime: Long) {
+        messageDao.updateReadStatusBySenderUpTo(
+            chatId = chatId,
+            senderId = senderId,
+            upToSendTime = sendTime,
+            isRead = true
+        )
     }
     
     suspend fun saveLocalMessage(message: Message) {

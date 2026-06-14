@@ -12,6 +12,14 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class MessageReadInfoDto(
+    @SerialName("userId") val userId: Long,
+    @SerialName("firstName") val firstName: String = "",
+    @SerialName("lastName") val lastName: String? = null,
+    @SerialName("readAt") val readAt: Long
+)
+
+@Serializable
 data class MessageAttachmentDto(
     @SerialName("fileId") val fileId: String,
     @SerialName("name") val name: String = "",
@@ -33,7 +41,8 @@ data class MessageDto(
     @SerialName("isRead") val isRead: Boolean? = null,
     @SerialName("messageType") val messageType: MessageType = MessageType.TEXT,
     @SerialName("systemEventType") val systemEventType: SystemMessageEventType? = null,
-    @SerialName("attachments") val attachments: List<MessageAttachmentDto> = emptyList()
+    @SerialName("attachments") val attachments: List<MessageAttachmentDto> = emptyList(),
+    @SerialName("readInfo") val readInfo: List<MessageReadInfoDto>? = null
 )
 
 @Serializable

@@ -48,13 +48,13 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.outlined.AccountCircle
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Create
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
@@ -234,7 +234,7 @@ private fun Content(
                     navBackStack.add(AppRoute.NewMessage)
                 }, containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(imageVector = Icons.Default.Create, contentDescription = null)
+                Icon(imageVector = Icons.Rounded.Create, contentDescription = null)
             }
         }
     }) { innerPadding ->
@@ -255,6 +255,7 @@ private fun Content(
                         ChatCard(
                             modifier = Modifier.animateItem(),
                             chat = chat,
+                            myId = uiState.me.id,
                             isSelected = isSelected,
                             isOnline = isOnline,
                             onClickChat = {
@@ -712,7 +713,7 @@ private fun AddAccountRow(onClick: () -> Unit) {
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Outlined.Add,
+                imageVector = Icons.Rounded.Add,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary
             )

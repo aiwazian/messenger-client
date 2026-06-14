@@ -55,8 +55,16 @@ class ChannelSubscribersViewModel @Inject constructor(
             val userId = _uiState.value.selectedUserId ?: return@launch
             
             channelRepository.kickUser(_channelId, userId).onSuccess {
-                _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar(UiText.StringResource(R.string.user_blocked)))
+                _uiState.update { state ->
+                    state.copy(
+                        subscribers = state.subscribers.filter { it.id != userId },
+                        showKickDialog = false,
+                        selectedUserId = null
+                    )
+                }
+                _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar(UiText.StringResource(R.string.user_kicked)))
             }.onFailure {
+                _uiState.update { it.copy(showKickDialog = false, selectedUserId = null) }
                 _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
@@ -68,8 +76,16 @@ class ChannelSubscribersViewModel @Inject constructor(
             val userId = _uiState.value.selectedUserId ?: return@launch
             
             channelRepository.banUser(_channelId, userId).onSuccess {
+                _uiState.update { state ->
+                    state.copy(
+                        subscribers = state.subscribers.filter { it.id != userId },
+                        showBlockDialog = false,
+                        selectedUserId = null
+                    )
+                }
                 _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar(UiText.StringResource(R.string.user_blocked)))
             }.onFailure {
+                _uiState.update { it.copy(showBlockDialog = false, selectedUserId = null) }
                 _uiEffect.emit(ChannelSubscribersSideEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }

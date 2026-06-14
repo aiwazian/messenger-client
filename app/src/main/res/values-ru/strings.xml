@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Поиск</string>
@@ -178,6 +182,7 @@
     <string name="failed_to_save_changes">Не удалось сохранить изменения.</string>
     <string name="error_empty_public_link">Введите общедоступную ссылку</string>
     <string name="user_blocked">Пользователь заблокирован</string>
+    <string name="user_kicked">Пользователь выгнан</string>
     <string name="user_unblocked">Пользователь разблокирован</string>
     <string name="unblock">Разблокировать</string>
     <string name="block">Блокировать</string>
@@ -245,4 +250,7 @@
     <string name="inactive_12_months">12 месяцев</string>
     <string name="if_away_for">Если я не захожу</string>
     <string name="delete_account_if_inactive_for">Удаление аккаунта при неактивности...</string>
+    <string name="automatic_media_download">Автоматическая загрузка мультимедиа</string>
+    <string name="auto_download_media">Автоматическая загрузка мультимедиа</string>
+    <string name="you">Ты</string>
 </resources>

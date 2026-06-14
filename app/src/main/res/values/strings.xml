@@ -182,6 +182,7 @@
     <string name="failed_to_save_changes">Failed to save changes</string>
     <string name="error_empty_public_link">Enter a public link</string>
     <string name="user_blocked">User blocked</string>
+    <string name="user_kicked">User kicked</string>
     <string name="user_unblocked">User unblocked</string>
     <string name="unblock">Unblock</string>
     <string name="block">Block</string>
@@ -253,4 +254,7 @@
     <string name="inactive_12_months">12 months</string>
     <string name="if_away_for">If away for</string>
     <string name="delete_account_if_inactive_for">Self-Destruct if inactive for...</string>
+    <string name="automatic_media_download">Automatic media download</string>
+    <string name="auto_download_media">Auto Download Media</string>
+    <string name="you">You</string>
 </resources>

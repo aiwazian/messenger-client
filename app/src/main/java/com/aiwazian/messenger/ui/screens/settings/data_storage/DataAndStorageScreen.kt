@@ -48,7 +48,7 @@ fun DataAndStorageScreen() {
         ) {
             SectionContainer {
                 SectionItem(
-                    headlineText = "Очистка памяти",
+                    headlineText = stringResource(R.string.storage_usage),
                     onClick = {
                         navBackStack.add(AppRoute.SettingsStorage)
                     }
@@ -57,7 +57,7 @@ fun DataAndStorageScreen() {
             
             SectionContainer {
                 SectionItem(
-                    headlineText = "Автозагрузка медиа",
+                    headlineText = stringResource(R.string.automatic_media_download),
                     onClick = {
                         navBackStack.add(AppRoute.SettingsAutoDownloadMedia)
                     }

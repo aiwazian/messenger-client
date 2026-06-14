@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -48,23 +49,23 @@ import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.enums.AttachmentType
+import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
-import com.aiwazian.messenger.utils.UiText
 
 @Composable
 fun ChatCard(
     modifier: Modifier = Modifier,
     chat: Chat,
+    myId: Long = 0,
     isSelected: Boolean = false,
     isOnline: Boolean = false,
     unreadMessageCount: Int = 0,
     onClickChat: () -> Unit = {},
-    onLongClickChat: () -> Unit = {},
-    onLongClickChatLogo: () -> Unit = {}
+    onLongClickChat: () -> Unit = {}
 ) {
     ListItem(
         modifier = modifier
@@ -85,7 +86,7 @@ fun ChatCard(
                 var color = Color.Unspecified
                 val text = if (chat.lastMessage.attachments.isNotEmpty()) {
                     color = MaterialTheme.colorScheme.primary
-                    UiText.StringResource(
+                    stringResource(
                         when (chat.lastMessage.attachments.first().type) {
                             AttachmentType.IMAGE -> R.string.photo
                             AttachmentType.FILE -> R.string.file
@@ -95,20 +96,33 @@ fun ChatCard(
                         }
                     )
                 } else if (!chat.lastMessage.text.isNullOrBlank()) {
-                    UiText.DynamicString(chat.lastMessage.text)
+                    chat.lastMessage.text
                 } else if (chat.lastMessage.systemMessageEventType != null) {
                     color = MaterialTheme.colorScheme.primary
-                    UiText.StringResource(
+                    stringResource(
                         when (chat.lastMessage.systemMessageEventType) {
                             SystemMessageEventType.CHANNEL_CREATED -> R.string.channel_created
                             SystemMessageEventType.GROUP_CREATED -> R.string.group_created
                             SystemMessageEventType.HISTORY_CLEARED -> R.string.history_cleared
                         }
                     )
-                } else UiText.DynamicString("")
+                } else {
+                    ""
+                }
+                
+                val isGroupChat = ChatType.fromId(chat.id) == ChatType.GROUP
+                val isMyMessage = chat.lastMessage.senderId == myId
+                val showMyPrefix =
+                    isGroupChat && isMyMessage && chat.lastMessage.systemMessageEventType == null
+                
+                val finalText = if (showMyPrefix) {
+                    stringResource(R.string.you) + ": " + text
+                } else {
+                    text
+                }
                 
                 Text(
-                    text = text.asString(),
+                    text = finalText,
                     maxLines = 1,
                     color = color,
                     overflow = TextOverflow.Ellipsis,
@@ -162,10 +176,12 @@ fun ChatCard(
                 }
             }
         }, trailingContent = {
+            val isSavedMessages = chat.lastMessage != null &&
+                    chat.lastMessage.senderId == chat.lastMessage.chatId
             Column(verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.End) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (chat.lastMessage != null) {
-                        LastMessageSendTime(chat.lastMessage)
+                        LastMessageSendTime(chat.lastMessage, isSavedMessages, myId)
                     }
                     AnimatedVisibility(chat.isPinned) {
                         PinIcon()
@@ -180,8 +196,10 @@ fun ChatCard(
 }
 
 @Composable
-private fun LastMessageSendTime(lastMessage: Message) {
+private fun LastMessageSendTime(lastMessage: Message, isSavedMessages: Boolean, myId: Long) {
     val isRead = lastMessage.isRead
+    val isMyMessage = lastMessage.senderId == myId
+    val showCheckmarks = !isSavedMessages && isMyMessage
     
     val sendTime = lastMessage.sendTime.toInstance().toPrettyTime()
     
@@ -189,12 +207,14 @@ private fun LastMessageSendTime(lastMessage: Message) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Icon(
-            imageVector = if (isRead) Icons.Rounded.DoneAll else Icons.Rounded.Done,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(14.dp)
-        )
+        if (showCheckmarks) {
+            Icon(
+                imageVector = if (isRead) Icons.Rounded.DoneAll else Icons.Rounded.Done,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(14.dp)
+            )
+        }
         Text(text = sendTime, style = MaterialTheme.typography.labelSmall)
     }
 }

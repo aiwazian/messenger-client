@@ -182,6 +182,7 @@
     <string name="failed_to_save_changes">Échec de l\'enregistrement des modifications</string>
     <string name="error_empty_public_link">Entrez un lien public</string>
     <string name="user_blocked">Utilisateur bloqué</string>
+    <string name="user_kicked">L\'utilisateur a été expulsé</string>
     <string name="user_unblocked">Utilisateur débloqué</string>
     <string name="unblock">Débloquer</string>
     <string name="block">Bloc</string>
@@ -247,4 +248,7 @@
     <string name="inactive_12_months">12 mois</string>
     <string name="if_away_for">Si vous êtes absent pour</string>
     <string name="delete_account_if_inactive_for">Autodestruction si inactif pendant...</string>
+    <string name="automatic_media_download">Téléchargement automatique des médias</string>
+    <string name="auto_download_media">Téléchargement automatique de médias</string>
+    <string name="you">Toi</string>
 </resources>

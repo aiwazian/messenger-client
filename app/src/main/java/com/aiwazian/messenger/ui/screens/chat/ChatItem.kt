@@ -5,6 +5,8 @@
 package com.aiwazian.messenger.ui.screens.chat
 
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.domain.MessageReadInfo
+import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.utils.UiText
 
@@ -19,6 +21,8 @@ sealed interface ChatItem {
         val senderName: String?,
         val isFirstInGroup: Boolean,
         val isSingleEmoji: Boolean,
-        val dropdownActions: List<DropdownMenuAction>
+        val dropdownActions: List<DropdownMenuAction>,
+        val chatType: ChatType,
+        val readInfo: List<MessageReadInfo>? = null
     ) : ChatItem
 }

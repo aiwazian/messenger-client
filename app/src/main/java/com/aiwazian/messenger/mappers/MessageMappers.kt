@@ -7,6 +7,7 @@ package com.aiwazian.messenger.mappers
 import com.aiwazian.messenger.database.entity.MessageEntity
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
+import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.network.dto.MessageAttachmentDto
 import com.aiwazian.messenger.network.dto.MessageDto
 
@@ -19,7 +20,15 @@ fun MessageDto.toDomain(): Message = Message(
     isRead = isRead ?: false,
     messageType = messageType,
     systemMessageEventType = systemEventType,
-    attachments = attachments.map { it.toDomain(messageId = id) }
+    attachments = attachments.map { it.toDomain(messageId = id) },
+    readInfo = readInfo?.map { it.toDomain() }
+)
+
+fun com.aiwazian.messenger.network.dto.MessageReadInfoDto.toDomain() = MessageReadInfo(
+    userId = userId,
+    firstName = firstName,
+    lastName = lastName,
+    readAt = readAt
 )
 
 fun MessageAttachmentDto.toDomain(messageId: Long) = MessageAttachment(

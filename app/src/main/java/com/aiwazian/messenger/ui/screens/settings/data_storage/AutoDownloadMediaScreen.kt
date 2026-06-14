@@ -20,7 +20,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
@@ -43,7 +45,7 @@ fun AutoDownloadMediaScreen(viewModel: AutoDownloadMediaViewModel = hiltViewMode
                     onClick = navBackStack::removeLastOrNull
                 ),
                 title = {
-                    Text(text = "Автозагрузка медиа")
+                    Text(text = stringResource(R.string.automatic_media_download))
                 }
             )
         },
@@ -56,7 +58,7 @@ fun AutoDownloadMediaScreen(viewModel: AutoDownloadMediaViewModel = hiltViewMode
         ) {
             SectionContainer {
                 SectionToggleItem(
-                    text = "Загружать автоматически",
+                    text = stringResource(R.string.auto_download_media),
                     isChecked = uiState.isAutoDownloadEnabled,
                     onCheckedChange = { viewModel.toggleAutoDownloadMedia(!uiState.isAutoDownloadEnabled) }
                 )
@@ -71,18 +73,18 @@ fun AutoDownloadMediaScreen(viewModel: AutoDownloadMediaViewModel = hiltViewMode
                     SectionDescription(text = "Голосовые сообщения имеют небольшой размер и всегда загружаются автоматически.")
                 }) {
                     SectionToggleItem(
-                        text = "Фото",
+                        text = stringResource(R.string.photos),
                         isChecked = uiState.isPhotoEnabled,
                         onCheckedChange = { viewModel.toggleAutoDownloadPhotos(!uiState.isPhotoEnabled) }
                     )
                     SectionToggleItem(
-                        text = "Видео",
+                        text = stringResource(R.string.videos),
                         supportingText = "До 10 МБ",
                         isChecked = uiState.isVideoEnabled,
                         onCheckedChange = { viewModel.toggleAutoDownloadVideos(!uiState.isVideoEnabled) }
                     )
                     SectionToggleItem(
-                        text = "Файлы",
+                        text = stringResource(R.string.files),
                         supportingText = "До 10 МБ",
                         isChecked = uiState.isFileEnabled,
                         onCheckedChange = { viewModel.toggleAutoDownloadFiles(!uiState.isFileEnabled) }

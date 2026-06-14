@@ -18,6 +18,7 @@ import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
+import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
@@ -37,6 +38,7 @@ import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.OnlineUsersTracker
+import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -99,7 +101,8 @@ class ChatViewModel @Inject constructor(
     private val leaveChatUseCase: LeaveChatUseCase,
     private val dataStoreManager: DataStoreManager,
     private val voicePlayerManager: VoicePlayerManager,
-    private val onlineUsersTracker: OnlineUsersTracker
+    private val onlineUsersTracker: OnlineUsersTracker,
+    private val realtimeEventSyncService: RealtimeEventSyncService
 ) : ViewModel() {
     
     private val audioRecorderManager = AudioRecorderManager(context)
@@ -183,14 +186,54 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             when (ChatType.fromId(chatId)) {
                 ChatType.CHANNEL -> channelRepository.fetchById(chatId)
-                ChatType.GROUP -> groupRepository.fetchById(chatId)
-                ChatType.PRIVATE -> userRepository.fetchById(chatId)
+                ChatType.GROUP -> {
+                    groupRepository.fetchById(chatId)
+                    chatRepository.markAllAsRead(chatId)
+                }
+                
+                ChatType.PRIVATE -> {
+                    userRepository.fetchById(chatId)
+                    if (chatId != _uiState.value.myId) {
+                        chatRepository.markAllAsRead(chatId)
+                    }
+                }
                 else -> {}
             }
         }
         
         setupUserObserver()
         loadChatData()
+        
+        viewModelScope.launch {
+            realtimeEventSyncService.groupReadEvents.collect { payload ->
+                if (payload.chatId == _uiState.value.chatId && payload.userId != _uiState.value.myId) {
+                    val readerInfo = MessageReadInfo(
+                        userId = payload.userId,
+                        firstName = "",
+                        lastName = null,
+                        readAt = payload.time
+                    )
+                    val current = _uiState.value.groupReadInfo
+                    val existing = current[payload.messageId].orEmpty()
+                    if (existing.none { it.userId == payload.userId }) {
+                        _uiState.update {
+                            it.copy(groupReadInfo = current + (payload.messageId to (existing + readerInfo)))
+                        }
+                    }
+                    if (!_uiState.value.userNamesCache.containsKey(payload.userId)) {
+                        loadUserName(payload.userId)
+                    }
+                }
+            }
+        }
+        
+        viewModelScope.launch {
+            realtimeEventSyncService.chatRemovedEvents.collect { removedChatId ->
+                if (removedChatId == _uiState.value.chatId) {
+                    _uiEffect.emit(ChatUiEffect.NavigateToMain)
+                }
+            }
+        }
     }
     
     private fun setupUserObserver() {
@@ -564,7 +607,31 @@ class ChatViewModel @Inject constructor(
                     } else null,
                     isFirstInGroup = isFirstInGroup,
                     isSingleEmoji = isSingleEmoji,
-                    dropdownActions = actions))
+                    dropdownActions = actions,
+                    chatType = chatType,
+                    readInfo = if (isMine) {
+                        val serverReadInfo = updatedMessage.readInfo.orEmpty()
+                        val extraReadInfo =
+                            _uiState.value.groupReadInfo[updatedMessage.id].orEmpty()
+                        val merged = (serverReadInfo + extraReadInfo).distinctBy { it.userId }
+                        val resolved = merged.map { info ->
+                            if (info.firstName.isBlank()) {
+                                val name = _uiState.value.userNamesCache[info.userId]
+                                if (name != null) {
+                                    val parts = name.split(" ", limit = 2)
+                                    info.copy(
+                                        firstName = parts.getOrElse(0) { "" },
+                                        lastName = parts.getOrNull(1)
+                                    )
+                                } else {
+                                    loadUserName(info.userId)
+                                    info
+                                }
+                            } else info
+                        }
+                        resolved.ifEmpty { null }
+                    } else null
+                ))
             
             lastSenderId = message.senderId
         }
@@ -842,7 +909,9 @@ class ChatViewModel @Inject constructor(
     }
     
     private fun readMessage(id: Long) {
-        // TODO
+        viewModelScope.launch {
+            chatRepository.markMessageAsRead(_uiState.value.chatId, id)
+        }
     }
     
     private fun isSingleEmoji(text: String): Boolean {

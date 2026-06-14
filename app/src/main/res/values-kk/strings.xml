@@ -182,6 +182,7 @@
     <string name="failed_to_save_changes">Өзгерістерді сақтау мүмкін болмады</string>
     <string name="error_empty_public_link">Жалпыға ортақ сілтемені енгізіңіз</string>
     <string name="user_blocked">Пайдаланушы блокталды</string>
+    <string name="user_kicked">Пайдаланушы тепті</string>
     <string name="user_unblocked">Пайдаланушы блоктан шығарылды</string>
     <string name="unblock">Блоктан шығару</string>
     <string name="block">Блоктау</string>
@@ -245,4 +246,7 @@
     <string name="inactive_12_months">12 ай</string>
     <string name="if_away_for">Егер алыс болса</string>
     <string name="delete_account_if_inactive_for">Белсенді болмаса, өзін-өзі жою...</string>
+    <string name="automatic_media_download">Автоматты медиа жүктеп алу</string>
+    <string name="auto_download_media">Автоматты жүктеп алу мультимедиа</string>
+    <string name="you">Сіз</string>
 </resources>

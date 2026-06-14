@@ -182,6 +182,7 @@
     <string name="failed_to_save_changes">변경사항을 저장하지 못했습니다.</string>
     <string name="error_empty_public_link">공개 링크를 입력하세요</string>
     <string name="user_blocked">사용자가 차단됨</string>
+    <string name="user_kicked">사용자가 추방됨</string>
     <string name="user_unblocked">사용자가 차단 해제되었습니다.</string>
     <string name="unblock">차단 해제</string>
     <string name="block">차단하다</string>
@@ -243,4 +244,7 @@
     <string name="inactive_12_months">12개월</string>
     <string name="if_away_for">다음 기간 동안 떨어져 있는 경우</string>
     <string name="delete_account_if_inactive_for">다음 기간 동안 활동하지 않으면 자폭합니다...</string>
+    <string name="automatic_media_download">자동 미디어 다운로드</string>
+    <string name="auto_download_media">자동 다운로드 미디어</string>
+    <string name="you">너</string>
 </resources>

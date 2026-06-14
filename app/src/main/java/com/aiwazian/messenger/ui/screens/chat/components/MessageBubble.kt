@@ -17,14 +17,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Downloading
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -51,6 +54,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
 import coil.compose.AsyncImage
 import coil.decode.GifDecoder
 import coil.decode.VideoFrameDecoder
@@ -59,13 +63,19 @@ import coil.request.videoFrameMillis
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
+import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.extensions.getDuration
 import com.aiwazian.messenger.extensions.sharedElement
+import com.aiwazian.messenger.extensions.toInstance
+import com.aiwazian.messenger.extensions.toPrettyTime
+import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun MessageBubble(
@@ -83,26 +93,35 @@ fun MessageBubble(
 ) {
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
+    var showReadersDropdown by remember { mutableStateOf(false) }
     val alignment = if (item.isMine) Arrangement.End else Arrangement.Start
     var isVisible by remember { mutableStateOf(false) }
-    
+    val isSavedMessages =
+        item.chatType == ChatType.PRIVATE && item.message.senderId == item.message.chatId
+
     LaunchedEffect(isVisible) {
-        if (isVisible && item.isRead == false) {
+        if (isVisible && !item.isMine && !message.isRead) {
             onSeen()
         }
     }
-    
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = alignment,
         modifier = modifier
             .fillMaxWidth()
             .onGloballyPositioned { coordinates ->
-                val position = coordinates.positionInParent()
-                val isElementVisible =
-                    position.y >= 0 && position.y < (coordinates.parentLayoutCoordinates?.size?.height
-                        ?: 0)
-                if (isElementVisible) isVisible = true
+                val posInParent = coordinates.positionInParent()
+                val parentHeight = coordinates.parentLayoutCoordinates?.size?.height ?: 0
+                if (parentHeight > 0) {
+                    val visibleTop = posInParent.y
+                    val visibleBottom = posInParent.y + coordinates.size.height
+                    val clampedTop = visibleTop.coerceAtLeast(0f)
+                    val clampedBottom = visibleBottom.coerceAtMost(parentHeight.toFloat())
+                    val visibleHeight = (clampedBottom - clampedTop).coerceAtLeast(0f)
+                    val ratio = visibleHeight / coordinates.size.height
+                    if (ratio >= 0.3f) isVisible = true
+                }
             }
             .combinedClickable(
                 onClick = { expanded = true },
@@ -112,7 +131,7 @@ fun MessageBubble(
     ) {
         val containerColor =
             if (item.isMine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
-        
+
         Box(
             modifier = Modifier
                 .widthIn(
@@ -133,7 +152,7 @@ fun MessageBubble(
                         modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp)
                     )
                 }
-                
+
                 val mediaAttachments = message.attachments.filter {
                     it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF
                 }
@@ -248,17 +267,119 @@ fun MessageBubble(
             
             Box(modifier = Modifier.align(Alignment.BottomEnd)) {
                 MessageFooter(
-                    time = item.time, isRead = if (item.isMine) item.isRead else null
+                    time = item.time,
+                    isRead = if (item.isMine && !isSavedMessages) item.isRead else null
                 )
             }
             
             MessageDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                actions = item.dropdownActions
+                actions = buildDropdownActions(item, isSavedMessages) {
+                    showReadersDropdown = true
+                }
+            )
+            
+            val readers = item.readInfo.orEmpty()
+            if (readers.isNotEmpty()) {
+                CustomDropdownMenu(
+                    expanded = showReadersDropdown,
+                    onDismissRequest = { showReadersDropdown = false },
+                    properties = PopupProperties(focusable = true)
+                ) {
+                    readers.forEach { reader ->
+                        val name = listOfNotNull(reader.firstName, reader.lastName)
+                            .joinToString(" ").ifEmpty { reader.userId.toString() }
+                        val readTime = reader.readAt.toInstance().toPrettyTime()
+                        DropdownMenuItem(
+                            leadingIcon = {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primaryContainer),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = reader.firstName.firstOrNull()?.uppercase() ?: "?",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            },
+                            text = {
+                                Column {
+                                    Text(
+                                        text = name,
+                                        fontSize = 14.sp,
+                                        lineHeight = 18.sp
+                                    )
+                                    Text(
+                                        text = readTime,
+                                        fontSize = 12.sp,
+                                        lineHeight = 14.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            },
+                            onClick = { showReadersDropdown = false }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun buildDropdownActions(
+    item: ChatItem.MessageItem,
+    isSavedMessages: Boolean,
+    onReadCountClick: () -> Unit = {}
+): List<com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction> {
+    val actions =
+        mutableListOf<com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction>()
+    
+    if (item.isMine && !isSavedMessages) {
+        val readInfo = item.readInfo
+        val isRead = item.isRead
+        
+        if (item.chatType == ChatType.PRIVATE && isRead == true) {
+            val now = java.time.LocalDate.now()
+            val msgDate = item.message.sendTime.toInstance().atZone(ZoneId.systemDefault())
+                .toLocalDate()
+            val label = if (msgDate == now) {
+                item.message.sendTime.toInstance().toPrettyTime()
+            } else {
+                item.message.sendTime.toInstance().atZone(ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("d MMMM HH:mm"))
+            }
+            actions.add(
+                com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction(
+                    icon = Icons.Rounded.DoneAll,
+                    text = com.aiwazian.messenger.utils.UiText.DynamicString(label),
+                    onClick = {}
+                )
+            )
+        } else if (item.chatType == ChatType.GROUP && !readInfo.isNullOrEmpty()) {
+            val count = readInfo.size
+            val word = when {
+                count % 10 == 1 && count % 100 != 11 -> "просмотр"
+                count % 10 in 2..4 && count % 100 !in 12..14 -> "просмотра"
+                else -> "просмотров"
+            }
+            actions.add(
+                com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction(
+                    icon = Icons.Rounded.DoneAll,
+                    text = com.aiwazian.messenger.utils.UiText.DynamicString("$count $word"),
+                    onClick = onReadCountClick
+                )
             )
         }
     }
+    
+    actions.addAll(item.dropdownActions)
+    return actions
 }
 
 @Composable
@@ -373,7 +494,11 @@ fun ImageGridCustomLayout(
 }
 
 private fun Placeable.PlacementScope.placeGrid(
-    measurables: List<Measurable>, rows: List<Int>, totalWidth: Int, totalHeight: Int, gap: Float
+    measurables: List<Measurable>,
+    rows: List<Int>,
+    totalWidth: Int,
+    totalHeight: Int,
+    gap: Float
 ) {
     var currentIndex = 0
     val rowCount = rows.size

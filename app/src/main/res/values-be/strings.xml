@@ -182,6 +182,7 @@
     <string name="failed_to_save_changes">Не ўдалося захаваць змены</string>
     <string name="error_empty_public_link">Увядзіце агульнадаступную спасылку</string>
     <string name="user_blocked">Карыстальнік заблакіраваны</string>
+    <string name="user_kicked">Карыстальнік выкінуты</string>
     <string name="user_unblocked">Карыстальнік разблакіраваны</string>
     <string name="unblock">Разблакіраваць</string>
     <string name="block">Блок</string>
@@ -249,4 +250,7 @@
     <string name="inactive_12_months">12 месяцаў</string>
     <string name="if_away_for">Калі прэч</string>
     <string name="delete_account_if_inactive_for">Самазнішчэнне, калі неактыўнае на працягу...</string>
+    <string name="automatic_media_download">Аўтаматычная загрузка мультымедыя</string>
+    <string name="auto_download_media">Аўтаматычная загрузка мультымедыя</string>
+    <string name="you">Вы</string>
 </resources>

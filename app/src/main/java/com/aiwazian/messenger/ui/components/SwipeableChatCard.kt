@@ -32,6 +32,7 @@ import com.aiwazian.messenger.utils.VibrationPattern
 @Composable
 fun SwipeableChatCard(
     chat: Chat,
+    myId: Long = 0,
     selected: Boolean = false,
     pinned: Boolean = false,
     enableSwipeable: Boolean = true,
@@ -91,6 +92,7 @@ fun SwipeableChatCard(
         }) {
         ChatCard(
             chat = chat,
+            myId = myId,
             isSelected = selected,
             onClickChat = onClick,
             onLongClickChat = onLongClick

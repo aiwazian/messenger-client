@@ -182,6 +182,7 @@
     <string name="failed_to_save_changes">Չհաջողվեց պահպանել փոփոխությունները</string>
     <string name="error_empty_public_link">Մուտքագրեք հանրային հղում</string>
     <string name="user_blocked">Օգտատերը արգելափակված է</string>
+    <string name="user_kicked">Օգտատերը հարվածել է</string>
     <string name="user_unblocked">Օգտատերն ապաարգելափակված է</string>
     <string name="unblock">Ապաշրջափակել</string>
     <string name="block">Արգելափակել</string>
@@ -245,4 +246,7 @@
     <string name="inactive_12_months">12 ամիս</string>
     <string name="if_away_for">Եթե ​​հեռու համար</string>
     <string name="delete_account_if_inactive_for">Ինքնոչնչացվի, եթե ոչ ակտիվ է...</string>
+    <string name="automatic_media_download">Մեդիա ավտոմատ ներբեռնում</string>
+    <string name="auto_download_media">Մեդիա ավտոմատ ներբեռնում</string>
+    <string name="you">Դուք</string>
 </resources>

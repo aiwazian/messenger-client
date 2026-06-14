@@ -6,7 +6,9 @@ package com.aiwazian.messenger.ui.screens.group.settings.members
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.repository.GroupRepository
+import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,9 +63,9 @@ class GroupMembersViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(members = state.members.filter { it.id != userId })
                 }
-                _sideEffect.emit(GroupMembersSideEffect.ShowSnackbar("Пользователь выгнан"))
+                _sideEffect.emit(GroupMembersSideEffect.ShowSnackbar(UiText.StringResource(R.string.user_kicked)))
             }.onFailure {
-                _sideEffect.emit(GroupMembersSideEffect.ShowSnackbar("Не удалось выгнать пользователя"))
+                _sideEffect.emit(GroupMembersSideEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
             }
             _uiState.update { it.copy(selectedUserId = null) }
         }
@@ -76,9 +78,9 @@ class GroupMembersViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(members = state.members.filter { it.id != userId })
                 }
-                _sideEffect.emit(GroupMembersSideEffect.ShowSnackbar("Пользователь заблокирован"))
+                _sideEffect.emit(GroupMembersSideEffect.ShowSnackbar(UiText.StringResource(R.string.user_blocked)))
             }.onFailure {
-                _sideEffect.emit(GroupMembersSideEffect.ShowSnackbar("Ошибка при блокировке"))
+                _sideEffect.emit(GroupMembersSideEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))
             }
             _uiState.update { it.copy(selectedUserId = null) }
         }

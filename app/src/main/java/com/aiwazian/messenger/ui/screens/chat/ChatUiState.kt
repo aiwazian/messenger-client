@@ -8,6 +8,7 @@ import android.net.Uri
 import com.aiwazian.messenger.domain.InviteLinkInfo
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
+import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.utils.UiText
 
@@ -55,5 +56,6 @@ data class ChatUiState(
     val isVoicePlaying: Boolean = false,
     val voicePositionMs: Int = 0,
     val voiceDurationMs: Int = 0,
-    val isFirstLoadDone: Boolean = false
+    val isFirstLoadDone: Boolean = false,
+    val groupReadInfo: Map<Long, List<MessageReadInfo>> = emptyMap()
 )

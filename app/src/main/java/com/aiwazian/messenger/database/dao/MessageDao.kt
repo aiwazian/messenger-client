@@ -106,5 +106,13 @@ interface MessageDao {
     suspend fun deleteAll()
     
     @Query("UPDATE message SET isRead = :isRead WHERE id = :id")
-    suspend fun updateMessageReadStatus(id: Int, isRead: Boolean)
+    suspend fun updateMessageReadStatus(id: Long, isRead: Boolean)
+    
+    @Query(
+        "UPDATE message SET isRead = :isRead " +
+                "WHERE chatId = :chatId AND senderId = :senderId AND sendTime <= :upToSendTime AND isRead = 0"
+    )
+    suspend fun updateReadStatusBySenderUpTo(
+        chatId: Long, senderId: Long, upToSendTime: Long, isRead: Boolean
+    )
 }

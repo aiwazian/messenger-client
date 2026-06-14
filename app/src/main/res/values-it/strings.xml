@@ -182,6 +182,7 @@
     <string name="failed_to_save_changes">Impossibile salvare le modifiche</string>
     <string name="error_empty_public_link">Inserisci un collegamento pubblico</string>
     <string name="user_blocked">Utente bloccato</string>
+    <string name="user_kicked">L\'utente ha preso a calci</string>
     <string name="user_unblocked">Utente sbloccato</string>
     <string name="unblock">Sbloccare</string>
     <string name="block">Bloccare</string>
@@ -247,4 +248,7 @@
     <string name="inactive_12_months">12 mesi</string>
     <string name="if_away_for">Se lontano per</string>
     <string name="delete_account_if_inactive_for">Autodistruzione se inattivo per...</string>
+    <string name="automatic_media_download">Download multimediale automatico</string>
+    <string name="auto_download_media">Download automatico dei contenuti multimediali</string>
+    <string name="you">Voi</string>
 </resources>
