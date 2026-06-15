@@ -253,4 +253,6 @@
     <string name="automatic_media_download">Аўтаматычная загрузка мультымедыя</string>
     <string name="auto_download_media">Аўтаматычная загрузка мультымедыя</string>
     <string name="you">Вы</string>
+    <string name="personal_channel">Асабісты канал</string>
+    <string name="hide_channel">Схаваць канал</string>
 </resources>

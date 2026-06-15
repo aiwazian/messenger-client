@@ -15,5 +15,6 @@ data class UserEntity(
     val username: String? = null,
     val bio: String? = null,
     val dateOfBirth: Long? = null,
-    val lastSeen: Long? = null
+    val lastSeen: Long? = null,
+    val profileChannelId: Long? = null
 )

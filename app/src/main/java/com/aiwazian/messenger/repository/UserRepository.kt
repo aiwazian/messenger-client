@@ -9,6 +9,7 @@ import androidx.core.net.toUri
 import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.UserDao
 import com.aiwazian.messenger.database.entity.AvatarEntity
+import com.aiwazian.messenger.domain.OwnedChannel
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
@@ -16,6 +17,7 @@ import com.aiwazian.messenger.mappers.toUpdateRequest
 import com.aiwazian.messenger.network.api.UserApi
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
+import com.aiwazian.messenger.network.dto.SetProfileChannelRequestDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
@@ -221,6 +223,58 @@ class UserRepository @Inject constructor(
                     )
                 )
             )
+        }
+    }
+    
+    suspend fun setProfileChannel(channelId: Long): Result<Unit> {
+        return try {
+            val response = userApi.setProfileChannel(
+                SetProfileChannelRequestDto(channelId = channelId.toString())
+            )
+            if (response.isSuccessful) {
+                val user = getMe().firstOrNull()
+                if (user != null) {
+                    userDao.insert(user.copy(profileChannelId = channelId).toEntity())
+                }
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to set profile channel"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error setting profile channel", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun removeProfileChannel(): Result<Unit> {
+        return try {
+            val response = userApi.removeProfileChannel()
+            if (response.isSuccessful) {
+                val user = getMe().firstOrNull()
+                if (user != null) {
+                    userDao.insert(user.copy(profileChannelId = null).toEntity())
+                }
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to remove profile channel"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error removing profile channel", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun getOwnedChannels(): Result<List<OwnedChannel>> {
+        return try {
+            val response = userApi.getOwnedChannels()
+            if (response.isSuccessful) {
+                Result.success(response.body()?.map { it.toDomain() }.orEmpty())
+            } else {
+                Result.failure(Exception("Failed to get owned channels"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error getting owned channels", e)
+            Result.failure(e)
         }
     }
 }

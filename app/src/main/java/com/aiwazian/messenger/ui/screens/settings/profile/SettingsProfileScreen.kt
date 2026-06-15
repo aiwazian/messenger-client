@@ -141,13 +141,11 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                 )
             }
             
-            SectionContainer(header = {
-                SectionHeader(title = stringResource(R.string.bio))
-            }, footer = {
-                SectionDescription(text = "В настройках можно выбрать, кому они будут видны.")
+            SectionContainer(footer = {
+                SectionDescription(text = stringResource(R.string.write_about_me))
             }) {
                 FramelessTextBox(
-                    placeholder = stringResource(R.string.write_about_me),
+                    placeholder = stringResource(R.string.bio),
                     value = uiState.user.bio.orEmpty(),
                     onValueChange = viewModel::onChangeBio,
                     singleLine = false
@@ -156,8 +154,6 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
             
             SectionContainer(header = {
                 SectionHeader(title = stringResource(R.string.username))
-            }, footer = {
-                SectionDescription("Другие пользователи смогут найти Вас по такому имени и связаться.")
             }) {
                 SectionItem(
                     headlineText = if (uiState.user.username != null) {
@@ -165,15 +161,14 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                     } else {
                         "Задать имя пользователя"
                     }, onClick = {
+                        viewModel.save()
                         navBackStack.add(AppRoute.SettingsUsername(uiState.user.username))
                     })
             }
             
-            SectionContainer(header = {
-                SectionHeader(title = stringResource(R.string.date_of_birth))
-            }) {
+            SectionContainer {
                 SectionItem(
-                    headlineText = "Дата Вашего рождения",
+                    headlineText = stringResource(R.string.date_of_birth),
                     trailingText = if (uiState.user.dateOfBirth != null) {
                         uiState.user.dateOfBirth!!.toInstance().toPrettyDateWithYear()
                     } else {
@@ -193,6 +188,17 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                         )
                     }
                 }
+            }
+            
+            SectionContainer {
+                SectionItem(
+                    headlineText = stringResource(R.string.personal_channel),
+                    supportingText = uiState.profileChannelName,
+                    onClick = {
+                        viewModel.save()
+                        navBackStack.add(AppRoute.SettingsSelectChannel)
+                    }
+                )
             }
             
             if (uiState.showDatePicker) {
@@ -229,7 +235,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
     }
     
     if (uiState.pendingAvatarUri != null) {
-        val context = androidx.compose.ui.platform.LocalContext.current
+        val context = LocalContext.current
         AvatarCropScreen(
             imageUri = uiState.pendingAvatarUri!!, onCropConfirmed = { bitmap ->
                 val file = File(context.cacheDir, "avatar_${System.currentTimeMillis()}.png")

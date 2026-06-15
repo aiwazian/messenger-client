@@ -53,6 +53,9 @@ sealed interface AppRoute : NavKey {
     data object SettingsProfile : AppRoute
     
     @Serializable
+    data object SettingsSelectChannel : AppRoute
+    
+    @Serializable
     data class SettingsUsername(val username: String?) : AppRoute
     
     @Serializable

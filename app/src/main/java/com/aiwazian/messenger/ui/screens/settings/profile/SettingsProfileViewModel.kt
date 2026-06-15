@@ -14,6 +14,7 @@ import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.isNetworkError
+import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
 import com.aiwazian.messenger.utils.UiText
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,6 +35,7 @@ import javax.inject.Inject
 class SettingsProfileViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val userRepository: UserRepository,
+    private val channelRepository: ChannelRepository,
     private val uploadManager: UploadManager,
     private val downloadAvatarUseCase: DownloadAvatarUseCase
 ) : ViewModel() {
@@ -49,6 +52,7 @@ class SettingsProfileViewModel @Inject constructor(
         viewModelScope.launch {
             userRepository.getMe().collectLatest { user ->
                 _uiState.update { it.copy(user = user) }
+                loadProfileChannelName(user.profileChannelId)
                 
                 user.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
                     .forEach { avatar ->
@@ -60,6 +64,18 @@ class SettingsProfileViewModel @Inject constructor(
                                 }
                         }
                     }
+            }
+        }
+    }
+    
+    private fun loadProfileChannelName(channelId: Long?) {
+        if (channelId == null) {
+            _uiState.update { it.copy(profileChannelName = null) }
+            return
+        }
+        viewModelScope.launch {
+            channelRepository.getById(channelId).firstOrNull()?.let { channel ->
+                _uiState.update { it.copy(profileChannelName = channel.name) }
             }
         }
     }
@@ -102,9 +118,15 @@ class SettingsProfileViewModel @Inject constructor(
     }
     
     fun onSaveAndBack() {
+        save()
+        viewModelScope.launch {
+            _sideEffect.emit(SettingsProfileSideEffect.NavigateBack)
+        }
+    }
+    
+    fun save() {
         viewModelScope.launch {
             userRepository.updateProfile(_uiState.value.user)
-            _sideEffect.emit(SettingsProfileSideEffect.NavigateBack)
         }
     }
     

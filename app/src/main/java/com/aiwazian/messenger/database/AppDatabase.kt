@@ -39,10 +39,11 @@ import com.aiwazian.messenger.database.entity.UserEntity
         ChatEntity::class,
         AvatarEntity::class
     ],
-    version = 39,
+    version = 40,
     exportSchema = true,
     autoMigrations = [
-        AutoMigration(from = 38, to = 39)
+        AutoMigration(from = 38, to = 39),
+        AutoMigration(from = 39, to = 40)
     ]
 )
 @TypeConverters(Converters::class)

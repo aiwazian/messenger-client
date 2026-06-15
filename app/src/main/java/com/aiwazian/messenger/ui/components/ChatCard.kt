@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,6 +69,7 @@ fun ChatCard(
     onLongClickChat: () -> Unit = {}
 ) {
     ListItem(
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = modifier
             .combinedClickable(
                 onClick = onClickChat, onLongClick = onLongClickChat
@@ -131,7 +133,7 @@ fun ChatCard(
             }
         }, leadingContent = {
             Box {
-                Box(Modifier.padding(4.dp)) {
+                Box(Modifier.padding(vertical = 4.dp)) {
                     ChatAvatar(
                         id = chat.id,
                         chatName = chat.chatName.asString(),
@@ -169,7 +171,6 @@ fun ChatCard(
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
-                            .padding(2.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.surface)
                     )

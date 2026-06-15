@@ -17,6 +17,7 @@ import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.repository.ChannelRepository
+import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.SearchRepository
@@ -53,6 +54,7 @@ class ProfileViewModel @Inject constructor(
     private val context: Context,
     private val userRepository: UserRepository,
     private val channelRepository: ChannelRepository,
+    private val chatRepository: ChatRepository,
     private val groupRepository: GroupRepository,
     private val searchRepository: SearchRepository,
     private val inviteLinkRepository: InviteLinkRepository,
@@ -131,6 +133,7 @@ class ProfileViewModel @Inject constructor(
                                 username = user.username,
                                 bio = user.bio,
                                 dateOfBirth = user.dateOfBirth,
+                                profileChannelId = user.profileChannelId,
                             )
                             _uiState.update {
                                 it.copy(
@@ -141,6 +144,7 @@ class ProfileViewModel @Inject constructor(
                                 )
                             }
                             recalculateActions()
+                            loadProfileChannel(user.profileChannelId)
                             user.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
                                 .forEach { avatar ->
                                     viewModelScope.launch {
@@ -169,7 +173,8 @@ class ProfileViewModel @Inject constructor(
                                 username = user.username,
                                 bio = user.bio,
                                 dateOfBirth = user.dateOfBirth,
-                                lastSeen = user.lastSeen
+                                lastSeen = user.lastSeen,
+                                profileChannelId = user.profileChannelId,
                             )
                             _uiState.update {
                                 it.copy(
@@ -180,6 +185,7 @@ class ProfileViewModel @Inject constructor(
                                 )
                             }
                             recalculateActions()
+                            loadProfileChannel(user.profileChannelId)
                             
                             user.avatars.filter { it.uri == null && downloadingAvatars.add(it.fileId) }
                                 .forEach { avatar ->
@@ -277,6 +283,39 @@ class ProfileViewModel @Inject constructor(
             }
             
             else -> {}
+        }
+    }
+    
+    private fun loadProfileChannel(channelId: Long?) {
+        if (channelId == null) {
+            _uiState.update { it.copy(profileChannelInfo = null) }
+            return
+        }
+        viewModelScope.launch {
+            channelRepository.getById(channelId).firstOrNull()?.let { channel ->
+                val avatarUri = channel.avatars.firstOrNull()?.uri
+                _uiState.update {
+                    it.copy(
+                        profileChannelInfo = ProfileChannelInfo(
+                            id = channel.id,
+                            name = channel.name,
+                            subscribers = channel.subscribers,
+                            avatarUri = avatarUri
+                        )
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            chatRepository.getLastMessageFlow(channelId).collectLatest { lastMessage ->
+                _uiState.update {
+                    it.copy(
+                        profileChannelInfo = it.profileChannelInfo?.copy(
+                            lastMessage = lastMessage
+                        )
+                    )
+                }
+            }
         }
     }
     

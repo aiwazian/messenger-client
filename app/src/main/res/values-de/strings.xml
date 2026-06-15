@@ -249,4 +249,6 @@
     <string name="automatic_media_download">Automatischer Medien-Download</string>
     <string name="auto_download_media">Medien automatisch herunterladen</string>
     <string name="you">Du</string>
+    <string name="personal_channel">Persönlicher Kanal</string>
+    <string name="hide_channel">Kanal ausblenden</string>
 </resources>

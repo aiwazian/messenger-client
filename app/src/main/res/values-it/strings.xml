@@ -251,4 +251,5 @@
     <string name="automatic_media_download">Download multimediale automatico</string>
     <string name="auto_download_media">Download automatico dei contenuti multimediali</string>
     <string name="you">Voi</string>
+    <string name="personal_channel">Canale personale</string>
 </resources>

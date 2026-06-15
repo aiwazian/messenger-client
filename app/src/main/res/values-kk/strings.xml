@@ -249,4 +249,5 @@
     <string name="automatic_media_download">Автоматты медиа жүктеп алу</string>
     <string name="auto_download_media">Автоматты жүктеп алу мультимедиа</string>
     <string name="you">Сіз</string>
+    <string name="personal_channel">Жеке арна</string>
 </resources>

@@ -276,6 +276,15 @@ class ChatRepository @Inject constructor(
         }
     }
     
+    fun getLastMessageFlow(chatId: Long): Flow<Message?> {
+        return messageDao.getChatLastMessageFlow(chatId).map { messageWithAttachments ->
+            messageWithAttachments?.let {
+                val attachments = it.attachments.map { att -> att.toDomain() }
+                it.message.toDomain(attachments)
+            }
+        }
+    }
+    
     @OptIn(ExperimentalCoroutinesApi::class)
     fun getById(chatId: Long): Flow<Chat?> {
         return userRepository.getMe().flatMapLatest { me ->

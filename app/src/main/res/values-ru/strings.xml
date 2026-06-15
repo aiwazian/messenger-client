@@ -253,4 +253,5 @@
     <string name="automatic_media_download">Автоматическая загрузка мультимедиа</string>
     <string name="auto_download_media">Автоматическая загрузка мультимедиа</string>
     <string name="you">Ты</string>
+    <string name="personal_channel">Личный канал</string>
 </resources>

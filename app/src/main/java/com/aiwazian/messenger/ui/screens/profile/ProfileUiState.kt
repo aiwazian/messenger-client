@@ -6,8 +6,17 @@ package com.aiwazian.messenger.ui.screens.profile
 
 import android.net.Uri
 import com.aiwazian.messenger.domain.InviteLinkInfo
+import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.utils.UiText
+
+data class ProfileChannelInfo(
+    val id: Long,
+    val name: String,
+    val subscribers: Int,
+    val avatarUri: Uri? = null,
+    val lastMessage: Message? = null
+)
 
 data class ProfileUiState(
     val id: Long = -1,
@@ -23,4 +32,5 @@ data class ProfileUiState(
     val showInviteBottomSheet: Boolean = false,
     val isProcessingInvite: Boolean = false,
     val showBannedDialog: Boolean = false,
+    val profileChannelInfo: ProfileChannelInfo? = null,
 )

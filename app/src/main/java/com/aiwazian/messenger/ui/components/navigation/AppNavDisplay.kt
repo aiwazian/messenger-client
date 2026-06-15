@@ -56,6 +56,7 @@ import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDa
 import com.aiwazian.messenger.ui.screens.settings.privacy.invites.SettingsInvitesScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.lastSeen.SettingsLastSeenScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.photo.SettingsPhotoScreen
+import com.aiwazian.messenger.ui.screens.settings.profile.SelectChannelScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.username.SettingsUsernameScreen
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsCloudPasswordScreen
@@ -117,6 +118,7 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsLastSeen> { SettingsLastSeenScreen(level = it.level) }
                     entry<AppRoute.SettingsSecurity> { SettingsSecurityScreen() }
                     entry<AppRoute.SettingsProfile> { SettingsProfileScreen() }
+                    entry<AppRoute.SettingsSelectChannel> { SelectChannelScreen() }
                     entry<AppRoute.SettingsUsername> { SettingsUsernameScreen(username = it.username) }
                     entry<AppRoute.SettingsBio> { SettingsBioScreen(level = it.level) }
                     entry<AppRoute.SettingsPhoto> { SettingsPhotoScreen(level = it.level) }
@@ -157,13 +159,13 @@ fun AppNavDisplay(
                     rememberViewModelStoreNavEntryDecorator()
                 ),
                 transitionSpec = {
-                    slideInHorizontally { it } togetherWith slideOutHorizontally { -it / 4 }
+                    slideInHorizontally { it } togetherWith slideOutHorizontally { -it / 8 }
                 },
                 popTransitionSpec = {
-                    slideInHorizontally { -it / 4 } togetherWith slideOutHorizontally { it }
+                    slideInHorizontally { -it / 8 } togetherWith slideOutHorizontally { it }
                 },
                 predictivePopTransitionSpec = {
-                    slideInHorizontally { -it / 4 } togetherWith slideOutHorizontally { it }
+                    slideInHorizontally { -it / 8 } togetherWith slideOutHorizontally { it }
                 }
             )
         }

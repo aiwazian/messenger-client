@@ -23,7 +23,8 @@ fun UserResponseDto.toDomain(): User = User(
     bio = bio,
     dateOfBirth = dateOfBirth,
     lastSeen = lastSeen,
-    avatars = emptyList()
+    avatars = emptyList(),
+    profileChannelId = profileChannelId?.toLongOrNull()
 )
 
 fun UserResponseDto.toEntity(): UserEntity = UserEntity(
@@ -33,7 +34,8 @@ fun UserResponseDto.toEntity(): UserEntity = UserEntity(
     username = username,
     bio = bio,
     dateOfBirth = dateOfBirth,
-    lastSeen = lastSeen
+    lastSeen = lastSeen,
+    profileChannelId = profileChannelId?.toLongOrNull()
 )
 
 fun User.toUpdateRequest(): UpdateUserRequestDto = UpdateUserRequestDto(
@@ -62,7 +64,8 @@ fun UserEntity.toDomain(avatars: List<Avatar> = emptyList()): User = User(
     bio = bio,
     dateOfBirth = dateOfBirth,
     lastSeen = lastSeen,
-    avatars = avatars
+    avatars = avatars,
+    profileChannelId = profileChannelId
 )
 
 fun User.toEntity(): UserEntity = UserEntity(
@@ -72,7 +75,8 @@ fun User.toEntity(): UserEntity = UserEntity(
     username = username,
     bio = bio,
     dateOfBirth = dateOfBirth,
-    lastSeen = lastSeen
+    lastSeen = lastSeen,
+    profileChannelId = profileChannelId
 )
 
 fun AvatarEntity.toDomain(uri: Uri?) = Avatar(

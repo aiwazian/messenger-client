@@ -58,10 +58,12 @@ import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
+import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
@@ -71,6 +73,7 @@ import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.chat.InviteLinkBottomSheet
+import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -220,6 +223,7 @@ fun ProfileScreen(
             when (val profile = uiState.profile) {
                 is Profile.User -> UserProfile(
                     user = profile,
+                    channelInfo = uiState.profileChannelInfo,
                     onLinkClicked = viewModel::onLinkClicked,
                     onUsernameClicked = viewModel::onUsernameClicked
                 )
@@ -334,14 +338,40 @@ private fun ChannelProfile(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UserProfile(
     user: Profile.User,
+    channelInfo: ProfileChannelInfo? = null,
     onLinkClicked: (String) -> Unit,
     onUsernameClicked: (String) -> Unit
 ) {
+    val navBackStack = LocalNavBackStack.current
+    
     Column {
+        if (user.profileChannelId != null && channelInfo != null) {
+            val channelChat = Chat(
+                id = channelInfo.id,
+                chatName = UiText.DynamicString(channelInfo.name),
+                isPinned = false,
+                avatarUri = channelInfo.avatarUri,
+                lastMessage = channelInfo.lastMessage
+            )
+            SectionContainer {
+                ChatCard(
+                    chat = channelChat,
+                    onClickChat = {
+                        navBackStack.add(
+                            AppRoute.Chat(
+                                chatId = channelInfo.id,
+                                chatName = channelInfo.name,
+                                avatarUri = channelInfo.avatarUri?.toString()
+                            )
+                        )
+                    }
+                )
+            }
+        }
+        
         SectionContainer {
             if (!user.bio.isNullOrBlank()) {
                 SectionItem(

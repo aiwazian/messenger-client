@@ -257,4 +257,6 @@
     <string name="automatic_media_download">Automatic media download</string>
     <string name="auto_download_media">Auto Download Media</string>
     <string name="you">You</string>
+    <string name="personal_channel">Personal channel</string>
+    <string name="hide_channel">Hide channel</string>
 </resources>

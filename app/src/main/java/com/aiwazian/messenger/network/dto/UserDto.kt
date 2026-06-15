@@ -17,7 +17,8 @@ data class UserResponseDto(
     @SerialName("bio") val bio: String? = null,
     @SerialName("dateOfBirth") val dateOfBirth: Long? = null,
     @SerialName("lastSeen") val lastSeen: Long? = null,
-    @SerialName("avatars") val avatars: List<AvatarDto> = emptyList()
+    @SerialName("avatars") val avatars: List<AvatarDto> = emptyList(),
+    @SerialName("profileChannelId") val profileChannelId: String? = null
 )
 
 @Serializable
@@ -65,4 +66,17 @@ data class UpdatePrivacySettingsRequestDto(
     @SerialName("invites") val invites: PrivacyLevel? = null,
     @SerialName("profilePhoto") val profilePhoto: PrivacyLevel? = null,
     @SerialName("deleteAfterDays") val deleteAfterDays: Int? = null
+)
+
+@Serializable
+data class SetProfileChannelRequestDto(
+    @SerialName("channelId") val channelId: String
+)
+
+@Serializable
+data class OwnedChannelDto(
+    @SerialName("id") val id: String,
+    @SerialName("name") val name: String,
+    @SerialName("subscribers") val subscribers: Int,
+    @SerialName("avatar") val avatar: AvatarDto? = null
 )

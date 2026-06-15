@@ -19,5 +19,6 @@ data class SettingsProfileUiState(
         avatars = emptyList()
     ),
     val showDatePicker: Boolean = false,
-    val pendingAvatarUri: Uri? = null
+    val pendingAvatarUri: Uri? = null,
+    val profileChannelName: String? = null
 )

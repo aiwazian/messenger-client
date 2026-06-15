@@ -13,6 +13,7 @@ sealed interface Profile {
         override val username: String? = null,
         val dateOfBirth: Long? = null,
         val lastSeen: Long? = null,
+        val profileChannelId: Long? = null,
     ) : Profile
     
     data class Channel(

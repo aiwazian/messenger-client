@@ -9,6 +9,8 @@ import com.aiwazian.messenger.network.dto.ChangePasswordRequestDto
 import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
+import com.aiwazian.messenger.network.dto.OwnedChannelDto
+import com.aiwazian.messenger.network.dto.SetProfileChannelRequestDto
 import com.aiwazian.messenger.network.dto.UpdateUserRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
 import retrofit2.Response
@@ -50,4 +52,13 @@ interface UserApi {
     
     @GET("users/avatars/{fileId}")
     suspend fun getAvatarDownloadUrl(@Path("fileId") fileId: String): Response<FileDownloadResponseDto>
+    
+    @PATCH("users/me/profile-channel")
+    suspend fun setProfileChannel(@Body request: SetProfileChannelRequestDto): Response<Unit>
+    
+    @DELETE("users/me/profile-channel")
+    suspend fun removeProfileChannel(): Response<Unit>
+    
+    @GET("users/me/owned-channels")
+    suspend fun getOwnedChannels(): Response<List<OwnedChannelDto>>
 }

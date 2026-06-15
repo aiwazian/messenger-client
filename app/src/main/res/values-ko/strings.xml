@@ -247,4 +247,5 @@
     <string name="automatic_media_download">자동 미디어 다운로드</string>
     <string name="auto_download_media">자동 다운로드 미디어</string>
     <string name="you">너</string>
+    <string name="personal_channel">개인 채널</string>
 </resources>
