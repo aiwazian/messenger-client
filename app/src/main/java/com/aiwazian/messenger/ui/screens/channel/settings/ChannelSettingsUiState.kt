@@ -15,7 +15,7 @@ data class ChannelSettingsUiState(
         channelType = ChannelType.PRIVATE,
         username = null,
         subscribers = 0,
-        removedUser = null,
+        removedUsers = null,
         isSubscribed = false,
         ownerId = null
     ),

@@ -10,6 +10,5 @@ data class ChannelSubscribersUiState(
     val subscribers: List<User> = emptyList(),
     val showKickDialog: Boolean = false,
     val showBlockDialog: Boolean = false,
-    val searchQuery: String = "",
     val selectedUserId: Long? = null
 )

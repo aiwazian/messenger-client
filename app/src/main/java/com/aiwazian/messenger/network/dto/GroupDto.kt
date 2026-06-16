@@ -17,6 +17,7 @@ data class GroupResponseDto(
     @SerialName("groupType") val groupType: GroupType = GroupType.PRIVATE,
     @SerialName("ownerId") val ownerId: Long? = null,
     @SerialName("membersCount") val membersCount: Int? = null,
+    @SerialName("removedUsers") val removedUsers: Int? = null,
     @SerialName("isMember") val isMember: Boolean = false,
     @SerialName("isOwner") val isOwner: Boolean? = false,
     @SerialName("avatars") val avatars: List<AvatarDto> = emptyList()

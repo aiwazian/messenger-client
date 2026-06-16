@@ -326,60 +326,58 @@ fun FullScreenViewer(
                             enter = fadeIn() + scaleIn(),
                             exit = fadeOut() + scaleOut()
                         ) {
-                            Box {
-                                IconButton(
-                                    onClick = { showVideoSettings = true },
-                                    colors = IconButtonDefaults.iconButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                    )
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Settings,
-                                        contentDescription = stringResource(R.string.video_settings)
-                                    )
-                                }
-                                CustomDropdownMenu(
-                                    expanded = showVideoSettings,
-                                    onDismissRequest = { showVideoSettings = false }) {
-                                    DropdownMenuItem(text = {
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            Text(text = stringResource(R.string.speed))
-                                            
-                                            Text(
-                                                text = String.format(
-                                                    Locale.ROOT, "%.1f", videoPlaybackSpeed
-                                                ) + 'x',
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }, onClick = {
-                                        showVideoSettings = false
-                                        showSpeedBottomSheet = true
-                                    }, leadingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Speed,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    })
-                                    DropdownMenuItem(text = {
+                            IconButton(
+                                onClick = { showVideoSettings = true },
+                                colors = IconButtonDefaults.iconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Settings,
+                                    contentDescription = stringResource(R.string.video_settings)
+                                )
+                            }
+                            CustomDropdownMenu(
+                                expanded = showVideoSettings,
+                                onDismissRequest = { showVideoSettings = false }) {
+                                DropdownMenuItem(text = {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(text = stringResource(R.string.speed))
+                                        
                                         Text(
-                                            text = stringResource(R.string.loop),
-                                            color = if (isVideoLooping) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                            text = String.format(
+                                                Locale.ROOT, "%.1f", videoPlaybackSpeed
+                                            ) + 'x',
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
-                                    }, onClick = {
-                                        onVideoLoopingChange(!isVideoLooping)
-                                        showVideoSettings = false
-                                    }, leadingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Repeat,
-                                            contentDescription = null,
-                                            tint = if (isVideoLooping) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                        )
-                                    })
-                                }
+                                    }
+                                }, onClick = {
+                                    showVideoSettings = false
+                                    showSpeedBottomSheet = true
+                                }, leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Speed,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
+                                })
+                                DropdownMenuItem(text = {
+                                    Text(
+                                        text = stringResource(R.string.loop),
+                                        color = if (isVideoLooping) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }, onClick = {
+                                    onVideoLoopingChange(!isVideoLooping)
+                                    showVideoSettings = false
+                                }, leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Repeat,
+                                        contentDescription = null,
+                                        tint = if (isVideoLooping) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                })
                             }
                         }
                         
@@ -388,38 +386,36 @@ fun FullScreenViewer(
                             enter = fadeIn() + scaleIn(),
                             exit = fadeOut() + scaleOut()
                         ) {
-                            Box {
-                                IconButton(
-                                    onClick = { showMoreActions = true },
-                                    colors = IconButtonDefaults.iconButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                    )
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.MoreVert,
-                                        contentDescription = stringResource(R.string.actions)
-                                    )
-                                }
-                                CustomDropdownMenu(
-                                    expanded = showMoreActions,
-                                    onDismissRequest = { showMoreActions = false }) {
-                                    if (canDownloadMedia && currentUri != null) {
-                                        DropdownMenuItem(text = {
-                                            Text(
-                                                text = stringResource(R.string.save_to_gallery),
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                        }, onClick = {
-                                            onSaveToGallery(currentUri)
-                                            showMoreActions = false
-                                        }, leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Rounded.SaveAlt,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onSurface
-                                            )
-                                        })
-                                    }
+                            IconButton(
+                                onClick = { showMoreActions = true },
+                                colors = IconButtonDefaults.iconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.MoreVert,
+                                    contentDescription = stringResource(R.string.actions)
+                                )
+                            }
+                            CustomDropdownMenu(
+                                expanded = showMoreActions,
+                                onDismissRequest = { showMoreActions = false }) {
+                                if (canDownloadMedia && currentUri != null) {
+                                    DropdownMenuItem(text = {
+                                        Text(
+                                            text = stringResource(R.string.save_to_gallery),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }, onClick = {
+                                        onSaveToGallery(currentUri)
+                                        showMoreActions = false
+                                    }, leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Rounded.SaveAlt,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    })
                                 }
                             }
                         }

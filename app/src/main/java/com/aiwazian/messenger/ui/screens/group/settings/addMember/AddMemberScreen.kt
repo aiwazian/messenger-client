@@ -4,17 +4,19 @@
 
 package com.aiwazian.messenger.ui.screens.group.settings.addMember
 
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,17 +37,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
-import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 
 @Composable
 fun AddMemberScreen(
-    groupId: Long,
-    viewModel: AddMemberViewModel = hiltViewModel()
+    groupId: Long, viewModel: AddMemberViewModel = hiltViewModel()
 ) {
     val navBackStack = LocalNavBackStack.current
     val state by viewModel.uiState.collectAsState()
@@ -65,101 +66,74 @@ fun AddMemberScreen(
         }
     }
     
-    Scaffold(
-        topBar = {
-            PageTopBar(
-                title = { Text(stringResource(R.string.add_member)) },
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navBackStack::removeLastOrNull
-                ),
-                actions = listOf(
-                    TopBarAction(
-                        icon = Icons.Rounded.Check,
-                        onClick = {
-                            viewModel.addSelectedUsers {
-                                navBackStack.removeLastOrNull()
-                            }
-                        }
-                    )
-                )
+    Scaffold(topBar = {
+        PageTopBar(
+            title = { Text(stringResource(R.string.add_member)) },
+            navigationIcon = NavigationIcon(
+                icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                onClick = navBackStack::removeLastOrNull
             )
-        },
-        snackbarHost = {
-            CustomSnackbar(snackbarHostState)
-        },
-        floatingActionButton = {
-            if (state.selectedUserIds.isNotEmpty()) {
-                FloatingActionButton(
-                    onClick = {
-                        viewModel.addSelectedUsers {
-                            navBackStack.removeLastOrNull()
-                        }
+        )
+    }, snackbarHost = {
+        CustomSnackbar(snackbarHostState)
+    }, floatingActionButton = {
+        AnimatedVisibility(
+            visible = state.selectedUserIds.isNotEmpty(),
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut() + scaleOut()
+        ) {
+            FloatingActionButton(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = CircleShape,
+                onClick = {
+                    viewModel.addSelectedUsers {
+                        navBackStack.removeLastOrNull()
                     }
-                ) {
-                    Icon(Icons.Rounded.PersonAdd, contentDescription = null)
-                }
+                }) {
+                Icon(Icons.Rounded.PersonAdd, contentDescription = null)
             }
         }
-    ) { innerPadding ->
+    }) { innerPadding ->
         Box(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            if (state.isLoading && state.users.isEmpty()) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (state.users.isEmpty()) {
+            if (state.users.isEmpty()) {
                 Text(
                     text = "Нет доступных пользователей",
                     modifier = Modifier.align(Alignment.Center),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             } else {
-                LazyColumn {
-                    items(state.users) { user ->
-                        UserListItem(
-                            user = user,
-                            isSelected = state.selectedUserIds.contains(user.id),
-                            onClick = { viewModel.toggleUser(user.id) }
-                        )
+                SectionContainer {
+                    LazyColumn {
+                        items(state.users) { user ->
+                            ProfileCard(
+                                id = user.id,
+                                headlineText = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                                avatarUri = user.avatars.firstOrNull()?.uri,
+                                supportingText = user.username?.let { "@$it" },
+                                trailingContent = {
+                                    Checkbox(
+                                        checked = state.selectedUserIds.contains(user.id),
+                                        onCheckedChange = null,
+                                        modifier = Modifier.padding(
+                                            vertical = 14.dp,
+                                            horizontal = 4.dp
+                                        )
+                                    )
+                                },
+                                onClick = { viewModel.toggleUser(user.id) })
+                        }
                     }
                 }
             }
+            if (state.isLoading && state.users.isEmpty()) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
         }
-    }
-}
-
-@Composable
-private fun UserListItem(
-    user: User,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyLarge
-        )
-        user.username?.let {
-            Text(
-                text = "@$it",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                modifier = Modifier.padding(end = 8.dp)
-            )
-        }
-        Checkbox(
-            checked = isSelected,
-            onCheckedChange = null
-        )
     }
 }

@@ -4,8 +4,8 @@
 
 package com.aiwazian.messenger.ui.screens.channel.settings.blockedUsers
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,7 +20,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,11 +38,10 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
-import com.aiwazian.messenger.ui.components.FramelessTextBox
+import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
@@ -55,11 +53,9 @@ fun ChannelBlockedUsersScreen(
     val navBackStack = LocalNavBackStack.current
     val state by viewModel.uiState.collectAsState()
     
-    var searchQuery by remember { mutableStateOf("") }
-    
     val snackbarHostState = remember { SnackbarHostState() }
     
-    LaunchedEffect(channelId, searchQuery) {
+    LaunchedEffect(channelId) {
         viewModel.init(channelId)
     }
     
@@ -77,55 +73,59 @@ fun ChannelBlockedUsersScreen(
             )
         }
     ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
-            FramelessTextBox(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = stringResource(R.string.search)
-            )
-            
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
             SectionContainer {
                 LazyColumn {
                     items(state.blockedUsers) { user ->
-                        SectionItem(
-                            headlineText = "${user.firstName} ${user.lastName.orEmpty()}",
+                        ProfileCard(
+                            id = user.id,
+                            headlineText = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                            avatarUri = user.avatars.firstOrNull()?.uri,
                             trailingContent = {
                                 var showMenu by remember { mutableStateOf(false) }
                                 
-                                Box {
-                                    IconButton(onClick = { showMenu = true }) {
-                                        Icon(
-                                            imageVector = Icons.Default.MoreVert,
-                                            contentDescription = null
+                                IconButton(onClick = { showMenu = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.MoreVert,
+                                        contentDescription = null
+                                    )
+                                }
+                                
+                                CustomDropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.unblock)) },
+                                        onClick = {
+                                            showMenu = false
+                                            viewModel.onUnblockClick(user)
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Rounded.CheckCircle, null)
+                                        },
+                                        colors = MenuItemColors(
+                                            textColor = MaterialTheme.colorScheme.primary,
+                                            leadingIconColor = MaterialTheme.colorScheme.primary,
+                                            trailingIconColor = MaterialTheme.colorScheme.primary,
+                                            disabledTextColor = Color.Unspecified,
+                                            disabledLeadingIconColor = Color.Unspecified,
+                                            disabledTrailingIconColor = Color.Unspecified
                                         )
-                                    }
-                                    CustomDropdownMenu(
-                                        expanded = showMenu,
-                                        onDismissRequest = { showMenu = false }
-                                    ) {
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.unblock)) },
-                                            onClick = {
-                                                showMenu = false
-                                                viewModel.onUnblockClick(user)
-                                            },
-                                            leadingIcon = {
-                                                Icon(Icons.Rounded.CheckCircle, null)
-                                            },
-                                            colors = MenuItemColors(
-                                                textColor = MaterialTheme.colorScheme.primary,
-                                                leadingIconColor = MaterialTheme.colorScheme.primary,
-                                                trailingIconColor = MaterialTheme.colorScheme.primary,
-                                                disabledTextColor = Color.Unspecified,
-                                                disabledLeadingIconColor = Color.Unspecified,
-                                                disabledTrailingIconColor = Color.Unspecified
-                                            )
-                                        )
-                                    }
+                                    )
                                 }
                             },
                             onClick = {
-                                navBackStack.add(AppRoute.Chat(user.id, "${user.firstName} ${user.lastName.orEmpty()}"))
+                                navBackStack.add(
+                                    AppRoute.Chat(
+                                        user.id,
+                                        "${user.firstName} ${user.lastName.orEmpty()}"
+                                    )
+                                )
                             }
                         )
                     }

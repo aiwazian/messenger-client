@@ -265,50 +265,49 @@ private fun InviteLinkItem(
         headlineText = link.code,
         supportingText = supportingText,
         trailingContent = {
-            Box {
-                var expanded by remember { mutableStateOf(false) }
-                val isMenuExpanded = expandedMenuId == link.id
-                
-                IconButton(onClick = {
-                    expanded = true
-                    viewModel.setExpandedMenuId(link.id)
-                }) {
-                    Icon(Icons.Rounded.MoreVert, contentDescription = null)
+            var expanded by remember { mutableStateOf(false) }
+            val isMenuExpanded = expandedMenuId == link.id
+            
+            IconButton(onClick = {
+                expanded = true
+                viewModel.setExpandedMenuId(link.id)
+            }) {
+                Icon(Icons.Rounded.MoreVert, contentDescription = null)
+            }
+            
+            CustomDropdownMenu(
+                expanded = isMenuExpanded && expanded,
+                onDismissRequest = {
+                    expanded = false
+                    viewModel.setExpandedMenuId(null)
                 }
-                CustomDropdownMenu(
-                    expanded = isMenuExpanded && expanded,
-                    onDismissRequest = {
-                        expanded = false
-                        viewModel.setExpandedMenuId(null)
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.share)) },
+                    onClick = { viewModel.shareLink(link.id) },
+                    leadingIcon = { Icon(Icons.Rounded.Share, null) }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.copy)) },
+                    onClick = { viewModel.copyLink(link.id) },
+                    leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }
+                )
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = stringResource(R.string.delete),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    },
+                    onClick = { viewModel.showDeleteConfirmation(link.id) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Rounded.DeleteOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
                     }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.share)) },
-                        onClick = { viewModel.shareLink(link.id) },
-                        leadingIcon = { Icon(Icons.Rounded.Share, null) }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.copy)) },
-                        onClick = { viewModel.copyLink(link.id) },
-                        leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }
-                    )
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = stringResource(R.string.delete),
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        },
-                        onClick = { viewModel.showDeleteConfirmation(link.id) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.DeleteOutline,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    )
-                }
+                )
             }
         }
     )

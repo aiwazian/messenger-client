@@ -17,7 +17,7 @@ data class ChannelResponseDto(
     @SerialName("ownerId") val ownerId: Long? = null,
     @SerialName("channelType") val channelType: ChannelType = ChannelType.PRIVATE,
     @SerialName("subscribers") val subscribers: Int = 0,
-    @SerialName("removedUser") val removedUser: Int? = null,
+    @SerialName("removedUsers") val removedUsers: Int? = null,
     @SerialName("isSubscribed") val isSubscribed: Boolean = false,
     @SerialName("isOwner") val isOwner: Boolean? = null,
     @SerialName("avatars") val avatars: List<AvatarDto> = emptyList()

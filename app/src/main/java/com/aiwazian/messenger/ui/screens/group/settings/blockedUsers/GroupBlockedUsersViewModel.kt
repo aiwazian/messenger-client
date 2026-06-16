@@ -33,6 +33,7 @@ class GroupBlockedUsersViewModel @Inject constructor(
     private var selectedUser: User? = null
     
     fun init(groupId: Long) {
+        _uiState.update { it.copy(groupId = groupId) }
         viewModelScope.launch {
             groupRepository.getBannedUsers(groupId).onSuccess { users ->
                 _uiState.update { it.copy(blockedUsers = users) }
@@ -52,6 +53,7 @@ class GroupBlockedUsersViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(blockedUsers = state.blockedUsers.filter { it.id != user.id })
                 }
+                hideUnblockDialog()
                 _sideEffect.emit(GroupBlockedUsersSideEffect.ShowSnackbar(UiText.StringResource(R.string.user_unblocked)))
             }.onFailure {
                 _sideEffect.emit(GroupBlockedUsersSideEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_unblock_user)))

@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
@@ -102,6 +103,28 @@ fun SelectChannelScreen(viewModel: SelectChannelViewModel = hiltViewModel()) {
             SectionContainer(footer = {
                 SectionDescription(text = "Для отображения в профиле доступны только ваши публичные каналы.")
             }) {
+                uiState.channels.forEach { channel ->
+                    ProfileCard(
+                        id = channel.id,
+                        headlineText = channel.name,
+                        avatarUri = channel.avatar?.uri,
+                        supportingText = pluralStringResource(
+                            R.plurals.subscribers_count,
+                            channel.subscribers,
+                            channel.subscribers
+                        ),
+                        trailingContent = {
+                            if (channel.id == uiState.selectedChannelId) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        },
+                        onClick = { viewModel.selectChannel(channel.id) }
+                    )
+                }
                 if (uiState.isLoading) {
                     Box(
                         modifier = Modifier
@@ -110,29 +133,6 @@ fun SelectChannelScreen(viewModel: SelectChannelViewModel = hiltViewModel()) {
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator()
-                    }
-                } else {
-                    uiState.channels.forEach { channel ->
-                        SectionItem(
-                            headlineContent = {
-                                Text(text = channel.name)
-                            },
-                            supportingText = pluralStringResource(
-                                R.plurals.subscribers_count,
-                                channel.subscribers,
-                                channel.subscribers
-                            ),
-                            trailingContent = {
-                                if (channel.id == uiState.selectedChannelId) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Check,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            },
-                            onClick = { viewModel.selectChannel(channel.id) }
-                        )
                     }
                 }
             }

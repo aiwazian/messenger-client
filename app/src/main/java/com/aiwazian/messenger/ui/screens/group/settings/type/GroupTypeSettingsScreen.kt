@@ -57,12 +57,12 @@ import kotlinx.coroutines.launch
 fun GroupTypeSettingsScreen(
     groupId: Long, viewModel: GroupTypeSettingsViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val navBackStack = LocalNavBackStack.current
-    
     LaunchedEffect(groupId) {
         viewModel.init(groupId)
     }
+    
+    val context = LocalContext.current
+    val navBackStack = LocalNavBackStack.current
     
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
@@ -109,7 +109,7 @@ fun GroupTypeSettingsScreen(
         }, modifier = Modifier.imePadding()
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
-            SectionContainer(header = { SectionHeader(title = stringResource(R.string.group_type)) }) {
+            SectionContainer {
                 SectionRadioItem(
                     text = stringResource(R.string.private_group),
                     selected = uiState.groupType == GroupType.PRIVATE,

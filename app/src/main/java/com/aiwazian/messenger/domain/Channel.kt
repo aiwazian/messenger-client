@@ -12,7 +12,7 @@ data class Channel(
     val name: String,
     val bio: String?,
     val subscribers: Int,
-    val removedUser: Int?,
+    val removedUsers: Int?,
     val channelType: ChannelType,
     val username: String?,
     val isSubscribed: Boolean,

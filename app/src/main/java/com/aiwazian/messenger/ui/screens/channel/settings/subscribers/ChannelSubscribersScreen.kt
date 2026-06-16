@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.channel.settings.subscribers
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,11 +39,10 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
-import com.aiwazian.messenger.ui.components.FramelessTextBox
+import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
@@ -88,68 +86,63 @@ fun ChannelSubscribersScreen(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
-            FramelessTextBox(
-                value = uiState.searchQuery,
-                onValueChange = viewModel::changeSearchQuery,
-                placeholder = stringResource(R.string.search)
-            )
-            
             SectionContainer {
                 LazyColumn {
                     items(items = uiState.subscribers) { user ->
-                        SectionItem(
+                        ProfileCard(
+                            id = user.id,
                             headlineText = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                            avatarUri = user.avatars.firstOrNull()?.uri,
                             trailingContent = {
                                 var showMenu by remember { mutableStateOf(false) }
                                 
-                                Box {
-                                    IconButton(onClick = { showMenu = true }) {
-                                        Icon(
-                                            imageVector = Icons.Default.MoreVert,
-                                            contentDescription = null
+                                IconButton(onClick = { showMenu = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.MoreVert,
+                                        contentDescription = null
+                                    )
+                                }
+                                
+                                CustomDropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.kick)) },
+                                        onClick = {
+                                            showMenu = false
+                                            viewModel.showKickDialog(user.id)
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Rounded.PersonRemove, null)
+                                        },
+                                        colors = MenuItemColors(
+                                            textColor = MaterialTheme.colorScheme.error,
+                                            leadingIconColor = MaterialTheme.colorScheme.error,
+                                            trailingIconColor = MaterialTheme.colorScheme.error,
+                                            disabledTextColor = Color.Unspecified,
+                                            disabledLeadingIconColor = Color.Unspecified,
+                                            disabledTrailingIconColor = Color.Unspecified
                                         )
-                                    }
-                                    CustomDropdownMenu(
-                                        expanded = showMenu,
-                                        onDismissRequest = { showMenu = false }
-                                    ) {
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.kick)) },
-                                            onClick = {
-                                                showMenu = false
-                                                viewModel.showKickDialog(user.id)
-                                            },
-                                            leadingIcon = {
-                                                Icon(Icons.Rounded.PersonRemove, null)
-                                            },
-                                            colors = MenuItemColors(
-                                                textColor = MaterialTheme.colorScheme.error,
-                                                leadingIconColor = MaterialTheme.colorScheme.error,
-                                                trailingIconColor = MaterialTheme.colorScheme.error,
-                                                disabledTextColor = Color.Unspecified,
-                                                disabledLeadingIconColor = Color.Unspecified,
-                                                disabledTrailingIconColor = Color.Unspecified
-                                            )
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.block_user)) },
+                                        onClick = {
+                                            showMenu = false
+                                            viewModel.showBlockDialog(user.id)
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Rounded.Block, null)
+                                        },
+                                        colors = MenuItemColors(
+                                            textColor = MaterialTheme.colorScheme.error,
+                                            leadingIconColor = MaterialTheme.colorScheme.error,
+                                            trailingIconColor = MaterialTheme.colorScheme.error,
+                                            disabledTextColor = Color.Unspecified,
+                                            disabledLeadingIconColor = Color.Unspecified,
+                                            disabledTrailingIconColor = Color.Unspecified
                                         )
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.block_user)) },
-                                            onClick = {
-                                                showMenu = false
-                                                viewModel.showBlockDialog(user.id)
-                                            },
-                                            leadingIcon = {
-                                                Icon(Icons.Rounded.Block, null)
-                                            },
-                                            colors = MenuItemColors(
-                                                textColor = MaterialTheme.colorScheme.error,
-                                                leadingIconColor = MaterialTheme.colorScheme.error,
-                                                trailingIconColor = MaterialTheme.colorScheme.error,
-                                                disabledTextColor = Color.Unspecified,
-                                                disabledLeadingIconColor = Color.Unspecified,
-                                                disabledTrailingIconColor = Color.Unspecified
-                                            )
-                                        )
-                                    }
+                                    )
                                 }
                             },
                             onClick = {

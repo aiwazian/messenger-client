@@ -19,6 +19,7 @@ fun GroupResponseDto.toDomain(): Group = Group(
     username = username,
     groupType = groupType,
     members = membersCount ?: 0,
+    removedUsers = removedUsers,
     isMember = isMember,
     avatars = avatars.map { it.toDomain() }
 )
@@ -31,6 +32,7 @@ fun GroupEntity.toDomain(avatars: List<Avatar> = emptyList()): Group = Group(
     username = username,
     groupType = groupType,
     members = members,
+    removedUsers = removedUsers,
     isMember = isMember,
     avatars = avatars
 )
@@ -43,6 +45,7 @@ fun Group.toEntity() = GroupEntity(
     ownerId = ownerId,
     groupType = groupType,
     members = members,
+    removedUsers = removedUsers,
     isMember = isMember
 )
 

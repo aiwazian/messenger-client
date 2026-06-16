@@ -17,5 +17,6 @@ data class GroupEntity(
     val username: String?,
     val groupType: GroupType,
     val members: Int,
+    val removedUsers: Int?,
     val isMember: Boolean
 )

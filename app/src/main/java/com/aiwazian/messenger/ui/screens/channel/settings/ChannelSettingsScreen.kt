@@ -58,12 +58,12 @@ import java.io.FileOutputStream
 fun ChannelSettingsScreen(
     channelId: Long, viewModel: ChannelSettingsViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val navBackStack = LocalNavBackStack.current
-    
     LaunchedEffect(channelId) {
         viewModel.init(channelId)
     }
+    
+    val context = LocalContext.current
+    val navBackStack = LocalNavBackStack.current
     
     val uiState by viewModel.uiState.collectAsState()
     
@@ -165,7 +165,7 @@ fun ChannelSettingsScreen(
                 SectionItem(
                     leadingIcon = Icons.Rounded.Block,
                     headlineText = stringResource(R.string.removed_user),
-                    trailingText = uiState.channel.removedUser?.toString(),
+                    trailingText = uiState.channel.removedUsers.toString(),
                     onClick = {
                         navBackStack.add(AppRoute.ChannelBlackList(uiState.channel.id))
                     })
@@ -204,7 +204,7 @@ fun ChannelSettingsScreen(
     }
     
     if (uiState.pendingAvatarUri != null) {
-        val context = androidx.compose.ui.platform.LocalContext.current
+        val context = LocalContext.current
         AvatarCropScreen(
             imageUri = uiState.pendingAvatarUri!!, onCropConfirmed = { bitmap ->
                 val file = File(context.cacheDir, "avatar_${System.currentTimeMillis()}.png")

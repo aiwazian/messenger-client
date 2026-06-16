@@ -46,10 +46,6 @@ class ChannelSubscribersViewModel @Inject constructor(
         }
     }
     
-    fun changeSearchQuery(newQuery: String) {
-        _uiState.update { it.copy(searchQuery = newQuery) }
-    }
-    
     fun kickUser() {
         viewModelScope.launch {
             val userId = _uiState.value.selectedUserId ?: return@launch

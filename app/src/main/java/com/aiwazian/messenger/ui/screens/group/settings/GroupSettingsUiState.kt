@@ -15,6 +15,7 @@ data class GroupSettingsUiState(
         bio = null,
         username = null,
         groupType = GroupType.PRIVATE,
+        removedUsers = 0,
         members = 0,
         isMember = false
     ),

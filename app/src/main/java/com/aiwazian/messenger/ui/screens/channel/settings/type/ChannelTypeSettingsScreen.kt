@@ -58,12 +58,12 @@ fun ChannelTypeSettingsScreen(
     channelId: Long,
     viewModel: ChannelTypeSettingsViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val navBackStack = LocalNavBackStack.current
-    
     LaunchedEffect(channelId) {
         viewModel.init(channelId)
     }
+    
+    val context = LocalContext.current
+    val navBackStack = LocalNavBackStack.current
     
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
@@ -113,9 +113,7 @@ fun ChannelTypeSettingsScreen(
         Column(
             modifier = Modifier.padding(innerPadding)
         ) {
-            SectionContainer(header = {
-                SectionHeader(title = stringResource(R.string.channel_type))
-            }) {
+            SectionContainer {
                 SectionRadioItem(
                     text = stringResource(R.string.private_channel),
                     selected = uiState.channelType == ChannelType.PRIVATE,

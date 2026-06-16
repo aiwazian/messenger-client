@@ -86,7 +86,6 @@ fun GroupSettingsScreen(
     }
     
     val uiState by viewModel.uiState.collectAsState()
-    val group = uiState.group
     
     Scaffold(
         topBar = {
@@ -123,13 +122,13 @@ fun GroupSettingsScreen(
 
             SectionContainer {
                 FramelessTextBox(
-                    value = group.name,
+                    value = uiState.group.name,
                     onValueChange = viewModel::changeName,
                     placeholder = stringResource(R.string.group_name)
                 )
                 
                 FramelessTextBox(
-                    value = group.bio.orEmpty(),
+                    value = uiState.group.bio.orEmpty(),
                     onValueChange = viewModel::changeBio,
                     placeholder = "${stringResource(R.string.description)} (${stringResource(R.string.optional)})",
                     singleLine = false
@@ -141,9 +140,9 @@ fun GroupSettingsScreen(
                     leadingIcon = Icons.Outlined.Lock,
                     headlineText = stringResource(R.string.group_type),
                     onClick = {
-                        navBackStack.add(AppRoute.GroupTypeSettings(group.id))
+                        navBackStack.add(AppRoute.GroupTypeSettings(uiState.group.id))
                     },
-                    trailingText = if (group.groupType == GroupType.PUBLIC) {
+                    trailingText = if (uiState.group.groupType == GroupType.PUBLIC) {
                         stringResource(R.string.public_group)
                     } else {
                         stringResource(R.string.private_group)
@@ -160,15 +159,16 @@ fun GroupSettingsScreen(
                 SectionItem(
                     leadingIcon = Icons.Rounded.People,
                     headlineText = stringResource(R.string.members),
-                    trailingText = group.members.toString(),
+                    trailingText = uiState.group.members.toString(),
                     onClick = {
-                        navBackStack.add(AppRoute.GroupMembers(group.id))
+                        navBackStack.add(AppRoute.GroupMembers(uiState.group.id))
                     })
                 SectionItem(
                     leadingIcon = Icons.Rounded.Block,
                     headlineText = stringResource(R.string.removed_user),
+                    trailingText = uiState.group.removedUsers.toString(),
                     onClick = {
-                        navBackStack.add(AppRoute.GroupBlackList(group.id))
+                        navBackStack.add(AppRoute.GroupBlackList(uiState.group.id))
                     })
             }
             
@@ -204,7 +204,7 @@ fun GroupSettingsScreen(
     }
     
     if (uiState.pendingAvatarUri != null) {
-        val context = androidx.compose.ui.platform.LocalContext.current
+        val context = LocalContext.current
         AvatarCropScreen(
             imageUri = uiState.pendingAvatarUri!!, onCropConfirmed = { bitmap ->
                 val file = File(context.cacheDir, "avatar_${System.currentTimeMillis()}.png")

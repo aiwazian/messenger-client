@@ -4,7 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.group.settings.blockedUsers
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,7 +19,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,9 +39,10 @@ import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
@@ -51,15 +51,15 @@ fun GroupBlockedUsersScreen(
     groupId: Long,
     viewModel: GroupBlockedUsersViewModel = hiltViewModel()
 ) {
+    LaunchedEffect(groupId) {
+        viewModel.init(groupId)
+    }
+    
     val context = LocalContext.current
     val navBackStack = LocalNavBackStack.current
     
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    LaunchedEffect(groupId) {
-        viewModel.init(groupId)
-    }
     
     LaunchedEffect(Unit) {
         viewModel.sideEffect.collect { effect ->
@@ -85,17 +85,19 @@ fun GroupBlockedUsersScreen(
             CustomSnackbar(snackbarHostState)
         }
     ) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            LazyColumn {
-                items(uiState.blockedUsers) { user ->
-                    BlockedUserItem(
-                        user = user,
-                        onUnblock = { viewModel.onUnblockClick(user) }
-                    )
+            SectionContainer {
+                LazyColumn {
+                    items(uiState.blockedUsers) { user ->
+                        BlockedUserItem(
+                            user = user,
+                            onUnblock = { viewModel.onUnblockClick(user) }
+                        )
+                    }
                 }
             }
         }
@@ -127,37 +129,37 @@ fun BlockedUserItem(
     val navBackStack = LocalNavBackStack.current
     var showMenu by remember { mutableStateOf(false) }
     
-    SectionItem(
+    ProfileCard(
+        id = user.id,
         headlineText = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+        avatarUri = user.avatars.firstOrNull()?.uri,
         supportingText = user.username?.let { "@$it" },
         trailingContent = {
-            Box {
-                IconButton(onClick = { showMenu = true }) {
-                    Icon(Icons.Rounded.MoreVert, contentDescription = null)
-                }
-                CustomDropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.unblock)) },
-                        onClick = {
-                            showMenu = false
-                            onUnblock()
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Rounded.CheckCircle, null)
-                        },
-                        colors = MenuItemColors(
-                            textColor = MaterialTheme.colorScheme.primary,
-                            leadingIconColor = MaterialTheme.colorScheme.primary,
-                            trailingIconColor = MaterialTheme.colorScheme.primary,
-                            disabledTextColor = Color.Unspecified,
-                            disabledLeadingIconColor = Color.Unspecified,
-                            disabledTrailingIconColor = Color.Unspecified
-                        ),
-                    )
-                }
+            IconButton(onClick = { showMenu = true }) {
+                Icon(Icons.Rounded.MoreVert, contentDescription = null)
+            }
+            CustomDropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.unblock)) },
+                    onClick = {
+                        showMenu = false
+                        onUnblock()
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Rounded.CheckCircle, null)
+                    },
+                    colors = MenuItemColors(
+                        textColor = MaterialTheme.colorScheme.primary,
+                        leadingIconColor = MaterialTheme.colorScheme.primary,
+                        trailingIconColor = MaterialTheme.colorScheme.primary,
+                        disabledTextColor = Color.Unspecified,
+                        disabledLeadingIconColor = Color.Unspecified,
+                        disabledTrailingIconColor = Color.Unspecified
+                    ),
+                )
             }
         },
         onClick = {

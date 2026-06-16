@@ -33,6 +33,7 @@ class ChannelBlockedUsersViewModel @Inject constructor(
     private var selectedUser: User? = null
     
     fun init(channelId: Long) {
+        _uiState.update { it.copy(channelId = channelId) }
         viewModelScope.launch {
             channelRepository.getBannedUsers(channelId).onSuccess { users ->
                 _uiState.update { it.copy(blockedUsers = users) }
@@ -52,6 +53,7 @@ class ChannelBlockedUsersViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(blockedUsers = state.blockedUsers.filter { it.id != user.id })
                 }
+                hideUnblockDialog()
                 _sideEffect.emit(ChannelBlockedUsersSideEffect.ShowSnackbar(UiText.StringResource(R.string.user_unblocked)))
             }.onFailure {
                 _sideEffect.emit(ChannelBlockedUsersSideEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_unblock_user)))

@@ -16,6 +16,7 @@ data class ChannelEntity(
     val ownerId: Long?,
     val channelType: ChannelType,
     val subscribers: Int,
+    val removedUsers: Int?,
     val username: String?,
     val isSubscribed: Boolean
 )

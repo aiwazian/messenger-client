@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.group.settings.members
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -43,6 +42,7 @@ import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -109,7 +109,6 @@ fun GroupMembersScreen(
                 SectionItem(
                     leadingIcon = Icons.Rounded.PersonAdd,
                     headlineText = stringResource(R.string.add_member),
-                    contentColor = MaterialTheme.colorScheme.primary,
                     onClick = { navBackStack.add(AppRoute.AddMember(groupId)) }
                 )
             }
@@ -189,55 +188,55 @@ fun MemberItem(
     
     var showMenu by remember { mutableStateOf(false) }
     
-    SectionItem(
+    ProfileCard(
+        id = user.id,
         headlineText = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+        avatarUri = user.avatars.firstOrNull()?.uri,
         supportingText = user.username?.let { "@$it" },
         trailingContent = {
-            Box {
-                IconButton(onClick = { showMenu = true }) {
-                    Icon(Icons.Rounded.MoreVert, contentDescription = null)
-                }
-                CustomDropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.kick)) },
-                        onClick = {
-                            showMenu = false
-                            onKick()
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Rounded.PersonRemove, null)
-                        },
-                        colors = MenuItemColors(
-                            textColor = MaterialTheme.colorScheme.error,
-                            leadingIconColor = MaterialTheme.colorScheme.error,
-                            trailingIconColor = MaterialTheme.colorScheme.error,
-                            disabledTextColor = Color.Unspecified,
-                            disabledLeadingIconColor = Color.Unspecified,
-                            disabledTrailingIconColor = Color.Unspecified
-                        )
+            IconButton(onClick = { showMenu = true }) {
+                Icon(Icons.Rounded.MoreVert, contentDescription = null)
+            }
+            CustomDropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.kick)) },
+                    onClick = {
+                        showMenu = false
+                        onKick()
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Rounded.PersonRemove, null)
+                    },
+                    colors = MenuItemColors(
+                        textColor = MaterialTheme.colorScheme.error,
+                        leadingIconColor = MaterialTheme.colorScheme.error,
+                        trailingIconColor = MaterialTheme.colorScheme.error,
+                        disabledTextColor = Color.Unspecified,
+                        disabledLeadingIconColor = Color.Unspecified,
+                        disabledTrailingIconColor = Color.Unspecified
                     )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.block_user)) },
-                        onClick = {
-                            showMenu = false
-                            onBlock()
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Rounded.Block, null)
-                        },
-                        colors = MenuItemColors(
-                            textColor = MaterialTheme.colorScheme.error,
-                            leadingIconColor = MaterialTheme.colorScheme.error,
-                            trailingIconColor = MaterialTheme.colorScheme.error,
-                            disabledTextColor = Color.Unspecified,
-                            disabledLeadingIconColor = Color.Unspecified,
-                            disabledTrailingIconColor = Color.Unspecified
-                        )
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.block_user)) },
+                    onClick = {
+                        showMenu = false
+                        onBlock()
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Rounded.Block, null)
+                    },
+                    colors = MenuItemColors(
+                        textColor = MaterialTheme.colorScheme.error,
+                        leadingIconColor = MaterialTheme.colorScheme.error,
+                        trailingIconColor = MaterialTheme.colorScheme.error,
+                        disabledTextColor = Color.Unspecified,
+                        disabledLeadingIconColor = Color.Unspecified,
+                        disabledTrailingIconColor = Color.Unspecified
                     )
-                }
+                )
             }
         },
         onClick = {
