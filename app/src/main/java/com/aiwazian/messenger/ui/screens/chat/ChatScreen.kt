@@ -439,7 +439,10 @@ fun ChatScreen(
                                     chatViewModel.onVoiceSeek(file, positionMs)
                                 },
                                 onLinkClicked = chatViewModel::onLinkClicked,
-                                onUsernameClicked = chatViewModel::onUsernameClicked
+                                onUsernameClicked = chatViewModel::onUsernameClicked,
+                                onSaveToDownloads = {
+                                    chatViewModel.saveAttachmentsToDownloads(item.message)
+                                }
                             )
                         }
                     }

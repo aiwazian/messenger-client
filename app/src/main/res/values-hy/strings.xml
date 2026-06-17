@@ -239,6 +239,8 @@
     <string name="save_to_gallery">Պահել պատկերասրահում</string>
     <string name="successfully_saved_to_gallery">Հաջողությամբ պահվեց պատկերասրահում</string>
     <string name="failed_to_save_to_gallery">Չհաջողվեց պահել պատկերասրահում</string>
+    <string name="saved_to_downloads">Պահված է ներբեռնումների մեջ</string>
+    <string name="failed_to_save_to_downloads">Չհաջողվեց պահել ներբեռնումների մեջ</string>
     <string name="speed">Արագություն</string>
     <string name="inactive_1_month">1 ամիս</string>
     <string name="inactive_3_months">3 ամիս</string>
@@ -250,4 +252,5 @@
     <string name="auto_download_media">Մեդիա ավտոմատ ներբեռնում</string>
     <string name="you">Դուք</string>
     <string name="personal_channel">Անձնական ալիք</string>
+    <string name="hide_channel">Թաքցնել ալիքը</string>
 </resources>

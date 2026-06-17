@@ -43,18 +43,66 @@ fun Uri.getFileSize(context: Context): Long? {
 }
 
 fun Uri.getFileType(context: Context): String {
-    context.contentResolver.getType(this)?.let { return it }
+    val extension = lastPathSegment?.let { segment ->
+        if (segment.contains('.')) segment.substringAfterLast('.').lowercase() else null
+    } ?: MimeTypeMap.getFileExtensionFromUrl(toString())?.lowercase()
     
-    val extension = lastPathSegment?.substringAfterLast('.')?.lowercase()
-        ?: MimeTypeMap.getFileExtensionFromUrl(toString())?.lowercase()
-
-    extension?.let {
-        MimeTypeMap.getSingleton().getMimeTypeFromExtension(it)?.let { mimeType ->
-            return mimeType
+    var mimeType: String? = null
+    
+    if (extension != null) {
+        mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+        if (mimeType == null) {
+            mimeType = when (extension) {
+                "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                "doc" -> "application/msword"
+                "pdf" -> "application/pdf"
+                "txt" -> "text/plain"
+                "apk" -> "application/vnd.android.package-archive"
+                "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                "xls" -> "application/vnd.ms-excel"
+                "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                "ppt" -> "application/vnd.ms-powerpoint"
+                "csv" -> "text/csv"
+                "rtf" -> "application/rtf"
+                "zip" -> "application/zip"
+                "rar" -> "application/x-rar-compressed"
+                "7z" -> "application/x-7z-compressed"
+                "tar" -> "application/x-tar"
+                "gz" -> "application/gzip"
+                "mp3" -> "audio/mpeg"
+                "wav" -> "audio/x-wav"
+                "m4a" -> "audio/mp4"
+                "mp4" -> "video/mp4"
+                "avi" -> "video/x-msvideo"
+                "mkv" -> "video/x-matroska"
+                "jpg", "jpeg" -> "image/jpeg"
+                "png" -> "image/png"
+                "gif" -> "image/gif"
+                "webp" -> "image/webp"
+                "svg" -> "image/svg+xml"
+                "html", "htm" -> "text/html"
+                "xml" -> "text/xml"
+                "json" -> "application/json"
+                else -> null
+            }
         }
     }
     
-    return getMimeTypeFromMagicBytes(context)
+    if (mimeType != null && mimeType != "application/octet-stream") {
+        return mimeType
+    }
+    
+    val resolverType = context.contentResolver.getType(this)
+    if (resolverType != null && resolverType != "application/octet-stream") {
+        return resolverType
+    }
+    
+    val magicType = getMimeTypeFromMagicBytes(context)
+    if (magicType != "application/octet-stream") {
+        return magicType
+    }
+    
+    return resolverType ?: "application/octet-stream"
 }
 
 private fun Uri.getMimeTypeFromMagicBytes(context: Context): String {

@@ -8,8 +8,11 @@ import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import com.aiwazian.messenger.R
@@ -25,16 +28,22 @@ class FileHandler @Inject constructor(
 ) {
     
     fun openFile(path: String) {
-        val file = File(path)
-        if (!file.exists()) {
-            Log.e("DownloaderManager", "File does not exist at path: $path")
-            return
-        }
-        
-        if (file.extension.equals("apk", ignoreCase = true)) {
-            openApkFile(file)
-        } else {
-            openGenericFile(file)
+        try {
+            val file = File(path)
+            if (!file.exists()) {
+                Log.e("FileHandler", "File does not exist at path: $path")
+                showToast("File does not exist")
+                return
+            }
+            
+            if (file.extension.equals("apk", ignoreCase = true)) {
+                openApkFile(file)
+            } else {
+                openGenericFile(file)
+            }
+        } catch (e: Exception) {
+            Log.e("FileHandler", "Error in openFile", e)
+            showToast("Error: ${e.message}")
         }
     }
     
@@ -78,54 +87,79 @@ class FileHandler @Inject constructor(
             false
         }
     }
-    
+
     private fun openApkFile(file: File) {
-        val fileUri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
-        
-        if (!context.packageManager.canRequestPackageInstalls()) {
-            val intent = Intent(
-                android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                "package:${context.packageName}".toUri()
-            )
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-            return
-        }
-        
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(fileUri, "application/vnd.android.package-archive")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        
-        try {
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            Log.e("DownloaderManager", "Error opening APK file", e)
-        }
+        openFileWithFallback(file, "application/vnd.android.package-archive")
     }
     
     private fun openGenericFile(file: File) {
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
+        openFileWithFallback(file, file.toUri().getFileType(context))
+    }
+    
+    private fun openFileWithFallback(file: File, mimeType: String) {
+        try {
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+            
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, mimeType)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            
+            val resolveInfo = context.packageManager.queryIntentActivities(intent, 0)
+            if (resolveInfo.isEmpty() || mimeType == "application/vnd.android.package-archive") {
+                intent.setDataAndType(uri, "*/*")
+            }
+            
+            val chooserIntent =
+                Intent.createChooser(intent, context.getString(R.string.app_name)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            
+            context.startActivity(chooserIntent)
+        } catch (e: Exception) {
+            Log.e("FileHandler", "Error opening file with fallback", e)
+            showToast("Cannot open file: ${e.javaClass.simpleName}")
+        }
+    }
+    
+    fun saveToDownloads(path: String, displayName: String? = null): Boolean {
+        val file = File(path)
+        if (!file.exists()) return false
         
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, uri.getFileType(context))
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val mimeType = file.toUri().getFileType(context)
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, displayName ?: file.name)
+            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
         }
         
-        try {
-            context.startActivity(intent)
+        val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        
+        return try {
+            val uri = context.contentResolver.insert(collection, contentValues)
+            if (uri != null) {
+                context.contentResolver.openOutputStream(uri)?.use { out ->
+                    file.inputStream().use { input ->
+                        input.copyTo(out)
+                    }
+                }
+                true
+            } else {
+                false
+            }
         } catch (e: Exception) {
-            Log.e("DownloaderManager", "Error opening generic file", e)
+            Log.e("FileHandler", "Error saving to downloads", e)
+            false
+        }
+    }
+
+    private fun showToast(message: String) {
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
         }
     }
 }

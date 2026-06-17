@@ -239,6 +239,8 @@
     <string name="save_to_gallery">In der Galerie speichern</string>
     <string name="successfully_saved_to_gallery">Erfolgreich in der Galerie gespeichert</string>
     <string name="failed_to_save_to_gallery">Speichern in der Galerie fehlgeschlagen</string>
+    <string name="saved_to_downloads">Als Downloads gespeichert</string>
+    <string name="failed_to_save_to_downloads">Das Speichern als Downloads ist fehlgeschlagen</string>
     <string name="speed">Geschwindigkeit</string>
     <string name="inactive_1_month">1 Monat</string>
     <string name="inactive_3_months">3 Monate</string>

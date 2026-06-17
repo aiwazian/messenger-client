@@ -243,6 +243,8 @@
     <string name="save_to_gallery">Захаваць у галерэю</string>
     <string name="successfully_saved_to_gallery">Паспяхова захавана ў галерэю</string>
     <string name="failed_to_save_to_gallery">Не ўдалося захаваць у галерэю</string>
+    <string name="saved_to_downloads">Захавана ў спампоўках</string>
+    <string name="failed_to_save_to_downloads">Не ўдалося захаваць у спампоўкі</string>
     <string name="speed">хуткасць</string>
     <string name="inactive_1_month">1 месяц</string>
     <string name="inactive_3_months">3 месяцы</string>

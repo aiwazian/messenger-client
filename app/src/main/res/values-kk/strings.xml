@@ -239,6 +239,8 @@
     <string name="save_to_gallery">Галереяға сақтаңыз</string>
     <string name="successfully_saved_to_gallery">Галереяға сәтті сақталды</string>
     <string name="failed_to_save_to_gallery">Галереяға сақтай алмады</string>
+    <string name="saved_to_downloads">Жүктеп алынғандар тізіміне сақталды</string>
+    <string name="failed_to_save_to_downloads">Жүктеп алынғандарға сақтау мүмкін болмады</string>
     <string name="speed">Жылдамдық</string>
     <string name="inactive_1_month">1 ай</string>
     <string name="inactive_3_months">3 ай</string>
@@ -250,4 +252,5 @@
     <string name="auto_download_media">Автоматты жүктеп алу мультимедиа</string>
     <string name="you">Сіз</string>
     <string name="personal_channel">Жеке арна</string>
+    <string name="hide_channel">Арнаны жасыру</string>
 </resources>

@@ -1070,6 +1070,32 @@ class ChatViewModel @Inject constructor(
         }
     }
     
+    fun saveAttachmentsToDownloads(message: Message) {
+        viewModelScope.launch {
+            val downloadedAttachments = message.attachments.filter { attachment ->
+                attachment.localUri != null &&
+                        (attachment.status == DownloadStatus.COMPLETED || attachment.status == DownloadStatus.UPLOADED)
+            }
+            
+            if (downloadedAttachments.isEmpty()) return@launch
+            
+            var successCount = 0
+            downloadedAttachments.forEach { attachment ->
+                val path = attachment.localUri?.path ?: attachment.localUri.toString()
+                if (fileHandler.saveToDownloads(path, attachment.name)) {
+                    successCount++
+                }
+            }
+            
+            if (successCount > 0) {
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.saved_to_downloads)))
+            } else {
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_to_downloads)))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
+    }
+    
     fun startRecording() {
         if (_uiState.value.isRecording) return
         val file = audioRecorderManager.startRecording()

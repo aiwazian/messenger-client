@@ -89,7 +89,8 @@ fun MessageBubble(
     voiceDurationMs: Int = 0,
     onVoiceSeek: (MessageAttachment, Int) -> Unit = { _, _ -> },
     onLinkClicked: ((String) -> Unit)? = null,
-    onUsernameClicked: ((String) -> Unit)? = null
+    onUsernameClicked: ((String) -> Unit)? = null,
+    onSaveToDownloads: (() -> Unit)? = null
 ) {
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
@@ -275,7 +276,7 @@ fun MessageBubble(
             MessageDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                actions = buildDropdownActions(item, isSavedMessages) {
+                actions = buildDropdownActions(item, isSavedMessages, onSaveToDownloads) {
                     showReadersDropdown = true
                 }
             )
@@ -335,6 +336,7 @@ fun MessageBubble(
 private fun buildDropdownActions(
     item: ChatItem.MessageItem,
     isSavedMessages: Boolean,
+    onSaveToDownloads: (() -> Unit)? = null,
     onReadCountClick: () -> Unit = {}
 ): List<com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction> {
     val actions =
@@ -376,6 +378,20 @@ private fun buildDropdownActions(
                 )
             )
         }
+    }
+    
+    val hasDownloadedAttachment = item.message.attachments.any { attachment ->
+        attachment.localUri != null &&
+                (attachment.status == DownloadStatus.COMPLETED || attachment.status == DownloadStatus.UPLOADED)
+    }
+    if (hasDownloadedAttachment && onSaveToDownloads != null) {
+        actions.add(
+            com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction(
+                icon = Icons.Rounded.Download,
+                text = com.aiwazian.messenger.utils.UiText.StringResource(R.string.save_to_downloads),
+                onClick = onSaveToDownloads
+            )
+        )
     }
     
     actions.addAll(item.dropdownActions)

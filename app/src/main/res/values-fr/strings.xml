@@ -241,6 +241,8 @@
     <string name="save_to_gallery">Enregistrer dans la galerie</string>
     <string name="successfully_saved_to_gallery">Enregistré avec succès dans la galerie</string>
     <string name="failed_to_save_to_gallery">Échec de l\'enregistrement dans la galerie</string>
+    <string name="saved_to_downloads">Enregistré dans les téléchargements</string>
+    <string name="failed_to_save_to_downloads">Échec de l\'enregistrement dans les téléchargements</string>
     <string name="speed">Vitesse</string>
     <string name="inactive_1_month">1 mois</string>
     <string name="inactive_3_months">3 mois</string>
@@ -252,4 +254,5 @@
     <string name="auto_download_media">Téléchargement automatique de médias</string>
     <string name="you">Toi</string>
     <string name="personal_channel">Chaîne personnelle</string>
+    <string name="hide_channel">Masquer la chaîne</string>
 </resources>

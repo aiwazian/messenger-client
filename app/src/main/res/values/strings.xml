@@ -247,6 +247,8 @@
     <string name="save_to_gallery">Save to gallery</string>
     <string name="successfully_saved_to_gallery">Successfully saved to gallery</string>
     <string name="failed_to_save_to_gallery">Failed to save to gallery</string>
+    <string name="saved_to_downloads">Saved to downloads</string>
+    <string name="failed_to_save_to_downloads">Failed to save to downloads</string>
     <string name="speed">Speed</string>
     <string name="inactive_1_month">1 month</string>
     <string name="inactive_3_months">3 months</string>

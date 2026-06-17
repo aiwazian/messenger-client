@@ -237,6 +237,8 @@
     <string name="save_to_gallery">갤러리로 저장하기</string>
     <string name="successfully_saved_to_gallery">갤러리에 성공적으로 저장됨</string>
     <string name="failed_to_save_to_gallery">갤러리에 저장 실패</string>
+    <string name="saved_to_downloads">다운로드에 저장됨</string>
+    <string name="failed_to_save_to_downloads">다운로드에 저장하지 못했습니다.</string>
     <string name="speed">속도</string>
     <string name="inactive_1_month">1개월</string>
     <string name="inactive_3_months">3개월</string>
@@ -248,4 +250,5 @@
     <string name="auto_download_media">자동 다운로드 미디어</string>
     <string name="you">너</string>
     <string name="personal_channel">개인 채널</string>
+    <string name="hide_channel">채널 숨기기</string>
 </resources>
