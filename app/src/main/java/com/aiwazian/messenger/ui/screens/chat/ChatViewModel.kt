@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.outlined.CleaningServices
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -537,6 +538,28 @@ class ChatViewModel @Inject constructor(
                 )
             }
             
+            val chatTypeForEdit = ChatType.fromId(_uiState.value.chatId)
+            val isMyMessage = if (chatTypeForEdit == ChatType.CHANNEL) {
+                _uiState.value.isOwner
+            } else {
+                message.senderId == myId
+            }
+            val now = System.currentTimeMillis()
+            val twentyFourHoursMs = 24 * 60 * 60 * 1000L
+            val canEdit = isMyMessage &&
+                    !message.text.isNullOrBlank() &&
+                    (now - message.sendTime) <= twentyFourHoursMs
+
+            if (canEdit) {
+                actions.add(
+                    DropdownMenuAction(
+                        Icons.Rounded.Edit,
+                        UiText.StringResource(R.string.edit),
+                        onClick = { startEditing(message) }
+                    )
+                )
+            }
+            
             val canDelete = when (chatType) {
                 ChatType.PRIVATE -> true
                 ChatType.CHANNEL, ChatType.GROUP -> _uiState.value.isOwner
@@ -644,6 +667,29 @@ class ChatViewModel @Inject constructor(
     
     fun onSendMessageClicked() {
         viewModelScope.launch {
+            val editingId = _uiState.value.editingMessageId
+            if (editingId != null) {
+                val newText = _uiState.value.messageText.trim()
+                val originalText = _uiState.value.editingOriginalText
+                if (newText.isEmpty() || newText == originalText) {
+                    cancelEditing()
+                    return@launch
+                }
+                cancelEditing()
+                chatRepository.editMessage(_uiState.value.chatId, editingId, newText)
+                    .onSuccess { editedMessage ->
+                        chatRepository.updateLocalMessage(
+                            messageId = editingId,
+                            text = editedMessage.text,
+                            editedAt = editedMessage.editedAt
+                        )
+                    }
+                    .onFailure { e ->
+                        Log.e("ChatViewModel", "Error editing message", e)
+                    }
+                return@launch
+            }
+
             val text = _uiState.value.messageText
             if (text.isBlank()) return@launch
             
@@ -658,6 +704,35 @@ class ChatViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e("ChatViewModel", "Error sending message", e)
             }
+        }
+    }
+
+    fun startEditing(message: Message) {
+        val now = System.currentTimeMillis()
+        val twentyFourHoursMs = 24 * 60 * 60 * 1000L
+        if (now - message.sendTime > twentyFourHoursMs) {
+            viewModelScope.launch {
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Невозможно изменить сообщение старше 24 часов")))
+            }
+            return
+        }
+        if (message.text.isNullOrBlank()) return
+        _uiState.update {
+            it.copy(
+                editingMessageId = message.id,
+                editingOriginalText = message.text,
+                messageText = message.text
+            )
+        }
+    }
+
+    fun cancelEditing() {
+        _uiState.update {
+            it.copy(
+                editingMessageId = null,
+                editingOriginalText = null,
+                messageText = ""
+            )
         }
     }
     

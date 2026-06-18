@@ -25,6 +25,8 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Downloading
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.EditCalendar
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -73,7 +75,10 @@ import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.formatDuration
+import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
+import com.aiwazian.messenger.utils.UiText
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -269,7 +274,8 @@ fun MessageBubble(
             Box(modifier = Modifier.align(Alignment.BottomEnd)) {
                 MessageFooter(
                     time = item.time,
-                    isRead = if (item.isMine && !isSavedMessages) item.isRead else null
+                    isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                    isEdited = message.editedAt != null
                 )
             }
             
@@ -338,16 +344,33 @@ private fun buildDropdownActions(
     isSavedMessages: Boolean,
     onSaveToDownloads: (() -> Unit)? = null,
     onReadCountClick: () -> Unit = {}
-): List<com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction> {
-    val actions =
-        mutableListOf<com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction>()
-    
+): List<DropdownMenuAction> {
+    val actions = mutableListOf<DropdownMenuAction>()
+
+    if (item.message.editedAt != null) {
+        val editedTime = item.message.editedAt.toInstance().toPrettyTime()
+        val editedDate = item.message.editedAt.toInstance().atZone(ZoneId.systemDefault())
+        val now = LocalDate.now()
+        val label = if (editedDate.toLocalDate() == now) {
+            "Изменено в $editedTime"
+        } else {
+            "Изменено " + editedDate.format(DateTimeFormatter.ofPattern("d MMMM HH:mm"))
+        }
+        actions.add(
+            DropdownMenuAction(
+                icon = Icons.Rounded.EditCalendar,
+                text = UiText.DynamicString(label),
+                onClick = {}
+            )
+        )
+    }
+
     if (item.isMine && !isSavedMessages) {
         val readInfo = item.readInfo
         val isRead = item.isRead
         
         if (item.chatType == ChatType.PRIVATE && isRead == true) {
-            val now = java.time.LocalDate.now()
+            val now = LocalDate.now()
             val msgDate = item.message.sendTime.toInstance().atZone(ZoneId.systemDefault())
                 .toLocalDate()
             val label = if (msgDate == now) {
@@ -357,9 +380,9 @@ private fun buildDropdownActions(
                     .format(DateTimeFormatter.ofPattern("d MMMM HH:mm"))
             }
             actions.add(
-                com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction(
+                DropdownMenuAction(
                     icon = Icons.Rounded.DoneAll,
-                    text = com.aiwazian.messenger.utils.UiText.DynamicString(label),
+                    text = UiText.DynamicString(label),
                     onClick = {}
                 )
             )
@@ -369,11 +392,11 @@ private fun buildDropdownActions(
                 count % 10 == 1 && count % 100 != 11 -> "просмотр"
                 count % 10 in 2..4 && count % 100 !in 12..14 -> "просмотра"
                 else -> "просмотров"
-            }
+            }// TODO plural string
             actions.add(
-                com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction(
+                DropdownMenuAction(
                     icon = Icons.Rounded.DoneAll,
-                    text = com.aiwazian.messenger.utils.UiText.DynamicString("$count $word"),
+                    text = UiText.DynamicString("$count $word"),
                     onClick = onReadCountClick
                 )
             )
@@ -386,9 +409,9 @@ private fun buildDropdownActions(
     }
     if (hasDownloadedAttachment && onSaveToDownloads != null) {
         actions.add(
-            com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction(
+            DropdownMenuAction(
                 icon = Icons.Rounded.Download,
-                text = com.aiwazian.messenger.utils.UiText.StringResource(R.string.save_to_downloads),
+                text = UiText.StringResource(R.string.save_to_downloads),
                 onClick = onSaveToDownloads
             )
         )

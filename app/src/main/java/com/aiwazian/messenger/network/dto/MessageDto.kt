@@ -51,6 +51,11 @@ data class TextMessageRequestDto(
 )
 
 @Serializable
+data class EditMessageRequestDto(
+    @SerialName("text") val text: String
+)
+
+@Serializable
 data class FileInitRequestDto(
     @SerialName("name") val name: String,
     @SerialName("size") val size: Long,

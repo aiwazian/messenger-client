@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Іздеу</string>
@@ -105,7 +101,6 @@
     <string name="secret_chat">Құпия чат</string>
     <string name="secret_chat_confirm_message">Сіз шынымен жасырын чатты бастағыңыз келе ме\?</string>
     <string name="start">Бастау</string>
-    <string name="edit_info">Ақпаратты өңдеу</string>
     <string name="change_profile_color">Профиль түсін өзгерту</string>
     <string name="change_username">Пайдаланушы атын өзгерту</string>
     <string name="mute">Дыбысты өшіру</string>
@@ -253,4 +248,9 @@
     <string name="you">Сіз</string>
     <string name="personal_channel">Жеке арна</string>
     <string name="hide_channel">Арнаны жасыру</string>
+    <string name="edit">Өңдеу</string>
+    <string name="edited_at">Өңделген</string>
+    <string name="read_at">мекенжайында оқыңыз</string>
+    <string name="edit_message">Хабарды өңдеу</string>
+    <string name="edited">Өңделген</string>
 </resources>

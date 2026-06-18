@@ -6,6 +6,7 @@ package com.aiwazian.messenger.network.api
 
 import com.aiwazian.messenger.network.dto.DeleteMessageRequestDto
 import com.aiwazian.messenger.network.dto.ClearHistoryRequestDto
+import com.aiwazian.messenger.network.dto.EditMessageRequestDto
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
 import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
@@ -89,4 +90,12 @@ interface MessageApi {
         @Path("chatId") chatId: Long,
         @Body request: ClearHistoryRequestDto = ClearHistoryRequestDto()
     ): Response<Unit>
+
+    @retrofit2.http.PATCH("chats/{chatId}/messages/{messageId}")
+    suspend fun editTextMessage(
+        @Path("chatId") chatId: Long,
+        @Path("messageId") messageId: Long,
+        @Body request: EditMessageRequestDto,
+        @Header("x-socket-id") socketId: String
+    ): Response<MessageDto>
 }

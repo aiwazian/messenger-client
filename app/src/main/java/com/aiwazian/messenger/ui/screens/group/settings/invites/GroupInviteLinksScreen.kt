@@ -262,7 +262,7 @@ private fun InviteLinkItem(
     val supportingText = "Осталось $remainingUsesText • $expirationText"
     
     SectionItem(
-        headlineText = link.code,
+        headlineText = "aiwazian.ru/" + link.code,
         supportingText = supportingText,
         trailingContent = {
             var expanded by remember { mutableStateOf(false) }

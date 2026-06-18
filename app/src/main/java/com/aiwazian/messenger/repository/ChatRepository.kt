@@ -26,6 +26,7 @@ import com.aiwazian.messenger.network.dto.AttachmentInputDto
 import com.aiwazian.messenger.network.dto.ClearHistoryRequestDto
 import com.aiwazian.messenger.network.dto.DeleteChatRequestDto
 import com.aiwazian.messenger.network.dto.DeleteMessageRequestDto
+import com.aiwazian.messenger.network.dto.EditMessageRequestDto
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
@@ -530,6 +531,41 @@ class ChatRepository @Inject constructor(
     
     suspend fun deleteLocalMessage(messageId: Long) {
         messageDao.deleteMessageById(messageId)
+    }
+
+    suspend fun editMessage(
+        chatId: Long,
+        messageId: Long,
+        text: String
+    ): Result<Message> {
+        return try {
+            val request = EditMessageRequestDto(text = text)
+            val response = messageApi.editTextMessage(chatId, messageId, request, socket.socketId.orEmpty())
+            if (response.isSuccessful) {
+                val editedMessage = response.body()?.toDomain()
+                if (editedMessage != null) {
+                    messageDao.updateMessageTextAndEditedAt(messageId, text, editedMessage.editedAt)
+                    Result.success(editedMessage)
+                } else {
+                    Result.failure(Exception("Empty response"))
+                }
+            } else {
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error editing message", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateLocalMessage(
+        messageId: Long,
+        text: String?,
+        editedAt: Long?
+    ) {
+        if (text != null) {
+            messageDao.updateMessageTextAndEditedAt(messageId, text, editedAt)
+        }
     }
     
     suspend fun clearLocalHistory(chatId: Long) {

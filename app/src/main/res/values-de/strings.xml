@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Suchen</string>
@@ -105,7 +101,6 @@
     <string name="secret_chat">Geheimer Chat</string>
     <string name="secret_chat_confirm_message">Sind Sie sicher, dass Sie einen geheimen Chat starten möchten\?</string>
     <string name="start">Start</string>
-    <string name="edit_info">Informationen bearbeiten</string>
     <string name="change_profile_color">Profilfarbe ändern</string>
     <string name="change_username">Benutzernamen ändern</string>
     <string name="mute">Stumm</string>
@@ -253,4 +248,9 @@
     <string name="you">Du</string>
     <string name="personal_channel">Persönlicher Kanal</string>
     <string name="hide_channel">Kanal ausblenden</string>
+    <string name="edit">Bearbeiten</string>
+    <string name="edited_at">Bearbeitet bei</string>
+    <string name="read_at">Lesen Sie unter</string>
+    <string name="edit_message">Nachricht bearbeiten</string>
+    <string name="edited">Bearbeitet</string>
 </resources>

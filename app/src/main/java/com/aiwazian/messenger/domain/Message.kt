@@ -20,6 +20,7 @@ data class Message(
     val chatId: Long,
     val text: String?,
     val sendTime: Long,
+    val editedAt: Long? = null,
     val isRead: Boolean,
     val messageType: MessageType,
     val systemMessageEventType: SystemMessageEventType?,

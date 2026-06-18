@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Поиск</string>
@@ -105,7 +101,6 @@
     <string name="secret_chat">Секретный чат</string>
     <string name="secret_chat_confirm_message">Хотите начать секретный чат?</string>
     <string name="start">Начать</string>
-    <string name="edit_info">Изменить информацию</string>
     <string name="change_profile_color">Изменить цвет профиля</string>
     <string name="change_username">Изменить имя</string>
     <string name="mute">Убрать звук</string>
@@ -254,7 +249,12 @@
     <string name="delete_account_if_inactive_for">Удаление аккаунта при неактивности...</string>
     <string name="automatic_media_download">Автоматическая загрузка мультимедиа</string>
     <string name="auto_download_media">Автоматическая загрузка мультимедиа</string>
-    <string name="you">Ты</string>
+    <string name="you">Вы</string>
     <string name="personal_channel">Личный канал</string>
     <string name="hide_channel">Скрыть канал</string>
+    <string name="edit">Изменить</string>
+    <string name="edited_at">Отредактировано в</string>
+    <string name="read_at">Прочтите на</string>
+    <string name="edit_message">Редактирование</string>
+    <string name="edited">Отредактировано</string>
 </resources>

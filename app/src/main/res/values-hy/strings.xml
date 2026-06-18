@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">Որոնում</string>
@@ -105,7 +101,6 @@
     <string name="secret_chat">Գաղտնի զրույց</string>
     <string name="secret_chat_confirm_message">Համոզվա՞ծ եք, որ ցանկանում եք գաղտնի զրույց սկսել:</string>
     <string name="start">Սկիզբ</string>
-    <string name="edit_info">ԻնֆոԽմբագրել</string>
     <string name="change_profile_color">Փոխել պրոֆիլի գույնը</string>
     <string name="change_username">Փոխել օգտվողի անունը</string>
     <string name="mute">Լռել</string>
@@ -253,4 +248,9 @@
     <string name="you">Դուք</string>
     <string name="personal_channel">Անձնական ալիք</string>
     <string name="hide_channel">Թաքցնել ալիքը</string>
+    <string name="edit">Խմբագրել</string>
+    <string name="edited_at">Խմբագրված է</string>
+    <string name="read_at">Կարդացեք ժամը</string>
+    <string name="edit_message">Խմբագրել հաղորդագրությունը</string>
+    <string name="edited">Խմբագրվել է</string>
 </resources>

@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     
     <string name="search">찾다</string>
@@ -105,7 +101,6 @@
     <string name="secret_chat">비밀채팅</string>
     <string name="secret_chat_confirm_message">비밀 채팅을 시작하시겠습니까\?</string>
     <string name="start">시작</string>
-    <string name="edit_info">정보 편집</string>
     <string name="change_profile_color">프로필 색상 변경</string>
     <string name="change_username">사용자 이름 변경</string>
     <string name="mute">무음</string>
@@ -251,4 +246,9 @@
     <string name="you">너</string>
     <string name="personal_channel">개인 채널</string>
     <string name="hide_channel">채널 숨기기</string>
+    <string name="edit">편집하다</string>
+    <string name="edited_at">편집 날짜:</string>
+    <string name="read_at">읽기 시간</string>
+    <string name="edit_message">메시지 편집</string>
+    <string name="edited">편집됨</string>
 </resources>

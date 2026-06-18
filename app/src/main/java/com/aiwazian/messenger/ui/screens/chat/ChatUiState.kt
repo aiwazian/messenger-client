@@ -57,5 +57,7 @@ data class ChatUiState(
     val voicePositionMs: Int = 0,
     val voiceDurationMs: Int = 0,
     val isFirstLoadDone: Boolean = false,
-    val groupReadInfo: Map<Long, List<MessageReadInfo>> = emptyMap()
+    val groupReadInfo: Map<Long, List<MessageReadInfo>> = emptyMap(),
+    val editingMessageId: Long? = null,
+    val editingOriginalText: String? = null
 )

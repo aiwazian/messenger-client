@@ -105,7 +105,6 @@
     <string name="secret_chat">Secret chat</string>
     <string name="secret_chat_confirm_message">Are you sure you want to start a secret chat?</string>
     <string name="start">Start</string>
-    <string name="edit_info">Edit Info</string>
     <string name="change_profile_color">Change profile color</string>
     <string name="change_username">Change Username</string>
     <string name="mute">Mute</string>
@@ -261,4 +260,9 @@
     <string name="you">You</string>
     <string name="personal_channel">Personal channel</string>
     <string name="hide_channel">Hide channel</string>
+    <string name="edit">Edit</string>
+    <string name="edited_at">Edited at</string>
+    <string name="read_at">Read at</string>
+    <string name="edit_message">Edit Message</string>
+    <string name="edited">Edited</string>
 </resources>

@@ -79,7 +79,10 @@ interface MessageDao {
     
     @Query("DELETE FROM message WHERE id = :id")
     suspend fun deleteMessageById(id: Long)
-    
+
+    @Query("UPDATE message SET text = :text, editedAt = :editedAt WHERE id = :id")
+    suspend fun updateMessageTextAndEditedAt(id: Long, text: String, editedAt: Long?)
+
     @Query("UPDATE message SET id = :newId WHERE id = :oldId")
     suspend fun updateMessageId(oldId: Long, newId: Long)
     
