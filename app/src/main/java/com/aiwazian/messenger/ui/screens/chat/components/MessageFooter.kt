@@ -34,7 +34,7 @@ fun MessageFooter(
     ) {
         if (isEdited) {
             Text(
-                text = stringResource(R.string.edited),
+                text = stringResource(R.string.edited).lowercase(),
                 fontSize = 10.sp,
                 lineHeight = 10.sp,
                 color = MaterialTheme.colorScheme.onSurface

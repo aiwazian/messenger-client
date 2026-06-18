@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Поиск</string>
@@ -256,5 +260,5 @@
     <string name="edited_at">Отредактировано в</string>
     <string name="read_at">Прочтите на</string>
     <string name="edit_message">Редактирование</string>
-    <string name="edited">Отредактировано</string>
+    <string name="edited">Изменено</string>
 </resources>
