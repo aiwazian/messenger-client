@@ -562,7 +562,8 @@ class ChatViewModel @Inject constructor(
             
             val canDelete = when (chatType) {
                 ChatType.PRIVATE -> true
-                ChatType.CHANNEL, ChatType.GROUP -> _uiState.value.isOwner
+                ChatType.CHANNEL -> _uiState.value.isOwner
+                ChatType.GROUP -> _uiState.value.isOwner || isMyMessage
                 else -> false
             }
             
