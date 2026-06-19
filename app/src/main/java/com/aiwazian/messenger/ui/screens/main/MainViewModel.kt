@@ -4,11 +4,14 @@
 
 package com.aiwazian.messenger.ui.screens.main
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.repository.ChatRepository
+import com.aiwazian.messenger.repository.SessionRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.socket.WebSocketClient
@@ -21,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ru.rustore.sdk.pushclient.RuStorePushClient
 import javax.inject.Inject
 
 @HiltViewModel
@@ -30,7 +34,9 @@ class MainViewModel @Inject constructor(
     private val themeManager: ThemeManager,
     userRepository: UserRepository,
     webSocketClient: WebSocketClient,
-    private val onlineUsersTracker: OnlineUsersTracker
+    private val onlineUsersTracker: OnlineUsersTracker,
+    private val accountDao: AccountDao,
+    private val sessionRepository: SessionRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(MainUiState())
@@ -77,6 +83,25 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             onlineUsersTracker.onlineUsers.collectLatest { onlineIds ->
                 _uiState.update { it.copy(onlineUserIds = onlineIds) }
+            }
+        }
+        
+        viewModelScope.launch {
+            accountDao.getCurrentAccount()?.let { account ->
+                RuStorePushClient.getToken().addOnSuccessListener { token ->
+                    if (account.fcmToken != token) {
+                        viewModelScope.launch {
+                            sessionRepository.updateFcmToken(token).onSuccess {
+                                accountDao.update(account.copy(fcmToken = token))
+                                Log.d("MainViewModel", "Token updated")
+                            }.onFailure {
+                                Log.e("MainViewModel", "Error saving token", it)
+                            }
+                        }
+                    }
+                }.addOnFailureListener { th ->
+                    Log.e("MainViewModel", "Error getting token", th)
+                }
             }
         }
     }

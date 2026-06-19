@@ -28,7 +28,8 @@ class RealtimeEventSyncService @Inject constructor(
     webSocketClient: WebSocketClient,
     private val chatRepository: ChatRepository,
     private val userRepository: UserRepository,
-    private val onlineUsersTracker: OnlineUsersTracker
+    private val onlineUsersTracker: OnlineUsersTracker,
+    private val notificationHelper: NotificationHelper
 ) {
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
@@ -54,8 +55,7 @@ class RealtimeEventSyncService @Inject constructor(
                             chat?.chatName?.asString(context)
                                 ?: context.getString(R.string.new_message)
                         val body = message.text ?: context.getString(R.string.message)
-                        NotificationHelper.showMessageNotification(
-                            context,
+                        notificationHelper.showMessageNotification(
                             chatId,
                             title,
                             body,

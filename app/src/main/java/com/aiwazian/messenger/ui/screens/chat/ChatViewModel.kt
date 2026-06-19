@@ -32,6 +32,7 @@ import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.playback.VoicePlayerManager
 import com.aiwazian.messenger.playback.VoiceQueueItem
+import com.aiwazian.messenger.push.NotificationHelper
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository
@@ -103,7 +104,8 @@ class ChatViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
     private val voicePlayerManager: VoicePlayerManager,
     private val onlineUsersTracker: OnlineUsersTracker,
-    private val realtimeEventSyncService: RealtimeEventSyncService
+    private val realtimeEventSyncService: RealtimeEventSyncService,
+    private val notificationHelper: NotificationHelper
 ) : ViewModel() {
     
     private val audioRecorderManager = AudioRecorderManager(context)
@@ -182,6 +184,8 @@ class ChatViewModel @Inject constructor(
         isFirstLoadDone = false
         limitFlow.value = 50
         
+        notificationHelper.clearChatNotifications(chatId)
+        
         webSocketClient.emitEvent("chat_open", mapOf("chatId" to chatId.toString()))
         
         viewModelScope.launch {
@@ -198,6 +202,7 @@ class ChatViewModel @Inject constructor(
                         chatRepository.markAllAsRead(chatId)
                     }
                 }
+                
                 else -> {}
             }
         }
@@ -549,7 +554,7 @@ class ChatViewModel @Inject constructor(
             val canEdit = isMyMessage &&
                     !message.text.isNullOrBlank() &&
                     (now - message.sendTime) <= twentyFourHoursMs
-
+            
             if (canEdit) {
                 actions.add(
                     DropdownMenuAction(
@@ -690,7 +695,7 @@ class ChatViewModel @Inject constructor(
                     }
                 return@launch
             }
-
+            
             val text = _uiState.value.messageText
             if (text.isBlank()) return@launch
             
@@ -707,7 +712,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-
+    
     fun startEditing(message: Message) {
         val now = System.currentTimeMillis()
         val twentyFourHoursMs = 24 * 60 * 60 * 1000L
@@ -726,7 +731,7 @@ class ChatViewModel @Inject constructor(
             )
         }
     }
-
+    
     fun cancelEditing() {
         _uiState.update {
             it.copy(

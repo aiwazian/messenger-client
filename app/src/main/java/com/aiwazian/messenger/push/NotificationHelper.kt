@@ -26,24 +26,38 @@ import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.scale
+import androidx.core.net.toUri
 import coil.imageLoader
 import coil.memory.MemoryCache
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.enums.ChatType
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import javax.inject.Inject
+import javax.inject.Singleton
 
-object NotificationHelper {
+@Singleton
+class NotificationHelper @Inject constructor(
+    @param:ApplicationContext private val context: Context,
+    private val database: AppDatabase
+) {
     
-    private const val MAX_MESSAGES = 5
-    private const val ICON_SIZE_DP = 192
+    private val scope = CoroutineScope(Dispatchers.IO)
+    
+    companion object {
+        private const val MAX_MESSAGES = 5
+        private const val ICON_SIZE_DP = 192
+    }
     
     private data class MessageData(
         val text: String,
@@ -129,19 +143,43 @@ object NotificationHelper {
     }
     
     fun showMessageNotification(
-        context: Context,
         chatId: Long,
         title: String,
         body: String,
         avatarUri: Uri? = null
     ) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val rawAvatar = loadAvatar(context, avatarUri)
+        scope.launch {
+            val chatInfo = runBlocking {
+                when (ChatType.fromId(chatId)) {
+                    ChatType.PRIVATE -> database.userDao().getWithAvatars(chatId)?.let {
+                        val name = "${it.user.firstName} ${it.user.lastName.orEmpty()}".trim()
+                        val uri = it.avatars.firstOrNull()?.file?.path?.toUri()
+                        name to uri
+                    }
+                    
+                    ChatType.GROUP -> database.groupDao().getWithAvatars(chatId)?.let {
+                        val uri = it.avatars.firstOrNull()?.file?.path?.toUri()
+                        it.group.name to uri
+                    }
+                    
+                    ChatType.CHANNEL -> database.channelDao().getWithAvatars(chatId)?.let {
+                        val uri = it.avatars.firstOrNull()?.file?.path?.toUri()
+                        it.channel.name to uri
+                    }
+                    
+                    else -> null
+                }
+            }
+            
+            val resolvedTitle = chatInfo?.first ?: title
+            val resolvedAvatarUri = chatInfo?.second ?: avatarUri
+            
+            val rawAvatar = loadAvatar(context, resolvedAvatarUri)
             val circularAvatar = rawAvatar?.cropToCircle()
             
-            createOrUpdateChatShortcut(context, chatId, title, circularAvatar)
+            createOrUpdateChatShortcut(context, chatId, resolvedTitle, circularAvatar)
             
-            val person = createPerson(title, circularAvatar, chatId)
+            val person = createPerson(resolvedTitle, circularAvatar, chatId)
             
             val history = loadMessages(context, chatId).toMutableList()
             val newMessage = MessageData(body, System.currentTimeMillis())
@@ -150,7 +188,7 @@ object NotificationHelper {
             saveMessages(context, chatId, trimmedHistory)
             
             val style = NotificationCompat.MessagingStyle(person)
-                .setConversationTitle(title)
+                .setConversationTitle(resolvedTitle)
                 .setGroupConversation(ChatType.fromId(chatId) != ChatType.PRIVATE)
             
             trimmedHistory.forEach { msg ->
@@ -194,7 +232,7 @@ object NotificationHelper {
         }
     }
     
-    fun clearChatNotifications(context: Context, chatId: Long) {
+    fun clearChatNotifications(chatId: Long) {
         saveMessages(context, chatId, emptyList())
         NotificationManagerCompat.from(context).cancel(chatId.toInt())
         ShortcutManagerCompat.removeDynamicShortcuts(context, listOf("chat_$chatId"))

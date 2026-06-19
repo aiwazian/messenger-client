@@ -143,7 +143,6 @@ import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.sharedElement
-import com.aiwazian.messenger.push.NotificationHelper
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.CountdownTextButton
@@ -176,7 +175,6 @@ fun ChatScreen(
     
     LaunchedEffect(Unit) {
         chatViewModel.init(chatId, chatName, avatarUri?.toUri())
-        NotificationHelper.clearChatNotifications(context, chatId)
     }
     
     DisposableEffect(chatId) {
@@ -783,7 +781,7 @@ private fun TopBar(
                                     )
                                 } else if (subTitle.isNotBlank()) {
                                     Text(
-                                        text = subTitle,
+                                        text = subTitle.lowercase(),
                                         fontSize = 12.sp,
                                         lineHeight = 12.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,

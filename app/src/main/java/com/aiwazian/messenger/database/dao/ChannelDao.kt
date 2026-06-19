@@ -28,6 +28,13 @@ interface ChannelDao {
     @Query("SELECT * FROM channel WHERE id = :id")
     fun getWithAvatarsFlow(id: Long): Flow<ChannelWithAvatars?>
     
+    @Query("SELECT * FROM channel WHERE id = :id")
+    suspend fun getById(id: Long): ChannelEntity?
+    
+    @Transaction
+    @Query("SELECT * FROM channel WHERE id = :id")
+    suspend fun getWithAvatars(id: Long): ChannelWithAvatars?
+
     @Query("DELETE FROM channel WHERE id = :id")
     suspend fun delete(id: Long)
 }

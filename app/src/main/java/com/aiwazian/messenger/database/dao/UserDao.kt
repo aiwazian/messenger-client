@@ -28,4 +28,11 @@ interface UserDao {
     @Transaction
     @Query("SELECT * FROM user WHERE id = :id")
     fun getWithAvatarsFlow(id: Long): Flow<UserWithAvatars?>
+    
+    @Query("SELECT * FROM user WHERE id = :id")
+    suspend fun getById(id: Long): UserEntity?
+    
+    @Transaction
+    @Query("SELECT * FROM user WHERE id = :id")
+    suspend fun getWithAvatars(id: Long): UserWithAvatars?
 }

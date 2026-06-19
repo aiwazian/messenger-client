@@ -424,7 +424,7 @@ private fun TopBar(
                         .fillMaxWidth()
                 )
                 Text(
-                    text = subTitle,
+                    text = subTitle.lowercase(),
                     fontSize = 12.sp,
                     lineHeight = 12.sp,
                     modifier = Modifier

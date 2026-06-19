@@ -25,6 +25,13 @@ interface GroupDao {
     @Query("SELECT * FROM `group` WHERE id = :id")
     fun getWithAvatarsFlow(id: Long): Flow<GroupWithAvatars?>
     
+    @Query("SELECT * FROM `group` WHERE id = :id")
+    suspend fun getById(id: Long): GroupEntity?
+    
+    @Transaction
+    @Query("SELECT * FROM `group` WHERE id = :id")
+    suspend fun getWithAvatars(id: Long): GroupWithAvatars?
+
     @Query("DELETE FROM `group` WHERE id = :id")
     suspend fun delete(id: Long)
 }
