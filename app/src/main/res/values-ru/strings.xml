@@ -251,8 +251,8 @@
     <string name="inactive_12_months">12 месяцев</string>
     <string name="if_away_for">Если я не захожу</string>
     <string name="delete_account_if_inactive_for">Удаление аккаунта при неактивности...</string>
-    <string name="automatic_media_download">Автоматическая загрузка мультимедиа</string>
-    <string name="auto_download_media">Автоматическая загрузка мультимедиа</string>
+    <string name="automatic_media_download">Автозагрузка медиа</string>
+    <string name="auto_download_media">Загружать автоматически</string>
     <string name="you">Вы</string>
     <string name="personal_channel">Личный канал</string>
     <string name="hide_channel">Скрыть канал</string>

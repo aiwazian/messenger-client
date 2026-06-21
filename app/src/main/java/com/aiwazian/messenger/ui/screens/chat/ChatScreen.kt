@@ -141,7 +141,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.FileAction
-import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatAvatar
@@ -299,7 +298,7 @@ fun ChatScreen(
         }
     }
     
-    Scaffold(modifier = Modifier.sharedBounds(key = "chat-${chatId}"), snackbarHost = {
+    Scaffold(snackbarHost = {
         if (!uiState.showFullScreenViewer) {
             CustomSnackbar(snackbarHostState)
         }
@@ -854,7 +853,7 @@ private fun DeleteChatDialog(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Checkbox(
                             checked = deleteForRecipient,
-                            onCheckedChange = onDeleteForRecipientChanged,
+                            onCheckedChange = null,
                             interactionSource = remember { MutableInteractionSource() })
                         Text(
                             text = stringResource(R.string.delete_for_recipient),
@@ -897,6 +896,7 @@ private fun ClearHistoryDialog(
                     lineHeight = 16.sp
                 )
                 if (isPrivateChat) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

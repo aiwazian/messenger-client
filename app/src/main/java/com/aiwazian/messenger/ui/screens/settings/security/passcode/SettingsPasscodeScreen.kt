@@ -273,7 +273,6 @@ private fun SettingsPasscodeLockScreen(
 ) {
     val navBackStack = LocalNavBackStack.current
     
-    val uiState by passcodeViewModel.uiState.collectAsState()
     val fingerprintEnabled by passcodeViewModel.fingerprintEnabled.collectAsState()
     
     val context = LocalContext.current

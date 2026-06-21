@@ -29,7 +29,6 @@ import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Flip
 import androidx.compose.material.icons.rounded.Rotate90DegreesCcw
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
@@ -91,7 +90,6 @@ fun AvatarCropScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AvatarCropContent(bitmap: Bitmap, onCropConfirmed: (Bitmap) -> Unit) {
     var displayBitmap by remember { mutableStateOf(bitmap) }
@@ -109,7 +107,7 @@ private fun AvatarCropContent(bitmap: Bitmap, onCropConfirmed: (Bitmap) -> Unit)
     val scope = rememberCoroutineScope()
     var minScale by remember { mutableFloatStateOf(1f) }
     
-    val transformableState = rememberTransformableState { zoomChange, panChange, _ ->
+    val transformableState = rememberTransformableState { _, zoomChange, panChange, _ ->
         if (isRotating || isFlipping) return@rememberTransformableState
         scale = (scale * zoomChange).coerceIn(minScale, 10f)
         scope.launch {

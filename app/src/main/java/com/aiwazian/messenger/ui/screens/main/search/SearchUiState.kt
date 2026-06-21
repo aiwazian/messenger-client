@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.main.search
 
-import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.domain.Search
 
 data class SearchUiState(

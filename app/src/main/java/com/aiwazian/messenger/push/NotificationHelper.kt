@@ -39,7 +39,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -149,26 +148,24 @@ class NotificationHelper @Inject constructor(
         avatarUri: Uri? = null
     ) {
         scope.launch {
-            val chatInfo = runBlocking {
-                when (ChatType.fromId(chatId)) {
-                    ChatType.PRIVATE -> database.userDao().getWithAvatars(chatId)?.let {
-                        val name = "${it.user.firstName} ${it.user.lastName.orEmpty()}".trim()
-                        val uri = it.avatars.firstOrNull()?.file?.path?.toUri()
-                        name to uri
-                    }
-                    
-                    ChatType.GROUP -> database.groupDao().getWithAvatars(chatId)?.let {
-                        val uri = it.avatars.firstOrNull()?.file?.path?.toUri()
-                        it.group.name to uri
-                    }
-                    
-                    ChatType.CHANNEL -> database.channelDao().getWithAvatars(chatId)?.let {
-                        val uri = it.avatars.firstOrNull()?.file?.path?.toUri()
-                        it.channel.name to uri
-                    }
-                    
-                    else -> null
+            val chatInfo = when (ChatType.fromId(chatId)) {
+                ChatType.PRIVATE -> database.userDao().getWithAvatars(chatId)?.let {
+                    val name = "${it.user.firstName} ${it.user.lastName.orEmpty()}".trim()
+                    val uri = it.avatars.firstOrNull()?.file?.path?.toUri()
+                    name to uri
                 }
+                
+                ChatType.GROUP -> database.groupDao().getWithAvatars(chatId)?.let {
+                    val uri = it.avatars.firstOrNull()?.file?.path?.toUri()
+                    it.group.name to uri
+                }
+                
+                ChatType.CHANNEL -> database.channelDao().getWithAvatars(chatId)?.let {
+                    val uri = it.avatars.firstOrNull()?.file?.path?.toUri()
+                    it.channel.name to uri
+                }
+                
+                else -> null
             }
             
             val resolvedTitle = chatInfo?.first ?: title

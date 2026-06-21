@@ -458,7 +458,7 @@ class ChatViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = false) }
             }.onFailure {
                 Log.e("ChatViewModel", "Error fetching fresh messages", it)
-                _uiState.update { it.copy(isLoading = false) }
+                _uiState.update { state -> state.copy(isLoading = false) }
             }
         }
     }
@@ -485,7 +485,7 @@ class ChatViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoadingMore = false) }
             }.onFailure {
                 Log.e("ChatViewModel", "Error loading more messages", it)
-                _uiState.update { it.copy(isLoadingMore = false) }
+                _uiState.update { state -> state.copy(isLoadingMore = false) }
             }
         }
     }
