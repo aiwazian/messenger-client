@@ -89,11 +89,12 @@ fun PasswordScreen(login: String, viewModel: PasswordViewModel = hiltViewModel()
     }
     
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding(),
         floatingActionButton = {
             FloatingActionButton(
                 onClick = viewModel::signIn,
-                modifier = Modifier.imePadding(),
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
@@ -128,9 +129,7 @@ fun PasswordScreen(login: String, viewModel: PasswordViewModel = hiltViewModel()
                 text = stringResource(R.string.authorization),
                 fontSize = 28.sp
             )
-            Column(Modifier
-                       .width(300.dp)
-                       .imePadding()) {
+            Column(Modifier.width(300.dp)) {
                 PasswordField(
                     modifier = Modifier.focusRequester(focusRequester),
                     value = uiState.password,

@@ -14,7 +14,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -22,25 +22,21 @@ import androidx.core.view.WindowCompat
 import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.enums.ThemeOption
 
-private fun darkColorSchemeMaterial(customPrimaryColor: Color) =
-    darkColorScheme(
-        primary = customPrimaryColor,
-        primaryContainer = customPrimaryColor.copy(
-            red = customPrimaryColor.red - 0.2f,
-            green = customPrimaryColor.green - 0.2f,
-            blue = customPrimaryColor.blue - 0.2f
-        )
+private fun darkColorSchemeMaterial(customPrimaryColor: Color) = darkColorScheme(
+    primary = customPrimaryColor, primaryContainer = customPrimaryColor.copy(
+        red = customPrimaryColor.red - 0.2f,
+        green = customPrimaryColor.green - 0.2f,
+        blue = customPrimaryColor.blue - 0.2f
     )
+)
 
-private fun lightColorSchemeMaterial(customPrimaryColor: Color) =
-    lightColorScheme(
-        primary = customPrimaryColor,
-        primaryContainer = customPrimaryColor.copy(
-            red = customPrimaryColor.red - 0.2f,
-            green = customPrimaryColor.green - 0.2f,
-            blue = customPrimaryColor.blue - 0.2f
-        )
+private fun lightColorSchemeMaterial(customPrimaryColor: Color) = lightColorScheme(
+    primary = customPrimaryColor, primaryContainer = customPrimaryColor.copy(
+        red = customPrimaryColor.red - 0.2f,
+        green = customPrimaryColor.green - 0.2f,
+        blue = customPrimaryColor.blue - 0.2f
     )
+)
 
 @Composable
 fun ApplicationTheme(
@@ -49,30 +45,26 @@ fun ApplicationTheme(
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit,
 ) {
+    val view = LocalView.current
     val isDark = when (theme) {
         ThemeOption.DARK -> true
         ThemeOption.LIGHT -> false
         ThemeOption.SYSTEM -> isSystemInDarkTheme()
     }
     
-    val view = LocalView.current
-    val activity = view.context as Activity
-    
-    SideEffect {
-        val window = activity.window
+    DisposableEffect(isDark, view) {
+        val window = (view.context as Activity).window
         
-        WindowCompat.setDecorFitsSystemWindows(
-            window,
-            false
-        )
+        if (window != null) {
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            window.isNavigationBarContrastEnforced = false
+            
+            val insetsController = WindowCompat.getInsetsController(window, view)
+            insetsController.isAppearanceLightStatusBars = !isDark
+            insetsController.isAppearanceLightNavigationBars = !isDark
+        }
         
-        val insetsController = WindowCompat.getInsetsController(
-            window,
-            view
-        )
-        
-        insetsController.isAppearanceLightStatusBars = !isDark
-        insetsController.isAppearanceLightNavigationBars = !isDark
+        onDispose {}
     }
     
     val colorScheme = when {
@@ -86,8 +78,6 @@ fun ApplicationTheme(
     }
     
     MaterialExpressiveTheme(
-        motionScheme = MotionScheme.expressive(),
-        colorScheme = colorScheme,
-        content = content
+        motionScheme = MotionScheme.expressive(), colorScheme = colorScheme, content = content
     )
 }

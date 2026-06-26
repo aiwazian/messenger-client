@@ -79,11 +79,12 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
     }
     
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding(),
         floatingActionButton = {
             FloatingActionButton(
                 onClick = viewModel::checkLogin,
-                modifier = Modifier.imePadding(),
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
@@ -118,11 +119,7 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
                 text = stringResource(R.string.user_login),
                 fontSize = 28.sp
             )
-            Column(
-                Modifier
-                    .width(300.dp)
-                    .imePadding()
-            ) {
+            Column(Modifier.width(300.dp)) {
                 InputTextField(
                     modifier = Modifier.focusRequester(focusRequester),
                     value = uiState.login,

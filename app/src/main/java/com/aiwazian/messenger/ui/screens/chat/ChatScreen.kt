@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -461,7 +462,7 @@ fun ChatScreen(
                     .background(
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
                                 Color.Transparent
                             )
                         )
@@ -471,14 +472,18 @@ fun ChatScreen(
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .height(innerPadding.calculateBottomPadding())
+                    .height(
+                        innerPadding.calculateBottomPadding() + WindowInsets().getBottom(
+                            LocalDensity.current
+                        ).dp
+                    )
                     .fillMaxWidth()
                     .imePadding()
                     .background(
                         brush = Brush.verticalGradient(
                             colors = listOf(
                                 Color.Transparent,
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
                             )
                         )
                     )

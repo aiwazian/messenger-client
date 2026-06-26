@@ -112,11 +112,12 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
         .build()
     
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding(),
         floatingActionButton = {
             FloatingActionButton(
                 onClick = viewModel::signUp,
-                modifier = Modifier.imePadding(),
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
@@ -151,11 +152,7 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
                 text = stringResource(R.string.registration),
                 fontSize = 28.sp
             )
-            Column(
-                Modifier
-                    .width(300.dp)
-                    .imePadding()
-            ) {
+            Column(Modifier.width(300.dp)) {
                 InputTextField(
                     modifier = Modifier.focusRequester(focusRequester),
                     value = uiState.firstName,
