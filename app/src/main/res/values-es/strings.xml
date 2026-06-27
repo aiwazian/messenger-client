@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Buscar</string>
@@ -255,4 +259,5 @@
     <string name="read_at">Leer en</string>
     <string name="edit_message">Editar mensaje</string>
     <string name="edited">Editado</string>
+    <string name="chat">Charlar</string>
 </resources>

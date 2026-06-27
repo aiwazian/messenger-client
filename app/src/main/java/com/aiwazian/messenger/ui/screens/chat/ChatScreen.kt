@@ -730,7 +730,12 @@ private fun TopBar(
     
     TopAppBar(
         title = {
-            Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) {
                 Row(
                     modifier = Modifier
                         .graphicsLayer(scaleX = scale, scaleY = scale)

@@ -9,21 +9,32 @@ import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalFlexBoxApi
+import androidx.compose.foundation.layout.FlexAlignItems
+import androidx.compose.foundation.layout.FlexBox
+import androidx.compose.foundation.layout.FlexBoxScope
+import androidx.compose.foundation.layout.FlexDirection
+import androidx.compose.foundation.layout.FlexWrap
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
@@ -44,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -154,7 +166,12 @@ fun ProfileScreen(
                 }
                 
                 is ProfileUiEffect.NavigateToChat -> {
-                    navBackStack.add(AppRoute.Chat(effect.chatId, null))
+                    val previous = navBackStack.getOrNull(navBackStack.size - 2)
+                    if (previous is AppRoute.Chat && previous.chatId == effect.chatId) {
+                        navBackStack.removeLastOrNull()
+                    } else {
+                        navBackStack.add(AppRoute.Chat(effect.chatId, null))
+                    }
                 }
             }
         }
@@ -177,28 +194,23 @@ fun ProfileScreen(
         }
     }
     
-    Scaffold(
-        snackbarHost = {
-            CustomSnackbar(snackbarHostState)
-        },
-        topBar = {
-            TopBar(
-                chatId = uiState.id,
-                title = uiState.title.asString(),
-                subTitle = uiState.subTitle.asString(),
-                actions = uiState.actions,
-                contentColor = if (hasAvatar) Color.White else Color.Unspecified
-            )
-        }) { innerPadding ->
+    Scaffold(snackbarHost = {
+        CustomSnackbar(snackbarHostState)
+    }, topBar = {
+        TopBar(
+            chatId = uiState.id,
+            title = uiState.title.asString(),
+            subTitle = uiState.subTitle.asString(),
+            actions = uiState.actions,
+            contentColor = if (hasAvatar) Color.White else Color.Unspecified
+        )
+    }) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-            Box(
-                modifier = Modifier.padding(bottom = 10.dp),
-                contentAlignment = Alignment.TopCenter
-            ) {
+            Box(contentAlignment = Alignment.TopCenter) {
                 ProfileImageCarousel(avatars = uiState.avatars, profileId = uiState.id)
                 
                 if (hasAvatar) {
@@ -209,8 +221,7 @@ fun ProfileScreen(
                             .background(
                                 brush = Brush.verticalGradient(
                                     colors = listOf(
-                                        Color.Black.copy(alpha = 0.6f),
-                                        Color.Transparent
+                                        Color.Black.copy(alpha = 0.6f), Color.Transparent
                                     )
                                 )
                             )
@@ -222,20 +233,31 @@ fun ProfileScreen(
             
             when (val profile = uiState.profile) {
                 is Profile.User -> UserProfile(
+                    myId = uiState.myId,
+                    userId = uiState.id,
                     user = profile,
                     channelInfo = uiState.profileChannelInfo,
+                    onChatClick = viewModel::onChatButtonClicked,
+                    onEditClick = { navBackStack.add(AppRoute.SettingsProfile) },
                     onLinkClicked = viewModel::onLinkClicked,
                     onUsernameClicked = viewModel::onUsernameClicked
                 )
                 
                 is Profile.Channel -> ChannelProfile(
+                    myId = uiState.myId,
                     channel = profile,
+                    onJoinClick = viewModel::onJoinClicked,
+                    onLeaveClick = viewModel::showLeaveDialog,
                     onLinkClicked = viewModel::onLinkClicked,
                     onUsernameClicked = viewModel::onUsernameClicked
                 )
                 
                 is Profile.Group -> GroupProfile(
+                    myId = uiState.myId,
                     group = profile,
+                    onChatClick = viewModel::onChatButtonClicked,
+                    onJoinClick = viewModel::onJoinClicked,
+                    onLeaveClick = viewModel::showLeaveDialog,
                     onLinkClicked = viewModel::onLinkClicked,
                     onUsernameClicked = viewModel::onUsernameClicked
                 )
@@ -286,11 +308,47 @@ fun ProfileScreen(
 
 @Composable
 private fun GroupProfile(
+    myId: Long,
     group: Profile.Group,
+    onChatClick: () -> Unit,
+    onJoinClick: () -> Unit,
+    onLeaveClick: () -> Unit,
     onLinkClicked: (String) -> Unit,
     onUsernameClicked: (String) -> Unit
 ) {
     Column {
+        ProfileActions(
+            actions = if (!group.isMember) {
+                listOf(
+                    ProfileActionData(
+                        onClick = onJoinClick,
+                        icon = Icons.Outlined.PersonAdd,
+                        text = UiText.StringResource(R.string.join)
+                    )
+                )
+            } else {
+                buildList {
+                    add(
+                        ProfileActionData(
+                            onClick = onChatClick,
+                            icon = Icons.Rounded.ChatBubbleOutline,
+                            text = UiText.StringResource(R.string.chat)
+                        )
+                    )
+                    if (group.ownerId != myId) {
+                        add(
+                            ProfileActionData(
+                                onClick = onLeaveClick,
+                                icon = Icons.AutoMirrored.Rounded.Logout,
+                                text = UiText.StringResource(R.string.leave),
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        )
+                    }
+                }
+            }
+        )
+        
         SectionContainer {
             if (!group.bio.isNullOrBlank()) {
                 SectionItem(
@@ -313,11 +371,39 @@ private fun GroupProfile(
 
 @Composable
 private fun ChannelProfile(
+    myId: Long,
     channel: Profile.Channel,
+    onJoinClick: () -> Unit,
+    onLeaveClick: () -> Unit,
     onLinkClicked: (String) -> Unit,
     onUsernameClicked: (String) -> Unit
 ) {
     Column {
+        ProfileActions(
+            actions = if (!channel.isSubscribed) {
+                listOf(
+                    ProfileActionData(
+                        onClick = onJoinClick,
+                        icon = Icons.Outlined.PersonAdd,
+                        text = UiText.StringResource(R.string.subscribe)
+                    )
+                )
+            } else {
+                buildList {
+                    if (channel.ownerId != myId) {
+                        add(
+                            ProfileActionData(
+                                onClick = onLeaveClick,
+                                icon = Icons.AutoMirrored.Rounded.Logout,
+                                text = UiText.StringResource(R.string.leave),
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        )
+                    }
+                }
+            }
+        )
+        
         SectionContainer {
             if (!channel.bio.isNullOrBlank()) {
                 SectionItem(
@@ -340,14 +426,38 @@ private fun ChannelProfile(
 
 @Composable
 private fun UserProfile(
+    myId: Long,
+    userId: Long,
     user: Profile.User,
     channelInfo: ProfileChannelInfo? = null,
+    onChatClick: () -> Unit,
+    onEditClick: () -> Unit,
     onLinkClicked: (String) -> Unit,
     onUsernameClicked: (String) -> Unit
 ) {
     val navBackStack = LocalNavBackStack.current
     
     Column {
+        ProfileActions(
+            actions = if (myId == userId) {
+                listOf(
+                    ProfileActionData(
+                        onClick = onEditClick,
+                        icon = Icons.Rounded.Edit,
+                        text = UiText.StringResource(R.string.edit)
+                    )
+                )
+            } else {
+                listOf(
+                    ProfileActionData(
+                        onClick = onChatClick,
+                        icon = Icons.Rounded.ChatBubbleOutline,
+                        text = UiText.StringResource(R.string.chat)
+                    )
+                )
+            }
+        )
+        
         if (user.profileChannelId != null && channelInfo != null) {
             val channelChat = Chat(
                 id = channelInfo.id,
@@ -358,8 +468,7 @@ private fun UserProfile(
             )
             SectionContainer {
                 ChatCard(
-                    chat = channelChat,
-                    onClickChat = {
+                    chat = channelChat, onClickChat = {
                         navBackStack.add(
                             AppRoute.Chat(
                                 chatId = channelInfo.id,
@@ -367,8 +476,7 @@ private fun UserProfile(
                                 avatarUri = channelInfo.avatarUri?.toString()
                             )
                         )
-                    }
-                )
+                    })
             }
         }
         
@@ -399,7 +507,58 @@ private fun UserProfile(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFlexBoxApi::class)
+@Composable
+private fun ProfileActions(
+    actions: List<ProfileActionData>,
+    modifier: Modifier = Modifier
+) {
+    FlexBox(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(10.dp),
+        config = {
+            wrap(FlexWrap.NoWrap)
+            direction(FlexDirection.Row)
+            alignItems(FlexAlignItems.Stretch)
+            gap(10.dp)
+        }) {
+        actions.forEach { action ->
+            ProfileAction(
+                onClick = action.onClick,
+                icon = action.icon,
+                text = action.text.asString(),
+                contentColor = action.contentColor
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFlexBoxApi::class)
+@Composable
+private fun FlexBoxScope.ProfileAction(
+    onClick: () -> Unit,
+    icon: ImageVector,
+    text: String,
+    modifier: Modifier = Modifier,
+    contentColor: Color = Color.Unspecified
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.flex {
+            grow(1f)
+            basis(0.dp)
+        },
+        shapes = ButtonDefaults.shapes(pressedShape = MaterialTheme.shapes.large),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = contentColor)
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, null, modifier = Modifier.size(20.dp))
+            Text(text, fontSize = 12.sp, lineHeight = 12.sp)
+        }
+    }
+}
+
 @Composable
 private fun TopBar(
     chatId: Long,
@@ -420,7 +579,9 @@ private fun TopBar(
                     lineHeight = 16.sp,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
-                        .sharedBounds(key = "chat-name-$chatId", zIndexInOverlay = 1f)
+                        .sharedBounds(
+                            key = "chat-name-$chatId", zIndexInOverlay = 1f
+                        )
                         .fillMaxWidth()
                 )
                 Text(
@@ -428,7 +589,9 @@ private fun TopBar(
                     fontSize = 12.sp,
                     lineHeight = 12.sp,
                     modifier = Modifier
-                        .sharedBounds(key = "chat-sub-title-$chatId", zIndexInOverlay = 1f)
+                        .sharedBounds(
+                            key = "chat-sub-title-$chatId", zIndexInOverlay = 1f
+                        )
                         .fillMaxWidth()
                 )
             }
@@ -446,22 +609,18 @@ private fun TopBar(
                         } else {
                             expand = true
                         }
-                    }
-                ) {
+                    }) {
                     Icon(action.icon, null)
                 }
                 CustomDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
                     action.dropdownActions.forEach { action ->
-                        DropdownMenuItem(
-                            leadingIcon = {
-                                Icon(action.icon, null)
-                            },
-                            text = {
-                                Text(action.text.asString())
-                            },
-                            onClick = {
-                                action.onClick()
-                            })
+                        DropdownMenuItem(leadingIcon = {
+                            Icon(action.icon, null)
+                        }, text = {
+                            Text(action.text.asString())
+                        }, onClick = {
+                            action.onClick()
+                        })
                     }
                 }
             }

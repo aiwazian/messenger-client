@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Suchen</string>
@@ -253,4 +257,5 @@
     <string name="read_at">Lesen Sie unter</string>
     <string name="edit_message">Nachricht bearbeiten</string>
     <string name="edited">Bearbeitet</string>
+    <string name="chat">Chatten</string>
 </resources>

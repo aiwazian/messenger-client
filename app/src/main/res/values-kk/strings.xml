@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Іздеу</string>
@@ -253,4 +257,5 @@
     <string name="read_at">мекенжайында оқыңыз</string>
     <string name="edit_message">Хабарды өңдеу</string>
     <string name="edited">Өңделген</string>
+    <string name="chat">Чат</string>
 </resources>

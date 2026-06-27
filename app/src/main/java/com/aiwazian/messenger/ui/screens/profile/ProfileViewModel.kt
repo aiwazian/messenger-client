@@ -28,6 +28,7 @@ import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
 import com.aiwazian.messenger.usecase.JoinViaInviteLinkUseCase
 import com.aiwazian.messenger.usecase.LeaveChatUseCase
+import com.aiwazian.messenger.utils.ActiveChatTracker
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.LastSeenHelper
 import com.aiwazian.messenger.utils.RegexPatterns
@@ -63,6 +64,8 @@ class ProfileViewModel @Inject constructor(
     private val vibrationManager: VibrationManager,
     private val downloadAvatarUseCase: DownloadAvatarUseCase,
     private val joinViaInviteLinkUseCase: JoinViaInviteLinkUseCase,
+    private val joinChannelUseCase: com.aiwazian.messenger.usecase.JoinChannelUseCase,
+    private val joinGroupUseCase: com.aiwazian.messenger.usecase.JoinGroupUseCase,
     private val leaveChatUseCase: LeaveChatUseCase,
     private val onlineUsersTracker: OnlineUsersTracker
 ) : ViewModel() {
@@ -610,5 +613,36 @@ class ProfileViewModel @Inject constructor(
     
     fun dismissBannedDialog() {
         _uiState.update { it.copy(showBannedDialog = false) }
+    }
+    
+    fun onChatButtonClicked() {
+        viewModelScope.launch {
+            if (ActiveChatTracker.activeChatId.value == _uiState.value.id) {
+                _uiEffect.emit(ProfileUiEffect.NavigateBack)
+            } else {
+                _uiEffect.emit(ProfileUiEffect.NavigateToChat(_uiState.value.id))
+            }
+        }
+    }
+    
+    fun onJoinClicked() {
+        viewModelScope.launch {
+            val profileId = _uiState.value.id
+            when (ChatType.fromId(profileId)) {
+                ChatType.CHANNEL -> {
+                    joinChannelUseCase(profileId).onSuccess {
+                        channelRepository.fetchById(profileId)
+                    }
+                }
+                
+                ChatType.GROUP -> {
+                    joinGroupUseCase(profileId).onSuccess {
+                        groupRepository.fetchById(profileId)
+                    }
+                }
+                
+                else -> {}
+            }
+        }
     }
 }

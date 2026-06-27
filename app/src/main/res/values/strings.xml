@@ -265,4 +265,5 @@
     <string name="read_at">Read at</string>
     <string name="edit_message">Edit Message</string>
     <string name="edited">Edited</string>
+    <string name="chat">Chat</string>
 </resources>

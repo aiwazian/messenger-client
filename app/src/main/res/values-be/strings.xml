@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     
     <string name="search">Пошук</string>
@@ -257,4 +261,5 @@
     <string name="read_at">Чытайце на</string>
     <string name="edit_message">Рэдагаваць паведамленне</string>
     <string name="edited">Адрэдагавана</string>
+    <string name="chat">Чат</string>
 </resources>

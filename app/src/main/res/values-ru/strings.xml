@@ -261,4 +261,5 @@
     <string name="read_at">Прочтите на</string>
     <string name="edit_message">Редактирование</string>
     <string name="edited">Изменено</string>
+    <string name="chat">Чат</string>
 </resources>
