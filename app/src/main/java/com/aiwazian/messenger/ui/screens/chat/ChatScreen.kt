@@ -59,6 +59,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -424,12 +425,7 @@ fun ChatScreen(
                                 isVoicePlaying = uiState.isVoicePlaying,
                                 voicePositionMs = uiState.voicePositionMs,
                                 voiceDurationMs = uiState.voiceDurationMs,
-                                onVoiceSeek = { file, positionMs ->
-                                    chatViewModel.onVoiceSeek(
-                                        file,
-                                        positionMs
-                                    )
-                                },
+                                onVoiceSeek = chatViewModel::onVoiceSeek,
                                 onLinkClicked = chatViewModel::onLinkClicked,
                                 onUsernameClicked = chatViewModel::onUsernameClicked,
                                 onSaveToDownloads = {
@@ -1068,7 +1064,7 @@ private fun InputMessage(
             ) {}
             .background(
                 color = MaterialTheme.colorScheme.surfaceContainer,
-                shape = MaterialTheme.shapes.extraLarge
+                shape = RoundedCornerShape(24.dp)
             )) {
         AnimatedVisibility(
             visible = uiState.editingMessageId != null,
