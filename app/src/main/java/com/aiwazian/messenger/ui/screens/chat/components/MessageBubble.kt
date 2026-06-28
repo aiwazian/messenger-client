@@ -359,7 +359,7 @@ private fun buildDropdownActions(
             DropdownMenuAction(
                 icon = Icons.Rounded.EditCalendar,
                 text = UiText.DynamicString(label),
-                onClick = {}
+                onClick = null
             )
         )
     }
@@ -373,16 +373,16 @@ private fun buildDropdownActions(
             val msgDate = item.message.sendTime.toInstance().atZone(ZoneId.systemDefault())
                 .toLocalDate()
             val label = if (msgDate == now) {
-                item.message.sendTime.toInstance().toPrettyTime()
+                "Прочитано в " + item.message.sendTime.toInstance().toPrettyTime()
             } else {
-                item.message.sendTime.toInstance().atZone(ZoneId.systemDefault())
+                "Прочитано " + item.message.sendTime.toInstance().atZone(ZoneId.systemDefault())
                     .format(DateTimeFormatter.ofPattern("d MMMM HH:mm"))
             }
             actions.add(
                 DropdownMenuAction(
                     icon = Icons.Rounded.DoneAll,
                     text = UiText.DynamicString(label),
-                    onClick = {}
+                    onClick = null
                 )
             )
         } else if (item.chatType == ChatType.GROUP && !readInfo.isNullOrEmpty()) {

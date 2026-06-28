@@ -62,7 +62,7 @@ fun PageTopBar(
                             text = { Text(item.text.asString()) },
                             onClick = {
                                 expand = false
-                                item.onClick()
+                                item.onClick?.invoke()
                             },
                             leadingIcon = {
                                 Icon(

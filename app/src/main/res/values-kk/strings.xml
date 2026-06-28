@@ -258,4 +258,17 @@
     <string name="edit_message">Хабарды өңдеу</string>
     <string name="edited">Өңделген</string>
     <string name="chat">Чат</string>
+    <string name="delete_chat_confirm">Қалпына келтіру мүмкіндігінсіз чатты жою керек пе\?</string>
+    <string name="clear_history_confirm">Қалпына келтіру мүмкіндігінсіз чаттағы барлық хабарларды жою керек пе\?</string>
+    <string name="swipe_to_cancel">Бас тарту үшін сырғытыңыз</string>
+    <string name="provide_mic_permission">Дауыстық хабарларды жазу үшін микрофонға рұқсат беріңіз</string>
+    <string name="cancel_sending">Жіберуден бас тарту</string>
+    <string name="cancel_upload_confirm">Файлды жүктеп салудан бас тартқыңыз келетініне сенімдісіз бе\?</string>
+    <string name="cancel_voice_recording">Дауысты жазудан бас тарту</string>
+    <string name="cancel_voice_recording_confirm">Жазуды тоқтатып, жазылған хабарды жойғыңыз келетініне сенімдісіз бе\?</string>
+    <string name="continue_recording">Жалғастыру</string>
+    <string name="reset">Қалпына келтіру</string>
+    <string name="no_access">Кіру жоқ</string>
+    <string name="banned_message">Сізге осы чаттың әкімшісі тыйым салды</string>
+    <string name="edit_time_limit_error">24 сағаттан асқан хабарларды өңдеу мүмкін емес</string>
 </resources>

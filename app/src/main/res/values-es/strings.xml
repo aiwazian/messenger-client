@@ -260,4 +260,17 @@
     <string name="edit_message">Editar mensaje</string>
     <string name="edited">Editado</string>
     <string name="chat">Charlar</string>
+    <string name="delete_chat_confirm">¿Eliminar chat sin posibilidad de recuperación\?</string>
+    <string name="clear_history_confirm">¿Eliminar todos los mensajes del chat, sin posibilidad de recuperación\?</string>
+    <string name="swipe_to_cancel">Desliza para cancelar</string>
+    <string name="provide_mic_permission">Proporcionar acceso al micrófono para grabar mensajes de voz.</string>
+    <string name="cancel_sending">Cancelar envío</string>
+    <string name="cancel_upload_confirm">¿Estás seguro de que deseas cancelar la carga del archivo\?</string>
+    <string name="cancel_voice_recording">Cancelar grabación de voz</string>
+    <string name="cancel_voice_recording_confirm">¿Está seguro de que desea detener la grabación y descartar el mensaje grabado\?</string>
+    <string name="continue_recording">Continuar</string>
+    <string name="reset">Reiniciar</string>
+    <string name="no_access">Sin acceso</string>
+    <string name="banned_message">Has sido baneado por el administrador de este chat.</string>
+    <string name="edit_time_limit_error">No se pueden editar mensajes de más de 24 horas</string>
 </resources>

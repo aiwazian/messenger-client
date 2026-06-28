@@ -10,6 +10,6 @@ import com.aiwazian.messenger.utils.UiText
 data class DropdownMenuAction(
     val icon: ImageVector,
     val text: UiText,
-    val onClick: () -> Unit,
+    val onClick: (() -> Unit)? = null,
     val isDestructive: Boolean = false
 )

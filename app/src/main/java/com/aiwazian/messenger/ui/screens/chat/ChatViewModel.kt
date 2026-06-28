@@ -10,9 +10,7 @@ import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.outlined.CleaningServices
-import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -25,11 +23,6 @@ import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
-import com.aiwazian.messenger.enums.MessageType
-import com.aiwazian.messenger.enums.SystemMessageEventType
-import com.aiwazian.messenger.extensions.getFileType
-import com.aiwazian.messenger.extensions.toInstance
-import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.playback.VoicePlayerManager
 import com.aiwazian.messenger.playback.VoiceQueueItem
 import com.aiwazian.messenger.push.NotificationHelper
@@ -74,9 +67,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.ZoneId
-import java.time.format.TextStyle
-import java.util.Locale
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -129,45 +119,9 @@ class ChatViewModel @Inject constructor(
     private var autoDownloadFiles = true
     
     init {
-        viewModelScope.launch {
-            autoDownloadMedia = dataStoreManager.getAutoDownloadMedia().firstOrNull() ?: false
-            autoDownloadPhotos = dataStoreManager.getAutoDownloadPhotos().firstOrNull() ?: true
-            autoDownloadVideos = dataStoreManager.getAutoDownloadVideos().firstOrNull() ?: true
-            autoDownloadFiles = dataStoreManager.getAutoDownloadFiles().firstOrNull() ?: true
-        }
-        viewModelScope.launch {
-            dataStoreManager.getVideoLooping().collect { isLooping ->
-                _uiState.update { it.copy(isVideoLooping = isLooping) }
-            }
-        }
-        viewModelScope.launch {
-            dataStoreManager.getVideoPlaybackSpeed().collect { speed ->
-                _uiState.update { it.copy(videoPlaybackSpeed = speed) }
-            }
-        }
-        
-        voicePlayerManager.connect()
-        viewModelScope.launch {
-            voicePlayerManager.state.collect { state ->
-                _uiState.update {
-                    it.copy(
-                        currentPlayingVoiceFileId = state.currentFileId,
-                        isVoicePlaying = state.isPlaying,
-                        voicePositionMs = state.positionMs,
-                        voiceDurationMs = state.durationMs
-                    )
-                }
-            }
-        }
-        viewModelScope.launch {
-            _uiState.collect { state ->
-                val playingId = state.currentPlayingVoiceFileId ?: return@collect
-                val queue = buildVoiceQueue(state.chatItems, state.chatName)
-                if (queue.any { it.fileId == playingId }) {
-                    voicePlayerManager.updateQueue(queue)
-                }
-            }
-        }
+        loadSettings()
+        observeVoicePlayer()
+        observeQueueUpdates()
     }
     
     fun init(chatId: Long, chatName: String? = null, avatarUri: Uri? = null) {
@@ -185,63 +139,62 @@ class ChatViewModel @Inject constructor(
         limitFlow.value = 50
         
         notificationHelper.clearChatNotifications(chatId)
-        
         webSocketClient.emitEvent("chat_open", mapOf("chatId" to chatId.toString()))
         
-        viewModelScope.launch {
-            when (ChatType.fromId(chatId)) {
-                ChatType.CHANNEL -> channelRepository.fetchById(chatId)
-                ChatType.GROUP -> {
-                    groupRepository.fetchById(chatId)
-                    chatRepository.markAllAsRead(chatId)
-                }
-                
-                ChatType.PRIVATE -> {
-                    userRepository.fetchById(chatId)
-                    if (chatId != _uiState.value.myId) {
-                        chatRepository.markAllAsRead(chatId)
-                    }
-                }
-                
-                else -> {}
-            }
-        }
-        
         setupUserObserver()
-        loadChatData()
-        
+        loadChatInfo()
+        observeRealtimeEvents()
+        observeMessages()
+    }
+    
+    // region Initialization & Settings
+    private fun loadSettings() {
         viewModelScope.launch {
-            realtimeEventSyncService.groupReadEvents.collect { payload ->
-                if (payload.chatId == _uiState.value.chatId && payload.userId != _uiState.value.myId) {
-                    val readerInfo = MessageReadInfo(
-                        userId = payload.userId,
-                        firstName = "",
-                        lastName = null,
-                        readAt = payload.time
-                    )
-                    val current = _uiState.value.groupReadInfo
-                    val existing = current[payload.messageId].orEmpty()
-                    if (existing.none { it.userId == payload.userId }) {
-                        _uiState.update {
-                            it.copy(groupReadInfo = current + (payload.messageId to (existing + readerInfo)))
-                        }
-                    }
-                    if (!_uiState.value.userNamesCache.containsKey(payload.userId)) {
-                        loadUserName(payload.userId)
-                    }
-                }
+            autoDownloadMedia = dataStoreManager.getAutoDownloadMedia().firstOrNull() ?: false
+            autoDownloadPhotos = dataStoreManager.getAutoDownloadPhotos().firstOrNull() ?: true
+            autoDownloadVideos = dataStoreManager.getAutoDownloadVideos().firstOrNull() ?: true
+            autoDownloadFiles = dataStoreManager.getAutoDownloadFiles().firstOrNull() ?: true
+        }
+        viewModelScope.launch {
+            dataStoreManager.getVideoLooping().collect { isLooping ->
+                _uiState.update { it.copy(isVideoLooping = isLooping) }
             }
         }
-        
         viewModelScope.launch {
-            realtimeEventSyncService.chatRemovedEvents.collect { removedChatId ->
-                if (removedChatId == _uiState.value.chatId) {
-                    _uiEffect.emit(ChatUiEffect.NavigateToMain)
+            dataStoreManager.getVideoPlaybackSpeed().collect { speed ->
+                _uiState.update { it.copy(videoPlaybackSpeed = speed) }
+            }
+        }
+    }
+    
+    private fun observeVoicePlayer() {
+        voicePlayerManager.connect()
+        viewModelScope.launch {
+            voicePlayerManager.state.collect { state ->
+                _uiState.update {
+                    it.copy(
+                        currentPlayingVoiceFileId = state.currentFileId,
+                        isVoicePlaying = state.isPlaying,
+                        voicePositionMs = state.positionMs,
+                        voiceDurationMs = state.durationMs
+                    )
                 }
             }
         }
     }
     
+    private fun observeQueueUpdates() {
+        viewModelScope.launch {
+            _uiState.collect { state ->
+                val playingId = state.currentPlayingVoiceFileId ?: return@collect
+                val queue = buildVoiceQueue(state.chatItems, state.chatName)
+                if (queue.any { it.fileId == playingId }) {
+                    voicePlayerManager.updateQueue(queue)
+                }
+            }
+        }
+    }
+
     private fun setupUserObserver() {
         viewModelScope.launch {
             userRepository.getMe().firstOrNull()?.let { user ->
@@ -254,181 +207,157 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
+    // endregion
     
-    private fun getRawMessages(): List<Message> {
-        return _uiState.value.chatItems.filterIsInstance<ChatItem.MessageItem>().map { it.message }
+    // region Chat Data Loading
+    private fun loadChatInfo() {
+        val chatId = _uiState.value.chatId
+        viewModelScope.launch {
+            when (ChatType.fromId(chatId)) {
+                ChatType.CHANNEL -> loadChannelInfo(chatId)
+                ChatType.GROUP -> loadGroupInfo(chatId)
+                ChatType.PRIVATE -> loadUserInfo(chatId)
+                else -> {}
+            }
+        }
     }
     
-    private fun loadChatData() {
-        _uiState.update { it.copy(isLoading = true) }
-        
-        when (ChatType.fromId(_uiState.value.chatId)) {
-            ChatType.CHANNEL -> {
-                viewModelScope.launch {
-                    channelRepository.getById(_uiState.value.chatId).collectLatest { channel ->
-                        _uiState.update {
-                            it.copy(
-                                chatName = UiText.DynamicString(channel.name),
-                                subTitle = UiText.PluralResource(
-                                    R.plurals.subscribers_count,
-                                    channel.subscribers,
-                                    channel.subscribers
-                                ),
-                                isJoined = channel.isSubscribed,
-                                isOwner = channel.ownerId == _uiState.value.myId,
-                                avatarUri = channel.avatars.firstOrNull()?.uri,
-                                topBarActions = if (channel.ownerId == _uiState.value.myId) {
-                                    listOf(
-                                        TopBarAction(
-                                            icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
-                                                DropdownMenuAction(
-                                                    Icons.Outlined.CleaningServices,
-                                                    UiText.StringResource(R.string.clear_history),
-                                                    ::showClearHistoryDialog
-                                                )
-                                            )
-                                        )
-                                    )
-                                } else if (channel.isSubscribed) {
-                                    listOf(
-                                        TopBarAction(
-                                            icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
-                                                DropdownMenuAction(
-                                                    Icons.AutoMirrored.Rounded.Logout,
-                                                    UiText.StringResource(R.string.leave_channel),
-                                                    ::showLeaveDialog
-                                                )
-                                            )
-                                        )
-                                    )
-                                } else {
-                                    emptyList()
-                                }
-                            )
-                        }
-                    }
-                }
+    private suspend fun loadChannelInfo(chatId: Long) {
+        channelRepository.fetchById(chatId)
+        channelRepository.getById(chatId).collectLatest { channel ->
+            _uiState.update {
+                it.copy(
+                    chatName = UiText.DynamicString(channel.name),
+                    subTitle = UiText.PluralResource(
+                        R.plurals.subscribers_count,
+                        channel.subscribers,
+                        channel.subscribers
+                    ),
+                    isJoined = channel.isSubscribed,
+                    isOwner = channel.ownerId == it.myId,
+                    avatarUri = channel.avatars.firstOrNull()?.uri,
+                    topBarActions = createTopBarActions(
+                        channel.ownerId == it.myId,
+                        channel.isSubscribed,
+                        ChatType.CHANNEL
+                    )
+                )
             }
-            
-            ChatType.GROUP -> {
-                viewModelScope.launch {
-                    groupRepository.getById(_uiState.value.chatId).collectLatest { group ->
-                        group.let {
-                            _uiState.update {
-                                it.copy(
-                                    chatName = UiText.DynamicString(group.name),
-                                    subTitle = UiText.PluralResource(
-                                        R.plurals.members_count,
-                                        group.members,
-                                        group.members
-                                    ),
-                                    isJoined = group.isMember,
-                                    isOwner = group.ownerId == _uiState.value.myId,
-                                    avatarUri = group.avatars.firstOrNull()?.uri,
-                                    topBarActions = if (group.ownerId == _uiState.value.myId) {
-                                        listOf(
-                                            TopBarAction(
-                                                icon = Icons.Rounded.MoreVert,
-                                                dropdownActions = listOf(
-                                                    DropdownMenuAction(
-                                                        Icons.Outlined.CleaningServices,
-                                                        UiText.StringResource(R.string.clear_history),
-                                                        ::showClearHistoryDialog
-                                                    )
-                                                )
-                                            )
-                                        )
-                                    } else {
-                                        listOf(
-                                            TopBarAction(
-                                                icon = Icons.Rounded.MoreVert,
-                                                dropdownActions = listOf(
-                                                    DropdownMenuAction(
-                                                        Icons.AutoMirrored.Rounded.Logout,
-                                                        UiText.StringResource(R.string.leave_group),
-                                                        ::showLeaveDialog
-                                                    )
-                                                )
-                                            )
-                                        )
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
+        }
+    }
+    
+    private suspend fun loadGroupInfo(chatId: Long) {
+        groupRepository.fetchById(chatId)
+        chatRepository.markAllAsRead(chatId)
+        groupRepository.getById(chatId).collectLatest { group ->
+            _uiState.update {
+                it.copy(
+                    chatName = UiText.DynamicString(group.name),
+                    subTitle = UiText.PluralResource(
+                        R.plurals.members_count,
+                        group.members,
+                        group.members
+                    ),
+                    isJoined = group.isMember,
+                    isOwner = group.ownerId == it.myId,
+                    avatarUri = group.avatars.firstOrNull()?.uri,
+                    topBarActions = createTopBarActions(
+                        group.ownerId == it.myId,
+                        group.isMember,
+                        ChatType.GROUP
+                    )
+                )
             }
-            
-            ChatType.PRIVATE -> {
-                viewModelScope.launch {
-                    if (_uiState.value.chatId == _uiState.value.myId) {
-                        userRepository.getMe().collectLatest { user ->
-                            _uiState.update {
-                                it.copy(
-                                    chatName = UiText.StringResource(R.string.saved_messages),
-                                    subTitle = UiText.DynamicString(""),
-                                    avatarUri = user.avatars.firstOrNull()?.uri,
-                                    topBarActions = listOf(
-                                        TopBarAction(
-                                            icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
-                                                DropdownMenuAction(
-                                                    Icons.Outlined.CleaningServices,
-                                                    UiText.StringResource(R.string.clear_history),
-                                                    ::showClearHistoryDialog
-                                                ),
-                                                DropdownMenuAction(
-                                                    Icons.Rounded.DeleteOutline,
-                                                    UiText.StringResource(R.string.delete_chat),
-                                                    ::showDeleteChatDialog,
-                                                    isDestructive = true
-                                                )
-                                            )
-                                        )
-                                    )
-                                )
-                            }
-                        }
-                    } else {
-                        combine(
-                            userRepository.getById(_uiState.value.chatId),
-                            onlineUsersTracker.onlineUsers
-                        ) { user, onlineUsers ->
-                            user to onlineUsers.contains(user.id)
-                        }.collectLatest { (user, isOnline) ->
-                            val subTitle =
-                                LastSeenHelper.getSubtitle(context, isOnline, user.lastSeen)
-                            _uiState.update {
-                                it.copy(
-                                    chatName = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
-                                    subTitle = subTitle,
-                                    avatarUri = user.avatars.firstOrNull()?.uri,
-                                    topBarActions = listOf(
-                                        TopBarAction(
-                                            icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
-                                                DropdownMenuAction(
-                                                    Icons.Outlined.CleaningServices,
-                                                    UiText.StringResource(R.string.clear_history),
-                                                    ::showClearHistoryDialog
-                                                ),
-                                                DropdownMenuAction(
-                                                    Icons.Rounded.DeleteOutline,
-                                                    UiText.StringResource(R.string.delete_chat),
-                                                    ::showDeleteChatDialog,
-                                                    isDestructive = true
-                                                )
-                                            )
-                                        )
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            
-            else -> {}
+        }
+    }
+    
+    private suspend fun loadUserInfo(chatId: Long) {
+        userRepository.fetchById(chatId)
+        if (chatId != _uiState.value.myId) {
+            chatRepository.markAllAsRead(chatId)
         }
         
+        if (chatId == _uiState.value.myId) {
+            userRepository.getMe().collectLatest { user ->
+                _uiState.update {
+                    it.copy(
+                        chatName = UiText.StringResource(R.string.saved_messages),
+                        subTitle = UiText.DynamicString(""),
+                        avatarUri = user.avatars.firstOrNull()?.uri,
+                        topBarActions = createTopBarActions(
+                            true,
+                            true,
+                            ChatType.PRIVATE,
+                            isMe = true
+                        )
+                    )
+                }
+            }
+        } else {
+            combine(
+                userRepository.getById(chatId),
+                onlineUsersTracker.onlineUsers
+            ) { user, onlineUsers ->
+                user to onlineUsers.contains(user.id)
+            }.collectLatest { (user, isOnline) ->
+                val subTitle = LastSeenHelper.getSubtitle(context, isOnline, user.lastSeen)
+                _uiState.update {
+                    it.copy(
+                        chatName = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
+                        subTitle = subTitle,
+                        avatarUri = user.avatars.firstOrNull()?.uri,
+                        topBarActions = createTopBarActions(false, true, ChatType.PRIVATE)
+                    )
+                }
+            }
+        }
+    }
+    
+    private fun createTopBarActions(
+        isOwner: Boolean,
+        isJoined: Boolean,
+        type: ChatType,
+        isMe: Boolean = false
+    ): List<TopBarAction> {
+        val actions = mutableListOf<DropdownMenuAction>()
+        if (isOwner || isMe) {
+            actions.add(
+                DropdownMenuAction(
+                    Icons.Outlined.CleaningServices,
+                    UiText.StringResource(R.string.clear_history),
+                    ::showClearHistoryDialog
+                )
+            )
+        }
+        
+        if (type == ChatType.PRIVATE) {
+            actions.add(
+                DropdownMenuAction(
+                    Icons.Rounded.DeleteOutline,
+                    UiText.StringResource(R.string.delete_chat),
+                    ::showDeleteChatDialog,
+                    isDestructive = true
+                )
+            )
+        } else if (isJoined && !isOwner) {
+            val leaveRes =
+                if (type == ChatType.CHANNEL) R.string.leave_channel else R.string.leave_group
+            actions.add(
+                DropdownMenuAction(
+                    Icons.AutoMirrored.Rounded.Logout,
+                    UiText.StringResource(leaveRes),
+                    ::showLeaveDialog
+                )
+            )
+        }
+        
+        return if (actions.isNotEmpty()) {
+            listOf(TopBarAction(icon = Icons.Rounded.MoreVert, dropdownActions = actions))
+        } else emptyList()
+    }
+    
+    private fun observeMessages() {
+        _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             val userId = userRepository.getMe().first().id
             limitFlow.collectLatest { limit ->
@@ -449,224 +378,105 @@ class ChatViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
-            chatRepository.getMessages(
-                chatId = _uiState.value.chatId, limit = 50, offset = 0
-            ).onSuccess { freshMessages ->
-                if (freshMessages.size < 50) {
-                    _uiState.update { it.copy(hasMoreMessages = false) }
+            chatRepository.getMessages(_uiState.value.chatId, limit = 50, offset = 0)
+                .onSuccess { freshMessages ->
+                    if (freshMessages.size < 50) _uiState.update { it.copy(hasMoreMessages = false) }
                 }
-                _uiState.update { it.copy(isLoading = false) }
-            }.onFailure {
-                Log.e("ChatViewModel", "Error fetching fresh messages", it)
-                _uiState.update { state -> state.copy(isLoading = false) }
-            }
         }
     }
     
-    fun loadMoreMessages() {
-        val state = _uiState.value
-        if (state.isLoadingMore || !state.hasMoreMessages || state.isLoading) return
-        
-        _uiState.update { it.copy(isLoadingMore = true) }
+    private fun observeRealtimeEvents() {
+        viewModelScope.launch {
+            realtimeEventSyncService.groupReadEvents.collect { payload ->
+                if (payload.chatId == _uiState.value.chatId && payload.userId != _uiState.value.myId) {
+                    val readerInfo =
+                        MessageReadInfo(
+                            userId = payload.userId,
+                            firstName = "",
+                            lastName = null,
+                            readAt = payload.time
+                        )
+                    val current = _uiState.value.groupReadInfo
+                    val existing = current[payload.messageId].orEmpty()
+                    if (existing.none { it.userId == payload.userId }) {
+                        _uiState.update { it.copy(groupReadInfo = current + (payload.messageId to (existing + readerInfo))) }
+                    }
+                    loadUserName(payload.userId)
+                }
+            }
+        }
         
         viewModelScope.launch {
-            val offset = limitFlow.value
-            chatRepository.getMessages(
-                _uiState.value.chatId, limit = 50, offset = offset
-            ).onSuccess { moreMessages ->
-                if (moreMessages.isEmpty()) {
-                    _uiState.update { it.copy(isLoadingMore = false, hasMoreMessages = false) }
-                } else {
-                    if (moreMessages.size < 50) {
-                        _uiState.update { it.copy(hasMoreMessages = false) }
-                    }
-                    limitFlow.value += moreMessages.size
-                }
-                _uiState.update { it.copy(isLoadingMore = false) }
-            }.onFailure {
-                Log.e("ChatViewModel", "Error loading more messages", it)
-                _uiState.update { state -> state.copy(isLoadingMore = false) }
+            realtimeEventSyncService.chatRemovedEvents.collect { removedChatId ->
+                if (removedChatId == _uiState.value.chatId) _uiEffect.emit(ChatUiEffect.NavigateToMain)
             }
         }
     }
     
     private fun updateChatItems(messages: List<Message>) {
-        val myId = _uiState.value.myId
-        val chatItems = mutableListOf<ChatItem>()
-        var lastDate: java.time.LocalDate? = null
-        var lastSenderId: Long? = null
-        val newMediaItems = mutableListOf<MessageAttachment>()
+        val mapper = ChatItemMapper(
+            context = context,
+            myId = _uiState.value.myId,
+            chatId = _uiState.value.chatId,
+            isOwner = _uiState.value.isOwner,
+            userNamesCache = _uiState.value.userNamesCache,
+            groupReadInfo = _uiState.value.groupReadInfo,
+            onCopyText = ::copyToClipboard,
+            onEditMessage = ::startEditing,
+            onDeleteMessage = {
+                showDeleteMessageDialog()
+                selectMessage(it)
+            },
+            onLoadUserName = ::loadUserName
+        )
         
-        messages.forEach { message ->
-            val messageDate =
-                message.sendTime.toInstance().atZone(ZoneId.systemDefault()).toLocalDate()
-            
-            if (lastDate == null || !messageDate.isEqual(lastDate)) {
-                val monthName = messageDate.month.getDisplayName(
-                    TextStyle.FULL, Locale.getDefault()
-                )
-                val capitalizedMonthName = monthName.replaceFirstChar {
-                    if (it.isLowerCase()) it.titlecase() else it.toString()
-                }
-                chatItems.add(ChatItem.DateSeparator("${messageDate.dayOfMonth} $capitalizedMonthName"))
-                lastDate = messageDate
-            }
-            
-            if (message.messageType == MessageType.SYSTEM && message.systemMessageEventType != null) {
-                val textResId = when (message.systemMessageEventType) {
-                    SystemMessageEventType.CHANNEL_CREATED -> R.string.channel_created
-                    SystemMessageEventType.GROUP_CREATED -> R.string.group_created
-                    SystemMessageEventType.HISTORY_CLEARED -> R.string.history_cleared
-                }
-                chatItems.add(
-                    ChatItem.SystemMessage(
-                        text = UiText.StringResource(resId = textResId),
-                        sendTime = message.sendTime
-                    )
-                )
-                return@forEach
-            }
-            
-            val isMine =
-                message.senderId == myId && ChatType.fromId(_uiState.value.chatId) != ChatType.CHANNEL
-            val isSingleEmoji = isSingleEmoji(message.text ?: "")
-            val isFirstInGroup = message.senderId != lastSenderId
-            val chatType = ChatType.fromId(_uiState.value.chatId)
-            
-            val actions = mutableListOf<DropdownMenuAction>()
-            if (!message.text.isNullOrBlank()) {
-                actions.add(
-                    DropdownMenuAction(
-                        Icons.Rounded.ContentCopy,
-                        UiText.StringResource(R.string.copy),
-                        onClick = { copyToClipboard(message.text) })
-                )
-            }
-            
-            val chatTypeForEdit = ChatType.fromId(_uiState.value.chatId)
-            val isMyMessage = if (chatTypeForEdit == ChatType.CHANNEL) {
-                _uiState.value.isOwner
-            } else {
-                message.senderId == myId
-            }
-            val now = System.currentTimeMillis()
-            val twentyFourHoursMs = 24 * 60 * 60 * 1000L
-            val canEdit = isMyMessage &&
-                    !message.text.isNullOrBlank() &&
-                    (now - message.sendTime) <= twentyFourHoursMs
-            
-            if (canEdit) {
-                actions.add(
-                    DropdownMenuAction(
-                        Icons.Rounded.Edit,
-                        UiText.StringResource(R.string.edit),
-                        onClick = { startEditing(message) }
-                    )
-                )
-            }
-            
-            val canDelete = when (chatType) {
-                ChatType.PRIVATE -> true
-                ChatType.CHANNEL -> _uiState.value.isOwner
-                ChatType.GROUP -> _uiState.value.isOwner || isMyMessage
-                else -> false
-            }
-            
-            if (canDelete) {
-                actions.add(
-                    DropdownMenuAction(
-                        Icons.Rounded.DeleteOutline,
-                        UiText.StringResource(R.string.delete),
-                        onClick = {
-                            showDeleteMessageDialog()
-                            selectMessage(message)
-                        },
-                        isDestructive = true
-                    )
-                )
-            }
-            
-            val updatedAttachments = message.attachments.map { attachment ->
-                if (attachment.localUri != null) {
-                    val mimeType = attachment.localUri.getFileType(context)
-                    val newType = when {
-                        mimeType == "image/gif" -> AttachmentType.GIF
-                        mimeType.startsWith("image/") -> AttachmentType.IMAGE
-                        mimeType.startsWith("video/") -> AttachmentType.VIDEO
-                        mimeType.startsWith("audio/") -> AttachmentType.VOICE
-                        else -> attachment.type
-                    }
-                    attachment.copy(type = newType)
-                } else {
-                    attachment
-                }
-            }
-            
-            val updatedMessage = message.copy(attachments = updatedAttachments)
-            
-            updatedMessage.attachments.sortedBy { it.sortOrder }.forEach { attachment ->
-                if (attachment.type == AttachmentType.IMAGE || attachment.type == AttachmentType.VIDEO || attachment.type == AttachmentType.GIF) {
-                    newMediaItems.add(attachment)
-                }
-                
-                if ((attachment.status == DownloadStatus.IDLE || attachment.status == DownloadStatus.UPLOADED) && autoDownloadMedia) {
-                    val shouldDownload = when (attachment.type) {
-                        AttachmentType.VOICE -> true
-                        AttachmentType.IMAGE, AttachmentType.GIF -> autoDownloadPhotos
-                        AttachmentType.VIDEO -> autoDownloadVideos && attachment.size <= 10 * 1024 * 1024
-                        AttachmentType.FILE -> autoDownloadFiles && attachment.size <= 10 * 1024 * 1024
-                    }
-                    
-                    if (shouldDownload) {
-                        onFileAction(updatedMessage, attachment, FileAction.DOWNLOAD)
-                    }
-                }
-            }
-            
-            chatItems.add(
-                ChatItem.MessageItem(
-                    message = updatedMessage,
-                    time = updatedMessage.sendTime.toInstance().toPrettyTime(),
-                    isMine = isMine,
-                    isRead = if (isMine) updatedMessage.isRead else null,
-                    senderName = if (!isMine && ChatType.fromId(updatedMessage.chatId) == ChatType.GROUP) {
-                        _uiState.value.userNamesCache[updatedMessage.senderId].also {
-                            if (it == null) loadUserName(updatedMessage.senderId)
-                        }
-                    } else null,
-                    isFirstInGroup = isFirstInGroup,
-                    isSingleEmoji = isSingleEmoji,
-                    dropdownActions = actions,
-                    chatType = chatType,
-                    readInfo = if (isMine) {
-                        val serverReadInfo = updatedMessage.readInfo.orEmpty()
-                        val extraReadInfo =
-                            _uiState.value.groupReadInfo[updatedMessage.id].orEmpty()
-                        val merged = (serverReadInfo + extraReadInfo).distinctBy { it.userId }
-                        val resolved = merged.map { info ->
-                            if (info.firstName.isBlank()) {
-                                val name = _uiState.value.userNamesCache[info.userId]
-                                if (name != null) {
-                                    val parts = name.split(" ", limit = 2)
-                                    info.copy(
-                                        firstName = parts.getOrElse(0) { "" },
-                                        lastName = parts.getOrNull(1)
-                                    )
-                                } else {
-                                    loadUserName(info.userId)
-                                    info
-                                }
-                            } else info
-                        }
-                        resolved.ifEmpty { null }
-                    } else null
-                ))
-            
-            lastSenderId = message.senderId
-        }
+        val chatItems = mapper.map(messages)
+        val newMediaItems = messages.flatMap { it.attachments }
+            .filter { it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF }
+        
         _uiState.update { it.copy(chatItems = chatItems, mediaItems = newMediaItems) }
+        
+        // Auto-download logic
+        if (autoDownloadMedia) {
+            messages.forEach { msg ->
+                msg.attachments.forEach { attachment ->
+                    if (attachment.status == DownloadStatus.IDLE || attachment.status == DownloadStatus.UPLOADED) {
+                        val shouldDownload = when (attachment.type) {
+                            AttachmentType.VOICE -> true
+                            AttachmentType.IMAGE, AttachmentType.GIF -> autoDownloadPhotos
+                            AttachmentType.VIDEO -> autoDownloadVideos && attachment.size <= 10 * 1024 * 1024
+                            AttachmentType.FILE -> autoDownloadFiles && attachment.size <= 10 * 1024 * 1024
+                        }
+                        if (shouldDownload) onFileAction(msg, attachment, FileAction.DOWNLOAD)
+                    }
+                }
+            }
+        }
     }
+
+    fun loadMoreMessages() {
+        val state = _uiState.value
+        if (state.isLoadingMore || !state.hasMoreMessages || state.isLoading) return
+        _uiState.update { it.copy(isLoadingMore = true) }
+        viewModelScope.launch {
+            val offset = limitFlow.value
+            chatRepository.getMessages(state.chatId, limit = 50, offset = offset)
+                .onSuccess { moreMessages ->
+                if (moreMessages.isEmpty()) {
+                    _uiState.update { it.copy(isLoadingMore = false, hasMoreMessages = false) }
+                } else {
+                    if (moreMessages.size < 50) _uiState.update { it.copy(hasMoreMessages = false) }
+                    limitFlow.value += moreMessages.size
+                }
+                _uiState.update { it.copy(isLoadingMore = false) }
+            }.onFailure {
+                _uiState.update { it.copy(isLoadingMore = false) }
+            }
+        }
+    }
+    // endregion
     
+    // region Message Actions
     fun changeText(newText: String) {
         _uiState.update { it.copy(messageText = newText) }
     }
@@ -675,36 +485,16 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             val editingId = _uiState.value.editingMessageId
             if (editingId != null) {
-                val newText = _uiState.value.messageText.trim()
-                val originalText = _uiState.value.editingOriginalText
-                if (newText.isEmpty() || newText == originalText) {
-                    cancelEditing()
-                    return@launch
-                }
-                cancelEditing()
-                chatRepository.editMessage(_uiState.value.chatId, editingId, newText)
-                    .onSuccess { editedMessage ->
-                        chatRepository.updateLocalMessage(
-                            messageId = editingId,
-                            text = editedMessage.text,
-                            editedAt = editedMessage.editedAt
-                        )
-                    }
-                    .onFailure { e ->
-                        Log.e("ChatViewModel", "Error editing message", e)
-                    }
+                handleEditMessage(editingId)
                 return@launch
             }
             
-            val text = _uiState.value.messageText
-            if (text.isBlank()) return@launch
-            
-            val validText = text.trim()
+            val text = _uiState.value.messageText.trim()
+            if (text.isEmpty()) return@launch
             
             changeText("")
-            
             try {
-                sendMessageUseCase(_uiState.value.chatId, validText)?.let {
+                sendMessageUseCase(_uiState.value.chatId, text)?.let {
                     _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
                 }
             } catch (e: Exception) {
@@ -713,12 +503,29 @@ class ChatViewModel @Inject constructor(
         }
     }
     
+    private suspend fun handleEditMessage(editingId: Long) {
+        val newText = _uiState.value.messageText.trim()
+        val originalText = _uiState.value.editingOriginalText
+        if (newText.isEmpty() || newText == originalText) {
+            cancelEditing()
+            return
+        }
+        cancelEditing()
+        chatRepository.editMessage(_uiState.value.chatId, editingId, newText)
+            .onSuccess { editedMessage ->
+                chatRepository.updateLocalMessage(
+                    editingId,
+                    editedMessage.text,
+                    editedMessage.editedAt
+                )
+            }
+    }
+    
     fun startEditing(message: Message) {
         val now = System.currentTimeMillis()
-        val twentyFourHoursMs = 24 * 60 * 60 * 1000L
-        if (now - message.sendTime > twentyFourHoursMs) {
+        if (now - message.sendTime > 24 * 60 * 60 * 1000L) {
             viewModelScope.launch {
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Невозможно изменить сообщение старше 24 часов")))
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.edit_time_limit_error)))
             }
             return
         }
@@ -742,235 +549,11 @@ class ChatViewModel @Inject constructor(
         }
     }
     
-    fun onJoinClicked() {
-        viewModelScope.launch {
-            val chatId = _uiState.value.chatId
-            when (ChatType.fromId(chatId)) {
-                ChatType.CHANNEL -> {
-                    joinChannelUseCase(chatId).onSuccess {
-                        _uiState.update { it.copy(isJoined = true) }
-                    }
-                }
-                
-                ChatType.GROUP -> {
-                    joinGroupUseCase(chatId).onSuccess {
-                        _uiState.update { it.copy(isJoined = true) }
-                    }
-                }
-                
-                else -> {}
-            }
-        }
-    }
-    
-    fun onLeaveClicked() {
-        viewModelScope.launch {
-            leaveChatUseCase(_uiState.value.chatId).onSuccess {
-                hideLeaveDialog()
-                _uiEffect.emit(ChatUiEffect.NavigateToMain)
-            }
-        }
-    }
-    
-    fun showDeleteChatDialog() =
-        _uiState.update { it.copy(showDeleteChatDialog = true, deleteForRecipient = false) }
-    
-    fun hideDeleteChatDialog() =
-        _uiState.update { it.copy(showDeleteChatDialog = false, deleteForRecipient = false) }
-    
-    fun showClearHistoryDialog() =
-        _uiState.update { it.copy(showClearHistoryDialog = true, deleteForRecipient = false) }
-    
-    fun hideClearHistoryDialog() =
-        _uiState.update { it.copy(showClearHistoryDialog = false, deleteForRecipient = false) }
-    
-    fun showDeleteMessageDialog() {
-        _uiState.update { it.copy(showDeleteMessageDialog = true, deleteForRecipient = false) }
-    }
-    
-    fun hideDeleteMessageDialog() {
-        _uiState.update { it.copy(showDeleteMessageDialog = false, deleteForRecipient = false) }
-    }
-    
-    fun setDeleteForRecipient(delete: Boolean) {
-        _uiState.update { it.copy(deleteForRecipient = delete) }
-    }
-    
-    fun showLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = true) }
-    
-    fun hideLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = false) }
-    
-    fun vibrate() {
-        vibrationManager.vibrate(VibrationPattern.Error)
-    }
-    
-    fun onDeleteChatConfirmed() {
-        viewModelScope.launch {
-            val deleteForRecipient = _uiState.value.deleteForRecipient
-            if (chatRepository.deleteChat(_uiState.value.chatId, deleteForRecipient)) {
-                hideDeleteChatDialog()
-                _uiEffect.emit(ChatUiEffect.NavigateToMain)
-            }
-        }
-    }
-    
-    fun onDeleteMessagesConfirmed() {
-        viewModelScope.launch {
-            val deleteForRecipient = _uiState.value.deleteForRecipient
-            if (chatRepository.deleteChatMessages(_uiState.value.chatId, deleteForRecipient)) {
-                hideClearHistoryDialog()
-            }
-        }
-    }
-    
-    fun onDeleteMessageConfirmed() {
-        viewModelScope.launch {
-            val deleteForRecipient = _uiState.value.deleteForRecipient
-            _uiState.value.selectedMessages.forEach { message ->
-                chatRepository.deleteMessage(_uiState.value.chatId, message.id, deleteForRecipient)
-            }
-            _uiState.update { it.copy(selectedMessages = emptySet()) }
-            hideDeleteMessageDialog()
-        }
-    }
-    
-    fun selectMessage(message: Message) =
-        _uiState.update { it.copy(selectedMessages = it.selectedMessages + message) }
-    
-    fun unselectMessage(message: Message) =
-        _uiState.update { it.copy(selectedMessages = it.selectedMessages - message) }
-    
-    fun copyToClipboard(text: String?) = text?.let { clipboardService.copy(it) }
-    
-    fun cancelUpload(tempMessageId: Long) {
-        viewModelScope.launch {
-            val tempMessage = getRawMessages().find { it.id == tempMessageId }
-            tempMessage?.attachments?.forEach { attachment ->
-                uploadManager.cancel(attachment.fileId)
-            }
-            
-            chatRepository.deleteLocalMessage(messageId = tempMessageId)
-        }
-    }
-    
-    fun onFileAction(message: Message, file: MessageAttachment, action: FileAction) {
-        when (action) {
-            FileAction.DOWNLOAD -> {
-                viewModelScope.launch {
-                    chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
-                        .onSuccess { url ->
-                            downloaderManager.download(
-                                url = url,
-                                fileName = file.name,
-                                fileId = file.fileId
-                            )
-                        }
-                        .onFailure {
-                            Log.e(
-                                "ChatViewModel",
-                                "Download URL is null for file: ${file.fileId}, message: ${message.id}, chat: ${message.chatId}"
-                            )
-                        }
-                }
-            }
-            
-            FileAction.PAUSE -> {
-                viewModelScope.launch {
-                    downloaderManager.pause(file.fileId)
-                }
-            }
-            
-            FileAction.RESUME -> {
-                viewModelScope.launch {
-                    downloaderManager.resume(file.fileId)
-                }
-            }
-            
-            FileAction.CANCEL -> {
-                viewModelScope.launch {
-                    downloaderManager.cancel(file.fileId)
-                }
-            }
-            
-            FileAction.OPEN -> {
-                if (file.type == AttachmentType.IMAGE || file.type == AttachmentType.VIDEO || file.type == AttachmentType.GIF) {
-                    val index = _uiState.value.mediaItems.indexOfFirst { it.fileId == file.fileId }
-                    _uiState.update {
-                        it.copy(
-                            showFullScreenViewer = true,
-                            initialMediaIndex = if (index >= 0) index else 0
-                        )
-                    }
-                } else {
-                    viewModelScope.launch {
-                        fileHandler.openFile(path = file.localUri.toString())
-                    }
-                }
-            }
-            
-            FileAction.PLAY -> {
-                if (file.type != AttachmentType.VOICE) return
-                file.localUri ?: return
-                
-                val currentPlayingId = _uiState.value.currentPlayingVoiceFileId
-                if (currentPlayingId == file.fileId) {
-                    voicePlayerManager.togglePlayPause()
-                } else {
-                    val startPos = pendingVoiceStartPositions.remove(file.fileId) ?: 0
-                    playVoice(file.fileId, startPos)
-                }
-            }
-        }
-    }
-    
-    private fun playVoice(fileId: String, startPositionMs: Int = 0) {
-        val state = _uiState.value
-        val queue = buildVoiceQueue(state.chatItems, state.chatName)
-        if (queue.none { it.fileId == fileId }) return
-        voicePlayerManager.play(queue, fileId, startPositionMs)
-    }
-    
-    private fun buildVoiceQueue(items: List<ChatItem>, chatName: UiText): List<VoiceQueueItem> {
-        val title = chatName.asString(context).ifBlank { "Voice message" }
-        val artworkUri = _uiState.value.avatarUri
-        return items.filterIsInstance<ChatItem.MessageItem>()
-            .flatMap { it.message.attachments }
-            .filter { it.type == AttachmentType.VOICE }
-            .map { attachment ->
-                val isReady = attachment.localUri != null &&
-                        (attachment.status == DownloadStatus.COMPLETED || attachment.status == DownloadStatus.UPLOADED)
-                VoiceQueueItem(
-                    uri = if (isReady) attachment.localUri else null,
-                    fileId = attachment.fileId,
-                    title = title,
-                    subtitle = context.getString(R.string.voice_message),
-                    artworkUri = artworkUri
-                )
-            }
-    }
-    
-    fun onVoiceSeek(file: MessageAttachment, positionMs: Int) {
-        val currentPlayingId = _uiState.value.currentPlayingVoiceFileId
-        
-        if (currentPlayingId != file.fileId) {
-            pendingVoiceStartPositions[file.fileId] = positionMs
-            return
-        }
-        
-        voicePlayerManager.seekTo(positionMs)
-    }
-    
-    fun sendFiles(uris: List<Uri>) {
-        viewModelScope.launch {
-            sendMessageWithFilesUseCase(_uiState.value.chatId, uris, null)
-        }
-    }
-    
     fun markAsReadMessage(message: Message) {
         if (message.senderId == _uiState.value.myId || message.isRead) return
         viewModelScope.launch {
             if (chatRepository.makeAsRead(_uiState.value.chatId, message.id)) {
-                readMessage(message.id)
+                chatRepository.markMessageAsRead(_uiState.value.chatId, message.id)
             }
         }
     }
@@ -988,60 +571,287 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
+    // endregion
     
-    private fun readMessage(id: Long) {
+    // region Join / Leave / Delete
+    fun onJoinClicked() {
         viewModelScope.launch {
-            chatRepository.markMessageAsRead(_uiState.value.chatId, id)
+            val chatId = _uiState.value.chatId
+            when (ChatType.fromId(chatId)) {
+                ChatType.CHANNEL -> joinChannelUseCase(chatId).onSuccess {
+                    _uiState.update {
+                        it.copy(
+                            isJoined = true
+                        )
+                    }
+                }
+                
+                ChatType.GROUP -> joinGroupUseCase(chatId).onSuccess {
+                    _uiState.update {
+                        it.copy(
+                            isJoined = true
+                        )
+                    }
+                }
+                else -> {}
+            }
         }
     }
     
-    private fun isSingleEmoji(text: String): Boolean {
-        val emojiRegex =
-            Regex("^[\\p{So}\\p{Cntrl}\\p{InEmoticons}\\p{InMiscellaneousSymbolsAndPictographs}\\p{InSupplementalSymbolsAndPictographs}\\uD83C\\uDFF0-\\uD83D\\uDFFF]+$")
-        return emojiRegex.matches(text.trim())
+    fun onLeaveClicked() {
+        viewModelScope.launch {
+            leaveChatUseCase(_uiState.value.chatId).onSuccess {
+                hideLeaveDialog()
+                _uiEffect.emit(ChatUiEffect.NavigateToMain)
+            }
+        }
+    }
+
+    fun onDeleteChatConfirmed() {
+        viewModelScope.launch {
+            if (chatRepository.deleteChat(
+                    _uiState.value.chatId,
+                    _uiState.value.deleteForRecipient
+                )
+            ) {
+                hideDeleteChatDialog()
+                _uiEffect.emit(ChatUiEffect.NavigateToMain)
+            }
+        }
     }
     
-    fun onLinkClicked(url: String) {
-        val inviteLinkRegex = RegexPatterns.INVITE_LINK
-        val match = inviteLinkRegex.find(url)
-        
-        if (match == null) {
-            val normalizedUrl =
-                if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"
-            viewModelScope.launch {
-                _uiEffect.emit(ChatUiEffect.OpenUrl(normalizedUrl))
+    fun onDeleteMessagesConfirmed() {
+        viewModelScope.launch {
+            if (chatRepository.deleteChatMessages(
+                    _uiState.value.chatId,
+                    _uiState.value.deleteForRecipient
+                )
+            ) {
+                hideClearHistoryDialog()
             }
+        }
+    }
+    
+    fun onDeleteMessageConfirmed() {
+        viewModelScope.launch {
+            val deleteForRecipient = _uiState.value.deleteForRecipient
+            _uiState.value.selectedMessages.forEach { message ->
+                chatRepository.deleteMessage(_uiState.value.chatId, message.id, deleteForRecipient)
+            }
+            _uiState.update { it.copy(selectedMessages = emptySet()) }
+            hideDeleteMessageDialog()
+        }
+    }
+    // endregion
+    
+    // region Dialog Management
+    fun showDeleteChatDialog() =
+        _uiState.update { it.copy(showDeleteChatDialog = true, deleteForRecipient = false) }
+    
+    fun hideDeleteChatDialog() =
+        _uiState.update { it.copy(showDeleteChatDialog = false, deleteForRecipient = false) }
+    
+    fun showClearHistoryDialog() =
+        _uiState.update { it.copy(showClearHistoryDialog = true, deleteForRecipient = false) }
+    
+    fun hideClearHistoryDialog() =
+        _uiState.update { it.copy(showClearHistoryDialog = false, deleteForRecipient = false) }
+    
+    fun showDeleteMessageDialog() =
+        _uiState.update { it.copy(showDeleteMessageDialog = true, deleteForRecipient = false) }
+    
+    fun hideDeleteMessageDialog() =
+        _uiState.update { it.copy(showDeleteMessageDialog = false, deleteForRecipient = false) }
+    
+    fun showLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = true) }
+    fun hideLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = false) }
+    fun setDeleteForRecipient(delete: Boolean) =
+        _uiState.update { it.copy(deleteForRecipient = delete) }
+    // endregion
+    
+    // region File & Media Actions
+    fun onFileAction(message: Message, file: MessageAttachment, action: FileAction) {
+        when (action) {
+            FileAction.DOWNLOAD -> downloadFile(message, file)
+            FileAction.PAUSE -> viewModelScope.launch { downloaderManager.pause(file.fileId) }
+            FileAction.RESUME -> viewModelScope.launch { downloaderManager.resume(file.fileId) }
+            FileAction.CANCEL -> viewModelScope.launch { downloaderManager.cancel(file.fileId) }
+            FileAction.OPEN -> handleOpenFile(file)
+            FileAction.PLAY -> handlePlayVoice(file)
+        }
+    }
+    
+    private fun downloadFile(message: Message, file: MessageAttachment) {
+        viewModelScope.launch {
+            chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
+                .onSuccess { url -> downloaderManager.download(url, file.name, file.fileId) }
+        }
+    }
+    
+    private fun handleOpenFile(file: MessageAttachment) {
+        if (file.type == AttachmentType.IMAGE || file.type == AttachmentType.VIDEO || file.type == AttachmentType.GIF) {
+            val index = _uiState.value.mediaItems.indexOfFirst { it.fileId == file.fileId }
+            _uiState.update {
+                it.copy(
+                    showFullScreenViewer = true,
+                    initialMediaIndex = index.coerceAtLeast(0)
+                )
+            }
+        } else {
+            viewModelScope.launch { fileHandler.openFile(file.localUri.toString()) }
+        }
+    }
+    
+    private fun handlePlayVoice(file: MessageAttachment) {
+        if (file.type != AttachmentType.VOICE || file.localUri == null) return
+        if (_uiState.value.currentPlayingVoiceFileId == file.fileId) {
+            voicePlayerManager.togglePlayPause()
+        } else {
+            val startPos = pendingVoiceStartPositions.remove(file.fileId) ?: 0
+            playVoice(file.fileId, startPos)
+        }
+    }
+
+    private fun playVoice(fileId: String, startPositionMs: Int = 0) {
+        val queue = buildVoiceQueue(_uiState.value.chatItems, _uiState.value.chatName)
+        if (queue.none { it.fileId == fileId }) return
+        voicePlayerManager.play(queue, fileId, startPositionMs)
+    }
+    
+    private fun buildVoiceQueue(items: List<ChatItem>, chatName: UiText): List<VoiceQueueItem> {
+        val title = chatName.asString(context).ifBlank { context.getString(R.string.voice_message) }
+        return items.filterIsInstance<ChatItem.MessageItem>()
+            .flatMap { it.message.attachments }
+            .filter { it.type == AttachmentType.VOICE }
+            .map { attachment ->
+                val isReady =
+                    attachment.localUri != null && (attachment.status == DownloadStatus.COMPLETED || attachment.status == DownloadStatus.UPLOADED)
+                VoiceQueueItem(
+                    uri = if (isReady) attachment.localUri else null,
+                    fileId = attachment.fileId,
+                    title = title,
+                    subtitle = context.getString(R.string.voice_message),
+                    artworkUri = _uiState.value.avatarUri
+                )
+            }
+    }
+    
+    fun onVoiceSeek(file: MessageAttachment, positionMs: Int) {
+        if (_uiState.value.currentPlayingVoiceFileId != file.fileId) {
+            pendingVoiceStartPositions[file.fileId] = positionMs
+        } else {
+            voicePlayerManager.seekTo(positionMs)
+        }
+    }
+    
+    fun sendFiles(uris: List<Uri>) {
+        viewModelScope.launch { sendMessageWithFilesUseCase(_uiState.value.chatId, uris, null) }
+    }
+    
+    fun cancelUpload(tempMessageId: Long) {
+        viewModelScope.launch {
+            val tempMessage = _uiState.value.chatItems.filterIsInstance<ChatItem.MessageItem>()
+                .find { it.message.id == tempMessageId }?.message
+            tempMessage?.attachments?.forEach { uploadManager.cancel(it.fileId) }
+            chatRepository.deleteLocalMessage(tempMessageId)
+        }
+    }
+    
+    fun saveToGallery(uri: Uri) {
+        viewModelScope.launch {
+            if (fileHandler.saveToGallery(uri.path ?: uri.toString())) {
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.successfully_saved_to_gallery)))
+            } else {
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_to_gallery)))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
+    }
+    
+    fun saveAttachmentsToDownloads(message: Message) {
+        viewModelScope.launch {
+            val downloaded =
+                message.attachments.filter { it.localUri != null && (it.status == DownloadStatus.COMPLETED || it.status == DownloadStatus.UPLOADED) }
+            if (downloaded.isEmpty()) return@launch
+            
+            var successCount = 0
+            downloaded.forEach {
+                if (fileHandler.saveToDownloads(
+                        it.localUri?.path ?: it.localUri.toString(),
+                        it.name
+                    )
+                ) successCount++
+            }
+            
+            val res =
+                if (successCount > 0) R.string.saved_to_downloads else R.string.failed_to_save_to_downloads
+            _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(res)))
+            if (successCount == 0) vibrationManager.vibrate(VibrationPattern.Error)
+        }
+    }
+    // endregion
+    
+    // region Utilities
+    fun copyToClipboard(text: String?) = text?.let { clipboardService.copy(it) }
+    fun vibrate() = vibrationManager.vibrate(VibrationPattern.Error)
+    fun selectMessage(message: Message) =
+        _uiState.update { it.copy(selectedMessages = it.selectedMessages + message) }
+    
+    fun clearMediaUrl() = _uiState.update { it.copy(showFullScreenViewer = false) }
+    fun setVideoLooping(isLooping: Boolean) =
+        viewModelScope.launch { dataStoreManager.saveVideoLooping(isLooping) }
+    
+    fun setVideoPlaybackSpeed(speed: Float) =
+        viewModelScope.launch { dataStoreManager.saveVideoPlaybackSpeed(speed) }
+    
+    fun dismissBannedDialog() = _uiState.update { it.copy(showBannedDialog = false) }
+    fun onMicrophonePermissionDenied() =
+        _uiState.update { it.copy(showMicrophonePermissionSheet = true) }
+    
+    fun dismissMicrophonePermissionSheet() =
+        _uiState.update { it.copy(showMicrophonePermissionSheet = false) }
+    
+    fun dismissInviteBottomSheet() = _uiState.update {
+        it.copy(
+            showInviteBottomSheet = false,
+            inviteLinkInfo = null,
+            inviteLinkCode = null,
+            isProcessingInvite = false
+        )
+    }
+    // endregion
+    
+    // region Invite Links
+    fun onLinkClicked(url: String) {
+        val match = RegexPatterns.INVITE_LINK.find(url)
+        if (match == null) {
+            val normalized = if (url.startsWith("http")) url else "https://$url"
+            viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenUrl(normalized)) }
             return
         }
         
         val code = match.groupValues[2]
-        
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessingInvite = true) }
-            
             inviteLinkRepository.getInviteLinkInfo(code).onSuccess { linkInfo ->
-                if (_uiState.value.chatId == linkInfo.chatId) {
-                    _uiState.update { it.copy(isProcessingInvite = false) }
-                    _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.you_are_already_in_this_chat)))
-                    vibrationManager.vibrate(VibrationPattern.Error)
-                } else if (linkInfo.isJoined != null) {
-                    _uiState.update { it.copy(isProcessingInvite = false) }
-                    _uiEffect.emit(ChatUiEffect.NavigateToChat(linkInfo.chatId))
-                } else if (linkInfo.isBanned != null) {
-                    _uiState.update {
-                        it.copy(
-                            showBannedDialog = true,
-                            isProcessingInvite = false
-                        )
+                _uiState.update { it.copy(isProcessingInvite = false) }
+                when {
+                    _uiState.value.chatId == linkInfo.chatId -> {
+                        _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.you_are_already_in_this_chat)))
+                        vibrationManager.vibrate(VibrationPattern.Error)
                     }
-                    vibrationManager.vibrate(VibrationPattern.Error)
-                } else {
-                    _uiState.update {
-                        it.copy(
+                    
+                    linkInfo.isJoined != null -> _uiEffect.emit(ChatUiEffect.NavigateToChat(linkInfo.chatId))
+                    linkInfo.isBanned != null -> {
+                        _uiState.update { s -> s.copy(showBannedDialog = true) }
+                        vibrationManager.vibrate(VibrationPattern.Error)
+                    }
+                    
+                    else -> _uiState.update { s ->
+                        s.copy(
                             inviteLinkInfo = linkInfo,
                             inviteLinkCode = code,
-                            showInviteBottomSheet = true,
-                            isProcessingInvite = false
+                            showInviteBottomSheet = true
                         )
                     }
                 }
@@ -1055,8 +865,7 @@ class ChatViewModel @Inject constructor(
     
     fun onUsernameClicked(username: String) {
         viewModelScope.launch {
-            val cleanUsername = username.removePrefix("@")
-            searchRepository.resolveUsername(cleanUsername).onSuccess { result ->
+            searchRepository.resolveUsername(username.removePrefix("@")).onSuccess { result ->
                 if (result == null) {
                     _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.chat_not_found)))
                     vibrationManager.vibrate(VibrationPattern.Error)
@@ -1066,117 +875,28 @@ class ChatViewModel @Inject constructor(
                 } else {
                     _uiEffect.emit(ChatUiEffect.NavigateToChat(result.chatId))
                 }
-            }.onFailure {
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.error_searching_for_chat)))
-                vibrationManager.vibrate(VibrationPattern.Error)
             }
         }
-    }
-    
-    fun dismissBannedDialog() {
-        _uiState.update { it.copy(showBannedDialog = false) }
     }
     
     fun onSubscribeViaInviteLink() {
         val info = _uiState.value.inviteLinkInfo ?: return
         val code = _uiState.value.inviteLinkCode ?: return
-        
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessingInvite = true) }
-            
-            val result = joinViaInviteLinkUseCase(code, info.chatId)
-            if (result.isSuccess) {
-                _uiState.update {
-                    it.copy(
-                        isProcessingInvite = false,
-                        showInviteBottomSheet = false,
-                        inviteLinkInfo = null,
-                        inviteLinkCode = null
-                    )
-                }
+            joinViaInviteLinkUseCase(code, info.chatId).onSuccess {
+                dismissInviteBottomSheet()
                 _uiEffect.emit(ChatUiEffect.NavigateToChat(info.chatId))
-            } else {
+            }.onFailure {
                 _uiState.update { it.copy(isProcessingInvite = false) }
                 _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_join)))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }
     }
+    // endregion
     
-    fun dismissInviteBottomSheet() {
-        _uiState.update {
-            it.copy(
-                showInviteBottomSheet = false,
-                inviteLinkInfo = null,
-                inviteLinkCode = null,
-                isProcessingInvite = false
-            )
-        }
-    }
-    
-    fun onMicrophonePermissionDenied() {
-        _uiState.update { it.copy(showMicrophonePermissionSheet = true) }
-    }
-    
-    fun dismissMicrophonePermissionSheet() {
-        _uiState.update { it.copy(showMicrophonePermissionSheet = false) }
-    }
-    
-    fun clearMediaUrl() {
-        _uiState.update { it.copy(showFullScreenViewer = false) }
-    }
-    
-    fun setVideoLooping(isLooping: Boolean) {
-        viewModelScope.launch {
-            dataStoreManager.saveVideoLooping(isLooping)
-        }
-    }
-    
-    fun setVideoPlaybackSpeed(speed: Float) {
-        viewModelScope.launch {
-            dataStoreManager.saveVideoPlaybackSpeed(speed)
-        }
-    }
-    
-    fun saveToGallery(uri: Uri) {
-        viewModelScope.launch {
-            val path = uri.path ?: uri.toString()
-            val success = fileHandler.saveToGallery(path)
-            if (success) {
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.successfully_saved_to_gallery)))
-            } else {
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_to_gallery)))
-                vibrationManager.vibrate(VibrationPattern.Error)
-            }
-        }
-    }
-    
-    fun saveAttachmentsToDownloads(message: Message) {
-        viewModelScope.launch {
-            val downloadedAttachments = message.attachments.filter { attachment ->
-                attachment.localUri != null &&
-                        (attachment.status == DownloadStatus.COMPLETED || attachment.status == DownloadStatus.UPLOADED)
-            }
-            
-            if (downloadedAttachments.isEmpty()) return@launch
-            
-            var successCount = 0
-            downloadedAttachments.forEach { attachment ->
-                val path = attachment.localUri?.path ?: attachment.localUri.toString()
-                if (fileHandler.saveToDownloads(path, attachment.name)) {
-                    successCount++
-                }
-            }
-            
-            if (successCount > 0) {
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.saved_to_downloads)))
-            } else {
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_to_downloads)))
-                vibrationManager.vibrate(VibrationPattern.Error)
-            }
-        }
-    }
-    
+    // region Voice Recording
     fun startRecording() {
         if (_uiState.value.isRecording) return
         val file = audioRecorderManager.startRecording()
@@ -1194,8 +914,8 @@ class ChatViewModel @Inject constructor(
                 val startTime = System.currentTimeMillis()
                 while (true) {
                     delay(100.milliseconds)
-                    val maxAmplitude = audioRecorderManager.getMaxAmplitude()
-                    val amplitude = (maxAmplitude / 32767f).coerceIn(0f, 1f)
+                    val amplitude =
+                        (audioRecorderManager.getMaxAmplitude() / 32767f).coerceIn(0f, 1f)
                     _uiState.update {
                         it.copy(
                             recordingDurationMs = System.currentTimeMillis() - startTime,
@@ -1206,9 +926,7 @@ class ChatViewModel @Inject constructor(
             }
             vibrationManager.vibrate(VibrationPattern.TactileResponse)
         } else {
-            viewModelScope.launch {
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Не удалось начать запись аудио")))
-            }
+            viewModelScope.launch { _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Не удалось начать запись аудио"))) }
         }
     }
     
@@ -1230,9 +948,7 @@ class ChatViewModel @Inject constructor(
                 recordingDurationMs = 0L
             )
         }
-        if (file != null) {
-            sendFiles(listOf(Uri.fromFile(file)))
-        }
+        if (file != null) sendFiles(listOf(Uri.fromFile(file)))
     }
     
     fun cancelRecording() {
@@ -1248,4 +964,5 @@ class ChatViewModel @Inject constructor(
         }
         vibrationManager.vibrate(VibrationPattern.TactileResponse)
     }
+    // endregion
 }

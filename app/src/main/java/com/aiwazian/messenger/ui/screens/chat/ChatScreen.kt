@@ -4,100 +4,48 @@
 
 package com.aiwazian.messenger.ui.screens.chat
 
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.provider.Settings
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.browser.customtabs.CustomTabsIntent
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.AttachFile
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.LockOpen
-import androidx.compose.material.icons.rounded.Mic
-import androidx.compose.material.icons.rounded.Photo
-import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -112,58 +60,33 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLocale
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
-import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.FileAction
-import com.aiwazian.messenger.extensions.sharedElement
-import com.aiwazian.messenger.ui.components.AnimatedDotsText
-import com.aiwazian.messenger.ui.components.ChatAvatar
-import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
-import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.ui.screens.chat.components.ChatDialogs
+import com.aiwazian.messenger.ui.screens.chat.components.ChatInputSection
+import com.aiwazian.messenger.ui.screens.chat.components.ChatTopBar
 import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
+import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
+import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.utils.ActiveChatTracker
-import com.aiwazian.messenger.utils.DialogController
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import java.util.Locale
-import kotlin.math.abs
 
 @Composable
 fun ChatScreen(
@@ -290,11 +213,16 @@ fun ChatScreen(
                 }
                 
                 is ChatUiEffect.OpenUrl -> {
-                    CustomTabsIntent.Builder()
-                        .setShowTitle(true)
-                        .setTranslateLocale(Locale.getDefault())
-                        .build()
-                        .launchUrl(context, effect.url.toUri())
+                    try {
+                        val intent =
+                            android.content.Intent(
+                                android.content.Intent.ACTION_VIEW,
+                                effect.url.toUri()
+                            )
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        // Fallback or error handling
+                    }
                 }
             }
         }
@@ -305,7 +233,7 @@ fun ChatScreen(
             CustomSnackbar(snackbarHostState)
         }
     }, topBar = {
-        TopBar(
+        ChatTopBar(
             title = uiState.chatName.asString(),
             avatarUri = uiState.avatarUri,
             subTitle = uiState.subTitle.asString(),
@@ -315,7 +243,7 @@ fun ChatScreen(
             onBackClick = onBackClick
         )
     }, bottomBar = {
-        BottomSection(
+        ChatInputSection(
             uiState = uiState, chatViewModel = chatViewModel
         )
     }, floatingActionButton = {
@@ -486,13 +414,13 @@ fun ChatScreen(
             )
         }
         
-        Dialogs(uiState = uiState, chatViewModel = chatViewModel)
+        ChatDialogs(uiState = uiState, chatViewModel = chatViewModel)
         
         if (fileToCancelId != null) {
             CustomDialog(
-                title = "Отменить отправку",
+                title = stringResource(R.string.cancel_sending),
                 onDismissRequest = { fileToCancelId = null },
-                content = { Text("Вы уверены, что хотите отменить отправку файла?") },
+                content = { Text(stringResource(R.string.cancel_upload_confirm)) },
                 buttons = {
                     TextButton(onClick = {
                         fileToCancelId = null
@@ -515,12 +443,12 @@ fun ChatScreen(
         
         if (showCancelRecordingDialog) {
             CustomDialog(
-                title = "Отмена голосового сообщения",
+                title = stringResource(R.string.cancel_voice_recording),
                 onDismissRequest = { showCancelRecordingDialog = false },
-                content = { Text("Вы точно хотите прекратить запись и сбросить записанное сообщение?") },
+                content = { Text(stringResource(R.string.cancel_voice_recording_confirm)) },
                 buttons = {
                     TextButton(onClick = { showCancelRecordingDialog = false }) {
-                        Text("Продолжить")
+                        Text(stringResource(R.string.continue_recording))
                     }
                     TextButton(
                         onClick = {
@@ -529,7 +457,7 @@ fun ChatScreen(
                         },
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                     ) {
-                        Text("Сбросить")
+                        Text(stringResource(R.string.reset))
                     }
                 })
         }
@@ -555,7 +483,7 @@ fun ChatScreen(
         
         if (uiState.showBannedDialog) {
             CustomDialog(
-                title = "Нет доступа",
+                title = stringResource(R.string.no_access),
                 onDismissRequest = chatViewModel::dismissBannedDialog,
                 buttons = {
                     TextButton(onClick = chatViewModel::dismissBannedDialog) {
@@ -563,7 +491,7 @@ fun ChatScreen(
                     }
                 },
                 content = {
-                    Text("Вас заблокировал администратор этого чата")
+                    Text(stringResource(R.string.banned_message))
                 })
         }
     }
@@ -591,1102 +519,6 @@ fun ChatScreen(
             contentAlignment = Alignment.BottomCenter,
         ) {
             CustomSnackbar(snackbarHostState)
-        }
-    }
-}
-
-@Composable
-private fun BottomSection(
-    uiState: ChatUiState, chatViewModel: ChatViewModel
-) {
-    Box(
-        modifier = Modifier
-            .navigationBarsPadding()
-            .imePadding()
-            .padding(8.dp)
-    ) {
-        when (ChatType.fromId(uiState.chatId)) {
-            ChatType.CHANNEL -> {
-                if (uiState.isOwner) {
-                    InputMessage(
-                        uiState = uiState, chatViewModel = chatViewModel
-                    )
-                } else if (!uiState.isJoined) {
-                    JoinButton(onClick = chatViewModel::onJoinClicked)
-                }
-            }
-            
-            ChatType.GROUP -> {
-                if (uiState.isOwner) {
-                    InputMessage(
-                        uiState = uiState, chatViewModel = chatViewModel
-                    )
-                } else if (uiState.isJoined) {
-                    InputMessage(
-                        uiState = uiState, chatViewModel = chatViewModel
-                    )
-                } else {
-                    JoinButton(onClick = chatViewModel::onJoinClicked)
-                }
-            }
-            
-            ChatType.PRIVATE -> {
-                InputMessage(
-                    uiState = uiState, chatViewModel = chatViewModel
-                )
-            }
-            
-            else -> {}
-        }
-    }
-}
-
-@Composable
-private fun JoinButton(onClick: () -> Unit) {
-    TextButton(
-        shape = RectangleShape, modifier = Modifier.fillMaxWidth(), onClick = onClick
-    ) {
-        Text(
-            text = stringResource(R.string.join).uppercase(),
-            modifier = Modifier.padding(vertical = 8.dp),
-            fontSize = 18.sp,
-            color = MaterialTheme.colorScheme.primary
-        )
-    }
-}
-
-@Composable
-private fun Dialogs(
-    uiState: ChatUiState, chatViewModel: ChatViewModel
-) {
-    if (uiState.showDeleteChatDialog) {
-        val isPrivateChat =
-            ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.chatId != uiState.myId
-        DeleteChatDialog(
-            onDismissRequest = chatViewModel::hideDeleteChatDialog,
-            onConfirm = chatViewModel::onDeleteChatConfirmed,
-            vibrate = chatViewModel::vibrate,
-            deleteForRecipient = uiState.deleteForRecipient,
-            onDeleteForRecipientChanged = chatViewModel::setDeleteForRecipient,
-            isPrivateChat = isPrivateChat
-        )
-    }
-    
-    if (uiState.showClearHistoryDialog) {
-        val isPrivateChat =
-            ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.chatId != uiState.myId
-        ClearHistoryDialog(
-            onDismissRequest = chatViewModel::hideClearHistoryDialog,
-            onConfirm = chatViewModel::onDeleteMessagesConfirmed,
-            vibrate = chatViewModel::vibrate,
-            clearForRecipient = uiState.deleteForRecipient,
-            onClearForRecipientChanged = chatViewModel::setDeleteForRecipient,
-            isPrivateChat = isPrivateChat
-        )
-    }
-    
-    if (uiState.showDeleteMessageDialog) {
-        val isPrivateChat =
-            ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.chatId != uiState.myId
-        DeleteMessageDialog(
-            onDismissRequest = chatViewModel::hideDeleteMessageDialog,
-            onConfirm = chatViewModel::onDeleteMessageConfirmed,
-            deleteForRecipient = uiState.deleteForRecipient,
-            onDeleteForRecipientChanged = chatViewModel::setDeleteForRecipient,
-            isPrivateChat = isPrivateChat
-        )
-    }
-    
-    if (uiState.showLeaveDialog) {
-        val chatType = ChatType.fromId(uiState.chatId)
-        LeaveDialog(
-            onDismiss = chatViewModel::hideLeaveDialog,
-            onConfirm = chatViewModel::onLeaveClicked,
-            chatName = uiState.chatName.asString(),
-            chatType = chatType
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TopBar(
-    title: String,
-    avatarUri: Uri?,
-    subTitle: String,
-    topBarActions: List<TopBarAction>,
-    isConnected: Boolean,
-    chatId: Long,
-    onBackClick: () -> Unit
-) {
-    val navBackStack = LocalNavBackStack.current
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
-        targetValue = if (isPressed) 0.96f else 1f,
-        label = "card_scale_animation"
-    )
-    
-    TopAppBar(
-        title = {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .graphicsLayer(scaleX = scale, scaleY = scale)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                        .clickable(
-                            interactionSource = interactionSource, indication = null, onClick = {
-                                navBackStack.add(
-                                    AppRoute.Profile(
-                                        profileId = chatId,
-                                        profileName = title,
-                                        avatarUri = avatarUri?.toString()
-                                    )
-                                )
-                            }), horizontalArrangement = Arrangement.Center
-                ) {
-                    Row(
-                        modifier = Modifier.padding(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        ChatAvatar(id = chatId, chatName = title, avatarUri = avatarUri)
-                        
-                        Column(
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
-                            Text(
-                                text = title,
-                                maxLines = 1,
-                                fontSize = 18.sp,
-                                lineHeight = 16.sp,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.sharedElement(key = "chat-name-$chatId")
-                            )
-                            
-                            AnimatedContent(
-                                targetState = isConnected, transitionSpec = {
-                                    slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
-                                }, label = "connection_animation"
-                            ) { connected ->
-                                if (!connected) {
-                                    AnimatedDotsText(
-                                        text = stringResource(R.string.connecting),
-                                        fontSize = 12.sp,
-                                        lineHeight = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                } else if (subTitle.isNotBlank()) {
-                                    Text(
-                                        text = subTitle.lowercase(),
-                                        fontSize = 12.sp,
-                                        lineHeight = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.sharedElement(key = "chat-sub-title-$chatId")
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }, navigationIcon = {
-            IconButton(
-                onClick = onBackClick,
-                colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-            ) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowBack, null)
-            }
-        }, actions = {
-            topBarActions.forEach { action ->
-                var expand by remember { mutableStateOf(false) }
-                IconButton(
-                    onClick = {
-                        expand = true
-                    },
-                    colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-                ) {
-                    Icon(action.icon, null)
-                }
-                CustomDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
-                    action.dropdownActions.forEach { action ->
-                        DropdownMenuItem(leadingIcon = {
-                            Icon(action.icon, null)
-                        }, text = {
-                            Text(action.text.asString())
-                        }, onClick = {
-                            action.onClick()
-                        })
-                    }
-                }
-            }
-        }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-    )
-}
-
-@Composable
-private fun DeleteChatDialog(
-    onDismissRequest: () -> Unit,
-    onConfirm: () -> Unit,
-    vibrate: () -> Unit,
-    deleteForRecipient: Boolean,
-    onDeleteForRecipientChanged: (Boolean) -> Unit,
-    isPrivateChat: Boolean
-) {
-    CustomDialog(
-        title = stringResource(R.string.delete_chat),
-        onDismissRequest = onDismissRequest,
-        content = {
-            Column {
-                Text(text = "Удалить чат без возможности восстановления?", lineHeight = 16.sp)
-                if (isPrivateChat) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.medium)
-                            .clickable { onDeleteForRecipientChanged(!deleteForRecipient) }
-                            .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Checkbox(
-                            checked = deleteForRecipient,
-                            onCheckedChange = null,
-                            interactionSource = remember { MutableInteractionSource() })
-                        Text(
-                            text = stringResource(R.string.delete_for_recipient),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
-        },
-        buttons = {
-            TextButton(onClick = onDismissRequest) {
-                Text(stringResource(R.string.cancel))
-            }
-            CountdownTextButton(
-                text = stringResource(R.string.delete),
-                seconds = 5,
-                onClickAfterFinish = onConfirm,
-                onClickWhileRunning = vibrate,
-                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            )
-        })
-}
-
-@Composable
-private fun ClearHistoryDialog(
-    onDismissRequest: () -> Unit,
-    onConfirm: () -> Unit,
-    vibrate: () -> Unit,
-    clearForRecipient: Boolean,
-    onClearForRecipientChanged: (Boolean) -> Unit,
-    isPrivateChat: Boolean
-) {
-    CustomDialog(
-        title = stringResource(R.string.clear_history),
-        onDismissRequest = onDismissRequest,
-        content = {
-            Column {
-                Text(
-                    text = "Удалить все сообщения в чате, без возможности восстановления?",
-                    lineHeight = 16.sp
-                )
-                if (isPrivateChat) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.medium)
-                            .clickable { onClearForRecipientChanged(!clearForRecipient) }
-                            .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Checkbox(
-                            checked = clearForRecipient,
-                            onCheckedChange = null,
-                            interactionSource = remember { MutableInteractionSource() })
-                        Text(
-                            text = stringResource(R.string.delete_for_recipient),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
-        },
-        buttons = {
-            TextButton(onClick = onDismissRequest) {
-                Text(stringResource(R.string.cancel))
-            }
-            CountdownTextButton(
-                text = stringResource(R.string.delete),
-                seconds = 5,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                ),
-                onClickAfterFinish = onConfirm,
-                onClickWhileRunning = vibrate
-            )
-        })
-}
-
-@Composable
-private fun DeleteMessageDialog(
-    onDismissRequest: () -> Unit,
-    onConfirm: () -> Unit,
-    deleteForRecipient: Boolean,
-    onDeleteForRecipientChanged: (Boolean) -> Unit,
-    isPrivateChat: Boolean
-) {
-    CustomDialog(
-        title = stringResource(R.string.delete_message),
-        onDismissRequest = onDismissRequest,
-        content = {
-            Column {
-                Text(
-                    text = stringResource(R.string.delete_message_description), lineHeight = 16.sp
-                )
-                if (isPrivateChat) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.medium)
-                            .clickable { onDeleteForRecipientChanged(!deleteForRecipient) }
-                            .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Checkbox(
-                            checked = deleteForRecipient,
-                            onCheckedChange = null,
-                            interactionSource = remember { MutableInteractionSource() })
-                        Text(
-                            text = stringResource(R.string.delete_for_recipient),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
-        },
-        buttons = {
-            TextButton(onClick = onDismissRequest) { Text(stringResource(R.string.cancel)) }
-            TextButton(
-                onClick = onConfirm,
-                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            ) {
-                Text(stringResource(R.string.delete))
-            }
-        })
-}
-
-@Composable
-private fun LeaveDialog(
-    onDismiss: () -> Unit, onConfirm: () -> Unit, chatName: String, chatType: ChatType
-) {
-    val title = when (chatType) {
-        ChatType.CHANNEL -> stringResource(R.string.leave_channel)
-        ChatType.GROUP -> stringResource(R.string.leave_group)
-        else -> stringResource(R.string.leave)
-    }
-    
-    val message = buildAnnotatedString {
-        append(stringResource(R.string.leave_channel_confirm_message))
-        withStyle(style = SpanStyle(fontWeight = FontWeight.W500)) { append(" $chatName") }
-        append("?")
-    }
-    
-    CustomDialog(title = title, onDismissRequest = onDismiss, content = {
-        Text(text = message)
-    }, buttons = {
-        TextButton(onClick = onDismiss) {
-            Text(stringResource(R.string.cancel))
-        }
-        TextButton(
-            onClick = onConfirm,
-            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-        ) {
-            Text(title)
-        }
-    })
-}
-
-@Composable
-private fun InputMessage(
-    uiState: ChatUiState, chatViewModel: ChatViewModel
-) {
-    var attachmentModal by remember { mutableStateOf(DialogController()) }
-    var micTranslationX by remember { mutableFloatStateOf(0f) }
-    var micTranslationY by remember { mutableFloatStateOf(0f) }
-    
-    val infiniteTransition = rememberInfiniteTransition(label = "recording_dot_transition")
-    val dotAlpha by infiniteTransition.animateFloat(
-        initialValue = 0f, targetValue = 1f, animationSpec = infiniteRepeatable(
-            animation = tween(800), repeatMode = RepeatMode.Reverse
-        ), label = "recording_dot_alpha"
-    )
-    
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments(), onResult = { uris: List<Uri> ->
-            if (uris.isNotEmpty()) {
-                attachmentModal.hide()
-                chatViewModel.sendFiles(uris)
-            }
-        })
-    
-    val context = LocalContext.current
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            chatViewModel.startRecording()
-        } else {
-            chatViewModel.onMicrophonePermissionDenied()
-        }
-    }
-    
-    val animatedAmplitude by animateFloatAsState(
-        targetValue = uiState.recordingAmplitude,
-        animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f),
-        label = "amplitude_animation"
-    )
-    
-    val swipeScale = 1f - (abs(micTranslationX) / 250f).coerceIn(0f, 1f) * 0.5f
-    
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() }, indication = null
-            ) {}
-            .background(
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                shape = RoundedCornerShape(24.dp)
-            )) {
-        AnimatedVisibility(
-            visible = uiState.editingMessageId != null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = stringResource(R.string.edit_message),
-                    color = MaterialTheme.colorScheme.primary
-                )
-                IconButton(onClick = chatViewModel::cancelEditing) {
-                    Icon(
-                        imageVector = Icons.Rounded.Close,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-        Row(verticalAlignment = Alignment.Bottom) {
-            Column(modifier = Modifier.weight(1f)) {
-                Box(modifier = Modifier.heightIn(min = 48.dp)) {
-                    val textFieldAlpha by animateFloatAsState(
-                        targetValue = if (uiState.isRecording) 0f else 1f,
-                        animationSpec = tween(200)
-                    )
-                    
-                    BasicTextField(
-                        value = uiState.messageText,
-                        onValueChange = chatViewModel::changeText,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .alpha(textFieldAlpha),
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
-                        maxLines = 5,
-                        minLines = 1,
-                        decorationBox = { innerTextField ->
-                            Box(modifier = Modifier.padding(vertical = 12.dp, horizontal = 14.dp)) {
-                                if (uiState.messageText.isEmpty() && !uiState.isRecording) {
-                                    Text(
-                                        text = stringResource(R.string.message),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                innerTextField()
-                            }
-                        },
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Sentences
-                        )
-                    )
-                    
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = uiState.isRecording,
-                        enter = fadeIn(),
-                        exit = fadeOut(),
-                        modifier = Modifier.matchParentSize()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .heightIn(min = 48.dp)
-                                .padding(horizontal = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val durationText = String.format(
-                                LocalLocale.current.platformLocale,
-                                "%02d:%02d",
-                                uiState.recordingDurationMs / 1000 / 60,
-                                uiState.recordingDurationMs / 1000 % 60
-                            )
-                            
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(12.dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.error.copy(alpha = dotAlpha))
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text(durationText, style = MaterialTheme.typography.bodyLarge)
-                            }
-                            
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                AnimatedContent(
-                                    targetState = uiState.isRecordingLocked,
-                                    transitionSpec = {
-                                        slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
-                                    },
-                                    label = "recording_hint_animation",
-                                    contentAlignment = Alignment.Center
-                                ) { isLocked ->
-                                    if (isLocked) {
-                                        TextButton(onClick = chatViewModel::cancelRecording) {
-                                            Text(stringResource(R.string.cancel).uppercase())
-                                        }
-                                    } else {
-                                        val infiniteTransition =
-                                            rememberInfiniteTransition(label = "shake")
-                                        
-                                        val offsetX by infiniteTransition.animateFloat(
-                                            initialValue = -4f,
-                                            targetValue = 4f,
-                                            animationSpec = infiniteRepeatable(
-                                                animation = tween(
-                                                    durationMillis = 1000, easing = LinearEasing
-                                                ), repeatMode = RepeatMode.Reverse
-                                            ),
-                                            label = "offsetX"
-                                        )
-                                        
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier
-                                                .graphicsLayer {
-                                                    translationX = micTranslationX * 0.5f
-                                                    alpha =
-                                                        (1f - (abs(micTranslationX) / 250f)).coerceIn(
-                                                            0.2f, 1f
-                                                        )
-                                                }
-                                                .offset {
-                                                    IntOffset(x = offsetX.dp.roundToPx(), y = 0)
-                                                }
-                                                .padding(horizontal = 2.dp)) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.ArrowBackIosNew,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.size(12.dp)
-                                            )
-                                            Spacer(Modifier.width(4.dp))
-                                            Text(
-                                                text = "Влево – отмена",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-            AnimatedVisibility(
-                visible = !uiState.isRecording && uiState.editingMessageId == null,
-                enter = fadeIn() + scaleIn(),
-                exit = fadeOut() + scaleOut()
-            ) {
-                IconButton(onClick = attachmentModal::show) {
-                    Icon(
-                        imageVector = Icons.Rounded.AttachFile,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.rotate(225f)
-                    )
-                }
-            }
-            
-            if (uiState.messageText.trim().isEmpty() || uiState.isRecording) {
-                Box(
-                    modifier = Modifier
-                        .zIndex(if (uiState.isRecording) 10f else 0f)
-                        .pointerInput(uiState.isRecordingLocked) {
-                            if (uiState.isRecordingLocked) {
-                                detectTapGestures(
-                                    onTap = {
-                                        chatViewModel.stopRecordingAndSend()
-                                    })
-                            } else {
-                                awaitPointerEventScope {
-                                    while (true) {
-                                        val downEvent = awaitFirstDown()
-                                        downEvent.consume()
-                                        
-                                        if (ContextCompat.checkSelfPermission(
-                                                context, android.Manifest.permission.RECORD_AUDIO
-                                            ) == PackageManager.PERMISSION_GRANTED
-                                        ) {
-                                            val releasedBeforeLongPress = withTimeoutOrNull(100L) {
-                                                do {
-                                                    val event = awaitPointerEvent()
-                                                    event.changes.forEach { it.consume() }
-                                                } while (event.changes.any { it.pressed })
-                                                true
-                                            } ?: false
-                                            
-                                            if (releasedBeforeLongPress) {
-                                                micTranslationX = 0f
-                                                micTranslationY = 0f
-                                                continue
-                                            }
-                                            
-                                            chatViewModel.startRecording()
-                                        } else {
-                                            permissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
-                                            do {
-                                                val event = awaitPointerEvent()
-                                                event.changes.forEach { it.consume() }
-                                            } while (event.changes.any { it.pressed })
-                                            continue
-                                        }
-                                        
-                                        var isCanceled = false
-                                        var isLocked = false
-                                        micTranslationX = 0f
-                                        micTranslationY = 0f
-                                        val startX = downEvent.position.x
-                                        val startY = downEvent.position.y
-                                        
-                                        var lockedAxis: String? = null
-                                        
-                                        do {
-                                            val event = awaitPointerEvent()
-                                            event.changes.forEach { it.consume() }
-                                            val position = event.changes.first().position
-                                            val currentX = position.x
-                                            val currentY = position.y
-                                            val deltaX = currentX - startX
-                                            val deltaY = currentY - startY
-                                            
-                                            if (lockedAxis == null) {
-                                                if (deltaX < -20f && abs(deltaX) > abs(deltaY)) {
-                                                    lockedAxis = "X"
-                                                } else if (deltaY < -20f && abs(deltaY) > abs(deltaX)) {
-                                                    lockedAxis = "Y"
-                                                }
-                                            } else if (abs(deltaX) < 20f && abs(deltaY) < 20f) {
-                                                lockedAxis = null
-                                            }
-                                            
-                                            if (deltaY < -250f && !isLocked && !isCanceled) {
-                                                chatViewModel.lockRecording()
-                                                isLocked = true
-                                                micTranslationX = 0f
-                                                micTranslationY = 0f
-                                            } else if (deltaX < -250f && !isCanceled && !isLocked) {
-                                                chatViewModel.cancelRecording()
-                                                isCanceled = true
-                                                micTranslationX = 0f
-                                                micTranslationY = 0f
-                                            } else if (!isCanceled && !isLocked) {
-                                                micTranslationX =
-                                                    if (lockedAxis == "X" || lockedAxis == null) deltaX.coerceAtMost(
-                                                        0f
-                                                    ) else 0f
-                                                micTranslationY =
-                                                    if (lockedAxis == "Y" || lockedAxis == null) deltaY.coerceAtMost(
-                                                        0f
-                                                    ) else 0f
-                                            }
-                                        } while (event.changes.any { it.pressed })
-                                        
-                                        if (!isCanceled && !isLocked) {
-                                            chatViewModel.stopRecordingAndSend()
-                                        }
-                                        micTranslationX = 0f
-                                        micTranslationY = 0f
-                                    }
-                                }
-                            }
-                        }, contentAlignment = Alignment.Center
-                ) {
-                    val micIconPosition by animateFloatAsState(
-                        targetValue = -70f + if (!uiState.isRecordingLocked) {
-                            micTranslationY * 0.3f
-                        } else {
-                            0f
-                        }
-                    )
-                    
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = uiState.isRecording,
-                        enter = fadeIn() + scaleIn() + slideInVertically { it / 2 },
-                        exit = fadeOut() + scaleOut() + slideOutVertically { it / 2 },
-                        modifier = Modifier.offset {
-                            IntOffset(x = 0, y = micIconPosition.dp.roundToPx())
-                        }) {
-                        val isNearLock = uiState.isRecordingLocked || micTranslationY < -150f
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceContainer)
-                                .padding(8.dp)
-                        ) {
-                            AnimatedContent(
-                                targetState = isNearLock,
-                                transitionSpec = { fadeIn() togetherWith fadeOut() }) { isNearLock ->
-                                Icon(
-                                    imageVector = if (isNearLock) Icons.Rounded.Lock else Icons.Rounded.LockOpen,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                    }
-                    
-                    Box(
-                        modifier = Modifier.graphicsLayer {
-                            translationX = micTranslationX
-                            scaleX = swipeScale
-                            scaleY = swipeScale
-                        }) {
-                        if (uiState.isRecording) {
-                            val maxBackgroundScale = 2.2f
-                            val currentScale =
-                                1f + ((animatedAmplitude * 2.5f).coerceAtMost(1f) * (maxBackgroundScale - 1f))
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .size(48.dp)
-                                    .graphicsLayer {
-                                        scaleX = currentScale
-                                        scaleY = currentScale
-                                    }
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)))
-                        }
-                        
-                        val micBackColor by animateColorAsState(
-                            targetValue = if (uiState.isRecording) MaterialTheme.colorScheme.primary else Color.Transparent,
-                            animationSpec = tween(
-                                durationMillis = 200, easing = FastOutSlowInEasing
-                            )
-                        )
-                        
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .size(48.dp)
-                                .padding(2.dp)
-                                .clip(CircleShape)
-                                .background(micBackColor), contentAlignment = Alignment.Center
-                        ) {
-                            AnimatedContent(
-                                targetState = uiState.isRecordingLocked,
-                                transitionSpec = { scaleIn() togetherWith scaleOut() }) { isLocked ->
-                                Icon(
-                                    imageVector = if (isLocked) Icons.AutoMirrored.Rounded.Send else Icons.Rounded.Mic,
-                                    contentDescription = null,
-                                    tint = if (uiState.isRecording) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
-                }
-            } else {
-                IconButton(onClick = chatViewModel::onSendMessageClicked) {
-                    AnimatedContent(
-                        targetState = uiState.editingMessageId != null,
-                        transitionSpec = { fadeIn() + scaleIn() togetherWith fadeOut() + scaleOut() }) { isEditing ->
-                        if (isEditing) {
-                            Icon(
-                                imageVector = Icons.Rounded.Done,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.Send,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    if (attachmentModal.isVisible) {
-        AttachmentBottomSheet(
-            onDismissRequest = attachmentModal::hide,
-            onFileSystemClick = { filePickerLauncher.launch(arrayOf("*/*")) },
-            onFileSelected = { uris ->
-                attachmentModal.hide()
-                chatViewModel.sendFiles(uris)
-            })
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AttachmentBottomSheet(
-    onDismissRequest: () -> Unit, onFileSystemClick: () -> Unit, onFileSelected: (List<Uri>) -> Unit
-) {
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-    
-    ModalBottomSheet(
-        sheetState = sheetState, onDismissRequest = onDismissRequest, dragHandle = null
-    ) {
-        Spacer(Modifier.height(10.dp))
-        SectionContainer {
-            Card(
-                onClick = onFileSystemClick,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RectangleShape,
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-            ) {
-                Row(
-                    modifier = Modifier.padding(10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                    ) {
-                        Icon(
-                            modifier = Modifier.padding(10.dp),
-                            imageVector = Icons.Rounded.Storage,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                    
-                    Column {
-                        Text(
-                            text = stringResource(R.string.internal_storage),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource(R.string.file_system_search),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 12.sp,
-                            lineHeight = 12.sp
-                        )
-                    }
-                }
-            }
-            
-            val d = rememberLauncherForActivityResult(
-                ActivityResultContracts.PickMultipleVisualMedia(
-                    10
-                )
-            ) { uris ->
-                if (uris.isNotEmpty()) {
-                    onFileSelected(uris)
-                }
-            }
-            Card(
-                onClick = {
-                    d.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RectangleShape,
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-            ) {
-                Row(
-                    modifier = Modifier.padding(10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
-                    ) {
-                        Icon(
-                            modifier = Modifier.padding(10.dp),
-                            imageVector = Icons.Rounded.Photo,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                    
-                    Column {
-                        Text(
-                            text = stringResource(R.string.gallery),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource(R.string.to_send_images_without_compression),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 12.sp,
-                            lineHeight = 12.sp
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MicrophonePermissionBottomSheet(
-    onDismiss: () -> Unit
-) {
-    val context = LocalContext.current
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-    
-    ModalBottomSheet(
-        onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = null
-    ) {
-        Column(
-            modifier = Modifier.padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
-            ) {
-                Icon(
-                    Icons.Rounded.Mic,
-                    null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier
-                        .padding(14.dp)
-                        .size(28.dp)
-                )
-            }
-            Text("Предоставьте доступ к микрофону, чтобы записывать голосовые сообщения")
-            TextButton(modifier = Modifier.fillMaxWidth(), onClick = {
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = Uri.fromParts("package", context.packageName, null)
-                }
-                context.startActivity(intent)
-            }, shape = MaterialTheme.shapes.medium) {
-                Text(stringResource(R.string.open_settings))
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun InviteLinkBottomSheet(
-    chatId: Long,
-    name: String,
-    description: String?,
-    count: Int,
-    isLoading: Boolean,
-    onDismiss: () -> Unit,
-    onJoin: () -> Unit
-) {
-    val chatType = ChatType.fromId(chatId)
-    
-    val countText = pluralStringResource(R.plurals.subscribers_count, count, count)
-    
-    val buttonText = if (chatType == ChatType.CHANNEL) {
-        stringResource(R.string.subscribe).uppercase()
-    } else {
-        stringResource(R.string.join).uppercase()
-    }
-    
-    ModalBottomSheet(
-        onDismissRequest = onDismiss, dragHandle = null
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = name,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            
-            if (!description.isNullOrBlank()) {
-                Text(
-                    text = description,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            
-            Text(
-                text = countText,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            TextButton(
-                onClick = onJoin,
-                enabled = !isLoading,
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                if (isLoading) {
-                    CircularWavyProgressIndicator(modifier = Modifier.padding(4.dp))
-                } else {
-                    Text(
-                        text = buttonText, fontSize = 16.sp, fontWeight = FontWeight.Bold
-                    )
-                }
-            }
         }
     }
 }

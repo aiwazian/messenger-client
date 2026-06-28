@@ -84,7 +84,7 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
-import com.aiwazian.messenger.ui.screens.chat.InviteLinkBottomSheet
+import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -619,7 +619,7 @@ private fun TopBar(
                         }, text = {
                             Text(action.text.asString())
                         }, onClick = {
-                            action.onClick()
+                            action.onClick?.invoke()
                         })
                     }
                 }

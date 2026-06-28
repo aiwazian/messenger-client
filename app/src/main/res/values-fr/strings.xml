@@ -260,4 +260,17 @@
     <string name="edit_message">Modifier le message</string>
     <string name="edited">Édité</string>
     <string name="chat">Chat</string>
+    <string name="delete_chat_confirm"><![CDATA[Supprimer le chat sans possibilité de récupération \?]]></string>
+    <string name="clear_history_confirm">Supprimer tous les messages du chat, sans possibilité de récupération \?</string>
+    <string name="swipe_to_cancel">Glissez pour annuler</string>
+    <string name="provide_mic_permission">Fournir un accès au microphone pour enregistrer des messages vocaux</string>
+    <string name="cancel_sending">Annuler l\'envoi</string>
+    <string name="cancel_upload_confirm"><![CDATA[Êtes-vous sûr de vouloir annuler le téléchargement du fichier \?]]></string>
+    <string name="cancel_voice_recording">Annuler l\'enregistrement vocal</string>
+    <string name="cancel_voice_recording_confirm"><![CDATA[Êtes-vous sûr de vouloir arrêter l\'enregistrement et supprimer le message enregistré \?]]></string>
+    <string name="continue_recording">Continuer</string>
+    <string name="reset">Réinitialiser</string>
+    <string name="no_access">Pas d\'accès</string>
+    <string name="banned_message">Vous avez été banni par l\'administrateur de ce chat</string>
+    <string name="edit_time_limit_error"><![CDATA[Impossible de modifier les messages datant de plus de 24 heures]]></string>
 </resources>

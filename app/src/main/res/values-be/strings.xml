@@ -262,4 +262,17 @@
     <string name="edit_message">Рэдагаваць паведамленне</string>
     <string name="edited">Адрэдагавана</string>
     <string name="chat">Чат</string>
+    <string name="delete_chat_confirm">Выдаліць чат без магчымасці аднаўлення\?</string>
+    <string name="clear_history_confirm">Выдаліць усе паведамленні ў чаце, без магчымасці аднаўлення\?</string>
+    <string name="swipe_to_cancel">Правядзіце пальцам, каб адмяніць</string>
+    <string name="provide_mic_permission">Дайце доступ да мікрафона для запісу галасавых паведамленняў</string>
+    <string name="cancel_sending">Адмяніць адпраўку</string>
+    <string name="cancel_upload_confirm">Вы ўпэўнены, што хочаце адмяніць загрузку файла\?</string>
+    <string name="cancel_voice_recording">Адмяніць запіс голасу</string>
+    <string name="cancel_voice_recording_confirm">Вы ўпэўнены, што хочаце спыніць запіс і адхіліць запісанае паведамленне\?</string>
+    <string name="continue_recording">Працягнуць</string>
+    <string name="reset">Скінуць</string>
+    <string name="no_access">Няма доступу</string>
+    <string name="banned_message">Вы былі забанены адміністратарам гэтага чата</string>
+    <string name="edit_time_limit_error">Нельга рэдагаваць паведамленні, старэйшыя за 24 гадзіны</string>
 </resources>

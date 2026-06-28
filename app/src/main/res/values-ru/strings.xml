@@ -262,4 +262,17 @@
     <string name="edit_message">Редактирование</string>
     <string name="edited">Изменено</string>
     <string name="chat">Чат</string>
+    <string name="delete_chat_confirm">Удалить чат без возможности восстановления?</string>
+    <string name="clear_history_confirm">Удалить все сообщения в чате, без возможности восстановления?</string>
+    <string name="swipe_to_cancel">Влево – отмена</string>
+    <string name="provide_mic_permission">Предоставьте доступ к микрофону, чтобы записывать голосовые сообщения</string>
+    <string name="cancel_sending">Отменить отправку</string>
+    <string name="cancel_upload_confirm">Вы уверены, что хотите отменить отправку файла?</string>
+    <string name="cancel_voice_recording">Отмена голосового сообщения</string>
+    <string name="cancel_voice_recording_confirm">Вы точно хотите прекратить запись и сбросить записанное сообщение?</string>
+    <string name="continue_recording">Продолжить</string>
+    <string name="reset">Сбросить</string>
+    <string name="no_access">Нет доступа</string>
+    <string name="banned_message">Вас заблокировал администратор этого чата</string>
+    <string name="edit_time_limit_error">Невозможно изменить сообщение старше 24 часов</string>
 </resources>

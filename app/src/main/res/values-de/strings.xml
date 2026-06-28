@@ -258,4 +258,17 @@
     <string name="edit_message">Nachricht bearbeiten</string>
     <string name="edited">Bearbeitet</string>
     <string name="chat">Chatten</string>
+    <string name="delete_chat_confirm">Chat ohne Wiederherstellungsmöglichkeit löschen\?</string>
+    <string name="clear_history_confirm">Alle Nachrichten im Chat löschen, ohne die Möglichkeit einer Wiederherstellung\?</string>
+    <string name="swipe_to_cancel">Zum Abbrechen wischen</string>
+    <string name="provide_mic_permission">Bieten Sie Zugriff auf das Mikrofon, um Sprachnachrichten aufzuzeichnen</string>
+    <string name="cancel_sending">Senden abbrechen</string>
+    <string name="cancel_upload_confirm">Möchten Sie den Datei-Upload wirklich abbrechen\?</string>
+    <string name="cancel_voice_recording">Sprachaufnahme abbrechen</string>
+    <string name="cancel_voice_recording_confirm">Möchten Sie die Aufnahme wirklich beenden und die aufgezeichnete Nachricht verwerfen\?</string>
+    <string name="continue_recording">Weitermachen</string>
+    <string name="reset">Zurücksetzen</string>
+    <string name="no_access">Kein Zugriff</string>
+    <string name="banned_message">Sie wurden vom Administrator dieses Chats gesperrt</string>
+    <string name="edit_time_limit_error">Nachrichten, die älter als 24 Stunden sind, können nicht bearbeitet werden</string>
 </resources>

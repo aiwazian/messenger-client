@@ -258,4 +258,17 @@
     <string name="edit_message">Խմբագրել հաղորդագրությունը</string>
     <string name="edited">Խմբագրվել է</string>
     <string name="chat">Զրուցարան</string>
+    <string name="delete_chat_confirm">Ջնջե՞լ զրույցն առանց վերականգնման հնարավորության:</string>
+    <string name="clear_history_confirm">Ջնջե՞լ զրույցի բոլոր հաղորդագրությունները՝ առանց վերականգնման հնարավորության:</string>
+    <string name="swipe_to_cancel">Չեղարկելու համար սահեցրեք</string>
+    <string name="provide_mic_permission">Տրամադրեք խոսափողի հասանելիություն ձայնային հաղորդագրությունները ձայնագրելու համար</string>
+    <string name="cancel_sending">Չեղարկել ուղարկումը</string>
+    <string name="cancel_upload_confirm">Իսկապե՞ս ուզում եք չեղարկել ֆայլի վերբեռնումը:</string>
+    <string name="cancel_voice_recording">Չեղարկել ձայնային ձայնագրությունը</string>
+    <string name="cancel_voice_recording_confirm">Իսկապե՞ս ուզում եք դադարեցնել ձայնագրումը և չեղարկել ձայնագրված հաղորդագրությունը:</string>
+    <string name="continue_recording">Շարունակեք</string>
+    <string name="reset">Վերականգնել</string>
+    <string name="no_access">Մուտք չկա</string>
+    <string name="banned_message">Դուք արգելվել եք այս զրույցի ադմինիստրատորի կողմից</string>
+    <string name="edit_time_limit_error">Հնարավոր չէ խմբագրել 24 ժամից ավելի հին հաղորդագրությունները</string>
 </resources>

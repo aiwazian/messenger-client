@@ -256,4 +256,17 @@
     <string name="edit_message">메시지 편집</string>
     <string name="edited">편집됨</string>
     <string name="chat">채팅</string>
+    <string name="delete_chat_confirm">복구 가능성 없이 채팅을 삭제하시겠습니까\?</string>
+    <string name="clear_history_confirm">복구 가능성 없이 채팅의 모든 메시지를 삭제하시겠습니까\?</string>
+    <string name="swipe_to_cancel">취소하려면 스와이프하세요.</string>
+    <string name="provide_mic_permission">음성 메시지를 녹음하려면 마이크 액세스 권한을 제공하세요.</string>
+    <string name="cancel_sending">보내기 취소</string>
+    <string name="cancel_upload_confirm">파일 업로드를 취소하시겠습니까\?</string>
+    <string name="cancel_voice_recording">음성 녹음 취소</string>
+    <string name="cancel_voice_recording_confirm">녹음을 중지하고 녹음된 메시지를 삭제하시겠습니까\?</string>
+    <string name="continue_recording">계속하다</string>
+    <string name="reset">다시 놓기</string>
+    <string name="no_access">접근 불가</string>
+    <string name="banned_message">이 채팅 관리자에 의해 귀하를 차단했습니다.</string>
+    <string name="edit_time_limit_error">24시간이 지난 메시지는 편집할 수 없습니다.</string>
 </resources>
