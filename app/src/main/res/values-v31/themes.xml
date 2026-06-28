@@ -7,7 +7,8 @@
     <style name="Theme.Messenger" parent="Theme.AppCompat.Light.NoActionBar" />
 
     <style name="Theme.MessengerSplashScreen" parent="Theme.Messenger">
-        <item name="android:windowSplashScreenBackground">#fff</item>
+        <item name="android:windowSplashScreenBackground">@color/splashScreenBackground</item>
+        <item name="android:windowSplashScreenBrandingImage">@drawable/aiwazian</item>
         <item name="postSplashScreenTheme">@style/Theme.Messenger</item>
     </style>
 </resources>
