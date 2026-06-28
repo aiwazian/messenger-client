@@ -211,7 +211,13 @@ fun ProfileScreen(
                 .verticalScroll(scrollState)
         ) {
             Box(contentAlignment = Alignment.TopCenter) {
-                ProfileImageCarousel(avatars = uiState.avatars, profileId = uiState.id)
+                if (uiState.avatars.isNotEmpty()) {
+                    ProfileImageCarousel(
+                        modifier = Modifier.padding(bottom = 10.dp),
+                        avatars = uiState.avatars,
+                        profileId = uiState.id
+                    )
+                }
                 
                 if (hasAvatar) {
                     Box(
@@ -516,7 +522,7 @@ private fun ProfileActions(
     FlexBox(
         modifier = modifier
             .fillMaxWidth()
-            .padding(10.dp),
+            .padding(start = 10.dp, end = 10.dp, bottom = 10.dp),
         config = {
             wrap(FlexWrap.NoWrap)
             direction(FlexDirection.Row)

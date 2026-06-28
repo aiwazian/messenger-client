@@ -24,6 +24,7 @@ import com.aiwazian.messenger.extensions.sharedBounds
 
 @Composable
 fun ProfileImageCarousel(
+    modifier: Modifier = Modifier,
     profileId: Long,
     avatars: List<Uri?>
 ) {
@@ -39,6 +40,7 @@ fun ProfileImageCarousel(
     HorizontalUncontainedCarousel(
         state = carouselState,
         itemWidth = itemWidth,
+        modifier = modifier,
         flingBehavior = if (containerWidth < 500.dp) {
             CarouselDefaults.singleAdvanceFlingBehavior(carouselState)
         } else {
