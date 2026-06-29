@@ -123,6 +123,7 @@ class ChatViewModel @Inject constructor(
         observeVoicePlayer()
         observeQueueUpdates()
     }
+
     
     fun init(chatId: Long, chatName: String? = null, avatarUri: Uri? = null) {
         if (isInit) return
@@ -223,7 +224,9 @@ class ChatViewModel @Inject constructor(
     }
     
     private suspend fun loadChannelInfo(chatId: Long) {
-        channelRepository.fetchById(chatId)
+        viewModelScope.launch {
+            channelRepository.fetchById(chatId)
+        }
         channelRepository.getById(chatId).collectLatest { channel ->
             _uiState.update {
                 it.copy(
@@ -247,8 +250,10 @@ class ChatViewModel @Inject constructor(
     }
     
     private suspend fun loadGroupInfo(chatId: Long) {
-        groupRepository.fetchById(chatId)
-        chatRepository.markAllAsRead(chatId)
+        viewModelScope.launch {
+            groupRepository.fetchById(chatId)
+            chatRepository.markAllAsRead(chatId)
+        }
         groupRepository.getById(chatId).collectLatest { group ->
             _uiState.update {
                 it.copy(
@@ -272,9 +277,11 @@ class ChatViewModel @Inject constructor(
     }
     
     private suspend fun loadUserInfo(chatId: Long) {
-        userRepository.fetchById(chatId)
-        if (chatId != _uiState.value.myId) {
-            chatRepository.markAllAsRead(chatId)
+        viewModelScope.launch {
+            userRepository.fetchById(chatId)
+            if (chatId != _uiState.value.myId) {
+                chatRepository.markAllAsRead(chatId)
+            }
         }
         
         if (chatId == _uiState.value.myId) {
@@ -306,7 +313,9 @@ class ChatViewModel @Inject constructor(
                         chatName = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
                         subTitle = subTitle,
                         avatarUri = user.avatars.firstOrNull()?.uri,
-                        topBarActions = createTopBarActions(false, true, ChatType.PRIVATE)
+                        topBarActions = createTopBarActions(false, true, ChatType.PRIVATE),
+                        isBlocked = user.isBlocked,
+                        isBlockedByThem = user.isBlockedByThem
                     )
                 }
             }
@@ -965,4 +974,26 @@ class ChatViewModel @Inject constructor(
         vibrationManager.vibrate(VibrationPattern.TactileResponse)
     }
     // endregion
+    
+    fun showBlockDialog() {
+        _uiState.update { it.copy(showBlockDialog = true) }
+    }
+    
+    fun dismissBlockDialog() {
+        _uiState.update { it.copy(showBlockDialog = false) }
+    }
+    
+    fun unblockUser() {
+        val userId = _uiState.value.chatId
+        viewModelScope.launch {
+            val result = userRepository.unblockUser(userId)
+            if (result.isSuccess) {
+                dismissBlockDialog()
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Пользователь разблокирован")))
+            } else {
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Ошибка")))
+                dismissBlockDialog()
+            }
+        }
+    }
 }

@@ -14,6 +14,8 @@ sealed interface Profile {
         val dateOfBirth: Long? = null,
         val lastSeen: Long? = null,
         val profileChannelId: Long? = null,
+        val isBlocked: Boolean = false,
+        val isBlockedByThem: Boolean = false
     ) : Profile
     
     data class Channel(

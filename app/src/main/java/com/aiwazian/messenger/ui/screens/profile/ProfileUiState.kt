@@ -33,4 +33,6 @@ data class ProfileUiState(
     val isProcessingInvite: Boolean = false,
     val showBannedDialog: Boolean = false,
     val profileChannelInfo: ProfileChannelInfo? = null,
+    val showBlockDialog: Boolean = false,
+    val isBlockedStateForDialog: Boolean = false
 )

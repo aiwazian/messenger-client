@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.repository.PrivacyRepository
+import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
@@ -26,6 +27,7 @@ import javax.inject.Inject
 class SettingsPrivacyViewModel @Inject constructor(
     private val privacyRepository: PrivacyRepository,
     private val authRepository: AuthRepository,
+    private val userRepository: UserRepository,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
@@ -46,10 +48,20 @@ class SettingsPrivacyViewModel @Inject constructor(
                     e
                 )
             }
+            
+            userRepository.getBlockedUsers().onSuccess { users ->
+                _uiState.update { it.copy(blockedUsersCount = users.size) }
+            }.onFailure { e ->
+                Log.e(
+                    "SettingsPrivacyViewModel",
+                    "Ошибка при получении заблокированных пользователей",
+                    e
+                )
+            }
         } catch (e: Exception) {
             Log.e(
                 "SettingsPrivacyViewModel",
-                "Ошибка при получении настроек конфиденциальности",
+                "Ошибка при получении данных",
                 e
             )
         }

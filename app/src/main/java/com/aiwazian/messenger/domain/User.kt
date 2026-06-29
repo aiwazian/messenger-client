@@ -16,7 +16,9 @@ data class User(
     val lastSeen: Long?,
     val avatars: List<Avatar>,
     val isOnline: Boolean = false,
-    val profileChannelId: Long? = null
+    val profileChannelId: Long? = null,
+    val isBlocked: Boolean = false,
+    val isBlockedByThem: Boolean = false
 )
 
 data class Avatar(

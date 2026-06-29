@@ -18,7 +18,9 @@ data class UserResponseDto(
     @SerialName("dateOfBirth") val dateOfBirth: Long? = null,
     @SerialName("lastSeen") val lastSeen: Long? = null,
     @SerialName("avatars") val avatars: List<AvatarDto> = emptyList(),
-    @SerialName("profileChannelId") val profileChannelId: String? = null
+    @SerialName("profileChannelId") val profileChannelId: String? = null,
+    @SerialName("isBlocked") val isBlocked: Boolean = false,
+    @SerialName("isBlockedByThem") val isBlockedByThem: Boolean = false
 )
 
 @Serializable

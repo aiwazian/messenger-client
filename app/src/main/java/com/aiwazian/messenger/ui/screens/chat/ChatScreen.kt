@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.chat
 
 import androidx.activity.compose.BackHandler
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
@@ -87,6 +88,7 @@ import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.utils.ActiveChatTracker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @Composable
 fun ChatScreen(
@@ -213,16 +215,11 @@ fun ChatScreen(
                 }
                 
                 is ChatUiEffect.OpenUrl -> {
-                    try {
-                        val intent =
-                            android.content.Intent(
-                                android.content.Intent.ACTION_VIEW,
-                                effect.url.toUri()
-                            )
-                        context.startActivity(intent)
-                    } catch (e: Exception) {
-                        // Fallback or error handling
-                    }
+                    CustomTabsIntent.Builder()
+                        .setShowTitle(true)
+                        .setTranslateLocale(Locale.getDefault())
+                        .build()
+                        .launchUrl(context, effect.url.toUri())
                 }
             }
         }
@@ -492,6 +489,23 @@ fun ChatScreen(
                 },
                 content = {
                     Text(stringResource(R.string.banned_message))
+                })
+        }
+        
+        if (uiState.showBlockDialog) {
+            CustomDialog(
+                title = stringResource(R.string.unblock),
+                onDismissRequest = chatViewModel::dismissBlockDialog,
+                buttons = {
+                    TextButton(onClick = chatViewModel::dismissBlockDialog) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                    TextButton(onClick = chatViewModel::unblockUser) {
+                        Text(stringResource(R.string.yes))
+                    }
+                },
+                content = {
+                    Text("Вы уверены что хотите разблокировать этого пользователя?")
                 })
         }
     }

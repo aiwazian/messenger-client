@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.database.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -16,5 +17,7 @@ data class UserEntity(
     val bio: String? = null,
     val dateOfBirth: Long? = null,
     val lastSeen: Long? = null,
-    val profileChannelId: Long? = null
+    val profileChannelId: Long? = null,
+    @ColumnInfo(defaultValue = "false") val isBlocked: Boolean = false,
+    @ColumnInfo(defaultValue = "false") val isBlockedByThem: Boolean = false
 )

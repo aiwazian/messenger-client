@@ -24,7 +24,9 @@ fun UserResponseDto.toDomain(): User = User(
     dateOfBirth = dateOfBirth,
     lastSeen = lastSeen,
     avatars = emptyList(),
-    profileChannelId = profileChannelId?.toLongOrNull()
+    profileChannelId = profileChannelId?.toLongOrNull(),
+    isBlocked = isBlocked,
+    isBlockedByThem = isBlockedByThem
 )
 
 fun UserResponseDto.toEntity(): UserEntity = UserEntity(
@@ -35,7 +37,9 @@ fun UserResponseDto.toEntity(): UserEntity = UserEntity(
     bio = bio,
     dateOfBirth = dateOfBirth,
     lastSeen = lastSeen,
-    profileChannelId = profileChannelId?.toLongOrNull()
+    profileChannelId = profileChannelId?.toLongOrNull(),
+    isBlocked = isBlocked,
+    isBlockedByThem = isBlockedByThem
 )
 
 fun User.toUpdateRequest(): UpdateUserRequestDto = UpdateUserRequestDto(
@@ -65,7 +69,9 @@ fun UserEntity.toDomain(avatars: List<Avatar> = emptyList()): User = User(
     dateOfBirth = dateOfBirth,
     lastSeen = lastSeen,
     avatars = avatars,
-    profileChannelId = profileChannelId
+    profileChannelId = profileChannelId,
+    isBlocked = isBlocked,
+    isBlockedByThem = isBlockedByThem
 )
 
 fun User.toEntity(): UserEntity = UserEntity(
@@ -76,7 +82,9 @@ fun User.toEntity(): UserEntity = UserEntity(
     bio = bio,
     dateOfBirth = dateOfBirth,
     lastSeen = lastSeen,
-    profileChannelId = profileChannelId
+    profileChannelId = profileChannelId,
+    isBlocked = isBlocked,
+    isBlockedByThem = isBlockedByThem
 )
 
 fun AvatarEntity.toDomain(uri: Uri?) = Avatar(

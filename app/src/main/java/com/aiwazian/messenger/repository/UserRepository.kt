@@ -277,4 +277,50 @@ class UserRepository @Inject constructor(
             Result.failure(e)
         }
     }
+    
+    suspend fun getBlockedUsers(): Result<List<User>> {
+        return try {
+            val response = userApi.getBlockedUsers()
+            if (response.isSuccessful) {
+                Result.success(response.body()?.map { it.toDomain() }.orEmpty())
+            } else {
+                Result.failure(Exception("Failed to get blocked users"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error getting blocked users", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun blockUser(userId: Long): Result<Unit> {
+        return try {
+            val response = userApi.blockUser(userId)
+            if (response.isSuccessful) {
+                userDao.getById(userId)?.let {
+                    userDao.insert(it.copy(isBlocked = true))
+                }
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Block user failed"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun unblockUser(userId: Long): Result<Unit> {
+        return try {
+            val response = userApi.unblockUser(userId)
+            if (response.isSuccessful) {
+                userDao.getById(userId)?.let {
+                    userDao.insert(it.copy(isBlocked = false))
+                }
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Unblock user failed"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

@@ -59,5 +59,8 @@ data class ChatUiState(
     val isFirstLoadDone: Boolean = false,
     val groupReadInfo: Map<Long, List<MessageReadInfo>> = emptyMap(),
     val editingMessageId: Long? = null,
-    val editingOriginalText: String? = null
+    val editingOriginalText: String? = null,
+    val isBlocked: Boolean = false,
+    val isBlockedByThem: Boolean = false,
+    val showBlockDialog: Boolean = false
 )

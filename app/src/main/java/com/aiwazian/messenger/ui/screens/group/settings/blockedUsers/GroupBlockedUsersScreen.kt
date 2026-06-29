@@ -112,7 +112,7 @@ fun GroupBlockedUsersScreen(
                     Text(stringResource(R.string.no))
                 }
                 TextButton(onClick = viewModel::confirmUnblock) {
-                    Text(stringResource(R.string.ok))
+                    Text(stringResource(R.string.yes))
                 }
             }
         ) {

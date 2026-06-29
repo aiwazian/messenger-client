@@ -310,6 +310,26 @@ fun ProfileScreen(
                 Text("Вас заблокировал администратор этого чата")
             })
     }
+    
+    if (uiState.showBlockDialog) {
+        CustomDialog(
+            title = if (uiState.isBlockedStateForDialog) stringResource(R.string.unblock) else stringResource(
+                R.string.block
+            ),
+            onDismissRequest = viewModel::dismissBlockDialog,
+            buttons = {
+                TextButton(onClick = viewModel::dismissBlockDialog) {
+                    Text(stringResource(R.string.cancel))
+                }
+                TextButton(onClick = viewModel::toggleBlockUser) {
+                    Text(stringResource(R.string.yes))
+                }
+            },
+            content = {
+                Text(if (uiState.isBlockedStateForDialog) "Вы уверены что хотите разблокировать этого пользователя?" else "Вы уверены что хотите заблокировать этого пользователя?")
+            }
+        )
+    }
 }
 
 @Composable
@@ -626,6 +646,7 @@ private fun TopBar(
                             Text(action.text.asString())
                         }, onClick = {
                             action.onClick?.invoke()
+                            expand = false
                         })
                     }
                 }

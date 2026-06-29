@@ -17,6 +17,7 @@ data class SettingsPrivacyUiState(
         profilePhoto = PrivacyLevel.EVERYBODY,
         deleteAfterDays = 365
     ),
+    val blockedUsersCount: Int = 0,
     val showDeleteBottomSheet: Boolean = false,
     val showDeleteDialog: Boolean = false,
     val showInactivityBottomSheet: Boolean = false

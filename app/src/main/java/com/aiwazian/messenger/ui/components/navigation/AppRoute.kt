@@ -159,4 +159,7 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data class Register(val login: String) : AppRoute
+    
+    @Serializable
+    data object BlockedUserList : AppRoute
 }

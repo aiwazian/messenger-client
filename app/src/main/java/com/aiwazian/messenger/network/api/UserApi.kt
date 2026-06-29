@@ -61,4 +61,13 @@ interface UserApi {
     
     @GET("users/me/owned-channels")
     suspend fun getOwnedChannels(): Response<List<OwnedChannelDto>>
+    
+    @GET("users/me/blocked")
+    suspend fun getBlockedUsers(): Response<List<UserResponseDto>>
+    
+    @POST("users/{userId}/block")
+    suspend fun blockUser(@Path("userId") userId: Long): Response<Unit>
+    
+    @DELETE("users/{userId}/block")
+    suspend fun unblockUser(@Path("userId") userId: Long): Response<Unit>
 }

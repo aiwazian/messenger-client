@@ -82,7 +82,15 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -128,9 +136,60 @@ fun ChatInputSection(
             }
             
             ChatType.PRIVATE -> {
-                InputMessage(
-                    uiState = uiState, chatViewModel = chatViewModel
-                )
+                if (uiState.isBlockedByThem) {
+                    Text(
+                        text = "Отправка сообщений ограничена",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                } else if (uiState.isBlocked) {
+                    Text(
+                        text = buildAnnotatedString {
+                            append(stringResource(R.string.user_blocked))
+                            append(". ")
+                            withLink(
+                                LinkAnnotation.Clickable(
+                                    tag = "unblock",
+                                    styles = TextLinkStyles(
+                                        style = SpanStyle(
+                                            color = MaterialTheme.colorScheme.primary,
+                                            textDecoration = TextDecoration.None
+                                        ),
+                                        pressedStyle = SpanStyle(
+                                            background = MaterialTheme.colorScheme.primary.copy(
+                                                alpha = 0.4f
+                                            )
+                                        )
+                                    ),
+                                    linkInteractionListener = {
+                                        chatViewModel.showBlockDialog()
+                                    }
+                                )
+                            ) {
+                                withStyle(
+                                    SpanStyle(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        textDecoration = TextDecoration.Underline
+                                    )
+                                ) {
+                                    append(stringResource(R.string.unblock))
+                                }
+                            }
+                            append("?")
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        lineHeight = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                } else {
+                    InputMessage(uiState = uiState, chatViewModel = chatViewModel)
+                }
             }
             
             else -> {}

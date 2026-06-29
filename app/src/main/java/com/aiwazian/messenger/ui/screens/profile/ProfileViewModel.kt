@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.rounded.AddHome
+import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -137,6 +138,7 @@ class ProfileViewModel @Inject constructor(
                                 bio = user.bio,
                                 dateOfBirth = user.dateOfBirth,
                                 profileChannelId = user.profileChannelId,
+                                isBlocked = user.isBlocked
                             )
                             _uiState.update {
                                 it.copy(
@@ -178,6 +180,8 @@ class ProfileViewModel @Inject constructor(
                                 dateOfBirth = user.dateOfBirth,
                                 lastSeen = user.lastSeen,
                                 profileChannelId = user.profileChannelId,
+                                isBlocked = user.isBlocked,
+                                isBlockedByThem = user.isBlockedByThem
                             )
                             _uiState.update {
                                 it.copy(
@@ -324,7 +328,7 @@ class ProfileViewModel @Inject constructor(
     
     private fun recalculateActions() {
         val newActions = when (val profile = _uiState.value.profile) {
-            is Profile.User -> calculateUserActions()
+            is Profile.User -> calculateUserActions(profile)
             
             is Profile.Channel -> calculateChannelActions(profile)
             
@@ -336,7 +340,7 @@ class ProfileViewModel @Inject constructor(
         _uiState.update { it.copy(actions = newActions) }
     }
     
-    private fun calculateUserActions(): List<TopBarAction> {
+    private fun calculateUserActions(user: Profile.User): List<TopBarAction> {
         val dropdownActions = mutableListOf<DropdownMenuAction>()
         
         dropdownActions.add(
@@ -361,6 +365,20 @@ class ProfileViewModel @Inject constructor(
                 )
             )
         } else {
+            dropdownActions.add(
+                DropdownMenuAction(
+                    icon = Icons.Rounded.Block,
+                    text = UiText.DynamicString(if (user.isBlocked) "Разблокировать" else "Заблокировать"),
+                    onClick = {
+                        _uiState.update {
+                            it.copy(
+                                showBlockDialog = true,
+                                isBlockedStateForDialog = user.isBlocked
+                            )
+                        }
+                    }
+                )
+            )
             listOf(
                 TopBarAction(
                     icon = Icons.Rounded.MoreVert,
@@ -643,6 +661,28 @@ class ProfileViewModel @Inject constructor(
                 
                 else -> {}
             }
+        }
+    }
+    
+    fun dismissBlockDialog() {
+        _uiState.update { it.copy(showBlockDialog = false) }
+    }
+    
+    fun toggleBlockUser() {
+        val isBlocked = _uiState.value.isBlockedStateForDialog
+        val userId = _uiState.value.id
+        viewModelScope.launch {
+            val result = if (isBlocked) {
+                userRepository.unblockUser(userId)
+            } else {
+                userRepository.blockUser(userId)
+            }
+            if (result.isSuccess) {
+                _uiEffect.tryEmit(ProfileUiEffect.ShowSnackbar(UiText.DynamicString(if (isBlocked) "Пользователь разблокирован" else "Пользователь заблокирован")))
+            } else {
+                _uiEffect.tryEmit(ProfileUiEffect.ShowSnackbar(UiText.DynamicString("Ошибка")))
+            }
+            dismissBlockDialog()
         }
     }
 }
