@@ -244,7 +244,7 @@
     <string name="inactive_6_months">6개월</string>
     <string name="inactive_12_months">12개월</string>
     <string name="if_away_for">다음 기간 동안 떨어져 있는 경우</string>
-    <string name="delete_account_if_inactive_for">다음 기간 동안 활동하지 않으면 자폭합니다...</string>
+    <string name="delete_account_if_inactive_for">다음 기간 동안 활동하지 않으면 자폭합니다…</string>
     <string name="automatic_media_download">자동 미디어 다운로드</string>
     <string name="auto_download_media">자동 다운로드 미디어</string>
     <string name="you">너</string>
@@ -269,4 +269,6 @@
     <string name="no_access">접근 불가</string>
     <string name="banned_message">이 채팅 관리자에 의해 귀하를 차단했습니다.</string>
     <string name="edit_time_limit_error">24시간이 지난 메시지는 편집할 수 없습니다.</string>
+    <string name="too_many_requests">요청이 너무 많습니다. 나중에 다시 시도해 주세요.</string>
+    <string name="blocked_users">차단된 사용자</string>
 </resources>

@@ -7,6 +7,7 @@ package com.aiwazian.messenger.utils
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.aiwazian.messenger.di.FileClient
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
@@ -24,11 +25,12 @@ import java.io.File
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.milliseconds
 
 @Singleton
 class UploadManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val okHttpClient: OkHttpClient,
+    @param:FileClient private val okHttpClient: OkHttpClient,
     private val fileRepository: FileRepository
 ) {
     private val activeUploads = mutableMapOf<String, okhttp3.Call>()
@@ -37,7 +39,7 @@ class UploadManager @Inject constructor(
         fileUri: Uri,
         uploadUrl: String,
         fileId: String,
-        maxAttempts: Int = 10
+        maxAttempts: Int = 3
     ): Result<String> = withContext(Dispatchers.IO) {
         repeat(maxAttempts) { attempt ->
             try {
@@ -74,7 +76,7 @@ class UploadManager @Inject constructor(
                 } else {
                     activeUploads.remove(fileId)
                     if (attempt < maxAttempts - 1) {
-                        delay(1_000L * (attempt + 1))
+                        delay((1_000 * (attempt + 1)).milliseconds)
                     } else {
                         return@withContext Result.failure(
                             Exception("UploadManager request unsuccessful after $maxAttempts attempts")
@@ -85,7 +87,7 @@ class UploadManager @Inject constructor(
                 activeUploads.remove(fileId)
                 Log.e("UploadManager", "Upload error: ${e.message}", e)
                 if (attempt < maxAttempts - 1) {
-                    delay(1_000L * (attempt + 1))
+                    delay((1_000L * (attempt + 1)).milliseconds)
                 } else {
                     return@withContext Result.failure(e)
                 }

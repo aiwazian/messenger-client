@@ -7,6 +7,7 @@ package com.aiwazian.messenger.utils
 import android.content.Context
 import android.net.Uri
 import com.aiwazian.messenger.database.entity.FileEntity
+import com.aiwazian.messenger.di.FileClient
 import com.aiwazian.messenger.domain.DownloadItem
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.extensions.getFileType
@@ -29,14 +30,14 @@ class DownloaderManager @Inject constructor(
     @param:ApplicationContext
     private val context: Context,
     private val fileRepository: FileRepository,
-    okHttpClient: OkHttpClient
+    @FileClient okHttpClient: OkHttpClient
 ) {
     private val ketch = Ketch.builder()
         .setOkHttpClient(okHttpClient)
         .setDownloadConfig(
             DownloadConfig(
-                connectTimeOutInMs = 30000,
-                readTimeOutInMs = 30000
+                connectTimeOutInMs = 15_000,
+                readTimeOutInMs = 10 * 60 * 1000
             )
         )
         .build(context)

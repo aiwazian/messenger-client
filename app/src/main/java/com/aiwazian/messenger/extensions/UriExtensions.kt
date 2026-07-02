@@ -10,6 +10,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
 import android.webkit.MimeTypeMap
+import java.io.FileInputStream
 
 fun Uri.getFileName(context: Context): String? {
     return context.contentResolver.query(this, null, null, null, null)?.use { cursor ->
@@ -106,7 +107,9 @@ fun Uri.getFileType(context: Context): String {
 }
 
 private fun Uri.getMimeTypeFromMagicBytes(context: Context): String {
-    if (scheme == "http" || scheme == "https") return "application/octet-stream"
+    if (scheme !in listOf("content", "file")) {
+        return "application/octet-stream"
+    }
     
     try {
         val inputStream = when (scheme) {
@@ -115,15 +118,15 @@ private fun Uri.getMimeTypeFromMagicBytes(context: Context): String {
             }
             
             "file" -> {
-                path?.let { java.io.FileInputStream(it) }
+                path?.let { FileInputStream(it) }
             }
             
             null -> {
-                java.io.FileInputStream(toString())
+                FileInputStream(toString())
             }
             
             else -> {
-                path?.let { java.io.FileInputStream(it) }
+                path?.let { FileInputStream(it) }
             }
         }
         

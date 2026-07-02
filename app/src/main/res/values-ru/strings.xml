@@ -250,7 +250,7 @@
     <string name="inactive_6_months">6 месяцев</string>
     <string name="inactive_12_months">12 месяцев</string>
     <string name="if_away_for">Если я не захожу</string>
-    <string name="delete_account_if_inactive_for">Удаление аккаунта при неактивности...</string>
+    <string name="delete_account_if_inactive_for">Удаление аккаунта при неактивности…</string>
     <string name="automatic_media_download">Автозагрузка медиа</string>
     <string name="auto_download_media">Загружать автоматически</string>
     <string name="you">Вы</string>
@@ -275,4 +275,6 @@
     <string name="no_access">Нет доступа</string>
     <string name="banned_message">Вас заблокировал администратор этого чата</string>
     <string name="edit_time_limit_error">Невозможно изменить сообщение старше 24 часов</string>
+    <string name="too_many_requests">Слишком много запросов. Пожалуйста, повторите попытку позже.</string>
+    <string name="blocked_users">Заблокированные пользователи</string>
 </resources>

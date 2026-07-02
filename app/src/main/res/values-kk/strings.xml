@@ -246,7 +246,7 @@
     <string name="inactive_6_months">6 ай</string>
     <string name="inactive_12_months">12 ай</string>
     <string name="if_away_for">Егер алыс болса</string>
-    <string name="delete_account_if_inactive_for">Белсенді болмаса, өзін-өзі жою...</string>
+    <string name="delete_account_if_inactive_for">Белсенді болмаса, өзін-өзі жою…</string>
     <string name="automatic_media_download">Автоматты медиа жүктеп алу</string>
     <string name="auto_download_media">Автоматты жүктеп алу мультимедиа</string>
     <string name="you">Сіз</string>
@@ -271,4 +271,6 @@
     <string name="no_access">Кіру жоқ</string>
     <string name="banned_message">Сізге осы чаттың әкімшісі тыйым салды</string>
     <string name="edit_time_limit_error">24 сағаттан асқан хабарларды өңдеу мүмкін емес</string>
+    <string name="too_many_requests">Өтініштер тым көп. Тағы жасауды сәл кейінірек көріңізді өтінеміз.</string>
+    <string name="blocked_users">Блокталған пайдаланушылар</string>
 </resources>

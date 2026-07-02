@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.main.search
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.repository.SearchRepository
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
@@ -42,7 +44,7 @@ class SearchViewModel @Inject constructor(
             )
         }
         searchJob = viewModelScope.launch {
-            delay(300)
+            delay(300.milliseconds)
             loadMore()
         }
     }
@@ -57,7 +59,6 @@ class SearchViewModel @Inject constructor(
             try {
                 val results = searchRepository.search(
                     query = query,
-                    type = "chats",
                     limit = PAGE_SIZE,
                     offset = state.chatResults.size
                 )
@@ -68,7 +69,8 @@ class SearchViewModel @Inject constructor(
                         hasMoreChats = results.size == PAGE_SIZE
                     )
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.e("SearchViewModel", "Failed to load more chats: ${e.message}", e)
                 _uiState.update { it.copy(isChatLoading = false) }
             }
         }

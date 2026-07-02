@@ -15,12 +15,16 @@ import com.aiwazian.messenger.domain.SignInResponse
 import com.aiwazian.messenger.domain.SignUpRequest
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toDto
+import com.aiwazian.messenger.network.ApiResult
 import com.aiwazian.messenger.network.api.AuthApi
 import com.aiwazian.messenger.network.api.UserApi
 import com.aiwazian.messenger.network.dto.ChangeLoginRequestDto
 import com.aiwazian.messenger.network.dto.ChangePasswordRequestDto
+import com.aiwazian.messenger.network.toApiError
 import com.aiwazian.messenger.utils.DataStoreManager
 import com.aiwazian.messenger.utils.SessionManager
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import javax.inject.Inject
 
 class AuthRepository @Inject constructor(
@@ -187,43 +191,49 @@ class AuthRepository @Inject constructor(
         }
     }
     
-    suspend fun signIn(request: SignInRequest): Result<SignInResponse> {
+    suspend fun signIn(request: SignInRequest): ApiResult<SignInResponse> {
         return try {
             val dto = request.toDto()
             val response = authApi.signIn(dto)
             if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null) {
-                    Result.success(body.toDomain())
-                } else {
-                    Result.failure(Exception("Empty body"))
-                }
+                response.body()?.let {
+                    ApiResult.Success(it.toDomain())
+                } ?: ApiResult.Error.Unknown(IllegalStateException("Empty body"))
             } else {
-                Result.failure(Exception("Unsuccessful request ${response.code()}"))
+                response.toApiError()
             }
+        } catch (e: UnknownHostException) {
+            Log.e("AuthRepository", "Нет интернета", e)
+            ApiResult.Error.NoInternet
+        } catch (e: SocketTimeoutException) {
+            Log.e("AuthRepository", "Таймаут", e)
+            ApiResult.Error.Timeout
         } catch (e: Exception) {
             Log.e("AuthRepository", "Ошибка при входе", e)
-            Result.failure(e)
+            ApiResult.Error.Unknown(e)
         }
     }
     
-    suspend fun signUp(request: SignUpRequest): Result<SignInResponse> {
+    suspend fun signUp(request: SignUpRequest): ApiResult<SignInResponse> {
         return try {
             val dto = request.toDto()
             val response = authApi.signUp(dto)
             if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null) {
-                    Result.success(body.toDomain())
-                } else {
-                    Result.failure(Exception("Empty body"))
-                }
+                response.body()?.let {
+                    ApiResult.Success(it.toDomain())
+                } ?: ApiResult.Error.Unknown(IllegalStateException("Empty body"))
             } else {
-                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+                response.toApiError()
             }
+        } catch (e: UnknownHostException) {
+            Log.e("AuthRepository", "Нет интернета", e)
+            ApiResult.Error.NoInternet
+        } catch (e: SocketTimeoutException) {
+            Log.e("AuthRepository", "Таймаут", e)
+            ApiResult.Error.Timeout
         } catch (e: Exception) {
-            Log.e("AuthRepository", "Ошибка при регистрации", e)
-            Result.failure(e)
+            Log.e("AuthRepository", "Ошибка при входе", e)
+            ApiResult.Error.Unknown(e)
         }
     }
     

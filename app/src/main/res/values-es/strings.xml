@@ -248,7 +248,7 @@
     <string name="inactive_6_months">6 meses</string>
     <string name="inactive_12_months">12 meses</string>
     <string name="if_away_for">si fuera por</string>
-    <string name="delete_account_if_inactive_for">Autodestrucción si está inactivo durante...</string>
+    <string name="delete_account_if_inactive_for">Autodestrucción si está inactivo durante…</string>
     <string name="automatic_media_download">Descarga automática de medios</string>
     <string name="auto_download_media">Descarga automática de medios</string>
     <string name="you">Tú</string>
@@ -273,4 +273,6 @@
     <string name="no_access">Sin acceso</string>
     <string name="banned_message">Has sido baneado por el administrador de este chat.</string>
     <string name="edit_time_limit_error">No se pueden editar mensajes de más de 24 horas</string>
+    <string name="too_many_requests">Demasiadas solicitudes. Inténtelo de nuevo más tarde.</string>
+    <string name="blocked_users">Usuarios bloqueados</string>
 </resources>

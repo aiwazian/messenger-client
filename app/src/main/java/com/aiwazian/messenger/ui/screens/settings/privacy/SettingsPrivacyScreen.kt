@@ -107,7 +107,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
         ) {
             SectionContainer {
                 SectionItem(
-                    headlineText = "Черный список",
+                    headlineText = stringResource(R.string.blocked_users),
                     trailingText = uiState.blockedUsersCount.toString(),
                     onClick = {
                         navBackStack.add(AppRoute.BlockedUserList)

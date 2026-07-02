@@ -8,7 +8,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.SignInRequest
-import com.aiwazian.messenger.extensions.isNetworkError
+import com.aiwazian.messenger.network.ApiResult
+import com.aiwazian.messenger.network.onError
+import com.aiwazian.messenger.network.onSuccess
 import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.utils.DeviceInfoProvider
 import com.aiwazian.messenger.utils.RegexPatterns
@@ -64,6 +66,8 @@ class PasswordViewModel @Inject constructor(
             return
         }
         
+        _uiState.update { it.copy(errorText = null) }
+        
         val deviceModel = deviceInfoProvider.getDeviceModel()
         val osVersion = deviceInfoProvider.getOsVersion()
         val osName = deviceInfoProvider.getOsName()
@@ -82,12 +86,34 @@ class PasswordViewModel @Inject constructor(
                 SessionManager.setAuthorized(true)
                 SessionManager.saveSession(data.userId, data.token, data.createdAt)
                 _uiEffect.emit(PasswordUiEffect.NavigateToMainActivity)
-            }.onFailure {
-                if (it.isNetworkError()) {
-                    _uiEffect.emit(PasswordUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_connect)))
-                } else {
-                    _uiState.update { state -> state.copy(errorText = UiText.StringResource(R.string.invalid_password)) }
+            }.onError { error ->
+                when (error) {
+                    ApiResult.Error.NoInternet,
+                    ApiResult.Error.Timeout -> {
+                        _uiEffect.emit(PasswordUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_connect)))
+                    }
+                    
+                    ApiResult.Error.Unauthorized -> {
+                        _uiState.update {
+                            it.copy(errorText = UiText.StringResource(R.string.invalid_password))
+                        }
+                    }
+                    
+                    ApiResult.Error.TooManyRequests -> {
+                        _uiEffect.emit(
+                            PasswordUiEffect.ShowSnackbar(
+                                UiText.StringResource(R.string.too_many_requests)
+                            )
+                        )
+                    }
+                    
+                    else -> {
+                        _uiEffect.emit(
+                            PasswordUiEffect.ShowSnackbar(UiText.StringResource(R.string.unexpected_error))
+                        )
+                    }
                 }
+                
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
             _uiState.update { it.copy(isLoading = false) }

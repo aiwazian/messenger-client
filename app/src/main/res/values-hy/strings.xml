@@ -246,7 +246,7 @@
     <string name="inactive_6_months">6 ամիս</string>
     <string name="inactive_12_months">12 ամիս</string>
     <string name="if_away_for">Եթե ​​հեռու համար</string>
-    <string name="delete_account_if_inactive_for">Ինքնոչնչացվի, եթե ոչ ակտիվ է...</string>
+    <string name="delete_account_if_inactive_for">Ինքնոչնչացվի, եթե ոչ ակտիվ է…</string>
     <string name="automatic_media_download">Մեդիա ավտոմատ ներբեռնում</string>
     <string name="auto_download_media">Մեդիա ավտոմատ ներբեռնում</string>
     <string name="you">Դուք</string>
@@ -271,4 +271,6 @@
     <string name="no_access">Մուտք չկա</string>
     <string name="banned_message">Դուք արգելվել եք այս զրույցի ադմինիստրատորի կողմից</string>
     <string name="edit_time_limit_error">Հնարավոր չէ խմբագրել 24 ժամից ավելի հին հաղորդագրությունները</string>
+    <string name="too_many_requests">Չափազանց շատ խնդրանքներ: Խնդրում ենք փորձել ավելի ուշ:</string>
+    <string name="blocked_users">Արգելափակված օգտվողներ</string>
 </resources>

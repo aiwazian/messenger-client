@@ -4,16 +4,8 @@
 
 package com.aiwazian.messenger.domain
 
-import com.aiwazian.messenger.enums.SearchResultType
-
 data class Search(
-    val type: SearchResultType,
     val chatId: Long,
     val name: String,
-    val fileId: String? = null,
-    val size: Long? = null,
-    val mimeType: String? = null,
-    val messageId: Long? = null,
-    val senderName: String? = null,
-    val createdAt: Long? = null
+    val username: String?
 )

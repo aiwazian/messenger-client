@@ -26,19 +26,20 @@ fun ProfileCard(
     avatarUri: Uri? = null,
     supportingText: String? = null,
     trailingContent: @Composable (() -> Unit)? = null,
+    sharedTransition: Boolean = true,
     onClick: () -> Unit = {}
 ) {
     ListItem(
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = modifier.clickable(onClick = onClick),
-        headlineContent = {
+        content = {
             Text(
                 text = headlineText,
                 maxLines = 1,
                 fontSize = 16.sp,
                 lineHeight = 16.sp,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.sharedElement(key = "chat-name-$id")
+                modifier = if (sharedTransition) Modifier.sharedElement(key = "chat-name-$id") else Modifier
             )
         },
         supportingContent = if (supportingText != null) {
@@ -58,7 +59,8 @@ fun ProfileCard(
                 id = id,
                 chatName = headlineText,
                 avatarUri = avatarUri,
-                size = 40.dp
+                size = 40.dp,
+                sharedTransition = sharedTransition
             )
         },
         trailingContent = trailingContent

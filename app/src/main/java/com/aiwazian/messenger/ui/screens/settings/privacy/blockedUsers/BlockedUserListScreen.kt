@@ -13,9 +13,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -50,7 +49,6 @@ import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BlockedUserListScreen(
     viewModel: BlockedUserListViewModel = hiltViewModel()
@@ -85,7 +83,7 @@ fun BlockedUserListScreen(
     Scaffold(
         topBar = {
             PageTopBar(
-                title = { Text("Черный список") },
+                title = { Text(stringResource(R.string.blocked_users)) },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
                     onClick = navBackStack::removeLastOrNull
@@ -102,7 +100,7 @@ fun BlockedUserListScreen(
                 .padding(paddingValues)
         ) {
             if (uiState.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularWavyProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
                 Column(
                     modifier = Modifier
@@ -154,14 +152,14 @@ fun BlockedUserListScreen(
     
     if (uiState.showUnblockDialog && uiState.selectedUserToUnblock != null) {
         CustomDialog(
-            title = "Разблокировать",
+            title = stringResource(R.string.unblock),
             onDismissRequest = viewModel::hideUnblockDialog,
             buttons = {
                 TextButton(onClick = viewModel::hideUnblockDialog) {
                     Text(stringResource(R.string.cancel))
                 }
                 TextButton(onClick = viewModel::unblockUser) {
-                    Text("Разблокировать")
+                    Text(stringResource(R.string.unblock))
                 }
             },
             content = {
@@ -211,7 +209,7 @@ private fun BlockedUserItem(
                     onDismissRequest = { isMenuExpanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Разблокировать") },
+                        text = { Text(stringResource(R.string.unblock)) },
                         onClick = {
                             isMenuExpanded = false
                             onUnblockClick()

@@ -71,7 +71,7 @@ fun MinimizeChatCard(
             }
         },
         trailingContent = trailingContent,
-        headlineContent = {
+        content = {
             Text(chatName)
         },
         colors = ListItemDefaults.colors(

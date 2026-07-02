@@ -135,7 +135,7 @@ fun GroupInviteLinksScreen(
                         val isSelected = uiState.selectedChatIds.contains(chat.id)
                         ListItem(
                             modifier = Modifier.clickable { viewModel.toggleChatSelection(chat.id) },
-                            headlineContent = { Text(chat.chatName.asString()) },
+                            content = { Text(chat.chatName.asString()) },
                             leadingContent = {
                                 Icon(
                                     imageVector = Icons.Rounded.AccountCircle,

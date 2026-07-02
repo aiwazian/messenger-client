@@ -87,8 +87,8 @@ import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.milliseconds
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FullScreenViewer(
     mediaUris: List<Uri?>,
@@ -155,7 +155,7 @@ fun FullScreenViewer(
         isUiVisible, isVideoPlaying, lastInteractionTime, showVideoSettings, showMoreActions
     ) {
         if (isUiVisible && isVideoPlaying && !showVideoSettings && !showMoreActions) {
-            delay(2000L)
+            delay(2000.milliseconds)
             isUiVisible = false
         }
     }

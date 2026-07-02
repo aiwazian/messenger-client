@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.network.api
 
+import com.aiwazian.messenger.network.dto.ResolveUsernameResponseDto
 import com.aiwazian.messenger.network.dto.SearchResponseDto
 import com.aiwazian.messenger.network.dto.UsernameAvailableResponseDto
 import retrofit2.Response
@@ -17,12 +18,11 @@ interface SearchApi {
     suspend fun checkUsernameAvailable(@Path("username") username: String): Response<UsernameAvailableResponseDto>
     
     @GET("search/resolve/{username}")
-    suspend fun resolveUsername(@Path("username") username: String): Response<com.aiwazian.messenger.network.dto.ResolveUsernameResponseDto>
+    suspend fun resolveUsername(@Path("username") username: String): Response<ResolveUsernameResponseDto>
 
     @GET("search")
     suspend fun search(
         @Query("q") query: String,
-        @Query("type") type: String,
         @Query("limit") limit: Int,
         @Query("offset") offset: Int
     ): Response<List<SearchResponseDto>>

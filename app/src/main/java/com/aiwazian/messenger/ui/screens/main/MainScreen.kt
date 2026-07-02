@@ -369,7 +369,6 @@ private fun Content(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SelectionTopBar(
     selectedCount: Int,
@@ -546,10 +545,10 @@ private fun DefaultTopBar(
                         }
                     } else {
                         IconButton(onClick = {
+                            textFieldState.edit {
+                                replace(0, length, "")
+                            }
                             scope.launch {
-                                textFieldState.edit {
-                                    replace(0, length, "")
-                                }
                                 searchBarState.animateToCollapsed()
                             }
                         }) {
@@ -586,7 +585,6 @@ private fun DefaultTopBar(
                         }
                     } else if (textFieldState.text.isNotEmpty()) {
                         IconButton(onClick = {
-                            scope.launch { searchBarState.animateToCollapsed() }
                             textFieldState.edit {
                                 replace(0, length, "")
                             }

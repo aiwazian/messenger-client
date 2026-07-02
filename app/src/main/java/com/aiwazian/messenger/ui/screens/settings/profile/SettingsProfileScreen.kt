@@ -19,7 +19,6 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -60,7 +59,6 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel()) {
     val context = LocalContext.current

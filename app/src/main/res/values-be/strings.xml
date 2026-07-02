@@ -250,7 +250,7 @@
     <string name="inactive_6_months">6 месяцаў</string>
     <string name="inactive_12_months">12 месяцаў</string>
     <string name="if_away_for">Калі прэч</string>
-    <string name="delete_account_if_inactive_for">Самазнішчэнне, калі неактыўнае на працягу...</string>
+    <string name="delete_account_if_inactive_for">Самазнішчэнне, калі неактыўнае на працягу…</string>
     <string name="automatic_media_download">Аўтаматычная загрузка мультымедыя</string>
     <string name="auto_download_media">Аўтаматычная загрузка мультымедыя</string>
     <string name="you">Вы</string>
@@ -275,4 +275,6 @@
     <string name="no_access">Няма доступу</string>
     <string name="banned_message">Вы былі забанены адміністратарам гэтага чата</string>
     <string name="edit_time_limit_error">Нельга рэдагаваць паведамленні, старэйшыя за 24 гадзіны</string>
+    <string name="too_many_requests">Занадта шмат запытаў. Паўтарыце спробу пазней.</string>
+    <string name="blocked_users">Заблакіраваныя карыстальнікі</string>
 </resources>

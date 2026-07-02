@@ -73,7 +73,7 @@ fun ChatCard(
         modifier = modifier
             .combinedClickable(
                 onClick = onClickChat, onLongClick = onLongClickChat
-            ), headlineContent = {
+            ), content = {
             Text(
                 text = chat.chatName.asString(),
                 maxLines = 1,
