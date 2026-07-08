@@ -5,7 +5,7 @@
 package com.aiwazian.messenger.di
 
 import android.content.Context
-import androidx.room.Room
+import androidx.room3.Room
 import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.database.dao.AttachmentDao

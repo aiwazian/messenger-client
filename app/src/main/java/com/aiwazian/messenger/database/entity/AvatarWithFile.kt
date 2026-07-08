@@ -4,14 +4,14 @@
 
 package com.aiwazian.messenger.database.entity
 
-import androidx.room.Embedded
-import androidx.room.Relation
+import androidx.room3.Embedded
+import androidx.room3.Relation
 
 data class AvatarWithFile(
     @Embedded val avatar: AvatarEntity,
     @Relation(
-        parentColumn = "fileId",
-        entityColumn = "id"
+        parentColumns = ["fileId"],
+        entityColumns = ["id"]
     )
     val file: FileEntity?
 )

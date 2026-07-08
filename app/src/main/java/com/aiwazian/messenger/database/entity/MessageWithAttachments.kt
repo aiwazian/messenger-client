@@ -4,15 +4,15 @@
 
 package com.aiwazian.messenger.database.entity
 
-import androidx.room.Embedded
-import androidx.room.Relation
+import androidx.room3.Embedded
+import androidx.room3.Relation
 
 data class MessageWithAttachments(
     @Embedded val message: MessageEntity,
     @Relation(
         entity = AttachmentEntity::class,
-        parentColumn = "id",
-        entityColumn = "messageId"
+        parentColumns = ["id"],
+        entityColumns = ["messageId"]
     )
     val attachments: List<AttachmentWithFile>
 )

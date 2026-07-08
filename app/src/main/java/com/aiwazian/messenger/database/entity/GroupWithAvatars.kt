@@ -4,15 +4,15 @@
 
 package com.aiwazian.messenger.database.entity
 
-import androidx.room.Embedded
-import androidx.room.Relation
+import androidx.room3.Embedded
+import androidx.room3.Relation
 
 data class GroupWithAvatars(
     @Embedded val group: GroupEntity,
     @Relation(
         entity = AvatarEntity::class,
-        parentColumn = "id",
-        entityColumn = "groupId"
+        parentColumns = ["id"],
+        entityColumns = ["groupId"]
     )
     val avatars: List<AvatarWithFile>
 )

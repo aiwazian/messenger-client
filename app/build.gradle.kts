@@ -9,6 +9,7 @@ plugins {
     
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
+    id("androidx.room3")
 }
 
 android {
@@ -117,9 +118,8 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     
     // Room database
-    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     
     implementation(libs.socketio.client) {
         exclude("org.json", "json")
@@ -147,6 +147,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
 
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
+room3 {
+    schemaDirectory("$projectDir/schemas")
 }

@@ -6,9 +6,7 @@ package com.aiwazian.messenger.repository
 
 import android.net.Uri
 import android.util.Log
-import androidx.room.withTransaction
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.MessageDao
@@ -48,7 +46,6 @@ import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
 class ChatRepository @Inject constructor(
-    private val database: AppDatabase,
     private val chatApi: ChatApi,
     private val messageApi: MessageApi,
     private val messageDao: MessageDao,
@@ -67,7 +64,7 @@ class ChatRepository @Inject constructor(
         val myId = me.id
         chatDao.getAllChatsFlow(myId).flatMapLatest { chatEntities ->
             if (chatEntities.isEmpty()) return@flatMapLatest flowOf(emptyList())
-
+            
             val flows = chatEntities.map { chatEntity ->
                 val lastMessageFlow = if (ChatType.fromId(chatEntity.chatId) == ChatType.PRIVATE) {
                     messageDao.getChatLastMessageFlow(myId, chatEntity.chatId)
@@ -91,7 +88,7 @@ class ChatRepository @Inject constructor(
                     chatEntity.toDomain(name, avatarUri, lastMessage)
                 }
             }
-
+            
             combine(flows) { chatsArray ->
                 chatsArray.filterNotNull().sortedWith(
                     compareByDescending<Chat> { it.isPinned }
@@ -390,30 +387,28 @@ class ChatRepository @Inject constructor(
     }
     
     private suspend fun saveMessagesToDb(messages: List<Message>) {
-        database.withTransaction {
-            messageDao.saveMessages(messages.map { it.toEntity() })
-            messages.forEach { message ->
-                val attachments = message.attachments.map { attachment ->
-                    val existingFile = fileRepository.getById(attachment.fileId)
-                    
-                    val file = if (existingFile != null) {
-                        existingFile
-                    } else {
-                        val newFile = FileEntity(
-                            id = attachment.fileId,
-                            name = attachment.name,
-                            size = attachment.size,
-                            path = attachment.localUri?.toString(),
-                            status = attachment.status
-                        )
-                        fileRepository.upsert(newFile)
-                        newFile
-                    }
-                    
-                    attachment.toEntity(file)
+        messageDao.saveMessages(messages.map { it.toEntity() })
+        messages.forEach { message ->
+            val attachments = message.attachments.map { attachment ->
+                val existingFile = fileRepository.getById(attachment.fileId)
+                
+                val file = if (existingFile != null) {
+                    existingFile
+                } else {
+                    val newFile = FileEntity(
+                        id = attachment.fileId,
+                        name = attachment.name,
+                        size = attachment.size,
+                        path = attachment.localUri?.toString(),
+                        status = attachment.status
+                    )
+                    fileRepository.upsert(newFile)
+                    newFile
                 }
-                attachmentDao.upsertAttachments(attachments)
+                
+                attachment.toEntity(file)
             }
+            attachmentDao.upsertAttachments(attachments)
         }
     }
     
@@ -532,7 +527,7 @@ class ChatRepository @Inject constructor(
     suspend fun deleteLocalMessage(messageId: Long) {
         messageDao.deleteMessageById(messageId)
     }
-
+    
     suspend fun editMessage(
         chatId: Long,
         messageId: Long,
@@ -540,7 +535,8 @@ class ChatRepository @Inject constructor(
     ): Result<Message> {
         return try {
             val request = EditMessageRequestDto(text = text)
-            val response = messageApi.editTextMessage(chatId, messageId, request, socket.socketId.orEmpty())
+            val response =
+                messageApi.editTextMessage(chatId, messageId, request, socket.socketId.orEmpty())
             if (response.isSuccessful) {
                 val editedMessage = response.body()?.toDomain()
                 if (editedMessage != null) {
@@ -557,7 +553,7 @@ class ChatRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun updateLocalMessage(
         messageId: Long,
         text: String?,
