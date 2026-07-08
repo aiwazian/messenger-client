@@ -299,7 +299,7 @@ fun ProfileScreen(
     
     if (uiState.showBannedDialog) {
         CustomDialog(
-            title = "Нет доступа",
+            title = stringResource(R.string.no_access),
             onDismissRequest = viewModel::dismissBannedDialog,
             buttons = {
                 TextButton(onClick = viewModel::dismissBannedDialog) {

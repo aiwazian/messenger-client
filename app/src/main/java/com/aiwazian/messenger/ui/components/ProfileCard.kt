@@ -26,7 +26,7 @@ fun ProfileCard(
     avatarUri: Uri? = null,
     supportingText: String? = null,
     trailingContent: @Composable (() -> Unit)? = null,
-    sharedTransition: Boolean = true,
+    sharedTransition: Boolean = false,
     onClick: () -> Unit = {}
 ) {
     ListItem(

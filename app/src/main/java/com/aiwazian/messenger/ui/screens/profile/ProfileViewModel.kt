@@ -368,7 +368,7 @@ class ProfileViewModel @Inject constructor(
             dropdownActions.add(
                 DropdownMenuAction(
                     icon = Icons.Rounded.Block,
-                    text = UiText.DynamicString(if (user.isBlocked) "Разблокировать" else "Заблокировать"),
+                    text = UiText.StringResource(if (user.isBlocked) R.string.unblock else R.string.block_user),
                     onClick = {
                         _uiState.update {
                             it.copy(
@@ -445,7 +445,7 @@ class ProfileViewModel @Inject constructor(
             )
         )
         
-        if (group.ownerId != _uiState.value.myId) {
+        if (group.ownerId != _uiState.value.myId && group.isMember) {
             dropdownActions.add(
                 DropdownMenuAction(
                     icon = Icons.AutoMirrored.Rounded.Logout,
@@ -678,7 +678,13 @@ class ProfileViewModel @Inject constructor(
                 userRepository.blockUser(userId)
             }
             if (result.isSuccess) {
-                _uiEffect.tryEmit(ProfileUiEffect.ShowSnackbar(UiText.DynamicString(if (isBlocked) "Пользователь разблокирован" else "Пользователь заблокирован")))
+                _uiEffect.tryEmit(
+                    ProfileUiEffect.ShowSnackbar(
+                        UiText.StringResource(
+                            if (isBlocked) R.string.user_unblocked else R.string.user_blocked
+                        )
+                    )
+                )
             } else {
                 _uiEffect.tryEmit(ProfileUiEffect.ShowSnackbar(UiText.DynamicString("Ошибка")))
             }

@@ -115,6 +115,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.aiwazian.messenger.BuildConfig
 import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
@@ -835,7 +836,8 @@ private fun DrawerContent(
             } else {
                 AdTheme.LIGHT
             }
-        val adRequest = AdRequest.Builder("R-M-15520718-1").setPreferredTheme(adTheme).build()
+        val adRequest =
+            AdRequest.Builder(BuildConfig.AD_BANNER_ID).setPreferredTheme(adTheme).build()
         
         val bannerState = rememberBannerAdState(
             adSize = BannerSize.Inline(width = 300.dp, maxHeight = maxAdHeight),

@@ -25,8 +25,12 @@ android {
     
     buildTypes {
         debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            
             buildConfigField("String", "API_URL", "\"http://10.170.67.101:4000/api/\"")
             buildConfigField("String", "WS_URL", "\"ws://10.170.67.101:4000\"")
+            buildConfigField("String", "AD_BANNER_ID", "\"demo-banner-yandex\"")
         }
         
         release {
@@ -40,6 +44,7 @@ android {
             
             buildConfigField("String", "API_URL", "\"https://aiwazian.ru/api/\"")
             buildConfigField("String", "WS_URL", "\"wss://ws.aiwazian.ru\"")
+            buildConfigField("String", "AD_BANNER_ID", "\"R-M-15520718-1\"")
         }
     }
     compileOptions {

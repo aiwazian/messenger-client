@@ -58,6 +58,7 @@ import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -75,7 +76,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -90,7 +90,6 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -105,8 +104,7 @@ import kotlin.math.abs
 
 @Composable
 fun ChatInputSection(
-    uiState: ChatUiState,
-    chatViewModel: ChatViewModel
+    uiState: ChatUiState, chatViewModel: ChatViewModel
 ) {
     Box(
         modifier = Modifier
@@ -114,85 +112,77 @@ fun ChatInputSection(
             .imePadding()
             .padding(8.dp)
     ) {
-        when (ChatType.fromId(uiState.chatId)) {
-            ChatType.CHANNEL -> {
-                if (uiState.isOwner) {
-                    InputMessage(
-                        uiState = uiState, chatViewModel = chatViewModel
-                    )
-                } else if (!uiState.isJoined) {
-                    JoinButton(onClick = chatViewModel::onJoinClicked)
+        AnimatedContent(
+            targetState = ChatType.fromId(uiState.chatId),
+            modifier = Modifier.fillMaxWidth(),
+            transitionSpec = {
+                slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
+            }) { chatType ->
+            when (chatType) {
+                ChatType.CHANNEL -> {
+                    if (uiState.isOwner) {
+                        InputMessage(uiState = uiState, chatViewModel = chatViewModel)
+                    } else if (!uiState.isJoined) {
+                        JoinButton(onClick = chatViewModel::onJoinClicked)
+                    }
                 }
-            }
-            
-            ChatType.GROUP -> {
-                if (uiState.isOwner || uiState.isJoined) {
-                    InputMessage(
-                        uiState = uiState, chatViewModel = chatViewModel
-                    )
-                } else {
-                    JoinButton(onClick = chatViewModel::onJoinClicked)
+                
+                ChatType.GROUP -> {
+                    if (uiState.isOwner || uiState.isJoined) {
+                        InputMessage(uiState = uiState, chatViewModel = chatViewModel)
+                    } else {
+                        JoinButton(onClick = chatViewModel::onJoinClicked)
+                    }
                 }
-            }
-            
-            ChatType.PRIVATE -> {
-                if (uiState.isBlockedByThem) {
-                    Text(
-                        text = "Отправка сообщений ограничена",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                } else if (uiState.isBlocked) {
-                    Text(
-                        text = buildAnnotatedString {
-                            append(stringResource(R.string.user_blocked))
-                            append(". ")
-                            withLink(
-                                LinkAnnotation.Clickable(
-                                    tag = "unblock",
-                                    styles = TextLinkStyles(
+                
+                ChatType.PRIVATE -> {
+                    if (uiState.isBlockedByThem) {
+                        Text(
+                            text = "Отправка сообщений ограничена",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    } else if (uiState.isBlocked) {
+                        Text(
+                            text = buildAnnotatedString {
+                                append(stringResource(R.string.user_blocked))
+                                append(". ")
+                                withLink(
+                                    LinkAnnotation.Clickable(
+                                        tag = "unblock", styles = TextLinkStyles(
                                         style = SpanStyle(
                                             color = MaterialTheme.colorScheme.primary,
                                             textDecoration = TextDecoration.None
-                                        ),
-                                        pressedStyle = SpanStyle(
+                                        ), pressedStyle = SpanStyle(
                                             background = MaterialTheme.colorScheme.primary.copy(
                                                 alpha = 0.4f
                                             )
                                         )
-                                    ),
-                                    linkInteractionListener = {
+                                        ), linkInteractionListener = {
                                         chatViewModel.showBlockDialog()
-                                    }
-                                )
-                            ) {
-                                withStyle(
-                                    SpanStyle(
-                                        color = MaterialTheme.colorScheme.primary,
-                                        textDecoration = TextDecoration.Underline
-                                    )
+                                        })
                                 ) {
                                     append(stringResource(R.string.unblock))
                                 }
-                            }
-                            append("?")
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        lineHeight = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                } else {
-                    InputMessage(uiState = uiState, chatViewModel = chatViewModel)
+                                append("?")
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            lineHeight = 16.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        InputMessage(uiState = uiState, chatViewModel = chatViewModel)
+                    }
                 }
+                
+                else -> {}
             }
-            
-            else -> {}
         }
     }
 }
@@ -200,11 +190,13 @@ fun ChatInputSection(
 @Composable
 private fun JoinButton(onClick: () -> Unit) {
     TextButton(
-        shape = RectangleShape, modifier = Modifier.fillMaxWidth(), onClick = onClick
+        shape = CircleShape,
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        colors = ButtonDefaults.textButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
     ) {
         Text(
             text = stringResource(R.string.join).uppercase(),
-            modifier = Modifier.padding(vertical = 8.dp),
             fontSize = 18.sp,
             color = MaterialTheme.colorScheme.primary
         )
@@ -360,7 +352,7 @@ private fun InputMessage(
                                                 context, android.Manifest.permission.RECORD_AUDIO
                                             ) == PackageManager.PERMISSION_GRANTED
                                         ) {
-                                            val releasedBeforeLongPress = withTimeoutOrNull(100L) {
+                                            val releasedBeforeLongPress = withTimeoutOrNull(200L) {
                                                 do {
                                                     val event = awaitPointerEvent()
                                                     event.changes.forEach { it.consume() }
@@ -520,9 +512,7 @@ private fun InputMessage(
 
 @Composable
 private fun VoiceRecordingStatus(
-    uiState: ChatUiState,
-    micTranslationX: Float,
-    onCancelRecording: () -> Unit
+    uiState: ChatUiState, micTranslationX: Float, onCancelRecording: () -> Unit
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "recording_dot_transition")
     val dotAlpha by infiniteTransition.animateFloat(
@@ -562,24 +552,19 @@ private fun VoiceRecordingStatus(
             }
             
             Row(
-                modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.Center
+                modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.Center
             ) {
                 AnimatedContent(
-                    targetState = uiState.isRecordingLocked,
-                    transitionSpec = {
+                    targetState = uiState.isRecordingLocked, transitionSpec = {
                         slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
-                    },
-                    label = "recording_hint_animation",
-                    contentAlignment = Alignment.Center
+                    }, label = "recording_hint_animation", contentAlignment = Alignment.Center
                 ) { isLocked ->
                     if (isLocked) {
                         TextButton(onClick = onCancelRecording) {
                             Text(stringResource(R.string.cancel).uppercase())
                         }
                     } else {
-                        val infiniteTransition =
-                            rememberInfiniteTransition(label = "shake")
+                        val infiniteTransition = rememberInfiniteTransition(label = "shake")
                         
                         val offsetX by infiniteTransition.animateFloat(
                             initialValue = -4f,
@@ -597,10 +582,9 @@ private fun VoiceRecordingStatus(
                             modifier = Modifier
                                 .graphicsLayer {
                                     translationX = micTranslationX * 0.5f
-                                    alpha =
-                                        (1f - (abs(micTranslationX) / 250f)).coerceIn(
-                                            0.2f, 1f
-                                        )
+                                    alpha = (1f - (abs(micTranslationX) / 250f)).coerceIn(
+                                        0.2f, 1f
+                                    )
                                 }
                                 .offset {
                                     IntOffset(x = offsetX.dp.roundToPx(), y = 0)
@@ -628,8 +612,7 @@ private fun VoiceRecordingStatus(
 
 @Composable
 private fun VoiceRecordingLockedIcon(
-    uiState: ChatUiState,
-    micTranslationY: Float
+    uiState: ChatUiState, micTranslationY: Float
 ) {
     val micIconPosition by animateFloatAsState(
         targetValue = -70f + if (!uiState.isRecordingLocked) {
@@ -644,7 +627,10 @@ private fun VoiceRecordingLockedIcon(
         enter = fadeIn() + scaleIn() + slideInVertically { it / 2 },
         exit = fadeOut() + scaleOut() + slideOutVertically { it / 2 },
         modifier = Modifier.offset {
-            IntOffset(x = 0, y = micIconPosition.dp.roundToPx())
+            IntOffset(
+                x = 0,
+                y = micIconPosition.dp.roundToPx()
+            )
         }) {
         val isNearLock = uiState.isRecordingLocked || micTranslationY < -150f
         Box(
@@ -670,8 +656,7 @@ private fun VoiceRecordingLockedIcon(
 @Composable
 private fun VoiceRecordingAmplitudeEffect(amplitude: Float) {
     val maxBackgroundScale = 2.2f
-    val currentScale =
-        1f + ((amplitude * 2.5f).coerceAtMost(1f) * (maxBackgroundScale - 1f))
+    val currentScale = 1f + ((amplitude * 2.5f).coerceAtMost(1f) * (maxBackgroundScale - 1f))
     Box(
         modifier = Modifier
             .size(48.dp)

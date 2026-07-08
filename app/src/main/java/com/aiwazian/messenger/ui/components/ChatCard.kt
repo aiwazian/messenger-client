@@ -245,7 +245,7 @@ fun ChatAvatar(
     chatName: String,
     avatarUri: Uri? = null,
     size: Dp = 40.dp,
-    sharedTransition: Boolean = true
+    sharedTransition: Boolean = false
 ) {
     if (avatarUri != null) {
         AsyncImage(
