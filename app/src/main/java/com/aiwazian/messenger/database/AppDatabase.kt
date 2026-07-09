@@ -39,13 +39,14 @@ import com.aiwazian.messenger.database.entity.UserEntity
         ChatEntity::class,
         AvatarEntity::class
     ],
-    version = 42,
+    version = 43,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 38, to = 39),
         AutoMigration(from = 39, to = 40),
         AutoMigration(from = 40, to = 41),
         AutoMigration(from = 41, to = 42),
+        AutoMigration(from = 42, to = 43),
     ]
 )
 @ColumnTypeConverters(Converters::class)

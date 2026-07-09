@@ -4,8 +4,10 @@
 
 package com.aiwazian.messenger.database.entity
 
+import androidx.room3.ColumnInfo
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
+import com.aiwazian.messenger.enums.MessageStatus
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 
@@ -19,5 +21,6 @@ data class MessageEntity(
     val editedAt: Long? = null,
     val messageType: MessageType,
     val systemMessageEventType: SystemMessageEventType?,
-    val isRead: Boolean
+    val isRead: Boolean,
+    @ColumnInfo(defaultValue = "SENT") val status: MessageStatus = MessageStatus.SENT
 )

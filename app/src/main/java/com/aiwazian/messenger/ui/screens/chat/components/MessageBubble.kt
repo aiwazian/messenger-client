@@ -274,6 +274,7 @@ fun MessageBubble(
                 MessageFooter(
                     time = item.time,
                     isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                    status = message.status,
                     isEdited = message.editedAt != null
                 )
             }

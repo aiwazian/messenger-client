@@ -12,6 +12,7 @@ import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.DownloadStatus
+import com.aiwazian.messenger.enums.MessageStatus
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
@@ -34,8 +35,12 @@ class SendMessageWithFilesUseCase @Inject constructor(
     private val fileRepository: FileRepository,
     private val uploadManager: UploadManager
 ) {
-    suspend operator fun invoke(chatId: Long, uris: List<Uri>, text: String?): Result<Message> {
-        val tempId = -System.currentTimeMillis()
+    suspend operator fun invoke(
+        chatId: Long,
+        uris: List<Uri>,
+        text: String?,
+        tempId: Long = -System.currentTimeMillis()
+    ): Result<Message> {
         val myId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
         
@@ -80,6 +85,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
             chatId = chatId,
             sendTime = System.currentTimeMillis(),
             isRead = false,
+            status = MessageStatus.SENDING,
             messageType = MessageType.TEXT,
             systemMessageEventType = null,
             attachments = attachments
@@ -137,9 +143,11 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 }
             }.onFailure {
                 Log.e("SendMessageWithFiles", "Confirmation failed", it)
+                chatRepository.updateMessageStatus(tempId, MessageStatus.ERROR)
             }
             result
         } else {
+            chatRepository.updateMessageStatus(tempId, MessageStatus.ERROR)
             Result.failure(Exception("Upload failed"))
         }
     }

@@ -19,6 +19,7 @@ fun MessageDto.toDomain(): Message = Message(
     sendTime = sendTime,
     editedAt = editedAt,
     isRead = isRead ?: false,
+    status = com.aiwazian.messenger.enums.MessageStatus.SENT,
     messageType = messageType,
     systemMessageEventType = systemEventType,
     attachments = attachments.map { it.toDomain(messageId = id) },
@@ -53,6 +54,7 @@ fun MessageEntity.toDomain(attachments: List<MessageAttachment> = emptyList()) =
     sendTime = sendTime,
     editedAt = editedAt,
     isRead = isRead,
+    status = status,
     messageType = messageType,
     systemMessageEventType = systemMessageEventType,
     attachments = attachments
@@ -67,5 +69,6 @@ fun Message.toEntity() = MessageEntity(
     editedAt = editedAt,
     isRead = isRead,
     messageType = messageType,
-    systemMessageEventType = systemMessageEventType
+    systemMessageEventType = systemMessageEventType,
+    status = status
 )

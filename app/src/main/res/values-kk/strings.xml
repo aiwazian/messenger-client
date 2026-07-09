@@ -263,6 +263,7 @@
     <string name="swipe_to_cancel">Бас тарту үшін сырғытыңыз</string>
     <string name="provide_mic_permission">Дауыстық хабарларды жазу үшін микрофонға рұқсат беріңіз</string>
     <string name="cancel_sending">Жіберуден бас тарту</string>
+    <string name="retry">Қайталап көріңіз</string>
     <string name="cancel_upload_confirm">Файлды жүктеп салудан бас тартқыңыз келетініне сенімдісіз бе\?</string>
     <string name="cancel_voice_recording">Дауысты жазудан бас тарту</string>
     <string name="cancel_voice_recording_confirm">Жазуды тоқтатып, жазылған хабарды жойғыңыз келетініне сенімдісіз бе\?</string>

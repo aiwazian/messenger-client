@@ -265,6 +265,7 @@
     <string name="swipe_to_cancel">Desliza para cancelar</string>
     <string name="provide_mic_permission">Proporcionar acceso al micrófono para grabar mensajes de voz.</string>
     <string name="cancel_sending">Cancelar envío</string>
+    <string name="retry">Rever</string>
     <string name="cancel_upload_confirm">¿Estás seguro de que deseas cancelar la carga del archivo\?</string>
     <string name="cancel_voice_recording">Cancelar grabación de voz</string>
     <string name="cancel_voice_recording_confirm">¿Está seguro de que desea detener la grabación y descartar el mensaje grabado\?</string>

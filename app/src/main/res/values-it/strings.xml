@@ -265,6 +265,7 @@
     <string name="swipe_to_cancel">Scorri per annullare</string>
     <string name="provide_mic_permission">Fornire l\'accesso al microfono per registrare messaggi vocali</string>
     <string name="cancel_sending">Annulla l\'invio</string>
+    <string name="retry">Riprova</string>
     <string name="cancel_upload_confirm">Sei sicuro di voler annullare il caricamento del file\?</string>
     <string name="cancel_voice_recording">Annulla la registrazione vocale</string>
     <string name="cancel_voice_recording_confirm">Sei sicuro di voler interrompere la registrazione ed eliminare il messaggio registrato\?</string>

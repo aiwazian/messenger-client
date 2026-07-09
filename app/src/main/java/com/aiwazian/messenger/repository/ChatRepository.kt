@@ -15,6 +15,7 @@ import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.enums.MessageStatus
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
@@ -314,8 +315,11 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    suspend fun sendMessage(chatId: Long, message: String): Message? {
-        val tempId = -System.currentTimeMillis()
+    suspend fun sendMessage(
+        chatId: Long,
+        message: String,
+        tempId: Long = -System.currentTimeMillis()
+    ): Message? {
         val senderId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
         
@@ -326,6 +330,7 @@ class ChatRepository @Inject constructor(
             text = message,
             sendTime = System.currentTimeMillis(),
             isRead = false,
+            status = MessageStatus.SENDING,
             messageType = MessageType.TEXT,
             systemMessageEventType = null,
             attachments = emptyList()
@@ -341,14 +346,15 @@ class ChatRepository @Inject constructor(
                 sentMessage?.let {
                     updateMessageId(tempId, it.id)
                 }
-                deleteLocalMessage(tempId)
                 sentMessage
             } else {
                 Log.e("ChatRepository", "Failed to send message: ${response.message()}")
+                messageDao.updateMessageStatus(tempId, MessageStatus.ERROR)
                 null
             }
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error sending message", e)
+            messageDao.updateMessageStatus(tempId, MessageStatus.ERROR)
             null
         }
     }
@@ -456,6 +462,10 @@ class ChatRepository @Inject constructor(
         messageDao.updateMessageId(oldId, newId)
     }
     
+    suspend fun updateMessageStatus(id: Long, status: MessageStatus) {
+        messageDao.updateMessageStatus(id, status)
+    }
+    
     suspend fun getDownloadUrl(chatId: Long, messageId: Long, fileId: String): Result<String> {
         return try {
             val response = messageApi.getFileDownloadUrl(chatId, messageId, fileId)
@@ -503,6 +513,10 @@ class ChatRepository @Inject constructor(
         messageId: Long,
         deleteForRecipient: Boolean = false
     ): Result<Unit> {
+        if (messageId < 0) {
+            deleteLocalMessage(messageId)
+            return Result.success(Unit)
+        }
         return try {
             val response = messageApi.deleteMessage(
                 chatId,

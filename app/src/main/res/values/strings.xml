@@ -271,6 +271,7 @@
     <string name="swipe_to_cancel">Swipe to cancel</string>
     <string name="provide_mic_permission">Provide microphone access to record voice messages</string>
     <string name="cancel_sending">Cancel sending</string>
+    <string name="retry">Retry</string>
     <string name="cancel_upload_confirm">Are you sure you want to cancel the file upload?</string>
     <string name="cancel_voice_recording">Cancel voice recording</string>
     <string name="cancel_voice_recording_confirm">Are you sure you want to stop recording and discard the recorded message?</string>

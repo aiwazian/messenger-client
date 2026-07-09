@@ -102,6 +102,7 @@ class ChatViewModel @Inject constructor(
     private var recordingTimerJob: kotlinx.coroutines.Job? = null
     
     private val pendingVoiceStartPositions = mutableMapOf<String, Int>()
+    private val sendingJobs = mutableMapOf<Long, kotlinx.coroutines.Job>()
     
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState = _uiState.asStateFlow()
@@ -123,7 +124,7 @@ class ChatViewModel @Inject constructor(
         observeVoicePlayer()
         observeQueueUpdates()
     }
-
+    
     
     fun init(chatId: Long, chatName: String? = null, avatarUri: Uri? = null) {
         if (isInit) return
@@ -195,7 +196,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-
+    
     private fun setupUserObserver() {
         viewModelScope.launch {
             userRepository.getMe().firstOrNull()?.let { user ->
@@ -436,6 +437,8 @@ class ChatViewModel @Inject constructor(
                 showDeleteMessageDialog()
                 selectMessage(it)
             },
+            onRetrySendMessage = ::retrySendMessage,
+            onCancelSendMessage = ::cancelSendMessage,
             onLoadUserName = ::loadUserName
         )
         
@@ -462,7 +465,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-
+    
     fun loadMoreMessages() {
         val state = _uiState.value
         if (state.isLoadingMore || !state.hasMoreMessages || state.isLoading) return
@@ -471,16 +474,16 @@ class ChatViewModel @Inject constructor(
             val offset = limitFlow.value
             chatRepository.getMessages(state.chatId, limit = 50, offset = offset)
                 .onSuccess { moreMessages ->
-                if (moreMessages.isEmpty()) {
-                    _uiState.update { it.copy(isLoadingMore = false, hasMoreMessages = false) }
-                } else {
-                    if (moreMessages.size < 50) _uiState.update { it.copy(hasMoreMessages = false) }
-                    limitFlow.value += moreMessages.size
+                    if (moreMessages.isEmpty()) {
+                        _uiState.update { it.copy(isLoadingMore = false, hasMoreMessages = false) }
+                    } else {
+                        if (moreMessages.size < 50) _uiState.update { it.copy(hasMoreMessages = false) }
+                        limitFlow.value += moreMessages.size
+                    }
+                    _uiState.update { it.copy(isLoadingMore = false) }
+                }.onFailure {
+                    _uiState.update { it.copy(isLoadingMore = false) }
                 }
-                _uiState.update { it.copy(isLoadingMore = false) }
-            }.onFailure {
-                _uiState.update { it.copy(isLoadingMore = false) }
-            }
         }
     }
     // endregion
@@ -491,25 +494,33 @@ class ChatViewModel @Inject constructor(
     }
     
     fun onSendMessageClicked() {
-        viewModelScope.launch {
-            val editingId = _uiState.value.editingMessageId
-            if (editingId != null) {
-                handleEditMessage(editingId)
-                return@launch
-            }
-            
-            val text = _uiState.value.messageText.trim()
-            if (text.isEmpty()) return@launch
-            
-            changeText("")
+        val editingId = _uiState.value.editingMessageId
+        if (editingId != null) {
+            viewModelScope.launch { handleEditMessage(editingId) }
+            return
+        }
+        
+        val text = _uiState.value.messageText.trim()
+        if (text.isEmpty()) return
+        
+        changeText("")
+        onSendMessageInternal(text)
+    }
+    
+    private fun onSendMessageInternal(text: String) {
+        val tempId = -System.currentTimeMillis()
+        val job = viewModelScope.launch {
             try {
-                sendMessageUseCase(_uiState.value.chatId, text)?.let {
+                sendMessageUseCase(_uiState.value.chatId, text, tempId)?.let {
                     _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
                 }
             } catch (e: Exception) {
                 Log.e("ChatViewModel", "Error sending message", e)
+            } finally {
+                sendingJobs.remove(tempId)
             }
         }
+        sendingJobs[tempId] = job
     }
     
     private suspend fun handleEditMessage(editingId: Long) {
@@ -528,6 +539,30 @@ class ChatViewModel @Inject constructor(
                     editedMessage.editedAt
                 )
             }
+    }
+    
+    fun retrySendMessage(message: Message) {
+        viewModelScope.launch {
+            if (message.attachments.isNotEmpty()) {
+                // For files, we might need a more complex retry logic depending on where it failed.
+                // For now, let's just re-trigger the file sending logic.
+                // We'd need the original URIs which we don't have here.
+                // This is a known limitation.
+            } else {
+                message.text?.let { text ->
+                    chatRepository.deleteLocalMessage(message.id)
+                    onSendMessageInternal(text)
+                }
+            }
+        }
+    }
+    
+    fun cancelSendMessage(message: Message) {
+        sendingJobs[message.id]?.cancel()
+        sendingJobs.remove(message.id)
+        viewModelScope.launch {
+            chatRepository.deleteLocalMessage(message.id)
+        }
     }
     
     fun startEditing(message: Message) {
@@ -602,6 +637,7 @@ class ChatViewModel @Inject constructor(
                         )
                     }
                 }
+                
                 else -> {}
             }
         }
@@ -615,7 +651,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-
+    
     fun onDeleteChatConfirmed() {
         viewModelScope.launch {
             if (chatRepository.deleteChat(
@@ -720,7 +756,7 @@ class ChatViewModel @Inject constructor(
             playVoice(file.fileId, startPos)
         }
     }
-
+    
     private fun playVoice(fileId: String, startPositionMs: Int = 0) {
         val queue = buildVoiceQueue(_uiState.value.chatItems, _uiState.value.chatName)
         if (queue.none { it.fileId == fileId }) return
@@ -754,10 +790,20 @@ class ChatViewModel @Inject constructor(
     }
     
     fun sendFiles(uris: List<Uri>) {
-        viewModelScope.launch { sendMessageWithFilesUseCase(_uiState.value.chatId, uris, null) }
+        val tempId = -System.currentTimeMillis()
+        val job = viewModelScope.launch {
+            try {
+                sendMessageWithFilesUseCase(_uiState.value.chatId, uris, null, tempId)
+            } finally {
+                sendingJobs.remove(tempId)
+            }
+        }
+        sendingJobs[tempId] = job
     }
     
     fun cancelUpload(tempMessageId: Long) {
+        sendingJobs[tempMessageId]?.cancel()
+        sendingJobs.remove(tempMessageId)
         viewModelScope.launch {
             val tempMessage = _uiState.value.chatItems.filterIsInstance<ChatItem.MessageItem>()
                 .find { it.message.id == tempMessageId }?.message
@@ -984,14 +1030,12 @@ class ChatViewModel @Inject constructor(
     }
     
     fun unblockUser() {
-        val userId = _uiState.value.chatId
         viewModelScope.launch {
-            val result = userRepository.unblockUser(userId)
-            if (result.isSuccess) {
+            userRepository.unblockUser(_uiState.value.chatId).onSuccess {
                 dismissBlockDialog()
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Пользователь разблокирован")))
-            } else {
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Ошибка")))
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.user_unblocked)))
+            }.onFailure {
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.unexpected_error)))
                 dismissBlockDialog()
             }
         }

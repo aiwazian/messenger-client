@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.domain
 
+import com.aiwazian.messenger.enums.MessageStatus
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 
@@ -22,6 +23,7 @@ data class Message(
     val sendTime: Long,
     val editedAt: Long? = null,
     val isRead: Boolean,
+    val status: MessageStatus = MessageStatus.SENT,
     val messageType: MessageType,
     val systemMessageEventType: SystemMessageEventType?,
     val attachments: List<MessageAttachment>,

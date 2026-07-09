@@ -9,11 +9,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Refresh
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.enums.MessageStatus
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.extensions.getFileType
@@ -35,6 +37,8 @@ class ChatItemMapper(
     private val onCopyText: (String) -> Unit,
     private val onEditMessage: (Message) -> Unit,
     private val onDeleteMessage: (Message) -> Unit,
+    private val onRetrySendMessage: (Message) -> Unit,
+    private val onCancelSendMessage: (Message) -> Unit,
     private val onLoadUserName: (Long) -> Unit
 ) {
     fun map(messages: List<Message>): List<ChatItem> {
@@ -111,6 +115,7 @@ class ChatItemMapper(
         chatType: ChatType
     ): List<DropdownMenuAction> {
         val actions = mutableListOf<DropdownMenuAction>()
+        
         if (!message.text.isNullOrBlank()) {
             actions.add(
                 DropdownMenuAction(
@@ -118,6 +123,43 @@ class ChatItemMapper(
                     UiText.StringResource(R.string.copy),
                     onClick = { onCopyText(message.text) })
             )
+        }
+        
+        if (isMine) {
+            when (message.status) {
+                MessageStatus.SENDING -> {
+                    actions.add(
+                        DropdownMenuAction(
+                            Icons.Rounded.DeleteOutline,
+                            UiText.StringResource(R.string.cancel_sending),
+                            onClick = { onCancelSendMessage(message) },
+                            isDestructive = true
+                        )
+                    )
+                    return actions
+                }
+                
+                MessageStatus.ERROR -> {
+                    actions.add(
+                        DropdownMenuAction(
+                            Icons.Rounded.Refresh,
+                            UiText.StringResource(R.string.retry),
+                            onClick = { onRetrySendMessage(message) }
+                        )
+                    )
+                    actions.add(
+                        DropdownMenuAction(
+                            Icons.Rounded.DeleteOutline,
+                            UiText.StringResource(R.string.delete),
+                            onClick = { onDeleteMessage(message) },
+                            isDestructive = true
+                        )
+                    )
+                    return actions
+                }
+                
+                MessageStatus.SENT -> {}
+            }
         }
         
         val isMyMessage = if (chatType == ChatType.CHANNEL) isOwner else isMine

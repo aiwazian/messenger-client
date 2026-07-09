@@ -36,7 +36,7 @@ object DatabaseModule {
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
-            "aiwazian.messenger"
+            "aiwazian.messenger.db"
         ).fallbackToDestructiveMigration(true).build()
     }
     

@@ -12,8 +12,12 @@ import javax.inject.Inject
 class SendMessageUseCase @Inject constructor(
     private val chatRepository: ChatRepository
 ) {
-    suspend operator fun invoke(chatId: Long, message: String): Message? {
-        val result = chatRepository.sendMessage(chatId, message)
+    suspend operator fun invoke(chatId: Long, message: String, tempId: Long? = null): Message? {
+        val result = if (tempId != null) {
+            chatRepository.sendMessage(chatId, message, tempId)
+        } else {
+            chatRepository.sendMessage(chatId, message)
+        }
         
         val localChat = chatRepository.getById(chatId).firstOrNull()
         

@@ -261,6 +261,7 @@
     <string name="swipe_to_cancel">취소하려면 스와이프하세요.</string>
     <string name="provide_mic_permission">음성 메시지를 녹음하려면 마이크 액세스 권한을 제공하세요.</string>
     <string name="cancel_sending">보내기 취소</string>
+    <string name="retry">다시 해 보다</string>
     <string name="cancel_upload_confirm">파일 업로드를 취소하시겠습니까\?</string>
     <string name="cancel_voice_recording">음성 녹음 취소</string>
     <string name="cancel_voice_recording_confirm">녹음을 중지하고 녹음된 메시지를 삭제하시겠습니까\?</string>

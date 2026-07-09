@@ -263,6 +263,7 @@
     <string name="swipe_to_cancel">Zum Abbrechen wischen</string>
     <string name="provide_mic_permission">Bieten Sie Zugriff auf das Mikrofon, um Sprachnachrichten aufzuzeichnen</string>
     <string name="cancel_sending">Senden abbrechen</string>
+    <string name="retry">Wiederholen</string>
     <string name="cancel_upload_confirm">Möchten Sie den Datei-Upload wirklich abbrechen\?</string>
     <string name="cancel_voice_recording">Sprachaufnahme abbrechen</string>
     <string name="cancel_voice_recording_confirm">Möchten Sie die Aufnahme wirklich beenden und die aufgezeichnete Nachricht verwerfen\?</string>
