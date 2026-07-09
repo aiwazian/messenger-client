@@ -237,6 +237,7 @@ fun ChatScreen(
             topBarActions = uiState.topBarActions,
             isConnected = uiState.isConnected,
             chatId = uiState.chatId,
+            myId = uiState.myId,
             onBackClick = onBackClick
         )
     }, bottomBar = {

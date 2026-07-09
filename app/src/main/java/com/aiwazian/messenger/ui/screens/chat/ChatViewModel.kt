@@ -123,8 +123,8 @@ class ChatViewModel @Inject constructor(
         loadSettings()
         observeVoicePlayer()
         observeQueueUpdates()
+        setupSocketConnectionObserver()
     }
-    
     
     fun init(chatId: Long, chatName: String? = null, avatarUri: Uri? = null) {
         if (isInit) return
@@ -143,7 +143,6 @@ class ChatViewModel @Inject constructor(
         notificationHelper.clearChatNotifications(chatId)
         webSocketClient.emitEvent("chat_open", mapOf("chatId" to chatId.toString()))
         
-        setupUserObserver()
         loadChatInfo()
         observeRealtimeEvents()
         observeMessages()
@@ -197,12 +196,7 @@ class ChatViewModel @Inject constructor(
         }
     }
     
-    private fun setupUserObserver() {
-        viewModelScope.launch {
-            userRepository.getMe().firstOrNull()?.let { user ->
-                _uiState.update { it.copy(myId = user.id) }
-            }
-        }
+    private fun setupSocketConnectionObserver() {
         viewModelScope.launch {
             webSocketClient.connectionState.collect { state ->
                 _uiState.update { it.copy(isConnected = state == ConnectionState.CONNECTED) }
@@ -215,16 +209,18 @@ class ChatViewModel @Inject constructor(
     private fun loadChatInfo() {
         val chatId = _uiState.value.chatId
         viewModelScope.launch {
+            val myId = userRepository.getMe().first().id
+            _uiState.update { it.copy(myId = myId) }
             when (ChatType.fromId(chatId)) {
-                ChatType.CHANNEL -> loadChannelInfo(chatId)
-                ChatType.GROUP -> loadGroupInfo(chatId)
-                ChatType.PRIVATE -> loadUserInfo(chatId)
+                ChatType.CHANNEL -> loadChannelInfo(chatId, myId)
+                ChatType.GROUP -> loadGroupInfo(chatId, myId)
+                ChatType.PRIVATE -> loadUserInfo(chatId, myId)
                 else -> {}
             }
         }
     }
     
-    private suspend fun loadChannelInfo(chatId: Long) {
+    private suspend fun loadChannelInfo(chatId: Long, myId: Long) {
         viewModelScope.launch {
             channelRepository.fetchById(chatId)
         }
@@ -238,10 +234,10 @@ class ChatViewModel @Inject constructor(
                         channel.subscribers
                     ),
                     isJoined = channel.isSubscribed,
-                    isOwner = channel.ownerId == it.myId,
+                    isOwner = channel.ownerId == myId,
                     avatarUri = channel.avatars.firstOrNull()?.uri,
                     topBarActions = createTopBarActions(
-                        channel.ownerId == it.myId,
+                        channel.ownerId == myId,
                         channel.isSubscribed,
                         ChatType.CHANNEL
                     )
@@ -250,7 +246,7 @@ class ChatViewModel @Inject constructor(
         }
     }
     
-    private suspend fun loadGroupInfo(chatId: Long) {
+    private suspend fun loadGroupInfo(chatId: Long, myId: Long) {
         viewModelScope.launch {
             groupRepository.fetchById(chatId)
             chatRepository.markAllAsRead(chatId)
@@ -265,10 +261,10 @@ class ChatViewModel @Inject constructor(
                         group.members
                     ),
                     isJoined = group.isMember,
-                    isOwner = group.ownerId == it.myId,
+                    isOwner = group.ownerId == myId,
                     avatarUri = group.avatars.firstOrNull()?.uri,
                     topBarActions = createTopBarActions(
-                        group.ownerId == it.myId,
+                        group.ownerId == myId,
                         group.isMember,
                         ChatType.GROUP
                     )
@@ -277,15 +273,15 @@ class ChatViewModel @Inject constructor(
         }
     }
     
-    private suspend fun loadUserInfo(chatId: Long) {
+    private suspend fun loadUserInfo(chatId: Long, myId: Long) {
         viewModelScope.launch {
             userRepository.fetchById(chatId)
-            if (chatId != _uiState.value.myId) {
+            if (chatId != myId) {
                 chatRepository.markAllAsRead(chatId)
             }
         }
         
-        if (chatId == _uiState.value.myId) {
+        if (chatId == myId) {
             userRepository.getMe().collectLatest { user ->
                 _uiState.update {
                     it.copy(
@@ -293,9 +289,9 @@ class ChatViewModel @Inject constructor(
                         subTitle = UiText.DynamicString(""),
                         avatarUri = user.avatars.firstOrNull()?.uri,
                         topBarActions = createTopBarActions(
-                            true,
-                            true,
-                            ChatType.PRIVATE,
+                            isOwner = true,
+                            isJoined = true,
+                            type = ChatType.PRIVATE,
                             isMe = true
                         )
                     )
@@ -314,7 +310,11 @@ class ChatViewModel @Inject constructor(
                         chatName = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
                         subTitle = subTitle,
                         avatarUri = user.avatars.firstOrNull()?.uri,
-                        topBarActions = createTopBarActions(false, true, ChatType.PRIVATE),
+                        topBarActions = createTopBarActions(
+                            isOwner = false,
+                            isJoined = true,
+                            type = ChatType.PRIVATE
+                        ),
                         isBlocked = user.isBlocked,
                         isBlockedByThem = user.isBlockedByThem
                     )
