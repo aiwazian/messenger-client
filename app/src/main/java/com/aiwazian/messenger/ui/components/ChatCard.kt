@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.DoneAll
@@ -68,12 +69,14 @@ fun ChatCard(
     onClickChat: () -> Unit = {},
     onLongClickChat: () -> Unit = {}
 ) {
+    val isSavedMessages = chat.id == myId
+    
     ListItem(
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = modifier
-            .combinedClickable(
+        modifier = modifier.combinedClickable(
                 onClick = onClickChat, onLongClick = onLongClickChat
-            ), content = {
+        ),
+        content = {
             Text(
                 text = chat.chatName.asString(),
                 maxLines = 1,
@@ -82,7 +85,8 @@ fun ChatCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.sharedElement(key = "chat-name-${chat.id}")
             )
-        }, supportingContent = {
+        },
+        supportingContent = {
             if (chat.lastMessage != null) {
                 var color = Color.Unspecified
                 val text = if (chat.lastMessage.attachments.isNotEmpty()) {
@@ -130,15 +134,33 @@ fun ChatCard(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-        }, leadingContent = {
+        },
+        leadingContent = {
             Box {
                 Box(Modifier.padding(vertical = 4.dp)) {
-                    ChatAvatar(
-                        id = chat.id,
-                        chatName = chat.chatName.asString(),
-                        avatarUri = chat.avatarUri,
-                        size = 50.dp
-                    )
+                    if (isSavedMessages) {
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.BookmarkBorder,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    } else {
+                        ChatAvatar(
+                            id = chat.id,
+                            chatName = chat.chatName.asString(),
+                            avatarUri = chat.avatarUri,
+                            size = 50.dp
+                        )
+                    }
                 }
                 AnimatedVisibility(
                     visible = isOnline,
@@ -175,10 +197,12 @@ fun ChatCard(
                     )
                 }
             }
-        }, trailingContent = {
-            val isSavedMessages = chat.lastMessage != null &&
-                    chat.lastMessage.senderId == chat.lastMessage.chatId
-            Column(verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.End) {
+        },
+        trailingContent = {
+            Column(
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.End
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (chat.lastMessage != null) {
                         LastMessageSendTime(chat.lastMessage, isSavedMessages, myId)
