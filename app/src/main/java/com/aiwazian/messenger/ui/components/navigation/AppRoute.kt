@@ -125,6 +125,9 @@ sealed interface AppRoute : NavKey {
     data class ChannelBlackList(val channelId: Long) : AppRoute
     
     @Serializable
+    data class ChannelJoinRequests(val channelId: Long) : AppRoute
+    
+    @Serializable
     data class ChannelInviteLinks(val channelId: Long) : AppRoute
     
     @Serializable
@@ -146,6 +149,9 @@ sealed interface AppRoute : NavKey {
     data class GroupBlackList(val groupId: Long) : AppRoute
     
     @Serializable
+    data class GroupJoinRequests(val groupId: Long) : AppRoute
+    
+    @Serializable
     data class AddMember(val groupId: Long) : AppRoute
     
     @Serializable
@@ -162,4 +168,7 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data object BlockedUserList : AppRoute
+    
+    @Serializable
+    data object PendingJoinRequests : AppRoute
 }

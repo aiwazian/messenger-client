@@ -5,8 +5,6 @@
 package com.aiwazian.messenger.ui.components.navigation
 
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -30,6 +28,7 @@ import com.aiwazian.messenger.ui.screens.channel.settings.ChannelSettingsScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.blockedUsers.ChannelBlockedUsersScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.invites.ChannelInviteLinksScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.invites.create.CreateInviteLinkScreen
+import com.aiwazian.messenger.ui.screens.channel.settings.joinRequests.ChannelJoinRequestsScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.subscribers.ChannelSubscribersScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.type.ChannelTypeSettingsScreen
 import com.aiwazian.messenger.ui.screens.chat.ChatScreen
@@ -39,6 +38,7 @@ import com.aiwazian.messenger.ui.screens.group.settings.addMember.AddMemberScree
 import com.aiwazian.messenger.ui.screens.group.settings.blockedUsers.GroupBlockedUsersScreen
 import com.aiwazian.messenger.ui.screens.group.settings.invites.GroupInviteLinksScreen
 import com.aiwazian.messenger.ui.screens.group.settings.invites.create.CreateGroupInviteLinkScreen
+import com.aiwazian.messenger.ui.screens.group.settings.joinRequests.GroupJoinRequestsScreen
 import com.aiwazian.messenger.ui.screens.group.settings.members.GroupMembersScreen
 import com.aiwazian.messenger.ui.screens.group.settings.type.GroupTypeSettingsScreen
 import com.aiwazian.messenger.ui.screens.logout.LogoutScreen
@@ -50,6 +50,7 @@ import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsAppearanceS
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsDarkThemeScreen
 import com.aiwazian.messenger.ui.screens.settings.data_storage.AutoDownloadMediaScreen
 import com.aiwazian.messenger.ui.screens.settings.data_storage.DataAndStorageScreen
+import com.aiwazian.messenger.ui.screens.settings.joinRequests.PendingJoinRequestsScreen
 import com.aiwazian.messenger.ui.screens.settings.language.SettingsLanguageScreen
 import com.aiwazian.messenger.ui.screens.settings.notification.NotificationSettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsPrivacyScreen
@@ -128,6 +129,7 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsDateOfBirth> { SettingsDateOfBirthScreen(level = it.level) }
                     entry<AppRoute.SettingsInvites> { SettingsInvitesScreen(level = it.level) }
                     entry<AppRoute.BlockedUserList> { BlockedUserListScreen() }
+                    entry<AppRoute.PendingJoinRequests> { PendingJoinRequestsScreen() }
                     entry<AppRoute.SettingsDevices> { SettingsDevicesScreen() }
                     entry<AppRoute.SettingsPasscode> { SettingsPasscodeScreen() }
                     entry<AppRoute.SettingsPasscodeCreate> { SettingsPasscodeCreateScreen() }
@@ -144,6 +146,7 @@ fun AppNavDisplay(
                     entry<AppRoute.ChannelTypeSettings> { ChannelTypeSettingsScreen(channelId = it.channelId) }
                     entry<AppRoute.ChannelSubscribers> { ChannelSubscribersScreen(channelId = it.channelId) }
                     entry<AppRoute.ChannelBlackList> { ChannelBlockedUsersScreen(channelId = it.channelId) }
+                    entry<AppRoute.ChannelJoinRequests> { ChannelJoinRequestsScreen(channelId = it.channelId) }
                     entry<AppRoute.ChannelInviteLinks> { ChannelInviteLinksScreen(channelId = it.channelId) }
                     entry<AppRoute.CreateInviteLink> { CreateInviteLinkScreen(channelId = it.channelId) }
                     entry<AppRoute.GroupSettings> { GroupSettingsScreen(groupId = it.groupId) }
@@ -152,6 +155,7 @@ fun AppNavDisplay(
                     entry<AppRoute.CreateGroupInviteLink> { CreateGroupInviteLinkScreen(groupId = it.groupId) }
                     entry<AppRoute.GroupMembers> { GroupMembersScreen(groupId = it.groupId) }
                     entry<AppRoute.GroupBlackList> { GroupBlockedUsersScreen(groupId = it.groupId) }
+                    entry<AppRoute.GroupJoinRequests> { GroupJoinRequestsScreen(groupId = it.groupId) }
                     entry<AppRoute.AddMember> { AddMemberScreen(groupId = it.groupId) }
                     entry<AppRoute.Logout> { LogoutScreen() }
                     entry<AppRoute.Login>(metadata = HorizontalMetadata) { LoginScreen() }
@@ -163,10 +167,10 @@ fun AppNavDisplay(
                     rememberViewModelStoreNavEntryDecorator()
                 ),
                 transitionSpec = {
-                    slideInHorizontally { it } + fadeIn() togetherWith slideOutHorizontally { -it / 8 }
+                    slideInHorizontally { it } togetherWith slideOutHorizontally { -it / 8 }
                 },
                 popTransitionSpec = {
-                    slideInHorizontally { -it / 8 } togetherWith slideOutHorizontally { it } + fadeOut()
+                    slideInHorizontally { -it / 8 } togetherWith slideOutHorizontally { it }
                 },
                 predictivePopTransitionSpec = {
                     slideInHorizontally { -it / 8 } togetherWith slideOutHorizontally { it }

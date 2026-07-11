@@ -511,7 +511,7 @@ class ChatViewModel @Inject constructor(
         val tempId = -System.currentTimeMillis()
         val job = viewModelScope.launch {
             try {
-                sendMessageUseCase(_uiState.value.chatId, text, tempId)?.let {
+                sendMessageUseCase(_uiState.value.chatId, message = text, tempId = tempId)?.let {
                     _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
                 }
             } catch (e: Exception) {
@@ -941,7 +941,11 @@ class ChatViewModel @Inject constructor(
             _uiState.update { it.copy(isProcessingInvite = true) }
             joinViaInviteLinkUseCase(code, info.chatId).onSuccess {
                 dismissInviteBottomSheet()
-                _uiEffect.emit(ChatUiEffect.NavigateToChat(info.chatId))
+                if (info.requireApproval) {
+                    _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Заявка отправлена")))
+                } else {
+                    _uiEffect.emit(ChatUiEffect.NavigateToChat(info.chatId))
+                }
             }.onFailure {
                 _uiState.update { it.copy(isProcessingInvite = false) }
                 _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_join)))

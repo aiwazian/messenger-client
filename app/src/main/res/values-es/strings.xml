@@ -276,4 +276,8 @@
     <string name="edit_time_limit_error">No se pueden editar mensajes de más de 24 horas</string>
     <string name="too_many_requests">Demasiadas solicitudes. Inténtelo de nuevo más tarde.</string>
     <string name="blocked_users">Usuarios bloqueados</string>
+    <string name="join_requests">Solicitudes de unión</string>
+    <string name="no_requests_to_join">No hay solicitudes para unirse</string>
+    <string name="pending_join_requests_description">Sus solicitudes para unirse a canales y grupos se muestran aquí.</string>
+    <string name="pending_join_requests_empty">No hay solicitudes pendientes para unirse.</string>
 </resources>

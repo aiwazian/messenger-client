@@ -103,86 +103,119 @@ import com.aiwazian.messenger.utils.DialogController
 import kotlin.math.abs
 
 @Composable
-fun ChatInputSection(
-    uiState: ChatUiState, chatViewModel: ChatViewModel
-) {
+fun ChatInputSection(uiState: ChatUiState, chatViewModel: ChatViewModel) {
     Box(
         modifier = Modifier
+            .fillMaxWidth()
             .navigationBarsPadding()
             .imePadding()
             .padding(8.dp)
     ) {
-        AnimatedContent(
-            targetState = ChatType.fromId(uiState.chatId),
-            modifier = Modifier.fillMaxWidth(),
-            transitionSpec = {
-                slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
-            }) { chatType ->
-            when (chatType) {
-                ChatType.CHANNEL -> {
-                    if (uiState.isOwner) {
-                        InputMessage(uiState = uiState, chatViewModel = chatViewModel)
-                    } else if (!uiState.isJoined) {
-                        JoinButton(onClick = chatViewModel::onJoinClicked)
+        when (ChatType.fromId(uiState.chatId)) {
+            ChatType.CHANNEL -> {
+                AnimatedContent(
+                    targetState = when {
+                        uiState.isOwner -> "input"
+                        !uiState.isJoined -> "join"
+                        else -> "none"
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) { state ->
+                    when (state) {
+                        "input" -> InputMessage(uiState = uiState, chatViewModel = chatViewModel)
+                        "join" -> JoinButton(onClick = chatViewModel::onJoinClicked)
+                        "none" -> Unit
                     }
                 }
-                
-                ChatType.GROUP -> {
-                    if (uiState.isOwner || uiState.isJoined) {
-                        InputMessage(uiState = uiState, chatViewModel = chatViewModel)
-                    } else {
-                        JoinButton(onClick = chatViewModel::onJoinClicked)
-                    }
-                }
-                
-                ChatType.PRIVATE -> {
-                    if (uiState.isBlockedByThem) {
-                        Text(
-                            text = "Отправка сообщений ограничена",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                    } else if (uiState.isBlocked) {
-                        Text(
-                            text = buildAnnotatedString {
-                                append(stringResource(R.string.user_blocked))
-                                append(". ")
-                                withLink(
-                                    LinkAnnotation.Clickable(
-                                        tag = "unblock", styles = TextLinkStyles(
-                                        style = SpanStyle(
-                                            color = MaterialTheme.colorScheme.primary,
-                                            textDecoration = TextDecoration.None
-                                        ), pressedStyle = SpanStyle(
-                                            background = MaterialTheme.colorScheme.primary.copy(
-                                                alpha = 0.4f
-                                            )
-                                        )
-                                        ), linkInteractionListener = {
-                                        chatViewModel.showBlockDialog()
-                                        })
-                                ) {
-                                    append(stringResource(R.string.unblock))
-                                }
-                                append("?")
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            lineHeight = 16.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                    } else {
-                        InputMessage(uiState = uiState, chatViewModel = chatViewModel)
-                    }
-                }
-                
-                else -> {}
             }
+            
+            ChatType.GROUP -> {
+                AnimatedContent(
+                    targetState = uiState.isOwner || uiState.isJoined,
+                    transitionSpec = {
+                        slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) { showInputField ->
+                    if (showInputField) {
+                        InputMessage(uiState = uiState, chatViewModel = chatViewModel)
+                    } else {
+                        JoinButton(onClick = chatViewModel::onJoinClicked)
+                    }
+                }
+            }
+            
+            ChatType.PRIVATE -> {
+                AnimatedContent(
+                    targetState = when {
+                        uiState.isBlockedByThem -> "blocked"
+                        uiState.isBlocked -> "unblock"
+                        else -> "input"
+                    },
+                    transitionSpec = {
+                        slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) { state ->
+                    when (state) {
+                        "blocked" -> {
+                            Text(
+                                text = "Отправка сообщений ограничена",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        
+                        "unblock" -> {
+                            Text(
+                                text = buildAnnotatedString {
+                                    append(stringResource(R.string.user_blocked))
+                                    append(". ")
+                                    withLink(
+                                        LinkAnnotation.Clickable(
+                                            tag = "unblock",
+                                            styles = TextLinkStyles(
+                                                style = SpanStyle(
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    textDecoration = TextDecoration.None
+                                                ),
+                                                pressedStyle = SpanStyle(
+                                                    background = MaterialTheme.colorScheme.primary.copy(
+                                                        alpha = 0.4f
+                                                    )
+                                                )
+                                            ),
+                                            linkInteractionListener = {
+                                                chatViewModel.showBlockDialog()
+                                            })
+                                    ) {
+                                        append(stringResource(R.string.unblock))
+                                    }
+                                    append("?")
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                lineHeight = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        
+                        "input" -> {
+                            InputMessage(uiState = uiState, chatViewModel = chatViewModel)
+                        }
+                    }
+                }
+            }
+            
+            else -> {}
         }
     }
 }
@@ -212,7 +245,8 @@ private fun InputMessage(
     var micTranslationY by remember { mutableFloatStateOf(0f) }
     
     val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments(), onResult = { uris: List<Uri> ->
+        contract = ActivityResultContracts.OpenMultipleDocuments(),
+        onResult = { uris: List<Uri> ->
             if (uris.isNotEmpty()) {
                 attachmentModal.hide()
                 chatViewModel.sendFiles(uris)
@@ -242,7 +276,8 @@ private fun InputMessage(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(
-                interactionSource = remember { MutableInteractionSource() }, indication = null
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
             ) {}
             .background(
                 color = MaterialTheme.colorScheme.surfaceContainer,
@@ -292,7 +327,12 @@ private fun InputMessage(
                         maxLines = 5,
                         minLines = 1,
                         decorationBox = { innerTextField ->
-                            Box(modifier = Modifier.padding(vertical = 12.dp, horizontal = 14.dp)) {
+                            Box(
+                                modifier = Modifier.padding(
+                                    vertical = 12.dp,
+                                    horizontal = 14.dp
+                                )
+                            ) {
                                 if (uiState.messageText.isEmpty() && !uiState.isRecording) {
                                     Text(
                                         text = stringResource(R.string.message),
@@ -349,16 +389,18 @@ private fun InputMessage(
                                         downEvent.consume()
                                         
                                         if (ContextCompat.checkSelfPermission(
-                                                context, android.Manifest.permission.RECORD_AUDIO
+                                                context,
+                                                android.Manifest.permission.RECORD_AUDIO
                                             ) == PackageManager.PERMISSION_GRANTED
                                         ) {
-                                            val releasedBeforeLongPress = withTimeoutOrNull(200L) {
-                                                do {
-                                                    val event = awaitPointerEvent()
-                                                    event.changes.forEach { it.consume() }
-                                                } while (event.changes.any { it.pressed })
-                                                true
-                                            } ?: false
+                                            val releasedBeforeLongPress =
+                                                withTimeoutOrNull(200L) {
+                                                    do {
+                                                        val event = awaitPointerEvent()
+                                                        event.changes.forEach { it.consume() }
+                                                    } while (event.changes.any { it.pressed })
+                                                    true
+                                                } ?: false
                                             
                                             if (releasedBeforeLongPress) {
                                                 micTranslationX = 0f
@@ -395,9 +437,15 @@ private fun InputMessage(
                                             val deltaY = currentY - startY
                                             
                                             if (lockedAxis == null) {
-                                                if (deltaX < -20f && abs(deltaX) > abs(deltaY)) {
+                                                if (deltaX < -20f && abs(deltaX) > abs(
+                                                        deltaY
+                                                    )
+                                                ) {
                                                     lockedAxis = "X"
-                                                } else if (deltaY < -20f && abs(deltaY) > abs(deltaX)) {
+                                                } else if (deltaY < -20f && abs(deltaY) > abs(
+                                                        deltaX
+                                                    )
+                                                ) {
                                                     lockedAxis = "Y"
                                                 }
                                             } else if (abs(deltaX) < 20f && abs(deltaY) < 20f) {
@@ -461,7 +509,8 @@ private fun InputMessage(
                                 .size(48.dp)
                                 .padding(2.dp)
                                 .clip(CircleShape)
-                                .background(micBackColor), contentAlignment = Alignment.Center
+                                .background(micBackColor),
+                            contentAlignment = Alignment.Center
                         ) {
                             AnimatedContent(
                                 targetState = uiState.isRecordingLocked,
@@ -555,9 +604,12 @@ private fun VoiceRecordingStatus(
                 modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.Center
             ) {
                 AnimatedContent(
-                    targetState = uiState.isRecordingLocked, transitionSpec = {
+                    targetState = uiState.isRecordingLocked,
+                    transitionSpec = {
                         slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
-                    }, label = "recording_hint_animation", contentAlignment = Alignment.Center
+                    },
+                    label = "recording_hint_animation",
+                    contentAlignment = Alignment.Center
                 ) { isLocked ->
                     if (isLocked) {
                         TextButton(onClick = onCancelRecording) {
@@ -656,7 +708,8 @@ private fun VoiceRecordingLockedIcon(
 @Composable
 private fun VoiceRecordingAmplitudeEffect(amplitude: Float) {
     val maxBackgroundScale = 2.2f
-    val currentScale = 1f + ((amplitude * 2.5f).coerceAtMost(1f) * (maxBackgroundScale - 1f))
+    val currentScale =
+        1f + ((amplitude * 2.5f).coerceAtMost(1f) * (maxBackgroundScale - 1f))
     Box(
         modifier = Modifier
             .size(48.dp)

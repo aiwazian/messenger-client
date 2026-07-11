@@ -276,4 +276,8 @@
     <string name="edit_time_limit_error">Non è possibile modificare i messaggi più vecchi di 24 ore</string>
     <string name="too_many_requests">Troppe richieste. Per favore riprova più tardi.</string>
     <string name="blocked_users">Utenti bloccati</string>
+    <string name="join_requests">Partecipa alle richieste</string>
+    <string name="no_requests_to_join">Nessuna richiesta di adesione</string>
+    <string name="pending_join_requests_description">Le tue richieste di adesione a canali e gruppi vengono visualizzate qui.</string>
+    <string name="pending_join_requests_empty">Non ci sono richieste di adesione in sospeso.</string>
 </resources>

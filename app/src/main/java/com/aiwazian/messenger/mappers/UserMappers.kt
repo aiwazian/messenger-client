@@ -8,9 +8,11 @@ import android.net.Uri
 import com.aiwazian.messenger.database.entity.AvatarEntity
 import com.aiwazian.messenger.database.entity.UserEntity
 import com.aiwazian.messenger.domain.Avatar
+import com.aiwazian.messenger.domain.PendingJoinRequest
 import com.aiwazian.messenger.domain.PrivacySettings
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.network.dto.AvatarDto
+import com.aiwazian.messenger.network.dto.PendingJoinRequestDto
 import com.aiwazian.messenger.network.dto.PrivacySettingsResponseDto
 import com.aiwazian.messenger.network.dto.UpdateUserRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
@@ -103,4 +105,11 @@ fun AvatarDto.toEntity(userId: Long) = AvatarEntity(
     fileId = fileId,
     userId = userId,
     sortOrder = sortOrder
+)
+
+fun PendingJoinRequestDto.toDomain() = PendingJoinRequest(
+    chatId = chatId.toLong(),
+    chatName = chatName,
+    createdAt = createdAt.toLong(),
+    avatarFileId = avatarFileId
 )

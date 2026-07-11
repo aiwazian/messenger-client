@@ -18,6 +18,7 @@ import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.People
+import androidx.compose.material.icons.rounded.PersonAddAlt1
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -119,7 +120,7 @@ fun GroupSettingsScreen(
                 onAddPhoto = viewModel::setPendingAvatarUri,
                 onDeletePhoto = viewModel::deleteAvatar
             )
-
+            
             SectionContainer {
                 FramelessTextBox(
                     value = uiState.group.name,
@@ -152,7 +153,10 @@ fun GroupSettingsScreen(
                 SectionItem(
                     leadingIcon = Icons.Rounded.Link,
                     headlineText = stringResource(R.string.invite_links),
-                    onClick = { navBackStack.add(AppRoute.GroupInviteLinks(groupId = uiState.group.id)) })
+                    onClick = {
+                        navBackStack.add(AppRoute.GroupInviteLinks(groupId = uiState.group.id))
+                    }
+                )
             }
             
             SectionContainer {
@@ -163,6 +167,13 @@ fun GroupSettingsScreen(
                     onClick = {
                         navBackStack.add(AppRoute.GroupMembers(uiState.group.id))
                     })
+                SectionItem(
+                    leadingIcon = Icons.Rounded.PersonAddAlt1,
+                    headlineText = stringResource(R.string.join_requests),
+                    onClick = {
+                        navBackStack.add(AppRoute.GroupJoinRequests(groupId = uiState.group.id))
+                    }
+                )
                 SectionItem(
                     leadingIcon = Icons.Rounded.Block,
                     headlineText = stringResource(R.string.removed_user),

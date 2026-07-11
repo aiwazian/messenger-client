@@ -274,4 +274,8 @@
     <string name="edit_time_limit_error">24 сағаттан асқан хабарларды өңдеу мүмкін емес</string>
     <string name="too_many_requests">Өтініштер тым көп. Тағы жасауды сәл кейінірек көріңізді өтінеміз.</string>
     <string name="blocked_users">Блокталған пайдаланушылар</string>
+    <string name="join_requests">Қосылу сұраулары</string>
+    <string name="no_requests_to_join">Қосылу сұраулары жоқ</string>
+    <string name="pending_join_requests_description">Арналар мен топтарға қосылу сұраулары осы жерде көрсетіледі.</string>
+    <string name="pending_join_requests_empty">Қосылу үшін күтпеген сұраулар жоқ.</string>
 </resources>

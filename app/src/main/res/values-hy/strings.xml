@@ -274,4 +274,8 @@
     <string name="edit_time_limit_error">Հնարավոր չէ խմբագրել 24 ժամից ավելի հին հաղորդագրությունները</string>
     <string name="too_many_requests">Չափազանց շատ խնդրանքներ: Խնդրում ենք փորձել ավելի ուշ:</string>
     <string name="blocked_users">Արգելափակված օգտվողներ</string>
+    <string name="join_requests">Միանալու հարցումներ</string>
+    <string name="no_requests_to_join">Միանալու հայտ չկա</string>
+    <string name="pending_join_requests_description">Ալիքներին և խմբերին միանալու ձեր հարցումները ցուցադրվում են այստեղ:</string>
+    <string name="pending_join_requests_empty">Միանալու առկախ հարցումներ չկան:</string>
 </resources>

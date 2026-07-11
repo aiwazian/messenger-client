@@ -46,6 +46,7 @@ import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionToggleItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -146,12 +147,15 @@ fun CreateInviteLinkScreen(
             SectionContainer(
                 header = { SectionHeader(title = "Ограничения") },
                 footer = { SectionDescription(text = "Вы можете ограничить срок действия ссылки или количество её использований.") }) {
-                FramelessTextBox(
-                    value = uiState.maxUses,
-                    onValueChange = viewModel::onMaxUsesChange,
-                    placeholder = "Количество использований",
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
+                
+                if (!uiState.requireApproval) {
+                    FramelessTextBox(
+                        value = uiState.maxUses,
+                        onValueChange = viewModel::onMaxUsesChange,
+                        placeholder = "Количество использований",
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
                 
                 SectionItem(
                     headlineText = "Срок действия",
@@ -168,6 +172,12 @@ fun CreateInviteLinkScreen(
                             onClick = { viewModel.onExpirationDateChange(null) })
                     }
                 }
+                
+                SectionToggleItem(
+                    text = "Заявки на вступление",
+                    isChecked = uiState.requireApproval,
+                    onCheckedChange = { viewModel.onRequireApprovalChange(!uiState.requireApproval) }
+                )
             }
         }
     }

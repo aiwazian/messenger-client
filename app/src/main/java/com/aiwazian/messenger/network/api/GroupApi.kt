@@ -90,6 +90,26 @@ interface GroupApi {
         @Path("groupId") groupId: Long,
         @Path("userId") userId: Long
     ): Response<Unit>
+    
+    @GET("groups/{groupId}/join-requests")
+    suspend fun getJoinRequests(
+        @Path("groupId") groupId: Long,
+        @Query("skip") skip: Int = 0,
+        @Query("take") take: Int = 100,
+        @Query("search") search: String? = null
+    ): Response<List<UserResponseDto>>
+    
+    @POST("groups/{groupId}/join-requests/{userId}/accept")
+    suspend fun acceptJoinRequest(
+        @Path("groupId") groupId: Long,
+        @Path("userId") userId: Long
+    ): Response<Unit>
+    
+    @POST("groups/{groupId}/join-requests/{userId}/reject")
+    suspend fun rejectJoinRequest(
+        @Path("groupId") groupId: Long,
+        @Path("userId") userId: Long
+    ): Response<Unit>
 
     @GET("groups/{groupId}/invite-links")
     suspend fun getInviteLinks(@Path("groupId") groupId: Long): Response<List<InviteLinkResponseDto>>

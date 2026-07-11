@@ -10,7 +10,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class CreateInviteLinkRequestDto(
     @SerialName("expiresAt") val expiresAt: Long? = null,
-    @SerialName("maxUses") val maxUses: Int? = null
+    @SerialName("maxUses") val maxUses: Int? = null,
+    @SerialName("requireApproval") val requireApproval: Boolean? = false
 )
 
 @Serializable
@@ -29,5 +30,6 @@ data class InviteLinkInfoDto(
     @SerialName("description") val description: String? = null,
     @SerialName("membersCount") val membersCount: Int? = null,
     @SerialName("isBanned") val isBanned: Boolean? = null,
-    @SerialName("isJoined") val isJoined: Boolean? = null
+    @SerialName("isJoined") val isJoined: Boolean? = null,
+    @SerialName("requireApproval") val requireApproval: Boolean? = false
 )

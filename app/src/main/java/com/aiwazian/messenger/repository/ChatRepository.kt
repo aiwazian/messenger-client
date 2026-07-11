@@ -319,7 +319,7 @@ class ChatRepository @Inject constructor(
         chatId: Long,
         message: String,
         tempId: Long = -System.currentTimeMillis()
-    ): Message? {
+    ): Result<Message> {
         val senderId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
         
@@ -343,19 +343,22 @@ class ChatRepository @Inject constructor(
             val response = messageApi.sendTextMessage(chatId, request, socket.socketId.orEmpty())
             if (response.isSuccessful) {
                 val sentMessage = response.body()?.toDomain()
-                sentMessage?.let {
-                    updateMessageId(tempId, it.id)
+                if (sentMessage == null) {
+                    Result.failure(Exception("Empty body"))
+                } else {
+                    updateMessageId(tempId, sentMessage.id)
+                    updateMessageStatus(sentMessage.id, MessageStatus.SENT)
+                    Result.success(sentMessage)
                 }
-                sentMessage
             } else {
                 Log.e("ChatRepository", "Failed to send message: ${response.message()}")
-                messageDao.updateMessageStatus(tempId, MessageStatus.ERROR)
-                null
+                updateMessageStatus(tempId, MessageStatus.ERROR)
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
             }
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error sending message", e)
-            messageDao.updateMessageStatus(tempId, MessageStatus.ERROR)
-            null
+            updateMessageStatus(tempId, MessageStatus.ERROR)
+            Result.failure(e)
         }
     }
     

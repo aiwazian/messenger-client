@@ -210,6 +210,7 @@ fun InviteLinkBottomSheet(
     name: String,
     description: String?,
     count: Int,
+    requireApproval: Boolean,
     isLoading: Boolean,
     onDismiss: () -> Unit,
     onJoin: () -> Unit
@@ -218,7 +219,9 @@ fun InviteLinkBottomSheet(
     
     val countText = pluralStringResource(R.plurals.subscribers_count, count, count)
     
-    val buttonText = if (chatType == ChatType.CHANNEL) {
+    val buttonText = if (requireApproval) {
+        "ПОДАТЬ ЗАЯВКУ"
+    } else if (chatType == ChatType.CHANNEL) {
         stringResource(R.string.subscribe).uppercase()
     } else {
         stringResource(R.string.join).uppercase()

@@ -298,6 +298,54 @@ class GroupRepository @Inject constructor(
         }
     }
     
+    suspend fun getJoinRequests(
+        groupId: Long,
+        skip: Int = 0,
+        take: Int = 100,
+        search: String? = null
+    ): Result<List<User>> {
+        return try {
+            val response = groupApi.getJoinRequests(groupId, skip, take, search)
+            if (response.isSuccessful) {
+                val dtos = response.body().orEmpty()
+                Result.success(dtos.map { it.toDomain() })
+            } else {
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("GroupRepository", "Error fetching join requests for group $groupId", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun acceptJoinRequest(groupId: Long, userId: Long): Result<Unit> {
+        return try {
+            val response = groupApi.acceptJoinRequest(groupId, userId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Accept join request failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("GroupRepository", "Ошибка при принятии заявки", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun rejectJoinRequest(groupId: Long, userId: Long): Result<Unit> {
+        return try {
+            val response = groupApi.rejectJoinRequest(groupId, userId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Reject join request failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("GroupRepository", "Ошибка при отклонении заявки", e)
+            Result.failure(e)
+        }
+    }
+
     suspend fun getInviteLinks(groupId: Long): Result<List<InviteLink>> {
         return try {
             val response = groupApi.getInviteLinks(groupId)
@@ -316,12 +364,14 @@ class GroupRepository @Inject constructor(
     suspend fun createInviteLink(
         groupId: Long,
         maxUses: Int?,
-        expiresAt: Long? = null
+        expiresAt: Long? = null,
+        requireApproval: Boolean = false
     ): Result<InviteLink> {
         return try {
             val request = CreateInviteLinkRequestDto(
                 maxUses = maxUses,
-                expiresAt = expiresAt
+                expiresAt = expiresAt,
+                requireApproval = requireApproval
             )
             val response = groupApi.createInviteLink(groupId, request)
             if (response.isSuccessful) {

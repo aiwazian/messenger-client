@@ -278,4 +278,8 @@
     <string name="edit_time_limit_error">Невозможно изменить сообщение старше 24 часов</string>
     <string name="too_many_requests">Слишком много запросов. Пожалуйста, повторите попытку позже.</string>
     <string name="blocked_users">Заблокированные пользователи</string>
+    <string name="join_requests">Заявки на вступление</string>
+    <string name="no_requests_to_join">Нет заявок на вступление</string>
+    <string name="pending_join_requests_description">Здесь отображаются ваши заявки на вступление в каналы и группы.</string>
+    <string name="pending_join_requests_empty">Отправленных заявок на вступление нет.</string>
 </resources>

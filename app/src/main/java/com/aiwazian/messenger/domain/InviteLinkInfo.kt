@@ -10,5 +10,6 @@ data class InviteLinkInfo(
     val description: String?,
     val membersCount: Int?,
     val isBanned: Boolean?,
-    val isJoined: Boolean?
+    val isJoined: Boolean?,
+    val requireApproval: Boolean
 )

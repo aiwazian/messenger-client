@@ -291,6 +291,7 @@ fun ProfileScreen(
             name = info.name.orEmpty(),
             description = info.description,
             count = info.membersCount ?: 0,
+            requireApproval = info.requireApproval,
             isLoading = uiState.isProcessingInvite,
             onDismiss = viewModel::dismissInviteBottomSheet,
             onJoin = viewModel::onSubscribeViaInviteLink

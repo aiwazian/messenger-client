@@ -278,4 +278,8 @@
     <string name="edit_time_limit_error">Нельга рэдагаваць паведамленні, старэйшыя за 24 гадзіны</string>
     <string name="too_many_requests">Занадта шмат запытаў. Паўтарыце спробу пазней.</string>
     <string name="blocked_users">Заблакіраваныя карыстальнікі</string>
+    <string name="join_requests">Запыты на далучэнне</string>
+    <string name="no_requests_to_join">Няма запытаў на далучэнне</string>
+    <string name="pending_join_requests_description">Вашы запыты на далучэнне да каналаў і груп адлюстроўваюцца тут.</string>
+    <string name="pending_join_requests_empty">Няма разгледжаных запытаў на далучэнне.</string>
 </resources>

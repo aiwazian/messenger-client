@@ -94,6 +94,26 @@ interface ChannelApi {
         @Path("userId") userId: Long
     ): Response<Unit>
     
+    @GET("channels/{channelId}/join-requests")
+    suspend fun getJoinRequests(
+        @Path("channelId") channelId: Long,
+        @Query("skip") skip: Int = 0,
+        @Query("take") take: Int = 100,
+        @Query("search") search: String? = null
+    ): Response<List<UserResponseDto>>
+    
+    @POST("channels/{channelId}/join-requests/{userId}/accept")
+    suspend fun acceptJoinRequest(
+        @Path("channelId") channelId: Long,
+        @Path("userId") userId: Long
+    ): Response<Unit>
+    
+    @POST("channels/{channelId}/join-requests/{userId}/reject")
+    suspend fun rejectJoinRequest(
+        @Path("channelId") channelId: Long,
+        @Path("userId") userId: Long
+    ): Response<Unit>
+    
     @POST("channels/{channelId}/avatar/init")
     suspend fun initUploadAvatar(
         @Path("channelId") channelId: Long,

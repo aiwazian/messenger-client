@@ -228,12 +228,14 @@ class ChannelRepository @Inject constructor(
     suspend fun createInviteLink(
         channelId: Long,
         maxUses: Int?,
-        expiresAt: Long? = null
+        expiresAt: Long? = null,
+        requireApproval: Boolean = false
     ): Result<InviteLink> {
         return try {
             val request = CreateInviteLinkRequestDto(
                 maxUses = maxUses,
-                expiresAt = expiresAt
+                expiresAt = expiresAt,
+                requireApproval = requireApproval
             )
             val response = channelApi.createInviteLink(channelId, request)
             if (response.isSuccessful) {
@@ -341,6 +343,54 @@ class ChannelRepository @Inject constructor(
                 "Ошибка при блокировке пользователя",
                 e
             )
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun getJoinRequests(
+        channelId: Long,
+        skip: Int = 0,
+        take: Int = 100,
+        search: String? = null
+    ): Result<List<User>> {
+        return try {
+            val response = channelApi.getJoinRequests(channelId, skip, take, search)
+            if (response.isSuccessful) {
+                val dtos = response.body().orEmpty()
+                Result.success(dtos.map { it.toDomain() })
+            } else {
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChannelRepository", "Error fetching join requests for channel $channelId", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun acceptJoinRequest(channelId: Long, userId: Long): Result<Unit> {
+        return try {
+            val response = channelApi.acceptJoinRequest(channelId, userId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Accept join request failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChannelRepository", "Ошибка при принятии заявки", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun rejectJoinRequest(channelId: Long, userId: Long): Result<Unit> {
+        return try {
+            val response = channelApi.rejectJoinRequest(channelId, userId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Reject join request failed"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChannelRepository", "Ошибка при отклонении заявки", e)
             Result.failure(e)
         }
     }

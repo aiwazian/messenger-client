@@ -10,6 +10,7 @@ import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.UserDao
 import com.aiwazian.messenger.database.entity.AvatarEntity
 import com.aiwazian.messenger.domain.OwnedChannel
+import com.aiwazian.messenger.domain.PendingJoinRequest
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
@@ -320,6 +321,35 @@ class UserRepository @Inject constructor(
                 Result.failure(Exception("Unblock user failed"))
             }
         } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun getPendingJoinRequests(): Result<List<PendingJoinRequest>> {
+        return try {
+            val response = userApi.getPendingJoinRequests()
+            if (response.isSuccessful) {
+                val dtos = response.body().orEmpty()
+                Result.success(dtos.map { it.toDomain() })
+            } else {
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Ошибка при получении заявок на вступление", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun cancelJoinRequest(chatId: Long): Result<Unit> {
+        return try {
+            val response = userApi.cancelJoinRequest(chatId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Ошибка при отмене заявки на вступление", e)
             Result.failure(e)
         }
     }

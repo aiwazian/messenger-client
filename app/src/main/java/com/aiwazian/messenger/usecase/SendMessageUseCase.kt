@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.usecase
 
-import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.repository.ChatRepository
 import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
@@ -12,7 +11,7 @@ import javax.inject.Inject
 class SendMessageUseCase @Inject constructor(
     private val chatRepository: ChatRepository
 ) {
-    suspend operator fun invoke(chatId: Long, message: String, tempId: Long? = null): Message? {
+    suspend operator fun invoke(chatId: Long, message: String, tempId: Long? = null) {
         val result = if (tempId != null) {
             chatRepository.sendMessage(chatId, message, tempId)
         } else {
@@ -21,10 +20,8 @@ class SendMessageUseCase @Inject constructor(
         
         val localChat = chatRepository.getById(chatId).firstOrNull()
         
-        if (result != null && localChat == null) {
+        if (result.isSuccess && localChat == null) {
             chatRepository.fetchChatByIdFromServer(chatId)
         }
-        
-        return result
     }
 }

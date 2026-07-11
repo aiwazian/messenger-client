@@ -276,4 +276,8 @@
     <string name="edit_time_limit_error"><![CDATA[Impossible de modifier les messages datant de plus de 24 heures]]></string>
     <string name="too_many_requests">Trop de demandes. Veuillez réessayer plus tard.</string>
     <string name="blocked_users">Utilisateurs bloqués</string>
+    <string name="join_requests">Demandes de participation</string>
+    <string name="no_requests_to_join">Aucune demande d\'adhésion</string>
+    <string name="pending_join_requests_description">Vos demandes pour rejoindre des chaînes et des groupes sont affichées ici.</string>
+    <string name="pending_join_requests_empty">Il n’y a aucune demande d’adhésion en attente.</string>
 </resources>

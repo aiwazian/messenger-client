@@ -42,6 +42,10 @@ class CreateChannelInviteLinkViewModel @Inject constructor(
         _uiState.update { it.copy(maxUses = value) }
     }
     
+    fun onRequireApprovalChange(value: Boolean) {
+        _uiState.update { it.copy(requireApproval = value) }
+    }
+    
     fun onExpirationDateChange(date: Long?) {
         _uiState.update { it.copy(expirationDate = date, showDatePicker = false) }
     }
@@ -58,8 +62,10 @@ class CreateChannelInviteLinkViewModel @Inject constructor(
         viewModelScope.launch {
             val maxUses = _uiState.value.maxUses.toIntOrNull()
             val expirationDate = _uiState.value.expirationDate
+            val requireApproval = _uiState.value.requireApproval
             
-            channelRepository.createInviteLink(channelId, maxUses, expirationDate).onSuccess {
+            channelRepository.createInviteLink(channelId, maxUses, expirationDate, requireApproval)
+                .onSuccess {
                 _effect.emit(CreateChannelInviteLinkEffect.NavigateBack)
             }.onFailure {
                 _effect.emit(CreateChannelInviteLinkEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_save_changes)))

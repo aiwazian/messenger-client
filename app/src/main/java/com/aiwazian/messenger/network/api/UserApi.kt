@@ -70,4 +70,10 @@ interface UserApi {
     
     @DELETE("users/{userId}/block")
     suspend fun unblockUser(@Path("userId") userId: Long): Response<Unit>
+    
+    @GET("users/me/join-requests")
+    suspend fun getPendingJoinRequests(): Response<List<com.aiwazian.messenger.network.dto.PendingJoinRequestDto>>
+    
+    @DELETE("users/me/join-requests/{chatId}")
+    suspend fun cancelJoinRequest(@Path("chatId") chatId: Long): Response<Unit>
 }

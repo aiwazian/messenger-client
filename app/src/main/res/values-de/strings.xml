@@ -274,4 +274,8 @@
     <string name="edit_time_limit_error">Nachrichten, die älter als 24 Stunden sind, können nicht bearbeitet werden</string>
     <string name="too_many_requests">Zu viele Anfragen. Bitte versuchen Sie es später noch einmal.</string>
     <string name="blocked_users">Blockierte Benutzer</string>
+    <string name="join_requests">Beitrittsanfragen</string>
+    <string name="no_requests_to_join">Keine Beitrittsanfragen</string>
+    <string name="pending_join_requests_description">Hier werden Ihre Anfragen zum Beitritt zu Kanälen und Gruppen angezeigt.</string>
+    <string name="pending_join_requests_empty">Es sind keine Beitrittsanfragen ausstehend.</string>
 </resources>

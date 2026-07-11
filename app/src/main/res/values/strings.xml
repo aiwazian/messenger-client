@@ -282,4 +282,8 @@
     <string name="edit_time_limit_error">Cannot edit messages older than 24 hours</string>
     <string name="too_many_requests">Too many requests. Please try again later.</string>
     <string name="blocked_users">Blocked Users</string>
+    <string name="join_requests">Join Requests</string>
+    <string name="no_requests_to_join">No requests to join</string>
+    <string name="pending_join_requests_description">Your requests to join channels and groups are displayed here.</string>
+    <string name="pending_join_requests_empty">There are no pending requests to join.</string>
 </resources>

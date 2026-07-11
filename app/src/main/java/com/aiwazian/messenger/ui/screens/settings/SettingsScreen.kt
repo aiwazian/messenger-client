@@ -19,6 +19,7 @@ import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.Gavel
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Outbox
 import androidx.compose.material.icons.rounded.PrivacyTip
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -101,6 +102,13 @@ fun SettingsScreen() {
                     headlineText = stringResource(R.string.confidentiality),
                     onClick = {
                         navBackStack.add(AppRoute.SettingsPrivacy)
+                    })
+                
+                SectionItem(
+                    leadingIcon = Icons.Rounded.Outbox,
+                    headlineText = stringResource(R.string.join_requests),
+                    onClick = {
+                        navBackStack.add(AppRoute.PendingJoinRequests)
                     })
                 
                 SectionItem(

@@ -14,6 +14,7 @@ fun InviteLinkInfoDto.toDomain(): InviteLinkInfo {
         description = description,
         membersCount = membersCount,
         isBanned = isBanned,
-        isJoined = isJoined
+        isJoined = isJoined,
+        requireApproval = requireApproval ?: false
     )
 }

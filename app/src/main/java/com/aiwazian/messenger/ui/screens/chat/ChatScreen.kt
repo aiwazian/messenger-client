@@ -467,6 +467,7 @@ fun ChatScreen(
                 name = info.name.orEmpty(),
                 description = info.description,
                 count = info.membersCount ?: 0,
+                requireApproval = info.requireApproval,
                 isLoading = uiState.isProcessingInvite,
                 onDismiss = chatViewModel::dismissInviteBottomSheet,
                 onJoin = chatViewModel::onSubscribeViaInviteLink

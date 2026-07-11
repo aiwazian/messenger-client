@@ -18,6 +18,7 @@ import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.People
+import androidx.compose.material.icons.rounded.PersonAddAlt1
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -162,6 +163,13 @@ fun ChannelSettingsScreen(
                     onClick = {
                         navBackStack.add(AppRoute.ChannelSubscribers(uiState.channel.id))
                     })
+                SectionItem(
+                    leadingIcon = Icons.Rounded.PersonAddAlt1,
+                    headlineText = stringResource(R.string.join_requests),
+                    onClick = {
+                        navBackStack.add(AppRoute.ChannelJoinRequests(channelId = uiState.channel.id))
+                    }
+                )
                 SectionItem(
                     leadingIcon = Icons.Rounded.Block,
                     headlineText = stringResource(R.string.removed_user),
