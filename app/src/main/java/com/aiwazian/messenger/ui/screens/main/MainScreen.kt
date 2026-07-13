@@ -762,7 +762,7 @@ private fun DrawerContent(
     val maxAdHeight = if (screenHeight < 400.dp) {
         100.dp
     } else {
-        260.dp
+        240.dp
     }
     
     ModalDrawerSheet(

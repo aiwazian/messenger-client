@@ -40,8 +40,14 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
-# --- Твои DTO / Serializable классы ---
-# Укажи пакет, где лежат DTO
+# --- Room / Ketch Database ---
+-keep class * extends androidx.room3.RoomDatabase
+-keep class **_Impl {
+    public <init>(...);
+}
+-keep class * extends androidx.room3.Entity
+-keep class * extends androidx.room3.Dao
+
 -keep,includedescriptorclasses class com.aiwazian.messenger.**$$serializer { *; }
 
 -keepclassmembers class com.aiwazian.messenger.** {
@@ -55,16 +61,16 @@
 -keep class com.aiwazian.messenger.network.** { *; }
 
 # --- WorkManager ---
--keep class * extends androidx.work.Worker { *; }
--keep class * extends androidx.work.CoroutineWorker { *; }
--keep class * extends androidx.work.ListenableWorker { *; }
--keep class * extends androidx.work.InputMerger { *; }
+#-keep class * extends androidx.work.Worker { *; }
+#-keep class * extends androidx.work.CoroutineWorker { *; }
+#-keep class * extends androidx.work.ListenableWorker { *; }
+#-keep class * extends androidx.work.InputMerger { *; }
 
 -keep class androidx.work.** { *; }
 
--keepclassmembers class * extends androidx.work.ListenableWorker {
-    public <init>(android.content.Context, androidx.work.WorkerParameters);
-}
+#-keepclassmembers class * extends androidx.work.ListenableWorker {
+#    public <init>(android.content.Context, androidx.work.WorkerParameters);
+#}
 
 # Deleting all calls Log.v, Log.d, Log.i, Log.w, Log.e, Log.wtf
 -assumenosideeffects class android.util.Log {
