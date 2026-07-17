@@ -276,4 +276,7 @@
     <string name="no_requests_to_join">가입 요청이 없습니다</string>
     <string name="pending_join_requests_description">채널 및 그룹 가입 요청이 여기에 표시됩니다.</string>
     <string name="pending_join_requests_empty">보류 중인 가입 요청이 없습니다.</string>
+    <string name="draft">초안</string>
+    <string name="login_hint">기존 로그인을 사용하거나 새 로그인을 만드세요.</string>
+    <string name="password_hint">계정 비밀번호를 입력하세요</string>
 </resources>

@@ -280,4 +280,7 @@
     <string name="no_requests_to_join">No hay solicitudes para unirse</string>
     <string name="pending_join_requests_description">Sus solicitudes para unirse a canales y grupos se muestran aquí.</string>
     <string name="pending_join_requests_empty">No hay solicitudes pendientes para unirse.</string>
+    <string name="draft">Borrador</string>
+    <string name="login_hint">Utilice un inicio de sesión existente o cree uno nuevo</string>
+    <string name="password_hint">Ingrese la contraseña de su cuenta</string>
 </resources>

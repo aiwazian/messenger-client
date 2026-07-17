@@ -278,4 +278,7 @@
     <string name="no_requests_to_join">Қосылу сұраулары жоқ</string>
     <string name="pending_join_requests_description">Арналар мен топтарға қосылу сұраулары осы жерде көрсетіледі.</string>
     <string name="pending_join_requests_empty">Қосылу үшін күтпеген сұраулар жоқ.</string>
+    <string name="draft">Жоба</string>
+    <string name="login_hint">Бар логинді пайдаланыңыз немесе жаңасын жасаңыз</string>
+    <string name="password_hint">Тіркелгіңіздің құпия сөзін енгізіңіз</string>
 </resources>

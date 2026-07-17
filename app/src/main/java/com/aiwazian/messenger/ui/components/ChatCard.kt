@@ -40,8 +40,12 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -74,7 +78,7 @@ fun ChatCard(
     ListItem(
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = modifier.combinedClickable(
-                onClick = onClickChat, onLongClick = onLongClickChat
+            onClick = onClickChat, onLongClick = onLongClickChat
         ),
         content = {
             Text(
@@ -87,53 +91,66 @@ fun ChatCard(
             )
         },
         supportingContent = {
-            if (chat.lastMessage != null) {
-                var color = Color.Unspecified
-                val text = if (chat.lastMessage.attachments.isNotEmpty()) {
-                    color = MaterialTheme.colorScheme.primary
-                    stringResource(
-                        when (chat.lastMessage.attachments.first().type) {
-                            AttachmentType.IMAGE -> R.string.photo
-                            AttachmentType.FILE -> R.string.file
-                            AttachmentType.VIDEO -> R.string.video
-                            AttachmentType.VOICE -> R.string.voice_message
-                            AttachmentType.GIF -> R.string.gif
+            var text = AnnotatedString("")
+            
+            if (!chat.draftText.isNullOrBlank()) {
+                text = buildAnnotatedString {
+                    withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.error)) {
+                        append(stringResource(R.string.draft) + ": ")
+                    }
+                    append(chat.draftText.trim())
+                }
+            } else if (chat.lastMessage != null) {
+                if (chat.lastMessage.attachments.isNotEmpty()) {
+                    text = buildAnnotatedString {
+                        withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            append(
+                                stringResource(
+                                    when (chat.lastMessage.attachments.first().type) {
+                                        AttachmentType.IMAGE -> R.string.photo
+                                        AttachmentType.FILE -> R.string.file
+                                        AttachmentType.VIDEO -> R.string.video
+                                        AttachmentType.VOICE -> R.string.voice_message
+                                        AttachmentType.GIF -> R.string.gif
+                                    }
+                                )
+                            )
                         }
-                    )
+                    }
                 } else if (!chat.lastMessage.text.isNullOrBlank()) {
-                    chat.lastMessage.text
-                } else if (chat.lastMessage.systemMessageEventType != null) {
-                    color = MaterialTheme.colorScheme.primary
-                    stringResource(
-                        when (chat.lastMessage.systemMessageEventType) {
-                            SystemMessageEventType.CHANNEL_CREATED -> R.string.channel_created
-                            SystemMessageEventType.GROUP_CREATED -> R.string.group_created
-                            SystemMessageEventType.HISTORY_CLEARED -> R.string.history_cleared
+                    text = buildAnnotatedString {
+                        val isGroupChat = ChatType.fromId(chat.id) == ChatType.GROUP
+                        val isMyMessage = chat.lastMessage.senderId == myId
+                        val showMyPrefix =
+                            isGroupChat && isMyMessage && chat.lastMessage.systemMessageEventType == null
+                        if (showMyPrefix) {
+                            append(stringResource(R.string.you) + ": ")
                         }
-                    )
-                } else {
-                    ""
+                        append(chat.lastMessage.text.trim())
+                    }
+                } else if (chat.lastMessage.systemMessageEventType != null) {
+                    text = buildAnnotatedString {
+                        withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            append(
+                                stringResource(
+                                    when (chat.lastMessage.systemMessageEventType) {
+                                        SystemMessageEventType.CHANNEL_CREATED -> R.string.channel_created
+                                        SystemMessageEventType.GROUP_CREATED -> R.string.group_created
+                                        SystemMessageEventType.HISTORY_CLEARED -> R.string.history_cleared
+                                    }
+                                )
+                            )
+                        }
+                    }
                 }
-                
-                val isGroupChat = ChatType.fromId(chat.id) == ChatType.GROUP
-                val isMyMessage = chat.lastMessage.senderId == myId
-                val showMyPrefix =
-                    isGroupChat && isMyMessage && chat.lastMessage.systemMessageEventType == null
-                
-                val finalText = if (showMyPrefix) {
-                    stringResource(R.string.you) + ": " + text
-                } else {
-                    text
-                }
-                
-                Text(
-                    text = finalText,
-                    maxLines = 1,
-                    color = color,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodySmall
-                )
             }
+            
+            Text(
+                text = text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodySmall
+            )
         },
         leadingContent = {
             Box {
@@ -200,8 +217,7 @@ fun ChatCard(
         },
         trailingContent = {
             Column(
-                verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.End
+                verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.End
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (chat.lastMessage != null) {

@@ -280,4 +280,7 @@
     <string name="no_requests_to_join">Nessuna richiesta di adesione</string>
     <string name="pending_join_requests_description">Le tue richieste di adesione a canali e gruppi vengono visualizzate qui.</string>
     <string name="pending_join_requests_empty">Non ci sono richieste di adesione in sospeso.</string>
+    <string name="draft">Bozza</string>
+    <string name="login_hint">Utilizza un login esistente o creane uno nuovo</string>
+    <string name="password_hint">Inserisci la password del tuo account</string>
 </resources>

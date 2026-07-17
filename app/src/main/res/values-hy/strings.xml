@@ -278,4 +278,7 @@
     <string name="no_requests_to_join">Միանալու հայտ չկա</string>
     <string name="pending_join_requests_description">Ալիքներին և խմբերին միանալու ձեր հարցումները ցուցադրվում են այստեղ:</string>
     <string name="pending_join_requests_empty">Միանալու առկախ հարցումներ չկան:</string>
+    <string name="draft">Նախագիծ</string>
+    <string name="login_hint">Օգտագործեք գոյություն ունեցող մուտք կամ ստեղծեք նորը</string>
+    <string name="password_hint">Մուտքագրեք ձեր հաշվի գաղտնաբառը</string>
 </resources>

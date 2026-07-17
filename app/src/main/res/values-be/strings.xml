@@ -282,4 +282,7 @@
     <string name="no_requests_to_join">Няма запытаў на далучэнне</string>
     <string name="pending_join_requests_description">Вашы запыты на далучэнне да каналаў і груп адлюстроўваюцца тут.</string>
     <string name="pending_join_requests_empty">Няма разгледжаных запытаў на далучэнне.</string>
+    <string name="draft">Чарнавік</string>
+    <string name="login_hint">Выкарыстоўвайце існуючы лагін або стварыце новы</string>
+    <string name="password_hint">Увядзіце пароль ад уліковага запісу</string>
 </resources>

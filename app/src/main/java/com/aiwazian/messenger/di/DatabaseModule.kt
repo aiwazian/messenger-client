@@ -12,6 +12,7 @@ import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
+import com.aiwazian.messenger.database.dao.DraftDao
 import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.database.dao.MessageDao
@@ -66,4 +67,7 @@ object DatabaseModule {
     
     @Provides
     fun provideAvatarDao(database: AppDatabase): AvatarDao = database.avatarDao()
+    
+    @Provides
+    fun provideDraftDao(database: AppDatabase): DraftDao = database.draftDao()
 }

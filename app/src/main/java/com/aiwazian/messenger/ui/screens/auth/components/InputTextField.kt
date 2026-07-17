@@ -4,9 +4,12 @@
 
 package com.aiwazian.messenger.ui.screens.auth.components
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -48,13 +51,17 @@ fun InputTextField(
         singleLine = true,
         isError = isError,
         supportingText = {
-            AnimatedVisibility(
+            AnimatedContent(
+                targetState = supportingText,
                 modifier = Modifier.fillMaxWidth(),
-                visible = !supportingText.isNullOrBlank(),
-                enter = slideInVertically() + fadeIn()
-            ) {
-                if (!supportingText.isNullOrBlank()) {
-                    Text(text = supportingText, color = MaterialTheme.colorScheme.error)
+                transitionSpec = {
+                    fadeIn() + slideInVertically() togetherWith fadeOut() + slideOutVertically()
+                }
+            ) { text ->
+                if (!text.isNullOrBlank()) {
+                    Text(text = text, color = MaterialTheme.colorScheme.error)
+                } else {
+                    Text(text = "")
                 }
             }
         },

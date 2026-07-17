@@ -286,4 +286,7 @@
     <string name="no_requests_to_join">No requests to join</string>
     <string name="pending_join_requests_description">Your requests to join channels and groups are displayed here.</string>
     <string name="pending_join_requests_empty">There are no pending requests to join.</string>
+    <string name="draft">Draft</string>
+    <string name="login_hint">Use an existing login or create a new</string>
+    <string name="password_hint">Enter your account password</string>
 </resources>

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -39,6 +40,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -112,14 +114,30 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(50.dp)
+            verticalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.height(it.calculateTopPadding() + 50.dp))
-            Text(
-                text = stringResource(R.string.user_login),
-                fontSize = 28.sp
-            )
-            Column(Modifier.width(300.dp)) {
+            Column(
+                modifier = Modifier
+                    .width(300.dp)
+                    .padding(
+                        top = it.calculateTopPadding(),
+                        bottom = it.calculateBottomPadding() + 10.dp
+                    ),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(R.string.user_login),
+                    fontSize = 28.sp
+                )
+                Text(
+                    text = stringResource(R.string.login_hint),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    lineHeight = 12.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 14.dp)
+                )
+                Spacer(Modifier.height(20.dp))
                 InputTextField(
                     modifier = Modifier.focusRequester(focusRequester),
                     value = uiState.login,
@@ -130,7 +148,6 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
                     onSendClick = viewModel::checkLogin
                 )
             }
-            Spacer(modifier = Modifier.height(it.calculateBottomPadding() + 50.dp))
         }
         
         if (uiState.showFoundDialog) {

@@ -9,8 +9,10 @@ import android.util.Log
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChatDao
+import com.aiwazian.messenger.database.dao.DraftDao
 import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.database.entity.ChatEntity
+import com.aiwazian.messenger.database.entity.DraftEntity
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
@@ -53,6 +55,7 @@ class ChatRepository @Inject constructor(
     private val attachmentDao: AttachmentDao,
     private val fileRepository: FileRepository,
     private val chatDao: ChatDao,
+    private val draftDao: DraftDao,
     private val userRepository: UserRepository,
     private val channelRepository: ChannelRepository,
     private val groupRepository: GroupRepository,
@@ -65,7 +68,7 @@ class ChatRepository @Inject constructor(
         val myId = me.id
         chatDao.getAllChatsFlow(myId).flatMapLatest { chatEntities ->
             if (chatEntities.isEmpty()) return@flatMapLatest flowOf(emptyList())
-            
+
             val flows = chatEntities.map { chatEntity ->
                 val lastMessageFlow = if (ChatType.fromId(chatEntity.chatId) == ChatType.PRIVATE) {
                     messageDao.getChatLastMessageFlow(myId, chatEntity.chatId)
@@ -73,20 +76,23 @@ class ChatRepository @Inject constructor(
                     messageDao.getChatLastMessageFlow(chatEntity.chatId)
                 }
                 
+                val draftFlow = draftDao.getDraftFlow(myId, chatEntity.chatId)
+
                 combine(
                     lastMessageFlow,
-                    resolveChatInfoFlow(chatEntity, myId)
-                ) { messageWithAttachments, info ->
+                    resolveChatInfoFlow(chatEntity, myId),
+                    draftFlow
+                ) { messageWithAttachments, info, draft ->
                     if (info == null) return@combine null
                     val name = info.first
                     val avatarUri = info.second
-                    
+
                     val lastMessage = messageWithAttachments?.let {
                         val attachments = it.attachments.map { att -> att.toDomain() }
                         it.message.toDomain(attachments)
                     }
                     
-                    chatEntity.toDomain(name, avatarUri, lastMessage)
+                    chatEntity.toDomain(name, avatarUri, lastMessage, draft?.text)
                 }
             }
             
@@ -693,5 +699,19 @@ class ChatRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error refreshing online users", e)
         }
+    }
+    
+    suspend fun saveDraft(chatId: Long, text: String) {
+        val myId = userRepository.getMe().first().id
+        draftDao.upsertDraft(DraftEntity(userId = myId, chatId = chatId, text = text))
+    }
+    
+    suspend fun deleteDraft(chatId: Long) {
+        val myId = userRepository.getMe().first().id
+        draftDao.deleteDraft(myId, chatId)
+    }
+    
+    fun getDraftFlow(userId: Long, chatId: Long): Flow<String?> {
+        return draftDao.getDraftFlow(userId, chatId).map { it?.text }
     }
 }

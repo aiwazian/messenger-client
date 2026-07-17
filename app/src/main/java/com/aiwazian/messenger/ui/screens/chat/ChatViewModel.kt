@@ -56,6 +56,7 @@ import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -99,10 +100,11 @@ class ChatViewModel @Inject constructor(
 ) : ViewModel() {
     
     private val audioRecorderManager = AudioRecorderManager(context)
-    private var recordingTimerJob: kotlinx.coroutines.Job? = null
+    private var recordingTimerJob: Job? = null
+    private var draftSaveJob: Job? = null
     
     private val pendingVoiceStartPositions = mutableMapOf<String, Int>()
-    private val sendingJobs = mutableMapOf<Long, kotlinx.coroutines.Job>()
+    private val sendingJobs = mutableMapOf<Long, Job>()
     
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState = _uiState.asStateFlow()
@@ -143,9 +145,20 @@ class ChatViewModel @Inject constructor(
         notificationHelper.clearChatNotifications(chatId)
         webSocketClient.emitEvent("chat_open", mapOf("chatId" to chatId.toString()))
         
+        loadDraft(chatId)
         loadChatInfo()
         observeRealtimeEvents()
         observeMessages()
+    }
+    
+    private fun loadDraft(chatId: Long) {
+        viewModelScope.launch {
+            val myId = userRepository.getMe().first().id
+            val draft = chatRepository.getDraftFlow(myId, chatId).firstOrNull()
+            if (!draft.isNullOrBlank()) {
+                _uiState.update { it.copy(messageText = draft) }
+            }
+        }
     }
     
     // region Initialization & Settings
@@ -491,6 +504,18 @@ class ChatViewModel @Inject constructor(
     // region Message Actions
     fun changeText(newText: String) {
         _uiState.update { it.copy(messageText = newText) }
+        
+        draftSaveJob?.cancel()
+        draftSaveJob = if (newText.isNotBlank()) {
+            viewModelScope.launch {
+                delay(500.milliseconds)
+                chatRepository.saveDraft(_uiState.value.chatId, newText)
+            }
+        } else {
+            viewModelScope.launch {
+                chatRepository.deleteDraft(_uiState.value.chatId)
+            }
+        }
     }
     
     fun onSendMessageClicked() {
@@ -511,9 +536,8 @@ class ChatViewModel @Inject constructor(
         val tempId = -System.currentTimeMillis()
         val job = viewModelScope.launch {
             try {
-                sendMessageUseCase(_uiState.value.chatId, message = text, tempId = tempId)?.let {
-                    _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
-                }
+                sendMessageUseCase(_uiState.value.chatId, message = text, tempId = tempId)
+                _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
             } catch (e: Exception) {
                 Log.e("ChatViewModel", "Error sending message", e)
             } finally {

@@ -278,4 +278,7 @@
     <string name="no_requests_to_join">Keine Beitrittsanfragen</string>
     <string name="pending_join_requests_description">Hier werden Ihre Anfragen zum Beitritt zu Kanälen und Gruppen angezeigt.</string>
     <string name="pending_join_requests_empty">Es sind keine Beitrittsanfragen ausstehend.</string>
+    <string name="draft">Entwurf</string>
+    <string name="login_hint">Verwenden Sie ein vorhandenes Login oder erstellen Sie ein neues</string>
+    <string name="password_hint">Geben Sie Ihr Kontopasswort ein</string>
 </resources>

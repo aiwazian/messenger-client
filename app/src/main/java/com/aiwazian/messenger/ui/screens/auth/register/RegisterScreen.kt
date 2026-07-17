@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -145,14 +146,24 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(50.dp)
+            verticalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.height(it.calculateTopPadding() + 50.dp))
-            Text(
-                text = stringResource(R.string.registration),
-                fontSize = 28.sp
-            )
-            Column(Modifier.width(300.dp)) {
+            Column(
+                modifier = Modifier
+                    .width(300.dp)
+                    .padding(
+                        top = it.calculateTopPadding(),
+                        bottom = it.calculateBottomPadding() + 10.dp
+                    ),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(R.string.registration),
+                    fontSize = 28.sp
+                )
+                
+                Spacer(Modifier.height(20.dp))
+                
                 InputTextField(
                     modifier = Modifier.focusRequester(focusRequester),
                     value = uiState.firstName,
@@ -176,6 +187,8 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
                     supportingText = uiState.passwordFieldError?.asString(),
                     onSendClick = viewModel::signUp
                 )
+                
+                Spacer(Modifier.height(10.dp))
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(
@@ -265,7 +278,6 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
                         lineHeight = 16.sp
                     )
                 }
-                Spacer(modifier = Modifier.height(it.calculateBottomPadding() + 50.dp))
             }
         }
     }

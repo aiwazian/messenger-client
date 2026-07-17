@@ -12,5 +12,6 @@ data class Chat(
     val chatName: UiText,
     val isPinned: Boolean,
     val avatarUri: Uri? = null,
-    val lastMessage: Message?
+    val lastMessage: Message?,
+    val draftText: String? = null
 )
