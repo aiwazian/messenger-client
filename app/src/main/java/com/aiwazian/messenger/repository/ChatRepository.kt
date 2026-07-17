@@ -711,6 +711,11 @@ class ChatRepository @Inject constructor(
         draftDao.deleteDraft(myId, chatId)
     }
     
+    suspend fun deleteAllDrafts() {
+        val myId = userRepository.getMe().first().id
+        draftDao.deleteAllDrafts(myId)
+    }
+    
     fun getDraftFlow(userId: Long, chatId: Long): Flow<String?> {
         return draftDao.getDraftFlow(userId, chatId).map { it?.text }
     }

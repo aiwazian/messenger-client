@@ -287,6 +287,9 @@
     <string name="pending_join_requests_description">Your requests to join channels and groups are displayed here.</string>
     <string name="pending_join_requests_empty">There are no pending requests to join.</string>
     <string name="draft">Draft</string>
+    <string name="clear_drafts">Clear Drafts</string>
+    <string name="clear_drafts_confirm_message">Are you sure you want to delete all drafts from all chats?</string>
+    <string name="drafts_cleared">All drafts cleared</string>
     <string name="login_hint">Use an existing login or create a new</string>
     <string name="password_hint">Enter your account password</string>
 </resources>

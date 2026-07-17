@@ -279,6 +279,9 @@
     <string name="pending_join_requests_description">Арналар мен топтарға қосылу сұраулары осы жерде көрсетіледі.</string>
     <string name="pending_join_requests_empty">Қосылу үшін күтпеген сұраулар жоқ.</string>
     <string name="draft">Жоба</string>
+    <string name="clear_drafts">Нобайларды тазалау</string>
+    <string name="clear_drafts_confirm_message">Барлық чаттардағы барлық нобайларды шынымен жойғыңыз келе ме\?</string>
+    <string name="drafts_cleared">Барлық жобалар тазартылды</string>
     <string name="login_hint">Бар логинді пайдаланыңыз немесе жаңасын жасаңыз</string>
     <string name="password_hint">Тіркелгіңіздің құпия сөзін енгізіңіз</string>
 </resources>

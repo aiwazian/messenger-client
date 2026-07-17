@@ -283,6 +283,9 @@
     <string name="pending_join_requests_description">Вашы запыты на далучэнне да каналаў і груп адлюстроўваюцца тут.</string>
     <string name="pending_join_requests_empty">Няма разгледжаных запытаў на далучэнне.</string>
     <string name="draft">Чарнавік</string>
+    <string name="clear_drafts">Ачысціць чарнавікі</string>
+    <string name="clear_drafts_confirm_message">Вы ўпэўнены, што хочаце выдаліць усе чарнавікі з усіх чатаў\?</string>
+    <string name="drafts_cleared">Усе чарнавікі выдалены</string>
     <string name="login_hint">Выкарыстоўвайце існуючы лагін або стварыце новы</string>
     <string name="password_hint">Увядзіце пароль ад уліковага запісу</string>
 </resources>

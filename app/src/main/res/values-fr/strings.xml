@@ -281,6 +281,9 @@
     <string name="pending_join_requests_description">Vos demandes pour rejoindre des chaînes et des groupes sont affichées ici.</string>
     <string name="pending_join_requests_empty">Il n’y a aucune demande d’adhésion en attente.</string>
     <string name="draft">Brouillon</string>
+    <string name="clear_drafts">Effacer les brouillons</string>
+    <string name="clear_drafts_confirm_message"><![CDATA[Êtes-vous sûr de vouloir supprimer tous les brouillons de toutes les discussions \?]]></string>
+    <string name="drafts_cleared">Tous les brouillons effacés</string>
     <string name="login_hint">Utilisez un identifiant existant ou créez un nouveau</string>
     <string name="password_hint">Entrez le mot de passe de votre compte</string>
 </resources>

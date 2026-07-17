@@ -25,4 +25,7 @@ interface DraftDao {
     
     @Query("DELETE FROM drafts WHERE userId = :userId AND chatId = :chatId")
     suspend fun deleteDraft(userId: Long, chatId: Long)
+    
+    @Query("DELETE FROM drafts WHERE userId = :userId")
+    suspend fun deleteAllDrafts(userId: Long)
 }

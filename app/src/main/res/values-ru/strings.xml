@@ -283,6 +283,9 @@
     <string name="pending_join_requests_description">Здесь отображаются ваши заявки на вступление в каналы и группы.</string>
     <string name="pending_join_requests_empty">Отправленных заявок на вступление нет.</string>
     <string name="draft">Черновик</string>
+    <string name="clear_drafts">Очистить черновики</string>
+    <string name="clear_drafts_confirm_message">Вы уверены, что хотите удалить все черновики во всех чатах?</string>
+    <string name="drafts_cleared">Все черновики удалены</string>
     <string name="login_hint">Используйте существующий логин или создайте новый</string>
     <string name="password_hint">Введите пароль вашей учетной записи</string>
 </resources>
