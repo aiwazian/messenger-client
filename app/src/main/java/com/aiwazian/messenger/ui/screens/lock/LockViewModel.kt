@@ -81,7 +81,9 @@ class LockViewModel @Inject constructor(
             CodeInputStatus.Success -> {
                 clearPasscode()
                 _uiState.update { it.copy(status = CodeInputStatus.Default) }
-                viewModelScope.launch { appLockManager.unlock() }
+                viewModelScope.launch {
+                    appLockManager.unlock()
+                }
             }
             
             CodeInputStatus.Error -> {

@@ -63,6 +63,12 @@ class MainViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
+            appLockManager.isLockApp.collectLatest { isLocked ->
+                _uiState.update { it.copy(isLocked = isLocked) }
+            }
+        }
+        
+        viewModelScope.launch {
             appLockManager.hasPasscode.collectLatest { passcode ->
                 _uiState.update { it.copy(hasPasscode = passcode) }
             }

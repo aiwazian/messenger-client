@@ -43,7 +43,6 @@ import com.aiwazian.messenger.ui.screens.group.settings.invites.create.CreateGro
 import com.aiwazian.messenger.ui.screens.group.settings.joinRequests.GroupJoinRequestsScreen
 import com.aiwazian.messenger.ui.screens.group.settings.members.GroupMembersScreen
 import com.aiwazian.messenger.ui.screens.group.settings.type.GroupTypeSettingsScreen
-import com.aiwazian.messenger.ui.screens.lock.LockScreen
 import com.aiwazian.messenger.ui.screens.logout.LogoutScreen
 import com.aiwazian.messenger.ui.screens.main.MainScreen
 import com.aiwazian.messenger.ui.screens.newmessage.NewMessageScreen
@@ -169,24 +168,15 @@ fun AppNavDisplay(
                     entry<AppRoute.Logout> { LogoutScreen() }
                     entry<AppRoute.Login>(metadata = HorizontalMetadata) { LoginScreen() }
                     entry<AppRoute.Password>(metadata = HorizontalMetadata) {
-                        PasswordScreen(
-                            login = it.login,
-                            canReset = it.canReset
-                        )
+                        PasswordScreen(login = it.login, canReset = it.canReset)
                     }
                     entry<AppRoute.PasswordResetCode>(metadata = HorizontalMetadata) {
-                        PasswordResetCodeScreen(
-                            login = it.login
-                        )
+                        PasswordResetCodeScreen(login = it.login)
                     }
                     entry<AppRoute.ResetPassword>(metadata = HorizontalMetadata) {
-                        ResetPasswordScreen(
-                            login = it.login,
-                            code = it.code
-                        )
+                        ResetPasswordScreen(login = it.login, code = it.code)
                     }
                     entry<AppRoute.Register>(metadata = HorizontalMetadata) { RegisterScreen(login = it.login) }
-                    entry<AppRoute.Lock> { LockScreen() }
                 },
                 entryDecorators = listOf(
                     rememberSaveableStateHolderNavEntryDecorator(),

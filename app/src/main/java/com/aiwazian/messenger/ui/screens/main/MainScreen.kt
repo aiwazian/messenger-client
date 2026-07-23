@@ -129,6 +129,7 @@ import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.screens.lock.LockScreen
 import com.aiwazian.messenger.ui.screens.main.search.ChatResultsList
 import com.aiwazian.messenger.ui.screens.main.search.EmptySearchResultsPlaceholder
 import com.aiwazian.messenger.ui.screens.main.search.LoadingPlaceholder
@@ -174,12 +175,18 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
         gesturesEnabled = uiState.selectedChatIds.isEmpty(),
         drawerState = drawerState,
         drawerContent = {
-            DrawerContent(
-                drawerState = drawerState, user = uiState.me, theme = uiState.theme
-            )
+            DrawerContent(drawerState = drawerState, user = uiState.me, theme = uiState.theme)
         },
     ) {
         Content(drawerState, viewModel)
+    }
+    
+    AnimatedVisibility(
+        visible = uiState.isLocked,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        LockScreen()
     }
 }
 

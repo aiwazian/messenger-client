@@ -12,9 +12,6 @@ import kotlinx.serialization.Serializable
 sealed interface AppRoute : NavKey {
     
     @Serializable
-    data object Lock : AppRoute
-    
-    @Serializable
     data object Main : AppRoute
     
     @Serializable

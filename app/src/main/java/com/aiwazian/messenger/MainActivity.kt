@@ -9,10 +9,6 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -22,9 +18,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.navigation.AppNavDisplay
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.screens.lock.LockScreen
 import com.aiwazian.messenger.ui.theme.ApplicationTheme
-import com.aiwazian.messenger.utils.AppLockManager
 import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.ThemeManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -34,9 +28,6 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-    
-    @Inject
-    lateinit var appLockManager: AppLockManager
     
     @Inject
     lateinit var themeManager: ThemeManager
@@ -82,7 +73,6 @@ class MainActivity : AppCompatActivity() {
         }
         
         setContent {
-            val isLockApp by appLockManager.isLockApp.collectAsState()
             val selectedTheme by themeManager.currentTheme.collectAsState()
             val primaryColor by themeManager.appPrimaryColor.collectAsState()
             val isDynamicColorEnable by themeManager.dynamicColor.collectAsState()
@@ -107,14 +97,6 @@ class MainActivity : AppCompatActivity() {
                     *startRoutes.toTypedArray(),
                     externalRouteFlow = externalRouteFlow
                 )
-                
-                AnimatedVisibility(
-                    visible = isLockApp,
-                    enter = fadeIn(tween(200)),
-                    exit = fadeOut(tween(200))
-                ) {
-                    LockScreen()
-                }
             }
         }
     }

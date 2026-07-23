@@ -26,5 +26,6 @@ data class MainUiState(
     val onlineUserIds: Set<Long> = emptySet(),
     val showNotificationBottomSheet: Boolean = false,
     val askedPermission: Boolean = false,
-    val showAccountDialog: Boolean = false
+    val showAccountDialog: Boolean = false,
+    val isLocked: Boolean = false
 )
