@@ -286,4 +286,17 @@
     <string name="drafts_cleared">Tutte le bozze sono state cancellate</string>
     <string name="login_hint">Utilizza un login esistente o creane uno nuovo</string>
     <string name="password_hint">Inserisci la password del tuo account</string>
+    <string name="email">E-mail</string>
+    <string name="forgot_password">Ha dimenticato la password\?</string>
+    <string name="enter_code">Inserisci il codice</string>
+    <string name="code_sent_to_email">Un codice di 6 cifre è stato inviato alla tua email</string>
+    <string name="enter_new_password">Inserisci la nuova password</string>
+    <string name="new_password_hint">Inserisci una nuova password che verrà utilizzata per accedere al tuo account</string>
+    <string name="invalid_code">Codice non valido o scaduto</string>
+    <string name="user_not_found">Utente non trovato</string>
+    <string name="no_email_associated">Nessuna email associata a questo account</string>
+    <string name="password_reset_request_failed">Impossibile inviare il codice di reimpostazione della password</string>
+    <string name="remove_email">Rimuovi e-mail</string>
+    <string name="change_email">Cambia e-mail</string>
+    <string name="remove">Rimuovere</string>
 </resources>

@@ -10,4 +10,6 @@ sealed interface SettingsSecuritySideEffect {
     data class ShowSnackbar(val message: UiText) : SettingsSecuritySideEffect
     data object NavigateToCloudPassword : SettingsSecuritySideEffect
     data object NavigateToLogin : SettingsSecuritySideEffect
+    data object NavigateToEmail : SettingsSecuritySideEffect
+    data object NavigateToEmailConfig : SettingsSecuritySideEffect
 }

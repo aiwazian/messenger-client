@@ -292,4 +292,17 @@
     <string name="drafts_cleared">All drafts cleared</string>
     <string name="login_hint">Use an existing login or create a new</string>
     <string name="password_hint">Enter your account password</string>
+    <string name="email">Email</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="enter_code">Enter code</string>
+    <string name="code_sent_to_email">A 6-digit code has been sent to your email</string>
+    <string name="enter_new_password">Enter new password</string>
+    <string name="new_password_hint">Enter a new password that will be used to log in to your account</string>
+    <string name="invalid_code">Invalid or expired code</string>
+    <string name="user_not_found">User not found</string>
+    <string name="no_email_associated">No email associated with this account</string>
+    <string name="password_reset_request_failed">Failed to send password reset code</string>
+    <string name="remove_email">Remove Email</string>
+    <string name="change_email">Change Email</string>
+    <string name="remove">Remove</string>
 </resources>

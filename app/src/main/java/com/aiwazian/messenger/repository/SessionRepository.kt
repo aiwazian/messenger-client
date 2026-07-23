@@ -61,13 +61,17 @@ class SessionRepository @Inject constructor(
         }
     }
     
-    suspend fun deleteSession(sessionId: Int): Boolean {
+    suspend fun deleteSession(sessionId: Int): Result<Unit> {
         return try {
             val response = sessionApi.deleteSession(sessionId)
-            response.isSuccessful
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Throwable("Error while delete session: ${response.errorBody()}"))
+            }
         } catch (e: Exception) {
             Log.e("SessionRepository", "Error deleting session", e)
-            false
+            Result.failure(e)
         }
     }
     

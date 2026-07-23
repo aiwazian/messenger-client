@@ -48,6 +48,43 @@ class PasswordViewModel @Inject constructor(
         _uiState.update { it.copy(login = login) }
     }
     
+    fun setCanReset(canReset: Boolean) {
+        _uiState.update { it.copy(canReset = canReset) }
+    }
+    
+    fun showForgotPasswordDialog() {
+        _uiState.update { it.copy(showForgotPasswordDialog = true) }
+    }
+    
+    fun hideForgotPasswordDialog() {
+        _uiState.update { it.copy(showForgotPasswordDialog = false) }
+    }
+    
+    fun requestPasswordReset() {
+        if (_uiState.value.isLoading) return
+        
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            authRepository.requestPasswordReset(_uiState.value.login).onSuccess {
+                _uiState.update { it.copy(showForgotPasswordDialog = false) }
+                _uiEffect.emit(PasswordUiEffect.NavigateToPasswordResetCode(_uiState.value.login))
+            }.onError { error ->
+                val message = when (error) {
+                    ApiResult.Error.NoInternet,
+                    ApiResult.Error.Timeout -> UiText.StringResource(R.string.failed_to_connect)
+                    
+                    ApiResult.Error.NotFound -> UiText.StringResource(R.string.user_not_found)
+                    ApiResult.Error.Unauthorized -> UiText.StringResource(R.string.no_email_associated)
+                    ApiResult.Error.TooManyRequests -> UiText.StringResource(R.string.too_many_requests)
+                    else -> UiText.StringResource(R.string.password_reset_request_failed)
+                }
+                _uiEffect.emit(PasswordUiEffect.ShowSnackbar(message))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+            _uiState.update { it.copy(isLoading = false) }
+        }
+    }
+    
     fun signIn() {
         if (_uiState.value.isLoading) return
         

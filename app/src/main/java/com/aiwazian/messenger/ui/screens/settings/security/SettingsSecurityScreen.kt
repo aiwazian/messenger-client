@@ -14,9 +14,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.rounded.Devices
-import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.PersonOutline
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -74,7 +75,6 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
             when (effect) {
                 is SettingsSecuritySideEffect.ShowSnackbar -> {
                     snackbarJob?.cancel()
-                    
                     snackbarJob = launch {
                         snackbarHostState.currentSnackbarData?.dismiss()
                         snackbarHostState.showSnackbar(
@@ -90,6 +90,14 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
                 
                 SettingsSecuritySideEffect.NavigateToLogin -> {
                     navBackStack.add(AppRoute.SettingsLogin)
+                }
+                
+                SettingsSecuritySideEffect.NavigateToEmail -> {
+                    navBackStack.add(AppRoute.SettingsEmail)
+                }
+                
+                SettingsSecuritySideEffect.NavigateToEmailConfig -> {
+                    navBackStack.add(AppRoute.SettingsEmailConfig)
                 }
             }
         }
@@ -119,9 +127,15 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
                 )
                 
                 SectionItem(
-                    leadingIcon = Icons.Rounded.Key,
+                    leadingIcon = Icons.Outlined.Key,
                     headlineText = stringResource(R.string.cloud_password),
                     onClick = viewModel::onCloudPasswordClick
+                )
+                
+                SectionItem(
+                    leadingIcon = Icons.Outlined.Email,
+                    headlineText = stringResource(R.string.email),
+                    onClick = viewModel::onEmailClick
                 )
                 
                 val passcodeEnabledText = if (uiState.passcodeEnabled) {
@@ -180,6 +194,41 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
                             shape = MaterialTheme.shapes.medium
                         ) {
                             Text(stringResource(R.string.enable_passcode))
+                        }
+                    }
+                }
+            }
+            
+            if (uiState.showEmailBottomSheet) {
+                ModalBottomSheet(
+                    dragHandle = null,
+                    onDismissRequest = viewModel::hideEmailBottomSheet
+                ) {
+                    Column(
+                        modifier = Modifier.padding(10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        val composition by rememberLottieComposition(
+                            spec = LottieCompositionSpec.Asset(LottieAnimation.MAILBOX)
+                        )
+                        
+                        LottieAnimation(
+                            composition = composition,
+                            modifier = Modifier.size(100.dp),
+                            iterations = LottieConstants.IterateForever,
+                            isPlaying = true
+                        )
+                        Text("С помощью электронного адреса можно будет сбросить пароль в случае, если вы его забудете.")
+                        TextButton(
+                            onClick = {
+                                viewModel.hideEmailBottomSheet()
+                                viewModel.navigateToEmail()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Text("Добавить")
                         }
                     }
                 }

@@ -622,7 +622,6 @@ private fun DefaultTopBar(
                 onLoadMore = searchViewModel::loadMore,
                 onChatClick = { chatId, chatName ->
                     scope.launch {
-                        searchBarState.animateToCollapsed()
                         navBackStack.add(AppRoute.Chat(chatId, chatName))
                     }
                 })
@@ -762,7 +761,7 @@ private fun DrawerContent(
     val maxAdHeight = if (screenHeight < 400.dp) {
         100.dp
     } else {
-        240.dp
+        300.dp
     }
     
     ModalDrawerSheet(

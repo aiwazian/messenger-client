@@ -76,4 +76,16 @@ interface UserApi {
     
     @DELETE("users/me/join-requests/{chatId}")
     suspend fun cancelJoinRequest(@Path("chatId") chatId: Long): Response<Unit>
+    
+    @GET("users/me/email")
+    suspend fun getEmail(): Response<com.aiwazian.messenger.network.dto.EmailResponseDto>
+    
+    @PATCH("users/me/email")
+    suspend fun setEmail(@Body request: com.aiwazian.messenger.network.dto.SetEmailRequestDto): Response<Unit>
+    
+    @POST("users/me/email/verify")
+    suspend fun verifyEmail(@Body request: com.aiwazian.messenger.network.dto.VerifyEmailRequestDto): Response<com.aiwazian.messenger.network.dto.EmailResponseDto>
+    
+    @DELETE("users/me/email")
+    suspend fun disableEmail(): Response<Unit>
 }

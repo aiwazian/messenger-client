@@ -10,6 +10,7 @@ import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.database.entity.AccountEntity
 import com.aiwazian.messenger.domain.ChangeLoginRequest
 import com.aiwazian.messenger.domain.ChangePasswordRequest
+import com.aiwazian.messenger.domain.LoginCheckResult
 import com.aiwazian.messenger.domain.SignInRequest
 import com.aiwazian.messenger.domain.SignInResponse
 import com.aiwazian.messenger.domain.SignUpRequest
@@ -20,6 +21,12 @@ import com.aiwazian.messenger.network.api.AuthApi
 import com.aiwazian.messenger.network.api.UserApi
 import com.aiwazian.messenger.network.dto.ChangeLoginRequestDto
 import com.aiwazian.messenger.network.dto.ChangePasswordRequestDto
+import com.aiwazian.messenger.network.dto.EmailResponseDto
+import com.aiwazian.messenger.network.dto.RequestPasswordResetDto
+import com.aiwazian.messenger.network.dto.ResetPasswordRequestDto
+import com.aiwazian.messenger.network.dto.SetEmailRequestDto
+import com.aiwazian.messenger.network.dto.VerifyEmailRequestDto
+import com.aiwazian.messenger.network.dto.VerifyResetCodeDto
 import com.aiwazian.messenger.network.toApiError
 import com.aiwazian.messenger.utils.DataStoreManager
 import com.aiwazian.messenger.utils.SessionManager
@@ -177,13 +184,22 @@ class AuthRepository @Inject constructor(
         }
     }
     
-    suspend fun checkLoginAvailable(login: String): Result<Boolean> {
+    suspend fun checkLoginAvailable(login: String): Result<LoginCheckResult> {
         return try {
             val response = authApi.checkLoginAvailable(login)
             when (response.code()) {
-                200 -> Result.success(true)
-                409 -> Result.success(false)
-                else -> Result.success(false)
+                200 -> {
+                    val body = response.body()
+                    Result.success(
+                        LoginCheckResult(
+                            available = body?.available ?: false,
+                            canReset = body?.canReset ?: false
+                        )
+                    )
+                }
+                
+                409 -> Result.success(LoginCheckResult(available = false, canReset = false))
+                else -> Result.success(LoginCheckResult(available = false, canReset = false))
             }
         } catch (e: Exception) {
             Log.e("AuthRepository", "Ошибка при проверке логина", e)
@@ -279,6 +295,137 @@ class AuthRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e("AuthRepository", "Ошибка при смене логина", e)
             Result.failure(e)
+        }
+    }
+    
+    suspend fun setEmail(email: String): Result<Unit> {
+        return try {
+            val dto = SetEmailRequestDto(email = email)
+            val response = userApi.setEmail(dto)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Ошибка установки почты: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Ошибка при установке почты", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun verifyEmail(code: String): Result<EmailResponseDto> {
+        return try {
+            val dto = VerifyEmailRequestDto(code = code)
+            val response = userApi.verifyEmail(dto)
+            if (response.isSuccessful) {
+                response.body()?.let {
+                    Result.success(it)
+                } ?: Result.failure(Exception("Пустой ответ сервера"))
+            } else {
+                Result.failure(Exception("Неверный код"))
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Ошибка при верификации почты", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun disableEmail(): Result<Unit> {
+        return try {
+            val response = userApi.disableEmail()
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Ошибка отключения почты: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Ошибка при отключении почты", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun getEmail(): Result<EmailResponseDto> {
+        return try {
+            val response = userApi.getEmail()
+            if (response.isSuccessful) {
+                response.body()?.let {
+                    Result.success(it)
+                } ?: Result.failure(Exception("Пустой ответ сервера"))
+            } else {
+                Result.failure(Exception("Ошибка получения почты: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Ошибка при получении почты", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun requestPasswordReset(login: String): ApiResult<Unit> {
+        return try {
+            val dto = RequestPasswordResetDto(login = login)
+            val response = authApi.requestPasswordReset(dto)
+            if (response.isSuccessful) {
+                ApiResult.Success(Unit)
+            } else {
+                response.toApiError()
+            }
+        } catch (e: UnknownHostException) {
+            Log.e("AuthRepository", "Нет интернета", e)
+            ApiResult.Error.NoInternet
+        } catch (e: SocketTimeoutException) {
+            Log.e("AuthRepository", "Таймаут", e)
+            ApiResult.Error.Timeout
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Ошибка при запросе сброса пароля", e)
+            ApiResult.Error.Unknown(e)
+        }
+    }
+    
+    suspend fun verifyResetCode(login: String, code: String): ApiResult<Boolean> {
+        return try {
+            val dto = VerifyResetCodeDto(login = login, code = code)
+            val response = authApi.verifyResetCode(dto)
+            if (response.isSuccessful) {
+                ApiResult.Success(response.body()?.valid ?: false)
+            } else {
+                response.toApiError()
+            }
+        } catch (e: UnknownHostException) {
+            Log.e("AuthRepository", "Нет интернета", e)
+            ApiResult.Error.NoInternet
+        } catch (e: SocketTimeoutException) {
+            Log.e("AuthRepository", "Таймаут", e)
+            ApiResult.Error.Timeout
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Ошибка при верификации кода", e)
+            ApiResult.Error.Unknown(e)
+        }
+    }
+    
+    suspend fun resetPassword(
+        login: String,
+        code: String,
+        newPassword: String
+    ): ApiResult<SignInResponse> {
+        return try {
+            val dto = ResetPasswordRequestDto(login = login, code = code, newPassword = newPassword)
+            val response = authApi.resetPassword(dto)
+            if (response.isSuccessful) {
+                response.body()?.let {
+                    ApiResult.Success(it.toDomain())
+                } ?: ApiResult.Error.Unknown(IllegalStateException("Empty body"))
+            } else {
+                response.toApiError()
+            }
+        } catch (e: UnknownHostException) {
+            Log.e("AuthRepository", "Нет интернета", e)
+            ApiResult.Error.NoInternet
+        } catch (e: SocketTimeoutException) {
+            Log.e("AuthRepository", "Таймаут", e)
+            ApiResult.Error.Timeout
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Ошибка при сбросе пароля", e)
+            ApiResult.Error.Unknown(e)
         }
     }
 }

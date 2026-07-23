@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.lock
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.ui.components.CodeInputStatus
 import com.aiwazian.messenger.ui.screens.settings.security.passcode.PasscodeViewModel
 import com.aiwazian.messenger.utils.AppLockManager
 import com.aiwazian.messenger.utils.VibrationManager
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
 class LockViewModel @Inject constructor(
@@ -29,7 +31,7 @@ class LockViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
     
     val fingerprintEnabled = appLockManager.fingerprintEnabled
-
+    
     init {
         viewModelScope.launch {
             appLockManager.blockedUntil.collectLatest { blockedUntil ->
@@ -40,13 +42,13 @@ class LockViewModel @Inject constructor(
             }
         }
     }
-
+    
     private fun startTimer(blockedUntil: Long) {
         viewModelScope.launch {
             while (System.currentTimeMillis() < blockedUntil) {
                 val remaining = ((blockedUntil - System.currentTimeMillis()) / 1000).toInt()
                 _uiState.update { it.copy(remainingSeconds = remaining) }
-                delay(1000)
+                delay(1.seconds)
             }
             _uiState.update { it.copy(blockedUntil = 0L, remainingSeconds = 0) }
             appLockManager.resetFailedAttempts()
@@ -54,10 +56,11 @@ class LockViewModel @Inject constructor(
     }
     
     fun onPasscodeChanged(newPasscode: String) {
+        if (_uiState.value.status != CodeInputStatus.Default) return
+        if (_uiState.value.blockedUntil > System.currentTimeMillis()) return
+        
         vibrationManager.vibrate(VibrationPattern.TactileResponse)
         
-        if (_uiState.value.blockedUntil > System.currentTimeMillis()) return
-
         if (newPasscode.length <= PasscodeViewModel.MAX_LENGTH_PASSCODE) {
             _uiState.update { it.copy(passcode = newPasscode) }
         }
@@ -73,6 +76,24 @@ class LockViewModel @Inject constructor(
         }
     }
     
+    fun onStatusShown(status: CodeInputStatus) {
+        when (status) {
+            CodeInputStatus.Success -> {
+                clearPasscode()
+                _uiState.update { it.copy(status = CodeInputStatus.Default) }
+                viewModelScope.launch { appLockManager.unlock() }
+            }
+            
+            CodeInputStatus.Error -> {
+                clearPasscode()
+                _uiState.update { it.copy(status = CodeInputStatus.Default) }
+                viewModelScope.launch { appLockManager.incrementFailedAttempts() }
+            }
+            
+            CodeInputStatus.Default -> {}
+        }
+    }
+    
     private fun clearPasscode() {
         _uiState.update { it.copy(passcode = "") }
     }
@@ -82,16 +103,10 @@ class LockViewModel @Inject constructor(
         val isCorrect = appLockManager.checkPasscode(currentPasscode)
         
         if (isCorrect) {
-            clearPasscode()
-            viewModelScope.launch {
-                appLockManager.unlock()
-            }
+            _uiState.update { it.copy(status = CodeInputStatus.Success) }
         } else {
             vibrationManager.vibrate(VibrationPattern.Error)
-            clearPasscode()
-            viewModelScope.launch {
-                appLockManager.incrementFailedAttempts()
-            }
+            _uiState.update { it.copy(status = CodeInputStatus.Error) }
         }
     }
 }

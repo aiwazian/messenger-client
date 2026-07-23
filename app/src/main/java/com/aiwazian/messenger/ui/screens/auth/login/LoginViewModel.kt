@@ -56,11 +56,11 @@ class LoginViewModel @Inject constructor(
         
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            authRepository.checkLoginAvailable(login).onSuccess { find ->
-                if (find) {
+            authRepository.checkLoginAvailable(login).onSuccess { result ->
+                if (result.available) {
                     _uiState.update { it.copy(showNotFoundDialog = true) }
                 } else {
-                    _uiState.update { it.copy(showFoundDialog = true) }
+                    _uiState.update { it.copy(showFoundDialog = true, canReset = result.canReset) }
                 }
             }.onFailure {
                 if (it.isNetworkError()) {

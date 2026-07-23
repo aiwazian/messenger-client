@@ -6,4 +6,5 @@ package com.aiwazian.messenger.utils
 
 object LottieAnimation {
     const val KEY_LOCK = "key_lock.json"
+    const val MAILBOX = "mailbox.json"
 }

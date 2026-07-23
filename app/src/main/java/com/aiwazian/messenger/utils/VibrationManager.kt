@@ -26,6 +26,6 @@ class VibrationManager @Inject constructor(
     }
     
     fun vibrate(pattern: LongArray) {
-        vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
+        vibrator.vibrate(VibrationEffect.createWaveform(pattern, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 }

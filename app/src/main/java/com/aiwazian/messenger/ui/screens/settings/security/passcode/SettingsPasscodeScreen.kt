@@ -15,7 +15,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.Backspace
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -41,10 +40,10 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.CodeBlocks
+import com.aiwazian.messenger.ui.components.CodeInputBlocks
 import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.CustomNumberBoard
+import com.aiwazian.messenger.ui.components.NumberKeyboard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -122,40 +121,15 @@ fun SettingsPasscodeCreateScreen(
                     )
                 }
                 
-                CodeBlocks(
-                    count = PasscodeViewModel.MAX_LENGTH_PASSCODE,
-                    showInput = false,
-                    code = uiState.passcode
+                CodeInputBlocks(
+                    length = PasscodeViewModel.MAX_LENGTH_PASSCODE,
+                    value = uiState.passcode
                 )
             }
             
-            val boardButtons = listOf(
-                listOf(
-                    "1",
-                    "2",
-                    "3"
-                ),
-                listOf(
-                    "4",
-                    "5",
-                    "6"
-                ),
-                listOf(
-                    "7",
-                    "8",
-                    "9"
-                ),
-                listOf(
-                    null,
-                    "0",
-                    Icons.AutoMirrored.Rounded.Backspace
-                ),
-            )
-            
-            CustomNumberBoard(
+            NumberKeyboard(
                 value = uiState.passcode,
-                buttons = boardButtons,
-                onChange = passcodeViewModel::onPasscodeChanged
+                onValueChange = passcodeViewModel::onPasscodeChanged
             )
         }
     }
@@ -217,39 +191,15 @@ fun SettingsPasscodeChangeScreen(passcodeViewModel: PasscodeViewModel = hiltView
                     )
                 }
                 
-                CodeBlocks(
-                    count = PasscodeViewModel.MAX_LENGTH_PASSCODE,
-                    code = uiState.passcode
+                CodeInputBlocks(
+                    length = PasscodeViewModel.MAX_LENGTH_PASSCODE,
+                    value = uiState.passcode
                 )
             }
             
-            val boardButtons = listOf(
-                listOf(
-                    "1",
-                    "2",
-                    "3"
-                ),
-                listOf(
-                    "4",
-                    "5",
-                    "6"
-                ),
-                listOf(
-                    "7",
-                    "8",
-                    "9"
-                ),
-                listOf(
-                    null,
-                    "0",
-                    Icons.AutoMirrored.Rounded.Backspace
-                ),
-            )
-            
-            CustomNumberBoard(
+            NumberKeyboard(
                 value = uiState.passcode,
-                buttons = boardButtons,
-                onChange = passcodeViewModel::onPasscodeChanged
+                onValueChange = passcodeViewModel::onPasscodeChanged
             )
         }
     }
@@ -333,7 +283,6 @@ private fun SettingsPasscodeLockScreen(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
             }
             
             if (hasEnrolledFingerprints) {

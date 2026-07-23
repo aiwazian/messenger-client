@@ -35,5 +35,29 @@ data class SignUpRequestDto(
 
 @Serializable
 data class LoginAvailableResponseDto(
-    @SerialName("available") val available: Boolean
+    @SerialName("available") val available: Boolean,
+    @SerialName("canReset") val canReset: Boolean = false
+)
+
+@Serializable
+data class RequestPasswordResetDto(
+    @SerialName("login") val login: String
+)
+
+@Serializable
+data class VerifyResetCodeDto(
+    @SerialName("login") val login: String,
+    @SerialName("code") val code: String
+)
+
+@Serializable
+data class VerifyResetCodeResponseDto(
+    @SerialName("valid") val valid: Boolean
+)
+
+@Serializable
+data class ResetPasswordRequestDto(
+    @SerialName("login") val login: String,
+    @SerialName("code") val code: String,
+    @SerialName("newPassword") val newPassword: String
 )

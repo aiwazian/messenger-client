@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.settings.security.devices
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
@@ -37,17 +36,9 @@ class DevicesViewModel @Inject constructor(
     val sideEffect = _sideEffect.asSharedFlow()
     
     init {
-        getSessions()
-    }
-    
-    private fun getSessions() {
         viewModelScope.launch {
-            try {
-                sessionRepository.getAllSessions().onSuccess { sessions ->
-                    _uiState.update { it.copy(sessions = sessions) }
-                }
-            } catch (e: Exception) {
-                Log.e("DevicesViewModel", "Error getting sessions", e)
+            sessionRepository.getAllSessions().onSuccess { sessions ->
+                _uiState.update { it.copy(sessions = sessions) }
             }
         }
     }
@@ -99,17 +90,12 @@ class DevicesViewModel @Inject constructor(
         viewModelScope.launch {
             hideTerminateSessionDialog()
             closeSessionInfo()
-            try {
-                val success = sessionRepository.deleteSession(sessionId)
-                if (success) {
-                    _uiState.update { state ->
-                        state.copy(sessions = state.sessions.filter { it.id != sessionId })
-                    }
-                    _sideEffect.emit(DevicesSideEffect.ShowSnackbar(UiText.DynamicString("Сессия завершена")))
-                } else {
-                    handleError("Не удалось завершить сессию")
+            sessionRepository.deleteSession(sessionId).onSuccess {
+                _uiState.update { state ->
+                    state.copy(sessions = state.sessions.filter { it.id != sessionId })
                 }
-            } catch (_: Exception) {
+                _sideEffect.emit(DevicesSideEffect.ShowSnackbar(UiText.DynamicString("Сессия завершена")))
+            }.onFailure {
                 handleError("Не удалось завершить сессию")
             }
         }

@@ -166,7 +166,7 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
                     }
                     TextButton(onClick = {
                         viewModel.hideFoundDialog()
-                        navBackStack.add(AppRoute.Password(uiState.login))
+                        navBackStack.add(AppRoute.Password(uiState.login, uiState.canReset))
                     }) {
                         Text(stringResource(R.string.yes))
                     }

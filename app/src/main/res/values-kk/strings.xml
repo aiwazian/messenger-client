@@ -284,4 +284,17 @@
     <string name="drafts_cleared">Барлық жобалар тазартылды</string>
     <string name="login_hint">Бар логинді пайдаланыңыз немесе жаңасын жасаңыз</string>
     <string name="password_hint">Тіркелгіңіздің құпия сөзін енгізіңіз</string>
+    <string name="email">Электрондық пошта</string>
+    <string name="forgot_password">Құпия сөзді ұмыттыңыз ба\?</string>
+    <string name="enter_code">Кодты енгізіңіз</string>
+    <string name="code_sent_to_email">Электрондық поштаңызға 6 таңбалы код жіберілді</string>
+    <string name="enter_new_password">Жаңа құпия сөзді енгізіңіз</string>
+    <string name="new_password_hint">Тіркелгіңізге кіру үшін пайдаланылатын жаңа құпия сөзді енгізіңіз</string>
+    <string name="invalid_code">Жарамсыз немесе мерзімі өтіп кеткен код</string>
+    <string name="user_not_found">Пайдаланушы табылмады</string>
+    <string name="no_email_associated">Бұл тіркелгімен байланыстырылған электрондық пошта жоқ</string>
+    <string name="password_reset_request_failed">Құпия сөзді қалпына келтіру кодын жіберу мүмкін болмады</string>
+    <string name="remove_email">Электрондық поштаны жою</string>
+    <string name="change_email">Электрондық поштаны өзгерту</string>
+    <string name="remove">Жою</string>
 </resources>

@@ -288,4 +288,17 @@
     <string name="drafts_cleared">Усе чарнавікі выдалены</string>
     <string name="login_hint">Выкарыстоўвайце існуючы лагін або стварыце новы</string>
     <string name="password_hint">Увядзіце пароль ад уліковага запісу</string>
+    <string name="email">Электронная пошта</string>
+    <string name="forgot_password">Забыліся пароль\?</string>
+    <string name="enter_code">Увядзіце код</string>
+    <string name="code_sent_to_email">На вашу электронную пошту быў адпраўлены 6-значны код</string>
+    <string name="enter_new_password">Увядзіце новы пароль</string>
+    <string name="new_password_hint">Увядзіце новы пароль, які будзе выкарыстоўвацца для ўваходу ў ваш уліковы запіс</string>
+    <string name="invalid_code">Няправільны або пратэрмінаваны код</string>
+    <string name="user_not_found">Карыстальнік не знойдзены</string>
+    <string name="no_email_associated">Няма электроннай пошты, звязанай з гэтым уліковым запісам</string>
+    <string name="password_reset_request_failed">Не ўдалося адправіць код скіду пароля</string>
+    <string name="remove_email">Выдаліць электронную пошту</string>
+    <string name="change_email">Змяніць электронную пошту</string>
+    <string name="remove">Выдаліць</string>
 </resources>

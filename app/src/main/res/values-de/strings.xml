@@ -284,4 +284,17 @@
     <string name="drafts_cleared">Alle Entwürfe geklärt</string>
     <string name="login_hint">Verwenden Sie ein vorhandenes Login oder erstellen Sie ein neues</string>
     <string name="password_hint">Geben Sie Ihr Kontopasswort ein</string>
+    <string name="email">E-Mail</string>
+    <string name="forgot_password">Passwort vergessen\?</string>
+    <string name="enter_code">Code eingeben</string>
+    <string name="code_sent_to_email">Ein 6-stelliger Code wurde an Ihre E-Mail-Adresse gesendet</string>
+    <string name="enter_new_password">Geben Sie ein neues Passwort ein</string>
+    <string name="new_password_hint">Geben Sie ein neues Passwort ein, das für die Anmeldung bei Ihrem Konto verwendet wird</string>
+    <string name="invalid_code">Ungültiger oder abgelaufener Code</string>
+    <string name="user_not_found">Benutzer nicht gefunden</string>
+    <string name="no_email_associated">Mit diesem Konto ist keine E-Mail-Adresse verknüpft</string>
+    <string name="password_reset_request_failed">Der Code zum Zurücksetzen des Passworts konnte nicht gesendet werden</string>
+    <string name="remove_email">E-Mail entfernen</string>
+    <string name="change_email">E-Mail ändern</string>
+    <string name="remove">Entfernen</string>
 </resources>

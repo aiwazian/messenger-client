@@ -8,55 +8,41 @@ import com.aiwazian.messenger.utils.SessionManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
-import okhttp3.Protocol
 import okhttp3.Response
-import okhttp3.ResponseBody.Companion.toResponseBody
+import kotlin.time.Duration.Companion.milliseconds
 
 class AuthInterceptor(
     private val shouldSkipAuth: (String) -> Boolean
 ) : Interceptor {
-
+    
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
         val path = request.url.encodedPath
-
+        
         if (shouldSkipAuth(path)) {
             return chain.proceed(request)
         }
-
+        
         if (!SessionManager.isInit) {
             runBlocking {
                 while (!SessionManager.isInit) {
-                    delay(100)
+                    delay(100.milliseconds)
                 }
             }
         }
-
+        
         val token = SessionManager.getToken()
-        val authRequest = if (token.isNotEmpty()) {
-            request.newBuilder()
-                .addHeader(
-                    "Authorization",
-                    "Bearer $token"
-                )
-                .build()
-        } else {
-            return Response.Builder()
-                .request(request)
-                .protocol(Protocol.HTTP_1_1)
-                .code(401)
-                .message("Unauthorized")
-                .body("".toResponseBody(null))
-                .build()
-        }
-
+        val authRequest = request.newBuilder()
+            .addHeader("Authorization", "Bearer $token")
+            .build()
+        
         val response = chain.proceed(authRequest)
-
+        
         if (response.code == 401) {
             SessionManager.setAuthorized(false)
             SessionManager.getUnauthorizedCallback()?.invoke()
         }
-
+        
         return response
     }
 }

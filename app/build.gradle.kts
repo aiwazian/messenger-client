@@ -35,6 +35,9 @@ android {
         }
         
         release {
+            optimization {
+                enable = true
+            }
             isShrinkResources = true
             isMinifyEnabled = true
             proguardFiles(

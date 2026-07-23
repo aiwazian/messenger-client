@@ -26,7 +26,10 @@ object RetrofitInstance {
     private val skipAuthPaths = listOf(
         "auth/signin",
         "auth/signup",
-        "auth/check"
+        "auth/check",
+        "auth/password-reset/request",
+        "auth/password-reset/verify",
+        "auth/password-reset/confirm",
     )
     
     private val okHttpClient = OkHttpClient.Builder()

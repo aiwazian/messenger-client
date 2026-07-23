@@ -22,6 +22,8 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.aiwazian.messenger.ui.screens.auth.login.LoginScreen
 import com.aiwazian.messenger.ui.screens.auth.password.PasswordScreen
+import com.aiwazian.messenger.ui.screens.auth.password.reset.PasswordResetCodeScreen
+import com.aiwazian.messenger.ui.screens.auth.password.reset.ResetPasswordScreen
 import com.aiwazian.messenger.ui.screens.auth.register.RegisterScreen
 import com.aiwazian.messenger.ui.screens.channel.create.CreateChannelScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.ChannelSettingsScreen
@@ -41,6 +43,7 @@ import com.aiwazian.messenger.ui.screens.group.settings.invites.create.CreateGro
 import com.aiwazian.messenger.ui.screens.group.settings.joinRequests.GroupJoinRequestsScreen
 import com.aiwazian.messenger.ui.screens.group.settings.members.GroupMembersScreen
 import com.aiwazian.messenger.ui.screens.group.settings.type.GroupTypeSettingsScreen
+import com.aiwazian.messenger.ui.screens.lock.LockScreen
 import com.aiwazian.messenger.ui.screens.logout.LogoutScreen
 import com.aiwazian.messenger.ui.screens.main.MainScreen
 import com.aiwazian.messenger.ui.screens.newmessage.NewMessageScreen
@@ -64,6 +67,9 @@ import com.aiwazian.messenger.ui.screens.settings.profile.SelectChannelScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.username.SettingsUsernameScreen
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsCloudPasswordScreen
+import com.aiwazian.messenger.ui.screens.settings.security.SettingsEmailConfigScreen
+import com.aiwazian.messenger.ui.screens.settings.security.SettingsEmailScreen
+import com.aiwazian.messenger.ui.screens.settings.security.SettingsEmailVerifyScreen
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsLoginScreen
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsSecurityScreen
 import com.aiwazian.messenger.ui.screens.settings.security.devices.SettingsDevicesScreen
@@ -136,6 +142,9 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsPasscodeChange> { SettingsPasscodeChangeScreen() }
                     entry<AppRoute.SettingsCloudPassword> { SettingsCloudPasswordScreen() }
                     entry<AppRoute.SettingsLogin> { SettingsLoginScreen() }
+                    entry<AppRoute.SettingsEmail> { SettingsEmailScreen() }
+                    entry<AppRoute.SettingsEmailVerify> { SettingsEmailVerifyScreen() }
+                    entry<AppRoute.SettingsEmailConfig> { SettingsEmailConfigScreen() }
                     entry<AppRoute.SettingsDataAndStorage> { DataAndStorageScreen() }
                     entry<AppRoute.SettingsStorage> { StorageScreen() }
                     entry<AppRoute.SettingsAutoDownloadMedia> { AutoDownloadMediaScreen() }
@@ -159,8 +168,25 @@ fun AppNavDisplay(
                     entry<AppRoute.AddMember> { AddMemberScreen(groupId = it.groupId) }
                     entry<AppRoute.Logout> { LogoutScreen() }
                     entry<AppRoute.Login>(metadata = HorizontalMetadata) { LoginScreen() }
-                    entry<AppRoute.Password>(metadata = HorizontalMetadata) { PasswordScreen(login = it.login) }
+                    entry<AppRoute.Password>(metadata = HorizontalMetadata) {
+                        PasswordScreen(
+                            login = it.login,
+                            canReset = it.canReset
+                        )
+                    }
+                    entry<AppRoute.PasswordResetCode>(metadata = HorizontalMetadata) {
+                        PasswordResetCodeScreen(
+                            login = it.login
+                        )
+                    }
+                    entry<AppRoute.ResetPassword>(metadata = HorizontalMetadata) {
+                        ResetPasswordScreen(
+                            login = it.login,
+                            code = it.code
+                        )
+                    }
                     entry<AppRoute.Register>(metadata = HorizontalMetadata) { RegisterScreen(login = it.login) }
+                    entry<AppRoute.Lock> { LockScreen() }
                 },
                 entryDecorators = listOf(
                     rememberSaveableStateHolderNavEntryDecorator(),

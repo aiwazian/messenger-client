@@ -288,4 +288,17 @@
     <string name="drafts_cleared">Все черновики удалены</string>
     <string name="login_hint">Используйте существующий логин или создайте новый</string>
     <string name="password_hint">Введите пароль вашей учетной записи</string>
+    <string name="email">Электронная почта</string>
+    <string name="forgot_password">Забыли пароль\?</string>
+    <string name="enter_code">Введите код</string>
+    <string name="code_sent_to_email">На вашу электронную почту был отправлен 6-значный код</string>
+    <string name="enter_new_password">Введите новый пароль</string>
+    <string name="new_password_hint">Введите новый пароль, который будет использоваться для входа в вашу учетную запись.</string>
+    <string name="invalid_code">Неверный или просроченный код</string>
+    <string name="user_not_found">Пользователь не найден</string>
+    <string name="no_email_associated">С этим аккаунтом не связан адрес электронной почты</string>
+    <string name="password_reset_request_failed">Не удалось отправить код сброса пароля.</string>
+    <string name="remove_email">Удалить электронную почту</string>
+    <string name="change_email">Изменить адрес электронной почты</string>
+    <string name="remove">Удалять</string>
 </resources>

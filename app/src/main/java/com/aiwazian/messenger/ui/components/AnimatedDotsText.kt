@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun AnimatedDotsText(
@@ -35,7 +36,7 @@ fun AnimatedDotsText(
     
     LaunchedEffect(Unit) {
         while (true) {
-            delay(500)
+            delay(500.milliseconds)
             dotsCount = (dotsCount + 1) % 4
         }
     }

@@ -31,22 +31,32 @@ class SettingsSecurityViewModel @Inject constructor(
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
-    private val _uiState = MutableStateFlow(SettingsUiState())
+    private val _uiState = MutableStateFlow(SettingsSecurityUiState())
     val uiState = _uiState.asStateFlow()
-    
+
     private val _sideEffect = MutableSharedFlow<SettingsSecuritySideEffect>()
     val sideEffect = _sideEffect.asSharedFlow()
-    
+
     init {
         viewModelScope.launch {
             sessionRepository.getDeviceCount().onSuccess { count ->
                 _uiState.update { it.copy(deviceCount = count) }
             }
         }
-        
+
         viewModelScope.launch {
             appLockManager.hasPasscode.collectLatest { passcode ->
                 _uiState.update { it.copy(passcodeEnabled = passcode) }
+            }
+        }
+        
+        loadEmail()
+    }
+    
+    private fun loadEmail() {
+        viewModelScope.launch {
+            authRepository.getEmail().onSuccess { response ->
+                _uiState.update { it.copy(email = response.email) }
             }
         }
     }
@@ -89,11 +99,31 @@ class SettingsSecurityViewModel @Inject constructor(
         }
     }
     
+    fun onEmailClick() {
+        viewModelScope.launch {
+            if (_uiState.value.email != null) {
+                _sideEffect.emit(SettingsSecuritySideEffect.NavigateToEmailConfig)
+            } else {
+                _uiState.update { it.copy(showEmailBottomSheet = true) }
+            }
+        }
+    }
+
     fun showBottomSheet() {
         _uiState.update { it.copy(showPasscodeBottomSheet = true) }
     }
     
     fun hideBottomSheet() {
         _uiState.update { it.copy(showPasscodeBottomSheet = false) }
+    }
+    
+    fun hideEmailBottomSheet() {
+        _uiState.update { it.copy(showEmailBottomSheet = false) }
+    }
+    
+    fun navigateToEmail() {
+        viewModelScope.launch {
+            _sideEffect.emit(SettingsSecuritySideEffect.NavigateToEmail)
+        }
     }
 }

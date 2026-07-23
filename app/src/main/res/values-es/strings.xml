@@ -286,4 +286,17 @@
     <string name="drafts_cleared">Todos los borradores borrados</string>
     <string name="login_hint">Utilice un inicio de sesión existente o cree uno nuevo</string>
     <string name="password_hint">Ingrese la contraseña de su cuenta</string>
+    <string name="email">Correo electrónico</string>
+    <string name="forgot_password">¿Has olvidado tu contraseña\?</string>
+    <string name="enter_code">Introduce el código</string>
+    <string name="code_sent_to_email">Se ha enviado un código de 6 dígitos a su correo electrónico</string>
+    <string name="enter_new_password">Ingrese una nueva contraseña</string>
+    <string name="new_password_hint">Ingrese una nueva contraseña que se utilizará para iniciar sesión en su cuenta</string>
+    <string name="invalid_code">Código no válido o caducado</string>
+    <string name="user_not_found">Usuario no encontrado</string>
+    <string name="no_email_associated">No hay correo electrónico asociado con esta cuenta</string>
+    <string name="password_reset_request_failed">No se pudo enviar el código de restablecimiento de contraseña</string>
+    <string name="remove_email">Eliminar correo electrónico</string>
+    <string name="change_email">Cambiar correo electrónico</string>
+    <string name="remove">Eliminar</string>
 </resources>

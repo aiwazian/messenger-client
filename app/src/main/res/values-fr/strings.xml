@@ -286,4 +286,17 @@
     <string name="drafts_cleared">Tous les brouillons effacés</string>
     <string name="login_hint">Utilisez un identifiant existant ou créez un nouveau</string>
     <string name="password_hint">Entrez le mot de passe de votre compte</string>
+    <string name="email">E-mail</string>
+    <string name="forgot_password">Mot de passe oublié \?</string>
+    <string name="enter_code">Entrez le code</string>
+    <string name="code_sent_to_email">Un code à 6 chiffres a été envoyé à votre email</string>
+    <string name="enter_new_password">Entrez le nouveau mot de passe</string>
+    <string name="new_password_hint">Saisissez un nouveau mot de passe qui sera utilisé pour vous connecter à votre compte</string>
+    <string name="invalid_code">Code invalide ou expiré</string>
+    <string name="user_not_found">Utilisateur introuvable</string>
+    <string name="no_email_associated">Aucun email associé à ce compte</string>
+    <string name="password_reset_request_failed">Échec de l\'envoi du code de réinitialisation du mot de passe</string>
+    <string name="remove_email">Supprimer l\'e-mail</string>
+    <string name="change_email">Changer l\'e-mail</string>
+    <string name="remove">Retirer</string>
 </resources>

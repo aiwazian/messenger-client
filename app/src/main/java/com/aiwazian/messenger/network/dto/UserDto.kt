@@ -19,6 +19,7 @@ data class UserResponseDto(
     @SerialName("lastSeen") val lastSeen: Long? = null,
     @SerialName("avatars") val avatars: List<AvatarDto> = emptyList(),
     @SerialName("profileChannelId") val profileChannelId: String? = null,
+    @SerialName("email") val email: String? = null,
     @SerialName("isBlocked") val isBlocked: Boolean = false,
     @SerialName("isBlockedByThem") val isBlockedByThem: Boolean = false
 )
@@ -81,4 +82,19 @@ data class OwnedChannelDto(
     @SerialName("name") val name: String,
     @SerialName("subscribers") val subscribers: Int,
     @SerialName("avatar") val avatar: AvatarDto? = null
+)
+
+@Serializable
+data class SetEmailRequestDto(
+    @SerialName("email") val email: String
+)
+
+@Serializable
+data class VerifyEmailRequestDto(
+    @SerialName("code") val code: String
+)
+
+@Serializable
+data class EmailResponseDto(
+    @SerialName("email") val email: String?
 )

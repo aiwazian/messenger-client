@@ -12,6 +12,9 @@ import kotlinx.serialization.Serializable
 sealed interface AppRoute : NavKey {
     
     @Serializable
+    data object Lock : AppRoute
+    
+    @Serializable
     data object Main : AppRoute
     
     @Serializable
@@ -63,7 +66,7 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data class SettingsPhoto(val level: PrivacyLevel) : AppRoute
-
+    
     @Serializable
     data class SettingsDateOfBirth(val level: PrivacyLevel) : AppRoute
     
@@ -87,6 +90,15 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data object SettingsLogin : AppRoute
+    
+    @Serializable
+    data object SettingsEmail : AppRoute
+    
+    @Serializable
+    data object SettingsEmailVerify : AppRoute
+    
+    @Serializable
+    data object SettingsEmailConfig : AppRoute
     
     @Serializable
     data object SettingsNotifications : AppRoute
@@ -161,7 +173,13 @@ sealed interface AppRoute : NavKey {
     data object Login : AppRoute
     
     @Serializable
-    data class Password(val login: String) : AppRoute
+    data class Password(val login: String, val canReset: Boolean = false) : AppRoute
+    
+    @Serializable
+    data class PasswordResetCode(val login: String) : AppRoute
+    
+    @Serializable
+    data class ResetPassword(val login: String, val code: String) : AppRoute
     
     @Serializable
     data class Register(val login: String) : AppRoute

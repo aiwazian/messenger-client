@@ -284,4 +284,17 @@
     <string name="drafts_cleared">Բոլոր նախագծերը մաքրված են</string>
     <string name="login_hint">Օգտագործեք գոյություն ունեցող մուտք կամ ստեղծեք նորը</string>
     <string name="password_hint">Մուտքագրեք ձեր հաշվի գաղտնաբառը</string>
+    <string name="email">Էլ</string>
+    <string name="forgot_password">Մոռացել եք գաղտնաբառը</string>
+    <string name="enter_code">Մուտքագրեք կոդը</string>
+    <string name="code_sent_to_email">Ձեր էլ.փոստին ուղարկվել է 6 նիշանոց կոդը</string>
+    <string name="enter_new_password">Մուտքագրեք նոր գաղտնաբառ</string>
+    <string name="new_password_hint">Մուտքագրեք նոր գաղտնաբառ, որը կօգտագործվի ձեր հաշիվ մուտք գործելու համար</string>
+    <string name="invalid_code">Անվավեր կամ ժամկետանց ծածկագիր</string>
+    <string name="user_not_found">Օգտատերը չի գտնվել</string>
+    <string name="no_email_associated">Այս հաշվի հետ կապված էլփոստ չկա</string>
+    <string name="password_reset_request_failed">Չհաջողվեց ուղարկել գաղտնաբառի վերակայման կոդը</string>
+    <string name="remove_email">Հեռացնել էլ</string>
+    <string name="change_email">Փոխել էլ</string>
+    <string name="remove">Հեռացնել</string>
 </resources>
