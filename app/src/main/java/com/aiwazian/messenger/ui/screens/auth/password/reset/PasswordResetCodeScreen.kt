@@ -93,30 +93,37 @@ fun PasswordResetCodeScreen(
     ) { innerPadding ->
         Column(
             modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .padding(innerPadding),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = stringResource(R.string.enter_code),
-                fontSize = 20.sp
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.code_sent_to_email),
-                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 14.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 32.dp)
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-            CodeInputBlocks(
-                value = uiState.code,
-                status = uiState.codeStatus,
-                length = 6,
-                onStatusShown = viewModel::onCodeInputStatusShown
-            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(R.string.enter_code),
+                    fontSize = 20.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.code_sent_to_email),
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 32.dp)
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+                CodeInputBlocks(
+                    value = uiState.code,
+                    status = uiState.codeStatus,
+                    length = 6,
+                    onStatusShown = viewModel::onCodeInputStatusShown
+                )
+            }
+            
             Spacer(modifier = Modifier.height(32.dp))
             NumberKeyboard(
                 value = uiState.code,
