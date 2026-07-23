@@ -9,13 +9,11 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.navigation.AppNavDisplay
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.theme.ApplicationTheme
@@ -31,9 +29,6 @@ class MainActivity : AppCompatActivity() {
     
     @Inject
     lateinit var themeManager: ThemeManager
-    
-    @Inject
-    lateinit var webSocketClient: WebSocketClient
     
     private var startRoute by mutableStateOf<AppRoute?>(null)
     private val externalRouteFlow = MutableSharedFlow<AppRoute>(extraBufferCapacity = 1)
@@ -76,10 +71,6 @@ class MainActivity : AppCompatActivity() {
             val selectedTheme by themeManager.currentTheme.collectAsState()
             val primaryColor by themeManager.appPrimaryColor.collectAsState()
             val isDynamicColorEnable by themeManager.dynamicColor.collectAsState()
-            
-            LaunchedEffect(Unit) {
-                webSocketClient.connect()
-            }
             
             ApplicationTheme(
                 theme = selectedTheme,

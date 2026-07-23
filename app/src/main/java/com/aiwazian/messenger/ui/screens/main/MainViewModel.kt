@@ -45,6 +45,8 @@ class MainViewModel @Inject constructor(
     val socketState = webSocketClient.connectionState
     
     init {
+        webSocketClient.connect()
+        
         viewModelScope.launch {
             chatRepository.getAllChats().collectLatest { chats ->
                 _uiState.update { it.copy(chats = chats.sortedByLastMessage()) }
@@ -138,7 +140,7 @@ class MainViewModel @Inject constructor(
                 .thenByDescending { it.lastMessage?.sendTime ?: 0L }
         )
     }
-
+    
     fun toggleChatSelection(chatId: Long) {
         _uiState.update { state ->
             val newSelection = if (chatId in state.selectedChatIds) {
@@ -149,11 +151,11 @@ class MainViewModel @Inject constructor(
             state.copy(selectedChatIds = newSelection)
         }
     }
-
+    
     fun clearSelection() {
         _uiState.update { it.copy(selectedChatIds = emptySet()) }
     }
-
+    
     fun pinSelectedChats() {
         val selectedIds = _uiState.value.selectedChatIds.toList()
         if (selectedIds.isNotEmpty()) {
@@ -163,7 +165,7 @@ class MainViewModel @Inject constructor(
             }
         }
     }
-
+    
     fun unpinSelectedChats() {
         val selectedIds = _uiState.value.selectedChatIds.toList()
         if (selectedIds.isNotEmpty()) {
@@ -173,7 +175,7 @@ class MainViewModel @Inject constructor(
             }
         }
     }
-
+    
     fun hasUnpinnedSelectedChats(): Boolean {
         val selectedIds = _uiState.value.selectedChatIds
         val chats = _uiState.value.chats

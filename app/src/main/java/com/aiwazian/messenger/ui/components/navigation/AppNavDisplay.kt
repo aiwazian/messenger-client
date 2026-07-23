@@ -104,7 +104,7 @@ fun AppNavDisplay(
                 onBack = backStack::removeLastOrNull,
                 entryProvider = entryProvider {
                     entry<AppRoute.Main> { MainScreen() }
-                    entry<AppRoute.Chat>(metadata = PredictiveBackMetadata) {
+                    entry<AppRoute.Chat> {
                         ChatScreen(
                             chatId = it.chatId,
                             chatName = it.chatName,

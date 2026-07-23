@@ -87,7 +87,6 @@ fun ChatCard(
                 fontSize = 16.sp,
                 lineHeight = 16.sp,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.sharedElement(key = "chat-name-${chat.id}")
             )
         },
         supportingContent = {
