@@ -19,11 +19,51 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Search
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.ui.components.ProfileCard
+
+@Composable
+fun highlightText(
+    text: String,
+    query: String,
+    isUsername: Boolean = false
+): AnnotatedString {
+    val trimmedQuery = query.trim()
+    if (trimmedQuery.isBlank()) return AnnotatedString(text)
+    
+    val primaryColor = MaterialTheme.colorScheme.primary
+    
+    return buildAnnotatedString {
+        val lowerText = text.lowercase()
+        val lowerQuery = trimmedQuery.lowercase()
+        val index = lowerText.indexOf(lowerQuery)
+        
+        if (index == -1) {
+            append(text)
+        } else {
+            if (isUsername && index == 1 && text.startsWith("@")) {
+                withStyle(SpanStyle(color = primaryColor)) {
+                    append("@")
+                }
+            } else {
+                append(text.substring(0, index))
+            }
+            
+            withStyle(SpanStyle(color = primaryColor)) {
+                append(text.substring(index, index + trimmedQuery.length))
+            }
+            
+            append(text.substring(index + trimmedQuery.length))
+        }
+    }
+}
 
 @Composable
 fun LoadingPlaceholder() {
@@ -52,6 +92,7 @@ fun EmptySearchResultsPlaceholder() {
 @Composable
 fun ChatResultsList(
     results: List<Search>,
+    query: String,
     isLoading: Boolean,
     onLoadMore: () -> Unit,
     onChatClick: (Long, String) -> Unit
@@ -64,6 +105,7 @@ fun ChatResultsList(
                 }
             }
             
+            val isUsername = chat.username != null
             val supportText = if (chat.username != null) {
                 "@" + chat.username
             } else when (ChatType.fromId(chat.chatId)) {
@@ -75,8 +117,8 @@ fun ChatResultsList(
             
             ProfileCard(
                 id = chat.chatId,
-                headlineText = chat.name,
-                supportingText = supportText,
+                headlineText = highlightText(chat.name, query),
+                supportingText = highlightText(supportText, query, isUsername),
                 sharedTransition = false,
                 onClick = { onChatClick(chat.chatId, chat.name) })
         }

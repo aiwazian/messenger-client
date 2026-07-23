@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,6 +26,29 @@ fun ProfileCard(
     headlineText: String,
     avatarUri: Uri? = null,
     supportingText: String? = null,
+    trailingContent: @Composable (() -> Unit)? = null,
+    sharedTransition: Boolean = false,
+    onClick: () -> Unit = {}
+) {
+    ProfileCard(
+        modifier = modifier,
+        id = id,
+        headlineText = AnnotatedString(headlineText),
+        avatarUri = avatarUri,
+        supportingText = supportingText?.let { AnnotatedString(it) },
+        trailingContent = trailingContent,
+        sharedTransition = sharedTransition,
+        onClick = onClick
+    )
+}
+
+@Composable
+fun ProfileCard(
+    modifier: Modifier = Modifier,
+    id: Long,
+    headlineText: AnnotatedString,
+    avatarUri: Uri? = null,
+    supportingText: AnnotatedString? = null,
     trailingContent: @Composable (() -> Unit)? = null,
     sharedTransition: Boolean = false,
     onClick: () -> Unit = {}
@@ -57,7 +81,7 @@ fun ProfileCard(
         leadingContent = {
             ChatAvatar(
                 id = id,
-                chatName = headlineText,
+                chatName = headlineText.text,
                 avatarUri = avatarUri,
                 size = 40.dp,
                 sharedTransition = sharedTransition

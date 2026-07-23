@@ -625,6 +625,7 @@ private fun DefaultTopBar(
         } else {
             ChatResultsList(
                 results = searchUiState.chatResults,
+                query = searchUiState.query,
                 isLoading = searchUiState.isChatLoading,
                 onLoadMore = searchViewModel::loadMore,
                 onChatClick = { chatId, chatName ->
