@@ -4,8 +4,8 @@
 
 package com.aiwazian.messenger.ui.screens.group.settings.invites
 
-import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.InviteLink
+import com.aiwazian.messenger.ui.components.ShareItem
 
 data class GroupInviteLinkUiState(
     val groupId: Long = -1,
@@ -15,7 +15,7 @@ data class GroupInviteLinkUiState(
     val linkIdToDelete: Long? = null,
     val showShareSheet: Boolean = false,
     val expandedMenuId: Long? = null,
-    val availableChats: List<Chat> = emptyList(),
+    val availableChats: List<ShareItem> = emptyList(),
     val selectedChatIds: Set<Long> = emptySet(),
     val linkToShare: String? = null
 )

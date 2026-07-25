@@ -4,8 +4,8 @@
 
 package com.aiwazian.messenger.ui.screens.channel.settings.invites
 
-import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.InviteLink
+import com.aiwazian.messenger.ui.components.ShareItem
 
 data class ChannelInviteLinkUiState(
     val channelId: Long = -1,
@@ -14,7 +14,7 @@ data class ChannelInviteLinkUiState(
     val linkIdToDelete: Long? = null,
     val showShareSheet: Boolean = false,
     val expandedMenuId: Long? = null,
-    val availableChats: List<Chat> = emptyList(),
+    val availableChats: List<ShareItem> = emptyList(),
     val selectedChatIds: Set<Long> = emptySet(),
     val linkToShare: String? = null
 )

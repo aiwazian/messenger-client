@@ -21,6 +21,7 @@ fun FramelessTextBox(
     placeholder: String,
     value: String,
     onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
     textStyle: TextStyle = LocalTextStyle.current,
     maxLines: Int = Int.MAX_VALUE,
     singleLine: Boolean = true,
@@ -30,7 +31,7 @@ fun FramelessTextBox(
     trailingIcon: @Composable (() -> Unit)? = null
 ) {
     TextField(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         value = value,
         singleLine = singleLine,
         maxLines = maxLines,

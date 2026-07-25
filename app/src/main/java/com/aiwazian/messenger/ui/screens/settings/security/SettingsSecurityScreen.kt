@@ -21,7 +21,6 @@ import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.PersonOutline
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
@@ -45,6 +44,7 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.components.CustomBottomSheet
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -168,9 +168,8 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
             }
             
             if (uiState.showPasscodeBottomSheet) {
-                ModalBottomSheet(dragHandle = null, onDismissRequest = viewModel::hideBottomSheet) {
+                CustomBottomSheet(onDismissRequest = viewModel::hideBottomSheet) {
                     Column(
-                        modifier = Modifier.padding(10.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
@@ -200,12 +199,8 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
             }
             
             if (uiState.showEmailBottomSheet) {
-                ModalBottomSheet(
-                    dragHandle = null,
-                    onDismissRequest = viewModel::hideEmailBottomSheet
-                ) {
+                CustomBottomSheet(onDismissRequest = viewModel::hideEmailBottomSheet) {
                     Column(
-                        modifier = Modifier.padding(10.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {

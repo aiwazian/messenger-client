@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -45,7 +44,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Slider
@@ -82,6 +80,7 @@ import coil.decode.GifDecoder
 import coil.request.ImageRequest
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.getFileType
+import com.aiwazian.messenger.ui.components.CustomBottomSheet
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import kotlinx.coroutines.delay
 import java.util.Locale
@@ -452,13 +451,9 @@ private fun SpeedBottomSheet(
     currentSpeed: Float, onSpeedChange: (Float) -> Unit, onDismiss: () -> Unit
 ) {
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-    ModalBottomSheet(
-        onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = null
-    ) {
+    CustomBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {

@@ -12,6 +12,7 @@ import com.aiwazian.messenger.extensions.isNetworkError
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.UserRepository
+import com.aiwazian.messenger.ui.components.ShareItem
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.UiText
@@ -133,6 +134,13 @@ class ChannelInviteLinksViewModel @Inject constructor(
                         }
                         else -> false
                     }
+                }.map { chat ->
+                    ShareItem(
+                        id = chat.id,
+                        name = chat.chatName,
+                        isSelected = _uiState.value.selectedChatIds.contains(chat.id),
+                        avatarUri = chat.avatarUri
+                    )
                 }
                 _uiState.update { it.copy(availableChats = filtered) }
             }
@@ -146,7 +154,12 @@ class ChannelInviteLinksViewModel @Inject constructor(
             } else {
                 state.selectedChatIds + chatId
             }
-            state.copy(selectedChatIds = newSelected)
+            state.copy(
+                selectedChatIds = newSelected,
+                availableChats = state.availableChats.map {
+                    if (it.id == chatId) it.copy(isSelected = newSelected.contains(it.id)) else it
+                }
+            )
         }
     }
     
@@ -176,7 +189,8 @@ class ChannelInviteLinksViewModel @Inject constructor(
             it.copy(
                 showShareSheet = false,
                 linkToShare = null,
-                selectedChatIds = emptySet()
+                selectedChatIds = emptySet(),
+                availableChats = it.availableChats.map { chat -> chat.copy(isSelected = false) }
             )
         }
     }

@@ -20,7 +20,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
@@ -43,6 +42,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.PrivacyLevel
 import com.aiwazian.messenger.ui.components.CountdownTextButton
+import com.aiwazian.messenger.ui.components.CustomBottomSheet
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -202,14 +202,9 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
     }
     
     if (uiState.showInactivityBottomSheet) {
-        ModalBottomSheet(
-            onDismissRequest = viewModel::hideInactivityBottomSheet,
-            dragHandle = null
-        ) {
+        CustomBottomSheet(onDismissRequest = viewModel::hideInactivityBottomSheet) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
@@ -236,9 +231,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                     )
                 }
                 TextButton(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     onClick = viewModel::hideInactivityBottomSheet,
                     shape = MaterialTheme.shapes.medium
                 ) {
@@ -249,14 +242,8 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
     }
     
     if (uiState.showDeleteBottomSheet) {
-        ModalBottomSheet(
-            onDismissRequest = viewModel::hideDeleteBottomSheet,
-            dragHandle = null
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
+        CustomBottomSheet(onDismissRequest = viewModel::hideDeleteBottomSheet) {
+            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(20.dp),
                     verticalAlignment = Alignment.CenterVertically

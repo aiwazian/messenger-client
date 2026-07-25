@@ -32,7 +32,6 @@ import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,7 +41,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -52,7 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
-import com.aiwazian.messenger.ui.components.section.SectionContainer
+import com.aiwazian.messenger.ui.components.CustomBottomSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,97 +61,92 @@ fun AttachmentBottomSheet(
 ) {
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     
-    ModalBottomSheet(
-        sheetState = sheetState, onDismissRequest = onDismissRequest, dragHandle = null
-    ) {
-        Spacer(Modifier.height(10.dp))
-        SectionContainer {
-            Card(
-                onClick = onFileSystemClick,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RectangleShape,
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+    CustomBottomSheet(sheetState = sheetState, onDismissRequest = onDismissRequest) {
+        Card(
+            onClick = onFileSystemClick,
+            modifier = Modifier.fillMaxWidth(),
+            shape = CircleShape,
+            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        ) {
+            Row(
+                modifier = Modifier.padding(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.padding(10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                    ) {
-                        Icon(
-                            modifier = Modifier.padding(10.dp),
-                            imageVector = Icons.Rounded.Storage,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                    
-                    Column {
-                        Text(
-                            text = stringResource(R.string.internal_storage),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource(R.string.file_system_search),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 12.sp,
-                            lineHeight = 12.sp
-                        )
-                    }
+                    Icon(
+                        modifier = Modifier.padding(10.dp),
+                        imageVector = Icons.Rounded.Storage,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                
+                Column {
+                    Text(
+                        text = stringResource(R.string.internal_storage),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = stringResource(R.string.file_system_search),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
+                        lineHeight = 12.sp
+                    )
                 }
             }
-            
-            val d = rememberLauncherForActivityResult(
-                ActivityResultContracts.PickMultipleVisualMedia(
-                    10
-                )
-            ) { uris ->
-                if (uris.isNotEmpty()) {
-                    onFileSelected(uris)
-                }
+        }
+        
+        val d = rememberLauncherForActivityResult(
+            ActivityResultContracts.PickMultipleVisualMedia(
+                10
+            )
+        ) { uris ->
+            if (uris.isNotEmpty()) {
+                onFileSelected(uris)
             }
-            Card(
-                onClick = {
-                    d.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RectangleShape,
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        }
+        Card(
+            onClick = {
+                d.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = CircleShape,
+            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        ) {
+            Row(
+                modifier = Modifier.padding(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.padding(10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
-                    ) {
-                        Icon(
-                            modifier = Modifier.padding(10.dp),
-                            imageVector = Icons.Rounded.Photo,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                    
-                    Column {
-                        Text(
-                            text = stringResource(R.string.gallery),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource(R.string.to_send_images_without_compression),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 12.sp,
-                            lineHeight = 12.sp
-                        )
-                    }
+                    Icon(
+                        modifier = Modifier.padding(10.dp),
+                        imageVector = Icons.Rounded.Photo,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                
+                Column {
+                    Text(
+                        text = stringResource(R.string.gallery),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = stringResource(R.string.to_send_images_without_compression),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
+                        lineHeight = 12.sp
+                    )
                 }
             }
         }
@@ -168,11 +161,8 @@ fun MicrophonePermissionBottomSheet(
     val context = LocalContext.current
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     
-    ModalBottomSheet(
-        onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = null
-    ) {
+    CustomBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
-            modifier = Modifier.padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -227,13 +217,9 @@ fun InviteLinkBottomSheet(
         stringResource(R.string.join).uppercase()
     }
     
-    ModalBottomSheet(
-        onDismissRequest = onDismiss, dragHandle = null
-    ) {
+    CustomBottomSheet(onDismissRequest = onDismiss) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(

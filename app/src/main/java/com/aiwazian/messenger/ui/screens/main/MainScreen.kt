@@ -70,7 +70,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
@@ -122,9 +121,12 @@ import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.ThemeOption
+import com.aiwazian.messenger.ui.animations.expressiveScaleIn
+import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.ChatCard
+import com.aiwazian.messenger.ui.components.CustomBottomSheet
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -236,7 +238,7 @@ private fun Content(
         }
     }, floatingActionButton = {
         AnimatedVisibility(
-            visible = !hasSelection, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()
+            visible = !hasSelection, enter = expressiveScaleIn, exit = expressiveScaleOut
         ) {
             FloatingActionButton(
                 shape = CircleShape, onClick = {
@@ -325,13 +327,11 @@ private fun Content(
         if (uiState.showNotificationBottomSheet) {
             val context = LocalContext.current
             val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-            ModalBottomSheet(
+            CustomBottomSheet(
                 onDismissRequest = viewModel::hideNotificationSheet,
-                sheetState = sheetState,
-                dragHandle = null
+                sheetState = sheetState
             ) {
                 Column(
-                    modifier = Modifier.padding(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
