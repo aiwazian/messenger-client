@@ -109,64 +109,64 @@ class ChatViewModel @Inject constructor(
     private val realtimeEventSyncService: RealtimeEventSyncService,
     private val notificationHelper: NotificationHelper
 ) : ViewModel() {
-    
+
     private val audioRecorderManager = AudioRecorderManager(context)
     private var recordingTimerJob: Job? = null
     private var draftSaveJob: Job? = null
-    
+
     private val pendingVoiceStartPositions = mutableMapOf<String, Int>()
     private val sendingJobs = mutableMapOf<Long, Job>()
-    
+
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState = _uiState.asStateFlow()
-    
+
     private val _uiEffect = MutableSharedFlow<ChatUiEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
-    
+
     private var isFirstLoadDone = false
-    
+
     private var messagePager: MessageWindowPager? = null
     private var windowObserverJob: Job? = null
     private var highlightJob: Job? = null
     private var searchJob: Job? = null
     private var searchCursorId: Long? = null
     private var lastMessages: List<Message> = emptyList()
-    
+
     /** Стек возврата: id сообщений, из которых был совершён переход. */
     private val returnStack = ArrayDeque<Long>()
-    
+
     /** Видимо ли сейчас самое нижнее сообщение списка. */
     private var isViewportAtBottom = true
-    
+
     /**
      * Сообщение, перед которым рисуется «Unread messages». Ставится один раз при
      * открытии чата и не меняется, когда счётчик непрочитанных ползёт вниз.
      */
     private var unreadAnchorMessageId: Long? = null
-    
+
     /** Максимальный id, про который уже сказали серверу «прочитано». */
     private var reportedReadUpToId = 0L
-    
+
     /** Самый новый id в окне: нужен, чтобы отличить новое сообщение от перерисовки. */
     private var lastKnownNewestId = 0L
-    
+
     private var isInit = false
     private var autoDownloadMedia = false
     private var autoDownloadPhotos = true
     private var autoDownloadVideos = true
     private var autoDownloadFiles = true
-    
+
     init {
         loadSettings()
         observeVoicePlayer()
         observeQueueUpdates()
         setupSocketConnectionObserver()
     }
-    
+
     fun init(chatId: Long, chatName: String? = null, avatarUri: Uri? = null) {
         if (isInit) return
         isInit = true
-        
+
         _uiState.update {
             it.copy(
                 chatId = chatId,
@@ -175,19 +175,19 @@ class ChatViewModel @Inject constructor(
             )
         }
         isFirstLoadDone = false
-        
+
         notificationHelper.clearChatNotifications(chatId)
         webSocketClient.emitEvent(
             OutgoingSocketEvent.CHAT_OPEN,
             mapOf("chatId" to chatId.toString())
         )
-        
+
         loadDraft(chatId)
         loadChatInfo()
         observeRealtimeEvents()
         observeMessages()
     }
-    
+
     private fun loadDraft(chatId: Long) {
         viewModelScope.launch {
             val myId = userRepository.getMe().first().id
@@ -197,7 +197,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     // region Initialization & Settings
     private fun loadSettings() {
         viewModelScope.launch {
@@ -217,7 +217,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     private fun observeVoicePlayer() {
         voicePlayerManager.connect()
         viewModelScope.launch {
@@ -233,7 +233,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     private fun observeQueueUpdates() {
         viewModelScope.launch {
             _uiState.collect { state ->
@@ -245,7 +245,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     private fun setupSocketConnectionObserver() {
         viewModelScope.launch {
             webSocketClient.connectionState.collect { state ->
@@ -254,7 +254,7 @@ class ChatViewModel @Inject constructor(
         }
     }
     // endregion
-    
+
     // region Chat Data Loading
     private fun loadChatInfo() {
         val chatId = _uiState.value.chatId
@@ -275,7 +275,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     private suspend fun loadChannelInfo(chatId: Long, myId: Long) {
         viewModelScope.launch {
             channelRepository.fetchById(chatId)
@@ -301,11 +301,16 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
+    /**
+     * Открытие чата само по себе ничего не помечает прочитанным.
+     *
+     * Отметка уходит только из onMessagesSeen — по сообщениям, которые реально
+     * показались на экране больше чем наполовину.
+     */
     private suspend fun loadGroupInfo(chatId: Long, myId: Long) {
         viewModelScope.launch {
             groupRepository.fetchById(chatId)
-            chatRepository.markAllAsRead(chatId)
         }
         groupRepository.getById(chatId).collectLatest { group ->
             _uiState.update {
@@ -328,15 +333,12 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     private suspend fun loadUserInfo(chatId: Long, myId: Long) {
         viewModelScope.launch {
             userRepository.fetchById(chatId)
-            if (chatId != myId) {
-                chatRepository.markAllAsRead(chatId)
-            }
         }
-        
+
         if (chatId == myId) {
             userRepository.getMe().collectLatest { user ->
                 _uiState.update {
@@ -378,7 +380,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     private fun createTopBarActions(
         isOwner: Boolean,
         isJoined: Boolean,
@@ -395,7 +397,7 @@ class ChatViewModel @Inject constructor(
                 )
             )
         }
-        
+
         if (type == ChatType.PRIVATE) {
             actions.add(
                 DropdownMenuAction(
@@ -416,21 +418,21 @@ class ChatViewModel @Inject constructor(
                 )
             )
         }
-        
+
         return if (actions.isNotEmpty()) {
             listOf(TopBarAction(icon = Icons.Rounded.MoreVert, dropdownActions = actions))
         } else emptyList()
     }
-    
+
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeMessages() {
         _uiState.update { it.copy(isLoading = true) }
         val chatId = _uiState.value.chatId
-        
+
         windowObserverJob?.cancel()
         windowObserverJob = viewModelScope.launch {
             val userId = userRepository.getMe().first().id
-            
+
             val pager = MessageWindowPager(
                 chatRepository = chatRepository,
                 userId = userId,
@@ -440,7 +442,7 @@ class ChatViewModel @Inject constructor(
                 maxWindowMessages = MAX_WINDOW_MESSAGES
             )
             messagePager = pager
-            
+
             launch {
                 pager.state.collect { window ->
                     _uiState.update {
@@ -456,7 +458,7 @@ class ChatViewModel @Inject constructor(
                     }
                 }
             }
-            
+
             launch {
                 pager.state
                     .map { it.bounds }
@@ -467,7 +469,7 @@ class ChatViewModel @Inject constructor(
                     .collect { messages ->
                         updateChatItems(messages)
                         _uiState.update { it.copy(isLoading = false) }
-                        
+
                         if (!isFirstLoadDone && pager.state.value.isInitialized) {
                             isFirstLoadDone = true
                             _uiState.update { it.copy(isFirstLoadDone = true) }
@@ -480,17 +482,17 @@ class ChatViewModel @Inject constructor(
                                 )
                             }
                         }
-                        
+
                         handleNewestMessage(messages, pager.state.value.isAtLive)
                     }
             }
-            
+
             val firstUnreadId = pager.openAtFirstUnread()
             _uiState.update { it.copy(firstUnreadMessageId = firstUnreadId) }
             if (firstUnreadId != null) {
                 unreadAnchorMessageId = firstUnreadId
                 updateChatItems(lastMessages)
-                
+
                 requestScrollTo(
                     messageId = firstUnreadId,
                     highlight = false,
@@ -504,7 +506,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     private fun observeRealtimeEvents() {
         viewModelScope.launch {
             realtimeEventSyncService.groupReadEvents.collect { payload ->
@@ -525,14 +527,14 @@ class ChatViewModel @Inject constructor(
                 }
             }
         }
-        
+
         viewModelScope.launch {
             realtimeEventSyncService.chatRemovedEvents.collect { removedChatId ->
                 if (removedChatId == _uiState.value.chatId) _uiEffect.emit(ChatUiEffect.NavigateToMain)
             }
         }
     }
-    
+
     private fun updateChatItems(messages: List<Message>) {
         lastMessages = messages
         val mapper = ChatItemMapper(
@@ -556,13 +558,13 @@ class ChatViewModel @Inject constructor(
             onForwardMessage = ::startForward,
             onLoadUserName = ::loadUserName
         )
-        
+
         val chatItems = mapper.map(messages)
         val newMediaItems = messages.flatMap { it.attachments }
             .filter { it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF }
-        
+
         _uiState.update { it.copy(chatItems = chatItems, mediaItems = newMediaItems) }
-        
+
         if (autoDownloadMedia) {
             messages.forEach { msg ->
                 msg.attachments.forEach { attachment ->
@@ -579,24 +581,24 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     // region Прокрутка к сообщению и догрузка окна
-    
+
     /** Скролл вверх: страница старше текущего окна. */
     fun loadOlderMessages() {
         val pager = messagePager ?: return
         viewModelScope.launch { pager.loadBefore() }
     }
-    
+
     /** Скролл вниз: страница новее текущего окна (актуально после прыжка в середину). */
     fun loadNewerMessages() {
         val pager = messagePager ?: return
         viewModelScope.launch { pager.loadAfter() }
     }
-    
+
     /** Совместимость со старым вызовом из UI. */
     fun loadMoreMessages() = loadOlderMessages()
-    
+
     /**
      * Единая точка входа для перехода к любому сообщению чата:
      * ответы, закреплённые, результаты поиска.
@@ -613,7 +615,7 @@ class ChatViewModel @Inject constructor(
                 returnStack.addLast(returnToMessageId)
                 _uiState.update { it.copy(canJumpBack = true) }
             }
-            
+
             if (!pager.containsMessage(messageId)) {
                 val loaded = pager.jumpTo(messageId)
                 if (!loaded) {
@@ -626,11 +628,11 @@ class ChatViewModel @Inject constructor(
                     return@launch
                 }
             }
-            
+
             requestScrollTo(messageId = messageId, highlight = true, animate = false)
         }
     }
-    
+
     /**
      * Прыжок к сообщению сразу после открытия чата.
      *
@@ -648,14 +650,14 @@ class ChatViewModel @Inject constructor(
             jumpToMessage(messageId)
         }
     }
-    
+
     /** Возврат к сообщению, из которого был совершён переход. */
     fun jumpBack() {
         val messageId = returnStack.removeLastOrNull() ?: return
         _uiState.update { it.copy(canJumpBack = returnStack.isNotEmpty()) }
         jumpToMessage(messageId)
     }
-    
+
     /**
      * FloatingActionButton: сразу в конец чата.
      * Один запрос за последними сообщениями, без прокрутки и догрузки промежуточных страниц.
@@ -663,7 +665,7 @@ class ChatViewModel @Inject constructor(
     fun jumpToLatest() {
         viewModelScope.launch { jumpToLatestInternal() }
     }
-    
+
     private suspend fun jumpToLatestInternal() {
         val pager = messagePager ?: return
         val wasAtLive = pager.state.value.isAtLive
@@ -671,11 +673,11 @@ class ChatViewModel @Inject constructor(
         returnStack.clear()
         _uiState.update { it.copy(canJumpBack = false) }
         requestScrollTo(messageId = null, highlight = false, animate = wasAtLive)
-        
+
         _uiState.update { it.copy(unreadCount = 0, firstUnreadMessageId = null) }
         chatRepository.markAllAsRead(_uiState.value.chatId)
     }
-    
+
     private fun requestScrollTo(
         messageId: Long?,
         highlight: Boolean,
@@ -693,7 +695,7 @@ class ChatViewModel @Inject constructor(
             )
         }
     }
-    
+
     /** Вызывается из UI, когда скролл к цели выполнен. */
     fun onScrollTargetHandled(requestId: Long) {
         val target = _uiState.value.scrollTarget ?: return
@@ -702,7 +704,7 @@ class ChatViewModel @Inject constructor(
         val messageId = target.messageId
         if (target.highlight && messageId != null) highlightMessage(messageId)
     }
-    
+
     private fun highlightMessage(messageId: Long) {
         highlightJob?.cancel()
         highlightJob = viewModelScope.launch {
@@ -714,10 +716,10 @@ class ChatViewModel @Inject constructor(
         }
     }
     // endregion
-    
+
     // region Поиск сообщений в чате
     fun startMessageSearch() = _uiState.update { it.copy(isMessageSearchActive = true) }
-    
+
     fun stopMessageSearch() {
         searchJob?.cancel()
         searchCursorId = null
@@ -731,11 +733,11 @@ class ChatViewModel @Inject constructor(
             )
         }
     }
-    
+
     fun changeMessageSearchQuery(query: String) {
         _uiState.update { it.copy(messageSearchQuery = query) }
         searchJob?.cancel()
-        
+
         if (query.isBlank()) {
             searchCursorId = null
             _uiState.update {
@@ -747,21 +749,21 @@ class ChatViewModel @Inject constructor(
             }
             return
         }
-        
+
         searchJob = viewModelScope.launch {
             delay(350.milliseconds)
             searchCursorId = null
             runMessageSearch(query, reset = true)
         }
     }
-    
+
     fun loadMoreSearchResults() {
         val query = _uiState.value.messageSearchQuery
         if (query.isBlank() || searchCursorId == null || _uiState.value.isSearchingMessages) return
         searchJob?.cancel()
         searchJob = viewModelScope.launch { runMessageSearch(query, reset = false) }
     }
-    
+
     private suspend fun runMessageSearch(query: String, reset: Boolean) {
         _uiState.update { it.copy(isSearchingMessages = true) }
         chatRepository.searchMessages(
@@ -781,16 +783,16 @@ class ChatViewModel @Inject constructor(
             _uiState.update { it.copy(isSearchingMessages = false) }
         }
     }
-    
+
     /** Клик по результату поиска. */
     fun onSearchResultClicked(hit: MessageSearchHit) = jumpToMessage(hit.id)
     // endregion
-    
+
     private companion object {
         const val PAGE_SIZE = 50
         const val AROUND_RADIUS = 25
         const val MAX_WINDOW_MESSAGES = 400
-        
+
         /** Первое непрочитанное ставим ниже середины экрана. */
         /**
          * Граница прочитанного уезжает почти к верхней кромке: всё непрочитанное
@@ -798,9 +800,9 @@ class ChatViewModel @Inject constructor(
          */
         const val UNREAD_VIEWPORT_FRACTION = 0.08f
     }
-    
+
     // region Ответ на сообщение
-    
+
     /**
      * «Ответить» в меню сообщения.
      *
@@ -812,16 +814,16 @@ class ChatViewModel @Inject constructor(
      */
     fun startReply(message: Message) {
         if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
-        
+
         val state = _uiState.value
         val chatType = ChatType.fromId(state.chatId)
-        
+
         val senderName = when {
             message.senderId == state.myId -> state.myName
             else -> state.userNamesCache[message.senderId]
                 ?: state.chatName.asString(context)
         }
-        
+
         val preview = MessageReplyPreview(
             messageId = message.id,
             chatId = state.chatId,
@@ -832,29 +834,29 @@ class ChatViewModel @Inject constructor(
             text = message.text,
             attachmentTypes = message.attachments.map { it.type }
         )
-        
+
         if (chatType != ChatType.PRIVATE) loadUserName(message.senderId)
-        
+
         _uiState.update { it.copy(replyToMessage = preview) }
     }
-    
+
     /** Клик по панели ответа над полем ввода — прыжок к цитируемому сообщению. */
     fun onReplyPanelClicked() {
         val preview = _uiState.value.replyToMessage ?: return
         jumpToMessage(preview.messageId)
     }
-    
+
     /** Крестик в панели ответа: сбрасываем ответ и чистим поле ввода. */
     fun cancelReply() {
         clearReply()
         changeText("")
     }
-    
+
     private fun clearReply() {
         if (_uiState.value.replyToMessage == null) return
         _uiState.update { it.copy(replyToMessage = null) }
     }
-    
+
     /**
      * Клик по блоку ответа внутри сообщения.
      *
@@ -863,7 +865,7 @@ class ChatViewModel @Inject constructor(
      */
     fun onReplyPreviewClicked(message: Message) {
         val preview = message.replyTo ?: return
-        
+
         if (isInCurrentChat(preview)) {
             jumpToMessage(preview.messageId, returnToMessageId = message.id)
         } else {
@@ -878,7 +880,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     /**
      * В личном чате chatId сообщения — это получатель, поэтому у двух сообщений
      * одного диалога chatId разные: мой id и id собеседника.
@@ -891,28 +893,28 @@ class ChatViewModel @Inject constructor(
                 (originChatId == state.myId || originChatId == state.chatId)
     }
     // endregion
-    
+
     // region Пересылка сообщения
-    
+
     /** «Переслать» в меню сообщения: собираем список чатов, куда можно писать. */
     fun startForward(message: Message) {
         if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
-        
+
         viewModelScope.launch {
             val myId = _uiState.value.myId
             val chats = chatRepository.getAllChats().firstOrNull().orEmpty()
-            
+
             val candidates = chats.filter { chat ->
                 when (ChatType.fromId(chat.id)) {
                     ChatType.CHANNEL ->
                         channelRepository.getByIdOrNull(chat.id)
                             .firstOrNull()?.ownerId == myId
-                    
+
                     ChatType.UNKNOWN -> false
                     else -> true
                 }
             }
-            
+
             _uiState.update {
                 it.copy(
                     forwardingMessage = message,
@@ -924,7 +926,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun toggleForwardTarget(chatId: Long) {
         _uiState.update { state ->
             val selected = state.selectedForwardChatIds
@@ -934,7 +936,7 @@ class ChatViewModel @Inject constructor(
             )
         }
     }
-    
+
     fun dismissForwardSheet() {
         _uiState.update {
             it.copy(
@@ -946,16 +948,16 @@ class ChatViewModel @Inject constructor(
             )
         }
     }
-    
+
     /** Отправка копий во все выбранные чаты одним запросом. */
     fun confirmForward() {
         val state = _uiState.value
         val message = state.forwardingMessage ?: return
         val targets = state.selectedForwardChatIds.toList()
         if (targets.isEmpty() || state.isForwarding) return
-        
+
         _uiState.update { it.copy(isForwarding = true) }
-        
+
         viewModelScope.launch {
             chatRepository.forwardMessage(state.chatId, message.id, targets)
                 .onSuccess {
@@ -978,7 +980,7 @@ class ChatViewModel @Inject constructor(
                 }
         }
     }
-    
+
     /**
      * Клик по заголовку «Переслано от…».
      *
@@ -990,17 +992,17 @@ class ChatViewModel @Inject constructor(
         val forwardedFrom = message.forwardedFrom ?: return
         if (forwardedFrom.access != ForwardSourceAccess.OPEN) return
         if (forwardedFrom.chatId == _uiState.value.chatId) return
-        
+
         viewModelScope.launch {
             _uiEffect.emit(ChatUiEffect.NavigateToChat(chatId = forwardedFrom.chatId))
         }
     }
     // endregion
-    
+
     // region Message Actions
     fun changeText(newText: String) {
         _uiState.update { it.copy(messageText = newText) }
-        
+
         draftSaveJob?.cancel()
         draftSaveJob = if (newText.isNotBlank()) {
             viewModelScope.launch {
@@ -1013,23 +1015,23 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun onSendMessageClicked() {
         val editingId = _uiState.value.editingMessageId
         if (editingId != null) {
             viewModelScope.launch { handleEditMessage(editingId) }
             return
         }
-        
+
         val text = _uiState.value.messageText.trim()
         if (text.isEmpty()) return
-        
+
         val replyTo = _uiState.value.replyToMessage
         changeText("")
         clearReply()
         onSendMessageInternal(text, replyTo)
     }
-    
+
     private fun onSendMessageInternal(
         text: String,
         replyTo: MessageReplyPreview? = null
@@ -1053,7 +1055,7 @@ class ChatViewModel @Inject constructor(
         }
         sendingJobs[tempId] = job
     }
-    
+
     private suspend fun handleEditMessage(editingId: Long) {
         val newText = _uiState.value.messageText.trim()
         val originalText = _uiState.value.editingOriginalText
@@ -1071,7 +1073,7 @@ class ChatViewModel @Inject constructor(
                 )
             }
     }
-    
+
     fun retrySendMessage(message: Message) {
         viewModelScope.launch {
             if (message.attachments.isNotEmpty()) {
@@ -1087,7 +1089,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun cancelSendMessage(message: Message) {
         sendingJobs[message.id]?.cancel()
         sendingJobs.remove(message.id)
@@ -1095,7 +1097,7 @@ class ChatViewModel @Inject constructor(
             chatRepository.deleteLocalMessage(message.id)
         }
     }
-    
+
     fun startEditing(message: Message) {
         val now = System.currentTimeMillis()
         if (now - message.sendTime > 24 * 60 * 60 * 1000L) {
@@ -1113,7 +1115,7 @@ class ChatViewModel @Inject constructor(
             )
         }
     }
-    
+
     fun cancelEditing() {
         _uiState.update {
             it.copy(
@@ -1123,9 +1125,12 @@ class ChatViewModel @Inject constructor(
             )
         }
     }
-    
+
     /**
      * Сообщения до messageId реально побывали в поле зрения больше чем наполовину.
+     *
+     * Единственное место, откуда уходит отметка о прочтении: ни открытие чата,
+     * ни загрузка истории сами по себе ничего прочитанным не помечают.
      *
      * Вызывается из UI с дебаунсом и всегда одним максимальным id: один запрос
      * на пачку вместо запроса на каждое сообщение.
@@ -1137,12 +1142,12 @@ class ChatViewModel @Inject constructor(
             chatRepository.markReadUpTo(_uiState.value.chatId, messageId)
         }
     }
-    
+
     /** Сообщается из UI: видно ли самое нижнее сообщение списка. */
     fun onViewportAtBottomChanged(atBottom: Boolean) {
         isViewportAtBottom = atBottom
     }
-    
+
     /**
      * Новое сообщение в окне.
      *
@@ -1153,17 +1158,17 @@ class ChatViewModel @Inject constructor(
         val newest = messages.lastOrNull() ?: return
         val newestId = newest.id
         if (newestId <= lastKnownNewestId) return
-        
+
         val isFirstFill = lastKnownNewestId == 0L
         lastKnownNewestId = newestId
         if (isFirstFill) return
-        
+
         val isMine = newest.senderId == _uiState.value.myId
         if (isMine || (isViewportAtBottom && isAtLive)) {
             requestScrollTo(messageId = null, highlight = false, animate = true)
         }
     }
-    
+
     fun loadUserName(userId: Long) {
         if (_uiState.value.userNamesCache.containsKey(userId)) return
         viewModelScope.launch {
@@ -1178,7 +1183,7 @@ class ChatViewModel @Inject constructor(
         }
     }
     // endregion
-    
+
     // region Join / Leave / Delete
     fun onJoinClicked() {
         viewModelScope.launch {
@@ -1191,7 +1196,7 @@ class ChatViewModel @Inject constructor(
                         )
                     }
                 }
-                
+
                 ChatType.GROUP -> joinGroupUseCase(chatId).onSuccess {
                     _uiState.update {
                         it.copy(
@@ -1199,12 +1204,12 @@ class ChatViewModel @Inject constructor(
                         )
                     }
                 }
-                
+
                 else -> {}
             }
         }
     }
-    
+
     fun onLeaveClicked() {
         viewModelScope.launch {
             leaveChatUseCase(_uiState.value.chatId).onSuccess {
@@ -1213,7 +1218,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun onDeleteChatConfirmed() {
         viewModelScope.launch {
             if (chatRepository.deleteChat(
@@ -1226,7 +1231,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun onDeleteMessagesConfirmed() {
         viewModelScope.launch {
             if (chatRepository.deleteChatMessages(
@@ -1238,7 +1243,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun onDeleteMessageConfirmed() {
         viewModelScope.launch {
             val deleteForRecipient = _uiState.value.deleteForRecipient
@@ -1250,32 +1255,32 @@ class ChatViewModel @Inject constructor(
         }
     }
     // endregion
-    
+
     // region Dialog Management
     fun showDeleteChatDialog() =
         _uiState.update { it.copy(showDeleteChatDialog = true, deleteForRecipient = false) }
-    
+
     fun hideDeleteChatDialog() =
         _uiState.update { it.copy(showDeleteChatDialog = false, deleteForRecipient = false) }
-    
+
     fun showClearHistoryDialog() =
         _uiState.update { it.copy(showClearHistoryDialog = true, deleteForRecipient = false) }
-    
+
     fun hideClearHistoryDialog() =
         _uiState.update { it.copy(showClearHistoryDialog = false, deleteForRecipient = false) }
-    
+
     fun showDeleteMessageDialog() =
         _uiState.update { it.copy(showDeleteMessageDialog = true, deleteForRecipient = false) }
-    
+
     fun hideDeleteMessageDialog() =
         _uiState.update { it.copy(showDeleteMessageDialog = false, deleteForRecipient = false) }
-    
+
     fun showLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = true) }
     fun hideLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = false) }
     fun setDeleteForRecipient(delete: Boolean) =
         _uiState.update { it.copy(deleteForRecipient = delete) }
     // endregion
-    
+
     // region File & Media Actions
     fun onFileAction(message: Message, file: MessageAttachment, action: FileAction) {
         when (action) {
@@ -1287,14 +1292,14 @@ class ChatViewModel @Inject constructor(
             FileAction.PLAY -> handlePlayVoice(file)
         }
     }
-    
+
     private fun downloadFile(message: Message, file: MessageAttachment) {
         viewModelScope.launch {
             chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
                 .onSuccess { url -> downloaderManager.download(url, file.name, file.fileId) }
         }
     }
-    
+
     private fun handleOpenFile(file: MessageAttachment) {
         if (file.type == AttachmentType.IMAGE || file.type == AttachmentType.VIDEO || file.type == AttachmentType.GIF) {
             val index = _uiState.value.mediaItems.indexOfFirst { it.fileId == file.fileId }
@@ -1308,7 +1313,7 @@ class ChatViewModel @Inject constructor(
             viewModelScope.launch { fileHandler.openFile(file.localUri.toString()) }
         }
     }
-    
+
     private fun handlePlayVoice(file: MessageAttachment) {
         if (file.type != AttachmentType.VOICE || file.localUri == null) return
         if (_uiState.value.currentPlayingVoiceFileId == file.fileId) {
@@ -1318,13 +1323,13 @@ class ChatViewModel @Inject constructor(
             playVoice(file.fileId, startPos)
         }
     }
-    
+
     private fun playVoice(fileId: String, startPositionMs: Int = 0) {
         val queue = buildVoiceQueue(_uiState.value.chatItems, _uiState.value.chatName)
         if (queue.none { it.fileId == fileId }) return
         voicePlayerManager.play(queue, fileId, startPositionMs)
     }
-    
+
     private fun buildVoiceQueue(items: List<ChatItem>, chatName: UiText): List<VoiceQueueItem> {
         val title = chatName.asString(context).ifBlank { context.getString(R.string.voice_message) }
         return items.filterIsInstance<ChatItem.MessageItem>()
@@ -1342,7 +1347,7 @@ class ChatViewModel @Inject constructor(
                 )
             }
     }
-    
+
     fun onVoiceSeek(file: MessageAttachment, positionMs: Int) {
         if (_uiState.value.currentPlayingVoiceFileId != file.fileId) {
             pendingVoiceStartPositions[file.fileId] = positionMs
@@ -1350,7 +1355,7 @@ class ChatViewModel @Inject constructor(
             voicePlayerManager.seekTo(positionMs)
         }
     }
-    
+
     fun sendFiles(uris: List<Uri>) {
         val tempId = -System.currentTimeMillis()
         val replyTo = _uiState.value.replyToMessage
@@ -1370,7 +1375,7 @@ class ChatViewModel @Inject constructor(
         }
         sendingJobs[tempId] = job
     }
-    
+
     fun cancelUpload(tempMessageId: Long) {
         sendingJobs[tempMessageId]?.cancel()
         sendingJobs.remove(tempMessageId)
@@ -1381,7 +1386,7 @@ class ChatViewModel @Inject constructor(
             chatRepository.deleteLocalMessage(tempMessageId)
         }
     }
-    
+
     fun saveToGallery(uri: Uri) {
         viewModelScope.launch {
             if (fileHandler.saveToGallery(uri.path ?: uri.toString())) {
@@ -1392,13 +1397,13 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun saveAttachmentsToDownloads(message: Message) {
         viewModelScope.launch {
             val downloaded =
                 message.attachments.filter { it.localUri != null && (it.status == DownloadStatus.COMPLETED || it.status == DownloadStatus.UPLOADED) }
             if (downloaded.isEmpty()) return@launch
-            
+
             var successCount = 0
             downloaded.forEach {
                 if (fileHandler.saveToDownloads(
@@ -1407,7 +1412,7 @@ class ChatViewModel @Inject constructor(
                     )
                 ) successCount++
             }
-            
+
             val res =
                 if (successCount > 0) R.string.saved_to_downloads else R.string.failed_to_save_to_downloads
             _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(res)))
@@ -1415,27 +1420,27 @@ class ChatViewModel @Inject constructor(
         }
     }
     // endregion
-    
+
     // region Utilities
     fun copyToClipboard(text: String?) = text?.let { clipboardService.copy(it) }
     fun vibrate() = vibrationManager.vibrate(VibrationPattern.Error)
     fun selectMessage(message: Message) =
         _uiState.update { it.copy(selectedMessages = it.selectedMessages + message) }
-    
+
     fun clearMediaUrl() = _uiState.update { it.copy(showFullScreenViewer = false) }
     fun setVideoLooping(isLooping: Boolean) =
         viewModelScope.launch { dataStoreManager.saveVideoLooping(isLooping) }
-    
+
     fun setVideoPlaybackSpeed(speed: Float) =
         viewModelScope.launch { dataStoreManager.saveVideoPlaybackSpeed(speed) }
-    
+
     fun dismissBannedDialog() = _uiState.update { it.copy(showBannedDialog = false) }
     fun onMicrophonePermissionDenied() =
         _uiState.update { it.copy(showMicrophonePermissionSheet = true) }
-    
+
     fun dismissMicrophonePermissionSheet() =
         _uiState.update { it.copy(showMicrophonePermissionSheet = false) }
-    
+
     fun dismissInviteBottomSheet() = _uiState.update {
         it.copy(
             showInviteBottomSheet = false,
@@ -1445,7 +1450,7 @@ class ChatViewModel @Inject constructor(
         )
     }
     // endregion
-    
+
     // region Invite Links
     fun onLinkClicked(url: String) {
         val match = RegexPatterns.INVITE_LINK.find(url)
@@ -1454,7 +1459,7 @@ class ChatViewModel @Inject constructor(
             viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenUrl(normalized)) }
             return
         }
-        
+
         val code = match.groupValues[2]
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessingInvite = true) }
@@ -1465,13 +1470,13 @@ class ChatViewModel @Inject constructor(
                         _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.you_are_already_in_this_chat)))
                         vibrationManager.vibrate(VibrationPattern.Error)
                     }
-                    
+
                     linkInfo.isJoined != null -> _uiEffect.emit(ChatUiEffect.NavigateToChat(linkInfo.chatId))
                     linkInfo.isBanned != null -> {
                         _uiState.update { s -> s.copy(showBannedDialog = true) }
                         vibrationManager.vibrate(VibrationPattern.Error)
                     }
-                    
+
                     else -> _uiState.update { s ->
                         s.copy(
                             inviteLinkInfo = linkInfo,
@@ -1487,14 +1492,14 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     /**
      * Почтовый адрес не открываем в CustomTabs как ссылку: нужно почтовое приложение.
      */
     fun onEmailClicked(email: String) {
         viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenEmail(email)) }
     }
-    
+
     fun onUsernameClicked(username: String) {
         viewModelScope.launch {
             searchRepository.resolveUsername(username.removePrefix("@")).onSuccess { result ->
@@ -1510,7 +1515,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun onSubscribeViaInviteLink() {
         val info = _uiState.value.inviteLinkInfo ?: return
         val code = _uiState.value.inviteLinkCode ?: return
@@ -1531,7 +1536,7 @@ class ChatViewModel @Inject constructor(
         }
     }
     // endregion
-    
+
     // region Voice Recording
     fun startRecording() {
         if (_uiState.value.isRecording) return
@@ -1565,14 +1570,14 @@ class ChatViewModel @Inject constructor(
             viewModelScope.launch { _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Не удалось начать запись аудио"))) }
         }
     }
-    
+
     fun lockRecording() {
         if (_uiState.value.isRecording) {
             _uiState.update { it.copy(isRecordingLocked = true) }
             vibrationManager.vibrate(VibrationPattern.TactileResponse)
         }
     }
-    
+
     fun stopRecordingAndSend() {
         if (!_uiState.value.isRecording) return
         val file = audioRecorderManager.stopRecording()
@@ -1586,7 +1591,7 @@ class ChatViewModel @Inject constructor(
         }
         if (file != null) sendFiles(listOf(Uri.fromFile(file)))
     }
-    
+
     fun cancelRecording() {
         if (!_uiState.value.isRecording) return
         audioRecorderManager.cancelRecording()
@@ -1601,15 +1606,15 @@ class ChatViewModel @Inject constructor(
         vibrationManager.vibrate(VibrationPattern.TactileResponse)
     }
     // endregion
-    
+
     fun showBlockDialog() {
         _uiState.update { it.copy(showBlockDialog = true) }
     }
-    
+
     fun dismissBlockDialog() {
         _uiState.update { it.copy(showBlockDialog = false) }
     }
-    
+
     fun unblockUser() {
         viewModelScope.launch {
             userRepository.unblockUser(_uiState.value.chatId).onSuccess {
