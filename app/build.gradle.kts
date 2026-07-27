@@ -52,12 +52,12 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     buildFeatures {
         compose = true
-        viewBinding = true
+        viewBinding = false
         buildConfig = true
     }
     buildToolsVersion = "36.0.0"

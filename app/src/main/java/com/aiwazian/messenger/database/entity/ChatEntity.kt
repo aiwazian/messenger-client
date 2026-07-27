@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.database.entity
 
+import androidx.room3.ColumnInfo
 import androidx.room3.Entity
 
 @Entity(
@@ -13,5 +14,9 @@ import androidx.room3.Entity
 data class ChatEntity(
     val userId: Long,
     val chatId: Long,
-    val isPinned: Boolean
+    val isPinned: Boolean,
+    /** Сколько сообщений не прочитано: бейдж справа в ChatCard. */
+    @ColumnInfo(defaultValue = "0") val unreadCount: Int = 0,
+    /** С какого сообщения открывать чат. null — всё прочитано, открываем конец. */
+    val firstUnreadMessageId: Long? = null
 )

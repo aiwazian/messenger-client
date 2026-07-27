@@ -4,6 +4,8 @@
 
 package com.aiwazian.messenger.ui.screens.chat
 
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedVisibility
@@ -74,6 +76,8 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.components.ShareBottomSheet
+import com.aiwazian.messenger.ui.components.ShareItem
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.screens.chat.components.ChatDialogs
@@ -85,22 +89,34 @@ import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
+import com.aiwazian.messenger.ui.screens.chat.components.UnreadSeparatorItem
 import com.aiwazian.messenger.utils.ActiveChatTracker
+import com.aiwazian.messenger.utils.UiText
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 
+@OptIn(FlowPreview::class)
 @Composable
 fun ChatScreen(
     chatId: Long,
     chatName: String? = null,
     avatarUri: String? = null,
+    scrollToMessageId: Long? = null,
     chatViewModel: ChatViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     
     LaunchedEffect(Unit) {
         chatViewModel.init(chatId, chatName, avatarUri?.toUri())
+        
+        if (scrollToMessageId != null) {
+            chatViewModel.jumpToMessageWhenReady(scrollToMessageId)
+        }
     }
     
     DisposableEffect(chatId) {
@@ -162,9 +178,102 @@ fun ChatScreen(
         }
     }
     
-    LaunchedEffect(firstVisibleItemIndex.value) {
-        if (firstVisibleItemIndex.value < 10 && uiState.hasMoreMessages && !uiState.isLoadingMore && !uiState.isLoading && uiState.isFirstLoadDone) {
-            chatViewModel.loadMoreMessages()
+    val lastVisibleItemIndex = remember {
+        derivedStateOf { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 }
+    }
+    
+    LaunchedEffect(
+        firstVisibleItemIndex.value,
+        uiState.hasMoreMessages,
+        uiState.isRelocating,
+        uiState.isLoadingOlder
+    ) {
+        if (uiState.isRelocating || uiState.isLoading || !uiState.isFirstLoadDone) return@LaunchedEffect
+        if (uiState.scrollTarget != null) return@LaunchedEffect
+        if (firstVisibleItemIndex.value < PREFETCH_THRESHOLD && uiState.hasMoreMessages && !uiState.isLoadingOlder) {
+            chatViewModel.loadOlderMessages()
+        }
+    }
+    
+    LaunchedEffect(
+        lastVisibleItemIndex.value,
+        uiState.hasMoreNewerMessages,
+        uiState.isRelocating,
+        uiState.isLoadingNewer
+    ) {
+        if (uiState.isRelocating || uiState.isLoading || !uiState.isFirstLoadDone) return@LaunchedEffect
+        if (uiState.scrollTarget != null) return@LaunchedEffect
+        val total = listState.layoutInfo.totalItemsCount
+        if (total > 0 &&
+            lastVisibleItemIndex.value >= total - PREFETCH_THRESHOLD &&
+            uiState.hasMoreNewerMessages &&
+            !uiState.isLoadingNewer
+        ) {
+            chatViewModel.loadNewerMessages()
+        }
+    }
+    
+    LaunchedEffect(uiState.scrollTarget?.requestId, uiState.chatItems) {
+        val target = uiState.scrollTarget ?: return@LaunchedEffect
+        val targetId = target.messageId
+        
+        if (targetId == null) {
+            val lastIndex = uiState.chatItems.size + 1
+            if (target.animate) listState.animateScrollToItem(lastIndex)
+            else listState.scrollToItem(lastIndex)
+            chatViewModel.onScrollTargetHandled(target.requestId)
+            return@LaunchedEffect
+        }
+        
+        val itemIndex = uiState.chatItems.indexOfFirst {
+            it is ChatItem.MessageItem && it.message.id == targetId
+        }
+        if (itemIndex < 0) return@LaunchedEffect
+        
+        val anchorIndex =
+            if (itemIndex > 0 && uiState.chatItems[itemIndex - 1] is ChatItem.UnreadSeparator) {
+                itemIndex - 1
+            } else itemIndex
+        
+        val listIndex = anchorIndex + 1
+        if (target.animate) {
+            listState.animateScrollToItem(listIndex)
+        } else {
+            val offset =
+                -(listState.layoutInfo.viewportSize.height * target.viewportFraction).toInt()
+            listState.scrollToItem(listIndex, offset)
+        }
+        chatViewModel.onScrollTargetHandled(target.requestId)
+    }
+    
+    LaunchedEffect(isAtBottom) {
+        chatViewModel.onViewportAtBottomChanged(isAtBottom)
+    }
+    
+    LaunchedEffect(listState, uiState.myId) {
+        snapshotFlow {
+            val layoutInfo = listState.layoutInfo
+            val viewportStart = layoutInfo.viewportStartOffset
+            val viewportEnd = layoutInfo.viewportEndOffset
+            
+            layoutInfo.visibleItemsInfo.filter { info ->
+                if (info.size <= 0) return@filter false
+                val visiblePart =
+                    (minOf(info.offset + info.size, viewportEnd) - maxOf(
+                        info.offset,
+                        viewportStart
+                    ))
+                visiblePart * 2 >= info.size
+            }.mapNotNull { info ->
+                val chatItem = uiState.chatItems.getOrNull(info.index - 1)
+                (chatItem as? ChatItem.MessageItem)?.message
+            }.filter { message ->
+                message.id > 0 && !message.isRead && message.senderId != uiState.myId
+            }.maxOfOrNull { it.id }
+        }.distinctUntilChanged()
+            .debounce(READ_REPORT_DEBOUNCE_MS.milliseconds)
+            .collect { messageId ->
+                if (messageId != null) chatViewModel.onMessagesSeen(messageId)
         }
     }
     
@@ -211,7 +320,12 @@ fun ChatScreen(
                 }
                 
                 is ChatUiEffect.NavigateToChat -> {
-                    navBackStack.add(AppRoute.Chat(effect.chatId, null))
+                    navBackStack.add(
+                        AppRoute.Chat(
+                            chatId = effect.chatId,
+                            scrollToMessageId = effect.scrollToMessageId
+                        )
+                    )
                 }
                 
                 is ChatUiEffect.OpenUrl -> {
@@ -220,6 +334,29 @@ fun ChatScreen(
                         .setTranslateLocale(Locale.getDefault())
                         .build()
                         .launchUrl(context, effect.url.toUri())
+                }
+                
+                is ChatUiEffect.OpenEmail -> {
+                    val mailIntent = Intent(
+                        Intent.ACTION_SENDTO,
+                        "mailto:${Uri.encode(effect.email)}".toUri()
+                    )
+                    val chooser = Intent.createChooser(
+                        mailIntent,
+                        UiText.StringResource(R.string.open_email_with).asString(context)
+                    )
+                    
+                    val launched = runCatching { context.startActivity(chooser) }.isSuccess
+                    if (!launched) {
+                        snackbarJob?.cancel()
+                        snackbarJob = scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = UiText.StringResource(R.string.no_email_app)
+                                    .asString(context),
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -246,7 +383,7 @@ fun ChatScreen(
         )
     }, floatingActionButton = {
         AnimatedVisibility(
-            visible = !isAtBottom && !isScrollingUp.value && !uiState.isRecording,
+            visible = (!isAtBottom || !uiState.isAtLiveEdge) && !isScrollingUp.value && !uiState.isRecording,
             enter = scaleIn() + fadeIn() + slideInVertically { it },
             exit = scaleOut() + fadeOut() + slideOutVertically { it },
         ) {
@@ -258,14 +395,7 @@ fun ChatScreen(
                 label = "scroll_bottom_button_scale_animation"
             )
             FloatingActionButton(
-                onClick = {
-                    scope.launch {
-                        val lastIndex = listState.layoutInfo.totalItemsCount - 1
-                        if (lastIndex >= 0) {
-                            listState.animateScrollToItem(lastIndex)
-                        }
-                    }
-                },
+                onClick = { chatViewModel.jumpToLatest() },
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
                 contentColor = MaterialTheme.colorScheme.onSurface,
                 shape = CircleShape,
@@ -293,19 +423,18 @@ fun ChatScreen(
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                     overscrollEffect = rememberOverscrollEffect()
                 ) {
-                    item {
-                        Spacer(Modifier.height(innerPadding.calculateTopPadding()))
-                    }
-                    
-                    if (uiState.isLoadingMore) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularWavyProgressIndicator()
+                    item(key = "chat_header") {
+                        Column {
+                            Spacer(Modifier.height(innerPadding.calculateTopPadding()))
+                            if (uiState.isLoadingOlder) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularWavyProgressIndicator()
+                                }
                             }
                         }
                     }
@@ -314,6 +443,7 @@ fun ChatScreen(
                         items = uiState.chatItems, key = { item ->
                             when (item) {
                                 is ChatItem.DateSeparator -> "date_${item.text}"
+                                is ChatItem.UnreadSeparator -> "unread_separator"
                                 is ChatItem.SystemMessage -> "sys_${item.sendTime}"
                                 is ChatItem.MessageItem -> "msg_${item.message.id}"
                             }
@@ -323,18 +453,25 @@ fun ChatScreen(
                                 item.text, Modifier.animateItem()
                             )
                             
+                            is ChatItem.UnreadSeparator -> UnreadSeparatorItem(
+                                Modifier.animateItem()
+                            )
+                            
                             is ChatItem.SystemMessage -> SystemMessageBubble(
                                 item.text.asString(), Modifier.animateItem()
                             )
                             
                             is ChatItem.MessageItem -> MessageBubble(
-                                modifier = Modifier.animateItem(),
+                                modifier = Modifier
+                                    .animateItem()
+                                    .then(
+                                        if (item.isHighlighted) {
+                                            Modifier.background(
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                            )
+                                        } else Modifier
+                                    ),
                                 item = item,
-                                onSeen = {
-                                    chatViewModel.markAsReadMessage(
-                                        item.message
-                                    )
-                                },
                                 onFileAction = { file, action ->
                                     if (action == FileAction.CANCEL) {
                                         fileToCancelId =
@@ -354,16 +491,35 @@ fun ChatScreen(
                                 onVoiceSeek = chatViewModel::onVoiceSeek,
                                 onLinkClicked = chatViewModel::onLinkClicked,
                                 onUsernameClicked = chatViewModel::onUsernameClicked,
+                                onEmailClicked = chatViewModel::onEmailClicked,
                                 onSaveToDownloads = {
                                     chatViewModel.saveAttachmentsToDownloads(
                                         item.message
                                     )
+                                },
+                                onReplyPreviewClick = {
+                                    chatViewModel.onReplyPreviewClicked(item.message)
+                                },
+                                onForwardedFromClick = {
+                                    chatViewModel.onForwardedFromClicked(item.message)
                                 })
                         }
                     }
                     
-                    item {
-                        Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
+                    item(key = "chat_footer") {
+                        Column {
+                            if (uiState.isLoadingNewer) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularWavyProgressIndicator()
+                                }
+                            }
+                            Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
+                        }
                     }
                 }
             }
@@ -512,6 +668,22 @@ fun ChatScreen(
         }
     }
     
+    if (uiState.isForwardSheetVisible) {
+        ShareBottomSheet(
+            items = uiState.forwardCandidates.map { chat ->
+                ShareItem(
+                    id = chat.id,
+                    name = chat.chatName,
+                    isSelected = chat.id in uiState.selectedForwardChatIds,
+                    avatarUri = chat.avatarUri
+                )
+            },
+            onItemClick = chatViewModel::toggleForwardTarget,
+            onSendClick = chatViewModel::confirmForward,
+            onDismiss = chatViewModel::dismissForwardSheet
+        )
+    }
+    
     if (uiState.showFullScreenViewer) {
         FullScreenViewer(
             mediaUris = uiState.mediaItems.map { it.localUri },
@@ -538,3 +710,14 @@ fun ChatScreen(
         }
     }
 }
+
+/** За сколько элементов до границы окна начинать догрузку. */
+private const val PREFETCH_THRESHOLD = 10
+
+/**
+ * Сколько ждать перед отправкой отметки о прочтении.
+ *
+ * Без паузы быстрый скролл через десятки сообщений помечал бы прочитанным всё,
+ * что промелькнуло мимо экрана.
+ */
+private const val READ_REPORT_DEBOUNCE_MS = 400L

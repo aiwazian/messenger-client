@@ -24,15 +24,21 @@ import com.aiwazian.messenger.utils.RegexPatterns
 fun MessageText(
     text: String,
     onLinkClicked: ((String) -> Unit)? = null,
-    onUsernameClicked: ((String) -> Unit)? = null
+    onUsernameClicked: ((String) -> Unit)? = null,
+    onEmailClicked: ((String) -> Unit)? = null
 ) {
     val annotatedString = buildAnnotatedString {
         var lastIndex = 0
         
-        val urlMatches = RegexPatterns.URL.findAll(text).map { it to "url" }
+        val emailMatches = RegexPatterns.EMAIL_IN_TEXT.findAll(text).toList()
+        val emailRanges = emailMatches.map { it.range }
+        
+        val urlMatches = RegexPatterns.URL.findAll(text)
+            .filterNot { url -> emailRanges.any { url.range.first <= it.last && it.first <= url.range.last } }
+            .map { it to "url" }
         val usernameMatches = RegexPatterns.MENTION.findAll(text).map { it to "username" }
         
-        val allMatches = (urlMatches + usernameMatches)
+        val allMatches = (emailMatches.map { it to "email" } + urlMatches + usernameMatches)
             .sortedBy { it.first.range.first }
             .toList()
         
@@ -76,6 +82,28 @@ fun MessageText(
                     }
                 }
                 
+                "email" if onEmailClicked != null -> {
+                    withLink(
+                        link = LinkAnnotation.Clickable(
+                            tag = matchedValue,
+                            styles = TextLinkStyles(
+                                style = SpanStyle(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    textDecoration = TextDecoration.Underline
+                                ),
+                                pressedStyle = SpanStyle(
+                                    background = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                                )
+                            ),
+                            linkInteractionListener = {
+                                onEmailClicked(matchedValue)
+                            }
+                        )
+                    ) {
+                        append(matchedValue)
+                    }
+                }
+                
                 "username" if onUsernameClicked != null -> {
                     withLink(
                         link = LinkAnnotation.Clickable(
@@ -98,7 +126,7 @@ fun MessageText(
                 }
                 
                 else -> {
-                    val style = if (type == "url") {
+                    val style = if (type == "url" || type == "email") {
                         SpanStyle(
                             color = MaterialTheme.colorScheme.primary,
                             textDecoration = TextDecoration.Underline

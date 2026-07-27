@@ -9,6 +9,7 @@ import android.net.Uri
 import android.util.Log
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
+import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.DownloadStatus
@@ -39,7 +40,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         chatId: Long,
         uris: List<Uri>,
         text: String?,
-        tempId: Long = -System.currentTimeMillis()
+        tempId: Long = -System.currentTimeMillis(),
+        replyTo: MessageReplyPreview? = null
     ): Result<Message> {
         val myId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
@@ -88,7 +90,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
             status = MessageStatus.SENDING,
             messageType = MessageType.TEXT,
             systemMessageEventType = null,
-            attachments = attachments
+            attachments = attachments,
+            replyTo = replyTo
         )
         
         chatRepository.saveLocalMessage(tempMessage)
@@ -133,7 +136,12 @@ class SendMessageWithFilesUseCase @Inject constructor(
         }
         
         return if (success) {
-            val result = chatRepository.confirmFileUpload(chatId, uploadResults, text)
+            val result = chatRepository.confirmFileUpload(
+                chatId,
+                uploadResults,
+                text,
+                replyTo?.messageId
+            )
             result.onSuccess {
                 chatRepository.updateMessageId(tempId, it.id)
                 val localChat = chatRepository.getById(chatId).firstOrNull()

@@ -299,4 +299,21 @@
     <string name="remove_email">Eliminar correo electrónico</string>
     <string name="change_email">Cambiar correo electrónico</string>
     <string name="remove">Eliminar</string>
+    <string name="reply">Responder</string>
+    <string name="reply_to">Responder a %1$s</string>
+    <string name="forward">Adelante</string>
+    <string name="forwarded_from">Reenviado desde</string>
+    <string name="message_forwarded">Mensaje reenviado</string>
+    <string name="forward_failed">No se pudo reenviar el mensaje</string>
+    <string name="forwarded_from_private_channel">Reenviado desde un canal privado</string>
+    <string name="forwarded_from_private_group">Reenviado desde un grupo privado</string>
+    <string name="forwarded_from_hidden_account">Reenviado desde una cuenta oculta</string>
+    <string name="unknown_chat">chat desconocido</string>
+    <string name="attachment_photo">Foto</string>
+    <string name="attachment_video">Video</string>
+    <string name="attachment_gif">GIF</string>
+    <string name="attachment_file">Archivo</string>
+    <string name="unread_messages">Mensajes no leídos</string>
+    <string name="open_email_with">abrir con</string>
+    <string name="no_email_app">Sin aplicación de correo electrónico</string>
 </resources>

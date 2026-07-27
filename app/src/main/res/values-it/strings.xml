@@ -299,4 +299,21 @@
     <string name="remove_email">Rimuovi e-mail</string>
     <string name="change_email">Cambia e-mail</string>
     <string name="remove">Rimuovere</string>
+    <string name="reply">Rispondere</string>
+    <string name="reply_to">Rispondi a %1$s</string>
+    <string name="forward">Inoltrare</string>
+    <string name="forwarded_from">Inoltrato da</string>
+    <string name="message_forwarded">Messaggio inoltrato</string>
+    <string name="forward_failed">Impossibile inoltrare il messaggio</string>
+    <string name="forwarded_from_private_channel">Inoltrato da un canale privato</string>
+    <string name="forwarded_from_private_group">Inoltrato da un gruppo privato</string>
+    <string name="forwarded_from_hidden_account">Inoltrato da un account nascosto</string>
+    <string name="unknown_chat">Chat sconosciuta</string>
+    <string name="attachment_photo">Foto</string>
+    <string name="attachment_video">Video</string>
+    <string name="attachment_gif">GIF</string>
+    <string name="attachment_file">File</string>
+    <string name="unread_messages">Messaggi non letti</string>
+    <string name="open_email_with">Apri con</string>
+    <string name="no_email_app">Nessuna app di posta elettronica</string>
 </resources>

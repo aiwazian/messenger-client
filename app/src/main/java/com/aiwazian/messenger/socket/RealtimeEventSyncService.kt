@@ -47,9 +47,9 @@ class RealtimeEventSyncService @Inject constructor(
                 val myId = userRepository.getMe().firstOrNull()?.id
                 val chatId = if (message.chatId == myId) message.senderId else message.chatId
                 if (myId != null && message.senderId != myId) {
-                    if (ActiveChatTracker.activeChatId.value == chatId) {
-                        chatRepository.markAllAsRead(chatId)
-                    } else {
+                    chatRepository.incrementUnread(chatId, message.id)
+                    
+                    if (ActiveChatTracker.activeChatId.value != chatId) {
                         val chat = chatRepository.getById(chatId).firstOrNull()
                         val title =
                             chat?.chatName?.asString(context)
@@ -63,6 +63,16 @@ class RealtimeEventSyncService @Inject constructor(
                         )
                     }
                 }
+            }
+        }
+        
+        webSocketClient.subscribeToEvent(WebSocketEvent.ChatUnread) { payload ->
+            serviceScope.launch {
+                chatRepository.applyUnreadState(
+                    chatId = payload.chatId,
+                    unreadCount = payload.unreadCount,
+                    firstUnreadMessageId = payload.firstUnreadMessageId
+                )
             }
         }
         

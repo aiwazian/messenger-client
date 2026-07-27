@@ -297,4 +297,21 @@
     <string name="remove_email">Электрондық поштаны жою</string>
     <string name="change_email">Электрондық поштаны өзгерту</string>
     <string name="remove">Жою</string>
+    <string name="reply">Жауап беру</string>
+    <string name="reply_to">%1$s жауап беру</string>
+    <string name="forward">Алға</string>
+    <string name="forwarded_from">Қайдан жіберілді</string>
+    <string name="message_forwarded">Хабар қайта бағытталды</string>
+    <string name="forward_failed">Хабарды қайта жіберу мүмкін болмады</string>
+    <string name="forwarded_from_private_channel">Жеке арнадан бағытталды</string>
+    <string name="forwarded_from_private_group">Жеке топтан жіберілді</string>
+    <string name="forwarded_from_hidden_account">Жасырын есептік жазбадан қайта жіберілді</string>
+    <string name="unknown_chat">Белгісіз чат</string>
+    <string name="attachment_photo">Фото</string>
+    <string name="attachment_video">Бейне</string>
+    <string name="attachment_gif">GIF</string>
+    <string name="attachment_file">Файл</string>
+    <string name="unread_messages">Оқылмаған хабарлар</string>
+    <string name="open_email_with">-мен ашыңыз</string>
+    <string name="no_email_app">Электрондық пошта қолданбасы жоқ</string>
 </resources>

@@ -6,6 +6,8 @@ package com.aiwazian.messenger.ui.screens.chat
 
 import android.content.Context
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Forward
+import androidx.compose.material.icons.automirrored.rounded.Reply
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DeleteOutline
@@ -34,11 +36,15 @@ class ChatItemMapper(
     private val isOwner: Boolean,
     private val userNamesCache: Map<Long, String>,
     private val groupReadInfo: Map<Long, List<MessageReadInfo>>,
+    private val highlightedMessageId: Long? = null,
+    private val unreadAnchorMessageId: Long? = null,
     private val onCopyText: (String) -> Unit,
     private val onEditMessage: (Message) -> Unit,
     private val onDeleteMessage: (Message) -> Unit,
     private val onRetrySendMessage: (Message) -> Unit,
     private val onCancelSendMessage: (Message) -> Unit,
+    private val onReplyMessage: (Message) -> Unit,
+    private val onForwardMessage: (Message) -> Unit,
     private val onLoadUserName: (Long) -> Unit
 ) {
     fun map(messages: List<Message>): List<ChatItem> {
@@ -78,6 +84,10 @@ class ChatItemMapper(
                 return@forEach
             }
             
+            if (unreadAnchorMessageId != null && message.id == unreadAnchorMessageId) {
+                chatItems.add(ChatItem.UnreadSeparator)
+            }
+            
             val isMine = message.senderId == myId && chatType != ChatType.CHANNEL
             val isSingleEmoji = isSingleEmoji(message.text ?: "")
             val isFirstInGroup = message.senderId != lastSenderId
@@ -100,6 +110,7 @@ class ChatItemMapper(
                     isSingleEmoji = isSingleEmoji,
                     dropdownActions = actions,
                     chatType = chatType,
+                    isHighlighted = highlightedMessageId != null && updatedMessage.id == highlightedMessageId,
                     readInfo = if (isMine) mergeReadInfo(updatedMessage) else null
                 )
             )
@@ -163,6 +174,28 @@ class ChatItemMapper(
         }
         
         val isMyMessage = if (chatType == ChatType.CHANNEL) isOwner else isMine
+        
+        val isSent = message.id > 0 && message.status == MessageStatus.SENT
+        
+        val canReply = isSent && (chatType != ChatType.CHANNEL || isOwner)
+        if (canReply) {
+            actions.add(
+                DropdownMenuAction(
+                    Icons.AutoMirrored.Rounded.Reply,
+                    UiText.StringResource(R.string.reply),
+                    onClick = { onReplyMessage(message) })
+            )
+        }
+        
+        if (isSent) {
+            actions.add(
+                DropdownMenuAction(
+                    Icons.AutoMirrored.Rounded.Forward,
+                    UiText.StringResource(R.string.forward),
+                    onClick = { onForwardMessage(message) })
+            )
+        }
+        
         val now = System.currentTimeMillis()
         val twentyFourHoursMs = 24 * 60 * 60 * 1000L
         val canEdit = isMyMessage &&

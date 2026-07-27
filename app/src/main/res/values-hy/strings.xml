@@ -297,4 +297,21 @@
     <string name="remove_email">Հեռացնել էլ</string>
     <string name="change_email">Փոխել էլ</string>
     <string name="remove">Հեռացնել</string>
+    <string name="reply">Պատասխանել</string>
+    <string name="reply_to">Պատասխանել %1$s-ին</string>
+    <string name="forward">Առաջ</string>
+    <string name="forwarded_from">Փոխանցվում է</string>
+    <string name="message_forwarded">Հաղորդագրությունը փոխանցվել է</string>
+    <string name="forward_failed">Չհաջողվեց փոխանցել հաղորդագրությունը</string>
+    <string name="forwarded_from_private_channel">Փոխանցվում է մասնավոր ալիքից</string>
+    <string name="forwarded_from_private_group">Փոխանցվում է մասնավոր խմբից</string>
+    <string name="forwarded_from_hidden_account">Փոխանցվել է թաքնված հաշվից</string>
+    <string name="unknown_chat">Անհայտ զրույց</string>
+    <string name="attachment_photo">Լուսանկարը</string>
+    <string name="attachment_video">Տեսանյութ</string>
+    <string name="attachment_gif">GIF</string>
+    <string name="attachment_file">Ֆայլ</string>
+    <string name="unread_messages">Չընթերցված հաղորդագրություններ</string>
+    <string name="open_email_with">Բացել հետ</string>
+    <string name="no_email_app">Էլփոստի հավելված չկա</string>
 </resources>

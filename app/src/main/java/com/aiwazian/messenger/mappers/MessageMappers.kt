@@ -5,11 +5,16 @@
 package com.aiwazian.messenger.mappers
 
 import com.aiwazian.messenger.database.entity.MessageEntity
+import com.aiwazian.messenger.domain.ForwardedFrom
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReadInfo
+import com.aiwazian.messenger.domain.MessageReplyPreview
+import com.aiwazian.messenger.enums.AttachmentType
+import com.aiwazian.messenger.enums.ForwardSourceAccess
 import com.aiwazian.messenger.network.dto.MessageAttachmentDto
 import com.aiwazian.messenger.network.dto.MessageDto
+import com.aiwazian.messenger.network.dto.MessageReplyPreviewDto
 
 fun MessageDto.toDomain(): Message = Message(
     id = id,
@@ -23,7 +28,27 @@ fun MessageDto.toDomain(): Message = Message(
     messageType = messageType,
     systemMessageEventType = systemEventType,
     attachments = attachments.map { it.toDomain(messageId = id) },
-    readInfo = readInfo?.map { it.toDomain() }
+    readInfo = readInfo?.map { it.toDomain() },
+    replyTo = replyTo?.toDomain() ?: replyToId?.let {
+        MessageReplyPreview(messageId = it, chatId = replyToChatId)
+    },
+    forwardedFrom = forwardedFromChatId?.let { sourceChatId ->
+        ForwardedFrom(
+            chatId = sourceChatId,
+            name = forwardedFromName.orEmpty(),
+            access = forwardedFromAccess ?: ForwardSourceAccess.UNAVAILABLE
+        )
+    }
+)
+
+fun MessageReplyPreviewDto.toDomain() = MessageReplyPreview(
+    messageId = id,
+    chatId = chatId,
+    senderId = senderId,
+    senderName = senderName,
+    chatName = chatName,
+    text = text,
+    attachmentTypes = attachmentTypes
 )
 
 fun com.aiwazian.messenger.network.dto.MessageReadInfoDto.toDomain() = MessageReadInfo(
@@ -57,7 +82,25 @@ fun MessageEntity.toDomain(attachments: List<MessageAttachment> = emptyList()) =
     status = status,
     messageType = messageType,
     systemMessageEventType = systemMessageEventType,
-    attachments = attachments
+    attachments = attachments,
+    replyTo = replyToId?.let { originalId ->
+        MessageReplyPreview(
+            messageId = originalId,
+            chatId = replyToChatId,
+            senderId = replyToSenderId,
+            senderName = replyToSenderName,
+            chatName = replyToChatName,
+            text = replyToText,
+            attachmentTypes = replyToAttachmentTypes.toAttachmentTypes()
+        )
+    },
+    forwardedFrom = forwardedFromChatId?.let { sourceChatId ->
+        ForwardedFrom(
+            chatId = sourceChatId,
+            name = forwardedFromName.orEmpty(),
+            access = forwardedFromAccess.toForwardSourceAccess()
+        )
+    }
 )
 
 fun Message.toEntity() = MessageEntity(
@@ -70,5 +113,26 @@ fun Message.toEntity() = MessageEntity(
     isRead = isRead,
     messageType = messageType,
     systemMessageEventType = systemMessageEventType,
-    status = status
+    status = status,
+    replyToId = replyTo?.messageId,
+    replyToChatId = replyTo?.chatId,
+    replyToSenderId = replyTo?.senderId,
+    replyToSenderName = replyTo?.senderName,
+    replyToChatName = replyTo?.chatName,
+    replyToText = replyTo?.text,
+    replyToAttachmentTypes = replyTo?.attachmentTypes
+        ?.takeIf { it.isNotEmpty() }
+        ?.joinToString(",") { it.name },
+    forwardedFromChatId = forwardedFrom?.chatId,
+    forwardedFromName = forwardedFrom?.name,
+    forwardedFromAccess = forwardedFrom?.access?.name
 )
+
+private fun String?.toAttachmentTypes(): List<AttachmentType> = this
+    ?.split(",")
+    ?.mapNotNull { raw -> runCatching { AttachmentType.valueOf(raw.trim()) }.getOrNull() }
+    .orEmpty()
+
+private fun String?.toForwardSourceAccess(): ForwardSourceAccess =
+    this?.let { raw -> runCatching { ForwardSourceAccess.valueOf(raw) }.getOrNull() }
+        ?: ForwardSourceAccess.UNAVAILABLE

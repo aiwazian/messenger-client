@@ -13,5 +13,8 @@ data class Chat(
     val isPinned: Boolean,
     val avatarUri: Uri? = null,
     val lastMessage: Message?,
-    val draftText: String? = null
+    val draftText: String? = null,
+    /** Бейдж непрочитанных в списке чатов. */
+    val unreadCount: Int = 0,
+    val firstUnreadMessageId: Long? = null
 )

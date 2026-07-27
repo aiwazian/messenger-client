@@ -269,6 +269,7 @@ private fun Content(
                             myId = uiState.me.id,
                             isSelected = isSelected,
                             isOnline = isOnline,
+                            unreadMessageCount = chat.unreadCount,
                             onClickChat = {
                                 if (hasSelection) {
                                     viewModel.toggleChatSelection(chat.id)

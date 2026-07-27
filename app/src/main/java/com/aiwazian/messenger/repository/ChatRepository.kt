@@ -16,6 +16,9 @@ import com.aiwazian.messenger.database.entity.DraftEntity
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.domain.MessageReplyPreview
+import com.aiwazian.messenger.domain.MessageSearchPage
+import com.aiwazian.messenger.domain.MessagesPage
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.MessageStatus
 import com.aiwazian.messenger.enums.MessageType
@@ -31,10 +34,13 @@ import com.aiwazian.messenger.network.dto.EditMessageRequestDto
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
+import com.aiwazian.messenger.network.dto.ForwardMessageRequestDto
+import com.aiwazian.messenger.network.dto.MarkReadRequestDto
 import com.aiwazian.messenger.network.dto.PinChatsRequestDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
 import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.socket.WebSocketClient
+import com.aiwazian.messenger.ui.screens.chat.paging.MessageWindowBounds
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -281,6 +287,116 @@ class ChatRepository @Inject constructor(
         }
     }
     
+    /**
+     * Содержимое текущего окна истории из Room.
+     * Единственный источник данных для списка сообщений в чате.
+     */
+    fun getMessagesWindowFlow(
+        userId: Long,
+        chatId: Long,
+        bounds: MessageWindowBounds
+    ): Flow<List<Message>> {
+        val includePending = if (bounds.includePending) 1 else 0
+        val source = when (ChatType.fromId(chatId)) {
+            ChatType.CHANNEL -> messageDao.getPrivateMessagesWindow(
+                chatId, chatId, bounds.fromId, bounds.toId, includePending
+            )
+            
+            ChatType.GROUP -> messageDao.getChatMessagesWindow(
+                chatId, bounds.fromId, bounds.toId, includePending
+            )
+            
+            ChatType.PRIVATE -> messageDao.getPrivateMessagesWindow(
+                userId, chatId, bounds.fromId, bounds.toId, includePending
+            )
+            
+            else -> return emptyFlow()
+        }
+        
+        return source.map { list ->
+            list.map { messageWithAttachments ->
+                val attachments = messageWithAttachments.attachments.map { it.toDomain() }
+                messageWithAttachments.message.toDomain(attachments)
+            }
+        }
+    }
+    
+    /** id последних сообщений из кэша — для открытия чата без сети. */
+    suspend fun getLastMessageIds(userId: Long, chatId: Long, limit: Int): List<Long> {
+        return when (ChatType.fromId(chatId)) {
+            ChatType.CHANNEL -> messageDao.getLastPrivateMessageIds(chatId, chatId, limit)
+            ChatType.GROUP -> messageDao.getLastChatMessageIds(chatId, limit)
+            ChatType.PRIVATE -> messageDao.getLastPrivateMessageIds(userId, chatId, limit)
+            else -> emptyList()
+        }
+    }
+    
+    /**
+     * Загрузка окна истории с сервера и запись в Room.
+     * Передавать надо не более одного курсора (anchorId / beforeId / afterId).
+     */
+    suspend fun fetchMessagesWindow(
+        chatId: Long,
+        anchorId: Long? = null,
+        beforeId: Long? = null,
+        afterId: Long? = null,
+        anchor: String? = null,
+        limit: Int = 50
+    ): Result<MessagesPage> {
+        return try {
+            val response = messageApi.getMessagesWindow(
+                chatId = chatId,
+                anchorId = anchorId,
+                beforeId = beforeId,
+                afterId = afterId,
+                anchor = anchor,
+                limit = limit
+            )
+            
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body == null) {
+                    Result.failure(Exception("Empty messages window"))
+                } else {
+                    val page = body.toDomain()
+                    saveMessagesToDb(page.messages)
+                    applyUnreadState(chatId, page.unreadCount, page.firstUnreadMessageId)
+                    Result.success(page)
+                }
+            } else {
+                Log.e(
+                    "ChatRepository",
+                    "Failed to get messages window for chat $chatId: ${response.message()}"
+                )
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error getting messages window for chat $chatId", e)
+            Result.failure(e)
+        }
+    }
+    
+    /** Поиск сообщений внутри чата (сервер дешифрует и фильтрует текст сам). */
+    suspend fun searchMessages(
+        chatId: Long,
+        query: String,
+        cursorId: Long? = null,
+        limit: Int = 30
+    ): Result<MessageSearchPage> {
+        return try {
+            val response = messageApi.searchMessages(chatId, query, cursorId, limit)
+            val body = response.body()
+            if (response.isSuccessful && body != null) {
+                Result.success(body.toDomain())
+            } else {
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error searching messages in chat $chatId", e)
+            Result.failure(e)
+        }
+    }
+    
     fun getLastMessageFlow(chatId: Long): Flow<Message?> {
         return messageDao.getChatLastMessageFlow(chatId).map { messageWithAttachments ->
             messageWithAttachments?.let {
@@ -324,7 +440,8 @@ class ChatRepository @Inject constructor(
     suspend fun sendMessage(
         chatId: Long,
         message: String,
-        tempId: Long = -System.currentTimeMillis()
+        tempId: Long = -System.currentTimeMillis(),
+        replyTo: MessageReplyPreview? = null
     ): Result<Message> {
         val senderId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
@@ -339,13 +456,17 @@ class ChatRepository @Inject constructor(
             status = MessageStatus.SENDING,
             messageType = MessageType.TEXT,
             systemMessageEventType = null,
-            attachments = emptyList()
+            attachments = emptyList(),
+            replyTo = replyTo
         )
         
         saveLocalMessage(localMessage)
         
         return try {
-            val request = TextMessageRequestDto(text = message)
+            val request = TextMessageRequestDto(
+                text = message,
+                replyToId = replyTo?.messageId?.toString()
+            )
             val response = messageApi.sendTextMessage(chatId, request, socket.socketId.orEmpty())
             if (response.isSuccessful) {
                 val sentMessage = response.body()?.toDomain()
@@ -445,10 +566,15 @@ class ChatRepository @Inject constructor(
     suspend fun confirmFileUpload(
         chatId: Long,
         attachments: List<AttachmentInputDto>,
-        text: String? = null
+        text: String? = null,
+        replyToId: Long? = null
     ): Result<Message> {
         return try {
-            val dto = FileConfirmRequestDto(attachments = attachments, text = text)
+            val dto = FileConfirmRequestDto(
+                attachments = attachments,
+                text = text,
+                replyToId = replyToId?.toString()
+            )
             val response = messageApi.confirmFileUpload(chatId, dto, socket.socketId.orEmpty())
             if (response.isSuccessful) {
                 val sentMessage = response.body()?.toDomain()
@@ -463,6 +589,42 @@ class ChatRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error confirming file upload", e)
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Пересылка сообщения в несколько чатов.
+     *
+     * Копии сразу кладём в Room: если один из получателей — текущий чат, сообщение
+     * появится в списке без ожидания сокет-события.
+     */
+    suspend fun forwardMessage(
+        sourceChatId: Long,
+        messageId: Long,
+        targetChatIds: List<Long>
+    ): Result<List<Message>> {
+        if (targetChatIds.isEmpty()) return Result.success(emptyList())
+        return try {
+            val request = ForwardMessageRequestDto(targetChatIds.map { it.toString() })
+            val response = messageApi.forwardMessage(
+                sourceChatId,
+                messageId,
+                request,
+                socket.socketId.orEmpty()
+            )
+            val body = response.body()
+            if (response.isSuccessful && body != null) {
+                val messages = body.map { it.toDomain() }
+                saveMessagesToDb(messages)
+                refreshChats()
+                Result.success(messages)
+            } else {
+                Log.e("ChatRepository", "Failed to forward message: ${response.message()}")
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error forwarding message", e)
             Result.failure(e)
         }
     }
@@ -497,24 +659,94 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    suspend fun makeAsRead(chatId: Long, messageId: Long): Boolean {
+    /**
+     * Отметить прочитанным всё до messageId включительно.
+     *
+     * Один запрос на пачку сообщений, а не по запросу на каждое:
+     * при быстром скролле иначе летит десятки запросов в секунду.
+     */
+    suspend fun markReadUpTo(chatId: Long, messageId: Long): Boolean {
+        markLocalReadUpTo(chatId, messageId)
+        
         return try {
             val response = messageApi.markRead(chatId, messageId)
-            response.isSuccessful
+            val state = response.body()
+            if (!response.isSuccessful) return false
+            
+            applyUnreadState(
+                chatId = chatId,
+                unreadCount = state?.unreadCount ?: 0,
+                firstUnreadMessageId = state?.firstUnreadMessageId
+            )
+            true
         } catch (e: Exception) {
-            Log.e("ChatRepository", "Error marking message as read", e)
+            Log.e("ChatRepository", "Error marking messages as read", e)
             false
         }
     }
     
+    /** Компатибильность со старыми вызовами. */
+    suspend fun makeAsRead(chatId: Long, messageId: Long): Boolean =
+        markReadUpTo(chatId, messageId)
+    
+    /** Прочитан весь чат: кнопка «вниз» и выход из чата с конца истории. */
     suspend fun markAllAsRead(chatId: Long): Boolean {
         return try {
-            val response = messageApi.markAllRead(chatId)
-            response.isSuccessful
+            val response = messageApi.markAllRead(chatId, MarkReadRequestDto())
+            if (!response.isSuccessful) return false
+            
+            val state = response.body()
+            markAllLocalMessagesRead(chatId)
+            applyUnreadState(
+                chatId = chatId,
+                unreadCount = state?.unreadCount ?: 0,
+                firstUnreadMessageId = state?.firstUnreadMessageId
+            )
+            true
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error marking all messages as read", e)
             false
         }
+    }
+    
+    /**
+     * Состояние прочтения с сервера → в Room.
+     *
+     * Счётчик никогда не считается на клиенте по сообщениям: в локальном кэше
+     * лежит только окно истории, а не вся история.
+     */
+    suspend fun applyUnreadState(chatId: Long, unreadCount: Int, firstUnreadMessageId: Long?) {
+        val myId = userRepository.getMe().firstOrNull()?.id ?: return
+        chatDao.setUnreadState(myId, chatId, unreadCount, firstUnreadMessageId)
+    }
+    
+    /**
+     * Локальный инкремент бейджа на случай, если message:new опередило chat:unread.
+     * Последующий chat:unread всё равно перезапишет значение серверным.
+     */
+    suspend fun incrementUnread(chatId: Long, messageId: Long) {
+        val myId = userRepository.getMe().firstOrNull()?.id ?: return
+        chatDao.incrementUnread(myId, chatId, messageId)
+    }
+    
+    suspend fun clearUnread(chatId: Long) {
+        val myId = userRepository.getMe().firstOrNull()?.id ?: return
+        chatDao.clearUnread(myId, chatId)
+    }
+    
+    private suspend fun markLocalReadUpTo(chatId: Long, messageId: Long) {
+        val myId = userRepository.getMe().firstOrNull()?.id ?: return
+        val message = messageDao.getMessageById(messageId)?.message ?: return
+        messageDao.markIncomingReadUpTo(
+            chatId = message.chatId,
+            myId = myId,
+            upToSendTime = message.sendTime
+        )
+    }
+    
+    private suspend fun markAllLocalMessagesRead(chatId: Long) {
+        val myId = userRepository.getMe().firstOrNull()?.id ?: return
+        messageDao.markAllIncomingRead(chatId, myId)
     }
     
     suspend fun deleteMessage(

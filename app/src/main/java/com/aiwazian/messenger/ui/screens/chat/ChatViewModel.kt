@@ -18,11 +18,15 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReadInfo
+import com.aiwazian.messenger.domain.MessageReplyPreview
+import com.aiwazian.messenger.domain.MessageSearchHit
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
+import com.aiwazian.messenger.enums.ForwardSourceAccess
+import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.playback.VoicePlayerManager
 import com.aiwazian.messenger.playback.VoiceQueueItem
 import com.aiwazian.messenger.push.NotificationHelper
@@ -33,10 +37,13 @@ import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.OnlineUsersTracker
+import com.aiwazian.messenger.socket.OutgoingSocketEvent
 import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.ui.screens.chat.paging.MessageWindowPager
+import com.aiwazian.messenger.ui.screens.chat.paging.ScrollTarget
 import com.aiwazian.messenger.usecase.JoinChannelUseCase
 import com.aiwazian.messenger.usecase.JoinGroupUseCase
 import com.aiwazian.messenger.usecase.JoinViaInviteLinkUseCase
@@ -56,6 +63,7 @@ import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -64,8 +72,11 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -113,7 +124,31 @@ class ChatViewModel @Inject constructor(
     val uiEffect = _uiEffect.asSharedFlow()
     
     private var isFirstLoadDone = false
-    private val limitFlow = MutableStateFlow(30)
+    
+    private var messagePager: MessageWindowPager? = null
+    private var windowObserverJob: Job? = null
+    private var highlightJob: Job? = null
+    private var searchJob: Job? = null
+    private var searchCursorId: Long? = null
+    private var lastMessages: List<Message> = emptyList()
+    
+    /** Стек возврата: id сообщений, из которых был совершён переход. */
+    private val returnStack = ArrayDeque<Long>()
+    
+    /** Видимо ли сейчас самое нижнее сообщение списка. */
+    private var isViewportAtBottom = true
+    
+    /**
+     * Сообщение, перед которым рисуется «Unread messages». Ставится один раз при
+     * открытии чата и не меняется, когда счётчик непрочитанных ползёт вниз.
+     */
+    private var unreadAnchorMessageId: Long? = null
+    
+    /** Максимальный id, про который уже сказали серверу «прочитано». */
+    private var reportedReadUpToId = 0L
+    
+    /** Самый новый id в окне: нужен, чтобы отличить новое сообщение от перерисовки. */
+    private var lastKnownNewestId = 0L
     
     private var isInit = false
     private var autoDownloadMedia = false
@@ -140,10 +175,12 @@ class ChatViewModel @Inject constructor(
             )
         }
         isFirstLoadDone = false
-        limitFlow.value = 50
         
         notificationHelper.clearChatNotifications(chatId)
-        webSocketClient.emitEvent("chat_open", mapOf("chatId" to chatId.toString()))
+        webSocketClient.emitEvent(
+            OutgoingSocketEvent.CHAT_OPEN,
+            mapOf("chatId" to chatId.toString())
+        )
         
         loadDraft(chatId)
         loadChatInfo()
@@ -222,8 +259,14 @@ class ChatViewModel @Inject constructor(
     private fun loadChatInfo() {
         val chatId = _uiState.value.chatId
         viewModelScope.launch {
-            val myId = userRepository.getMe().first().id
-            _uiState.update { it.copy(myId = myId) }
+            val me = userRepository.getMe().first()
+            val myId = me.id
+            _uiState.update {
+                it.copy(
+                    myId = myId,
+                    myName = "${me.firstName} ${me.lastName.orEmpty()}".trim()
+                )
+            }
             when (ChatType.fromId(chatId)) {
                 ChatType.CHANNEL -> loadChannelInfo(chatId, myId)
                 ChatType.GROUP -> loadGroupInfo(chatId, myId)
@@ -379,32 +422,86 @@ class ChatViewModel @Inject constructor(
         } else emptyList()
     }
     
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeMessages() {
         _uiState.update { it.copy(isLoading = true) }
-        viewModelScope.launch {
+        val chatId = _uiState.value.chatId
+        
+        windowObserverJob?.cancel()
+        windowObserverJob = viewModelScope.launch {
             val userId = userRepository.getMe().first().id
-            limitFlow.collectLatest { limit ->
-                chatRepository.getMessagesFlow(userId, _uiState.value.chatId, limit, 0)
+            
+            val pager = MessageWindowPager(
+                chatRepository = chatRepository,
+                userId = userId,
+                chatId = chatId,
+                pageSize = PAGE_SIZE,
+                aroundRadius = AROUND_RADIUS,
+                maxWindowMessages = MAX_WINDOW_MESSAGES
+            )
+            messagePager = pager
+            
+            launch {
+                pager.state.collect { window ->
+                    _uiState.update {
+                        it.copy(
+                            isLoadingOlder = window.isLoadingBefore,
+                            isLoadingNewer = window.isLoadingAfter,
+                            isLoadingMore = window.isLoadingBefore || window.isLoadingAfter,
+                            hasMoreMessages = window.hasMoreBefore,
+                            hasMoreNewerMessages = window.hasMoreAfter,
+                            isRelocating = window.isRelocating,
+                            isAtLiveEdge = window.isAtLive
+                        )
+                    }
+                }
+            }
+            
+            launch {
+                pager.state
+                    .map { it.bounds }
+                    .distinctUntilChanged()
+                    .flatMapLatest { bounds ->
+                        chatRepository.getMessagesWindowFlow(userId, chatId, bounds)
+                    }
                     .collect { messages ->
                         updateChatItems(messages)
-                        _uiState.update { it.copy(isLoading = false, isLoadingMore = false) }
-                        if (messages.isNotEmpty() && !isFirstLoadDone) {
+                        _uiState.update { it.copy(isLoading = false) }
+                        
+                        if (!isFirstLoadDone && pager.state.value.isInitialized) {
                             isFirstLoadDone = true
                             _uiState.update { it.copy(isFirstLoadDone = true) }
-                            _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
-                        } else if (messages.isEmpty() && !isFirstLoadDone) {
-                            isFirstLoadDone = true
-                            _uiState.update { it.copy(isFirstLoadDone = true) }
+                            val hasUnreadTarget = _uiState.value.firstUnreadMessageId != null
+                            if (messages.isNotEmpty() && !hasUnreadTarget) {
+                                requestScrollTo(
+                                    messageId = null,
+                                    highlight = false,
+                                    animate = false
+                                )
+                            }
                         }
+                        
+                        handleNewestMessage(messages, pager.state.value.isAtLive)
                     }
             }
-        }
-        
-        viewModelScope.launch {
-            chatRepository.getMessages(_uiState.value.chatId, limit = 50, offset = 0)
-                .onSuccess { freshMessages ->
-                    if (freshMessages.size < 50) _uiState.update { it.copy(hasMoreMessages = false) }
-                }
+            
+            val firstUnreadId = pager.openAtFirstUnread()
+            _uiState.update { it.copy(firstUnreadMessageId = firstUnreadId) }
+            if (firstUnreadId != null) {
+                unreadAnchorMessageId = firstUnreadId
+                updateChatItems(lastMessages)
+                
+                requestScrollTo(
+                    messageId = firstUnreadId,
+                    highlight = false,
+                    animate = false,
+                    viewportFraction = UNREAD_VIEWPORT_FRACTION
+                )
+            }
+            if (!isFirstLoadDone) {
+                isFirstLoadDone = true
+                _uiState.update { it.copy(isFirstLoadDone = true, isLoading = false) }
+            }
         }
     }
     
@@ -437,6 +534,7 @@ class ChatViewModel @Inject constructor(
     }
     
     private fun updateChatItems(messages: List<Message>) {
+        lastMessages = messages
         val mapper = ChatItemMapper(
             context = context,
             myId = _uiState.value.myId,
@@ -444,6 +542,8 @@ class ChatViewModel @Inject constructor(
             isOwner = _uiState.value.isOwner,
             userNamesCache = _uiState.value.userNamesCache,
             groupReadInfo = _uiState.value.groupReadInfo,
+            highlightedMessageId = _uiState.value.highlightedMessageId,
+            unreadAnchorMessageId = unreadAnchorMessageId,
             onCopyText = ::copyToClipboard,
             onEditMessage = ::startEditing,
             onDeleteMessage = {
@@ -452,6 +552,8 @@ class ChatViewModel @Inject constructor(
             },
             onRetrySendMessage = ::retrySendMessage,
             onCancelSendMessage = ::cancelSendMessage,
+            onReplyMessage = ::startReply,
+            onForwardMessage = ::startForward,
             onLoadUserName = ::loadUserName
         )
         
@@ -461,7 +563,6 @@ class ChatViewModel @Inject constructor(
         
         _uiState.update { it.copy(chatItems = chatItems, mediaItems = newMediaItems) }
         
-        // Auto-download logic
         if (autoDownloadMedia) {
             messages.forEach { msg ->
                 msg.attachments.forEach { attachment ->
@@ -479,24 +580,419 @@ class ChatViewModel @Inject constructor(
         }
     }
     
-    fun loadMoreMessages() {
-        val state = _uiState.value
-        if (state.isLoadingMore || !state.hasMoreMessages || state.isLoading) return
-        _uiState.update { it.copy(isLoadingMore = true) }
+    // region Прокрутка к сообщению и догрузка окна
+    
+    /** Скролл вверх: страница старше текущего окна. */
+    fun loadOlderMessages() {
+        val pager = messagePager ?: return
+        viewModelScope.launch { pager.loadBefore() }
+    }
+    
+    /** Скролл вниз: страница новее текущего окна (актуально после прыжка в середину). */
+    fun loadNewerMessages() {
+        val pager = messagePager ?: return
+        viewModelScope.launch { pager.loadAfter() }
+    }
+    
+    /** Совместимость со старым вызовом из UI. */
+    fun loadMoreMessages() = loadOlderMessages()
+    
+    /**
+     * Единая точка входа для перехода к любому сообщению чата:
+     * ответы, закреплённые, результаты поиска.
+     *
+     * Промежуточные сообщения не грузятся: сразу берётся окно вокруг цели.
+     *
+     * @param messageId id целевого сообщения.
+     * @param returnToMessageId id сообщения, из которого прыгаем (для кнопки «вернуться»).
+     */
+    fun jumpToMessage(messageId: Long, returnToMessageId: Long? = null) {
+        val pager = messagePager ?: return
         viewModelScope.launch {
-            val offset = limitFlow.value
-            chatRepository.getMessages(state.chatId, limit = 50, offset = offset)
-                .onSuccess { moreMessages ->
-                    if (moreMessages.isEmpty()) {
-                        _uiState.update { it.copy(isLoadingMore = false, hasMoreMessages = false) }
-                    } else {
-                        if (moreMessages.size < 50) _uiState.update { it.copy(hasMoreMessages = false) }
-                        limitFlow.value += moreMessages.size
-                    }
-                    _uiState.update { it.copy(isLoadingMore = false) }
-                }.onFailure {
-                    _uiState.update { it.copy(isLoadingMore = false) }
+            if (returnToMessageId != null) {
+                returnStack.addLast(returnToMessageId)
+                _uiState.update { it.copy(canJumpBack = true) }
+            }
+            
+            if (!pager.containsMessage(messageId)) {
+                val loaded = pager.jumpTo(messageId)
+                if (!loaded) {
+                    _uiEffect.emit(
+                        ChatUiEffect.ShowSnackbar(
+                            UiText.DynamicString("Не удалось перейти к сообщению")
+                        )
+                    )
+                    vibrationManager.vibrate(VibrationPattern.Error)
+                    return@launch
                 }
+            }
+            
+            requestScrollTo(messageId = messageId, highlight = true, animate = false)
+        }
+    }
+    
+    /**
+     * Прыжок к сообщению сразу после открытия чата.
+     *
+     * Окно сообщений в этот момент ещё может грузиться, поэтому ждём
+     * инициализацию пейджера.
+     */
+    fun jumpToMessageWhenReady(messageId: Long) {
+        viewModelScope.launch {
+            var attempts = 0
+            while (messagePager == null && attempts < 50) {
+                delay(100.milliseconds)
+                attempts++
+            }
+            if (messagePager == null) return@launch
+            jumpToMessage(messageId)
+        }
+    }
+    
+    /** Возврат к сообщению, из которого был совершён переход. */
+    fun jumpBack() {
+        val messageId = returnStack.removeLastOrNull() ?: return
+        _uiState.update { it.copy(canJumpBack = returnStack.isNotEmpty()) }
+        jumpToMessage(messageId)
+    }
+    
+    /**
+     * FloatingActionButton: сразу в конец чата.
+     * Один запрос за последними сообщениями, без прокрутки и догрузки промежуточных страниц.
+     */
+    fun jumpToLatest() {
+        viewModelScope.launch { jumpToLatestInternal() }
+    }
+    
+    private suspend fun jumpToLatestInternal() {
+        val pager = messagePager ?: return
+        val wasAtLive = pager.state.value.isAtLive
+        if (!wasAtLive) pager.openAtLatest()
+        returnStack.clear()
+        _uiState.update { it.copy(canJumpBack = false) }
+        requestScrollTo(messageId = null, highlight = false, animate = wasAtLive)
+        
+        _uiState.update { it.copy(unreadCount = 0, firstUnreadMessageId = null) }
+        chatRepository.markAllAsRead(_uiState.value.chatId)
+    }
+    
+    private fun requestScrollTo(
+        messageId: Long?,
+        highlight: Boolean,
+        animate: Boolean,
+        viewportFraction: Float = 1f / 3f
+    ) {
+        _uiState.update {
+            it.copy(
+                scrollTarget = ScrollTarget(
+                    messageId = messageId,
+                    highlight = highlight,
+                    animate = animate,
+                    viewportFraction = viewportFraction
+                )
+            )
+        }
+    }
+    
+    /** Вызывается из UI, когда скролл к цели выполнен. */
+    fun onScrollTargetHandled(requestId: Long) {
+        val target = _uiState.value.scrollTarget ?: return
+        if (target.requestId != requestId) return
+        _uiState.update { it.copy(scrollTarget = null) }
+        val messageId = target.messageId
+        if (target.highlight && messageId != null) highlightMessage(messageId)
+    }
+    
+    private fun highlightMessage(messageId: Long) {
+        highlightJob?.cancel()
+        highlightJob = viewModelScope.launch {
+            _uiState.update { it.copy(highlightedMessageId = messageId) }
+            updateChatItems(lastMessages)
+            delay(2000.milliseconds)
+            _uiState.update { it.copy(highlightedMessageId = null) }
+            updateChatItems(lastMessages)
+        }
+    }
+    // endregion
+    
+    // region Поиск сообщений в чате
+    fun startMessageSearch() = _uiState.update { it.copy(isMessageSearchActive = true) }
+    
+    fun stopMessageSearch() {
+        searchJob?.cancel()
+        searchCursorId = null
+        _uiState.update {
+            it.copy(
+                isMessageSearchActive = false,
+                messageSearchQuery = "",
+                messageSearchResults = emptyList(),
+                isSearchingMessages = false,
+                hasMoreSearchResults = false
+            )
+        }
+    }
+    
+    fun changeMessageSearchQuery(query: String) {
+        _uiState.update { it.copy(messageSearchQuery = query) }
+        searchJob?.cancel()
+        
+        if (query.isBlank()) {
+            searchCursorId = null
+            _uiState.update {
+                it.copy(
+                    messageSearchResults = emptyList(),
+                    hasMoreSearchResults = false,
+                    isSearchingMessages = false
+                )
+            }
+            return
+        }
+        
+        searchJob = viewModelScope.launch {
+            delay(350.milliseconds)
+            searchCursorId = null
+            runMessageSearch(query, reset = true)
+        }
+    }
+    
+    fun loadMoreSearchResults() {
+        val query = _uiState.value.messageSearchQuery
+        if (query.isBlank() || searchCursorId == null || _uiState.value.isSearchingMessages) return
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch { runMessageSearch(query, reset = false) }
+    }
+    
+    private suspend fun runMessageSearch(query: String, reset: Boolean) {
+        _uiState.update { it.copy(isSearchingMessages = true) }
+        chatRepository.searchMessages(
+            chatId = _uiState.value.chatId,
+            query = query,
+            cursorId = if (reset) null else searchCursorId
+        ).onSuccess { page ->
+            searchCursorId = page.nextCursorId
+            _uiState.update {
+                it.copy(
+                    messageSearchResults = if (reset) page.items else it.messageSearchResults + page.items,
+                    hasMoreSearchResults = page.nextCursorId != null,
+                    isSearchingMessages = false
+                )
+            }
+        }.onFailure {
+            _uiState.update { it.copy(isSearchingMessages = false) }
+        }
+    }
+    
+    /** Клик по результату поиска. */
+    fun onSearchResultClicked(hit: MessageSearchHit) = jumpToMessage(hit.id)
+    // endregion
+    
+    private companion object {
+        const val PAGE_SIZE = 50
+        const val AROUND_RADIUS = 25
+        const val MAX_WINDOW_MESSAGES = 400
+        
+        /** Первое непрочитанное ставим ниже середины экрана. */
+        /**
+         * Граница прочитанного уезжает почти к верхней кромке: всё непрочитанное
+         * должно быть ниже него, чтобы счётчик таял по мере скролла вниз.
+         */
+        const val UNREAD_VIEWPORT_FRACTION = 0.08f
+    }
+    
+    // region Ответ на сообщение
+    
+    /**
+     * «Ответить» в меню сообщения.
+     *
+     * Превью собирается сразу, чтобы панель над полем ввода и локальное
+     * pending-сообщение выглядели одинаково до ответа сервера.
+     *
+     * Заголовок: в группе и канале — название чата, в личном чате — имя автора
+     * сообщения (своё имя, если отвечаем сами себе).
+     */
+    fun startReply(message: Message) {
+        if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
+        
+        val state = _uiState.value
+        val chatType = ChatType.fromId(state.chatId)
+        
+        val senderName = when {
+            message.senderId == state.myId -> state.myName
+            else -> state.userNamesCache[message.senderId]
+                ?: state.chatName.asString(context)
+        }
+        
+        val preview = MessageReplyPreview(
+            messageId = message.id,
+            chatId = state.chatId,
+            senderId = message.senderId,
+            senderName = senderName,
+            chatName = if (chatType == ChatType.PRIVATE) null
+            else state.chatName.asString(context),
+            text = message.text,
+            attachmentTypes = message.attachments.map { it.type }
+        )
+        
+        if (chatType != ChatType.PRIVATE) loadUserName(message.senderId)
+        
+        _uiState.update { it.copy(replyToMessage = preview) }
+    }
+    
+    /** Клик по панели ответа над полем ввода — прыжок к цитируемому сообщению. */
+    fun onReplyPanelClicked() {
+        val preview = _uiState.value.replyToMessage ?: return
+        jumpToMessage(preview.messageId)
+    }
+    
+    /** Крестик в панели ответа: сбрасываем ответ и чистим поле ввода. */
+    fun cancelReply() {
+        clearReply()
+        changeText("")
+    }
+    
+    private fun clearReply() {
+        if (_uiState.value.replyToMessage == null) return
+        _uiState.update { it.copy(replyToMessage = null) }
+    }
+    
+    /**
+     * Клик по блоку ответа внутри сообщения.
+     *
+     * Оригинал в этом же чате — прыжок по истории с возможностью вернуться,
+     * иначе — открываем чужой чат сразу на нужном сообщении.
+     */
+    fun onReplyPreviewClicked(message: Message) {
+        val preview = message.replyTo ?: return
+        
+        if (isInCurrentChat(preview)) {
+            jumpToMessage(preview.messageId, returnToMessageId = message.id)
+        } else {
+            val targetChatId = preview.chatId ?: return
+            viewModelScope.launch {
+                _uiEffect.emit(
+                    ChatUiEffect.NavigateToChat(
+                        chatId = targetChatId,
+                        scrollToMessageId = preview.messageId
+                    )
+                )
+            }
+        }
+    }
+    
+    /**
+     * В личном чате chatId сообщения — это получатель, поэтому у двух сообщений
+     * одного диалога chatId разные: мой id и id собеседника.
+     */
+    private fun isInCurrentChat(preview: MessageReplyPreview): Boolean {
+        val state = _uiState.value
+        val originChatId = preview.chatId ?: return true
+        if (originChatId == state.chatId) return true
+        return ChatType.fromId(state.chatId) == ChatType.PRIVATE &&
+                (originChatId == state.myId || originChatId == state.chatId)
+    }
+    // endregion
+    
+    // region Пересылка сообщения
+    
+    /** «Переслать» в меню сообщения: собираем список чатов, куда можно писать. */
+    fun startForward(message: Message) {
+        if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
+        
+        viewModelScope.launch {
+            val myId = _uiState.value.myId
+            val chats = chatRepository.getAllChats().firstOrNull().orEmpty()
+            
+            val candidates = chats.filter { chat ->
+                when (ChatType.fromId(chat.id)) {
+                    ChatType.CHANNEL ->
+                        channelRepository.getByIdOrNull(chat.id)
+                            .firstOrNull()?.ownerId == myId
+                    
+                    ChatType.UNKNOWN -> false
+                    else -> true
+                }
+            }
+            
+            _uiState.update {
+                it.copy(
+                    forwardingMessage = message,
+                    forwardCandidates = candidates,
+                    selectedForwardChatIds = emptySet(),
+                    isForwarding = false,
+                    isForwardSheetVisible = true
+                )
+            }
+        }
+    }
+    
+    fun toggleForwardTarget(chatId: Long) {
+        _uiState.update { state ->
+            val selected = state.selectedForwardChatIds
+            state.copy(
+                selectedForwardChatIds = if (chatId in selected) selected - chatId
+                else selected + chatId
+            )
+        }
+    }
+    
+    fun dismissForwardSheet() {
+        _uiState.update {
+            it.copy(
+                isForwardSheetVisible = false,
+                forwardingMessage = null,
+                forwardCandidates = emptyList(),
+                selectedForwardChatIds = emptySet(),
+                isForwarding = false
+            )
+        }
+    }
+    
+    /** Отправка копий во все выбранные чаты одним запросом. */
+    fun confirmForward() {
+        val state = _uiState.value
+        val message = state.forwardingMessage ?: return
+        val targets = state.selectedForwardChatIds.toList()
+        if (targets.isEmpty() || state.isForwarding) return
+        
+        _uiState.update { it.copy(isForwarding = true) }
+        
+        viewModelScope.launch {
+            chatRepository.forwardMessage(state.chatId, message.id, targets)
+                .onSuccess {
+                    dismissForwardSheet()
+                    if (targets.contains(state.chatId)) {
+                        if (!_uiState.value.isAtLiveEdge) jumpToLatestInternal()
+                        requestScrollTo(messageId = null, highlight = false, animate = true)
+                    }
+                    _uiEffect.emit(
+                        ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.message_forwarded))
+                    )
+                }
+                .onFailure { error ->
+                    Log.e("ChatViewModel", "Error forwarding message", error)
+                    _uiState.update { it.copy(isForwarding = false) }
+                    _uiEffect.emit(
+                        ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.forward_failed))
+                    )
+                    vibrationManager.vibrate(VibrationPattern.Error)
+                }
+        }
+    }
+    
+    /**
+     * Клик по заголовку «Переслано от…».
+     *
+     * Доступность считает сервер: публичные и подписанные чаты — OPEN,
+     * закрытые и скрытые настройками приватности — RESTRICTED.
+     * Тултип при RESTRICTED показывает сам MessageBubble.
+     */
+    fun onForwardedFromClicked(message: Message) {
+        val forwardedFrom = message.forwardedFrom ?: return
+        if (forwardedFrom.access != ForwardSourceAccess.OPEN) return
+        if (forwardedFrom.chatId == _uiState.value.chatId) return
+        
+        viewModelScope.launch {
+            _uiEffect.emit(ChatUiEffect.NavigateToChat(chatId = forwardedFrom.chatId))
         }
     }
     // endregion
@@ -528,16 +1024,27 @@ class ChatViewModel @Inject constructor(
         val text = _uiState.value.messageText.trim()
         if (text.isEmpty()) return
         
+        val replyTo = _uiState.value.replyToMessage
         changeText("")
-        onSendMessageInternal(text)
+        clearReply()
+        onSendMessageInternal(text, replyTo)
     }
     
-    private fun onSendMessageInternal(text: String) {
+    private fun onSendMessageInternal(
+        text: String,
+        replyTo: MessageReplyPreview? = null
+    ) {
         val tempId = -System.currentTimeMillis()
         val job = viewModelScope.launch {
             try {
-                sendMessageUseCase(_uiState.value.chatId, message = text, tempId = tempId)
-                _uiEffect.emit(ChatUiEffect.ScrollToBottom(_uiState.value.chatItems.lastIndex))
+                if (!_uiState.value.isAtLiveEdge) jumpToLatestInternal()
+                sendMessageUseCase(
+                    _uiState.value.chatId,
+                    message = text,
+                    tempId = tempId,
+                    replyTo = replyTo
+                )
+                requestScrollTo(messageId = null, highlight = false, animate = true)
             } catch (e: Exception) {
                 Log.e("ChatViewModel", "Error sending message", e)
             } finally {
@@ -575,7 +1082,7 @@ class ChatViewModel @Inject constructor(
             } else {
                 message.text?.let { text ->
                     chatRepository.deleteLocalMessage(message.id)
-                    onSendMessageInternal(text)
+                    onSendMessageInternal(text, message.replyTo)
                 }
             }
         }
@@ -617,12 +1124,43 @@ class ChatViewModel @Inject constructor(
         }
     }
     
-    fun markAsReadMessage(message: Message) {
-        if (message.senderId == _uiState.value.myId || message.isRead) return
+    /**
+     * Сообщения до messageId реально побывали в поле зрения больше чем наполовину.
+     *
+     * Вызывается из UI с дебаунсом и всегда одним максимальным id: один запрос
+     * на пачку вместо запроса на каждое сообщение.
+     */
+    fun onMessagesSeen(messageId: Long) {
+        if (messageId <= reportedReadUpToId) return
+        reportedReadUpToId = messageId
         viewModelScope.launch {
-            if (chatRepository.makeAsRead(_uiState.value.chatId, message.id)) {
-                chatRepository.markMessageAsRead(_uiState.value.chatId, message.id)
-            }
+            chatRepository.markReadUpTo(_uiState.value.chatId, messageId)
+        }
+    }
+    
+    /** Сообщается из UI: видно ли самое нижнее сообщение списка. */
+    fun onViewportAtBottomChanged(atBottom: Boolean) {
+        isViewportAtBottom = atBottom
+    }
+    
+    /**
+     * Новое сообщение в окне.
+     *
+     * Крутим вниз только если пользователь уже стоит внизу либо отправил своё:
+     * иначе чтение старой переписки прерывалось бы прыжком в конец.
+     */
+    private fun handleNewestMessage(messages: List<Message>, isAtLive: Boolean) {
+        val newest = messages.lastOrNull() ?: return
+        val newestId = newest.id
+        if (newestId <= lastKnownNewestId) return
+        
+        val isFirstFill = lastKnownNewestId == 0L
+        lastKnownNewestId = newestId
+        if (isFirstFill) return
+        
+        val isMine = newest.senderId == _uiState.value.myId
+        if (isMine || (isViewportAtBottom && isAtLive)) {
+            requestScrollTo(messageId = null, highlight = false, animate = true)
         }
     }
     
@@ -815,9 +1353,17 @@ class ChatViewModel @Inject constructor(
     
     fun sendFiles(uris: List<Uri>) {
         val tempId = -System.currentTimeMillis()
+        val replyTo = _uiState.value.replyToMessage
+        clearReply()
         val job = viewModelScope.launch {
             try {
-                sendMessageWithFilesUseCase(_uiState.value.chatId, uris, null, tempId)
+                sendMessageWithFilesUseCase(
+                    _uiState.value.chatId,
+                    uris,
+                    null,
+                    tempId,
+                    replyTo
+                )
             } finally {
                 sendingJobs.remove(tempId)
             }
@@ -940,6 +1486,13 @@ class ChatViewModel @Inject constructor(
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }
+    }
+    
+    /**
+     * Почтовый адрес не открываем в CustomTabs как ссылку: нужно почтовое приложение.
+     */
+    fun onEmailClicked(email: String) {
+        viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenEmail(email)) }
     }
     
     fun onUsernameClicked(username: String) {

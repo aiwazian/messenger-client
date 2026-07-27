@@ -16,13 +16,17 @@ fun ChatResponseDto.toDomain(): Chat = Chat(
     chatName = UiText.DynamicString(name),
     isPinned = isPinned,
     avatarUri = null,
-    lastMessage = lastMessage?.toDomain()
+    lastMessage = lastMessage?.toDomain(),
+    unreadCount = unreadCount,
+    firstUnreadMessageId = firstUnreadMessageId
 )
 
 fun ChatResponseDto.toEntity(userId: Long): ChatEntity = ChatEntity(
     userId = userId,
     chatId = id,
-    isPinned = isPinned
+    isPinned = isPinned,
+    unreadCount = unreadCount,
+    firstUnreadMessageId = firstUnreadMessageId
 )
 
 fun ChatEntity.toDomain(
@@ -36,11 +40,15 @@ fun ChatEntity.toDomain(
     isPinned = isPinned,
     avatarUri = avatarUri,
     lastMessage = lastMessage,
-    draftText = draftText
+    draftText = draftText,
+    unreadCount = unreadCount,
+    firstUnreadMessageId = firstUnreadMessageId
 )
 
 fun Chat.toEntity(userId: Long): ChatEntity = ChatEntity(
     userId = userId,
     chatId = id,
-    isPinned = isPinned
+    isPinned = isPinned,
+    unreadCount = unreadCount,
+    firstUnreadMessageId = firstUnreadMessageId
 )

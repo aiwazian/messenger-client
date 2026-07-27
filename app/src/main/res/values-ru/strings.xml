@@ -301,4 +301,21 @@
     <string name="remove_email">Удалить электронную почту</string>
     <string name="change_email">Изменить адрес электронной почты</string>
     <string name="remove">Удалять</string>
+    <string name="reply">Ответить</string>
+    <string name="reply_to">Ответ %1$s</string>
+    <string name="forward">Переслать</string>
+    <string name="forwarded_from">Переслано от</string>
+    <string name="message_forwarded">Сообщение переслано</string>
+    <string name="forward_failed">Не удалось переслать сообщение</string>
+    <string name="forwarded_from_private_channel">Переслано из частного канала</string>
+    <string name="forwarded_from_private_group">Переслано из частной группы</string>
+    <string name="forwarded_from_hidden_account">Переслано из скрытого аккаунта</string>
+    <string name="unknown_chat">Неизвестный чат</string>
+    <string name="attachment_photo">Фото</string>
+    <string name="attachment_video">Видео</string>
+    <string name="attachment_gif">GIF</string>
+    <string name="attachment_file">Файл</string>
+    <string name="unread_messages">Непрочитанные сообщения</string>
+    <string name="open_email_with">Открыть с помощью</string>
+    <string name="no_email_app">Нет почтового приложения</string>
 </resources>

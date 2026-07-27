@@ -297,4 +297,21 @@
     <string name="remove_email">E-Mail entfernen</string>
     <string name="change_email">E-Mail ändern</string>
     <string name="remove">Entfernen</string>
+    <string name="reply">Antwort</string>
+    <string name="reply_to">Auf %1$s antworten</string>
+    <string name="forward">Nach vorne</string>
+    <string name="forwarded_from">Weitergeleitet von</string>
+    <string name="message_forwarded">Nachricht weitergeleitet</string>
+    <string name="forward_failed">Die Nachricht konnte nicht weitergeleitet werden</string>
+    <string name="forwarded_from_private_channel">Von einem privaten Kanal weitergeleitet</string>
+    <string name="forwarded_from_private_group">Von einer privaten Gruppe weitergeleitet</string>
+    <string name="forwarded_from_hidden_account">Von einem versteckten Konto weitergeleitet</string>
+    <string name="unknown_chat">Unbekannter Chat</string>
+    <string name="attachment_photo">Foto</string>
+    <string name="attachment_video">Video</string>
+    <string name="attachment_gif">GIF</string>
+    <string name="attachment_file">Datei</string>
+    <string name="unread_messages">Ungelesene Nachrichten</string>
+    <string name="open_email_with">Öffnen mit</string>
+    <string name="no_email_app">Keine E-Mail-App</string>
 </resources>

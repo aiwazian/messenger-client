@@ -305,4 +305,21 @@
     <string name="remove_email">Remove Email</string>
     <string name="change_email">Change Email</string>
     <string name="remove">Remove</string>
+    <string name="reply">Reply</string>
+    <string name="reply_to">Reply to %1$s</string>
+    <string name="forward">Forward</string>
+    <string name="forwarded_from">Forwarded from</string>
+    <string name="message_forwarded">Message forwarded</string>
+    <string name="forward_failed">Could\'t forward the message</string>
+    <string name="forwarded_from_private_channel">Forwarded from a private channel</string>
+    <string name="forwarded_from_private_group">Forwarded from a private group</string>
+    <string name="forwarded_from_hidden_account">Forwarded from a hidden account</string>
+    <string name="unknown_chat">Unknown chat</string>
+    <string name="attachment_photo">Photo</string>
+    <string name="attachment_video">Video</string>
+    <string name="attachment_gif">GIF</string>
+    <string name="attachment_file">File</string>
+    <string name="unread_messages">Unread messages</string>
+    <string name="open_email_with">Open with</string>
+    <string name="no_email_app">No email app</string>
 </resources>

@@ -33,7 +33,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,8 +44,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.Placeable
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -85,7 +82,6 @@ import java.time.format.DateTimeFormatter
 fun MessageBubble(
     modifier: Modifier = Modifier,
     item: ChatItem.MessageItem,
-    onSeen: () -> Unit,
     onFileAction: (MessageAttachment, FileAction) -> Unit,
     currentPlayingVoiceFileId: String? = null,
     isVoicePlaying: Boolean = false,
@@ -94,40 +90,26 @@ fun MessageBubble(
     onVoiceSeek: (MessageAttachment, Int) -> Unit = { _, _ -> },
     onLinkClicked: ((String) -> Unit)? = null,
     onUsernameClicked: ((String) -> Unit)? = null,
-    onSaveToDownloads: (() -> Unit)? = null
+    /** Клик по почтовому адресу в тексте. */
+    onEmailClicked: ((String) -> Unit)? = null,
+    onSaveToDownloads: (() -> Unit)? = null,
+    /** Клик по цитате: прыжок к оригиналу или переход в чат оригинала. */
+    onReplyPreviewClick: (() -> Unit)? = null,
+    /** Клик по заголовку «Переслано от». */
+    onForwardedFromClick: (() -> Unit)? = null
 ) {
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
     var showReadersDropdown by remember { mutableStateOf(false) }
     val alignment = if (item.isMine) Arrangement.End else Arrangement.Start
-    var isVisible by remember { mutableStateOf(false) }
     val isSavedMessages =
         item.chatType == ChatType.PRIVATE && item.message.senderId == item.message.chatId
-
-    LaunchedEffect(isVisible) {
-        if (isVisible && !item.isMine && !message.isRead) {
-            onSeen()
-        }
-    }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = alignment,
         modifier = modifier
             .fillMaxWidth()
-            .onGloballyPositioned { coordinates ->
-                val posInParent = coordinates.positionInParent()
-                val parentHeight = coordinates.parentLayoutCoordinates?.size?.height ?: 0
-                if (parentHeight > 0) {
-                    val visibleTop = posInParent.y
-                    val visibleBottom = posInParent.y + coordinates.size.height
-                    val clampedTop = visibleTop.coerceAtLeast(0f)
-                    val clampedBottom = visibleBottom.coerceAtMost(parentHeight.toFloat())
-                    val visibleHeight = (clampedBottom - clampedTop).coerceAtLeast(0f)
-                    val ratio = visibleHeight / coordinates.size.height
-                    if (ratio >= 0.3f) isVisible = true
-                }
-            }
             .combinedClickable(
                 onClick = { expanded = true },
                 onLongClick = { },
@@ -157,7 +139,26 @@ fun MessageBubble(
                         modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp)
                     )
                 }
-
+                
+                message.forwardedFrom?.let { forwardedFrom ->
+                    ForwardedFromHeader(
+                        forwardedFrom = forwardedFrom,
+                        modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp),
+                        onClick = { onForwardedFromClick?.invoke() })
+                }
+                
+                message.replyTo?.let { preview ->
+                    ReplyQuote(
+                        preview = preview,
+                        modifier = Modifier.padding(
+                            start = 8.dp,
+                            top = 6.dp,
+                            end = 8.dp
+                        ),
+                        onClick = onReplyPreviewClick
+                    )
+                }
+                
                 val mediaAttachments = message.attachments.filter {
                     it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF
                 }
@@ -265,7 +266,8 @@ fun MessageBubble(
                     MessageText(
                         text = message.text,
                         onLinkClicked = onLinkClicked,
-                        onUsernameClicked = onUsernameClicked
+                        onUsernameClicked = onUsernameClicked,
+                        onEmailClicked = onEmailClicked
                     )
                 }
             }

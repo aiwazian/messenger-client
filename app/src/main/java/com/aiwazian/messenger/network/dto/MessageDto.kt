@@ -6,6 +6,7 @@ package com.aiwazian.messenger.network.dto
 
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.DownloadStatus
+import com.aiwazian.messenger.enums.ForwardSourceAccess
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 import kotlinx.serialization.SerialName
@@ -30,6 +31,25 @@ data class MessageAttachmentDto(
     @SerialName("sortOrder") val sortOrder: Int = 0,
 )
 
+/**
+ * Превью цитируемого сообщения. Приходит вместе с сообщением, чтобы не делать
+ * отдельный запрос за оригиналом при отрисовке ответа.
+ */
+@Serializable
+data class MessageReplyPreviewDto(
+    @SerialName("id") val id: Long,
+    @SerialName("senderId") val senderId: Long? = null,
+    @SerialName("chatId") val chatId: Long? = null,
+    @SerialName("text") val text: String? = null,
+    @SerialName("messageType") val messageType: MessageType = MessageType.TEXT,
+    /** Имя автора — заголовок ответа в личном чате. */
+    @SerialName("senderName") val senderName: String? = null,
+    /** Название группы/канала — заголовок ответа в группе или канале. */
+    @SerialName("chatName") val chatName: String? = null,
+    /** Нужны, чтобы вместо пустого текста показать «Фото», «Видео», «Голосовое сообщение». */
+    @SerialName("attachmentTypes") val attachmentTypes: List<AttachmentType> = emptyList()
+)
+
 @Serializable
 data class MessageDto(
     @SerialName("id") val id: Long,
@@ -42,12 +62,21 @@ data class MessageDto(
     @SerialName("messageType") val messageType: MessageType = MessageType.TEXT,
     @SerialName("systemEventType") val systemEventType: SystemMessageEventType? = null,
     @SerialName("attachments") val attachments: List<MessageAttachmentDto> = emptyList(),
-    @SerialName("readInfo") val readInfo: List<MessageReadInfoDto>? = null
+    @SerialName("readInfo") val readInfo: List<MessageReadInfoDto>? = null,
+    @SerialName("replyToId") val replyToId: Long? = null,
+    @SerialName("replyToChatId") val replyToChatId: Long? = null,
+    @SerialName("replyTo") val replyTo: MessageReplyPreviewDto? = null,
+    /** Автор контента, а не последний пересылавший. */
+    @SerialName("forwardedFromChatId") val forwardedFromChatId: Long? = null,
+    @SerialName("forwardedFromName") val forwardedFromName: String? = null,
+    @SerialName("forwardedFromAccess") val forwardedFromAccess: ForwardSourceAccess? = null
 )
 
 @Serializable
 data class TextMessageRequestDto(
-    @SerialName("text") val text: String
+    @SerialName("text") val text: String,
+    /** id сообщения, на которое отвечаем. Сервер ждёт строку из-за BigInt. */
+    @SerialName("replyToId") val replyToId: String? = null
 )
 
 @Serializable
@@ -77,7 +106,14 @@ data class AttachmentInputDto(
 @Serializable
 data class FileConfirmRequestDto(
     @SerialName("attachments") val attachments: List<AttachmentInputDto>,
-    @SerialName("text") val text: String? = null
+    @SerialName("text") val text: String? = null,
+    @SerialName("replyToId") val replyToId: String? = null
+)
+
+/** Пересылка одного сообщения в несколько чатов за один запрос. */
+@Serializable
+data class ForwardMessageRequestDto(
+    @SerialName("targetChatIds") val targetChatIds: List<String>
 )
 
 @Serializable

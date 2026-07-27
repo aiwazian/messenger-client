@@ -301,4 +301,21 @@
     <string name="remove_email">Выдаліць электронную пошту</string>
     <string name="change_email">Змяніць электронную пошту</string>
     <string name="remove">Выдаліць</string>
+    <string name="reply">Адказаць</string>
+    <string name="reply_to">Адказаць %1$s</string>
+    <string name="forward">Наперад</string>
+    <string name="forwarded_from">Пераслана з</string>
+    <string name="message_forwarded">Паведамленне пераслана</string>
+    <string name="forward_failed">Не ўдалося пераслаць паведамленне</string>
+    <string name="forwarded_from_private_channel">Пераслана з прыватнага канала</string>
+    <string name="forwarded_from_private_group">Пераслана з прыватнай групы</string>
+    <string name="forwarded_from_hidden_account">Пераслана са схаванага акаўнта</string>
+    <string name="unknown_chat">Невядомы чат</string>
+    <string name="attachment_photo">Фота</string>
+    <string name="attachment_video">Відэа</string>
+    <string name="attachment_gif">GIF</string>
+    <string name="attachment_file">Файл</string>
+    <string name="unread_messages">Непрачытаныя паведамленні</string>
+    <string name="open_email_with">Адкрыць з дапамогай</string>
+    <string name="no_email_app">Няма праграмы электроннай пошты</string>
 </resources>

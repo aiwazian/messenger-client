@@ -18,7 +18,9 @@ sealed interface AppRoute : NavKey {
     data class Chat(
         val chatId: Long,
         val chatName: String? = null,
-        val avatarUri: String? = null
+        val avatarUri: String? = null,
+        /** Открыть чат сразу на этом сообщении (переход по ответу/пересылке). */
+        val scrollToMessageId: Long? = null
     ) : AppRoute
     
     @Serializable

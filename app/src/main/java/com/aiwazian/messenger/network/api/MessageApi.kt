@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.network.api
 
+import com.aiwazian.messenger.network.dto.ChatReadStateDto
 import com.aiwazian.messenger.network.dto.ClearHistoryRequestDto
 import com.aiwazian.messenger.network.dto.DeleteMessageRequestDto
 import com.aiwazian.messenger.network.dto.EditMessageRequestDto
@@ -11,7 +12,11 @@ import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
 import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
+import com.aiwazian.messenger.network.dto.ForwardMessageRequestDto
+import com.aiwazian.messenger.network.dto.MarkReadRequestDto
 import com.aiwazian.messenger.network.dto.MessageDto
+import com.aiwazian.messenger.network.dto.MessageSearchResponseDto
+import com.aiwazian.messenger.network.dto.MessagesWindowDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
 import retrofit2.Response
 import retrofit2.http.Body
@@ -23,6 +28,34 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface MessageApi {
+    
+    /**
+     * Окно истории вокруг точки.
+     *
+     * - без курсоров — последние limit сообщений (открытие чата, прыжок в конец);
+     * - anchorId — limit сообщений до и limit после указанного (переход к сообщению);
+     * - beforeId — страница старше указанного id (скролл вверх);
+     * - afterId — страница новее указанного id (скролл вниз после прыжка);
+     * - anchor=first_unread — окно вокруг первого непрочитанного (якорь выбирает сервер).
+     */
+    @GET("chats/{chatId}/messages/window")
+    suspend fun getMessagesWindow(
+        @Path("chatId") chatId: Long,
+        @Query("anchorId") anchorId: Long? = null,
+        @Query("beforeId") beforeId: Long? = null,
+        @Query("afterId") afterId: Long? = null,
+        @Query("anchor") anchor: String? = null,
+        @Query("limit") limit: Int? = null
+    ): Response<MessagesWindowDto>
+    
+    /** Поиск сообщений внутри чата. cursorId — продолжение сканирования. */
+    @GET("chats/{chatId}/messages/search")
+    suspend fun searchMessages(
+        @Path("chatId") chatId: Long,
+        @Query("q") query: String,
+        @Query("cursorId") cursorId: Long? = null,
+        @Query("limit") limit: Int? = null
+    ): Response<MessageSearchResponseDto>
     
     @GET("chats/{chatId}/messages")
     suspend fun getMessages(
@@ -58,16 +91,35 @@ interface MessageApi {
         @Path("fileId") fileId: String
     ): Response<FileDownloadResponseDto>
     
+    /**
+     * Пересылка сообщения в выбранные чаты.
+     *
+     * Сервер возвращает созданные копии — по одной на каждый чат-получатель.
+     */
+    @POST("chats/{chatId}/messages/{messageId}/forward")
+    suspend fun forwardMessage(
+        @Path("chatId") chatId: Long,
+        @Path("messageId") messageId: Long,
+        @Body request: ForwardMessageRequestDto,
+        @Header("x-socket-id") socketId: String
+    ): Response<List<MessageDto>>
+    
+    /** Прочитано всё до messageId включительно. Ответ — актуальный счётчик чата. */
     @POST("chats/{chatId}/messages/{messageId}/read")
     suspend fun markRead(
         @Path("chatId") chatId: Long,
         @Path("messageId") messageId: Long
-    ): Response<Unit>
+    ): Response<ChatReadStateDto>
     
+    /**
+     * Прочитан весь чат либо всё до request.upToMessageId.
+     * Используется кнопкой «вниз» и пачкой просмотренных сообщений.
+     */
     @POST("chats/{chatId}/messages/read")
     suspend fun markAllRead(
-        @Path("chatId") chatId: Long
-    ): Response<Unit>
+        @Path("chatId") chatId: Long,
+        @Body request: MarkReadRequestDto = MarkReadRequestDto()
+    ): Response<ChatReadStateDto>
     
     @HTTP(
         method = "DELETE",

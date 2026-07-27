@@ -12,6 +12,7 @@ import com.aiwazian.messenger.utils.UiText
 
 sealed interface ChatItem {
     data class DateSeparator(val text: String) : ChatItem
+    data object UnreadSeparator : ChatItem
     data class SystemMessage(val text: UiText, val sendTime: Long) : ChatItem
     data class MessageItem(
         val message: Message,
@@ -23,6 +24,7 @@ sealed interface ChatItem {
         val isSingleEmoji: Boolean,
         val dropdownActions: List<DropdownMenuAction>,
         val chatType: ChatType,
+        val isHighlighted: Boolean = false,
         val readInfo: List<MessageReadInfo>? = null
     ) : ChatItem
 }

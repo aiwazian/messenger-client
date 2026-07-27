@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.socket
 
 import com.aiwazian.messenger.domain.Chat
+import com.aiwazian.messenger.domain.ChatUnreadPayload
 import com.aiwazian.messenger.domain.DeleteChatPayload
 import com.aiwazian.messenger.domain.DeleteMessagePayload
 import com.aiwazian.messenger.domain.Message
@@ -67,6 +68,13 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
         override val eventName = "chat:read"
         override val deserializer = ReadMessagePayload.serializer()
         override val mapper: (ReadMessagePayload) -> ReadMessagePayload = { it }
+    }
+    
+    /** Актуальный счётчик непрочитанных чата: растёт при новом сообщении и гаснет после прочтения. */
+    data object ChatUnread : WebSocketEvent<ChatUnreadPayload, ChatUnreadPayload> {
+        override val eventName = "chat:unread"
+        override val deserializer = ChatUnreadPayload.serializer()
+        override val mapper: (ChatUnreadPayload) -> ChatUnreadPayload = { it }
     }
     
     data object UserOnline : WebSocketEvent<PresencePayload, PresencePayload> {

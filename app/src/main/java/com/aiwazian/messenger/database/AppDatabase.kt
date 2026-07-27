@@ -42,7 +42,7 @@ import com.aiwazian.messenger.database.entity.UserEntity
         AvatarEntity::class,
         DraftEntity::class
     ],
-    version = 44,
+    version = 46,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 38, to = 39),
@@ -50,6 +50,8 @@ import com.aiwazian.messenger.database.entity.UserEntity
         AutoMigration(from = 40, to = 41),
         AutoMigration(from = 41, to = 42),
         AutoMigration(from = 42, to = 43),
+        AutoMigration(from = 44, to = 45),
+        AutoMigration(from = 45, to = 46),
     ]
 )
 @ColumnTypeConverters(Converters::class)

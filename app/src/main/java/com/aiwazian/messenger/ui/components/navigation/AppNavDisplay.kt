@@ -108,7 +108,8 @@ fun AppNavDisplay(
                         ChatScreen(
                             chatId = it.chatId,
                             chatName = it.chatName,
-                            avatarUri = it.avatarUri
+                            avatarUri = it.avatarUri,
+                            scrollToMessageId = it.scrollToMessageId
                         )
                     }
                     entry<AppRoute.Profile>(metadata = PredictiveBackMetadata) {

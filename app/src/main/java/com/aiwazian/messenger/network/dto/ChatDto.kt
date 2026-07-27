@@ -12,5 +12,7 @@ data class ChatResponseDto(
     @SerialName("id") val id: Long,
     @SerialName("name") val name: String,
     @SerialName("isPinned") val isPinned: Boolean = false,
-    @SerialName("lastMessage") val lastMessage: MessageDto? = null
+    @SerialName("lastMessage") val lastMessage: MessageDto? = null,
+    @SerialName("unreadCount") val unreadCount: Int = 0,
+    @SerialName("firstUnreadMessageId") val firstUnreadMessageId: Long? = null
 )
