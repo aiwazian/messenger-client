@@ -7,6 +7,7 @@ package com.aiwazian.messenger.socket
 import android.content.Context
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.ReadMessagePayload
+import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.push.NotificationHelper
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.UserRepository
@@ -44,24 +45,25 @@ class RealtimeEventSyncService @Inject constructor(
             serviceScope.launch {
                 chatRepository.saveLocalMessage(message)
                 
-                val myId = userRepository.getMe().firstOrNull()?.id
-                val chatId = if (message.chatId == myId) message.senderId else message.chatId
-                if (myId != null && message.senderId != myId) {
-                    chatRepository.incrementUnread(chatId, message.id)
-                    
-                    if (ActiveChatTracker.activeChatId.value != chatId) {
-                        val chat = chatRepository.getById(chatId).firstOrNull()
-                        val title =
-                            chat?.chatName?.asString(context)
-                                ?: context.getString(R.string.new_message)
-                        val body = message.text ?: context.getString(R.string.message)
-                        notificationHelper.showMessageNotification(
-                            chatId,
-                            title,
-                            body,
-                            chat?.avatarUri
-                        )
-                    }
+                val myId = userRepository.getMe().firstOrNull()?.id ?: return@launch
+                if (message.senderId == myId) return@launch
+                
+                val chatId = resolveChatId(message.chatId, message.senderId, myId)
+                
+                chatRepository.incrementUnread(chatId, message.id)
+                
+                if (ActiveChatTracker.activeChatId.value != chatId) {
+                    val chat = chatRepository.getById(chatId).firstOrNull()
+                    val title =
+                        chat?.chatName?.asString(context)
+                            ?: context.getString(R.string.new_message)
+                    val body = message.text ?: context.getString(R.string.message)
+                    notificationHelper.showMessageNotification(
+                        chatId,
+                        title,
+                        body,
+                        chat?.avatarUri
+                    )
                 }
             }
         }
@@ -100,17 +102,19 @@ class RealtimeEventSyncService @Inject constructor(
         
         webSocketClient.subscribeToEvent(WebSocketEvent.ChatRead) { payload ->
             serviceScope.launch {
-                val chatType = com.aiwazian.messenger.enums.ChatType.fromId(payload.chatId)
-                if (chatType == com.aiwazian.messenger.enums.ChatType.GROUP) {
+                if (ChatType.fromId(payload.chatId) == ChatType.GROUP) {
                     _groupReadEvents.emit(payload)
+                    return@launch
+                }
+                
+                // Личный чат: сервер присылает chatId читателя (Андрей) и senderId автора (Олег) —
+                // ровно в этой паре исходящие сообщения лежат в локальной базе автора.
+                if (payload.senderId > 0 && payload.sendTime > 0) {
+                    chatRepository.markReadBySender(
+                        payload.chatId, payload.senderId, payload.sendTime
+                    )
                 } else {
-                    if (payload.senderId > 0 && payload.sendTime > 0) {
-                        chatRepository.markReadBySender(
-                            payload.chatId, payload.senderId, payload.sendTime
-                        )
-                    } else {
-                        chatRepository.markMessageAsRead(payload.chatId, payload.messageId)
-                    }
+                    chatRepository.markMessageAsRead(payload.chatId, payload.messageId)
                 }
             }
         }
@@ -152,6 +156,21 @@ class RealtimeEventSyncService @Inject constructor(
         
         webSocketClient.subscribeToEvent(WebSocketEvent.UserOffline) { payload ->
             onlineUsersTracker.setOffline(payload.userId)
+        }
+    }
+    
+    /**
+     * В какой чат положить входящее событие.
+     *
+     * id пользователя равен id его личного чата, поэтому в личной переписке смотреть надо
+     * на senderId: Олег (id 1) пишет «в чат 2», и без пересчёта Андрей (id 2) кладёт это
+     * сообщение себе в «Избранное». В группе и канале chatId общий для всех участников,
+     * там берётся именно он.
+     */
+    private fun resolveChatId(chatId: Long, senderId: Long, myId: Long): Long {
+        return when (ChatType.fromId(chatId)) {
+            ChatType.PRIVATE -> if (chatId == myId) senderId else chatId
+            else -> chatId
         }
     }
 }
