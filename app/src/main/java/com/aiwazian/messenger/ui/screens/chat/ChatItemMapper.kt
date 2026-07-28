@@ -198,7 +198,13 @@ class ChatItemMapper(
         
         val now = System.currentTimeMillis()
         val twentyFourHoursMs = 24 * 60 * 60 * 1000L
+        
+        /**
+         * Пересланное сообщение — копия чужого текста, редактировать его нельзя.
+         * Сервер проверяет это же условие в CanEditMessageGuard.
+         */
         val canEdit = isMyMessage &&
+                message.forwardedFrom == null &&
                 !message.text.isNullOrBlank() &&
                 (now - message.sendTime) <= twentyFourHoursMs
         
