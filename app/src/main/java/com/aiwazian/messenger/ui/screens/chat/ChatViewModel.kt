@@ -299,6 +299,8 @@ class ChatViewModel @Inject constructor(
                     )
                 )
             }
+            // Права на ответ зависят от роли: пересобираем пункты меню и свайп.
+            if (lastMessages.isNotEmpty()) updateChatItems(lastMessages)
         }
     }
 
@@ -331,6 +333,8 @@ class ChatViewModel @Inject constructor(
                     )
                 )
             }
+            // Ответ доступен только участникам: после загрузки состава пересобираем items.
+            if (lastMessages.isNotEmpty()) updateChatItems(lastMessages)
         }
     }
 
@@ -542,6 +546,7 @@ class ChatViewModel @Inject constructor(
             myId = _uiState.value.myId,
             chatId = _uiState.value.chatId,
             isOwner = _uiState.value.isOwner,
+            isJoined = _uiState.value.isJoined,
             userNamesCache = _uiState.value.userNamesCache,
             groupReadInfo = _uiState.value.groupReadInfo,
             highlightedMessageId = _uiState.value.highlightedMessageId,
@@ -1443,6 +1448,15 @@ class ChatViewModel @Inject constructor(
     // region Utilities
     fun copyToClipboard(text: String?) = text?.let { clipboardService.copy(it) }
     fun vibrate() = vibrationManager.vibrate(VibrationPattern.Error)
+
+    /**
+     * Короткий тактильный отклик.
+     *
+     * Свайп сообщения влево вызывает его один раз, когда палец перешёл порог,
+     * после которого отпускание начнёт ответ.
+     */
+    fun vibrateTactile() = vibrationManager.vibrate(VibrationPattern.TactileResponse)
+
     fun selectMessage(message: Message) =
         _uiState.update { it.copy(selectedMessages = it.selectedMessages + message) }
 
