@@ -220,7 +220,7 @@ fun ChatScreen(
         if (targetId == null) {
             val lastIndex = uiState.chatItems.size + 1
             if (target.animate) listState.animateScrollToItem(lastIndex)
-            else listState.scrollToItem(lastIndex)
+            else listState.animateScrollToItem(lastIndex)
             chatViewModel.onScrollTargetHandled(target.requestId)
             return@LaunchedEffect
         }
@@ -241,7 +241,7 @@ fun ChatScreen(
         } else {
             val offset =
                 -(listState.layoutInfo.viewportSize.height * target.viewportFraction).toInt()
-            listState.scrollToItem(listIndex, offset)
+            listState.animateScrollToItem(listIndex, offset)
         }
         chatViewModel.onScrollTargetHandled(target.requestId)
     }
@@ -462,15 +462,7 @@ fun ChatScreen(
                             )
                             
                             is ChatItem.MessageItem -> MessageBubble(
-                                modifier = Modifier
-                                    .animateItem()
-                                    .then(
-                                        if (item.isHighlighted) {
-                                            Modifier.background(
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                            )
-                                        } else Modifier
-                                    ),
+                                modifier = Modifier.animateItem(),
                                 item = item,
                                 onFileAction = { file, action ->
                                     if (action == FileAction.CANCEL) {

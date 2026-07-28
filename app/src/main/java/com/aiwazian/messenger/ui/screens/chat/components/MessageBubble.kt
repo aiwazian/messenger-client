@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.net.Uri
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -12,12 +13,14 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -40,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
@@ -104,12 +108,19 @@ fun MessageBubble(
     val alignment = if (item.isMine) Arrangement.End else Arrangement.Start
     val isSavedMessages =
         item.chatType == ChatType.PRIVATE && item.message.senderId == item.message.chatId
-
+    
+    val backgroundColor by animateColorAsState(
+        targetValue = if (item.isHighlighted) MaterialTheme.colorScheme.primary.copy(
+            alpha = 0.1f
+        ) else Color.Transparent
+    )
+    
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = alignment,
         modifier = modifier
             .fillMaxWidth()
+            .background(backgroundColor)
             .combinedClickable(
                 onClick = { expanded = true },
                 onLongClick = { },
@@ -118,7 +129,7 @@ fun MessageBubble(
     ) {
         val containerColor =
             if (item.isMine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
-
+        
         Box(
             modifier = Modifier
                 .widthIn(
@@ -128,7 +139,7 @@ fun MessageBubble(
                 .clip(MaterialTheme.shapes.large)
                 .background(containerColor)
         ) {
-            Column {
+            Column(Modifier.width(IntrinsicSize.Max)) {
                 if (!item.isMine && item.isFirstInGroup && item.senderName != null) {
                     Text(
                         text = item.senderName,
@@ -150,11 +161,9 @@ fun MessageBubble(
                 message.replyTo?.let { preview ->
                     ReplyQuote(
                         preview = preview,
-                        modifier = Modifier.padding(
-                            start = 8.dp,
-                            top = 6.dp,
-                            end = 8.dp
-                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 8.dp, top = 8.dp, end = 8.dp),
                         onClick = onReplyPreviewClick
                     )
                 }
@@ -348,7 +357,7 @@ private fun buildDropdownActions(
     onReadCountClick: () -> Unit = {}
 ): List<DropdownMenuAction> {
     val actions = mutableListOf<DropdownMenuAction>()
-
+    
     if (item.message.editedAt != null) {
         val editedTime = item.message.editedAt.toInstance().toPrettyTime()
         val editedDate = item.message.editedAt.toInstance().atZone(ZoneId.systemDefault())
@@ -366,7 +375,7 @@ private fun buildDropdownActions(
             )
         )
     }
-
+    
     if (item.isMine && !isSavedMessages) {
         val readInfo = item.readInfo
         val isRead = item.isRead
@@ -394,7 +403,7 @@ private fun buildDropdownActions(
                 count % 10 == 1 && count % 100 != 11 -> "просмотр"
                 count % 10 in 2..4 && count % 100 !in 12..14 -> "просмотра"
                 else -> "просмотров"
-            }// TODO plural string
+            } // TODO plural string
             actions.add(
                 DropdownMenuAction(
                     icon = Icons.Rounded.DoneAll,
