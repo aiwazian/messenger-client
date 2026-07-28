@@ -57,6 +57,8 @@ data class PrivacySettingsResponseDto(
     @SerialName("dateOfBirth") val dateOfBirth: PrivacyLevel = PrivacyLevel.EVERYBODY,
     @SerialName("invites") val invites: PrivacyLevel = PrivacyLevel.EVERYBODY,
     @SerialName("profilePhoto") val profilePhoto: PrivacyLevel = PrivacyLevel.EVERYBODY,
+    /** Кто может открыть профиль по заголовку «Переслано от». */
+    @SerialName("forwardedProfile") val forwardedProfile: PrivacyLevel = PrivacyLevel.EVERYBODY,
     @SerialName("deleteAfterDays") val deleteAfterDays: Int = 365
 )
 
@@ -68,6 +70,7 @@ data class UpdatePrivacySettingsRequestDto(
     @SerialName("dateOfBirth") val dateOfBirth: PrivacyLevel? = null,
     @SerialName("invites") val invites: PrivacyLevel? = null,
     @SerialName("profilePhoto") val profilePhoto: PrivacyLevel? = null,
+    @SerialName("forwardedProfile") val forwardedProfile: PrivacyLevel? = null,
     @SerialName("deleteAfterDays") val deleteAfterDays: Int? = null
 )
 
