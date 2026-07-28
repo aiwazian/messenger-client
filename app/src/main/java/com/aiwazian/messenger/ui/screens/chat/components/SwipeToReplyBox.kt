@@ -4,12 +4,13 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.animation.core.animate
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -17,22 +18,26 @@ import androidx.compose.material.icons.automirrored.rounded.Reply
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.screens.chat.components.SwipeToReplyDefaults.MaxOffset
 import com.aiwazian.messenger.ui.screens.chat.components.SwipeToReplyDefaults.TriggerOffset
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 /**
  * Единственное место настройки свайпа «ответить».
@@ -66,9 +71,20 @@ object SwipeToReplyDefaults {
 /**
  * Оборачивает контент свайпом влево для ответа на сообщение.
  *
+ * Жест устроен так:
+ * 1. Ждём именно горизонтальный touch slop. Если человек ведёт палец вертикально,
+ *    жест отменяется и события целиком достаются списку чата.
+ * 2. Как только свайп начался, каждое событие потребляется целиком — вместе
+ *    с вертикальной составляющей. Иначе LazyColumn продолжает видеть
+ *    вертикальные микросдвиги пальца, копит из них скорость и дёргает
+ *    чат на одно сообщение прямо во время свайпа.
+ * 3. Позиция хранится в обычном float-state и применяется через graphicsLayer,
+ *    поэтому на каждый кадр не запускаются корутины и не пересчитывается
+ *    лейаут элемента списка.
+ *
  * Отличия от `SwipeToDismissBox`: тот тянет контент на всю ширину до якоря
- * удаления и не умеет ни ограничивать сдвиг фиксированными [SwipeToReplyDefaults.MaxOffset],
- * ни давать тактильную отдачу в момент пересечения порога без отпускания пальца.
+ * удаления и не умеет ни ограничивать сдвиг фиксированным [MaxOffset],
+ * ни давать тактильную отдачу в момент пересечения порога.
  *
  * @param enabled если false — жест не ставится и иконка не рисуется.
  * @param onReply палец отпущен за порогом.
@@ -91,7 +107,10 @@ fun SwipeToReplyBox(
     val iconTravelPx = with(density) { SwipeToReplyDefaults.IconTravel.toPx() }
     
     /** Сдвиг контента: отрицательный, потому что тянем влево. */
-    val offset = remember { Animatable(0f) }
+    var offsetPx by remember { mutableFloatStateOf(0f) }
+    
+    /** Анимация возврата после отпускания: отменяется новым жестом. */
+    var releaseJob by remember { mutableStateOf<Job?>(null) }
     val scope = rememberCoroutineScope()
     
     Box(modifier = modifier.fillMaxWidth()) {
@@ -106,7 +125,7 @@ fun SwipeToReplyBox(
                     .size(SwipeToReplyDefaults.IconSize)
                     .graphicsLayer {
                         // Прогресс свайпа до порога: иконка проявляется и едет справа налево.
-                        val progress = (-offset.value / triggerPx).coerceIn(0f, 1f)
+                        val progress = (-offsetPx / triggerPx).coerceIn(0f, 1f)
                         alpha = progress
                         translationX = (1f - progress) * iconTravelPx
                         scaleX = progress
@@ -117,33 +136,58 @@ fun SwipeToReplyBox(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .offset { IntOffset(offset.value.roundToInt(), 0) }
+                .graphicsLayer { translationX = offsetPx }
                 .then(
                     if (enabled) Modifier.pointerInput(triggerPx, maxOffsetPx) {
-                        /** Взведена ли вибрация: сбрасывается при возврате ниже порога. */
-                        var armed = true
-                        detectHorizontalDragGestures(
-                            onDragStart = { armed = true },
-                            onDragEnd = {
-                                val shouldReply = -offset.value >= triggerPx
-                                scope.launch { offset.animateTo(0f) }
-                                if (shouldReply) onReply()
-                            },
-                            onDragCancel = {
-                                scope.launch { offset.animateTo(0f) }
-                            }) { _, dragAmount ->
-                            val target = (offset.value + dragAmount).coerceIn(-maxOffsetPx, 0f)
-                            scope.launch { offset.snapTo(target) }
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
                             
-                            val distance = -target
-                            when {
-                                distance >= triggerPx && armed -> {
-                                    armed = false
-                                    onThresholdReached()
-                                }
+                            // Горизонтальный slop: вертикальный скролл списка не трогаем.
+                            val dragStart =
+                                awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ ->
+                                    change.consume()
+                                } ?: return@awaitEachGesture
+                            
+                            releaseJob?.cancel()
+                            
+                            val pointerId = dragStart.id
+                            var current = offsetPx
+                            
+                            /** Взведена ли вибрация: сбрасывается при возврате ниже порога. */
+                            var armed = true
+                            
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val change =
+                                    event.changes.firstOrNull { it.id == pointerId } ?: break
+                                if (!change.pressed) break
                                 
-                                distance < rearmPx -> armed = true
+                                current = (current + change.positionChange().x)
+                                    .coerceIn(-maxOffsetPx, 0f)
+                                offsetPx = current
+                                
+                                // Забираем событие целиком, включая вертикальную составляющую:
+                                // пока идёт свайп, список чата не скроллится и не ловит флинг.
+                                change.consume()
+                                
+                                val distance = -current
+                                if (distance >= triggerPx) {
+                                    if (armed) {
+                                        armed = false
+                                        onThresholdReached()
+                                    }
+                                } else if (distance < rearmPx) {
+                                    armed = true
+                                }
                             }
+                            
+                            val shouldReply = -offsetPx >= triggerPx
+                            releaseJob = scope.launch {
+                                animate(initialValue = offsetPx, targetValue = 0f) { value, _ ->
+                                    offsetPx = value
+                                }
+                            }
+                            if (shouldReply) onReply()
                         }
                     } else Modifier
                 ),
