@@ -95,7 +95,14 @@ class DownloaderManager @Inject constructor(
                 val fileId = existing.fileId
                 val finalStatus = model.status.toDomain()
                 val finalUri = if (finalStatus == DownloadStatus.COMPLETED) {
-                    "${model.path}/${model.fileName}"
+                    /*
+                     * Именно file:// URI, а не голый путь вида /storage/.../file.mp4.
+                     * Coil бессхемный путь ещё переваривает (поэтому превью в
+                     * MessageBubble рисовалось), а вот ExoPlayer, MediaMetadataRetriever
+                     * и определение mime-типа по содержимому без схемы не работают:
+                     * именно поэтому после очистки кэша FullScreenViewer оставался пустым.
+                     */
+                    Uri.fromFile(File(model.path, model.fileName)).toString()
                 } else {
                     existing.localUri
                 }
