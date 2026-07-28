@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.components.CustomDialog
@@ -281,6 +282,14 @@ fun ChatScreen(
     
     var fileToCancelId by remember { mutableStateOf<Long?>(null) }
     var showCancelRecordingDialog by remember { mutableStateOf(false) }
+    /**
+     * Вложение, по которому открыли просмотрщик.
+     *
+     * Берём именно тот объект, который отрисовал MessageBubble: у него тип уже
+     * пересчитан по mime скачанного файла (ChatItemMapper.processAttachments),
+     * а не взят из ответа сервера.
+     */
+    var tappedMedia by remember { mutableStateOf<MessageAttachment?>(null) }
     val scope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
@@ -471,6 +480,9 @@ fun ChatScreen(
                                         fileToCancelId =
                                             item.message.id
                                     } else {
+                                        if (action == FileAction.OPEN) {
+                                            tappedMedia = file
+                                        }
                                         chatViewModel.onFileAction(
                                             item.message,
                                             file,
@@ -684,28 +696,49 @@ fun ChatScreen(
     
     if (uiState.showFullScreenViewer) {
         /*
-         * В просмотрщик уходят только уже скачанные вложения: у остальных
-         * localUri ещё null, из-за них страницы пейджера оставались пустыми.
-         * Тип берём из вложения, а не из имени файла: у скачанных с сервера
-         * файлов расширения может не быть вовсе.
+         * Список медиа собираем из chatItems, а не из uiState.mediaItems.
+         *
+         * В mediaItems вложения лежат с типом, пришедшим с сервера, а пузырь
+         * рисует chatItems, где ChatItemMapper.processAttachments пересчитывает
+         * тип по mime уже скачанного файла. Из-за расхождения у заново
+         * скачанных фото и видео просмотрщик получал пустой список: страницы
+         * были пустыми и пейджер не листался, хотя превью в пузыре рисовалось.
+         *
+         * В просмотрщик уходят только скачанные вложения: у остальных localUri
+         * ещё null и показывать нечего.
          */
-        val tappedFileId = remember(uiState.mediaItems, uiState.initialMediaIndex) {
-            uiState.mediaItems.getOrNull(uiState.initialMediaIndex)?.fileId
+        val downloadedMedia = remember(uiState.chatItems) {
+            uiState.chatItems
+                .filterIsInstance<ChatItem.MessageItem>()
+                .flatMap { it.message.attachments }
+                .filter { attachment ->
+                    attachment.localUri != null && (
+                            attachment.type == AttachmentType.IMAGE ||
+                                    attachment.type == AttachmentType.VIDEO ||
+                                    attachment.type == AttachmentType.GIF
+                            )
+                }
         }
-        val viewerMedia = remember(uiState.mediaItems) {
-            uiState.mediaItems.mapNotNull { attachment ->
-                val uri = attachment.localUri ?: return@mapNotNull null
-                ViewerMediaItem(
-                    uri = uri,
-                    isVideo = attachment.type == AttachmentType.VIDEO
-                )
-            }
+        
+        val tapped = tappedMedia
+        /* Нажатое вложение показываем даже в одиночку: пустой пейджер недопустим. */
+        val viewerAttachments = when {
+            tapped == null -> downloadedMedia
+            downloadedMedia.any { it.fileId == tapped.fileId } -> downloadedMedia
+            tapped.localUri != null -> listOf(tapped)
+            else -> downloadedMedia
         }
-        val viewerInitialPage = remember(uiState.mediaItems, tappedFileId) {
-            uiState.mediaItems.filter { it.localUri != null }
-                .indexOfFirst { it.fileId == tappedFileId }
-                .coerceAtLeast(0)
+        
+        val viewerMedia = viewerAttachments.mapNotNull { attachment ->
+            val uri = attachment.localUri ?: return@mapNotNull null
+            ViewerMediaItem(
+                uri = uri,
+                isVideo = attachment.type == AttachmentType.VIDEO
+            )
         }
+        val viewerInitialPage = viewerAttachments
+            .indexOfFirst { it.fileId == tapped?.fileId }
+            .coerceAtLeast(0)
         
         FullScreenViewer(
             media = viewerMedia,
