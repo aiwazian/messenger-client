@@ -16,10 +16,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,7 +37,9 @@ import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ForwardSourceAccess
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Текст превью цитаты: если текста нет, показываем тип вложения:
@@ -120,7 +124,7 @@ fun ForwardedFromHeader(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val tooltipState = rememberTooltipState()
+    val tooltipState = rememberTooltipState(isPersistent = true)
     val scope = rememberCoroutineScope()
     
     val restrictedRes = when (ChatType.fromId(forwardedFrom.chatId)) {
@@ -129,9 +133,23 @@ fun ForwardedFromHeader(
         else -> R.string.forwarded_from_hidden_account
     }
     
+    LaunchedEffect(tooltipState.isVisible) {
+        if (tooltipState.isVisible) {
+            delay(3.seconds)
+            tooltipState.dismiss()
+        }
+    }
+    
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-        tooltip = { PlainTooltip { Text(stringResource(restrictedRes)) } },
+        positionProvider = rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+        tooltip = {
+            PlainTooltip(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text(stringResource(restrictedRes), lineHeight = 12.sp)
+            }
+        },
         state = tooltipState,
         enableUserInput = false
     ) {

@@ -8,9 +8,9 @@ import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Forward
 import androidx.compose.material.icons.automirrored.rounded.Reply
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Refresh
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Message
@@ -205,7 +205,7 @@ class ChatItemMapper(
         if (canEdit) {
             actions.add(
                 DropdownMenuAction(
-                    Icons.Outlined.Edit,
+                    Icons.Rounded.Edit,
                     UiText.StringResource(R.string.edit),
                     onClick = { onEditMessage(message) }
                 )
