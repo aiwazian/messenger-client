@@ -811,9 +811,14 @@ class ChatViewModel @Inject constructor(
      *
      * Заголовок: в группе и канале — название чата, в личном чате — имя автора
      * сообщения (своё имя, если отвечаем сами себе).
+     *
+     * Ответ и редактирование взаимоисключают друг друга: если шла правка
+     * сообщения, она отменяется, а поле ввода очищается.
      */
     fun startReply(message: Message) {
         if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
+
+        if (_uiState.value.editingMessageId != null) cancelEditing()
 
         val state = _uiState.value
         val chatType = ChatType.fromId(state.chatId)
@@ -1098,7 +1103,18 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    /**
+     * «Изменить» в меню сообщения.
+     *
+     * Пересланные сообщения редактировать нельзя: это копия чужого текста,
+     * такую же проверку делает сервер.
+     *
+     * Редактирование и ответ взаимоисключают друг друга: начатый ответ
+     * сбрасывается, а в поле ввода остаётся только текст правимого сообщения.
+     */
     fun startEditing(message: Message) {
+        if (message.forwardedFrom != null) return
+
         val now = System.currentTimeMillis()
         if (now - message.sendTime > 24 * 60 * 60 * 1000L) {
             viewModelScope.launch {
@@ -1107,6 +1123,9 @@ class ChatViewModel @Inject constructor(
             return
         }
         if (message.text.isNullOrBlank()) return
+
+        clearReply()
+
         _uiState.update {
             it.copy(
                 editingMessageId = message.id,
