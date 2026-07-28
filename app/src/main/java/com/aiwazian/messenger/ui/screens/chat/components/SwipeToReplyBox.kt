@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.screens.chat.components.SwipeToReplyDefaults.MaxOffset
+import com.aiwazian.messenger.ui.screens.chat.components.SwipeToReplyDefaults.TriggerOffset
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -107,6 +109,8 @@ fun SwipeToReplyBox(
                         val progress = (-offset.value / triggerPx).coerceIn(0f, 1f)
                         alpha = progress
                         translationX = (1f - progress) * iconTravelPx
+                        scaleX = progress
+                        scaleY = progress
                     })
         }
         

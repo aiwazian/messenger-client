@@ -6,11 +6,11 @@ package com.aiwazian.messenger.ui.screens.chat
 
 import android.content.Context
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Forward
-import androidx.compose.material.icons.automirrored.rounded.Reply
+import androidx.compose.material.icons.automirrored.outlined.Forward
+import androidx.compose.material.icons.automirrored.outlined.Reply
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Refresh
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Message
@@ -200,7 +200,7 @@ class ChatItemMapper(
         if (canReply(message, chatType)) {
             actions.add(
                 DropdownMenuAction(
-                    Icons.AutoMirrored.Rounded.Reply,
+                    Icons.AutoMirrored.Outlined.Reply,
                     UiText.StringResource(R.string.reply),
                     onClick = { onReplyMessage(message) })
             )
@@ -209,7 +209,7 @@ class ChatItemMapper(
         if (isSent) {
             actions.add(
                 DropdownMenuAction(
-                    Icons.AutoMirrored.Rounded.Forward,
+                    Icons.AutoMirrored.Outlined.Forward,
                     UiText.StringResource(R.string.forward),
                     onClick = { onForwardMessage(message) })
             )
@@ -230,7 +230,7 @@ class ChatItemMapper(
         if (canEdit) {
             actions.add(
                 DropdownMenuAction(
-                    Icons.Rounded.Edit,
+                    Icons.Outlined.Edit,
                     UiText.StringResource(R.string.edit),
                     onClick = { onEditMessage(message) }
                 )
