@@ -30,6 +30,6 @@ fun UnreadSeparatorItem(modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.8f))
-            .padding(vertical = 6.dp)
+            .padding(vertical = 4.dp)
     )
 }
