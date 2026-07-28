@@ -59,6 +59,7 @@ import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsPrivacyScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.bio.SettingsBioScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.blockedUsers.BlockedUserListScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthScreen
+import com.aiwazian.messenger.ui.screens.settings.privacy.forwardedProfile.SettingsForwardedProfileScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.invites.SettingsInvitesScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.lastSeen.SettingsLastSeenScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.photo.SettingsPhotoScreen
@@ -134,6 +135,7 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsPhoto> { SettingsPhotoScreen(level = it.level) }
                     entry<AppRoute.SettingsDateOfBirth> { SettingsDateOfBirthScreen(level = it.level) }
                     entry<AppRoute.SettingsInvites> { SettingsInvitesScreen(level = it.level) }
+                    entry<AppRoute.SettingsForwardedProfile> { SettingsForwardedProfileScreen(level = it.level) }
                     entry<AppRoute.BlockedUserList> { BlockedUserListScreen() }
                     entry<AppRoute.PendingJoinRequests> { PendingJoinRequestsScreen() }
                     entry<AppRoute.SettingsDevices> { SettingsDevicesScreen() }
