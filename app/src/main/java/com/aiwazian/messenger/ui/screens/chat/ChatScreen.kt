@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
@@ -90,6 +91,7 @@ import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.UnreadSeparatorItem
+import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
 import com.aiwazian.messenger.utils.ActiveChatTracker
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.FlowPreview
@@ -681,9 +683,33 @@ fun ChatScreen(
     }
     
     if (uiState.showFullScreenViewer) {
+        /*
+         * В просмотрщик уходят только уже скачанные вложения: у остальных
+         * localUri ещё null, из-за них страницы пейджера оставались пустыми.
+         * Тип берём из вложения, а не из имени файла: у скачанных с сервера
+         * файлов расширения может не быть вовсе.
+         */
+        val tappedFileId = remember(uiState.mediaItems, uiState.initialMediaIndex) {
+            uiState.mediaItems.getOrNull(uiState.initialMediaIndex)?.fileId
+        }
+        val viewerMedia = remember(uiState.mediaItems) {
+            uiState.mediaItems.mapNotNull { attachment ->
+                val uri = attachment.localUri ?: return@mapNotNull null
+                ViewerMediaItem(
+                    uri = uri,
+                    isVideo = attachment.type == AttachmentType.VIDEO
+                )
+            }
+        }
+        val viewerInitialPage = remember(uiState.mediaItems, tappedFileId) {
+            uiState.mediaItems.filter { it.localUri != null }
+                .indexOfFirst { it.fileId == tappedFileId }
+                .coerceAtLeast(0)
+        }
+        
         FullScreenViewer(
-            mediaUris = uiState.mediaItems.map { it.localUri },
-            initialPage = uiState.initialMediaIndex,
+            media = viewerMedia,
+            initialPage = viewerInitialPage,
             isVideoLooping = uiState.isVideoLooping,
             videoPlaybackSpeed = uiState.videoPlaybackSpeed,
             canDownloadMedia = uiState.canDownloadMedia,
