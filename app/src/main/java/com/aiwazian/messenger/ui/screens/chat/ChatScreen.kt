@@ -494,6 +494,10 @@ fun ChatScreen(
                                 },
                                 onForwardedFromClick = {
                                     chatViewModel.onForwardedFromClicked(item.message)
+                                },
+                                onSwipeThresholdReached = chatViewModel::vibrateTactile,
+                                onSwipeToReply = {
+                                    chatViewModel.startReply(item.message)
                                 })
                         }
                     }
