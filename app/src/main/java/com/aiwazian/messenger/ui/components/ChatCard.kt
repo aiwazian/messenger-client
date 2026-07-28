@@ -6,10 +6,6 @@ package com.aiwazian.messenger.ui.components
 
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -182,22 +178,24 @@ fun ChatCard(
                 }
                 AnimatedVisibility(
                     visible = isOnline,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 2.dp, bottom = 2.dp),
-                    enter = fadeIn() + scaleIn(),
-                    exit = fadeOut() + scaleOut()
+                    modifier = Modifier.align(Alignment.BottomEnd),
+                    enter = expressiveScaleIn,
+                    exit = expressiveScaleOut
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Circle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                    Box(
                         modifier = Modifier
-                            .padding(2.dp)
-                            .size(14.dp)
+                            .padding(end = 3.dp, bottom = 3.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surface)
-                    )
+                            .background(MaterialTheme.colorScheme.surface),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Circle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
                 }
                 AnimatedVisibility(
                     visible = isSelected,

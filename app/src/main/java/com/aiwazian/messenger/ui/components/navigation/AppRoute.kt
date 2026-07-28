@@ -72,6 +72,10 @@ sealed interface AppRoute : NavKey {
     @Serializable
     data class SettingsInvites(val level: PrivacyLevel) : AppRoute
     
+    /** Кто может перейти в мой профиль по заголовку «Переслано от». */
+    @Serializable
+    data class SettingsForwardedProfile(val level: PrivacyLevel) : AppRoute
+    
     @Serializable
     data object SettingsDevices : AppRoute
     

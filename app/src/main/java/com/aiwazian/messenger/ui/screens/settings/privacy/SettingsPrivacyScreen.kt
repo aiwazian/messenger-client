@@ -172,6 +172,17 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                     onClick = {
                         navBackStack.add(AppRoute.SettingsInvites(uiState.privacy.invites))
                     })
+                
+                SectionItem(
+                    headlineText = stringResource(R.string.message_forwarding),
+                    trailingText = if (uiState.privacy.forwardedProfile == PrivacyLevel.EVERYBODY) {
+                        stringResource(R.string.everybody)
+                    } else {
+                        stringResource(R.string.nobody)
+                    },
+                    onClick = {
+                        navBackStack.add(AppRoute.SettingsForwardedProfile(uiState.privacy.forwardedProfile))
+                    })
             }
             
             SectionContainer(header = {

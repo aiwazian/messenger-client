@@ -13,5 +13,12 @@ data class PrivacySettings(
     val messages: PrivacyLevel,
     val invites: PrivacyLevel,
     val profilePhoto: PrivacyLevel,
+    /**
+     * Кто может перейти в мой профиль по заголовку «Переслано от».
+     *
+     * NOBODY — сервер отдаёт таким пересылкам access = RESTRICTED,
+     * и вместо перехода в чат показывается тултип.
+     */
+    val forwardedProfile: PrivacyLevel = PrivacyLevel.EVERYBODY,
     val deleteAfterDays: Int
 )

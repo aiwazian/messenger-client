@@ -308,6 +308,8 @@
     <string name="forwarded_from_private_channel">Inoltrato da un canale privato</string>
     <string name="forwarded_from_private_group">Inoltrato da un gruppo privato</string>
     <string name="forwarded_from_hidden_account">Inoltrato da un account nascosto</string>
+    <string name="message_forwarding">Inoltro dei messaggi</string>
+    <string name="who_can_open_my_profile_from_forwarded_messages">Chi può aprire il mio profilo dai messaggi inoltrati\?</string>
     <string name="unknown_chat">Chat sconosciuta</string>
     <string name="attachment_photo">Foto</string>
     <string name="attachment_video">Video</string>

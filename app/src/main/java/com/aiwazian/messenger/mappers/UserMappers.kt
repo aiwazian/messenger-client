@@ -59,6 +59,7 @@ fun PrivacySettingsResponseDto.toDomain() = PrivacySettings(
     dateOfBirth = dateOfBirth,
     invites = invites,
     profilePhoto = profilePhoto,
+    forwardedProfile = forwardedProfile,
     deleteAfterDays = deleteAfterDays
 )
 

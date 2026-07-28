@@ -310,6 +310,8 @@
     <string name="forwarded_from_private_channel">Пераслана з прыватнага канала</string>
     <string name="forwarded_from_private_group">Пераслана з прыватнай групы</string>
     <string name="forwarded_from_hidden_account">Пераслана са схаванага акаўнта</string>
+    <string name="message_forwarding">Перасылка паведамленняў</string>
+    <string name="who_can_open_my_profile_from_forwarded_messages">Хто можа адкрыць мой профіль з перасланых паведамленняў\?</string>
     <string name="unknown_chat">Невядомы чат</string>
     <string name="attachment_photo">Фота</string>
     <string name="attachment_video">Відэа</string>

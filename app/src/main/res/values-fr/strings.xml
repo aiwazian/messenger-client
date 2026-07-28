@@ -308,6 +308,8 @@
     <string name="forwarded_from_private_channel">Transféré depuis un canal privé</string>
     <string name="forwarded_from_private_group">Transféré depuis un groupe privé</string>
     <string name="forwarded_from_hidden_account">Transféré depuis un compte caché</string>
+    <string name="message_forwarding">Transfert de messages</string>
+    <string name="who_can_open_my_profile_from_forwarded_messages"><![CDATA[Qui peut ouvrir mon profil à partir des messages transférés \?]]></string>
     <string name="unknown_chat">Discussion inconnue</string>
     <string name="attachment_photo">Photo</string>
     <string name="attachment_video">Vidéo</string>

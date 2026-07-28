@@ -6,8 +6,8 @@ package com.aiwazian.messenger.ui.screens.chat
 
 import android.content.Context
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Forward
-import androidx.compose.material.icons.automirrored.rounded.Reply
+import androidx.compose.material.icons.automirrored.outlined.Forward
+import androidx.compose.material.icons.automirrored.outlined.Reply
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DeleteOutline
@@ -34,6 +34,8 @@ class ChatItemMapper(
     private val myId: Long,
     private val chatId: Long,
     private val isOwner: Boolean,
+    /** Состою ли в группе/канале: без этого нельзя ни писать, ни отвечать. */
+    private val isJoined: Boolean,
     private val userNamesCache: Map<Long, String>,
     private val groupReadInfo: Map<Long, List<MessageReadInfo>>,
     private val highlightedMessageId: Long? = null,
@@ -111,13 +113,31 @@ class ChatItemMapper(
                     dropdownActions = actions,
                     chatType = chatType,
                     isHighlighted = highlightedMessageId != null && updatedMessage.id == highlightedMessageId,
-                    readInfo = if (isMine) mergeReadInfo(updatedMessage) else null
+                    readInfo = if (isMine) mergeReadInfo(updatedMessage) else null,
+                    canReply = canReply(updatedMessage, chatType)
                 )
             )
             
             lastSenderId = message.senderId
         }
         return chatItems
+    }
+    
+    /**
+     * Ответить можно только там, где вообще разрешено писать: в канале —
+     * только владельцу, в группе — только участнику, в личном чате — всегда.
+     *
+     * Тем же условием включается свайп влево в MessageBubble.
+     */
+    private fun canReply(message: Message, chatType: ChatType): Boolean {
+        if (message.messageType == MessageType.SYSTEM) return false
+        if (message.id <= 0 || message.status != MessageStatus.SENT) return false
+        return when (chatType) {
+            ChatType.PRIVATE -> true
+            ChatType.GROUP -> isJoined
+            ChatType.CHANNEL -> isOwner
+            else -> false
+        }
     }
     
     private fun createDropdownActions(
@@ -177,11 +197,10 @@ class ChatItemMapper(
         
         val isSent = message.id > 0 && message.status == MessageStatus.SENT
         
-        val canReply = isSent && (chatType != ChatType.CHANNEL || isOwner)
-        if (canReply) {
+        if (canReply(message, chatType)) {
             actions.add(
                 DropdownMenuAction(
-                    Icons.AutoMirrored.Rounded.Reply,
+                    Icons.AutoMirrored.Outlined.Reply,
                     UiText.StringResource(R.string.reply),
                     onClick = { onReplyMessage(message) })
             )
@@ -190,7 +209,7 @@ class ChatItemMapper(
         if (isSent) {
             actions.add(
                 DropdownMenuAction(
-                    Icons.AutoMirrored.Rounded.Forward,
+                    Icons.AutoMirrored.Outlined.Forward,
                     UiText.StringResource(R.string.forward),
                     onClick = { onForwardMessage(message) })
             )
@@ -198,7 +217,13 @@ class ChatItemMapper(
         
         val now = System.currentTimeMillis()
         val twentyFourHoursMs = 24 * 60 * 60 * 1000L
+        
+        /**
+         * Пересланное сообщение — копия чужого текста, редактировать его нельзя.
+         * Сервер проверяет это же условие в CanEditMessageGuard.
+         */
         val canEdit = isMyMessage &&
+                message.forwardedFrom == null &&
                 !message.text.isNullOrBlank() &&
                 (now - message.sendTime) <= twentyFourHoursMs
         

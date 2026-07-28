@@ -126,7 +126,6 @@ fun PasswordScreen(
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (uiState.canReset) {
@@ -154,6 +153,9 @@ fun PasswordScreen(
                             }
                         })
                     }
+                    
+                    Spacer(modifier = Modifier.weight(1f))
+                    
                     FloatingActionButton(
                         onClick = viewModel::signIn,
                         contentColor = MaterialTheme.colorScheme.onPrimary,

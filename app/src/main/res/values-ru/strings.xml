@@ -309,7 +309,9 @@
     <string name="forward_failed">Не удалось переслать сообщение</string>
     <string name="forwarded_from_private_channel">Переслано из частного канала</string>
     <string name="forwarded_from_private_group">Переслано из частной группы</string>
-    <string name="forwarded_from_hidden_account">Переслано из скрытого аккаунта</string>
+    <string name="forwarded_from_hidden_account">Автор сообщения скрыл свой профиль</string>
+    <string name="message_forwarding">Пересылка сообщений</string>
+    <string name="who_can_open_my_profile_from_forwarded_messages">Кто может ссылаться на мой профиль при пересылке сообщений?</string>
     <string name="unknown_chat">Неизвестный чат</string>
     <string name="attachment_photo">Фото</string>
     <string name="attachment_video">Видео</string>

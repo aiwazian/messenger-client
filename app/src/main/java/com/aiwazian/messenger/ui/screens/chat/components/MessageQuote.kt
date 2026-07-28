@@ -4,26 +4,34 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,7 +43,9 @@ import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ForwardSourceAccess
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Текст превью цитаты: если текста нет, показываем тип вложения:
@@ -70,22 +80,37 @@ fun ReplyQuote(
     onClick: (() -> Unit)? = null
 ) {
     val accentColor = MaterialTheme.colorScheme.primary
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+        targetValue = if (isPressed) 0.98f else 1f,
+        label = "reply_quote_scale_animation"
+    )
     
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.then(
-            if (onClick != null) Modifier.clickable { onClick() } else Modifier
-        )
+        modifier = modifier
+            .graphicsLayer(scaleX = scale, scaleY = scale)
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+            .then(
+                if (onClick != null) Modifier.combinedClickable(
+                    interactionSource = interactionSource,
+                    onClick = onClick,
+                    onLongClick = onClick
+                )
+                else Modifier
+            )
     ) {
         Column(
             modifier = Modifier
                 .width(3.dp)
                 .height(32.dp)
-                .clip(CircleShape)
                 .background(accentColor)
         ) {}
         
-        Column(modifier = Modifier.padding(start = 6.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 6.dp)) {
             Text(
                 text = preview.title.orEmpty(),
                 fontSize = 12.sp,
@@ -120,7 +145,7 @@ fun ForwardedFromHeader(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val tooltipState = rememberTooltipState()
+    val tooltipState = rememberTooltipState(isPersistent = true)
     val scope = rememberCoroutineScope()
     
     val restrictedRes = when (ChatType.fromId(forwardedFrom.chatId)) {
@@ -129,20 +154,45 @@ fun ForwardedFromHeader(
         else -> R.string.forwarded_from_hidden_account
     }
     
+    LaunchedEffect(tooltipState.isVisible) {
+        if (tooltipState.isVisible) {
+            delay(3.seconds)
+            tooltipState.dismiss()
+        }
+    }
+    
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+        targetValue = if (isPressed) 0.96f else 1f,
+        label = "forward_scale_animation"
+    )
+    
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-        tooltip = { PlainTooltip { Text(stringResource(restrictedRes)) } },
+        positionProvider = rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+        tooltip = {
+            PlainTooltip(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text(stringResource(restrictedRes), lineHeight = 12.sp)
+            }
+        },
         state = tooltipState,
         enableUserInput = false
     ) {
         Column(
-            modifier = modifier.clickable {
-                when (forwardedFrom.access) {
-                    ForwardSourceAccess.OPEN -> onClick()
-                    ForwardSourceAccess.RESTRICTED -> scope.launch { tooltipState.show() }
-                    ForwardSourceAccess.UNAVAILABLE -> Unit
+            modifier = modifier
+                .graphicsLayer(scaleX = scale, scaleY = scale)
+                .clip(MaterialTheme.shapes.extraSmall)
+                .clickable(interactionSource = interactionSource) {
+                    when (forwardedFrom.access) {
+                        ForwardSourceAccess.OPEN -> onClick()
+                        ForwardSourceAccess.RESTRICTED -> scope.launch { tooltipState.show() }
+                        ForwardSourceAccess.UNAVAILABLE -> Unit
+                    }
                 }
-            }
         ) {
             Text(
                 text = stringResource(R.string.forwarded_from),

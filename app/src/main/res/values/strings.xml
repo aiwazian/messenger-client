@@ -314,6 +314,8 @@
     <string name="forwarded_from_private_channel">Forwarded from a private channel</string>
     <string name="forwarded_from_private_group">Forwarded from a private group</string>
     <string name="forwarded_from_hidden_account">Forwarded from a hidden account</string>
+    <string name="message_forwarding">Message Forwarding</string>
+    <string name="who_can_open_my_profile_from_forwarded_messages">Who can open my profile from forwarded messages?</string>
     <string name="unknown_chat">Unknown chat</string>
     <string name="attachment_photo">Photo</string>
     <string name="attachment_video">Video</string>

@@ -25,6 +25,13 @@ sealed interface ChatItem {
         val dropdownActions: List<DropdownMenuAction>,
         val chatType: ChatType,
         val isHighlighted: Boolean = false,
-        val readInfo: List<MessageReadInfo>? = null
+        val readInfo: List<MessageReadInfo>? = null,
+        /**
+         * Доступен ли ответ на это сообщение.
+         *
+         * Тем же флагом включается свайп влево по сообщению: свайп — это просто
+         * второй способ вызвать «Ответить».
+         */
+        val canReply: Boolean = false
     ) : ChatItem
 }

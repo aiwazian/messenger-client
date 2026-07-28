@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.net.Uri
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -12,12 +13,14 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -40,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
@@ -78,6 +82,16 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+/**
+ * Ширина сетки медиа, когда родитель спрашивает размер без ограничений
+ * (intrinsic-измерение из-за `Modifier.width(IntrinsicSize.Max)` у колонки пузыря).
+ * Соответствует максимальной ширине пузыря за вычетом горизонтальных отступов.
+ */
+private val MediaGridFallbackWidth = 264.dp
+
+/** Предел размера лейаута в Compose: больше — падает IllegalStateException. */
+private const val MaxLayoutDimension = 16_777_215
+
 @Composable
 fun MessageBubble(
     modifier: Modifier = Modifier,
@@ -96,7 +110,11 @@ fun MessageBubble(
     /** Клик по цитате: прыжок к оригиналу или переход в чат оригинала. */
     onReplyPreviewClick: (() -> Unit)? = null,
     /** Клик по заголовку «Переслано от». */
-    onForwardedFromClick: (() -> Unit)? = null
+    onForwardedFromClick: (() -> Unit)? = null,
+    /** Свайп влево пересёк порог: короткая тактильная отдача. */
+    onSwipeThresholdReached: (() -> Unit)? = null,
+    /** Палец отпущен за порогом: начинаем ответ на это сообщение. */
+    onSwipeToReply: (() -> Unit)? = null
 ) {
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
@@ -104,236 +122,250 @@ fun MessageBubble(
     val alignment = if (item.isMine) Arrangement.End else Arrangement.Start
     val isSavedMessages =
         item.chatType == ChatType.PRIVATE && item.message.senderId == item.message.chatId
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = alignment,
-        modifier = modifier
-            .fillMaxWidth()
-            .combinedClickable(
-                onClick = { expanded = true },
-                onLongClick = { },
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() })
+    
+    val backgroundColor by animateColorAsState(
+        targetValue = if (item.isHighlighted) MaterialTheme.colorScheme.primary.copy(
+            alpha = 0.1f
+        ) else Color.Transparent
+    )
+    
+    SwipeToReplyBox(
+        // Свайп доступен ровно там, где доступен ответ: канал — владелец,
+        // группа — участник, личный чат — всегда.
+        enabled = item.canReply && onSwipeToReply != null,
+        onReply = { onSwipeToReply?.invoke() },
+        onThresholdReached = { onSwipeThresholdReached?.invoke() },
+        modifier = modifier.background(backgroundColor)
     ) {
-        val containerColor =
-            if (item.isMine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
-
-        Box(
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = alignment,
             modifier = Modifier
-                .widthIn(
-                    min = 80.dp, max = 280.dp
-                )
-                .padding(horizontal = 8.dp)
-                .clip(MaterialTheme.shapes.large)
-                .background(containerColor)
+                .fillMaxWidth()
+                .combinedClickable(
+                    onClick = { expanded = true },
+                    onLongClick = { },
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() })
         ) {
-            Column {
-                if (!item.isMine && item.isFirstInGroup && item.senderName != null) {
-                    Text(
-                        text = item.senderName,
-                        fontSize = 12.sp,
-                        lineHeight = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp)
+            val containerColor =
+                if (item.isMine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
+            
+            Box(
+                modifier = Modifier
+                    .widthIn(
+                        min = 80.dp, max = 280.dp
                     )
-                }
-                
-                message.forwardedFrom?.let { forwardedFrom ->
-                    ForwardedFromHeader(
-                        forwardedFrom = forwardedFrom,
-                        modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp),
-                        onClick = { onForwardedFromClick?.invoke() })
-                }
-                
-                message.replyTo?.let { preview ->
-                    ReplyQuote(
-                        preview = preview,
-                        modifier = Modifier.padding(
-                            start = 8.dp,
-                            top = 6.dp,
-                            end = 8.dp
-                        ),
-                        onClick = onReplyPreviewClick
-                    )
-                }
-                
-                val mediaAttachments = message.attachments.filter {
-                    it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF
-                }
-                if (mediaAttachments.isNotEmpty()) {
-                    ImageGridCustomLayout(
-                        Modifier.heightIn(max = 400.dp), content = {
-                            mediaAttachments.forEach { attachment ->
-                                if (attachment.localUri == null ||
-                                    attachment.status == DownloadStatus.UPLOADING ||
-                                    attachment.status == DownloadStatus.DOWNLOADING
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(MaterialTheme.shapes.extraSmall)
-                                            .clickable {
-                                                val action = when (attachment.status) {
-                                                    DownloadStatus.DOWNLOADING -> FileAction.DOWNLOAD
-                                                    DownloadStatus.PAUSED -> FileAction.DOWNLOAD
-                                                    DownloadStatus.IDLE,
-                                                    DownloadStatus.CANCELLED,
-                                                    DownloadStatus.FAILED,
-                                                    DownloadStatus.UPLOADED,
-                                                    DownloadStatus.COMPLETED -> FileAction.DOWNLOAD
-                                                    
-                                                    DownloadStatus.UPLOADING -> FileAction.CANCEL
-                                                }
-                                                onFileAction(attachment, action)
-                                            }, contentAlignment = Alignment.Center
+                    .padding(horizontal = 8.dp)
+                    .clip(MaterialTheme.shapes.large)
+                    .background(containerColor)
+            ) {
+                Column(Modifier.width(IntrinsicSize.Max)) {
+                    if (!item.isMine && item.isFirstInGroup && item.senderName != null) {
+                        Text(
+                            text = item.senderName,
+                            fontSize = 12.sp,
+                            lineHeight = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp)
+                        )
+                    }
+                    
+                    message.forwardedFrom?.let { forwardedFrom ->
+                        ForwardedFromHeader(
+                            forwardedFrom = forwardedFrom,
+                            modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp),
+                            onClick = { onForwardedFromClick?.invoke() })
+                    }
+                    
+                    message.replyTo?.let { preview ->
+                        ReplyQuote(
+                            preview = preview,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 8.dp, top = 8.dp, end = 8.dp),
+                            onClick = onReplyPreviewClick
+                        )
+                    }
+                    
+                    val mediaAttachments = message.attachments.filter {
+                        it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF
+                    }
+                    if (mediaAttachments.isNotEmpty()) {
+                        ImageGridCustomLayout(
+                            Modifier.heightIn(max = 400.dp), content = {
+                                mediaAttachments.forEach { attachment ->
+                                    if (attachment.localUri == null ||
+                                        attachment.status == DownloadStatus.UPLOADING ||
+                                        attachment.status == DownloadStatus.DOWNLOADING
                                     ) {
-                                        Text(
-                                            text = attachment.size.formatFileSize(),
+                                        Box(
                                             modifier = Modifier
-                                                .align(Alignment.TopStart)
-                                                .padding(4.dp),
-                                            fontSize = 12.sp,
-                                            lineHeight = 12.sp
-                                        )
-                                        when (attachment.status) {
-                                            DownloadStatus.DOWNLOADING -> {
-                                                CircularWavyProgressIndicator()
-                                                Icon(Icons.Rounded.Pause, null)
+                                                .clip(MaterialTheme.shapes.extraSmall)
+                                                .clickable {
+                                                    val action = when (attachment.status) {
+                                                        DownloadStatus.DOWNLOADING -> FileAction.DOWNLOAD
+                                                        DownloadStatus.PAUSED -> FileAction.DOWNLOAD
+                                                        DownloadStatus.IDLE,
+                                                        DownloadStatus.CANCELLED,
+                                                        DownloadStatus.FAILED,
+                                                        DownloadStatus.UPLOADED,
+                                                        DownloadStatus.COMPLETED -> FileAction.DOWNLOAD
+                                                        
+                                                        DownloadStatus.UPLOADING -> FileAction.CANCEL
+                                                    }
+                                                    onFileAction(attachment, action)
+                                                }, contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = attachment.size.formatFileSize(),
+                                                modifier = Modifier
+                                                    .align(Alignment.TopStart)
+                                                    .padding(4.dp),
+                                                fontSize = 12.sp,
+                                                lineHeight = 12.sp
+                                            )
+                                            when (attachment.status) {
+                                                DownloadStatus.DOWNLOADING -> {
+                                                    CircularWavyProgressIndicator()
+                                                    Icon(Icons.Rounded.Pause, null)
+                                                }
+                                                
+                                                DownloadStatus.UPLOADING -> {
+                                                    CircularWavyProgressIndicator()
+                                                    Icon(Icons.Rounded.Close, null)
+                                                }
+                                                
+                                                DownloadStatus.PAUSED -> {
+                                                    Icon(Icons.Rounded.Downloading, null)
+                                                }
+                                                
+                                                else -> {
+                                                    Icon(Icons.Rounded.Download, null)
+                                                }
                                             }
-                                            
-                                            DownloadStatus.UPLOADING -> {
-                                                CircularWavyProgressIndicator()
-                                                Icon(Icons.Rounded.Close, null)
-                                            }
-                                            
-                                            DownloadStatus.PAUSED -> {
-                                                Icon(Icons.Rounded.Downloading, null)
-                                            }
-                                            
-                                            else -> {
-                                                Icon(Icons.Rounded.Download, null)
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    if (attachment.type == AttachmentType.VIDEO) {
-                                        VideoThumbnail(attachment.localUri) {
-                                            onFileAction(attachment, FileAction.OPEN)
                                         }
                                     } else {
-                                        ImageThumbnail(
-                                            attachment.localUri,
-                                            attachment.type == AttachmentType.GIF
-                                        ) {
-                                            onFileAction(attachment, FileAction.OPEN)
+                                        if (attachment.type == AttachmentType.VIDEO) {
+                                            VideoThumbnail(attachment.localUri) {
+                                                onFileAction(attachment, FileAction.OPEN)
+                                            }
+                                        } else {
+                                            ImageThumbnail(
+                                                attachment.localUri,
+                                                attachment.type == AttachmentType.GIF
+                                            ) {
+                                                onFileAction(attachment, FileAction.OPEN)
+                                            }
                                         }
                                     }
                                 }
+                            })
+                    }
+                    
+                    message.attachments.forEach { attachment ->
+                        when (attachment.type) {
+                            AttachmentType.VOICE -> {
+                                MessageVoice(
+                                    file = attachment,
+                                    isPlaying = currentPlayingVoiceFileId == attachment.fileId && isVoicePlaying,
+                                    positionMs = if (currentPlayingVoiceFileId == attachment.fileId) voicePositionMs else 0,
+                                    durationMs = if (currentPlayingVoiceFileId == attachment.fileId) voiceDurationMs else 0,
+                                    onAction = { action ->
+                                        onFileAction(attachment, action)
+                                    },
+                                    onSeek = { positionMs ->
+                                        onVoiceSeek(attachment, positionMs)
+                                    }
+                                )
                             }
-                        })
-                }
-                
-                message.attachments.forEach { attachment ->
-                    when (attachment.type) {
-                        AttachmentType.VOICE -> {
-                            MessageVoice(
-                                file = attachment,
-                                isPlaying = currentPlayingVoiceFileId == attachment.fileId && isVoicePlaying,
-                                positionMs = if (currentPlayingVoiceFileId == attachment.fileId) voicePositionMs else 0,
-                                durationMs = if (currentPlayingVoiceFileId == attachment.fileId) voiceDurationMs else 0,
-                                onAction = { action ->
-                                    onFileAction(attachment, action)
-                                },
-                                onSeek = { positionMs ->
-                                    onVoiceSeek(attachment, positionMs)
-                                }
-                            )
+                            
+                            AttachmentType.FILE -> {
+                                MessageFile(
+                                    file = attachment, onAction = { action ->
+                                        onFileAction(attachment, action)
+                                    })
+                            }
+                            
+                            else -> {}
                         }
-                        
-                        AttachmentType.FILE -> {
-                            MessageFile(
-                                file = attachment, onAction = { action ->
-                                    onFileAction(attachment, action)
-                                })
-                        }
-                        
-                        else -> {}
+                    }
+                    
+                    if (!message.text.isNullOrBlank()) {
+                        MessageText(
+                            text = message.text,
+                            onLinkClicked = onLinkClicked,
+                            onUsernameClicked = onUsernameClicked,
+                            onEmailClicked = onEmailClicked
+                        )
                     }
                 }
                 
-                if (!message.text.isNullOrBlank()) {
-                    MessageText(
-                        text = message.text,
-                        onLinkClicked = onLinkClicked,
-                        onUsernameClicked = onUsernameClicked,
-                        onEmailClicked = onEmailClicked
+                Box(modifier = Modifier.align(Alignment.BottomEnd)) {
+                    MessageFooter(
+                        time = item.time,
+                        isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                        status = message.status,
+                        isEdited = message.editedAt != null
                     )
                 }
-            }
-            
-            Box(modifier = Modifier.align(Alignment.BottomEnd)) {
-                MessageFooter(
-                    time = item.time,
-                    isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
-                    status = message.status,
-                    isEdited = message.editedAt != null
+                
+                MessageDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    actions = buildDropdownActions(item, isSavedMessages, onSaveToDownloads) {
+                        showReadersDropdown = true
+                    }
                 )
-            }
-            
-            MessageDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                actions = buildDropdownActions(item, isSavedMessages, onSaveToDownloads) {
-                    showReadersDropdown = true
-                }
-            )
-            
-            val readers = item.readInfo.orEmpty()
-            if (readers.isNotEmpty()) {
-                CustomDropdownMenu(
-                    expanded = showReadersDropdown,
-                    onDismissRequest = { showReadersDropdown = false },
-                    properties = PopupProperties(focusable = true)
-                ) {
-                    readers.forEach { reader ->
-                        val name = listOfNotNull(reader.firstName, reader.lastName)
-                            .joinToString(" ").ifEmpty { reader.userId.toString() }
-                        val readTime = reader.readAt.toInstance().toPrettyTime()
-                        DropdownMenuItem(
-                            leadingIcon = {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.primaryContainer),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = reader.firstName.firstOrNull()?.uppercase() ?: "?",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            },
-                            text = {
-                                Column {
-                                    Text(
-                                        text = name,
-                                        fontSize = 14.sp,
-                                        lineHeight = 18.sp
-                                    )
-                                    Text(
-                                        text = readTime,
-                                        fontSize = 12.sp,
-                                        lineHeight = 14.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            },
-                            onClick = { showReadersDropdown = false }
-                        )
+                
+                val readers = item.readInfo.orEmpty()
+                if (readers.isNotEmpty()) {
+                    CustomDropdownMenu(
+                        expanded = showReadersDropdown,
+                        onDismissRequest = { showReadersDropdown = false },
+                        properties = PopupProperties(focusable = true)
+                    ) {
+                        readers.forEach { reader ->
+                            val name = listOfNotNull(reader.firstName, reader.lastName)
+                                .joinToString(" ").ifEmpty { reader.userId.toString() }
+                            val readTime = reader.readAt.toInstance().toPrettyTime()
+                            DropdownMenuItem(
+                                leadingIcon = {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.primaryContainer),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = reader.firstName.firstOrNull()?.uppercase()
+                                                ?: "?",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                },
+                                text = {
+                                    Column {
+                                        Text(
+                                            text = name,
+                                            fontSize = 14.sp,
+                                            lineHeight = 18.sp
+                                        )
+                                        Text(
+                                            text = readTime,
+                                            fontSize = 12.sp,
+                                            lineHeight = 14.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                },
+                                onClick = { showReadersDropdown = false }
+                            )
+                        }
                     }
                 }
             }
@@ -348,7 +380,7 @@ private fun buildDropdownActions(
     onReadCountClick: () -> Unit = {}
 ): List<DropdownMenuAction> {
     val actions = mutableListOf<DropdownMenuAction>()
-
+    
     if (item.message.editedAt != null) {
         val editedTime = item.message.editedAt.toInstance().toPrettyTime()
         val editedDate = item.message.editedAt.toInstance().atZone(ZoneId.systemDefault())
@@ -366,7 +398,7 @@ private fun buildDropdownActions(
             )
         )
     }
-
+    
     if (item.isMine && !isSavedMessages) {
         val readInfo = item.readInfo
         val isRead = item.isRead
@@ -394,7 +426,7 @@ private fun buildDropdownActions(
                 count % 10 == 1 && count % 100 != 11 -> "просмотр"
                 count % 10 in 2..4 && count % 100 !in 12..14 -> "просмотра"
                 else -> "просмотров"
-            }// TODO plural string
+            } // TODO plural string
             actions.add(
                 DropdownMenuAction(
                     icon = Icons.Rounded.DoneAll,
@@ -437,9 +469,17 @@ fun ImageGridCustomLayout(
         val count = measurables.size.coerceAtMost(10)
         if (count == 0) return@Layout layout(0, 0) {}
         
-        val width = constraints.maxWidth
-        val height =
-            if (constraints.hasBoundedHeight) constraints.maxHeight else (width * 0.75f).toInt()
+        /*
+         * При intrinsic-измерении (колонка пузыря использует IntrinsicSize.Max)
+         * ограничения приходят бесконечными: maxWidth == Int.MAX_VALUE.
+         * Без этого fallback лейаут пытался сообщить размер 2147483647 и падал
+         * с IllegalStateException: Size(...) is out of range.
+         */
+        val width = (if (constraints.hasBoundedWidth) constraints.maxWidth
+        else MediaGridFallbackWidth.roundToPx()).coerceIn(0, MaxLayoutDimension)
+        
+        val height = (if (constraints.hasBoundedHeight) constraints.maxHeight
+        else (width * 0.75f).toInt()).coerceIn(0, MaxLayoutDimension)
         
         layout(width, height) {
             when (count) {

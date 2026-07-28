@@ -306,6 +306,8 @@
     <string name="forwarded_from_private_channel">Von einem privaten Kanal weitergeleitet</string>
     <string name="forwarded_from_private_group">Von einer privaten Gruppe weitergeleitet</string>
     <string name="forwarded_from_hidden_account">Von einem versteckten Konto weitergeleitet</string>
+    <string name="message_forwarding">Nachrichtenweiterleitung</string>
+    <string name="who_can_open_my_profile_from_forwarded_messages">Wer kann mein Profil über weitergeleitete Nachrichten öffnen\?</string>
     <string name="unknown_chat">Unbekannter Chat</string>
     <string name="attachment_photo">Foto</string>
     <string name="attachment_video">Video</string>

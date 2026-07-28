@@ -73,6 +73,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.MessageAttachment
+import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.CustomSnackbar
@@ -90,6 +92,7 @@ import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.UnreadSeparatorItem
+import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
 import com.aiwazian.messenger.utils.ActiveChatTracker
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.FlowPreview
@@ -220,7 +223,7 @@ fun ChatScreen(
         if (targetId == null) {
             val lastIndex = uiState.chatItems.size + 1
             if (target.animate) listState.animateScrollToItem(lastIndex)
-            else listState.scrollToItem(lastIndex)
+            else listState.animateScrollToItem(lastIndex)
             chatViewModel.onScrollTargetHandled(target.requestId)
             return@LaunchedEffect
         }
@@ -241,7 +244,7 @@ fun ChatScreen(
         } else {
             val offset =
                 -(listState.layoutInfo.viewportSize.height * target.viewportFraction).toInt()
-            listState.scrollToItem(listIndex, offset)
+            listState.animateScrollToItem(listIndex, offset)
         }
         chatViewModel.onScrollTargetHandled(target.requestId)
     }
@@ -279,6 +282,14 @@ fun ChatScreen(
     
     var fileToCancelId by remember { mutableStateOf<Long?>(null) }
     var showCancelRecordingDialog by remember { mutableStateOf(false) }
+    /**
+     * Вложение, по которому открыли просмотрщик.
+     *
+     * Берём именно тот объект, который отрисовал MessageBubble: у него тип уже
+     * пересчитан по mime скачанного файла (ChatItemMapper.processAttachments),
+     * а не взят из ответа сервера.
+     */
+    var tappedMedia by remember { mutableStateOf<MessageAttachment?>(null) }
     val scope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
@@ -462,21 +473,16 @@ fun ChatScreen(
                             )
                             
                             is ChatItem.MessageItem -> MessageBubble(
-                                modifier = Modifier
-                                    .animateItem()
-                                    .then(
-                                        if (item.isHighlighted) {
-                                            Modifier.background(
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                            )
-                                        } else Modifier
-                                    ),
+                                modifier = Modifier.animateItem(),
                                 item = item,
                                 onFileAction = { file, action ->
                                     if (action == FileAction.CANCEL) {
                                         fileToCancelId =
                                             item.message.id
                                     } else {
+                                        if (action == FileAction.OPEN) {
+                                            tappedMedia = file
+                                        }
                                         chatViewModel.onFileAction(
                                             item.message,
                                             file,
@@ -502,6 +508,10 @@ fun ChatScreen(
                                 },
                                 onForwardedFromClick = {
                                     chatViewModel.onForwardedFromClicked(item.message)
+                                },
+                                onSwipeThresholdReached = chatViewModel::vibrateTactile,
+                                onSwipeToReply = {
+                                    chatViewModel.startReply(item.message)
                                 })
                         }
                     }
@@ -685,9 +695,54 @@ fun ChatScreen(
     }
     
     if (uiState.showFullScreenViewer) {
+        /*
+         * Список медиа собираем из chatItems, а не из uiState.mediaItems.
+         *
+         * В mediaItems вложения лежат с типом, пришедшим с сервера, а пузырь
+         * рисует chatItems, где ChatItemMapper.processAttachments пересчитывает
+         * тип по mime уже скачанного файла. Из-за расхождения у заново
+         * скачанных фото и видео просмотрщик получал пустой список: страницы
+         * были пустыми и пейджер не листался, хотя превью в пузыре рисовалось.
+         *
+         * В просмотрщик уходят только скачанные вложения: у остальных localUri
+         * ещё null и показывать нечего.
+         */
+        val downloadedMedia = remember(uiState.chatItems) {
+            uiState.chatItems
+                .filterIsInstance<ChatItem.MessageItem>()
+                .flatMap { it.message.attachments }
+                .filter { attachment ->
+                    attachment.localUri != null && (
+                            attachment.type == AttachmentType.IMAGE ||
+                                    attachment.type == AttachmentType.VIDEO ||
+                                    attachment.type == AttachmentType.GIF
+                            )
+                }
+        }
+        
+        val tapped = tappedMedia
+        /* Нажатое вложение показываем даже в одиночку: пустой пейджер недопустим. */
+        val viewerAttachments = when {
+            tapped == null -> downloadedMedia
+            downloadedMedia.any { it.fileId == tapped.fileId } -> downloadedMedia
+            tapped.localUri != null -> listOf(tapped)
+            else -> downloadedMedia
+        }
+        
+        val viewerMedia = viewerAttachments.mapNotNull { attachment ->
+            val uri = attachment.localUri ?: return@mapNotNull null
+            ViewerMediaItem(
+                uri = uri,
+                isVideo = attachment.type == AttachmentType.VIDEO
+            )
+        }
+        val viewerInitialPage = viewerAttachments
+            .indexOfFirst { it.fileId == tapped?.fileId }
+            .coerceAtLeast(0)
+        
         FullScreenViewer(
-            mediaUris = uiState.mediaItems.map { it.localUri },
-            initialPage = uiState.initialMediaIndex,
+            media = viewerMedia,
+            initialPage = viewerInitialPage,
             isVideoLooping = uiState.isVideoLooping,
             videoPlaybackSpeed = uiState.videoPlaybackSpeed,
             canDownloadMedia = uiState.canDownloadMedia,

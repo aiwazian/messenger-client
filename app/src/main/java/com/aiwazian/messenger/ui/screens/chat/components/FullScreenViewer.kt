@@ -13,8 +13,6 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -45,12 +43,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -79,7 +75,8 @@ import coil.compose.AsyncImage
 import coil.decode.GifDecoder
 import coil.request.ImageRequest
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.extensions.getFileType
+import com.aiwazian.messenger.ui.animations.expressiveScaleIn
+import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.components.CustomBottomSheet
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import kotlinx.coroutines.delay
@@ -88,9 +85,22 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * Одна страница просмотрщика.
+ *
+ * Тип приходит из вложения сообщения, а не угадывается по URI: у файлов,
+ * скачанных с сервера, имени вида `<fileId>` часто вообще без расширения,
+ * и mime-тип определялся как application/octet-stream — видео и гифки
+ * показывались пустым экраном.
+ */
+data class ViewerMediaItem(
+    val uri: Uri,
+    val isVideo: Boolean
+)
+
 @Composable
 fun FullScreenViewer(
-    mediaUris: List<Uri?>,
+    media: List<ViewerMediaItem>,
     initialPage: Int,
     isVideoLooping: Boolean,
     videoPlaybackSpeed: Float = 1.0f,
@@ -144,7 +154,9 @@ fun FullScreenViewer(
         }
     }
     
-    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { mediaUris.size })
+    val pagerState = rememberPagerState(
+        initialPage = initialPage.coerceIn(0, (media.size - 1).coerceAtLeast(0)),
+        pageCount = { media.size })
     
     LaunchedEffect(pagerState.currentPage) {
         isVideoPlaying = false
@@ -173,6 +185,10 @@ fun FullScreenViewer(
                 }
             }, contentAlignment = Alignment.Center
     ) {
+        if (media.isEmpty()) {
+            CircularWavyProgressIndicator()
+        }
+        
         HorizontalPager(
             state = pagerState, modifier = Modifier
                 .fillMaxSize()
@@ -184,7 +200,7 @@ fun FullScreenViewer(
                         var previousY = down.position.y
                         var dragDetected = false
                         var totalDragY = 0f
-                        var totalDragX = 0f
+                        var totalDragX: Float
                         var isHorizontalScroll = false
                         var wasConsumed = false
                         
@@ -251,16 +267,16 @@ fun FullScreenViewer(
                 .graphicsLayer {
                     translationY = animatedOffsetY
                 }) { page ->
-            val uri = mediaUris[page]
+            val item = media.getOrNull(page)
             val isCurrentPage = pagerState.currentPage == page
             
-            if (uri == null) {
+            if (item == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularWavyProgressIndicator()
                 }
-            } else if (uri.getFileType(context).startsWith("video/")) {
+            } else if (item.isVideo) {
                 VideoPlayerItem(
-                    uri = uri,
+                    uri = item.uri,
                     isCurrentPage = isCurrentPage,
                     isUiVisible = !isDragging && isUiVisible,
                     isLooping = isVideoLooping,
@@ -275,7 +291,7 @@ fun FullScreenViewer(
             } else {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
-                        .data(uri)
+                        .data(item.uri)
                         .decoderFactory(GifDecoder.Factory())
                         .build(),
                     contentDescription = null,
@@ -292,9 +308,9 @@ fun FullScreenViewer(
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            val currentUri = mediaUris.getOrNull(pagerState.currentPage)
-            val isCurrentVideo = currentUri?.getFileType(context)?.startsWith("video/") == true
-            val showMoreActionsButton = canDownloadMedia && currentUri != null
+            val currentItem = media.getOrNull(pagerState.currentPage)
+            val isCurrentVideo = currentItem?.isVideo == true
+            val showMoreActionsButton = canDownloadMedia && currentItem != null
             
             LaunchedEffect(isCurrentVideo) {
                 if (!isCurrentVideo) {
@@ -323,8 +339,8 @@ fun FullScreenViewer(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         AnimatedVisibility(
                             visible = isCurrentVideo,
-                            enter = fadeIn() + scaleIn(),
-                            exit = fadeOut() + scaleOut()
+                            enter = expressiveScaleIn,
+                            exit = expressiveScaleOut
                         ) {
                             IconButton(
                                 onClick = { showVideoSettings = true },
@@ -383,8 +399,8 @@ fun FullScreenViewer(
                         
                         AnimatedVisibility(
                             visible = showMoreActionsButton,
-                            enter = fadeIn() + scaleIn(),
-                            exit = fadeOut() + scaleOut()
+                            enter = expressiveScaleIn,
+                            exit = expressiveScaleOut
                         ) {
                             IconButton(
                                 onClick = { showMoreActions = true },
@@ -400,14 +416,14 @@ fun FullScreenViewer(
                             CustomDropdownMenu(
                                 expanded = showMoreActions,
                                 onDismissRequest = { showMoreActions = false }) {
-                                if (canDownloadMedia && currentUri != null) {
+                                if (canDownloadMedia && currentItem != null) {
                                     DropdownMenuItem(text = {
                                         Text(
                                             text = stringResource(R.string.save_to_gallery),
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }, onClick = {
-                                        onSaveToGallery(currentUri)
+                                        onSaveToGallery(currentItem.uri)
                                         showMoreActions = false
                                     }, leadingIcon = {
                                         Icon(
@@ -450,8 +466,7 @@ private const val MAX_PLAYBACK_SPEED = 10.0f
 private fun SpeedBottomSheet(
     currentSpeed: Float, onSpeedChange: (Float) -> Unit, onDismiss: () -> Unit
 ) {
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-    CustomBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    CustomBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -488,7 +503,7 @@ private fun SpeedBottomSheet(
                 }
             }
             Row(
-                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 val speedValues = remember { listOf(1f, 2.5f, 5f, 7.5f, 10f) }
                 speedValues.forEach { value ->

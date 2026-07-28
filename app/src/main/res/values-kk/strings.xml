@@ -306,6 +306,8 @@
     <string name="forwarded_from_private_channel">Жеке арнадан бағытталды</string>
     <string name="forwarded_from_private_group">Жеке топтан жіберілді</string>
     <string name="forwarded_from_hidden_account">Жасырын есептік жазбадан қайта жіберілді</string>
+    <string name="message_forwarding">Хабарды қайта жіберу</string>
+    <string name="who_can_open_my_profile_from_forwarded_messages">Қайта жіберілген хабарламалардан менің профилімді кім аша алады\?</string>
     <string name="unknown_chat">Белгісіз чат</string>
     <string name="attachment_photo">Фото</string>
     <string name="attachment_video">Бейне</string>
