@@ -79,7 +79,6 @@ import coil.compose.AsyncImage
 import coil.decode.GifDecoder
 import coil.request.ImageRequest
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.ui.components.CustomBottomSheet
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import kotlinx.coroutines.delay
@@ -88,9 +87,22 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * Одна страница просмотрщика.
+ *
+ * Тип приходит из вложения сообщения, а не угадывается по URI: у файлов,
+ * скачанных с сервера, имени вида `<fileId>` часто вообще без расширения,
+ * и mime-тип определялся как application/octet-stream — видео и гифки
+ * показывались пустым экраном.
+ */
+data class ViewerMediaItem(
+    val uri: Uri,
+    val isVideo: Boolean
+)
+
 @Composable
 fun FullScreenViewer(
-    mediaUris: List<Uri?>,
+    media: List<ViewerMediaItem>,
     initialPage: Int,
     isVideoLooping: Boolean,
     videoPlaybackSpeed: Float = 1.0f,
@@ -144,7 +156,9 @@ fun FullScreenViewer(
         }
     }
     
-    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { mediaUris.size })
+    val pagerState = rememberPagerState(
+        initialPage = initialPage.coerceIn(0, (media.size - 1).coerceAtLeast(0)),
+        pageCount = { media.size })
     
     LaunchedEffect(pagerState.currentPage) {
         isVideoPlaying = false
@@ -173,6 +187,10 @@ fun FullScreenViewer(
                 }
             }, contentAlignment = Alignment.Center
     ) {
+        if (media.isEmpty()) {
+            CircularWavyProgressIndicator()
+        }
+        
         HorizontalPager(
             state = pagerState, modifier = Modifier
                 .fillMaxSize()
@@ -251,16 +269,16 @@ fun FullScreenViewer(
                 .graphicsLayer {
                     translationY = animatedOffsetY
                 }) { page ->
-            val uri = mediaUris[page]
+            val item = media.getOrNull(page)
             val isCurrentPage = pagerState.currentPage == page
             
-            if (uri == null) {
+            if (item == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularWavyProgressIndicator()
                 }
-            } else if (uri.getFileType(context).startsWith("video/")) {
+            } else if (item.isVideo) {
                 VideoPlayerItem(
-                    uri = uri,
+                    uri = item.uri,
                     isCurrentPage = isCurrentPage,
                     isUiVisible = !isDragging && isUiVisible,
                     isLooping = isVideoLooping,
@@ -275,7 +293,7 @@ fun FullScreenViewer(
             } else {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
-                        .data(uri)
+                        .data(item.uri)
                         .decoderFactory(GifDecoder.Factory())
                         .build(),
                     contentDescription = null,
@@ -292,9 +310,9 @@ fun FullScreenViewer(
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            val currentUri = mediaUris.getOrNull(pagerState.currentPage)
-            val isCurrentVideo = currentUri?.getFileType(context)?.startsWith("video/") == true
-            val showMoreActionsButton = canDownloadMedia && currentUri != null
+            val currentItem = media.getOrNull(pagerState.currentPage)
+            val isCurrentVideo = currentItem?.isVideo == true
+            val showMoreActionsButton = canDownloadMedia && currentItem != null
             
             LaunchedEffect(isCurrentVideo) {
                 if (!isCurrentVideo) {
@@ -400,14 +418,14 @@ fun FullScreenViewer(
                             CustomDropdownMenu(
                                 expanded = showMoreActions,
                                 onDismissRequest = { showMoreActions = false }) {
-                                if (canDownloadMedia && currentUri != null) {
+                                if (canDownloadMedia && currentItem != null) {
                                     DropdownMenuItem(text = {
                                         Text(
                                             text = stringResource(R.string.save_to_gallery),
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }, onClick = {
-                                        onSaveToGallery(currentUri)
+                                        onSaveToGallery(currentItem.uri)
                                         showMoreActions = false
                                     }, leadingIcon = {
                                         Icon(
