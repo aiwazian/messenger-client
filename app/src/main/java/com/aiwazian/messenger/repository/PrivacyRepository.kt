@@ -103,6 +103,26 @@ class PrivacyRepository @Inject constructor(
         }
     }
     
+    /**
+     * Кто может перейти в мой профиль по заголовку «Переслано от».
+     *
+     * Сервер считает право на момент чтения истории, поэтому старые пересылки
+     * закрываются сразу после смены настройки, без перезаписи сообщений.
+     */
+    suspend fun updateForwardedProfilePrivacy(forwardedProfile: PrivacyLevel): Result<Unit> {
+        return try {
+            val request = UpdatePrivacySettingsRequestDto(forwardedProfile = forwardedProfile)
+            val response = privacyApi.updatePrivacySettings(request)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to update forwarded profile privacy: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
     suspend fun updateDeleteAfterDays(days: Int): Result<Unit> {
         return try {
             val request = UpdatePrivacySettingsRequestDto(deleteAfterDays = days)
