@@ -15,6 +15,7 @@ data class SettingsPrivacyUiState(
         messages = PrivacyLevel.EVERYBODY,
         invites = PrivacyLevel.EVERYBODY,
         profilePhoto = PrivacyLevel.EVERYBODY,
+        forwardedProfile = PrivacyLevel.EVERYBODY,
         deleteAfterDays = 365
     ),
     val blockedUsersCount: Int = 0,
