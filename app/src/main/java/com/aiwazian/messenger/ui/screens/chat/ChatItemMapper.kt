@@ -34,6 +34,8 @@ class ChatItemMapper(
     private val myId: Long,
     private val chatId: Long,
     private val isOwner: Boolean,
+    /** Состою ли в группе/канале: без этого нельзя ни писать, ни отвечать. */
+    private val isJoined: Boolean,
     private val userNamesCache: Map<Long, String>,
     private val groupReadInfo: Map<Long, List<MessageReadInfo>>,
     private val highlightedMessageId: Long? = null,
@@ -111,13 +113,31 @@ class ChatItemMapper(
                     dropdownActions = actions,
                     chatType = chatType,
                     isHighlighted = highlightedMessageId != null && updatedMessage.id == highlightedMessageId,
-                    readInfo = if (isMine) mergeReadInfo(updatedMessage) else null
+                    readInfo = if (isMine) mergeReadInfo(updatedMessage) else null,
+                    canReply = canReply(updatedMessage, chatType)
                 )
             )
             
             lastSenderId = message.senderId
         }
         return chatItems
+    }
+    
+    /**
+     * Ответить можно только там, где вообще разрешено писать: в канале —
+     * только владельцу, в группе — только участнику, в личном чате — всегда.
+     *
+     * Тем же условием включается свайп влево в MessageBubble.
+     */
+    private fun canReply(message: Message, chatType: ChatType): Boolean {
+        if (message.messageType == MessageType.SYSTEM) return false
+        if (message.id <= 0 || message.status != MessageStatus.SENT) return false
+        return when (chatType) {
+            ChatType.PRIVATE -> true
+            ChatType.GROUP -> isJoined
+            ChatType.CHANNEL -> isOwner
+            else -> false
+        }
     }
     
     private fun createDropdownActions(
@@ -177,8 +197,7 @@ class ChatItemMapper(
         
         val isSent = message.id > 0 && message.status == MessageStatus.SENT
         
-        val canReply = isSent && (chatType != ChatType.CHANNEL || isOwner)
-        if (canReply) {
+        if (canReply(message, chatType)) {
             actions.add(
                 DropdownMenuAction(
                     Icons.AutoMirrored.Rounded.Reply,
