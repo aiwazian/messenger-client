@@ -6,11 +6,9 @@ package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.net.Uri
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,14 +18,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Reply
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.Download
@@ -43,14 +39,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
@@ -61,7 +54,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
@@ -86,17 +78,9 @@ import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
 import com.aiwazian.messenger.utils.UiText
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import kotlin.math.roundToInt
-
-/** Максимальный сдвиг сообщения влево при свайпе. */
-private val SwipeMaxOffset = 50.dp
-
-/** С этого сдвига свайп считается сработавшим: вибрация и ответ после отпускания. */
-private val SwipeReplyThreshold = 40.dp
 
 /**
  * Ширина сетки медиа, когда родитель спрашивает размер без ограничений
@@ -127,7 +111,7 @@ fun MessageBubble(
     onReplyPreviewClick: (() -> Unit)? = null,
     /** Клик по заголовку «Переслано от». */
     onForwardedFromClick: (() -> Unit)? = null,
-    /** Свайп влево дотянули до порога: короткая тактильная отдача. */
+    /** Свайп влево пересёк порог: короткая тактильная отдача. */
     onSwipeThresholdReached: (() -> Unit)? = null,
     /** Палец отпущен за порогом: начинаем ответ на это сообщение. */
     onSwipeToReply: (() -> Unit)? = null
@@ -145,71 +129,19 @@ fun MessageBubble(
         ) else Color.Transparent
     )
     
-    val density = LocalDensity.current
-    val maxOffsetPx = with(density) { SwipeMaxOffset.toPx() }
-    val thresholdPx = with(density) { SwipeReplyThreshold.toPx() }
-    
-    /** Текущий сдвиг сообщения: отрицательный, потому что тянем влево. */
-    val swipeOffset = remember { Animatable(0f) }
-    val swipeScope = rememberCoroutineScope()
-    
-    /**
-     * Свайп доступен ровно там, где доступен ответ: в канале — владельцу,
-     * в группе — участнику, в личном чате — всегда.
-     */
-    val canSwipeToReply = item.canReply && onSwipeToReply != null
-    
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(backgroundColor)
+    SwipeToReplyBox(
+        // Свайп доступен ровно там, где доступен ответ: канал — владелец,
+        // группа — участник, личный чат — всегда.
+        enabled = item.canReply && onSwipeToReply != null,
+        onReply = { onSwipeToReply?.invoke() },
+        onThresholdReached = { onSwipeThresholdReached?.invoke() },
+        modifier = modifier.background(backgroundColor)
     ) {
-        if (canSwipeToReply) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.Reply,
-                contentDescription = stringResource(R.string.reply),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 12.dp)
-                    .size(20.dp)
-                    .graphicsLayer {
-                        val progress = (-swipeOffset.value / thresholdPx).coerceIn(0f, 1f)
-                        alpha = progress
-                        scaleX = 0.6f + 0.4f * progress
-                        scaleY = 0.6f + 0.4f * progress
-                    })
-        }
-        
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = alignment,
             modifier = Modifier
                 .fillMaxWidth()
-                .offset { IntOffset(swipeOffset.value.roundToInt(), 0) }
-                .then(
-                    if (canSwipeToReply) Modifier.pointerInput(item.message.id) {
-                        var passedThreshold = false
-                        detectHorizontalDragGestures(
-                            onDragStart = { passedThreshold = false },
-                            onDragEnd = {
-                                val shouldReply = -swipeOffset.value >= thresholdPx
-                                swipeScope.launch { swipeOffset.animateTo(0f) }
-                                if (shouldReply) onSwipeToReply?.invoke()
-                            },
-                            onDragCancel = {
-                                swipeScope.launch { swipeOffset.animateTo(0f) }
-                            }) { _, dragAmount ->
-                            val target =
-                                (swipeOffset.value + dragAmount).coerceIn(-maxOffsetPx, 0f)
-                            swipeScope.launch { swipeOffset.snapTo(target) }
-                            if (!passedThreshold && -target >= thresholdPx) {
-                                passedThreshold = true
-                                onSwipeThresholdReached?.invoke()
-                            }
-                        }
-                    } else Modifier
-                )
                 .combinedClickable(
                     onClick = { expanded = true },
                     onLongClick = { },
