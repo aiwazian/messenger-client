@@ -308,6 +308,8 @@
     <string name="forwarded_from_private_channel">Reenviado desde un canal privado</string>
     <string name="forwarded_from_private_group">Reenviado desde un grupo privado</string>
     <string name="forwarded_from_hidden_account">Reenviado desde una cuenta oculta</string>
+    <string name="message_forwarding">Reenvío de mensajes</string>
+    <string name="who_can_open_my_profile_from_forwarded_messages">¿Quién puede abrir mi perfil a partir de mensajes reenviados\?</string>
     <string name="unknown_chat">chat desconocido</string>
     <string name="attachment_photo">Foto</string>
     <string name="attachment_video">Video</string>

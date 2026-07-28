@@ -306,6 +306,8 @@
     <string name="forwarded_from_private_channel">Փոխանցվում է մասնավոր ալիքից</string>
     <string name="forwarded_from_private_group">Փոխանցվում է մասնավոր խմբից</string>
     <string name="forwarded_from_hidden_account">Փոխանցվել է թաքնված հաշվից</string>
+    <string name="message_forwarding">Հաղորդագրությունների վերահասցեավորում</string>
+    <string name="who_can_open_my_profile_from_forwarded_messages">Ո՞վ կարող է բացել իմ պրոֆիլը փոխանցված հաղորդագրություններից:</string>
     <string name="unknown_chat">Անհայտ զրույց</string>
     <string name="attachment_photo">Լուսանկարը</string>
     <string name="attachment_video">Տեսանյութ</string>

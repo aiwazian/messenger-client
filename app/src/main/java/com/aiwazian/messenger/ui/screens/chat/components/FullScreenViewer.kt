@@ -13,8 +13,6 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -45,12 +43,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -79,6 +75,8 @@ import coil.compose.AsyncImage
 import coil.decode.GifDecoder
 import coil.request.ImageRequest
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.animations.expressiveScaleIn
+import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.components.CustomBottomSheet
 import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import kotlinx.coroutines.delay
@@ -202,7 +200,7 @@ fun FullScreenViewer(
                         var previousY = down.position.y
                         var dragDetected = false
                         var totalDragY = 0f
-                        var totalDragX = 0f
+                        var totalDragX: Float
                         var isHorizontalScroll = false
                         var wasConsumed = false
                         
@@ -341,8 +339,8 @@ fun FullScreenViewer(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         AnimatedVisibility(
                             visible = isCurrentVideo,
-                            enter = fadeIn() + scaleIn(),
-                            exit = fadeOut() + scaleOut()
+                            enter = expressiveScaleIn,
+                            exit = expressiveScaleOut
                         ) {
                             IconButton(
                                 onClick = { showVideoSettings = true },
@@ -401,8 +399,8 @@ fun FullScreenViewer(
                         
                         AnimatedVisibility(
                             visible = showMoreActionsButton,
-                            enter = fadeIn() + scaleIn(),
-                            exit = fadeOut() + scaleOut()
+                            enter = expressiveScaleIn,
+                            exit = expressiveScaleOut
                         ) {
                             IconButton(
                                 onClick = { showMoreActions = true },
@@ -468,8 +466,7 @@ private const val MAX_PLAYBACK_SPEED = 10.0f
 private fun SpeedBottomSheet(
     currentSpeed: Float, onSpeedChange: (Float) -> Unit, onDismiss: () -> Unit
 ) {
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-    CustomBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    CustomBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -506,7 +503,7 @@ private fun SpeedBottomSheet(
                 }
             }
             Row(
-                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 val speedValues = remember { listOf(1f, 2.5f, 5f, 7.5f, 10f) }
                 speedValues.forEach { value ->
