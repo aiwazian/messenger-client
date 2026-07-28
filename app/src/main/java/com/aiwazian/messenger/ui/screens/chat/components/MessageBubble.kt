@@ -98,6 +98,16 @@ private val SwipeMaxOffset = 50.dp
 /** С этого сдвига свайп считается сработавшим: вибрация и ответ после отпускания. */
 private val SwipeReplyThreshold = 40.dp
 
+/**
+ * Ширина сетки медиа, когда родитель спрашивает размер без ограничений
+ * (intrinsic-измерение из-за `Modifier.width(IntrinsicSize.Max)` у колонки пузыря).
+ * Соответствует максимальной ширине пузыря за вычетом горизонтальных отступов.
+ */
+private val MediaGridFallbackWidth = 264.dp
+
+/** Предел размера лейаута в Compose: больше — падает IllegalStateException. */
+private const val MaxLayoutDimension = 16_777_215
+
 @Composable
 fun MessageBubble(
     modifier: Modifier = Modifier,
@@ -527,9 +537,17 @@ fun ImageGridCustomLayout(
         val count = measurables.size.coerceAtMost(10)
         if (count == 0) return@Layout layout(0, 0) {}
         
-        val width = constraints.maxWidth
-        val height =
-            if (constraints.hasBoundedHeight) constraints.maxHeight else (width * 0.75f).toInt()
+        /*
+         * При intrinsic-измерении (колонка пузыря использует IntrinsicSize.Max)
+         * ограничения приходят бесконечными: maxWidth == Int.MAX_VALUE.
+         * Без этого fallback лейаут пытался сообщить размер 2147483647 и падал
+         * с IllegalStateException: Size(...) is out of range.
+         */
+        val width = (if (constraints.hasBoundedWidth) constraints.maxWidth
+        else MediaGridFallbackWidth.roundToPx()).coerceIn(0, MaxLayoutDimension)
+        
+        val height = (if (constraints.hasBoundedHeight) constraints.maxHeight
+        else (width * 0.75f).toInt()).coerceIn(0, MaxLayoutDimension)
         
         layout(width, height) {
             when (count) {
