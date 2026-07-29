@@ -14,5 +14,9 @@ data class ChannelTypeSettingsUiState(
     val channelType: ChannelType = ChannelType.PRIVATE,
     val isError: Boolean = false,
     val canSave: Boolean = false,
-    val statusText: UiText? = null
+    val statusText: UiText? = null,
+    /** Запрет копирования контента канала. */
+    val noCopy: Boolean = false,
+    /** Доступен ли переключатель запрета копирования (только для владельца). */
+    val canChangeNoCopy: Boolean = false
 )
