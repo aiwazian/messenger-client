@@ -13,7 +13,7 @@ import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import javax.inject.Inject
 
 /**
- * Участники канала: подписки, блокировки, заявки на вступление и ссылки-приглашения.
+ * Участники канала: подписчики, блокировки, заявки на вступление и ссылки-приглашения.
  */
 class ChannelMembersRepository @Inject constructor(
     private val channelApi: ChannelApi

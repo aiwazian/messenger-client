@@ -23,7 +23,7 @@ import javax.inject.Inject
  * [com.aiwazian.messenger.repository.channel.ChannelContentProtectionRepository] —
  * запрет копирования.
  *
- * Новый код лучше внедрять напрямую нужный узкий репозиторий, этот класс оставлен
+ * В новом коде лучше внедрять нужный узкий репозиторий напрямую, этот класс оставлен
  * для существующих экранов.
  */
 class ChannelRepository @Inject constructor(
