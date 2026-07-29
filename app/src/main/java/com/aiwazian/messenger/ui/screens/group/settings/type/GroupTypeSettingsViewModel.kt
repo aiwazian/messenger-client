@@ -7,8 +7,10 @@ package com.aiwazian.messenger.ui.screens.group.settings.type
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.Group
 import com.aiwazian.messenger.enums.GroupType
 import com.aiwazian.messenger.repository.GroupRepository
+import com.aiwazian.messenger.repository.NoCopyRepository
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.UiText
@@ -29,11 +31,15 @@ import javax.inject.Inject
 @HiltViewModel
 class GroupTypeSettingsViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
+    private val noCopyRepository: NoCopyRepository,
     private val searchRepository: SearchRepository,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
     private var checkLinkJob: Job? = null
+    
+    /** Последнее загруженное состояние группы, нужно для обновления локального кэша. */
+    private var group: Group? = null
     
     private val _uiState = MutableStateFlow(GroupTypeSettingsUiState())
     val uiState = _uiState.asStateFlow()
@@ -45,12 +51,15 @@ class GroupTypeSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             groupRepository.fetchById(groupId)
             groupRepository.getById(groupId).firstOrNull()?.let { group ->
+                this@GroupTypeSettingsViewModel.group = group
                 _uiState.update {
                     it.copy(
                         groupId = group.id,
                         groupType = group.groupType,
                         username = group.username.orEmpty(),
-                        canSave = true
+                        canSave = true,
+                        noCopy = group.noCopy,
+                        canChangeNoCopy = true
                     )
                 }
             }
@@ -63,6 +72,34 @@ class GroupTypeSettingsViewModel @Inject constructor(
                 groupType = groupType,
                 canSave = groupType == GroupType.PRIVATE
             )
+        }
+    }
+    
+    /**
+     * Переключает запрет копирования.
+     *
+     * Изменение применяется сразу, без кнопки сохранения. При ошибке сервера
+     * (например, если пользователь не владелец) переключатель возвращается назад.
+     */
+    fun changeNoCopy(noCopy: Boolean) {
+        val group = group ?: return
+        val previous = _uiState.value.noCopy
+        
+        _uiState.update { it.copy(noCopy = noCopy, canChangeNoCopy = false) }
+        
+        viewModelScope.launch {
+            noCopyRepository.setGroupNoCopy(group, noCopy).onSuccess {
+                this@GroupTypeSettingsViewModel.group = group.copy(noCopy = noCopy)
+                _uiState.update { it.copy(canChangeNoCopy = true) }
+            }.onFailure {
+                _uiState.update { it.copy(noCopy = previous, canChangeNoCopy = true) }
+                vibrationManager.vibrate(VibrationPattern.Error)
+                _uiEffect.emit(
+                    GroupTypeSettingsEffect.ShowSnackbar(
+                        UiText.StringResource(R.string.failed_to_save_changes)
+                    )
+                )
+            }
         }
     }
     
