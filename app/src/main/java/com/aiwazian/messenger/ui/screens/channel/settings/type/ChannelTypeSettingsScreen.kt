@@ -47,6 +47,7 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
+import com.aiwazian.messenger.ui.components.section.SectionToggleItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -164,6 +165,16 @@ fun ChannelTypeSettingsScreen(
                         }
                     }
                 }
+            }
+            
+            SectionContainer {
+                SectionToggleItem(
+                    text = stringResource(R.string.no_copy),
+                    supportingText = stringResource(R.string.no_copy_channel_description),
+                    isChecked = uiState.noCopy,
+                    enabled = uiState.canChangeNoCopy,
+                    onCheckedChange = { viewModel.changeNoCopy(!uiState.noCopy) }
+                )
             }
         }
     }
