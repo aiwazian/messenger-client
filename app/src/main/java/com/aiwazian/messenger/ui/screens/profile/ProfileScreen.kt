@@ -75,10 +75,10 @@ import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
+import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ChatCard
-import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.CustomDropdownMenu
-import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -195,7 +195,7 @@ fun ProfileScreen(
     }
     
     Scaffold(snackbarHost = {
-        CustomSnackbar(snackbarHostState)
+        AppSnackbar(snackbarHostState)
     }, topBar = {
         TopBar(
             chatId = uiState.id,
@@ -299,7 +299,7 @@ fun ProfileScreen(
     }
     
     if (uiState.showBannedDialog) {
-        CustomDialog(
+        AppDialog(
             title = stringResource(R.string.no_access),
             onDismissRequest = viewModel::dismissBannedDialog,
             buttons = {
@@ -313,7 +313,7 @@ fun ProfileScreen(
     }
     
     if (uiState.showBlockDialog) {
-        CustomDialog(
+        AppDialog(
             title = if (uiState.isBlockedStateForDialog) stringResource(R.string.unblock) else stringResource(
                 R.string.block
             ),
@@ -639,7 +639,7 @@ private fun TopBar(
                     }) {
                     Icon(action.icon, null)
                 }
-                CustomDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
+                AppDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
                     action.dropdownActions.forEach { action ->
                         DropdownMenuItem(leadingIcon = {
                             Icon(action.icon, null)
@@ -691,7 +691,7 @@ private fun LeaveProfileDialog(
         }
     }
     
-    CustomDialog(title = title, onDismissRequest = onDismiss, content = {
+    AppDialog(title = title, onDismissRequest = onDismiss, content = {
         Text(text = message)
     }, buttons = {
         TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }

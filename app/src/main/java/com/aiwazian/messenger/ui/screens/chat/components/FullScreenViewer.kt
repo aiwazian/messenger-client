@@ -77,8 +77,8 @@ import coil.request.ImageRequest
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
-import com.aiwazian.messenger.ui.components.CustomBottomSheet
-import com.aiwazian.messenger.ui.components.CustomDropdownMenu
+import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.abs
@@ -353,7 +353,7 @@ fun FullScreenViewer(
                                     contentDescription = stringResource(R.string.video_settings)
                                 )
                             }
-                            CustomDropdownMenu(
+                            AppDropdownMenu(
                                 expanded = showVideoSettings,
                                 onDismissRequest = { showVideoSettings = false }) {
                                 DropdownMenuItem(text = {
@@ -413,7 +413,7 @@ fun FullScreenViewer(
                                     contentDescription = stringResource(R.string.actions)
                                 )
                             }
-                            CustomDropdownMenu(
+                            AppDropdownMenu(
                                 expanded = showMoreActions,
                                 onDismissRequest = { showMoreActions = false }) {
                                 if (canDownloadMedia && currentItem != null) {
@@ -466,7 +466,7 @@ private const val MAX_PLAYBACK_SPEED = 10.0f
 private fun SpeedBottomSheet(
     currentSpeed: Float, onSpeedChange: (Float) -> Unit, onDismiss: () -> Unit
 ) {
-    CustomBottomSheet(onDismissRequest = onDismiss) {
+    AppBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,

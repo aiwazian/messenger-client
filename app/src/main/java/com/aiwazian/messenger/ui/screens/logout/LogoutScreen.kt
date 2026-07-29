@@ -30,7 +30,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.AuthActivity
 import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -137,7 +137,7 @@ private fun LogoutModal(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    CustomDialog(
+    AppDialog(
         title = stringResource(R.string.logout),
         onDismissRequest = onDismiss,
         content = {

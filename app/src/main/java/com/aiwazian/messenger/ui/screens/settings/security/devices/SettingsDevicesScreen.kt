@@ -57,10 +57,10 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Session
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateTime
+import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.CountdownTextButton
-import com.aiwazian.messenger.ui.components.CustomBottomSheet
-import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
@@ -112,7 +112,7 @@ fun SettingsDevicesScreen(viewModel: DevicesViewModel = hiltViewModel()) {
             )
         },
         snackbarHost = {
-            CustomSnackbar(snackbarHostState)
+            AppSnackbar(snackbarHostState)
         }) { paddingValues ->
         Column(
             Modifier
@@ -197,7 +197,7 @@ private fun SessionInfoBottomSheet(
     onDismissRequest: () -> Unit,
     onTerminateClick: () -> Unit
 ) {
-    CustomBottomSheet(onDismissRequest = onDismissRequest) {
+    AppBottomSheet(onDismissRequest = onDismissRequest) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -322,7 +322,7 @@ private fun TerminateSessionDialog(
     onConfirm: () -> Unit,
     vibrate: () -> Unit
 ) {
-    CustomDialog(
+    AppDialog(
         title = title,
         onDismissRequest = onDismiss,
         content = {

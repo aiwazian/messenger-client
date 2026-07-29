@@ -52,9 +52,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.sharedElement
+import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatAvatar
-import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -185,7 +185,7 @@ fun ChatTopBar(
                 ) {
                     Icon(action.icon, null)
                 }
-                CustomDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
+                AppDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
                     action.dropdownActions.forEach { action ->
                         DropdownMenuItem(leadingIcon = {
                             Icon(action.icon, null)

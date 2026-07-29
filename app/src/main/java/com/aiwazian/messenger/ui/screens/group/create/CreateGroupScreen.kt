@@ -36,7 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -81,7 +81,7 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
     
     Scaffold(
         snackbarHost = {
-            CustomSnackbar(snackbarHostState)
+            AppSnackbar(snackbarHostState)
         },
         topBar = {
             TopBar()

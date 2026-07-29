@@ -44,8 +44,8 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.CustomBottomSheet
-import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -105,7 +105,7 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
     
     Scaffold(
         topBar = { TopBar() },
-        snackbarHost = { CustomSnackbar(snackbarHostState) }
+        snackbarHost = { AppSnackbar(snackbarHostState) }
     ) {
         Column(
             modifier = Modifier
@@ -168,7 +168,7 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
             }
             
             if (uiState.showPasscodeBottomSheet) {
-                CustomBottomSheet(onDismissRequest = viewModel::hideBottomSheet) {
+                AppBottomSheet(onDismissRequest = viewModel::hideBottomSheet) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -199,7 +199,7 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
             }
             
             if (uiState.showEmailBottomSheet) {
-                CustomBottomSheet(onDismissRequest = viewModel::hideEmailBottomSheet) {
+                AppBottomSheet(onDismissRequest = viewModel::hideEmailBottomSheet) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(10.dp)

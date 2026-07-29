@@ -73,7 +73,7 @@ import com.aiwazian.messenger.extensions.getDuration
 import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
-import com.aiwazian.messenger.ui.components.CustomDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
@@ -321,7 +321,7 @@ fun MessageBubble(
                 
                 val readers = item.readInfo.orEmpty()
                 if (readers.isNotEmpty()) {
-                    CustomDropdownMenu(
+                    AppDropdownMenu(
                         expanded = showReadersDropdown,
                         onDismissRequest = { showReadersDropdown = false },
                         properties = PopupProperties(focusable = true)

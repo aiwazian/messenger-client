@@ -2,7 +2,7 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.components
+package com.aiwazian.messenger.ui.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun CustomSnackbar(
+fun AppSnackbar(
     hostState: SnackbarHostState,
     leadingIcon: ImageVector? = null
 ) {

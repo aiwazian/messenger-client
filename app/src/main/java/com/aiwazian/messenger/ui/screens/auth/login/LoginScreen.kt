@@ -45,8 +45,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.screens.auth.components.InputTextField
@@ -107,7 +107,7 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
             }
         },
         snackbarHost = {
-            CustomSnackbar(snackbarHostState)
+            AppSnackbar(snackbarHostState)
         }) {
         Column(
             modifier = Modifier
@@ -151,7 +151,7 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
         }
         
         if (uiState.showFoundDialog) {
-            CustomDialog(
+            AppDialog(
                 title = stringResource(R.string.app_name),
                 onDismissRequest = viewModel::hideFoundDialog,
                 content = {
@@ -175,7 +175,7 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
         }
         
         if (uiState.showNotFoundDialog) {
-            CustomDialog(
+            AppDialog(
                 title = stringResource(R.string.app_name),
                 onDismissRequest = viewModel::hideNotFoundDialog,
                 content = {

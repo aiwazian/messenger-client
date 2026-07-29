@@ -43,7 +43,7 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -75,7 +75,7 @@ fun SettingsEmailConfigScreen(viewModel: EmailConfigViewModel = hiltViewModel())
     }
     
     if (showDisableDialog) {
-        CustomDialog(
+        AppDialog(
             title = stringResource(R.string.remove_email),
             onDismissRequest = viewModel::hideDisableDialog,
             buttons = {

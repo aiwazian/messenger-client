@@ -39,7 +39,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
-import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -138,7 +138,7 @@ fun CreateGroupInviteLinkScreen(
             )
         },
         snackbarHost = {
-            CustomSnackbar(snackbarHostState)
+            AppSnackbar(snackbarHostState)
         }) { innerPadding ->
         Column(
             modifier = Modifier

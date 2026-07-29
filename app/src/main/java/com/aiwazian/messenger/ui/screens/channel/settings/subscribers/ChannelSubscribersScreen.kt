@@ -36,9 +36,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.CustomDropdownMenu
-import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -82,7 +82,7 @@ fun ChannelSubscribersScreen(
             )
         },
         snackbarHost = {
-            CustomSnackbar(snackbarHostState)
+            AppSnackbar(snackbarHostState)
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
@@ -103,7 +103,7 @@ fun ChannelSubscribersScreen(
                                     )
                                 }
                                 
-                                CustomDropdownMenu(
+                                AppDropdownMenu(
                                     expanded = showMenu,
                                     onDismissRequest = { showMenu = false }
                                 ) {
@@ -159,7 +159,7 @@ fun ChannelSubscribersScreen(
         }
         
         if (uiState.showKickDialog) {
-            CustomDialog(
+            AppDialog(
                 title = stringResource(R.string.kick),
                 onDismissRequest = viewModel::hideKickDialog,
                 buttons = {
@@ -183,7 +183,7 @@ fun ChannelSubscribersScreen(
     }
     
     if (uiState.showBlockDialog) {
-        CustomDialog(
+        AppDialog(
             title = stringResource(R.string.block_user),
             onDismissRequest = viewModel::hideBlockDialog,
             buttons = {

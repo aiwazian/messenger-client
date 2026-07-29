@@ -41,10 +41,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.PrivacyLevel
+import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.CountdownTextButton
-import com.aiwazian.messenger.ui.components.CustomBottomSheet
-import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -97,7 +97,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
     }
     
     Scaffold(topBar = { TopBar() }, snackbarHost = {
-        CustomSnackbar(snackbarHostState)
+        AppSnackbar(snackbarHostState)
     }) {
         Column(
             modifier = Modifier
@@ -213,7 +213,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
     }
     
     if (uiState.showInactivityBottomSheet) {
-        CustomBottomSheet(onDismissRequest = viewModel::hideInactivityBottomSheet) {
+        AppBottomSheet(onDismissRequest = viewModel::hideInactivityBottomSheet) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -253,7 +253,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
     }
     
     if (uiState.showDeleteBottomSheet) {
-        CustomBottomSheet(onDismissRequest = viewModel::hideDeleteBottomSheet) {
+        AppBottomSheet(onDismissRequest = viewModel::hideDeleteBottomSheet) {
             Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(20.dp),
@@ -286,7 +286,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
     }
     
     if (uiState.showDeleteDialog) {
-        CustomDialog(
+        AppDialog(
             title = stringResource(R.string.delete_account),
             onDismissRequest = viewModel::hideDeleteDialog,
             content = {

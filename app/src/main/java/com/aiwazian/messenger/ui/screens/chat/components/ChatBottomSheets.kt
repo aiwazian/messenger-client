@@ -50,7 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
-import com.aiwazian.messenger.ui.components.CustomBottomSheet
+import com.aiwazian.messenger.ui.app.AppBottomSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,7 +61,7 @@ fun AttachmentBottomSheet(
 ) {
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     
-    CustomBottomSheet(sheetState = sheetState, onDismissRequest = onDismissRequest) {
+    AppBottomSheet(sheetState = sheetState, onDismissRequest = onDismissRequest) {
         Card(
             onClick = onFileSystemClick,
             modifier = Modifier.fillMaxWidth(),
@@ -161,7 +161,7 @@ fun MicrophonePermissionBottomSheet(
     val context = LocalContext.current
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     
-    CustomBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    AppBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -217,7 +217,7 @@ fun InviteLinkBottomSheet(
         stringResource(R.string.join).uppercase()
     }
     
-    CustomBottomSheet(onDismissRequest = onDismiss) {
+    AppBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally

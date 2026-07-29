@@ -32,8 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.CountdownTextButton
-import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
 
@@ -100,7 +100,7 @@ private fun DeleteChatDialog(
     onDeleteForRecipientChanged: (Boolean) -> Unit,
     isPrivateChat: Boolean
 ) {
-    CustomDialog(
+    AppDialog(
         title = stringResource(R.string.delete_chat),
         onDismissRequest = onDismissRequest,
         content = {
@@ -151,7 +151,7 @@ private fun ClearHistoryDialog(
     onClearForRecipientChanged: (Boolean) -> Unit,
     isPrivateChat: Boolean
 ) {
-    CustomDialog(
+    AppDialog(
         title = stringResource(R.string.clear_history),
         onDismissRequest = onDismissRequest,
         content = {
@@ -206,7 +206,7 @@ private fun DeleteMessageDialog(
     onDeleteForRecipientChanged: (Boolean) -> Unit,
     isPrivateChat: Boolean
 ) {
-    CustomDialog(
+    AppDialog(
         title = stringResource(R.string.delete_message),
         onDismissRequest = onDismissRequest,
         content = {
@@ -263,7 +263,7 @@ private fun LeaveDialog(
         append("?")
     }
     
-    CustomDialog(title = title, onDismissRequest = onDismiss, content = {
+    AppDialog(title = title, onDismissRequest = onDismiss, content = {
         Text(text = message)
     }, buttons = {
         TextButton(onClick = onDismiss) {

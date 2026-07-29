@@ -36,8 +36,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.PendingJoinRequest
+import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.ChatAvatar
-import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
@@ -110,7 +110,7 @@ fun PendingJoinRequestsScreen(
     }
     
     requestToCancel?.let { request ->
-        CustomDialog(
+        AppDialog(
             onDismissRequest = { requestToCancel = null },
             title = stringResource(R.string.cancel),
             buttons = {
