@@ -10,8 +10,8 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Group
 import com.aiwazian.messenger.enums.GroupType
 import com.aiwazian.messenger.repository.GroupRepository
-import com.aiwazian.messenger.repository.NoCopyRepository
 import com.aiwazian.messenger.repository.SearchRepository
+import com.aiwazian.messenger.repository.group.GroupContentProtectionRepository
 import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
@@ -31,7 +31,7 @@ import javax.inject.Inject
 @HiltViewModel
 class GroupTypeSettingsViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
-    private val noCopyRepository: NoCopyRepository,
+    private val contentProtectionRepository: GroupContentProtectionRepository,
     private val searchRepository: SearchRepository,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
@@ -88,7 +88,7 @@ class GroupTypeSettingsViewModel @Inject constructor(
         _uiState.update { it.copy(noCopy = noCopy, canChangeNoCopy = false) }
         
         viewModelScope.launch {
-            noCopyRepository.setGroupNoCopy(group, noCopy).onSuccess {
+            contentProtectionRepository.setNoCopy(group, noCopy).onSuccess {
                 this@GroupTypeSettingsViewModel.group = group.copy(noCopy = noCopy)
                 _uiState.update { it.copy(canChangeNoCopy = true) }
             }.onFailure {
@@ -187,8 +187,7 @@ class GroupTypeSettingsViewModel @Inject constructor(
             }.onFailure {
                 vibrationManager.vibrate(VibrationPattern.Error)
                 _uiEffect.emit(
-                    GroupTypeSettingsEffect.ShowSnackbar
-                        (
+                    GroupTypeSettingsEffect.ShowSnackbar(
                         UiText.StringResource(R.string.failed_to_save_changes)
                     )
                 )

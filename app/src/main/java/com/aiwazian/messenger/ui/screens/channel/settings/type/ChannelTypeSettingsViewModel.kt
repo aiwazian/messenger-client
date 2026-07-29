@@ -10,8 +10,8 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Channel
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.repository.ChannelRepository
-import com.aiwazian.messenger.repository.NoCopyRepository
 import com.aiwazian.messenger.repository.SearchRepository
+import com.aiwazian.messenger.repository.channel.ChannelContentProtectionRepository
 import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
@@ -31,7 +31,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ChannelTypeSettingsViewModel @Inject constructor(
     private val channelRepository: ChannelRepository,
-    private val noCopyRepository: NoCopyRepository,
+    private val contentProtectionRepository: ChannelContentProtectionRepository,
     private val searchRepository: SearchRepository,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
@@ -89,7 +89,7 @@ class ChannelTypeSettingsViewModel @Inject constructor(
         _uiState.update { it.copy(noCopy = noCopy, canChangeNoCopy = false) }
         
         viewModelScope.launch {
-            noCopyRepository.setChannelNoCopy(channel, noCopy).onSuccess {
+            contentProtectionRepository.setNoCopy(channel, noCopy).onSuccess {
                 this@ChannelTypeSettingsViewModel.channel = channel.copy(noCopy = noCopy)
                 _uiState.update { it.copy(canChangeNoCopy = true) }
             }.onFailure {
