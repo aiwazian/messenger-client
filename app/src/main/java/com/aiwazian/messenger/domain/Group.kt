@@ -16,5 +16,12 @@ data class Group(
     val members: Int,
     val removedUsers: Int?,
     val isMember: Boolean,
+    /**
+     * Запрет копирования контента.
+     *
+     * Если true, то ни один участник, включая владельца, не может копировать
+     * текст, пересылать сообщения и сохранять медиа.
+     */
+    val noCopy: Boolean = false,
     val avatars: List<Avatar> = emptyList()
 )
