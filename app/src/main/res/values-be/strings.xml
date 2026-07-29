@@ -320,4 +320,9 @@
     <string name="unread_messages">Непрачытаныя паведамленні</string>
     <string name="open_email_with">Адкрыць з дапамогай</string>
     <string name="no_email_app">Няма праграмы электроннай пошты</string>
+    <string name="no_copy">Абмежаваць капіраванне</string>
+    <string name="no_copy_channel_description">Удзельнікі не змогуць капіяваць тэкст, перасылаць паведамленні або захоўваць мультымедыя з канала.</string>
+    <string name="no_copy_group_description">Удзельнікі не змогуць капіяваць тэкст, перасылаць паведамленні або захоўваць мультымедыя з групы.</string>
+    <string name="no_copy_channel_notice">Капіраванне і перасылка з гэтага канала забаронена.</string>
+    <string name="no_copy_group_notice">Капіраванне і перасылка з гэтай групы забаронена.</string>
 </resources>

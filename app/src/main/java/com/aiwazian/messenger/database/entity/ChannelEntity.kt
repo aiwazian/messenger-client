@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.database.entity
 
+import androidx.room3.ColumnInfo
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 import com.aiwazian.messenger.enums.ChannelType
@@ -18,5 +19,7 @@ data class ChannelEntity(
     val subscribers: Int,
     val removedUsers: Int?,
     val username: String?,
-    val isSubscribed: Boolean
+    val isSubscribed: Boolean,
+    /** Запрет копирования контента канала. */
+    @ColumnInfo(defaultValue = "false") val noCopy: Boolean = false
 )

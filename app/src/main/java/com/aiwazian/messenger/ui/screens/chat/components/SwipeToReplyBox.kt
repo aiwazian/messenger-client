@@ -106,10 +106,8 @@ fun SwipeToReplyBox(
     val rearmPx = with(density) { (triggerOffset - SwipeToReplyDefaults.RearmHysteresis).toPx() }
     val iconTravelPx = with(density) { SwipeToReplyDefaults.IconTravel.toPx() }
     
-    /** Сдвиг контента: отрицательный, потому что тянем влево. */
     var offsetPx by remember { mutableFloatStateOf(0f) }
     
-    /** Анимация возврата после отпускания: отменяется новым жестом. */
     var releaseJob by remember { mutableStateOf<Job?>(null) }
     val scope = rememberCoroutineScope()
     
@@ -124,7 +122,6 @@ fun SwipeToReplyBox(
                     .padding(end = SwipeToReplyDefaults.IconPadding)
                     .size(SwipeToReplyDefaults.IconSize)
                     .graphicsLayer {
-                        // Прогресс свайпа до порога: иконка проявляется и едет справа налево.
                         val progress = (-offsetPx / triggerPx).coerceIn(0f, 1f)
                         alpha = progress
                         translationX = (1f - progress) * iconTravelPx
@@ -142,7 +139,6 @@ fun SwipeToReplyBox(
                         awaitEachGesture {
                             val down = awaitFirstDown(requireUnconsumed = false)
                             
-                            // Горизонтальный slop: вертикальный скролл списка не трогаем.
                             val dragStart =
                                 awaitHorizontalTouchSlopOrCancellation(down.id) { change, _ ->
                                     change.consume()
@@ -153,7 +149,6 @@ fun SwipeToReplyBox(
                             val pointerId = dragStart.id
                             var current = offsetPx
                             
-                            /** Взведена ли вибрация: сбрасывается при возврате ниже порога. */
                             var armed = true
                             
                             while (true) {
@@ -166,8 +161,6 @@ fun SwipeToReplyBox(
                                     .coerceIn(-maxOffsetPx, 0f)
                                 offsetPx = current
                                 
-                                // Забираем событие целиком, включая вертикальную составляющую:
-                                // пока идёт свайп, список чата не скроллится и не ловит флинг.
                                 change.consume()
                                 
                                 val distance = -current

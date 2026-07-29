@@ -38,9 +38,9 @@ import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
+import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.CountdownTextButton
-import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.CustomSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -101,7 +101,7 @@ fun ChannelSettingsScreen(
             
             TopBar(actions)
         }, snackbarHost = {
-            CustomSnackbar(snackbarHostState)
+            AppSnackbar(snackbarHostState)
         }, modifier = Modifier.imePadding()
     ) { innerPadding ->
         Column(
@@ -188,7 +188,7 @@ fun ChannelSettingsScreen(
             }
             
             if (uiState.showDeleteDialog) {
-                CustomDialog(
+                AppDialog(
                     title = stringResource(R.string.delete_channel),
                     onDismissRequest = viewModel::hideDeleteDialog,
                     buttons = {

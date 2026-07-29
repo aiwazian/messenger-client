@@ -37,9 +37,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
-import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.CustomDropdownMenu
-import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -91,7 +91,7 @@ fun BlockedUserListScreen(
             )
         },
         snackbarHost = {
-            CustomSnackbar(snackbarHostState)
+            AppSnackbar(snackbarHostState)
         }
     ) { paddingValues ->
         Box(
@@ -151,7 +151,7 @@ fun BlockedUserListScreen(
     }
     
     if (uiState.showUnblockDialog && uiState.selectedUserToUnblock != null) {
-        CustomDialog(
+        AppDialog(
             title = stringResource(R.string.unblock),
             onDismissRequest = viewModel::hideUnblockDialog,
             buttons = {
@@ -204,7 +204,7 @@ private fun BlockedUserItem(
                         contentDescription = "More"
                     )
                 }
-                CustomDropdownMenu(
+                AppDropdownMenu(
                     expanded = isMenuExpanded,
                     onDismissRequest = { isMenuExpanded = false }
                 ) {

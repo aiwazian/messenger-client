@@ -16,5 +16,12 @@ data class Channel(
     val channelType: ChannelType,
     val username: String?,
     val isSubscribed: Boolean,
+    /**
+     * Запрет копирования контента.
+     *
+     * Если true, то ни один участник, включая владельца, не может копировать
+     * текст, пересылать сообщения и сохранять медиа.
+     */
+    val noCopy: Boolean = false,
     val avatars: List<Avatar> = emptyList()
 )

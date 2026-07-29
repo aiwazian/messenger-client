@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.database.entity
 
+import androidx.room3.ColumnInfo
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 import com.aiwazian.messenger.enums.GroupType
@@ -18,5 +19,7 @@ data class GroupEntity(
     val groupType: GroupType,
     val members: Int,
     val removedUsers: Int?,
-    val isMember: Boolean
+    val isMember: Boolean,
+    /** Запрет копирования контента группы. */
+    @ColumnInfo(defaultValue = "false") val noCopy: Boolean = false
 )

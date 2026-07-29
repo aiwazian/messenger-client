@@ -41,12 +41,14 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
-import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
+import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
+import com.aiwazian.messenger.ui.components.section.SectionToggleItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -106,7 +108,7 @@ fun ChannelTypeSettingsScreen(
             )
         },
         snackbarHost = {
-            CustomSnackbar(snackbarHostState)
+            AppSnackbar(snackbarHostState)
         },
         modifier = Modifier.imePadding()
     ) { innerPadding ->
@@ -164,6 +166,17 @@ fun ChannelTypeSettingsScreen(
                         }
                     }
                 }
+            }
+            
+            SectionContainer(footer = {
+                SectionDescription(stringResource(R.string.no_copy_channel_description))
+            }) {
+                SectionToggleItem(
+                    text = stringResource(R.string.no_copy),
+                    isChecked = uiState.noCopy,
+                    enabled = uiState.canChangeNoCopy,
+                    onCheckedChange = { viewModel.changeNoCopy(!uiState.noCopy) }
+                )
             }
         }
     }

@@ -318,4 +318,9 @@
     <string name="unread_messages">Messages non lus</string>
     <string name="open_email_with">Ouvrir avec</string>
     <string name="no_email_app">Pas d\'application de messagerie</string>
+    <string name="no_copy">Restreindre la copie</string>
+    <string name="no_copy_channel_description">Les membres ne pourront pas copier de texte, transférer des messages ou enregistrer des médias à partir de la chaîne.</string>
+    <string name="no_copy_group_description">Les membres ne pourront pas copier de texte, transférer des messages ou enregistrer des médias du groupe.</string>
+    <string name="no_copy_channel_notice">La copie et le transfert ne sont pas autorisés à partir de ce canal.</string>
+    <string name="no_copy_group_notice">La copie et le transfert ne sont pas autorisés à partir de ce groupe.</string>
 </resources>

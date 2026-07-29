@@ -2,26 +2,28 @@
  * Copyright (c) 2026. Aiwazian.
  */
 
-package com.aiwazian.messenger.ui.components
+package com.aiwazian.messenger.ui.app
 
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.PopupProperties
 
 @Composable
-fun CustomDropdownMenu(
+fun AppDropdownMenuPopup(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
     properties: PopupProperties = PopupProperties(focusable = true),
     content: @Composable (ColumnScope.() -> Unit)
 ) {
-    DropdownMenu(
+    DropdownMenuPopup(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
-        shape = MaterialTheme.shapes.large,
+        modifier = modifier,
         properties = properties,
-        content = content
-    )
+    ) {
+        content()
+    }
 }

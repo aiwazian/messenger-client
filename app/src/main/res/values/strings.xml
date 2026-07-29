@@ -324,4 +324,9 @@
     <string name="unread_messages">Unread messages</string>
     <string name="open_email_with">Open with</string>
     <string name="no_email_app">No email app</string>
+    <string name="no_copy">Restrict copying</string>
+    <string name="no_copy_channel_description">Members, won\'t be able to copy text, forward messages, or save media from the channel.</string>
+    <string name="no_copy_group_description">Members, won\'t be able to copy text, forward messages, or save media from the group.</string>
+    <string name="no_copy_channel_notice">Copying and forwarding is not allowed from this channel.</string>
+    <string name="no_copy_group_notice">Copying and forwarding is not allowed from this group.</string>
 </resources>

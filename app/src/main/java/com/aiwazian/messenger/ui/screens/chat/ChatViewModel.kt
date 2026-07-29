@@ -292,6 +292,7 @@ class ChatViewModel @Inject constructor(
                     isJoined = channel.isSubscribed,
                     isOwner = channel.ownerId == myId,
                     avatarUri = channel.avatars.firstOrNull()?.uri,
+                    noCopy = channel.noCopy,
                     topBarActions = createTopBarActions(
                         channel.ownerId == myId,
                         channel.isSubscribed,
@@ -299,7 +300,6 @@ class ChatViewModel @Inject constructor(
                     )
                 )
             }
-            // Права на ответ зависят от роли: пересобираем пункты меню и свайп.
             if (lastMessages.isNotEmpty()) updateChatItems(lastMessages)
         }
     }
@@ -326,6 +326,7 @@ class ChatViewModel @Inject constructor(
                     isJoined = group.isMember,
                     isOwner = group.ownerId == myId,
                     avatarUri = group.avatars.firstOrNull()?.uri,
+                    noCopy = group.noCopy,
                     topBarActions = createTopBarActions(
                         group.ownerId == myId,
                         group.isMember,
@@ -333,7 +334,6 @@ class ChatViewModel @Inject constructor(
                     )
                 )
             }
-            // Ответ доступен только участникам: после загрузки состава пересобираем items.
             if (lastMessages.isNotEmpty()) updateChatItems(lastMessages)
         }
     }
@@ -551,6 +551,7 @@ class ChatViewModel @Inject constructor(
             groupReadInfo = _uiState.value.groupReadInfo,
             highlightedMessageId = _uiState.value.highlightedMessageId,
             unreadAnchorMessageId = unreadAnchorMessageId,
+            copyPolicy = copyPolicy,
             onCopyText = ::copyToClipboard,
             onEditMessage = ::startEditing,
             onDeleteMessage = {
@@ -905,9 +906,8 @@ class ChatViewModel @Inject constructor(
     // endregion
 
     // region Пересылка сообщения
-
-    /** «Переслать» в меню сообщения: собираем список чатов, куда можно писать. */
     fun startForward(message: Message) {
+        if (!copyPolicy.canForward) return
         if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
 
         viewModelScope.launch {
@@ -961,6 +961,7 @@ class ChatViewModel @Inject constructor(
 
     /** Отправка копий во все выбранные чаты одним запросом. */
     fun confirmForward() {
+        if (!copyPolicy.canForward) return
         val state = _uiState.value
         val message = state.forwardingMessage ?: return
         val targets = state.selectedForwardChatIds.toList()
@@ -1412,6 +1413,7 @@ class ChatViewModel @Inject constructor(
     }
 
     fun saveToGallery(uri: Uri) {
+        if (!copyPolicy.canSaveMedia) return
         viewModelScope.launch {
             if (fileHandler.saveToGallery(uri.path ?: uri.toString())) {
                 _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.successfully_saved_to_gallery)))
@@ -1423,6 +1425,7 @@ class ChatViewModel @Inject constructor(
     }
 
     fun saveAttachmentsToDownloads(message: Message) {
+        if (!copyPolicy.canSaveMedia) return
         viewModelScope.launch {
             val downloaded =
                 message.attachments.filter { it.localUri != null && (it.status == DownloadStatus.COMPLETED || it.status == DownloadStatus.UPLOADED) }
@@ -1446,7 +1449,13 @@ class ChatViewModel @Inject constructor(
     // endregion
 
     // region Utilities
-    fun copyToClipboard(text: String?) = text?.let { clipboardService.copy(it) }
+
+    /** Копирование текста в буфер обмена. При запрете копирования не выполняется. */
+    fun copyToClipboard(text: String?) {
+        if (!copyPolicy.canCopyText) return
+        text?.let { clipboardService.copy(it) }
+    }
+
     fun vibrate() = vibrationManager.vibrate(VibrationPattern.Error)
 
     /**

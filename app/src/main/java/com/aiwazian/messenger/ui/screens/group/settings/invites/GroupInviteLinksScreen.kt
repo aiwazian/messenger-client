@@ -39,9 +39,9 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
-import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.CustomDropdownMenu
-import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ShareBottomSheet
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -79,7 +79,7 @@ fun GroupInviteLinksScreen(
     val navBackStack = LocalNavBackStack.current
     
     if (uiState.linkIdToDelete != null) {
-        CustomDialog(
+        AppDialog(
             title = stringResource(R.string.delete),
             onDismissRequest = viewModel::hideDeleteDialog,
             buttons = {
@@ -110,7 +110,7 @@ fun GroupInviteLinksScreen(
     
     Scaffold(
         snackbarHost = {
-            CustomSnackbar(snackbarHostState)
+            AppSnackbar(snackbarHostState)
         },
         topBar = {
             PageTopBar(
@@ -201,7 +201,7 @@ private fun InviteLinkItem(
                 Icon(Icons.Rounded.MoreVert, contentDescription = null)
             }
             
-            CustomDropdownMenu(
+            AppDropdownMenu(
                 expanded = isMenuExpanded && expanded,
                 onDismissRequest = {
                     expanded = false

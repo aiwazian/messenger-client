@@ -20,6 +20,7 @@ data class ChannelResponseDto(
     @SerialName("removedUsers") val removedUsers: Int? = null,
     @SerialName("isSubscribed") val isSubscribed: Boolean = false,
     @SerialName("isOwner") val isOwner: Boolean? = null,
+    @SerialName("noCopy") val noCopy: Boolean = false,
     @SerialName("avatars") val avatars: List<AvatarDto> = emptyList()
 )
 
@@ -28,7 +29,8 @@ data class CreateChannelRequestDto(
     @SerialName("name") val name: String,
     @SerialName("bio") val bio: String? = null,
     @SerialName("channelType") val channelType: ChannelType = ChannelType.PRIVATE,
-    @SerialName("username") val username: String? = null
+    @SerialName("username") val username: String? = null,
+    @SerialName("noCopy") val noCopy: Boolean? = null
 )
 
 @Serializable
@@ -36,5 +38,16 @@ data class UpdateChannelRequestDto(
     @SerialName("name") val name: String? = null,
     @SerialName("bio") val bio: String? = null,
     @SerialName("channelType") val channelType: ChannelType? = null,
-    @SerialName("username") val username: String? = null
+    @SerialName("username") val username: String? = null,
+    @SerialName("noCopy") val noCopy: Boolean? = null
+)
+
+/**
+ * Тело запроса на включение или выключение запрета копирования.
+ *
+ * Используется и для каналов, и для групп.
+ */
+@Serializable
+data class SetNoCopyRequestDto(
+    @SerialName("noCopy") val noCopy: Boolean
 )

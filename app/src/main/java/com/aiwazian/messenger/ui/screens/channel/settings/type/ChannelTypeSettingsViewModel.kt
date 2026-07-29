@@ -7,9 +7,11 @@ package com.aiwazian.messenger.ui.screens.channel.settings.type
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.Channel
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.SearchRepository
+import com.aiwazian.messenger.repository.channel.ChannelContentProtectionRepository
 import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
@@ -29,11 +31,15 @@ import javax.inject.Inject
 @HiltViewModel
 class ChannelTypeSettingsViewModel @Inject constructor(
     private val channelRepository: ChannelRepository,
+    private val contentProtectionRepository: ChannelContentProtectionRepository,
     private val searchRepository: SearchRepository,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
     private var checkLinkJob: Job? = null
+    
+    /** Последнее загруженное состояние канала, нужно для обновления локального кэша. */
+    private var channel: Channel? = null
     
     private val _uiState = MutableStateFlow(ChannelTypeSettingsUiState())
     val uiState = _uiState.asStateFlow()
@@ -45,13 +51,16 @@ class ChannelTypeSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             channelRepository.fetchById(channelId)
             channelRepository.getById(channelId).firstOrNull()?.let { channel ->
+                this@ChannelTypeSettingsViewModel.channel = channel
                 _uiState.update {
                     it.copy(
                         channelId = channel.id,
                         channelType = channel.channelType,
                         username = channel.username.orEmpty(),
                         originalName = channel.username.orEmpty(),
-                        canSave = true
+                        canSave = true,
+                        noCopy = channel.noCopy,
+                        canChangeNoCopy = true
                     )
                 }
             }
@@ -64,6 +73,34 @@ class ChannelTypeSettingsViewModel @Inject constructor(
                 channelType = channelType,
                 canSave = channelType == ChannelType.PRIVATE
             )
+        }
+    }
+    
+    /**
+     * Переключает запрет копирования.
+     *
+     * Изменение применяется сразу, без кнопки сохранения. При ошибке сервера
+     * (например, если пользователь не владелец) переключатель возвращается назад.
+     */
+    fun changeNoCopy(noCopy: Boolean) {
+        val channel = channel ?: return
+        val previous = _uiState.value.noCopy
+        
+        _uiState.update { it.copy(noCopy = noCopy, canChangeNoCopy = false) }
+        
+        viewModelScope.launch {
+            contentProtectionRepository.setNoCopy(channel, noCopy).onSuccess {
+                this@ChannelTypeSettingsViewModel.channel = channel.copy(noCopy = noCopy)
+                _uiState.update { it.copy(canChangeNoCopy = true) }
+            }.onFailure {
+                _uiState.update { it.copy(noCopy = previous, canChangeNoCopy = true) }
+                vibrationManager.vibrate(VibrationPattern.Error)
+                _uiEffect.emit(
+                    ChannelTypeSettingsEffect.ShowSnackbar(
+                        UiText.StringResource(R.string.failed_to_save_changes)
+                    )
+                )
+            }
         }
     }
     

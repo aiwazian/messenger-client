@@ -20,6 +20,7 @@ data class GroupResponseDto(
     @SerialName("removedUsers") val removedUsers: Int? = null,
     @SerialName("isMember") val isMember: Boolean = false,
     @SerialName("isOwner") val isOwner: Boolean? = false,
+    @SerialName("noCopy") val noCopy: Boolean = false,
     @SerialName("avatars") val avatars: List<AvatarDto> = emptyList()
 )
 
@@ -35,6 +36,7 @@ data class UpdateGroupRequestDto(
     @SerialName("bio") val bio: String? = null,
     @SerialName("username") val username: String? = null,
     @SerialName("groupType") val groupType: GroupType? = null,
+    @SerialName("noCopy") val noCopy: Boolean? = null,
 )
 
 @Serializable

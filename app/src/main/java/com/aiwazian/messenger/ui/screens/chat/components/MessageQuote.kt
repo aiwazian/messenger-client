@@ -68,11 +68,6 @@ fun replyPreviewText(preview: MessageReplyPreview): String {
     )
 }
 
-/**
- * Цитата сообщения: вертикальная полоса, заголовок и одна строка текста.
- *
- * Используется и внутри сообщения, и в панели над полем ввода.
- */
 @Composable
 fun ReplyQuote(
     preview: MessageReplyPreview,
@@ -92,6 +87,7 @@ fun ReplyQuote(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .graphicsLayer(scaleX = scale, scaleY = scale)
+            .height(32.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             .then(

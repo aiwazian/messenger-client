@@ -49,7 +49,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.extensions.formatFileSize
-import com.aiwazian.messenger.ui.components.CustomDialog
+import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
@@ -238,7 +238,7 @@ private fun StorageCategory(
 private fun ClearCacheConfirmationDialog(
     onConfirm: () -> Unit, onDismiss: () -> Unit
 ) {
-    CustomDialog(
+    AppDialog(
         title = stringResource(R.string.clear_cache),
         onDismissRequest = onDismiss,
         content = {
@@ -268,7 +268,7 @@ private fun ClearCacheConfirmationDialog(
 private fun ClearDatabaseConfirmationDialog(
     onConfirm: () -> Unit, onDismiss: () -> Unit
 ) {
-    CustomDialog(
+    AppDialog(
         title = stringResource(R.string.clear_database),
         onDismissRequest = onDismiss,
         content = {

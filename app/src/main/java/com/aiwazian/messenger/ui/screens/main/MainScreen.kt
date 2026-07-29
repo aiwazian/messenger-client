@@ -123,12 +123,12 @@ import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.enums.ThemeOption
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
+import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.ChatCard
-import com.aiwazian.messenger.ui.components.CustomBottomSheet
-import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.CustomDropdownMenu
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.screens.lock.LockScreen
@@ -328,7 +328,7 @@ private fun Content(
         if (uiState.showNotificationBottomSheet) {
             val context = LocalContext.current
             val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-            CustomBottomSheet(
+            AppBottomSheet(
                 onDismissRequest = viewModel::hideNotificationSheet,
                 sheetState = sheetState
             ) {
@@ -420,7 +420,7 @@ private fun SelectionTopBar(
                 Icon(Icons.Rounded.MoreVert, null)
             }
             
-            CustomDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
+            AppDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
                 DropdownMenuItem(
                     leadingIcon = {
                         Icon(
@@ -646,7 +646,7 @@ private fun AccountSwitcherDialog(
     onAddAccount: () -> Unit,
     onDismissRequest: () -> Unit
 ) {
-    CustomDialog(
+    AppDialog(
         onDismissRequest = onDismissRequest,
         content = {
             Column(

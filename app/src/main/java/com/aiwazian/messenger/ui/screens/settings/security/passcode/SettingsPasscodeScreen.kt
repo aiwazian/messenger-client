@@ -40,9 +40,9 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.CodeInputBlocks
 import com.aiwazian.messenger.ui.components.CountdownTextButton
-import com.aiwazian.messenger.ui.components.CustomDialog
 import com.aiwazian.messenger.ui.components.NumberKeyboard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -331,7 +331,7 @@ private fun DisablePasscodeDialog(
     onConfirm: () -> Unit,
     vibrate: () -> Unit
 ) {
-    CustomDialog(
+    AppDialog(
         title = stringResource(R.string.turn_passcode_off),
         onDismissRequest = onDismiss,
         content = {

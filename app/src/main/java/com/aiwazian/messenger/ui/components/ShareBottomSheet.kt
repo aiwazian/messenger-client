@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
+import com.aiwazian.messenger.ui.app.AppBottomSheet
 
 import com.aiwazian.messenger.utils.UiText
 
@@ -89,7 +90,7 @@ fun ShareBottomSheet(
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val hasSelected = remember(items) { items.any { it.isSelected } }
     
-    CustomBottomSheet(
+    AppBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         contentPadding = PaddingValues()

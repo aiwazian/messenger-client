@@ -76,8 +76,9 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.FileAction
-import com.aiwazian.messenger.ui.components.CustomDialog
-import com.aiwazian.messenger.ui.components.CustomSnackbar
+import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppSnackbar
+import com.aiwazian.messenger.ui.components.SecureScreenEffect
 import com.aiwazian.messenger.ui.components.ShareBottomSheet
 import com.aiwazian.messenger.ui.components.ShareItem
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -133,6 +134,17 @@ fun ChatScreen(
     val uiState by chatViewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    /** Правила защиты контента: запрет копирования действует для всех, включая владельца. */
+    val copyPolicy = uiState.copyPolicy
+    
+    /*
+     * Скриншот и запись экрана — тоже копирование содержимого, поэтому при
+     * запрете окно помечается FLAG_SECURE. Защита снимается автоматически при
+     * выходе из чата и распространяется на всё окно: список сообщений,
+     * просмотрщик медиа и превью в списке недавних приложений.
+     */
+    SecureScreenEffect(enabled = !copyPolicy.canTakeScreenshot)
     
     val firstVisibleItemIndex = remember { derivedStateOf { listState.firstVisibleItemIndex } }
     
@@ -375,7 +387,7 @@ fun ChatScreen(
     
     Scaffold(snackbarHost = {
         if (!uiState.showFullScreenViewer) {
-            CustomSnackbar(snackbarHostState)
+            AppSnackbar(snackbarHostState)
         }
     }, topBar = {
         ChatTopBar(
@@ -498,11 +510,14 @@ fun ChatScreen(
                                 onLinkClicked = chatViewModel::onLinkClicked,
                                 onUsernameClicked = chatViewModel::onUsernameClicked,
                                 onEmailClicked = chatViewModel::onEmailClicked,
-                                onSaveToDownloads = {
-                                    chatViewModel.saveAttachmentsToDownloads(
-                                        item.message
-                                    )
-                                },
+                                /* При запрете копирования пункта «Сохранить в загрузки» не будет. */
+                                onSaveToDownloads = if (copyPolicy.canSaveMedia) {
+                                    {
+                                        chatViewModel.saveAttachmentsToDownloads(
+                                            item.message
+                                        )
+                                    }
+                                } else null,
                                 onReplyPreviewClick = {
                                     chatViewModel.onReplyPreviewClicked(item.message)
                                 },
@@ -581,7 +596,7 @@ fun ChatScreen(
         ChatDialogs(uiState = uiState, chatViewModel = chatViewModel)
         
         if (fileToCancelId != null) {
-            CustomDialog(
+            AppDialog(
                 title = stringResource(R.string.cancel_sending),
                 onDismissRequest = { fileToCancelId = null },
                 content = { Text(stringResource(R.string.cancel_upload_confirm)) },
@@ -606,7 +621,7 @@ fun ChatScreen(
         }
         
         if (showCancelRecordingDialog) {
-            CustomDialog(
+            AppDialog(
                 title = stringResource(R.string.cancel_voice_recording),
                 onDismissRequest = { showCancelRecordingDialog = false },
                 content = { Text(stringResource(R.string.cancel_voice_recording_confirm)) },
@@ -647,7 +662,7 @@ fun ChatScreen(
         }
         
         if (uiState.showBannedDialog) {
-            CustomDialog(
+            AppDialog(
                 title = stringResource(R.string.no_access),
                 onDismissRequest = chatViewModel::dismissBannedDialog,
                 buttons = {
@@ -661,7 +676,7 @@ fun ChatScreen(
         }
         
         if (uiState.showBlockDialog) {
-            CustomDialog(
+            AppDialog(
                 title = stringResource(R.string.unblock),
                 onDismissRequest = chatViewModel::dismissBlockDialog,
                 buttons = {
@@ -745,7 +760,8 @@ fun ChatScreen(
             initialPage = viewerInitialPage,
             isVideoLooping = uiState.isVideoLooping,
             videoPlaybackSpeed = uiState.videoPlaybackSpeed,
-            canDownloadMedia = uiState.canDownloadMedia,
+            /* При запрете копирования кнопки «Сохранить в галерею» нет. */
+            canDownloadMedia = uiState.canDownloadMedia && copyPolicy.canSaveMedia,
             onVideoLoopingChange = chatViewModel::setVideoLooping,
             onVideoPlaybackSpeedChange = chatViewModel::setVideoPlaybackSpeed,
             onSaveToGallery = chatViewModel::saveToGallery,
@@ -761,7 +777,7 @@ fun ChatScreen(
                 .padding(bottom = 16.dp),
             contentAlignment = Alignment.BottomCenter,
         ) {
-            CustomSnackbar(snackbarHostState)
+            AppSnackbar(snackbarHostState)
         }
     }
 }
