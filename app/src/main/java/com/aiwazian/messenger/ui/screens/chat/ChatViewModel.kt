@@ -156,6 +156,16 @@ class ChatViewModel @Inject constructor(
     private var autoDownloadVideos = true
     private var autoDownloadFiles = true
 
+    /**
+     * Правила защиты контента текущего чата.
+     *
+     * Единственный источник правды для копирования текста, пересылки и
+     * сохранения медиа: логика не размазана по ChatViewModel, ChatScreen и
+     * MessageBubble, а живёт в [ChatCopyPolicy].
+     */
+    private val copyPolicy: ChatCopyPolicy
+        get() = _uiState.value.copyPolicy
+
     init {
         loadSettings()
         observeVoicePlayer()
@@ -292,6 +302,8 @@ class ChatViewModel @Inject constructor(
                     isJoined = channel.isSubscribed,
                     isOwner = channel.ownerId == myId,
                     avatarUri = channel.avatars.firstOrNull()?.uri,
+                    // Запрет копирования действует на всех, включая владельца канала.
+                    noCopy = channel.noCopy,
                     topBarActions = createTopBarActions(
                         channel.ownerId == myId,
                         channel.isSubscribed,
@@ -326,6 +338,8 @@ class ChatViewModel @Inject constructor(
                     isJoined = group.isMember,
                     isOwner = group.ownerId == myId,
                     avatarUri = group.avatars.firstOrNull()?.uri,
+                    // Запрет копирования действует на всех, включая владельца группы.
+                    noCopy = group.noCopy,
                     topBarActions = createTopBarActions(
                         group.ownerId == myId,
                         group.isMember,
@@ -551,6 +565,7 @@ class ChatViewModel @Inject constructor(
             groupReadInfo = _uiState.value.groupReadInfo,
             highlightedMessageId = _uiState.value.highlightedMessageId,
             unreadAnchorMessageId = unreadAnchorMessageId,
+            copyPolicy = copyPolicy,
             onCopyText = ::copyToClipboard,
             onEditMessage = ::startEditing,
             onDeleteMessage = {
@@ -906,8 +921,14 @@ class ChatViewModel @Inject constructor(
 
     // region Пересылка сообщения
 
-    /** «Переслать» в меню сообщения: собираем список чатов, куда можно писать. */
+    /**
+     * «Переслать» в меню сообщения: собираем список чатов, куда можно писать.
+     *
+     * При запрете копирования пересылка невозможна вообще: пункта меню нет, а
+     * этот вызов страхует от пересылки любым другим путём.
+     */
     fun startForward(message: Message) {
+        if (!copyPolicy.canForward) return
         if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
 
         viewModelScope.launch {
@@ -961,6 +982,7 @@ class ChatViewModel @Inject constructor(
 
     /** Отправка копий во все выбранные чаты одним запросом. */
     fun confirmForward() {
+        if (!copyPolicy.canForward) return
         val state = _uiState.value
         val message = state.forwardingMessage ?: return
         val targets = state.selectedForwardChatIds.toList()
@@ -1411,7 +1433,14 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Сохранение в галерею.
+     *
+     * При запрете копирования кнопки нет, а сам вызов ничего не делает: так
+     * запрет соблюдается и для владельца чата.
+     */
     fun saveToGallery(uri: Uri) {
+        if (!copyPolicy.canSaveMedia) return
         viewModelScope.launch {
             if (fileHandler.saveToGallery(uri.path ?: uri.toString())) {
                 _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.successfully_saved_to_gallery)))
@@ -1422,7 +1451,9 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    /** Сохранение вложений в загрузки. При запрете копирования недоступно. */
     fun saveAttachmentsToDownloads(message: Message) {
+        if (!copyPolicy.canSaveMedia) return
         viewModelScope.launch {
             val downloaded =
                 message.attachments.filter { it.localUri != null && (it.status == DownloadStatus.COMPLETED || it.status == DownloadStatus.UPLOADED) }
@@ -1446,7 +1477,13 @@ class ChatViewModel @Inject constructor(
     // endregion
 
     // region Utilities
-    fun copyToClipboard(text: String?) = text?.let { clipboardService.copy(it) }
+
+    /** Копирование текста в буфер обмена. При запрете копирования не выполняется. */
+    fun copyToClipboard(text: String?) {
+        if (!copyPolicy.canCopyText) return
+        text?.let { clipboardService.copy(it) }
+    }
+
     fun vibrate() = vibrationManager.vibrate(VibrationPattern.Error)
 
     /**
