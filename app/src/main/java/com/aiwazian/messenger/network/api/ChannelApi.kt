@@ -11,6 +11,7 @@ import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.InviteLinkResponseDto
+import com.aiwazian.messenger.network.dto.SetNoCopyRequestDto
 import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
 import retrofit2.Response
@@ -42,6 +43,17 @@ interface ChannelApi {
     suspend fun updateChannel(
         @Path("channelId") channelId: Long,
         @Body request: UpdateChannelRequestDto
+    ): Response<ChannelResponseDto>
+
+    /**
+     * Включает или выключает запрет копирования контента канала.
+     *
+     * Сервер допускает вызов только владельцу канала.
+     */
+    @PATCH("channels/{channelId}/no-copy")
+    suspend fun setNoCopy(
+        @Path("channelId") channelId: Long,
+        @Body request: SetNoCopyRequestDto
     ): Response<ChannelResponseDto>
 
     @DELETE("channels/{channelId}")

@@ -12,6 +12,7 @@ import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.GroupResponseDto
 import com.aiwazian.messenger.network.dto.InviteLinkResponseDto
+import com.aiwazian.messenger.network.dto.SetNoCopyRequestDto
 import com.aiwazian.messenger.network.dto.UpdateGroupRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
 import retrofit2.Response
@@ -54,6 +55,17 @@ interface GroupApi {
     suspend fun updateGroup(
         @Path("groupId") groupId: Long,
         @Body request: UpdateGroupRequestDto
+    ): Response<GroupResponseDto>
+
+    /**
+     * Включает или выключает запрет копирования контента группы.
+     *
+     * Сервер допускает вызов только владельцу группы.
+     */
+    @PATCH("groups/{groupId}/no-copy")
+    suspend fun setNoCopy(
+        @Path("groupId") groupId: Long,
+        @Body request: SetNoCopyRequestDto
     ): Response<GroupResponseDto>
 
     @DELETE("groups/{groupId}")
