@@ -45,6 +45,7 @@ import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
+import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
 import com.aiwazian.messenger.ui.components.section.SectionToggleItem
@@ -157,10 +158,11 @@ fun GroupTypeSettingsScreen(
                 }
             }
             
-            SectionContainer {
+            SectionContainer(footer = {
+                SectionDescription(stringResource(R.string.no_copy_group_description))
+            }) {
                 SectionToggleItem(
                     text = stringResource(R.string.no_copy),
-                    supportingText = stringResource(R.string.no_copy_group_description),
                     isChecked = uiState.noCopy,
                     enabled = uiState.canChangeNoCopy,
                     onCheckedChange = { viewModel.changeNoCopy(!uiState.noCopy) })

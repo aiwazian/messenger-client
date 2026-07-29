@@ -302,7 +302,6 @@ class ChatViewModel @Inject constructor(
                     isJoined = channel.isSubscribed,
                     isOwner = channel.ownerId == myId,
                     avatarUri = channel.avatars.firstOrNull()?.uri,
-                    // Запрет копирования действует на всех, включая владельца канала.
                     noCopy = channel.noCopy,
                     topBarActions = createTopBarActions(
                         channel.ownerId == myId,
@@ -311,7 +310,6 @@ class ChatViewModel @Inject constructor(
                     )
                 )
             }
-            // Права на ответ зависят от роли: пересобираем пункты меню и свайп.
             if (lastMessages.isNotEmpty()) updateChatItems(lastMessages)
         }
     }
@@ -338,7 +336,6 @@ class ChatViewModel @Inject constructor(
                     isJoined = group.isMember,
                     isOwner = group.ownerId == myId,
                     avatarUri = group.avatars.firstOrNull()?.uri,
-                    // Запрет копирования действует на всех, включая владельца группы.
                     noCopy = group.noCopy,
                     topBarActions = createTopBarActions(
                         group.ownerId == myId,
@@ -347,7 +344,6 @@ class ChatViewModel @Inject constructor(
                     )
                 )
             }
-            // Ответ доступен только участникам: после загрузки состава пересобираем items.
             if (lastMessages.isNotEmpty()) updateChatItems(lastMessages)
         }
     }

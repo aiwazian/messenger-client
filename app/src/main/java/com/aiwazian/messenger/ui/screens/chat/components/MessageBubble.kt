@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -130,8 +131,6 @@ fun MessageBubble(
     )
     
     SwipeToReplyBox(
-        // Свайп доступен ровно там, где доступен ответ: канал — владелец,
-        // группа — участник, личный чат — всегда.
         enabled = item.canReply && onSwipeToReply != null,
         onReply = { onSwipeToReply?.invoke() },
         onThresholdReached = { onSwipeThresholdReached?.invoke() },
@@ -153,9 +152,7 @@ fun MessageBubble(
             
             Box(
                 modifier = Modifier
-                    .widthIn(
-                        min = 80.dp, max = 280.dp
-                    )
+                    .widthIn(min = 90.dp, max = 280.dp)
                     .padding(horizontal = 8.dp)
                     .clip(MaterialTheme.shapes.large)
                     .background(containerColor)
@@ -168,7 +165,9 @@ fun MessageBubble(
                             lineHeight = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp)
+                            modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                     

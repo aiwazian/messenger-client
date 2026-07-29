@@ -316,4 +316,9 @@
     <string name="unread_messages">Оқылмаған хабарлар</string>
     <string name="open_email_with">-мен ашыңыз</string>
     <string name="no_email_app">Электрондық пошта қолданбасы жоқ</string>
+    <string name="no_copy">Көшіруді шектеңіз</string>
+    <string name="no_copy_channel_description">Мүшелер, арнадан мәтінді көшіру, хабарларды қайта бағыттау немесе медианы сақтау мүмкін болмайды.</string>
+    <string name="no_copy_group_description">Мүшелер топтан мәтінді көшіре, хабарларды қайта бағыттай немесе медианы сақтай алмайды.</string>
+    <string name="no_copy_channel_notice">Бұл арнадан көшіруге және қайта жіберуге рұқсат етілмейді.</string>
+    <string name="no_copy_group_notice">Бұл топтан көшіруге және қайта жіберуге рұқсат етілмейді.</string>
 </resources>

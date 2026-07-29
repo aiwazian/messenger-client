@@ -107,8 +107,6 @@ class RealtimeEventSyncService @Inject constructor(
                     return@launch
                 }
                 
-                // Личный чат: сервер присылает chatId читателя (Андрей) и senderId автора (Олег) —
-                // ровно в этой паре исходящие сообщения лежат в локальной базе автора.
                 if (payload.senderId > 0 && payload.sendTime > 0) {
                     chatRepository.markReadBySender(
                         payload.chatId, payload.senderId, payload.sendTime

@@ -320,4 +320,9 @@
     <string name="unread_messages">Непрочитанные сообщения</string>
     <string name="open_email_with">Открыть с помощью</string>
     <string name="no_email_app">Нет почтового приложения</string>
+    <string name="no_copy">Запрет копирования</string>
+    <string name="no_copy_channel_description">Участники не смогут копировать текст, пересылать сообщения и сохранять медиа из канала.</string>
+    <string name="no_copy_group_description">Участники, включая владельца, не смогут копировать текст, пересылать сообщения и сохранять медиа из группы.</string>
+    <string name="no_copy_channel_notice">Копирование и пересылка из канала запрещены.</string>
+    <string name="no_copy_group_notice">Копирование и пересылка из группы запрещены.</string>
 </resources>

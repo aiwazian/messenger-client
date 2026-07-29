@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
@@ -106,6 +107,7 @@ fun MessageVoice(
     
     Row(
         modifier = Modifier
+            .width(280.dp)
             .clickable(interactionSource = null, indication = null) {
                 when (file.status) {
                     DownloadStatus.UPLOADING -> onAction(FileAction.CANCEL)

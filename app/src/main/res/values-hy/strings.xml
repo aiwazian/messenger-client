@@ -316,4 +316,9 @@
     <string name="unread_messages">Չընթերցված հաղորդագրություններ</string>
     <string name="open_email_with">Բացել հետ</string>
     <string name="no_email_app">Էլփոստի հավելված չկա</string>
+    <string name="no_copy">Սահմանափակել պատճենումը</string>
+    <string name="no_copy_channel_description">Անդամներ, չեն կարողանա պատճենել տեքստը, փոխանցել հաղորդագրությունները կամ պահել մեդիա ալիքից:</string>
+    <string name="no_copy_group_description">Անդամներ, չեն կարողանա պատճենել տեքստը, փոխանցել հաղորդագրությունները կամ պահպանել մեդիա խմբից:</string>
+    <string name="no_copy_channel_notice">Այս ալիքից պատճենումը և վերահասցեավորումն արգելված է:</string>
+    <string name="no_copy_group_notice">Այս խմբից պատճենումը և վերահասցեավորումն արգելված է:</string>
 </resources>

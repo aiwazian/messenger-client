@@ -46,7 +46,7 @@ fun MessageDropdownMenu(
     AppDropdownMenuPopup(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
-        modifier = Modifier.widthIn(max = 200.dp)
+        modifier = Modifier.widthIn(max = 220.dp)
     ) {
         if (nonClickable.isNotEmpty() || clickable.isNotEmpty()) {
             DropdownMenuGroup(

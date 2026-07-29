@@ -316,4 +316,9 @@
     <string name="unread_messages">Ungelesene Nachrichten</string>
     <string name="open_email_with">Öffnen mit</string>
     <string name="no_email_app">Keine E-Mail-App</string>
+    <string name="no_copy">Kopieren einschränken</string>
+    <string name="no_copy_channel_description">Mitglieder können keinen Text kopieren, keine Nachrichten weiterleiten oder Medien aus dem Kanal speichern.</string>
+    <string name="no_copy_group_description">Mitglieder können keinen Text kopieren, keine Nachrichten weiterleiten oder Medien aus der Gruppe speichern.</string>
+    <string name="no_copy_channel_notice">Das Kopieren und Weiterleiten ist von diesem Kanal aus nicht gestattet.</string>
+    <string name="no_copy_group_notice">Aus dieser Gruppe ist das Kopieren und Weiterleiten nicht gestattet.</string>
 </resources>

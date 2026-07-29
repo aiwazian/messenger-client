@@ -314,4 +314,9 @@
     <string name="unread_messages">읽지 않은 메시지</string>
     <string name="open_email_with">다음으로 열기</string>
     <string name="no_email_app">이메일 앱 없음</string>
+    <string name="no_copy">복사 제한</string>
+    <string name="no_copy_channel_description">회원은 채널에서 텍스트를 복사하거나, 메시지를 전달하거나, 미디어를 저장할 수 없습니다.</string>
+    <string name="no_copy_group_description">회원은 그룹에서 텍스트를 복사하거나, 메시지를 전달하거나, 미디어를 저장할 수 없습니다.</string>
+    <string name="no_copy_channel_notice">이 채널에서는 복사 및 전달이 허용되지 않습니다.</string>
+    <string name="no_copy_group_notice">이 그룹에서는 복사 및 전달이 허용되지 않습니다.</string>
 </resources>
