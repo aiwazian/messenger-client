@@ -30,6 +30,14 @@ value class ChatCopyPolicy(
     val canSaveMedia: Boolean
         get() = !noCopy
     
+    /**
+     * Можно ли делать скриншоты и записывать экран.
+     *
+     * Скриншот — такое же копирование содержимого, поэтому запрет закрывает и его.
+     */
+    val canTakeScreenshot: Boolean
+        get() = !noCopy
+    
     companion object {
         /** Обычный режим: ограничений нет. */
         val Unrestricted = ChatCopyPolicy(noCopy = false)
