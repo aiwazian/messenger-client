@@ -7,9 +7,11 @@ package com.aiwazian.messenger.ui.screens.chat.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -33,10 +35,6 @@ fun MessageDropdownMenu(
     onDismissRequest: () -> Unit,
     actions: List<DropdownMenuAction>
 ) {
-    /*
-     * Пояснения (например, о запрете копирования) не пункты меню: они уходят
-     * в отдельную группу под основной, чтобы их нельзя было нажать.
-     */
     val (notices, menuActions) = actions.partition { it.isNotice }
     val (nonClickable, clickable) = menuActions.partition { it.onClick == null }
     
@@ -48,6 +46,7 @@ fun MessageDropdownMenu(
     AppDropdownMenuPopup(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
+        modifier = Modifier.widthIn(max = 200.dp)
     ) {
         if (nonClickable.isNotEmpty() || clickable.isNotEmpty()) {
             DropdownMenuGroup(
@@ -56,9 +55,7 @@ fun MessageDropdownMenu(
             ) {
                 nonClickable.forEach { action ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 12.dp, end = 12.dp, bottom = 4.dp),
+                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
@@ -109,29 +106,23 @@ fun MessageDropdownMenu(
         }
         
         if (notices.isNotEmpty()) {
+            Spacer(Modifier.height(4.dp))
+            
             DropdownMenuGroup(
                 shapes = groupShapes,
                 contentPadding = PaddingValues(0.dp)
             ) {
                 notices.forEach { notice ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Icon(
-                            imageVector = notice.icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                         Text(
                             text = notice.text.asString(),
-                            fontSize = 13.sp,
-                            lineHeight = 16.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            fontSize = 12.sp,
+                            lineHeight = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
