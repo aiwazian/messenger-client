@@ -134,6 +134,9 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
     
+    /** Правила защиты контента: запрет копирования действует для всех, включая владельца. */
+    val copyPolicy = uiState.copyPolicy
+    
     val firstVisibleItemIndex = remember { derivedStateOf { listState.firstVisibleItemIndex } }
     
     val isAtBottom by remember {
@@ -498,11 +501,14 @@ fun ChatScreen(
                                 onLinkClicked = chatViewModel::onLinkClicked,
                                 onUsernameClicked = chatViewModel::onUsernameClicked,
                                 onEmailClicked = chatViewModel::onEmailClicked,
-                                onSaveToDownloads = {
-                                    chatViewModel.saveAttachmentsToDownloads(
-                                        item.message
-                                    )
-                                },
+                                /* При запрете копирования пункта «Сохранить в загрузки» не будет. */
+                                onSaveToDownloads = if (copyPolicy.canSaveMedia) {
+                                    {
+                                        chatViewModel.saveAttachmentsToDownloads(
+                                            item.message
+                                        )
+                                    }
+                                } else null,
                                 onReplyPreviewClick = {
                                     chatViewModel.onReplyPreviewClicked(item.message)
                                 },
@@ -745,7 +751,8 @@ fun ChatScreen(
             initialPage = viewerInitialPage,
             isVideoLooping = uiState.isVideoLooping,
             videoPlaybackSpeed = uiState.videoPlaybackSpeed,
-            canDownloadMedia = uiState.canDownloadMedia,
+            /* При запрете копирования кнопки «Сохранить в галерею» нет. */
+            canDownloadMedia = uiState.canDownloadMedia && copyPolicy.canSaveMedia,
             onVideoLoopingChange = chatViewModel::setVideoLooping,
             onVideoPlaybackSpeedChange = chatViewModel::setVideoPlaybackSpeed,
             onSaveToGallery = chatViewModel::saveToGallery,
