@@ -40,6 +40,11 @@ class ChatItemMapper(
     private val groupReadInfo: Map<Long, List<MessageReadInfo>>,
     private val highlightedMessageId: Long? = null,
     private val unreadAnchorMessageId: Long? = null,
+    /**
+     * Правила защиты контента: при запрете копирования в меню сообщения нет ни
+     * «Копировать», ни «Переслать» — даже у владельца.
+     */
+    private val copyPolicy: ChatCopyPolicy = ChatCopyPolicy.Unrestricted,
     private val onCopyText: (String) -> Unit,
     private val onEditMessage: (Message) -> Unit,
     private val onDeleteMessage: (Message) -> Unit,
@@ -147,7 +152,7 @@ class ChatItemMapper(
     ): List<DropdownMenuAction> {
         val actions = mutableListOf<DropdownMenuAction>()
         
-        if (!message.text.isNullOrBlank()) {
+        if (copyPolicy.canCopyText && !message.text.isNullOrBlank()) {
             actions.add(
                 DropdownMenuAction(
                     Icons.Rounded.ContentCopy,
@@ -206,7 +211,7 @@ class ChatItemMapper(
             )
         }
         
-        if (isSent) {
+        if (isSent && copyPolicy.canForward) {
             actions.add(
                 DropdownMenuAction(
                     Icons.AutoMirrored.Outlined.Forward,
