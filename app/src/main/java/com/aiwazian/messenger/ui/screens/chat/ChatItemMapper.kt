@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Forward
 import androidx.compose.material.icons.automirrored.outlined.Reply
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Refresh
@@ -61,6 +62,30 @@ class ChatItemMapper(
         
         val chatType = ChatType.fromId(chatId)
         
+        /*
+         * При запрете копирования пункты меню не просто исчезают: внизу меню
+         * остаётся пояснение, почему нет «Копировать» и «Переслать».
+         */
+        val noCopyNotice = if (copyPolicy.noCopy) {
+            when (chatType) {
+                ChatType.CHANNEL -> DropdownMenuAction(
+                    icon = Icons.Rounded.Block,
+                    text = UiText.StringResource(R.string.no_copy_channel_notice),
+                    onClick = null,
+                    isNotice = true
+                )
+                
+                ChatType.GROUP -> DropdownMenuAction(
+                    icon = Icons.Rounded.Block,
+                    text = UiText.StringResource(R.string.no_copy_group_notice),
+                    onClick = null,
+                    isNotice = true
+                )
+                
+                else -> null
+            }
+        } else null
+        
         messages.forEach { message ->
             val messageDate =
                 message.sendTime.toInstance().atZone(ZoneId.systemDefault()).toLocalDate()
@@ -99,7 +124,8 @@ class ChatItemMapper(
             val isSingleEmoji = isSingleEmoji(message.text ?: "")
             val isFirstInGroup = message.senderId != lastSenderId
             
-            val actions = createDropdownActions(message, isMine, chatType)
+            val actions =
+                createDropdownActions(message, isMine, chatType) + listOfNotNull(noCopyNotice)
             val updatedMessage = processAttachments(message)
             
             chatItems.add(
