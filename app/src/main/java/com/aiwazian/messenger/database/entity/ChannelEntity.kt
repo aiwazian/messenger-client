@@ -18,5 +18,7 @@ data class ChannelEntity(
     val subscribers: Int,
     val removedUsers: Int?,
     val username: String?,
-    val isSubscribed: Boolean
+    val isSubscribed: Boolean,
+    /** Запрет копирования контента канала. */
+    val noCopy: Boolean = false
 )

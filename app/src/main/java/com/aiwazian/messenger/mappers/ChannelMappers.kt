@@ -21,6 +21,7 @@ fun ChannelResponseDto.toDomain() = Channel(
     channelType = channelType,
     username = username,
     isSubscribed = isSubscribed,
+    noCopy = noCopy,
     avatars = avatars.map { it.toDomain() }
 )
 
@@ -34,6 +35,7 @@ fun ChannelEntity.toDomain(avatars: List<Avatar> = emptyList()) = Channel(
     channelType = channelType,
     username = username,
     isSubscribed = isSubscribed,
+    noCopy = noCopy,
     avatars = avatars
 )
 
@@ -46,7 +48,8 @@ fun Channel.toEntity() = ChannelEntity(
     removedUsers = removedUsers,
     channelType = channelType,
     username = username,
-    isSubscribed = isSubscribed
+    isSubscribed = isSubscribed,
+    noCopy = noCopy
 )
 
 fun AvatarDto.toChannelEntity(channelId: Long) = AvatarEntity(
