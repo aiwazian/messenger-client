@@ -53,6 +53,12 @@ data class ChatUiState(
     val isVideoLooping: Boolean = false,
     val videoPlaybackSpeed: Float = 1.0f,
     val canDownloadMedia: Boolean = true,
+    /**
+     * Запрет копирования контента канала или группы.
+     *
+     * Готовые правила доступны через [copyPolicy].
+     */
+    val noCopy: Boolean = false,
     val isRecording: Boolean = false,
     val isRecordingLocked: Boolean = false,
     val recordingDurationMs: Long = 0L,
@@ -113,4 +119,9 @@ data class ChatUiState(
     val isSearchingMessages: Boolean = false,
     val hasMoreSearchResults: Boolean = false
     // endregion
-)
+) {
+    
+    /** Правила копирования, пересылки и сохранения медиа для текущего чата. */
+    val copyPolicy: ChatCopyPolicy
+        get() = ChatCopyPolicy(noCopy)
+}
