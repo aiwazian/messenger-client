@@ -149,7 +149,6 @@ fun SwipeToReplyBox(
                             val pointerId = dragStart.id
                             var current = offsetPx
                             
-                            /** Взведена ли вибрация: сбрасывается при возврате ниже порога. */
                             var armed = true
                             
                             while (true) {
