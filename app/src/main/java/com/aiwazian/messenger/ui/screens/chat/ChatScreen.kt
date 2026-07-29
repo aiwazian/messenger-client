@@ -78,6 +78,7 @@ import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppSnackbar
+import com.aiwazian.messenger.ui.components.SecureScreenEffect
 import com.aiwazian.messenger.ui.components.ShareBottomSheet
 import com.aiwazian.messenger.ui.components.ShareItem
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -136,6 +137,14 @@ fun ChatScreen(
     
     /** Правила защиты контента: запрет копирования действует для всех, включая владельца. */
     val copyPolicy = uiState.copyPolicy
+    
+    /*
+     * Скриншот и запись экрана — тоже копирование содержимого, поэтому при
+     * запрете окно помечается FLAG_SECURE. Защита снимается автоматически при
+     * выходе из чата и распространяется на всё окно: список сообщений,
+     * просмотрщик медиа и превью в списке недавних приложений.
+     */
+    SecureScreenEffect(enabled = !copyPolicy.canTakeScreenshot)
     
     val firstVisibleItemIndex = remember { derivedStateOf { listState.firstVisibleItemIndex } }
     
