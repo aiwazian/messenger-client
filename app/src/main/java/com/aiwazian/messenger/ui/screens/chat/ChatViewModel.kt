@@ -155,6 +155,9 @@ class ChatViewModel @Inject constructor(
     private var autoDownloadPhotos = true
     private var autoDownloadVideos = true
     private var autoDownloadFiles = true
+    
+    private val copyPolicy: ChatCopyPolicy
+        get() = _uiState.value.copyPolicy
 
     init {
         loadSettings()

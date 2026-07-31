@@ -715,7 +715,6 @@ fun ChatScreen(
     }
     
     if (uiState.showFullScreenViewer) {
-        /* chatItems приходят перевёрнутыми, а в просмотрщике медиа нужны по времени. */
         val downloadedMedia = remember(uiState.chatItems) {
             uiState.chatItems
                 .asReversed()
