@@ -141,11 +141,15 @@ fun ChatScreen(
     
     val firstVisibleItemIndex = remember { derivedStateOf { listState.firstVisibleItemIndex } }
     
+    /*
+     * Список рисуется с reverseLayout, а ChatViewModel отдаёт уже перевёрнутый
+     * chatItems: индекс 0 — самое новое сообщение, то есть «низ» чата,
+     * а чем больше индекс — тем старее сообщение.
+     */
     val isAtBottom by remember {
         derivedStateOf {
-            val layoutInfo = listState.layoutInfo
-            val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()
-            lastVisible != null && lastVisible.index >= layoutInfo.totalItemsCount - 1
+            val firstVisible = listState.layoutInfo.visibleItemsInfo.firstOrNull()
+            firstVisible == null || firstVisible.index <= BOTTOM_ITEM_INDEX
         }
     }
     
@@ -169,14 +173,15 @@ fun ChatScreen(
             val newAccumulator = scrollAccumulator.floatValue + delta
             scrollAccumulator.floatValue = newAccumulator
             
+            /* В перевёрнутом списке рост индекса — это скролл вверх, к старым сообщениям. */
             when {
                 newAccumulator > scrollThresholdPx -> {
-                    isScrollingUp.value = false
+                    isScrollingUp.value = true
                     scrollAccumulator.floatValue = 0f
                 }
                 
                 newAccumulator < -scrollThresholdPx -> {
-                    isScrollingUp.value = true
+                    isScrollingUp.value = false
                     scrollAccumulator.floatValue = 0f
                 }
             }
@@ -190,33 +195,35 @@ fun ChatScreen(
         derivedStateOf { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 }
     }
     
+    /* Старые сообщения теперь в конце списка. */
     LaunchedEffect(
-        firstVisibleItemIndex.value,
+        lastVisibleItemIndex.value,
         uiState.hasMoreMessages,
         uiState.isRelocating,
         uiState.isLoadingOlder
     ) {
         if (uiState.isRelocating || uiState.isLoading || !uiState.isFirstLoadDone) return@LaunchedEffect
         if (uiState.scrollTarget != null) return@LaunchedEffect
-        if (firstVisibleItemIndex.value < PREFETCH_THRESHOLD && uiState.hasMoreMessages && !uiState.isLoadingOlder) {
+        val total = listState.layoutInfo.totalItemsCount
+        if (total > 0 &&
+            lastVisibleItemIndex.value >= total - PREFETCH_THRESHOLD &&
+            uiState.hasMoreMessages &&
+            !uiState.isLoadingOlder
+        ) {
             chatViewModel.loadOlderMessages()
         }
     }
     
+    /* Новые сообщения — в начале списка. */
     LaunchedEffect(
-        lastVisibleItemIndex.value,
+        firstVisibleItemIndex.value,
         uiState.hasMoreNewerMessages,
         uiState.isRelocating,
         uiState.isLoadingNewer
     ) {
         if (uiState.isRelocating || uiState.isLoading || !uiState.isFirstLoadDone) return@LaunchedEffect
         if (uiState.scrollTarget != null) return@LaunchedEffect
-        val total = listState.layoutInfo.totalItemsCount
-        if (total > 0 &&
-            lastVisibleItemIndex.value >= total - PREFETCH_THRESHOLD &&
-            uiState.hasMoreNewerMessages &&
-            !uiState.isLoadingNewer
-        ) {
+        if (firstVisibleItemIndex.value < PREFETCH_THRESHOLD && uiState.hasMoreNewerMessages && !uiState.isLoadingNewer) {
             chatViewModel.loadNewerMessages()
         }
     }
@@ -225,10 +232,13 @@ fun ChatScreen(
         val target = uiState.scrollTarget ?: return@LaunchedEffect
         val targetId = target.messageId
         
+        /*
+         * Конец чата в перевёрнутом списке — это нулевой элемент, а не последний:
+         * иначе FloatingActionButton увозила не вниз, а в самое начало истории.
+         */
         if (targetId == null) {
-            val lastIndex = uiState.chatItems.size + 1
-            if (target.animate) listState.animateScrollToItem(lastIndex)
-            else listState.animateScrollToItem(lastIndex)
+            if (target.animate) listState.animateScrollToItem(BOTTOM_ITEM_INDEX)
+            else listState.scrollToItem(BOTTOM_ITEM_INDEX)
             chatViewModel.onScrollTargetHandled(target.requestId)
             return@LaunchedEffect
         }
@@ -238,17 +248,21 @@ fun ChatScreen(
         }
         if (itemIndex < 0) return@LaunchedEffect
         
+        /* В перевёрнутом списке разделитель непрочитанных идёт после своего сообщения. */
         val anchorIndex =
-            if (itemIndex > 0 && uiState.chatItems[itemIndex - 1] is ChatItem.UnreadSeparator) {
-                itemIndex - 1
+            if (itemIndex + 1 <= uiState.chatItems.lastIndex &&
+                uiState.chatItems[itemIndex + 1] is ChatItem.UnreadSeparator
+            ) {
+                itemIndex + 1
             } else itemIndex
         
         val listIndex = anchorIndex + 1
         if (target.animate) {
             listState.animateScrollToItem(listIndex)
         } else {
-            val offset =
-                -(listState.layoutInfo.viewportSize.height * target.viewportFraction).toInt()
+            /* При reverseLayout отступ считается от нижней кромки окна. */
+            val offset = -(listState.layoutInfo.viewportSize.height *
+                    (1f - target.viewportFraction)).toInt()
             listState.animateScrollToItem(listIndex, offset)
         }
         chatViewModel.onScrollTargetHandled(target.requestId)
@@ -313,10 +327,9 @@ fun ChatScreen(
                     navBackStack.add(AppRoute.Main)
                 }
                 
+                /* Низ чата в перевёрнутом списке всегда нулевой элемент. */
                 is ChatUiEffect.ScrollToBottom -> {
-                    if (effect.index >= 0) {
-                        listState.animateScrollToItem(effect.index)
-                    }
+                    listState.animateScrollToItem(BOTTOM_ITEM_INDEX)
                 }
                 
                 is ChatUiEffect.ShowSnackbar -> {
@@ -428,15 +441,19 @@ fun ChatScreen(
             Column(
                 modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom
             ) {
+                /*
+                 * reverseLayout: нулевой элемент рисуется у нижней кромки экрана,
+                 * поэтому футер объявляется первым, а шапка — последней.
+                 */
                 LazyColumn(
                     state = listState,
+                    reverseLayout = true,
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                     overscrollEffect = rememberOverscrollEffect()
                 ) {
-                    item(key = "chat_header") {
+                    item(key = "chat_footer") {
                         Column {
-                            Spacer(Modifier.height(innerPadding.calculateTopPadding()))
-                            if (uiState.isLoadingOlder) {
+                            if (uiState.isLoadingNewer) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -446,6 +463,7 @@ fun ChatScreen(
                                     CircularWavyProgressIndicator()
                                 }
                             }
+                            Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
                         }
                     }
                     
@@ -518,9 +536,9 @@ fun ChatScreen(
                         }
                     }
                     
-                    item(key = "chat_footer") {
+                    item(key = "chat_header") {
                         Column {
-                            if (uiState.isLoadingNewer) {
+                            if (uiState.isLoadingOlder) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -530,7 +548,7 @@ fun ChatScreen(
                                     CircularWavyProgressIndicator()
                                 }
                             }
-                            Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
+                            Spacer(Modifier.height(innerPadding.calculateTopPadding()))
                         }
                     }
                 }
@@ -699,6 +717,7 @@ fun ChatScreen(
     if (uiState.showFullScreenViewer) {
         val downloadedMedia = remember(uiState.chatItems) {
             uiState.chatItems
+                .asReversed()
                 .filterIsInstance<ChatItem.MessageItem>()
                 .flatMap { it.message.attachments }
                 .filter { attachment ->
@@ -758,6 +777,13 @@ fun ChatScreen(
 
 /** За сколько элементов до границы окна начинать догрузку. */
 private const val PREFETCH_THRESHOLD = 10
+
+/**
+ * Индекс «низа» чата.
+ *
+ * При reverseLayout самое новое сообщение — это начало списка.
+ */
+private const val BOTTOM_ITEM_INDEX = 0
 
 /**
  * Сколько ждать перед отправкой отметки о прочтении.
