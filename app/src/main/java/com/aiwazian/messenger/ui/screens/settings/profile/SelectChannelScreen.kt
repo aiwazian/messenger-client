@@ -91,9 +91,7 @@ fun SelectChannelScreen(viewModel: SelectChannelViewModel = hiltViewModel()) {
             AnimatedVisibility(uiState.selectedChannelId != null) {
                 SectionContainer {
                     SectionItem(
-                        headlineContent = {
-                            Text(text = stringResource(R.string.hide_channel))
-                        },
+                        headlineText = stringResource(R.string.hide_channel),
                         onClick = viewModel::removeProfileChannel,
                         contentColor = MaterialTheme.colorScheme.error
                     )

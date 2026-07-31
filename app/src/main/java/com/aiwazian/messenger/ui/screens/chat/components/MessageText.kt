@@ -154,7 +154,7 @@ fun MessageText(
     Text(
         text = annotatedString,
         fontSize = 16.sp,
-        lineHeight = 16.sp,
+        lineHeight = 18.sp,
         modifier = Modifier.padding(8.dp)
     )
 }
