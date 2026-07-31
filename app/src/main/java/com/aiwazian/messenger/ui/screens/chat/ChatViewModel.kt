@@ -565,7 +565,12 @@ class ChatViewModel @Inject constructor(
             onLoadUserName = ::loadUserName
         )
 
-        val chatItems = mapper.map(messages)
+        /*
+         * UI рисует список с reverseLayout, поэтому отдаём его уже перевёрнутым:
+         * нулевой элемент — самое новое сообщение и «низ» чата.
+         * Группировка и разделители считаются по-старому, по хронологии.
+         */
+        val chatItems = mapper.map(messages).asReversed()
         val newMediaItems = messages.flatMap { it.attachments }
             .filter { it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF }
 
@@ -1355,9 +1360,13 @@ class ChatViewModel @Inject constructor(
         voicePlayerManager.play(queue, fileId, startPositionMs)
     }
 
+    /**
+     * Очередь голосовых идёт по времени, поэтому перевёрнутый для UI список
+     * разворачивается обратно: иначе автопереход играл бы сообщения вспять.
+     */
     private fun buildVoiceQueue(items: List<ChatItem>, chatName: UiText): List<VoiceQueueItem> {
         val title = chatName.asString(context).ifBlank { context.getString(R.string.voice_message) }
-        return items.filterIsInstance<ChatItem.MessageItem>()
+        return items.asReversed().filterIsInstance<ChatItem.MessageItem>()
             .flatMap { it.message.attachments }
             .filter { it.type == AttachmentType.VOICE }
             .map { attachment ->
