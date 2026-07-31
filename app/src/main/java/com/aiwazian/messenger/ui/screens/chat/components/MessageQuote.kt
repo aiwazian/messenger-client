@@ -10,8 +10,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -87,7 +90,7 @@ fun ReplyQuote(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .graphicsLayer(scaleX = scale, scaleY = scale)
-            .height(32.dp)
+            .height(IntrinsicSize.Min)
             .clip(MaterialTheme.shapes.extraSmall)
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             .then(
@@ -99,12 +102,12 @@ fun ReplyQuote(
                 else Modifier
             )
     ) {
-        Column(
+        Box(
             modifier = Modifier
+                .fillMaxHeight()
                 .width(3.dp)
-                .height(32.dp)
                 .background(accentColor)
-        ) {}
+        )
         
         Column(modifier = Modifier.padding(horizontal = 6.dp)) {
             Text(

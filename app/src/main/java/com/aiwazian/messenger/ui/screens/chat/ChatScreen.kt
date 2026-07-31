@@ -135,15 +135,8 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
     
-    /** Правила защиты контента: запрет копирования действует для всех, включая владельца. */
     val copyPolicy = uiState.copyPolicy
     
-    /*
-     * Скриншот и запись экрана — тоже копирование содержимого, поэтому при
-     * запрете окно помечается FLAG_SECURE. Защита снимается автоматически при
-     * выходе из чата и распространяется на всё окно: список сообщений,
-     * просмотрщик медиа и превью в списке недавних приложений.
-     */
     SecureScreenEffect(enabled = !copyPolicy.canTakeScreenshot)
     
     val firstVisibleItemIndex = remember { derivedStateOf { listState.firstVisibleItemIndex } }
@@ -294,13 +287,7 @@ fun ChatScreen(
     
     var fileToCancelId by remember { mutableStateOf<Long?>(null) }
     var showCancelRecordingDialog by remember { mutableStateOf(false) }
-    /**
-     * Вложение, по которому открыли просмотрщик.
-     *
-     * Берём именно тот объект, который отрисовал MessageBubble: у него тип уже
-     * пересчитан по mime скачанного файла (ChatItemMapper.processAttachments),
-     * а не взят из ответа сервера.
-     */
+    
     var tappedMedia by remember { mutableStateOf<MessageAttachment?>(null) }
     val scope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
@@ -710,18 +697,6 @@ fun ChatScreen(
     }
     
     if (uiState.showFullScreenViewer) {
-        /*
-         * Список медиа собираем из chatItems, а не из uiState.mediaItems.
-         *
-         * В mediaItems вложения лежат с типом, пришедшим с сервера, а пузырь
-         * рисует chatItems, где ChatItemMapper.processAttachments пересчитывает
-         * тип по mime уже скачанного файла. Из-за расхождения у заново
-         * скачанных фото и видео просмотрщик получал пустой список: страницы
-         * были пустыми и пейджер не листался, хотя превью в пузыре рисовалось.
-         *
-         * В просмотрщик уходят только скачанные вложения: у остальных localUri
-         * ещё null и показывать нечего.
-         */
         val downloadedMedia = remember(uiState.chatItems) {
             uiState.chatItems
                 .filterIsInstance<ChatItem.MessageItem>()
@@ -736,7 +711,6 @@ fun ChatScreen(
         }
         
         val tapped = tappedMedia
-        /* Нажатое вложение показываем даже в одиночку: пустой пейджер недопустим. */
         val viewerAttachments = when {
             tapped == null -> downloadedMedia
             downloadedMedia.any { it.fileId == tapped.fileId } -> downloadedMedia

@@ -72,7 +72,7 @@ fun SectionItem(
                     Icon(
                         imageVector = leadingIcon,
                         contentDescription = null,
-                        tint = contentColor,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(end = 16.dp)
                     )
                 }

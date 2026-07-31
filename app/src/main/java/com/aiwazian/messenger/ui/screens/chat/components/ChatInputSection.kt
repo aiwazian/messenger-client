@@ -119,9 +119,7 @@ fun ChatInputSection(uiState: ChatUiState, chatViewModel: ChatViewModel) {
                         uiState.isOwner -> "input"
                         !uiState.isJoined -> "join"
                         else -> "none"
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
+                    }, modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center
                 ) { state ->
                     when (state) {
                         "input" -> InputMessage(uiState = uiState, chatViewModel = chatViewModel)
@@ -133,12 +131,9 @@ fun ChatInputSection(uiState: ChatUiState, chatViewModel: ChatViewModel) {
             
             ChatType.GROUP -> {
                 AnimatedContent(
-                    targetState = uiState.isOwner || uiState.isJoined,
-                    transitionSpec = {
+                    targetState = uiState.isOwner || uiState.isJoined, transitionSpec = {
                         slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
+                    }, modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center
                 ) { showInputField ->
                     if (showInputField) {
                         InputMessage(uiState = uiState, chatViewModel = chatViewModel)
@@ -180,19 +175,16 @@ fun ChatInputSection(uiState: ChatUiState, chatViewModel: ChatViewModel) {
                                     append(". ")
                                     withLink(
                                         LinkAnnotation.Clickable(
-                                            tag = "unblock",
-                                            styles = TextLinkStyles(
+                                            tag = "unblock", styles = TextLinkStyles(
                                                 style = SpanStyle(
                                                     color = MaterialTheme.colorScheme.primary,
                                                     textDecoration = TextDecoration.None
-                                                ),
-                                                pressedStyle = SpanStyle(
+                                                ), pressedStyle = SpanStyle(
                                                     background = MaterialTheme.colorScheme.primary.copy(
                                                         alpha = 0.4f
                                                     )
                                                 )
-                                            ),
-                                            linkInteractionListener = {
+                                            ), linkInteractionListener = {
                                                 chatViewModel.showBlockDialog()
                                             })
                                     ) {
@@ -246,8 +238,7 @@ private fun InputMessage(
     var micTranslationY by remember { mutableFloatStateOf(0f) }
     
     val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments(),
-        onResult = { uris: List<Uri> ->
+        contract = ActivityResultContracts.OpenMultipleDocuments(), onResult = { uris: List<Uri> ->
             if (uris.isNotEmpty()) {
                 attachmentModal.hide()
                 chatViewModel.sendFiles(uris)
@@ -277,8 +268,7 @@ private fun InputMessage(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
+                interactionSource = remember { MutableInteractionSource() }, indication = null
             ) {}
             .background(
                 color = MaterialTheme.colorScheme.surfaceContainer,
@@ -368,21 +358,23 @@ private fun InputMessage(
                             .fillMaxWidth()
                             .alpha(textFieldAlpha),
                         textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            lineHeight = 16.sp
                         ),
                         maxLines = 5,
                         minLines = 1,
                         decorationBox = { innerTextField ->
                             Box(
                                 modifier = Modifier.padding(
-                                    vertical = 12.dp,
-                                    horizontal = 14.dp
+                                    vertical = 12.dp, horizontal = 14.dp
                                 )
                             ) {
                                 if (uiState.messageText.isEmpty() && !uiState.isRecording) {
                                     Text(
                                         text = stringResource(R.string.message),
-                                        style = MaterialTheme.typography.bodyLarge,
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            lineHeight = 16.sp
+                                        ),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -435,18 +427,16 @@ private fun InputMessage(
                                         downEvent.consume()
                                         
                                         if (ContextCompat.checkSelfPermission(
-                                                context,
-                                                android.Manifest.permission.RECORD_AUDIO
+                                                context, android.Manifest.permission.RECORD_AUDIO
                                             ) == PackageManager.PERMISSION_GRANTED
                                         ) {
-                                            val releasedBeforeLongPress =
-                                                withTimeoutOrNull(200L) {
-                                                    do {
-                                                        val event = awaitPointerEvent()
-                                                        event.changes.forEach { it.consume() }
-                                                    } while (event.changes.any { it.pressed })
-                                                    true
-                                                } ?: false
+                                            val releasedBeforeLongPress = withTimeoutOrNull(200L) {
+                                                do {
+                                                    val event = awaitPointerEvent()
+                                                    event.changes.forEach { it.consume() }
+                                                } while (event.changes.any { it.pressed })
+                                                true
+                                            } ?: false
                                             
                                             if (releasedBeforeLongPress) {
                                                 micTranslationX = 0f
@@ -555,8 +545,7 @@ private fun InputMessage(
                                 .size(48.dp)
                                 .padding(2.dp)
                                 .clip(CircleShape)
-                                .background(micBackColor),
-                            contentAlignment = Alignment.Center
+                                .background(micBackColor), contentAlignment = Alignment.Center
                         ) {
                             AnimatedContent(
                                 targetState = uiState.isRecordingLocked,
@@ -647,15 +636,13 @@ private fun VoiceRecordingStatus(
             }
             
             Row(
-                modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.Center
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.Center
             ) {
                 AnimatedContent(
-                    targetState = uiState.isRecordingLocked,
-                    transitionSpec = {
+                    targetState = uiState.isRecordingLocked, transitionSpec = {
                         slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
-                    },
-                    label = "recording_hint_animation",
-                    contentAlignment = Alignment.Center
+                    }, label = "recording_hint_animation", contentAlignment = Alignment.Center
                 ) { isLocked ->
                     if (isLocked) {
                         TextButton(onClick = onCancelRecording) {
@@ -726,8 +713,7 @@ private fun VoiceRecordingLockedIcon(
         exit = fadeOut() + scaleOut() + slideOutVertically { it / 2 },
         modifier = Modifier.offset {
             IntOffset(
-                x = 0,
-                y = micIconPosition.dp.roundToPx()
+                x = 0, y = micIconPosition.dp.roundToPx()
             )
         }) {
         val isNearLock = uiState.isRecordingLocked || micTranslationY < -150f
@@ -754,8 +740,7 @@ private fun VoiceRecordingLockedIcon(
 @Composable
 private fun VoiceRecordingAmplitudeEffect(amplitude: Float) {
     val maxBackgroundScale = 2.2f
-    val currentScale =
-        1f + ((amplitude * 2.5f).coerceAtMost(1f) * (maxBackgroundScale - 1f))
+    val currentScale = 1f + ((amplitude * 2.5f).coerceAtMost(1f) * (maxBackgroundScale - 1f))
     Box(
         modifier = Modifier
             .size(48.dp)
