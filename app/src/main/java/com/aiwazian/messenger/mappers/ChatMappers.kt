@@ -18,7 +18,8 @@ fun ChatResponseDto.toDomain(): Chat = Chat(
     avatarUri = null,
     lastMessage = lastMessage?.toDomain(),
     unreadCount = unreadCount,
-    firstUnreadMessageId = firstUnreadMessageId
+    firstUnreadMessageId = firstUnreadMessageId,
+    isManuallyUnread = isManuallyUnread
 )
 
 fun ChatResponseDto.toEntity(userId: Long): ChatEntity = ChatEntity(
@@ -26,7 +27,8 @@ fun ChatResponseDto.toEntity(userId: Long): ChatEntity = ChatEntity(
     chatId = id,
     isPinned = isPinned,
     unreadCount = unreadCount,
-    firstUnreadMessageId = firstUnreadMessageId
+    firstUnreadMessageId = firstUnreadMessageId,
+    isManuallyUnread = isManuallyUnread
 )
 
 fun ChatEntity.toDomain(
@@ -42,7 +44,8 @@ fun ChatEntity.toDomain(
     lastMessage = lastMessage,
     draftText = draftText,
     unreadCount = unreadCount,
-    firstUnreadMessageId = firstUnreadMessageId
+    firstUnreadMessageId = firstUnreadMessageId,
+    isManuallyUnread = isManuallyUnread
 )
 
 fun Chat.toEntity(userId: Long): ChatEntity = ChatEntity(
@@ -50,5 +53,6 @@ fun Chat.toEntity(userId: Long): ChatEntity = ChatEntity(
     chatId = id,
     isPinned = isPinned,
     unreadCount = unreadCount,
-    firstUnreadMessageId = firstUnreadMessageId
+    firstUnreadMessageId = firstUnreadMessageId,
+    isManuallyUnread = isManuallyUnread
 )
