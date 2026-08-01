@@ -35,6 +35,7 @@ import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.ForwardMessageRequestDto
+import com.aiwazian.messenger.network.dto.MarkChatsRequestDto
 import com.aiwazian.messenger.network.dto.MarkReadRequestDto
 import com.aiwazian.messenger.network.dto.PinChatsRequestDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
@@ -710,14 +711,67 @@ class ChatRepository @Inject constructor(
     }
     
     /**
+     * Массовое «Пометить прочитанным» из списка чатов.
+     *
+     * Список чатов фильтруется вызывающей стороной: на сервер уходят только
+     * реально непрочитанные чаты.
+     */
+    suspend fun markChatsRead(chatIds: List<Long>): Boolean {
+        if (chatIds.isEmpty()) return true
+        return try {
+            val myId = userRepository.getMe().first().id
+            val request = MarkChatsRequestDto(chatIds.map { it.toString() })
+            val response = chatApi.markChatsRead(request, socket.socketId.orEmpty())
+            if (response.isSuccessful) {
+                chatIds.forEach { chatId ->
+                    messageDao.markAllIncomingRead(chatId, myId)
+                    chatDao.clearUnread(myId, chatId)
+                }
+                true
+            } else {
+                Log.e("ChatRepository", "Failed to mark chats as read: ${response.message()}")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error marking chats as read", e)
+            false
+        }
+    }
+    
+    /** Массовое «Пометить непрочитанным» из списка чатов. */
+    suspend fun markChatsUnread(chatIds: List<Long>): Boolean {
+        if (chatIds.isEmpty()) return true
+        return try {
+            val myId = userRepository.getMe().first().id
+            val request = MarkChatsRequestDto(chatIds.map { it.toString() })
+            val response = chatApi.markChatsUnread(request, socket.socketId.orEmpty())
+            if (response.isSuccessful) {
+                chatDao.setManuallyUnread(myId, chatIds, true)
+                true
+            } else {
+                Log.e("ChatRepository", "Failed to mark chats as unread: ${response.message()}")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error marking chats as unread", e)
+            false
+        }
+    }
+    
+    /**
      * Состояние прочтения с сервера → в Room.
      *
      * Счётчик никогда не считается на клиенте по сообщениям: в локальном кэше
      * лежит только окно истории, а не вся история.
      */
-    suspend fun applyUnreadState(chatId: Long, unreadCount: Int, firstUnreadMessageId: Long?) {
+    suspend fun applyUnreadState(
+        chatId: Long,
+        unreadCount: Int,
+        firstUnreadMessageId: Long?,
+        isManuallyUnread: Boolean = false
+    ) {
         val myId = userRepository.getMe().firstOrNull()?.id ?: return
-        chatDao.setUnreadState(myId, chatId, unreadCount, firstUnreadMessageId)
+        chatDao.setUnreadState(myId, chatId, unreadCount, firstUnreadMessageId, isManuallyUnread)
     }
     
     /**
