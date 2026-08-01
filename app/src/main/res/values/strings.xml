@@ -71,6 +71,8 @@
     <string name="remove_folder">Remove Folder</string>
     <string name="pin">Pin</string>
     <string name="unpin">Unpin</string>
+    <string name="mark_as_read">Mark as read</string>
+    <string name="mark_as_unread">Mark as unread</string>
     <string name="folder_name">Folder name</string>
     <string name="included_chats">Included Chats</string>
     <string name="add_chats">Add Chats</string>
