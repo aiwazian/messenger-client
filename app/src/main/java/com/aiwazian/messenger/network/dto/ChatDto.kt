@@ -14,5 +14,6 @@ data class ChatResponseDto(
     @SerialName("isPinned") val isPinned: Boolean = false,
     @SerialName("lastMessage") val lastMessage: MessageDto? = null,
     @SerialName("unreadCount") val unreadCount: Int = 0,
-    @SerialName("firstUnreadMessageId") val firstUnreadMessageId: Long? = null
+    @SerialName("firstUnreadMessageId") val firstUnreadMessageId: Long? = null,
+    @SerialName("isManuallyUnread") val isManuallyUnread: Boolean = false
 )
