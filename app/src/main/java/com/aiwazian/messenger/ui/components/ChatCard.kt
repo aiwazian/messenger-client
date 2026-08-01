@@ -285,7 +285,11 @@ private fun UnreadMessageCount(count: Int) {
             )
         }
     } else {
-        Badge(containerColor = MaterialTheme.colorScheme.primary)
+        Badge(containerColor = MaterialTheme.colorScheme.primary) {
+            Text(
+                text = "", style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 }
 
