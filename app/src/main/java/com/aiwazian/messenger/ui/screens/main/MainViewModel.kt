@@ -183,4 +183,42 @@ class MainViewModel @Inject constructor(
             chats.find { it.id == id }?.isPinned == false
         }
     }
+    
+    /** Хотя бы один из выделенных чатов не прочитан. */
+    fun hasUnreadSelectedChats(): Boolean {
+        val selectedIds = _uiState.value.selectedChatIds
+        val chats = _uiState.value.chats
+        return selectedIds.any { id ->
+            chats.find { it.id == id }?.isUnread == true
+        }
+    }
+    
+    /**
+     * На сервер уходят только реально непрочитанные чаты: уже прочитанные из выделения
+     * отсеиваются на клиенте.
+     */
+    fun markSelectedChatsRead() {
+        val state = _uiState.value
+        val unreadIds = state.selectedChatIds.filter { id ->
+            state.chats.find { it.id == id }?.isUnread == true
+        }
+        if (unreadIds.isEmpty()) {
+            clearSelection()
+            return
+        }
+        viewModelScope.launch {
+            chatRepository.markChatsRead(unreadIds)
+            clearSelection()
+        }
+    }
+    
+    fun markSelectedChatsUnread() {
+        val selectedIds = _uiState.value.selectedChatIds.toList()
+        if (selectedIds.isNotEmpty()) {
+            viewModelScope.launch {
+                chatRepository.markChatsUnread(selectedIds)
+                clearSelection()
+            }
+        }
+    }
 }

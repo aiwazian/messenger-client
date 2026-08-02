@@ -20,8 +20,8 @@ android {
         applicationId = "com.aiwazian.messenger"
         minSdk = 30
         targetSdk = 37
-        versionCode = 46
-        versionName = "1.17.1"
+        versionCode = 47
+        versionName = "1.17.2"
     }
     
     buildTypes {
@@ -110,6 +110,8 @@ dependencies {
     
     // Lottie animation
     implementation(libs.lottie.compose)
+    
+    implementation(libs.material.kolor)
     
     implementation(libs.okhttp)
     

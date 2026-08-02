@@ -49,6 +49,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.MarkChatRead
+import androidx.compose.material.icons.outlined.MarkChatUnread
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Add
@@ -232,7 +234,10 @@ private fun Content(
                     onClearSelection = viewModel::clearSelection,
                     onPinClick = viewModel::pinSelectedChats,
                     onUnpinClick = viewModel::unpinSelectedChats,
-                    hasUnpinnedChats = viewModel.hasUnpinnedSelectedChats()
+                    hasUnpinnedChats = viewModel.hasUnpinnedSelectedChats(),
+                    onMarkReadClick = viewModel::markSelectedChatsRead,
+                    onMarkUnreadClick = viewModel::markSelectedChatsUnread,
+                    hasUnreadChats = viewModel.hasUnreadSelectedChats()
                 )
             }
         }
@@ -384,7 +389,10 @@ private fun SelectionTopBar(
     onClearSelection: () -> Unit,
     onPinClick: () -> Unit,
     onUnpinClick: () -> Unit,
-    hasUnpinnedChats: Boolean
+    hasUnpinnedChats: Boolean,
+    onMarkReadClick: () -> Unit,
+    onMarkUnreadClick: () -> Unit,
+    hasUnreadChats: Boolean
 ) {
     TopAppBar(
         title = {
@@ -437,6 +445,32 @@ private fun SelectionTopBar(
                             onPinClick()
                         } else {
                             onUnpinClick()
+                        }
+                    })
+                
+                DropdownMenuItem(
+                    leadingIcon = {
+                        Icon(
+                            if (hasUnreadChats) Icons.Outlined.MarkChatRead
+                            else Icons.Outlined.MarkChatUnread,
+                            null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    text = {
+                        Text(
+                            stringResource(
+                                if (hasUnreadChats) R.string.mark_as_read
+                                else R.string.mark_as_unread
+                            )
+                        )
+                    },
+                    onClick = {
+                        expand = false
+                        if (hasUnreadChats) {
+                            onMarkReadClick()
+                        } else {
+                            onMarkUnreadClick()
                         }
                     })
             }
@@ -852,7 +886,7 @@ private fun DrawerContent(
             events = BannerEvents(onAdFailedToLoad = { error ->
                 Log.e("YandexAds", error.description)
                 scope.launch {
-                    delay(1.seconds)
+                    delay(4.seconds)
                     loadTrigger++
                 }
             }, onImpression = { data ->

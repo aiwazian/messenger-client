@@ -231,7 +231,7 @@ fun ChatCard(
                     }
                 }
                 
-                if (unreadMessageCount > 0) {
+                if (unreadMessageCount > 0 || chat.isManuallyUnread) {
                     UnreadMessageCount(unreadMessageCount)
                 }
             }
@@ -273,12 +273,23 @@ private fun PinIcon() {
     )
 }
 
+/**
+ * Чат, помеченный непрочитанным вручную, показывает пустой бейдж без числа.
+ */
 @Composable
 private fun UnreadMessageCount(count: Int) {
-    Badge(containerColor = MaterialTheme.colorScheme.primary) {
-        Text(
-            text = count.toString(), style = MaterialTheme.typography.bodySmall
-        )
+    if (count > 0) {
+        Badge(containerColor = MaterialTheme.colorScheme.primary) {
+            Text(
+                text = count.toString(), style = MaterialTheme.typography.bodySmall
+            )
+        }
+    } else {
+        Badge(containerColor = MaterialTheme.colorScheme.primary) {
+            Text(
+                text = "", style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 }
 

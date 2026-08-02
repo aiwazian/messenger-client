@@ -51,7 +51,9 @@ interface ChatDao {
     @Query(
         """
         UPDATE chats 
-        SET unreadCount = :unreadCount, firstUnreadMessageId = :firstUnreadMessageId 
+        SET unreadCount = :unreadCount, 
+            firstUnreadMessageId = :firstUnreadMessageId, 
+            isManuallyUnread = :isManuallyUnread 
         WHERE userId = :userId AND chatId = :chatId
     """
     )
@@ -59,18 +61,22 @@ interface ChatDao {
         userId: Long,
         chatId: Long,
         unreadCount: Int,
-        firstUnreadMessageId: Long?
+        firstUnreadMessageId: Long?,
+        isManuallyUnread: Boolean
     )
     
     /**
      * Локальный инкремент на случай, если message:new опередило chat:unread.
      * firstUnreadMessageId выставляется только если был пуст: граница не должна съезжать вниз.
+     *
+     * Ручная пометка снимается: появились настоящие непрочитанные, бейдж должен показать число.
      */
     @Query(
         """
         UPDATE chats 
         SET unreadCount = unreadCount + 1, 
-            firstUnreadMessageId = COALESCE(firstUnreadMessageId, :messageId) 
+            firstUnreadMessageId = COALESCE(firstUnreadMessageId, :messageId), 
+            isManuallyUnread = 0 
         WHERE userId = :userId AND chatId = :chatId
     """
     )
@@ -79,9 +85,19 @@ interface ChatDao {
     @Query(
         """
         UPDATE chats 
-        SET unreadCount = 0, firstUnreadMessageId = NULL 
+        SET unreadCount = 0, firstUnreadMessageId = NULL, isManuallyUnread = 0 
         WHERE userId = :userId AND chatId = :chatId
     """
     )
     suspend fun clearUnread(userId: Long, chatId: Long)
+    
+    /** Пункт «Пометить непрочитанным» в меню выделения: счётчик не трогаем. */
+    @Query(
+        """
+        UPDATE chats 
+        SET isManuallyUnread = :isManuallyUnread 
+        WHERE userId = :userId AND chatId IN (:chatIds)
+    """
+    )
+    suspend fun setManuallyUnread(userId: Long, chatIds: List<Long>, isManuallyUnread: Boolean)
 }

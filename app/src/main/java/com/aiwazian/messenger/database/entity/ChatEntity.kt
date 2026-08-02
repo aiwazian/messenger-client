@@ -18,5 +18,11 @@ data class ChatEntity(
     /** Сколько сообщений не прочитано: бейдж справа в ChatCard. */
     @ColumnInfo(defaultValue = "0") val unreadCount: Int = 0,
     /** С какого сообщения открывать чат. null — всё прочитано, открываем конец. */
-    val firstUnreadMessageId: Long? = null
+    val firstUnreadMessageId: Long? = null,
+    /**
+     * Пользователь сам пометил чат непрочитанным.
+     *
+     * Непрочитанных сообщений при этом может не быть вовсе — бейдж рисуется пустым.
+     */
+    @ColumnInfo(defaultValue = "0") val isManuallyUnread: Boolean = false
 )

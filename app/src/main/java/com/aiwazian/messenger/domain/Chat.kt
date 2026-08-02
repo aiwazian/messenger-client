@@ -16,5 +16,10 @@ data class Chat(
     val draftText: String? = null,
     /** Бейдж непрочитанных в списке чатов. */
     val unreadCount: Int = 0,
-    val firstUnreadMessageId: Long? = null
-)
+    val firstUnreadMessageId: Long? = null,
+    /** Помечен непрочитанным вручную: бейдж рисуется пустым. */
+    val isManuallyUnread: Boolean = false
+) {
+    /** Чат выглядит непрочитанным: есть сообщения либо стоит ручная пометка. */
+    val isUnread: Boolean get() = unreadCount > 0 || isManuallyUnread
+}

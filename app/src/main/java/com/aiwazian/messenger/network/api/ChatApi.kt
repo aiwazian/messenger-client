@@ -7,11 +7,13 @@ package com.aiwazian.messenger.network.api
 import com.aiwazian.messenger.network.dto.ChatResponseDto
 import com.aiwazian.messenger.network.dto.DeleteChatRequestDto
 import com.aiwazian.messenger.network.dto.InviteLinkInfoDto
+import com.aiwazian.messenger.network.dto.MarkChatsRequestDto
 import com.aiwazian.messenger.network.dto.PinChatsRequestDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.HTTP
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 
@@ -50,6 +52,19 @@ interface ChatApi {
 
     @POST("chats/unpin")
     suspend fun unpinChats(@Body body: PinChatsRequestDto): Response<Unit>
+    
+    /** Прочитать чаты целиком. Свой сокет уходит в заголовке, чтобы не получить своё же событие. */
+    @POST("chats/read")
+    suspend fun markChatsRead(
+        @Body body: MarkChatsRequestDto,
+        @Header("x-socket-id") socketId: String
+    ): Response<Unit>
+    
+    @POST("chats/unread")
+    suspend fun markChatsUnread(
+        @Body body: MarkChatsRequestDto,
+        @Header("x-socket-id") socketId: String
+    ): Response<Unit>
     
     @GET("chats/online")
     suspend fun getOnlineUsers(): Response<List<String>>

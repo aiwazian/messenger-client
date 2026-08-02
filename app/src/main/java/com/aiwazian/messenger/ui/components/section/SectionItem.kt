@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.isUnspecified
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -39,7 +40,7 @@ fun SectionItem(
     leadingIcon: ImageVector? = null,
     trailingText: String? = null,
     trailingContent: @Composable (() -> Unit) = {},
-    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    contentColor: Color = Color.Unspecified,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
 ) {
@@ -72,7 +73,11 @@ fun SectionItem(
                     Icon(
                         imageVector = leadingIcon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (contentColor.isUnspecified) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            contentColor
+                        },
                         modifier = Modifier.padding(end = 16.dp)
                     )
                 }

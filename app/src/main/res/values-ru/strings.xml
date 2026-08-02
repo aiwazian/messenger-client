@@ -71,6 +71,8 @@
     <string name="remove_folder">Удалить папку</string>
     <string name="pin">Закрепить</string>
     <string name="unpin">Открепить</string>
+    <string name="mark_as_read">Пометить прочитанным</string>
+    <string name="mark_as_unread">Пометить непрочитанным</string>
     <string name="folder_name">Название папки</string>
     <string name="included_chats">Выбранные чаты</string>
     <string name="add_chats">Добавить чаты</string>

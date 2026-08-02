@@ -73,7 +73,8 @@ class RealtimeEventSyncService @Inject constructor(
                 chatRepository.applyUnreadState(
                     chatId = payload.chatId,
                     unreadCount = payload.unreadCount,
-                    firstUnreadMessageId = payload.firstUnreadMessageId
+                    firstUnreadMessageId = payload.firstUnreadMessageId,
+                    isManuallyUnread = payload.isManuallyUnread
                 )
             }
         }
