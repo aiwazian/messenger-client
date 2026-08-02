@@ -344,8 +344,11 @@ private fun InputMessage(
             }
         }
         Row(verticalAlignment = Alignment.Bottom) {
-            Column(modifier = Modifier.weight(1f)) {
-                Box(modifier = Modifier.heightIn(min = 48.dp)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                Box(
+                    modifier = Modifier.heightIn(min = 48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     val textFieldAlpha by animateFloatAsState(
                         targetValue = if (uiState.isRecording) 0f else 1f,
                         animationSpec = tween(200)

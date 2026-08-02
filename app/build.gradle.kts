@@ -111,6 +111,8 @@ dependencies {
     // Lottie animation
     implementation(libs.lottie.compose)
     
+    implementation(libs.material.kolor)
+    
     implementation(libs.okhttp)
     
     // Dagger Hilt

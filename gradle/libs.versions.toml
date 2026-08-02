@@ -97,6 +97,8 @@ socketio-client = { module = "io.socket:socket.io-client", version.ref = "socket
 
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottieCompose" }
 
+material-kolor = { module = "com.materialkolor:material-kolor", version = "5.0.0" }
+
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobufJavalite" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }

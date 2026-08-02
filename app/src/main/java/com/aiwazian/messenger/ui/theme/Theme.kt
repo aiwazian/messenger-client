@@ -9,10 +9,8 @@ import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MotionScheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.Color
@@ -21,22 +19,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.enums.ThemeOption
-
-private fun darkColorSchemeMaterial(customPrimaryColor: Color) = darkColorScheme(
-    primary = customPrimaryColor, primaryContainer = customPrimaryColor.copy(
-        red = customPrimaryColor.red - 0.2f,
-        green = customPrimaryColor.green - 0.2f,
-        blue = customPrimaryColor.blue - 0.2f
-    )
-)
-
-private fun lightColorSchemeMaterial(customPrimaryColor: Color) = lightColorScheme(
-    primary = customPrimaryColor, primaryContainer = customPrimaryColor.copy(
-        red = customPrimaryColor.red - 0.2f,
-        green = customPrimaryColor.green - 0.2f,
-        blue = customPrimaryColor.blue - 0.2f
-    )
-)
+import com.materialkolor.PaletteStyle
+import com.materialkolor.rememberDynamicColorScheme
 
 @Composable
 fun ApplicationTheme(
@@ -73,8 +57,11 @@ fun ApplicationTheme(
             if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
         
-        isDark -> darkColorSchemeMaterial(appPrimaryColor)
-        else -> lightColorSchemeMaterial(appPrimaryColor)
+        else -> rememberDynamicColorScheme(
+            seedColor = appPrimaryColor,
+            isDark = isDark,
+            style = PaletteStyle.TonalSpot,
+        )
     }
     
     MaterialExpressiveTheme(
