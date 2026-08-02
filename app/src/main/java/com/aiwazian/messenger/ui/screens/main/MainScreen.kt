@@ -886,7 +886,7 @@ private fun DrawerContent(
             events = BannerEvents(onAdFailedToLoad = { error ->
                 Log.e("YandexAds", error.description)
                 scope.launch {
-                    delay(1.seconds)
+                    delay(4.seconds)
                     loadTrigger++
                 }
             }, onImpression = { data ->
