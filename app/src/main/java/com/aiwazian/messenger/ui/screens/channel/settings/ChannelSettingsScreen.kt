@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Link
@@ -163,6 +164,13 @@ fun ChannelSettingsScreen(
                     onClick = {
                         navBackStack.add(AppRoute.ChannelSubscribers(uiState.channel.id))
                     })
+                SectionItem(
+                    leadingIcon = Icons.Rounded.AdminPanelSettings,
+                    headlineText = stringResource(R.string.administrators),
+                    onClick = {
+                        navBackStack.add(AppRoute.ChannelAdmins(channelId = uiState.channel.id))
+                    }
+                )
                 SectionItem(
                     leadingIcon = Icons.Rounded.PersonAddAlt1,
                     headlineText = stringResource(R.string.join_requests),
