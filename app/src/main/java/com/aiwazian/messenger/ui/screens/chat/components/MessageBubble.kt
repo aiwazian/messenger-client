@@ -159,16 +159,36 @@ fun MessageBubble(
             ) {
                 Column(Modifier.width(IntrinsicSize.Max)) {
                     if (!item.isMine && item.isFirstInGroup && item.senderName != null) {
-                        Text(
-                            text = item.senderName,
-                            fontSize = 12.sp,
-                            lineHeight = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                        /*
+                         * Рядом с именем показывается тег участника, если он выдан.
+                         * Теги есть только в группах.
+                         */
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp)
+                        ) {
+                            Text(
+                                text = item.senderName,
+                                fontSize = 12.sp,
+                                lineHeight = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            
+                            if (!item.senderTag.isNullOrBlank()) {
+                                Text(
+                                    text = item.senderTag,
+                                    fontSize = 11.sp,
+                                    lineHeight = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 4.dp),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
                     }
                     
                     message.forwardedFrom?.let { forwardedFrom ->
