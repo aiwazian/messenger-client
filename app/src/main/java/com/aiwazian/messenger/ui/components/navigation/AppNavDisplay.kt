@@ -27,6 +27,9 @@ import com.aiwazian.messenger.ui.screens.auth.password.reset.ResetPasswordScreen
 import com.aiwazian.messenger.ui.screens.auth.register.RegisterScreen
 import com.aiwazian.messenger.ui.screens.channel.create.CreateChannelScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.ChannelSettingsScreen
+import com.aiwazian.messenger.ui.screens.channel.settings.admins.AddChannelAdminScreen
+import com.aiwazian.messenger.ui.screens.channel.settings.admins.ChannelAdminPermissionsScreen
+import com.aiwazian.messenger.ui.screens.channel.settings.admins.ChannelAdminsScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.blockedUsers.ChannelBlockedUsersScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.invites.ChannelInviteLinksScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.invites.create.CreateInviteLinkScreen
@@ -37,6 +40,9 @@ import com.aiwazian.messenger.ui.screens.chat.ChatScreen
 import com.aiwazian.messenger.ui.screens.group.create.CreateGroupScreen
 import com.aiwazian.messenger.ui.screens.group.settings.GroupSettingsScreen
 import com.aiwazian.messenger.ui.screens.group.settings.addMember.AddMemberScreen
+import com.aiwazian.messenger.ui.screens.group.settings.admins.AddGroupAdminScreen
+import com.aiwazian.messenger.ui.screens.group.settings.admins.GroupAdminPermissionsScreen
+import com.aiwazian.messenger.ui.screens.group.settings.admins.GroupAdminsScreen
 import com.aiwazian.messenger.ui.screens.group.settings.blockedUsers.GroupBlockedUsersScreen
 import com.aiwazian.messenger.ui.screens.group.settings.invites.GroupInviteLinksScreen
 import com.aiwazian.messenger.ui.screens.group.settings.invites.create.CreateGroupInviteLinkScreen
@@ -159,6 +165,11 @@ fun AppNavDisplay(
                     entry<AppRoute.ChannelBlackList> { ChannelBlockedUsersScreen(channelId = it.channelId) }
                     entry<AppRoute.ChannelJoinRequests> { ChannelJoinRequestsScreen(channelId = it.channelId) }
                     entry<AppRoute.ChannelInviteLinks> { ChannelInviteLinksScreen(channelId = it.channelId) }
+                    entry<AppRoute.ChannelAdmins> { ChannelAdminsScreen(channelId = it.channelId) }
+                    entry<AppRoute.AddChannelAdmin> { AddChannelAdminScreen(channelId = it.channelId) }
+                    entry<AppRoute.ChannelAdminPermissions> {
+                        ChannelAdminPermissionsScreen(channelId = it.channelId, userId = it.userId)
+                    }
                     entry<AppRoute.CreateInviteLink> { CreateInviteLinkScreen(channelId = it.channelId) }
                     entry<AppRoute.GroupSettings> { GroupSettingsScreen(groupId = it.groupId) }
                     entry<AppRoute.GroupTypeSettings> { GroupTypeSettingsScreen(groupId = it.groupId) }
@@ -167,6 +178,11 @@ fun AppNavDisplay(
                     entry<AppRoute.GroupMembers> { GroupMembersScreen(groupId = it.groupId) }
                     entry<AppRoute.GroupBlackList> { GroupBlockedUsersScreen(groupId = it.groupId) }
                     entry<AppRoute.GroupJoinRequests> { GroupJoinRequestsScreen(groupId = it.groupId) }
+                    entry<AppRoute.GroupAdmins> { GroupAdminsScreen(groupId = it.groupId) }
+                    entry<AppRoute.AddGroupAdmin> { AddGroupAdminScreen(groupId = it.groupId) }
+                    entry<AppRoute.GroupAdminPermissions> {
+                        GroupAdminPermissionsScreen(groupId = it.groupId, userId = it.userId)
+                    }
                     entry<AppRoute.AddMember> { AddMemberScreen(groupId = it.groupId) }
                     entry<AppRoute.Logout> { LogoutScreen() }
                     entry<AppRoute.Login>(metadata = HorizontalMetadata) { LoginScreen() }
