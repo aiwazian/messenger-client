@@ -4,7 +4,9 @@
 
 package com.aiwazian.messenger.network.api
 
+import com.aiwazian.messenger.network.dto.ChannelAdminResponseDto
 import com.aiwazian.messenger.network.dto.ChannelResponseDto
+import com.aiwazian.messenger.network.dto.ChatAdminPermissionsResponseDto
 import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
@@ -13,6 +15,7 @@ import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.InviteLinkResponseDto
 import com.aiwazian.messenger.network.dto.SetNoCopyRequestDto
 import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
+import com.aiwazian.messenger.network.dto.UpsertChannelAdminRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
 import retrofit2.Response
 import retrofit2.http.Body
@@ -20,6 +23,7 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -38,6 +42,33 @@ interface ChannelApi {
         @Query("take") take: Int = 100,
         @Query("search") search: String? = null
     ): Response<List<UserResponseDto>>
+
+    /** Список администраторов канала: только для владельца. */
+    @GET("channels/{channelId}/admins")
+    suspend fun getAdmins(
+        @Path("channelId") channelId: Long
+    ): Response<List<ChannelAdminResponseDto>>
+
+    /** Права текущего пользователя в канале. */
+    @GET("channels/{channelId}/admins/me")
+    suspend fun getMyChannelPermissions(
+        @Path("channelId") channelId: Long
+    ): Response<ChatAdminPermissionsResponseDto>
+
+    /** Назначить администратора или перезаписать его права. */
+    @PUT("channels/{channelId}/admins/{userId}")
+    suspend fun upsertAdmin(
+        @Path("channelId") channelId: Long,
+        @Path("userId") userId: Long,
+        @Body request: UpsertChannelAdminRequestDto
+    ): Response<ChannelAdminResponseDto>
+
+    /** Снять администратора канала. */
+    @DELETE("channels/{channelId}/admins/{userId}")
+    suspend fun removeAdmin(
+        @Path("channelId") channelId: Long,
+        @Path("userId") userId: Long
+    ): Response<Unit>
 
     @PATCH("channels/{channelId}")
     suspend fun updateChannel(

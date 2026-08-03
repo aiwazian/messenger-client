@@ -38,6 +38,12 @@ class ChatItemMapper(
     /** Состою ли в группе/канале: без этого нельзя ни писать, ни отвечать. */
     private val isJoined: Boolean,
     private val userNamesCache: Map<Long, String>,
+    /**
+     * Теги участников группы: id → тег.
+     *
+     * Загружаются одним запросом при открытии группы, в каналах всегда пусты.
+     */
+    private val memberTagsCache: Map<Long, String> = emptyMap(),
     private val groupReadInfo: Map<Long, List<MessageReadInfo>>,
     private val highlightedMessageId: Long? = null,
     private val unreadAnchorMessageId: Long? = null,
@@ -138,6 +144,10 @@ class ChatItemMapper(
                         userNamesCache[updatedMessage.senderId].also {
                             if (it == null) onLoadUserName(updatedMessage.senderId)
                         }
+                    } else null,
+                    /* Тег есть только в группах и только у назначенных администраторов. */
+                    senderTag = if (!isMine && chatType == ChatType.GROUP) {
+                        memberTagsCache[updatedMessage.senderId]?.takeIf { it.isNotBlank() }
                     } else null,
                     isFirstInGroup = isFirstInGroup,
                     isSingleEmoji = isSingleEmoji,

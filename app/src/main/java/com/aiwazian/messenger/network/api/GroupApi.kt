@@ -5,15 +5,19 @@
 package com.aiwazian.messenger.network.api
 
 import com.aiwazian.messenger.network.dto.AddMembersRequestDto
+import com.aiwazian.messenger.network.dto.ChatAdminPermissionsResponseDto
 import com.aiwazian.messenger.network.dto.CreateGroupRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
+import com.aiwazian.messenger.network.dto.GroupAdminResponseDto
+import com.aiwazian.messenger.network.dto.GroupMemberTagResponseDto
 import com.aiwazian.messenger.network.dto.GroupResponseDto
 import com.aiwazian.messenger.network.dto.InviteLinkResponseDto
 import com.aiwazian.messenger.network.dto.SetNoCopyRequestDto
 import com.aiwazian.messenger.network.dto.UpdateGroupRequestDto
+import com.aiwazian.messenger.network.dto.UpsertGroupAdminRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
 import retrofit2.Response
 import retrofit2.http.Body
@@ -21,6 +25,7 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -39,6 +44,41 @@ interface GroupApi {
         @Query("take") take: Int = 100,
         @Query("search") search: String? = null
     ): Response<List<UserResponseDto>>
+
+    /**
+     * Теги участников группы.
+     *
+     * Доступно любому участнику: тег рисуется рядом с именем отправителя.
+     */
+    @GET("groups/{groupId}/member-tags")
+    suspend fun getMemberTags(
+        @Path("groupId") groupId: Long
+    ): Response<List<GroupMemberTagResponseDto>>
+
+    /** Список администраторов группы: только для владельца. */
+    @GET("groups/{groupId}/admins")
+    suspend fun getAdmins(@Path("groupId") groupId: Long): Response<List<GroupAdminResponseDto>>
+
+    /** Права текущего пользователя в группе. */
+    @GET("groups/{groupId}/admins/me")
+    suspend fun getMyGroupPermissions(
+        @Path("groupId") groupId: Long
+    ): Response<ChatAdminPermissionsResponseDto>
+
+    /** Назначить администратора или перезаписать его права и тег. */
+    @PUT("groups/{groupId}/admins/{userId}")
+    suspend fun upsertAdmin(
+        @Path("groupId") groupId: Long,
+        @Path("userId") userId: Long,
+        @Body request: UpsertGroupAdminRequestDto
+    ): Response<GroupAdminResponseDto>
+
+    /** Снять администратора вместе с его тегом. */
+    @DELETE("groups/{groupId}/admins/{userId}")
+    suspend fun removeAdmin(
+        @Path("groupId") groupId: Long,
+        @Path("userId") userId: Long
+    ): Response<Unit>
 
     @GET("groups/{groupId}/available-users")
     suspend fun getAvailableUsersForInvite(
