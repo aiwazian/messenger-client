@@ -164,38 +164,48 @@ fun ChannelSettingsScreen(
                 }
             }
             
-            if (uiState.isOwner) {
+            if (uiState.isOwner || uiState.canManageAdmins) {
                 SectionContainer {
-                    SectionItem(
-                        leadingIcon = Icons.Rounded.People,
-                        headlineText = stringResource(R.string.subscribers),
-                        trailingText = uiState.channel.subscribers.toString(),
-                        onClick = {
-                            navBackStack.add(AppRoute.ChannelSubscribers(uiState.channel.id))
-                        })
-                    SectionItem(
-                        leadingIcon = Icons.Rounded.AdminPanelSettings,
-                        headlineText = stringResource(R.string.administrators),
-                        onClick = {
-                            navBackStack.add(AppRoute.ChannelAdmins(channelId = uiState.channel.id))
-                        }
-                    )
-                    SectionItem(
-                        leadingIcon = Icons.Rounded.PersonAddAlt1,
-                        headlineText = stringResource(R.string.join_requests),
-                        onClick = {
-                            navBackStack.add(AppRoute.ChannelJoinRequests(channelId = uiState.channel.id))
-                        }
-                    )
-                    SectionItem(
-                        leadingIcon = Icons.Rounded.Block,
-                        headlineText = stringResource(R.string.removed_user),
-                        trailingText = uiState.channel.removedUsers.toString(),
-                        onClick = {
-                            navBackStack.add(AppRoute.ChannelBlackList(uiState.channel.id))
-                        })
+                    if (uiState.isOwner) {
+                        SectionItem(
+                            leadingIcon = Icons.Rounded.People,
+                            headlineText = stringResource(R.string.subscribers),
+                            trailingText = uiState.channel.subscribers.toString(),
+                            onClick = {
+                                navBackStack.add(AppRoute.ChannelSubscribers(uiState.channel.id))
+                            })
+                    }
+                    
+                    if (uiState.canManageAdmins) {
+                        SectionItem(
+                            leadingIcon = Icons.Rounded.AdminPanelSettings,
+                            headlineText = stringResource(R.string.administrators),
+                            onClick = {
+                                navBackStack.add(AppRoute.ChannelAdmins(channelId = uiState.channel.id))
+                            }
+                        )
+                    }
+                    
+                    if (uiState.isOwner) {
+                        SectionItem(
+                            leadingIcon = Icons.Rounded.PersonAddAlt1,
+                            headlineText = stringResource(R.string.join_requests),
+                            onClick = {
+                                navBackStack.add(AppRoute.ChannelJoinRequests(channelId = uiState.channel.id))
+                            }
+                        )
+                        SectionItem(
+                            leadingIcon = Icons.Rounded.Block,
+                            headlineText = stringResource(R.string.removed_user),
+                            trailingText = uiState.channel.removedUsers.toString(),
+                            onClick = {
+                                navBackStack.add(AppRoute.ChannelBlackList(uiState.channel.id))
+                            })
+                    }
                 }
-                
+            }
+            
+            if (uiState.isOwner) {
                 SectionContainer {
                     SectionItem(
                         headlineText = stringResource(R.string.delete_channel),
