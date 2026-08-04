@@ -7,8 +7,10 @@ package com.aiwazian.messenger.repository.channel
 import android.util.Log
 import com.aiwazian.messenger.domain.ChannelAdmin
 import com.aiwazian.messenger.domain.ChatAdminPermissions
+import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.network.api.ChannelApi
 import com.aiwazian.messenger.network.dto.UpsertChannelAdminRequestDto
+import com.aiwazian.messenger.network.dto.toDomain
 import javax.inject.Inject
 
 /**
@@ -32,7 +34,8 @@ class ChannelAdminsRepository @Inject constructor(
                         lastName = dto.lastName,
                         username = dto.username,
                         canManageInviteLinks = dto.canManageInviteLinks,
-                        canEditProfile = dto.canEditProfile
+                        canEditProfile = dto.canEditProfile,
+                        canManageAdmins = dto.canManageAdmins
                     )
                 })
             } else {
@@ -40,6 +43,25 @@ class ChannelAdminsRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error getting admins for channel $channelId", e)
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Кого можно назначить администратором.
+     *
+     * Владельца сервер в списке не отдаёт: у него и так все права.
+     */
+    suspend fun getAdminCandidates(channelId: Long): Result<List<User>> {
+        return try {
+            val response = channelApi.getAdminCandidates(channelId)
+            if (response.isSuccessful) {
+                Result.success(response.body().orEmpty().map { it.toDomain() })
+            } else {
+                Result.failure(Exception("Failed to get channel admin candidates"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting admin candidates for channel $channelId", e)
             Result.failure(e)
         }
     }
@@ -54,7 +76,8 @@ class ChannelAdminsRepository @Inject constructor(
                         isOwner = dto.isOwner,
                         isAdmin = dto.isAdmin,
                         canManageInviteLinks = dto.canManageInviteLinks,
-                        canEditProfile = dto.canEditProfile
+                        canEditProfile = dto.canEditProfile,
+                        canManageAdmins = dto.canManageAdmins
                     )
                 )
             } else {
@@ -70,7 +93,8 @@ class ChannelAdminsRepository @Inject constructor(
         channelId: Long,
         userId: Long,
         canManageInviteLinks: Boolean,
-        canEditProfile: Boolean
+        canEditProfile: Boolean,
+        canManageAdmins: Boolean
     ): Result<Unit> {
         return try {
             val response = channelApi.upsertAdmin(
@@ -78,7 +102,8 @@ class ChannelAdminsRepository @Inject constructor(
                 userId = userId,
                 request = UpsertChannelAdminRequestDto(
                     canManageInviteLinks = canManageInviteLinks,
-                    canEditProfile = canEditProfile
+                    canEditProfile = canEditProfile,
+                    canManageAdmins = canManageAdmins
                 )
             )
             if (response.isSuccessful) {
