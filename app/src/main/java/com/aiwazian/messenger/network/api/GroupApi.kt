@@ -55,9 +55,15 @@ interface GroupApi {
         @Path("groupId") groupId: Long
     ): Response<List<GroupMemberTagResponseDto>>
 
-    /** Список администраторов группы: только для владельца. */
+    /** Список администраторов группы: владелец и админы с правом управления админами. */
     @GET("groups/{groupId}/admins")
     suspend fun getAdmins(@Path("groupId") groupId: Long): Response<List<GroupAdminResponseDto>>
+
+    /** Участники, которых можно назначить администраторами: без владельца. */
+    @GET("groups/{groupId}/admins/candidates")
+    suspend fun getAdminCandidates(
+        @Path("groupId") groupId: Long
+    ): Response<List<UserResponseDto>>
 
     /** Права текущего пользователя в группе. */
     @GET("groups/{groupId}/admins/me")
