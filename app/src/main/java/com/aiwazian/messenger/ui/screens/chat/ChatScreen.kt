@@ -101,11 +101,9 @@ import com.aiwazian.messenger.utils.ActiveChatTracker
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import java.util.Locale
-import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(FlowPreview::class)
 @Composable
@@ -296,7 +294,6 @@ fun ChatScreen(
                 message.id > 0 && !message.isRead && message.senderId != uiState.myId
             }.maxOfOrNull { it.id }
         }.distinctUntilChanged()
-            .debounce(READ_REPORT_DEBOUNCE_MS.milliseconds)
             .collect { messageId ->
                 if (messageId != null) chatViewModel.onMessagesSeen(messageId)
             }
@@ -793,11 +790,3 @@ private const val PREFETCH_THRESHOLD = 10
  * При reverseLayout самое новое сообщение — это начало списка.
  */
 private const val BOTTOM_ITEM_INDEX = 0
-
-/**
- * Сколько ждать перед отправкой отметки о прочтении.
- *
- * Без паузы быстрый скролл через десятки сообщений помечал бы прочитанным всё,
- * что промелькнуло мимо экрана.
- */
-private const val READ_REPORT_DEBOUNCE_MS = 400L
