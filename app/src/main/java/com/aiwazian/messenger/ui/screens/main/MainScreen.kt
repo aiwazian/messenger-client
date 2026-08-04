@@ -31,6 +31,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -109,6 +111,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -254,81 +257,91 @@ private fun Content(
             }
         }
     }) { innerPadding ->
-        Column {
-            if (uiState.chats.isEmpty()) {
-                EmptyChatPlaceholder(text = "Чтобы начать общение нажмите на поле поиска сверху экрана и найдите пользователя по его @username")
-            } else {
-                LazyColumn {
-                    item {
-                        Spacer(Modifier.height(innerPadding.calculateTopPadding()))
-                    }
-                    items(uiState.chats) { chat ->
-                        val chatName = chat.chatName.asString()
-                        val isSelected = chat.id in uiState.selectedChatIds
-                        val isOnline = ChatType.fromId(chat.id) == ChatType.PRIVATE &&
-                                chat.id != uiState.me.id &&
-                                chat.id in uiState.onlineUserIds
-                        ChatCard(
-                            modifier = Modifier.animateItem(),
-                            chat = chat,
-                            myId = uiState.me.id,
-                            isSelected = isSelected,
-                            isOnline = isOnline,
-                            unreadMessageCount = chat.unreadCount,
-                            onClickChat = {
-                                if (hasSelection) {
-                                    viewModel.toggleChatSelection(chat.id)
-                                } else {
-                                    navBackStack.add(
-                                        AppRoute.Chat(
-                                            chatId = chat.id,
-                                            chatName = chatName,
-                                            avatarUri = chat.avatarUri?.toString()
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.padding(
+                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                    end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
+                )
+            ) {
+                if (uiState.chats.isEmpty()) {
+                    EmptyChatPlaceholder(text = "Чтобы начать общение нажмите на поле поиска сверху экрана и найдите пользователя по его @username")
+                } else {
+                    LazyColumn {
+                        item {
+                            Spacer(Modifier.height(innerPadding.calculateTopPadding()))
+                        }
+                        items(uiState.chats) { chat ->
+                            val chatName = chat.chatName.asString()
+                            val isSelected = chat.id in uiState.selectedChatIds
+                            val isOnline = ChatType.fromId(chat.id) == ChatType.PRIVATE &&
+                                    chat.id != uiState.me.id &&
+                                    chat.id in uiState.onlineUserIds
+                            ChatCard(
+                                modifier = Modifier.animateItem(),
+                                chat = chat,
+                                myId = uiState.me.id,
+                                isSelected = isSelected,
+                                isOnline = isOnline,
+                                unreadMessageCount = chat.unreadCount,
+                                onClickChat = {
+                                    if (hasSelection) {
+                                        viewModel.toggleChatSelection(chat.id)
+                                    } else {
+                                        navBackStack.add(
+                                            AppRoute.Chat(
+                                                chatId = chat.id,
+                                                chatName = chatName,
+                                                avatarUri = chat.avatarUri?.toString()
+                                            )
                                         )
-                                    )
-                                }
-                            },
-                            onLongClickChat = {
-                                viewModel.toggleChatSelection(chat.id)
-                            })
-                    }
-                    item {
-                        Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
+                                    }
+                                },
+                                onLongClickChat = {
+                                    viewModel.toggleChatSelection(chat.id)
+                                })
+                        }
+                        item {
+                            Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
+                        }
                     }
                 }
             }
+            
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(innerPadding.calculateTopPadding())
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+                    .align(Alignment.TopCenter)
+            )
+            
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(
+                        innerPadding.calculateBottomPadding() + WindowInsets().getBottom(
+                            LocalDensity.current
+                        ).dp
+                    )
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+                            )
+                        )
+                    )
+                    .align(Alignment.BottomCenter)
+            )
         }
-        
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(innerPadding.calculateTopPadding())
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), Color.Transparent
-                        )
-                    )
-                )
-        )
-        
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(
-                    innerPadding.calculateBottomPadding() + WindowInsets().getBottom(
-                        LocalDensity.current
-                    ).dp
-                )
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
-                        )
-                    )
-                )
-        )
         
         if (uiState.showNotificationBottomSheet) {
             val context = LocalContext.current

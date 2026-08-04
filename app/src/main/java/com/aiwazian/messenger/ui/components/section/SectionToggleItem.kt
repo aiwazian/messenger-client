@@ -13,12 +13,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
@@ -56,14 +56,13 @@ fun SectionToggleItem(
             ) {
                 Text(
                     text = text,
-                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Normal
                 )
                 if (!supportingText.isNullOrBlank()) {
                     Text(
                         text = supportingText,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Normal,
                         lineHeight = 12.sp
@@ -82,10 +81,6 @@ fun SectionToggleItem(
                     enabled = enabled,
                     checked = isChecked,
                     onCheckedChange = null,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                        checkedTrackColor = MaterialTheme.colorScheme.primary,
-                    )
                 )
             }
         }

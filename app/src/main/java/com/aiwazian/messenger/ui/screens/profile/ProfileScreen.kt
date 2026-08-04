@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.FlexBoxScope
 import androidx.compose.foundation.layout.FlexDirection
 import androidx.compose.foundation.layout.FlexWrap
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -64,6 +66,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
@@ -237,38 +240,47 @@ fun ProfileScreen(
                 }
             }
             
-            when (val profile = uiState.profile) {
-                is Profile.User -> UserProfile(
-                    myId = uiState.myId,
-                    userId = uiState.id,
-                    user = profile,
-                    channelInfo = uiState.profileChannelInfo,
-                    onChatClick = viewModel::onChatButtonClicked,
-                    onEditClick = { navBackStack.add(AppRoute.SettingsProfile) },
-                    onLinkClicked = viewModel::onLinkClicked,
-                    onUsernameClicked = viewModel::onUsernameClicked
+            Box(
+                modifier = Modifier.padding(
+                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                    end = innerPadding.calculateEndPadding(
+                        LayoutDirection.Ltr
+                    )
                 )
-                
-                is Profile.Channel -> ChannelProfile(
-                    myId = uiState.myId,
-                    channel = profile,
-                    onJoinClick = viewModel::onJoinClicked,
-                    onLeaveClick = viewModel::showLeaveDialog,
-                    onLinkClicked = viewModel::onLinkClicked,
-                    onUsernameClicked = viewModel::onUsernameClicked
-                )
-                
-                is Profile.Group -> GroupProfile(
-                    myId = uiState.myId,
-                    group = profile,
-                    onChatClick = viewModel::onChatButtonClicked,
-                    onJoinClick = viewModel::onJoinClicked,
-                    onLeaveClick = viewModel::showLeaveDialog,
-                    onLinkClicked = viewModel::onLinkClicked,
-                    onUsernameClicked = viewModel::onUsernameClicked
-                )
-                
-                else -> {}
+            ) {
+                when (val profile = uiState.profile) {
+                    is Profile.User -> UserProfile(
+                        myId = uiState.myId,
+                        userId = uiState.id,
+                        user = profile,
+                        channelInfo = uiState.profileChannelInfo,
+                        onChatClick = viewModel::onChatButtonClicked,
+                        onEditClick = { navBackStack.add(AppRoute.SettingsProfile) },
+                        onLinkClicked = viewModel::onLinkClicked,
+                        onUsernameClicked = viewModel::onUsernameClicked
+                    )
+                    
+                    is Profile.Channel -> ChannelProfile(
+                        myId = uiState.myId,
+                        channel = profile,
+                        onJoinClick = viewModel::onJoinClicked,
+                        onLeaveClick = viewModel::showLeaveDialog,
+                        onLinkClicked = viewModel::onLinkClicked,
+                        onUsernameClicked = viewModel::onUsernameClicked
+                    )
+                    
+                    is Profile.Group -> GroupProfile(
+                        myId = uiState.myId,
+                        group = profile,
+                        onChatClick = viewModel::onChatButtonClicked,
+                        onJoinClick = viewModel::onJoinClicked,
+                        onLeaveClick = viewModel::showLeaveDialog,
+                        onLinkClicked = viewModel::onLinkClicked,
+                        onUsernameClicked = viewModel::onUsernameClicked
+                    )
+                    
+                    else -> {}
+                }
             }
         }
     }

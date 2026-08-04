@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -69,6 +71,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -296,7 +299,7 @@ fun ChatScreen(
             .debounce(READ_REPORT_DEBOUNCE_MS.milliseconds)
             .collect { messageId ->
                 if (messageId != null) chatViewModel.onMessagesSeen(messageId)
-        }
+            }
     }
     
     var fileToCancelId by remember { mutableStateOf<Long?>(null) }
@@ -439,7 +442,13 @@ fun ChatScreen(
     }) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
-                modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                        end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
+                    ),
+                verticalArrangement = Arrangement.Bottom
             ) {
                 /*
                  * reverseLayout: нулевой элемент рисуется у нижней кромки экрана,

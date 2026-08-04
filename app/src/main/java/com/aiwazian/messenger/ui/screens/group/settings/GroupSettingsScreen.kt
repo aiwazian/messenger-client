@@ -13,13 +13,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.rounded.AdminPanelSettings
+import androidx.compose.material.icons.outlined.PersonAddAlt1
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Link
-import androidx.compose.material.icons.rounded.People
-import androidx.compose.material.icons.rounded.PersonAddAlt1
+import androidx.compose.material.icons.rounded.PeopleOutline
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -172,7 +172,7 @@ fun GroupSettingsScreen(
                 SectionContainer {
                     if (uiState.isOwner) {
                         SectionItem(
-                            leadingIcon = Icons.Rounded.People,
+                            leadingIcon = Icons.Rounded.PeopleOutline,
                             headlineText = stringResource(R.string.members),
                             trailingText = uiState.group.members.toString(),
                             onClick = {
@@ -182,7 +182,7 @@ fun GroupSettingsScreen(
                     
                     if (uiState.canManageAdmins) {
                         SectionItem(
-                            leadingIcon = Icons.Rounded.AdminPanelSettings,
+                            leadingIcon = Icons.Outlined.AdminPanelSettings,
                             headlineText = stringResource(R.string.administrators),
                             trailingText = uiState.adminsCount.toString(),
                             onClick = {
@@ -193,7 +193,7 @@ fun GroupSettingsScreen(
                     
                     if (uiState.isOwner) {
                         SectionItem(
-                            leadingIcon = Icons.Rounded.PersonAddAlt1,
+                            leadingIcon = Icons.Outlined.PersonAddAlt1,
                             headlineText = stringResource(R.string.join_requests),
                             trailingText = uiState.joinRequestsCount.toString(),
                             onClick = {

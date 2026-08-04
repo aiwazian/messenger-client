@@ -123,7 +123,7 @@ fun SectionItem(
     leadingIcon: ImageVector? = null,
     trailingText: String? = null,
     trailingContent: @Composable (() -> Unit) = {},
-    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    contentColor: Color = Color.Unspecified,
     onLinkClicked: ((String) -> Unit)? = null,
     onUsernameClicked: ((String) -> Unit)? = null,
     onClick: () -> Unit = {},
@@ -221,7 +221,11 @@ fun SectionItem(
             
             Text(
                 text = annotatedString,
-                color = contentColor,
+                color = if (contentColor.isUnspecified) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    contentColor
+                },
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Normal
             )
