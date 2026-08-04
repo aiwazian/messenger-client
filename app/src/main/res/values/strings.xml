@@ -335,6 +335,7 @@
     <string name="add_administrator">Add Administrator</string>
     <string name="admin_permissions">Permissions</string>
     <string name="edit_permissions">Edit permissions</string>
+    <string name="view_permissions">View permissions</string>
     <string name="dismiss_admin">Dismiss</string>
     <string name="dismiss_admin_confirm_message">Are you sure you want to remove this user from the administrators?</string>
     <string name="no_administrators">No administrators</string>
