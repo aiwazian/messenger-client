@@ -30,7 +30,11 @@ data class GroupSettingsUiState(
     val hasChanges: Boolean = false,
     val showDeleteDialog: Boolean = false,
     val pendingAvatarUri: Uri? = null,
-    val permissions: ChatAdminPermissions = ChatAdminPermissions()
+    val permissions: ChatAdminPermissions = ChatAdminPermissions(),
+    /** Показывается справа от пункта «Администраторы». */
+    val adminsCount: Int = 0,
+    /** Показывается справа от пункта «Заявки на вступление». */
+    val joinRequestsCount: Int = 0
 ) {
     
     val isOwner: Boolean

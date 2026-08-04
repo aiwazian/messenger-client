@@ -57,6 +57,7 @@ class ChannelSettingsViewModel @Inject constructor(
     fun init(channelId: Long) {
         viewModelScope.launch {
             loadMyPermissions(channelId)
+            loadCounters(channelId)
         }
         
         viewModelScope.launch {
@@ -83,6 +84,27 @@ class ChannelSettingsViewModel @Inject constructor(
         }.onFailure { error ->
             Log.e(TAG, "error load my permissions", error)
             _uiState.update { it.copy(permissions = ChatAdminPermissions()) }
+        }
+    }
+    
+    /** Счётчики грузятся только для тех блоков, которые видны текущему пользователю. */
+    private suspend fun loadCounters(channelId: Long) {
+        val state = _uiState.value
+        
+        if (state.canManageAdmins) {
+            channelAdminsRepository.getAdmins(channelId).onSuccess { admins ->
+                _uiState.update { it.copy(adminsCount = admins.size) }
+            }.onFailure { error ->
+                Log.e(TAG, "error load admins count", error)
+            }
+        }
+        
+        if (state.isOwner) {
+            channelRepository.getJoinRequests(channelId).onSuccess { requests ->
+                _uiState.update { it.copy(joinRequestsCount = requests.size) }
+            }.onFailure { error ->
+                Log.e(TAG, "error load join requests count", error)
+            }
         }
     }
     

@@ -57,6 +57,7 @@ class GroupSettingsViewModel @Inject constructor(
     fun init(groupId: Long) {
         viewModelScope.launch {
             loadMyPermissions(groupId)
+            loadCounters(groupId)
         }
         
         viewModelScope.launch {
@@ -83,6 +84,27 @@ class GroupSettingsViewModel @Inject constructor(
         }.onFailure { error ->
             Log.e(TAG, "error load my permissions", error)
             _uiState.update { it.copy(permissions = ChatAdminPermissions()) }
+        }
+    }
+    
+    /** Счётчики грузятся только для тех блоков, которые видны текущему пользователю. */
+    private suspend fun loadCounters(groupId: Long) {
+        val state = _uiState.value
+        
+        if (state.canManageAdmins) {
+            groupAdminsRepository.getAdmins(groupId).onSuccess { admins ->
+                _uiState.update { it.copy(adminsCount = admins.size) }
+            }.onFailure { error ->
+                Log.e(TAG, "error load admins count", error)
+            }
+        }
+        
+        if (state.isOwner) {
+            groupRepository.getJoinRequests(groupId).onSuccess { requests ->
+                _uiState.update { it.copy(joinRequestsCount = requests.size) }
+            }.onFailure { error ->
+                Log.e(TAG, "error load join requests count", error)
+            }
         }
     }
     
