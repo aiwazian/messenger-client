@@ -43,11 +43,17 @@ interface ChannelApi {
         @Query("search") search: String? = null
     ): Response<List<UserResponseDto>>
 
-    /** Список администраторов канала: только для владельца. */
+    /** Список администраторов канала: владелец и админы с правом управления админами. */
     @GET("channels/{channelId}/admins")
     suspend fun getAdmins(
         @Path("channelId") channelId: Long
     ): Response<List<ChannelAdminResponseDto>>
+
+    /** Подписчики, которых можно назначить администраторами: без владельца. */
+    @GET("channels/{channelId}/admins/candidates")
+    suspend fun getAdminCandidates(
+        @Path("channelId") channelId: Long
+    ): Response<List<UserResponseDto>>
 
     /** Права текущего пользователя в канале. */
     @GET("channels/{channelId}/admins/me")
