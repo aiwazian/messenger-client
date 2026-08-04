@@ -10,5 +10,7 @@ data class GroupAdminPermissionsUiState(
     val canEditProfile: Boolean = false,
     val canManageAdmins: Boolean = false,
     val tag: String = "",
-    val isSaving: Boolean = false
+    val isSaving: Boolean = false,
+    /** Свои разрешения администратор только смотрит: переключатели выключены. */
+    val isReadOnly: Boolean = false
 )

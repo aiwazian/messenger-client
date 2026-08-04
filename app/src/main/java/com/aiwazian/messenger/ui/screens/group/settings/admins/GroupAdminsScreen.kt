@@ -109,7 +109,8 @@ fun GroupAdminsScreen(
                         items(uiState.admins) { admin ->
                             GroupAdminItem(
                                 admin = admin,
-                                onEditPermissions = {
+                                isCurrentUser = admin.userId == uiState.currentUserId,
+                                onOpenPermissions = {
                                     navBackStack.add(
                                         AppRoute.GroupAdminPermissions(groupId, admin.userId)
                                     )
@@ -146,10 +147,16 @@ fun GroupAdminsScreen(
     }
 }
 
+/**
+ * Карточка администратора.
+ *
+ * В своей карточке действий над правами нет: разрешения можно только посмотреть.
+ */
 @Composable
 private fun GroupAdminItem(
     admin: GroupAdmin,
-    onEditPermissions: () -> Unit,
+    isCurrentUser: Boolean,
+    onOpenPermissions: () -> Unit,
     onDemote: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -169,36 +176,49 @@ private fun GroupAdminItem(
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false }
             ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.edit_permissions)) },
-                    onClick = {
-                        showMenu = false
-                        onEditPermissions()
-                    },
-                    leadingIcon = {
-                        Icon(Icons.Rounded.Tune, null)
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.dismiss_admin)) },
-                    onClick = {
-                        showMenu = false
-                        onDemote()
-                    },
-                    leadingIcon = {
-                        Icon(Icons.Rounded.PersonRemove, null)
-                    },
-                    colors = MenuItemColors(
-                        textColor = MaterialTheme.colorScheme.error,
-                        leadingIconColor = MaterialTheme.colorScheme.error,
-                        trailingIconColor = MaterialTheme.colorScheme.error,
-                        disabledTextColor = Color.Unspecified,
-                        disabledLeadingIconColor = Color.Unspecified,
-                        disabledTrailingIconColor = Color.Unspecified
+                if (isCurrentUser) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.view_permissions)) },
+                        onClick = {
+                            showMenu = false
+                            onOpenPermissions()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Rounded.Tune, null)
+                        }
                     )
-                )
+                } else {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.edit_permissions)) },
+                        onClick = {
+                            showMenu = false
+                            onOpenPermissions()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Rounded.Tune, null)
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.dismiss_admin)) },
+                        onClick = {
+                            showMenu = false
+                            onDemote()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Rounded.PersonRemove, null)
+                        },
+                        colors = MenuItemColors(
+                            textColor = MaterialTheme.colorScheme.error,
+                            leadingIconColor = MaterialTheme.colorScheme.error,
+                            trailingIconColor = MaterialTheme.colorScheme.error,
+                            disabledTextColor = Color.Unspecified,
+                            disabledLeadingIconColor = Color.Unspecified,
+                            disabledTrailingIconColor = Color.Unspecified
+                        )
+                    )
+                }
             }
         },
-        onClick = onEditPermissions
+        onClick = onOpenPermissions
     )
 }

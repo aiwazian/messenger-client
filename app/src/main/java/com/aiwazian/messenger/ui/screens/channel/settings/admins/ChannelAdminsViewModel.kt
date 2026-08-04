@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.repository.channel.ChannelAdminsRepository
 import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,14 +16,16 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** Список администраторов канала: доступен только владельцу. */
+/** Список администраторов канала: доступен владельцу и админам с правом на управление. */
 @HiltViewModel
 class ChannelAdminsViewModel @Inject constructor(
-    private val channelAdminsRepository: ChannelAdminsRepository
+    private val channelAdminsRepository: ChannelAdminsRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
     
     private var _channelId = -1L
@@ -35,7 +38,16 @@ class ChannelAdminsViewModel @Inject constructor(
     
     fun init(channelId: Long) {
         _channelId = channelId
+        loadCurrentUserId()
         loadAdmins()
+    }
+    
+    /** Своего администратора нельзя ни уволить, ни отредактировать: это решает сервер. */
+    private fun loadCurrentUserId() {
+        viewModelScope.launch {
+            val me = userRepository.getMe().firstOrNull()
+            _uiState.update { it.copy(currentUserId = me?.id) }
+        }
     }
     
     /** Перезагружается при каждом возврате на экран, чтобы показать нового администратора. */
@@ -58,6 +70,7 @@ class ChannelAdminsViewModel @Inject constructor(
     }
     
     fun showDemoteDialog(userId: Long) {
+        if (userId == _uiState.value.currentUserId) return
         _uiState.update { it.copy(showDemoteDialog = true, selectedUserId = userId) }
     }
     

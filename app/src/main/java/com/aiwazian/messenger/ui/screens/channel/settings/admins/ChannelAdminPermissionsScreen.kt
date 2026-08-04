@@ -68,12 +68,16 @@ fun ChannelAdminPermissionsScreen(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
                     onClick = navBackStack::removeLastOrNull
                 ),
-                actions = listOf(
-                    TopBarAction(
-                        icon = Icons.Rounded.Check,
-                        onClick = viewModel::save
+                actions = if (uiState.isReadOnly) {
+                    emptyList()
+                } else {
+                    listOf(
+                        TopBarAction(
+                            icon = Icons.Rounded.Check,
+                            onClick = viewModel::save
+                        )
                     )
-                )
+                }
             )
         },
         snackbarHost = {
@@ -94,6 +98,7 @@ fun ChannelAdminPermissionsScreen(
                     text = stringResource(R.string.invite_links),
                     supportingText = stringResource(R.string.permission_invite_links_description),
                     isChecked = uiState.canManageInviteLinks,
+                    enabled = !uiState.isReadOnly,
                     onCheckedChange = viewModel::toggleManageInviteLinks
                 )
                 
@@ -101,6 +106,7 @@ fun ChannelAdminPermissionsScreen(
                     text = stringResource(R.string.edit_channel_profile),
                     supportingText = stringResource(R.string.edit_channel_profile_description),
                     isChecked = uiState.canEditProfile,
+                    enabled = !uiState.isReadOnly,
                     onCheckedChange = viewModel::toggleEditProfile
                 )
                 
@@ -108,6 +114,7 @@ fun ChannelAdminPermissionsScreen(
                     text = stringResource(R.string.manage_admins),
                     supportingText = stringResource(R.string.manage_admins_description),
                     isChecked = uiState.canManageAdmins,
+                    enabled = !uiState.isReadOnly,
                     onCheckedChange = viewModel::toggleManageAdmins
                 )
             }

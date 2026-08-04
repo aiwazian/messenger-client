@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.repository.channel.ChannelAdminsRepository
 import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,14 +16,21 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** Разрешения одного администратора канала. Тегов в каналах нет. */
+/**
+ * Разрешения одного администратора канала. Тегов в каналах нет.
+ *
+ * Свои разрешения открываются только на просмотр: менять их может владелец или другой
+ * администратор с правом на управление администраторами.
+ */
 @HiltViewModel
 class ChannelAdminPermissionsViewModel @Inject constructor(
-    private val channelAdminsRepository: ChannelAdminsRepository
+    private val channelAdminsRepository: ChannelAdminsRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
     
     private var _channelId = -1L
@@ -37,6 +45,11 @@ class ChannelAdminPermissionsViewModel @Inject constructor(
     fun init(channelId: Long, userId: Long) {
         _channelId = channelId
         _userId = userId
+        
+        viewModelScope.launch {
+            val me = userRepository.getMe().firstOrNull()
+            _uiState.update { it.copy(isReadOnly = me?.id == userId) }
+        }
         
         viewModelScope.launch {
             channelAdminsRepository.getAdmins(channelId).onSuccess { admins ->
@@ -55,20 +68,23 @@ class ChannelAdminPermissionsViewModel @Inject constructor(
     }
     
     fun toggleManageInviteLinks() {
+        if (_uiState.value.isReadOnly) return
         _uiState.update { it.copy(canManageInviteLinks = !it.canManageInviteLinks) }
     }
     
     fun toggleEditProfile() {
+        if (_uiState.value.isReadOnly) return
         _uiState.update { it.copy(canEditProfile = !it.canEditProfile) }
     }
     
     /** Право на управление администраторами выдаёт только владелец: это проверяет сервер. */
     fun toggleManageAdmins() {
+        if (_uiState.value.isReadOnly) return
         _uiState.update { it.copy(canManageAdmins = !it.canManageAdmins) }
     }
     
     fun save() {
-        if (_uiState.value.isSaving) return
+        if (_uiState.value.isSaving || _uiState.value.isReadOnly) return
         
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }

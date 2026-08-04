@@ -71,12 +71,16 @@ fun GroupAdminPermissionsScreen(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
                     onClick = navBackStack::removeLastOrNull
                 ),
-                actions = listOf(
-                    TopBarAction(
-                        icon = Icons.Rounded.Check,
-                        onClick = viewModel::save
+                actions = if (uiState.isReadOnly) {
+                    emptyList()
+                } else {
+                    listOf(
+                        TopBarAction(
+                            icon = Icons.Rounded.Check,
+                            onClick = viewModel::save
+                        )
                     )
-                )
+                }
             )
         },
         snackbarHost = {
@@ -96,6 +100,7 @@ fun GroupAdminPermissionsScreen(
                     text = stringResource(R.string.invite_links),
                     supportingText = stringResource(R.string.permission_invite_links_description),
                     isChecked = uiState.canManageInviteLinks,
+                    enabled = !uiState.isReadOnly,
                     onCheckedChange = viewModel::toggleManageInviteLinks
                 )
                 
@@ -103,6 +108,7 @@ fun GroupAdminPermissionsScreen(
                     text = stringResource(R.string.edit_group_profile),
                     supportingText = stringResource(R.string.edit_group_profile_description),
                     isChecked = uiState.canEditProfile,
+                    enabled = !uiState.isReadOnly,
                     onCheckedChange = viewModel::toggleEditProfile
                 )
                 
@@ -110,23 +116,26 @@ fun GroupAdminPermissionsScreen(
                     text = stringResource(R.string.manage_admins),
                     supportingText = stringResource(R.string.manage_admins_description),
                     isChecked = uiState.canManageAdmins,
+                    enabled = !uiState.isReadOnly,
                     onCheckedChange = viewModel::toggleManageAdmins
                 )
             }
             
-            SectionContainer(
-                header = {
-                    SectionHeader(title = stringResource(R.string.member_tag))
-                },
-                footer = {
-                    SectionDescription(text = stringResource(R.string.member_tag_description))
+            if (!uiState.isReadOnly) {
+                SectionContainer(
+                    header = {
+                        SectionHeader(title = stringResource(R.string.member_tag))
+                    },
+                    footer = {
+                        SectionDescription(text = stringResource(R.string.member_tag_description))
+                    }
+                ) {
+                    FramelessTextBox(
+                        value = uiState.tag,
+                        onValueChange = viewModel::changeTag,
+                        placeholder = "${stringResource(R.string.member_tag)} (${stringResource(R.string.optional)})"
+                    )
                 }
-            ) {
-                FramelessTextBox(
-                    value = uiState.tag,
-                    onValueChange = viewModel::changeTag,
-                    placeholder = "${stringResource(R.string.member_tag)} (${stringResource(R.string.optional)})"
-                )
             }
         }
     }

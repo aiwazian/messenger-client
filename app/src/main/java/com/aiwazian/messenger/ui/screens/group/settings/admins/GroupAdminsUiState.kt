@@ -10,5 +10,7 @@ data class GroupAdminsUiState(
     val admins: List<GroupAdmin> = emptyList(),
     val isLoading: Boolean = false,
     val selectedUserId: Long? = null,
-    val showDemoteDialog: Boolean = false
+    val showDemoteDialog: Boolean = false,
+    /** Нужен, чтобы в своей карточке не показывать действия над собой. */
+    val currentUserId: Long? = null
 )

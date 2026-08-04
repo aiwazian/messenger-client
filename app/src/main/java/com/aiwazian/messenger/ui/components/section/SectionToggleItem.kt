@@ -36,6 +36,7 @@ fun SectionToggleItem(
     TextButton(
         shape = RectangleShape,
         modifier = Modifier.fillMaxWidth(),
+        enabled = enabled,
         onClick = { if (enabled) onCheckedChange() },
         colors = ButtonDefaults.textButtonColors(
             contentColor = MaterialTheme.colorScheme.onSurface

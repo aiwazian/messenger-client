@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.repository.group.GroupAdminsRepository
 import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,14 +16,16 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** Список администраторов группы: доступен только владельцу. */
+/** Список администраторов группы: доступен владельцу и админам с правом на управление. */
 @HiltViewModel
 class GroupAdminsViewModel @Inject constructor(
-    private val groupAdminsRepository: GroupAdminsRepository
+    private val groupAdminsRepository: GroupAdminsRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
     
     private var _groupId = -1L
@@ -35,7 +38,16 @@ class GroupAdminsViewModel @Inject constructor(
     
     fun init(groupId: Long) {
         _groupId = groupId
+        loadCurrentUserId()
         loadAdmins()
+    }
+    
+    /** Своего администратора нельзя ни уволить, ни отредактировать: это решает сервер. */
+    private fun loadCurrentUserId() {
+        viewModelScope.launch {
+            val me = userRepository.getMe().firstOrNull()
+            _uiState.update { it.copy(currentUserId = me?.id) }
+        }
     }
     
     /** Перезагружается при каждом возврате на экран, чтобы показать нового администратора. */
@@ -58,6 +70,7 @@ class GroupAdminsViewModel @Inject constructor(
     }
     
     fun showDemoteDialog(userId: Long) {
+        if (userId == _uiState.value.currentUserId) return
         _uiState.update { it.copy(showDemoteDialog = true, selectedUserId = userId) }
     }
     
