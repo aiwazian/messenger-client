@@ -41,4 +41,8 @@ data class GroupSettingsUiState(
     
     val canManageInviteLinks: Boolean
         get() = permissions.isOwner || permissions.canManageInviteLinks
+    
+    /** Владелец управляет администраторами всегда, админ — только с отдельным разрешением. */
+    val canManageAdmins: Boolean
+        get() = permissions.isOwner || permissions.canManageAdmins
 }
