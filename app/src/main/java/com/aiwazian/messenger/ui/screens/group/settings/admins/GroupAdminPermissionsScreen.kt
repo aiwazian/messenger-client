@@ -105,6 +105,13 @@ fun GroupAdminPermissionsScreen(
                     isChecked = uiState.canEditProfile,
                     onCheckedChange = viewModel::toggleEditProfile
                 )
+                
+                SectionToggleItem(
+                    text = stringResource(R.string.manage_admins),
+                    supportingText = stringResource(R.string.manage_admins_description),
+                    isChecked = uiState.canManageAdmins,
+                    onCheckedChange = viewModel::toggleManageAdmins
+                )
             }
             
             SectionContainer(
