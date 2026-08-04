@@ -168,38 +168,48 @@ fun GroupSettingsScreen(
                 }
             }
             
-            if (uiState.isOwner) {
+            if (uiState.isOwner || uiState.canManageAdmins) {
                 SectionContainer {
-                    SectionItem(
-                        leadingIcon = Icons.Rounded.People,
-                        headlineText = stringResource(R.string.members),
-                        trailingText = uiState.group.members.toString(),
-                        onClick = {
-                            navBackStack.add(AppRoute.GroupMembers(uiState.group.id))
-                        })
-                    SectionItem(
-                        leadingIcon = Icons.Rounded.AdminPanelSettings,
-                        headlineText = stringResource(R.string.administrators),
-                        onClick = {
-                            navBackStack.add(AppRoute.GroupAdmins(groupId = uiState.group.id))
-                        }
-                    )
-                    SectionItem(
-                        leadingIcon = Icons.Rounded.PersonAddAlt1,
-                        headlineText = stringResource(R.string.join_requests),
-                        onClick = {
-                            navBackStack.add(AppRoute.GroupJoinRequests(groupId = uiState.group.id))
-                        }
-                    )
-                    SectionItem(
-                        leadingIcon = Icons.Rounded.Block,
-                        headlineText = stringResource(R.string.removed_user),
-                        trailingText = uiState.group.removedUsers.toString(),
-                        onClick = {
-                            navBackStack.add(AppRoute.GroupBlackList(uiState.group.id))
-                        })
+                    if (uiState.isOwner) {
+                        SectionItem(
+                            leadingIcon = Icons.Rounded.People,
+                            headlineText = stringResource(R.string.members),
+                            trailingText = uiState.group.members.toString(),
+                            onClick = {
+                                navBackStack.add(AppRoute.GroupMembers(uiState.group.id))
+                            })
+                    }
+                    
+                    if (uiState.canManageAdmins) {
+                        SectionItem(
+                            leadingIcon = Icons.Rounded.AdminPanelSettings,
+                            headlineText = stringResource(R.string.administrators),
+                            onClick = {
+                                navBackStack.add(AppRoute.GroupAdmins(groupId = uiState.group.id))
+                            }
+                        )
+                    }
+                    
+                    if (uiState.isOwner) {
+                        SectionItem(
+                            leadingIcon = Icons.Rounded.PersonAddAlt1,
+                            headlineText = stringResource(R.string.join_requests),
+                            onClick = {
+                                navBackStack.add(AppRoute.GroupJoinRequests(groupId = uiState.group.id))
+                            }
+                        )
+                        SectionItem(
+                            leadingIcon = Icons.Rounded.Block,
+                            headlineText = stringResource(R.string.removed_user),
+                            trailingText = uiState.group.removedUsers.toString(),
+                            onClick = {
+                                navBackStack.add(AppRoute.GroupBlackList(uiState.group.id))
+                            })
+                    }
                 }
-                
+            }
+            
+            if (uiState.isOwner) {
                 SectionContainer {
                     SectionItem(
                         headlineText = stringResource(R.string.delete_group),
