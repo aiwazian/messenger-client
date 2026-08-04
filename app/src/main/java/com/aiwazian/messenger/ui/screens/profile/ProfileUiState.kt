@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.profile
 
 import android.net.Uri
+import com.aiwazian.messenger.domain.ChatAdminPermissions
 import com.aiwazian.messenger.domain.InviteLinkInfo
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -34,5 +35,13 @@ data class ProfileUiState(
     val showBannedDialog: Boolean = false,
     val profileChannelInfo: ProfileChannelInfo? = null,
     val showBlockDialog: Boolean = false,
-    val isBlockedStateForDialog: Boolean = false
-)
+    val isBlockedStateForDialog: Boolean = false,
+    val permissions: ChatAdminPermissions = ChatAdminPermissions()
+) {
+    
+    /**
+     * Есть ли у текущего пользователя хотя бы одно право, дающее доступ к экрану настроек чата.
+     */
+    val canOpenChatSettings: Boolean
+        get() = permissions.isOwner || permissions.canEditProfile || permissions.canManageInviteLinks
+}

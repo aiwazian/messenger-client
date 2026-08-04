@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.ChatAdminPermissions
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
@@ -23,6 +24,8 @@ import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
+import com.aiwazian.messenger.repository.channel.ChannelAdminsRepository
+import com.aiwazian.messenger.repository.group.GroupAdminsRepository
 import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -58,6 +61,8 @@ class ProfileViewModel @Inject constructor(
     private val channelRepository: ChannelRepository,
     private val chatRepository: ChatRepository,
     private val groupRepository: GroupRepository,
+    private val channelAdminsRepository: ChannelAdminsRepository,
+    private val groupAdminsRepository: GroupAdminsRepository,
     private val searchRepository: SearchRepository,
     private val inviteLinkRepository: InviteLinkRepository,
     private val shortcutManager: ShortcutManager,
@@ -102,8 +107,31 @@ class ProfileViewModel @Inject constructor(
             }
         }
         
+        loadMyPermissions(profileId)
         setupUserObserver()
         loadProfile()
+    }
+    
+    /**
+     * Загружает мои права в чате, чтобы решить, показывать ли кнопку перехода в настройки.
+     */
+    private fun loadMyPermissions(profileId: Long) {
+        viewModelScope.launch {
+            val result = when (ChatType.fromId(profileId)) {
+                ChatType.CHANNEL -> channelAdminsRepository.getMyPermissions(profileId)
+                ChatType.GROUP -> groupAdminsRepository.getMyPermissions(profileId)
+                else -> return@launch
+            }
+            
+            result.onSuccess { permissions ->
+                _uiState.update { it.copy(permissions = permissions) }
+                recalculateActions()
+            }.onFailure { error ->
+                Log.e(TAG, "Error load my permissions: ", error)
+                _uiState.update { it.copy(permissions = ChatAdminPermissions()) }
+                recalculateActions()
+            }
+        }
     }
     
     private fun setupUserObserver() {
@@ -401,7 +429,9 @@ class ProfileViewModel @Inject constructor(
             )
         )
         
-        if (channel.isSubscribed && channel.ownerId != _uiState.value.myId) {
+        val isOwner = channel.ownerId == _uiState.value.myId
+        
+        if (channel.isSubscribed && !isOwner) {
             dropdownActions.add(
                 DropdownMenuAction(
                     icon = Icons.AutoMirrored.Rounded.Logout,
@@ -411,19 +441,17 @@ class ProfileViewModel @Inject constructor(
             )
         }
         
-        return if (channel.ownerId == _uiState.value.myId) {
-            listOf(
-                TopBarAction(
-                    icon = Icons.Filled.Edit,
-                    onClick = { navigateToChannelSettings(_uiState.value.id) }
-                ),
-                TopBarAction(
-                    icon = Icons.Rounded.MoreVert,
-                    dropdownActions = dropdownActions
+        return buildList {
+            if (isOwner || _uiState.value.canOpenChatSettings) {
+                add(
+                    TopBarAction(
+                        icon = Icons.Filled.Edit,
+                        onClick = { navigateToChannelSettings(_uiState.value.id) }
+                    )
                 )
-            )
-        } else {
-            listOf(
+            }
+            
+            add(
                 TopBarAction(
                     icon = Icons.Rounded.MoreVert,
                     dropdownActions = dropdownActions
@@ -445,7 +473,9 @@ class ProfileViewModel @Inject constructor(
             )
         )
         
-        if (group.ownerId != _uiState.value.myId && group.isMember) {
+        val isOwner = group.ownerId == _uiState.value.myId
+        
+        if (!isOwner && group.isMember) {
             dropdownActions.add(
                 DropdownMenuAction(
                     icon = Icons.AutoMirrored.Rounded.Logout,
@@ -455,19 +485,17 @@ class ProfileViewModel @Inject constructor(
             )
         }
         
-        return if (group.ownerId == _uiState.value.myId) {
-            listOf(
-                TopBarAction(
-                    icon = Icons.Filled.Edit,
-                    onClick = { navigateToGroupSettings(_uiState.value.id) }
-                ),
-                TopBarAction(
-                    icon = Icons.Rounded.MoreVert,
-                    dropdownActions = dropdownActions
+        return buildList {
+            if (isOwner || _uiState.value.canOpenChatSettings) {
+                add(
+                    TopBarAction(
+                        icon = Icons.Filled.Edit,
+                        onClick = { navigateToGroupSettings(_uiState.value.id) }
+                    )
                 )
-            )
-        } else {
-            listOf(
+            }
+            
+            add(
                 TopBarAction(
                     icon = Icons.Rounded.MoreVert,
                     dropdownActions = dropdownActions
@@ -690,5 +718,9 @@ class ProfileViewModel @Inject constructor(
             }
             dismissBlockDialog()
         }
+    }
+    
+    private companion object {
+        const val TAG = "ProfileViewModel"
     }
 }
