@@ -44,7 +44,8 @@ class ChannelAdminPermissionsViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         canManageInviteLinks = admin.canManageInviteLinks,
-                        canEditProfile = admin.canEditProfile
+                        canEditProfile = admin.canEditProfile,
+                        canManageAdmins = admin.canManageAdmins
                     )
                 }
             }.onFailure { error ->
@@ -61,6 +62,11 @@ class ChannelAdminPermissionsViewModel @Inject constructor(
         _uiState.update { it.copy(canEditProfile = !it.canEditProfile) }
     }
     
+    /** Право на управление администраторами выдаёт только владелец: это проверяет сервер. */
+    fun toggleManageAdmins() {
+        _uiState.update { it.copy(canManageAdmins = !it.canManageAdmins) }
+    }
+    
     fun save() {
         if (_uiState.value.isSaving) return
         
@@ -73,7 +79,8 @@ class ChannelAdminPermissionsViewModel @Inject constructor(
                 channelId = _channelId,
                 userId = _userId,
                 canManageInviteLinks = state.canManageInviteLinks,
-                canEditProfile = state.canEditProfile
+                canEditProfile = state.canEditProfile,
+                canManageAdmins = state.canManageAdmins
             ).onSuccess {
                 _uiState.update { it.copy(isSaving = false) }
                 _sideEffect.emit(ChannelAdminPermissionsSideEffect.NavigateBack)
