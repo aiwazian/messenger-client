@@ -50,6 +50,7 @@ class GroupAdminPermissionsViewModel @Inject constructor(
                     it.copy(
                         canManageInviteLinks = admin.canManageInviteLinks,
                         canEditProfile = admin.canEditProfile,
+                        canManageAdmins = admin.canManageAdmins,
                         tag = admin.tag.orEmpty()
                     )
                 }
@@ -65,6 +66,11 @@ class GroupAdminPermissionsViewModel @Inject constructor(
     
     fun toggleEditProfile() {
         _uiState.update { it.copy(canEditProfile = !it.canEditProfile) }
+    }
+    
+    /** Право на управление администраторами выдаёт только владелец: это проверяет сервер. */
+    fun toggleManageAdmins() {
+        _uiState.update { it.copy(canManageAdmins = !it.canManageAdmins) }
     }
     
     fun changeTag(tag: String) {
@@ -84,6 +90,7 @@ class GroupAdminPermissionsViewModel @Inject constructor(
                 userId = _userId,
                 canManageInviteLinks = state.canManageInviteLinks,
                 canEditProfile = state.canEditProfile,
+                canManageAdmins = state.canManageAdmins,
                 tag = state.tag
             ).onSuccess {
                 _uiState.update { it.copy(isSaving = false) }
