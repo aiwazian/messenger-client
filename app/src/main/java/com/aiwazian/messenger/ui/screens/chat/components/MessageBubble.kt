@@ -152,20 +152,19 @@ fun MessageBubble(
             
             Box(
                 modifier = Modifier
-                    .widthIn(min = 90.dp, max = 280.dp)
+                    .widthIn(min = 90.dp, max = 300.dp)
                     .padding(horizontal = 8.dp)
                     .clip(MaterialTheme.shapes.large)
                     .background(containerColor)
             ) {
                 Column(Modifier.width(IntrinsicSize.Max)) {
                     if (!item.isMine && item.isFirstInGroup && item.senderName != null) {
-                        /*
-                         * Рядом с именем показывается тег участника, если он выдан.
-                         * Теги есть только в группах.
-                         */
                         Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 8.dp, top = 8.dp, end = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
                                 text = item.senderName,
@@ -178,15 +177,21 @@ fun MessageBubble(
                             )
                             
                             if (!item.senderTag.isNullOrBlank()) {
-                                Text(
-                                    text = item.senderTag,
-                                    fontSize = 11.sp,
-                                    lineHeight = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(start = 4.dp),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .clip(MaterialTheme.shapes.medium)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = item.senderTag,
+                                        fontSize = 11.sp,
+                                        lineHeight = 12.sp,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
                             }
                         }
                     }

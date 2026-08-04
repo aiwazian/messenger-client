@@ -71,6 +71,8 @@
     <string name="remove_folder">Հեռացնել պանակը</string>
     <string name="pin">Փին</string>
     <string name="unpin">Unpin</string>
+    <string name="mark_as_read">Նշել որպես կարդացված</string>
+    <string name="mark_as_unread">Նշել որպես չկարդացված</string>
     <string name="folder_name">Պանակի անուն</string>
     <string name="included_chats">Ներառված Chats</string>
     <string name="add_chats">Ավելացնել զրույցներ</string>
@@ -321,4 +323,21 @@
     <string name="no_copy_group_description">Անդամներ, չեն կարողանա պատճենել տեքստը, փոխանցել հաղորդագրությունները կամ պահպանել մեդիա խմբից:</string>
     <string name="no_copy_channel_notice">Այս ալիքից պատճենումը և վերահասցեավորումն արգելված է:</string>
     <string name="no_copy_group_notice">Այս խմբից պատճենումը և վերահասցեավորումն արգելված է:</string>
+    <string name="administrators">Ադմինիստրատորներ</string>
+    <string name="add_administrator">Ավելացնել ադմինիստրատոր</string>
+    <string name="admin_permissions">Թույլտվություններ</string>
+    <string name="edit_permissions">Խմբագրել թույլտվությունները</string>
+    <string name="dismiss_admin">Հեռացնել</string>
+    <string name="dismiss_admin_confirm_message">Իսկապե՞ս ուզում եք հեռացնել այս օգտվողին ադմինիստրատորներից:</string>
+    <string name="no_administrators">Ոչ մի ադմինիստրատոր</string>
+    <string name="admin_removed">Ադմինիստրատորն ազատվել է աշխատանքից</string>
+    <string name="failed_to_load_administrators">Չհաջողվեց բեռնել ադմինիստրատորները</string>
+    <string name="no_users_available">Հասանելի օգտվողներ չկան</string>
+    <string name="permission_invite_links_description">Կարող է ստեղծել և ջնջել հրավերի հղումներ:</string>
+    <string name="edit_channel_profile">Փոխել ալիքի պրոֆիլը</string>
+    <string name="edit_channel_profile_description">Կարող է փոխել ալիքի անունը, նկարագրությունը և պրոֆիլի լուսանկարները:</string>
+    <string name="edit_group_profile">Փոխել խմբի պրոֆիլը</string>
+    <string name="edit_group_profile_description">Կարող է փոխել խմբի անունը, նկարագրությունը և պրոֆիլի լուսանկարները:</string>
+    <string name="member_tag">Անդամի պիտակ</string>
+    <string name="member_tag_description">Խմբային հաղորդագրություններում պիտակը ցուցադրվում է ուղարկողի անվան կողքին:</string>
 </resources>

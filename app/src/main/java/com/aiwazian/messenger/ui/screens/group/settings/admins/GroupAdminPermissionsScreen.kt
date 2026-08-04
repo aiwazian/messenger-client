@@ -89,9 +89,9 @@ fun GroupAdminPermissionsScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
         ) {
-            SectionHeader(title = stringResource(R.string.admin_permissions))
-            
-            SectionContainer {
+            SectionContainer(header = {
+                SectionHeader(title = stringResource(R.string.admin_permissions))
+            }) {
                 SectionToggleItem(
                     text = stringResource(R.string.invite_links),
                     supportingText = stringResource(R.string.permission_invite_links_description),
@@ -107,17 +107,20 @@ fun GroupAdminPermissionsScreen(
                 )
             }
             
-            SectionHeader(title = stringResource(R.string.member_tag))
-            
-            SectionContainer {
+            SectionContainer(
+                header = {
+                    SectionHeader(title = stringResource(R.string.member_tag))
+                },
+                footer = {
+                    SectionDescription(text = stringResource(R.string.member_tag_description))
+                }
+            ) {
                 FramelessTextBox(
                     value = uiState.tag,
                     onValueChange = viewModel::changeTag,
                     placeholder = "${stringResource(R.string.member_tag)} (${stringResource(R.string.optional)})"
                 )
             }
-            
-            SectionDescription(text = stringResource(R.string.member_tag_description))
         }
     }
 }

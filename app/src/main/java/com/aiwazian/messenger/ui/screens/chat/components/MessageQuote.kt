@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -109,10 +110,13 @@ fun ReplyQuote(
                 .background(accentColor)
         )
         
-        Column(modifier = Modifier.padding(horizontal = 6.dp)) {
+        Column(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
             Text(
                 text = preview.title.orEmpty(),
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 lineHeight = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = accentColor,
@@ -121,7 +125,7 @@ fun ReplyQuote(
             )
             Text(
                 text = replyPreviewText(preview),
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 lineHeight = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
