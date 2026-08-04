@@ -7,6 +7,8 @@ package com.aiwazian.messenger.repository.group
 import android.util.Log
 import com.aiwazian.messenger.domain.ChatAdminPermissions
 import com.aiwazian.messenger.domain.GroupAdmin
+import com.aiwazian.messenger.domain.User
+import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.network.api.GroupApi
 import com.aiwazian.messenger.network.dto.UpsertGroupAdminRequestDto
 import javax.inject.Inject
@@ -14,7 +16,8 @@ import javax.inject.Inject
 /**
  * Администраторы группы и теги участников.
  *
- * Список администраторов сервер отдаёт только владельцу, теги — любому участнику.
+ * Список администраторов сервер отдаёт владельцу и админам с правом управления
+ * администраторами, теги — любому участнику.
  */
 class GroupAdminsRepository @Inject constructor(
     private val groupApi: GroupApi
@@ -33,6 +36,7 @@ class GroupAdminsRepository @Inject constructor(
                         username = dto.username,
                         canManageInviteLinks = dto.canManageInviteLinks,
                         canEditProfile = dto.canEditProfile,
+                        canManageAdmins = dto.canManageAdmins,
                         tag = dto.tag
                     )
                 })
@@ -41,6 +45,25 @@ class GroupAdminsRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error getting admins for group $groupId", e)
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Кого можно назначить администратором.
+     *
+     * Владельца сервер в списке не отдаёт: у него и так все права.
+     */
+    suspend fun getAdminCandidates(groupId: Long): Result<List<User>> {
+        return try {
+            val response = groupApi.getAdminCandidates(groupId)
+            if (response.isSuccessful) {
+                Result.success(response.body().orEmpty().map { it.toDomain() })
+            } else {
+                Result.failure(Exception("Failed to get group admin candidates"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting admin candidates for group $groupId", e)
             Result.failure(e)
         }
     }
@@ -81,6 +104,7 @@ class GroupAdminsRepository @Inject constructor(
                         isAdmin = dto.isAdmin,
                         canManageInviteLinks = dto.canManageInviteLinks,
                         canEditProfile = dto.canEditProfile,
+                        canManageAdmins = dto.canManageAdmins,
                         tag = dto.tag
                     )
                 )
@@ -99,6 +123,7 @@ class GroupAdminsRepository @Inject constructor(
         userId: Long,
         canManageInviteLinks: Boolean,
         canEditProfile: Boolean,
+        canManageAdmins: Boolean,
         tag: String?
     ): Result<Unit> {
         return try {
@@ -108,6 +133,7 @@ class GroupAdminsRepository @Inject constructor(
                 request = UpsertGroupAdminRequestDto(
                     canManageInviteLinks = canManageInviteLinks,
                     canEditProfile = canEditProfile,
+                    canManageAdmins = canManageAdmins,
                     tag = tag?.trim()?.ifBlank { null }
                 )
             )
