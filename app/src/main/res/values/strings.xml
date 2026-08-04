@@ -348,4 +348,6 @@
     <string name="edit_group_profile_description">Can change the group name, description and profile photos.</string>
     <string name="member_tag">Member tag</string>
     <string name="member_tag_description">The tag is shown next to the sender name in group messages.</string>
+    <string name="manage_admins">Manage administrators</string>
+    <string name="manage_admins_description">Can add and remove administrators and change their permissions.</string>
 </resources>
