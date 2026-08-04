@@ -92,7 +92,7 @@ fun ChannelSettingsScreen(
     
     Scaffold(
         topBar = {
-            val actions = if (uiState.hasChanges) {
+            val actions = if (uiState.canEditProfile && uiState.hasChanges) {
                 listOf(
                     TopBarAction(
                         icon = Icons.Rounded.Check, onClick = viewModel::save
@@ -110,89 +110,99 @@ fun ChannelSettingsScreen(
                 .padding(innerPadding)
                 .verticalScroll(scrollState)
         ) {
-            Box(modifier = Modifier.padding(start = 10.dp)) {
-                SectionHeader(title = stringResource(R.string.profile_photos))
-            }
-            
-            SettingsProfileImageCarousel(
-                avatars = uiState.channel.avatars,
-                onAddPhoto = viewModel::setPendingAvatarUri,
-                onDeletePhoto = viewModel::deleteAvatar
-            )
-            
-            SectionContainer {
-                FramelessTextBox(
-                    value = uiState.channel.name,
-                    onValueChange = viewModel::changeName,
-                    placeholder = stringResource(R.string.channel_name)
-                )
-                FramelessTextBox(
-                    value = uiState.channel.bio.orEmpty(),
-                    onValueChange = viewModel::changeBio,
-                    placeholder = "${stringResource(R.string.description)} (${stringResource(R.string.optional)})",
-                    singleLine = false
-                )
-            }
-            
-            SectionContainer {
-                SectionItem(
-                    leadingIcon = Icons.Outlined.Lock,
-                    headlineText = stringResource(R.string.channel_type),
-                    trailingText = if (uiState.channel.channelType == ChannelType.PUBLIC) {
-                        stringResource(R.string.public_channel)
-                    } else {
-                        stringResource(R.string.private_channel)
-                    },
-                    onClick = {
-                        navBackStack.add(AppRoute.ChannelTypeSettings(channelId = uiState.channel.id))
-                    })
+            if (uiState.canEditProfile) {
+                Box(modifier = Modifier.padding(start = 10.dp)) {
+                    SectionHeader(title = stringResource(R.string.profile_photos))
+                }
                 
-                SectionItem(
-                    leadingIcon = Icons.Rounded.Link,
-                    headlineText = stringResource(R.string.invite_links),
-                    onClick = {
-                        navBackStack.add(AppRoute.ChannelInviteLinks(channelId = uiState.channel.id))
-                    }
+                SettingsProfileImageCarousel(
+                    avatars = uiState.channel.avatars,
+                    onAddPhoto = viewModel::setPendingAvatarUri,
+                    onDeletePhoto = viewModel::deleteAvatar
                 )
+                
+                SectionContainer {
+                    FramelessTextBox(
+                        value = uiState.channel.name,
+                        onValueChange = viewModel::changeName,
+                        placeholder = stringResource(R.string.channel_name)
+                    )
+                    FramelessTextBox(
+                        value = uiState.channel.bio.orEmpty(),
+                        onValueChange = viewModel::changeBio,
+                        placeholder = "${stringResource(R.string.description)} (${stringResource(R.string.optional)})",
+                        singleLine = false
+                    )
+                }
             }
             
-            SectionContainer {
-                SectionItem(
-                    leadingIcon = Icons.Rounded.People,
-                    headlineText = stringResource(R.string.subscribers),
-                    trailingText = uiState.channel.subscribers.toString(),
-                    onClick = {
-                        navBackStack.add(AppRoute.ChannelSubscribers(uiState.channel.id))
-                    })
-                SectionItem(
-                    leadingIcon = Icons.Rounded.AdminPanelSettings,
-                    headlineText = stringResource(R.string.administrators),
-                    onClick = {
-                        navBackStack.add(AppRoute.ChannelAdmins(channelId = uiState.channel.id))
+            if (uiState.isOwner || uiState.canManageInviteLinks) {
+                SectionContainer {
+                    if (uiState.isOwner) {
+                        SectionItem(
+                            leadingIcon = Icons.Outlined.Lock,
+                            headlineText = stringResource(R.string.channel_type),
+                            trailingText = if (uiState.channel.channelType == ChannelType.PUBLIC) {
+                                stringResource(R.string.public_channel)
+                            } else {
+                                stringResource(R.string.private_channel)
+                            },
+                            onClick = {
+                                navBackStack.add(AppRoute.ChannelTypeSettings(channelId = uiState.channel.id))
+                            })
                     }
-                )
-                SectionItem(
-                    leadingIcon = Icons.Rounded.PersonAddAlt1,
-                    headlineText = stringResource(R.string.join_requests),
-                    onClick = {
-                        navBackStack.add(AppRoute.ChannelJoinRequests(channelId = uiState.channel.id))
+                    
+                    if (uiState.canManageInviteLinks) {
+                        SectionItem(
+                            leadingIcon = Icons.Rounded.Link,
+                            headlineText = stringResource(R.string.invite_links),
+                            onClick = {
+                                navBackStack.add(AppRoute.ChannelInviteLinks(channelId = uiState.channel.id))
+                            }
+                        )
                     }
-                )
-                SectionItem(
-                    leadingIcon = Icons.Rounded.Block,
-                    headlineText = stringResource(R.string.removed_user),
-                    trailingText = uiState.channel.removedUsers.toString(),
-                    onClick = {
-                        navBackStack.add(AppRoute.ChannelBlackList(uiState.channel.id))
-                    })
+                }
             }
             
-            SectionContainer {
-                SectionItem(
-                    headlineText = stringResource(R.string.delete_channel),
-                    contentColor = MaterialTheme.colorScheme.error,
-                    onClick = viewModel::showDeleteDialog
-                )
+            if (uiState.isOwner) {
+                SectionContainer {
+                    SectionItem(
+                        leadingIcon = Icons.Rounded.People,
+                        headlineText = stringResource(R.string.subscribers),
+                        trailingText = uiState.channel.subscribers.toString(),
+                        onClick = {
+                            navBackStack.add(AppRoute.ChannelSubscribers(uiState.channel.id))
+                        })
+                    SectionItem(
+                        leadingIcon = Icons.Rounded.AdminPanelSettings,
+                        headlineText = stringResource(R.string.administrators),
+                        onClick = {
+                            navBackStack.add(AppRoute.ChannelAdmins(channelId = uiState.channel.id))
+                        }
+                    )
+                    SectionItem(
+                        leadingIcon = Icons.Rounded.PersonAddAlt1,
+                        headlineText = stringResource(R.string.join_requests),
+                        onClick = {
+                            navBackStack.add(AppRoute.ChannelJoinRequests(channelId = uiState.channel.id))
+                        }
+                    )
+                    SectionItem(
+                        leadingIcon = Icons.Rounded.Block,
+                        headlineText = stringResource(R.string.removed_user),
+                        trailingText = uiState.channel.removedUsers.toString(),
+                        onClick = {
+                            navBackStack.add(AppRoute.ChannelBlackList(uiState.channel.id))
+                        })
+                }
+                
+                SectionContainer {
+                    SectionItem(
+                        headlineText = stringResource(R.string.delete_channel),
+                        contentColor = MaterialTheme.colorScheme.error,
+                        onClick = viewModel::showDeleteDialog
+                    )
+                }
             }
             
             if (uiState.showDeleteDialog) {

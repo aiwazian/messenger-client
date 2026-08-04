@@ -10,12 +10,14 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.ChatAdminPermissions
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.isNetworkError
 import com.aiwazian.messenger.repository.ChannelRepository
+import com.aiwazian.messenger.repository.channel.ChannelAdminsRepository
 import com.aiwazian.messenger.usecase.DeleteChannelUseCase
 import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
 import com.aiwazian.messenger.utils.UiText
@@ -37,6 +39,7 @@ import javax.inject.Inject
 class ChannelSettingsViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val channelRepository: ChannelRepository,
+    private val channelAdminsRepository: ChannelAdminsRepository,
     private val deleteChannelUseCase: DeleteChannelUseCase,
     private val vibrationManager: VibrationManager,
     private val uploadManager: UploadManager,
@@ -52,6 +55,10 @@ class ChannelSettingsViewModel @Inject constructor(
     private val downloadingAvatars = mutableSetOf<String>()
     
     fun init(channelId: Long) {
+        viewModelScope.launch {
+            loadMyPermissions(channelId)
+        }
+        
         viewModelScope.launch {
             channelRepository.fetchById(channelId)
             channelRepository.getById(channelId).collectLatest { channel ->
@@ -70,6 +77,15 @@ class ChannelSettingsViewModel @Inject constructor(
         }
     }
     
+    private suspend fun loadMyPermissions(channelId: Long) {
+        channelAdminsRepository.getMyPermissions(channelId).onSuccess { permissions ->
+            _uiState.update { it.copy(permissions = permissions) }
+        }.onFailure { error ->
+            Log.e(TAG, "error load my permissions", error)
+            _uiState.update { it.copy(permissions = ChatAdminPermissions()) }
+        }
+    }
+    
     fun setPendingAvatarUri(uri: Uri?) {
         _uiState.update { it.copy(pendingAvatarUri = uri) }
     }
@@ -81,7 +97,7 @@ class ChannelSettingsViewModel @Inject constructor(
     fun deleteAvatar(fileId: String) {
         viewModelScope.launch {
             channelRepository.deleteAvatar(_uiState.value.channel.id, fileId).onFailure {
-                Log.e("ChannelSettingsViewModel", "error delete avatar", it)
+                Log.e(TAG, "error delete avatar", it)
             }
         }
     }
@@ -128,11 +144,13 @@ class ChannelSettingsViewModel @Inject constructor(
     }
     
     fun changeName(newName: String) {
+        if (!_uiState.value.canEditProfile) return
         _uiState.update { it.copy(channel = it.channel.copy(name = newName)) }
         updateHasChanges()
     }
     
     fun changeBio(newBio: String) {
+        if (!_uiState.value.canEditProfile) return
         _uiState.update { it.copy(channel = it.channel.copy(bio = newBio)) }
         updateHasChanges()
     }
@@ -143,6 +161,10 @@ class ChannelSettingsViewModel @Inject constructor(
     
     fun save() {
         viewModelScope.launch {
+            if (!_uiState.value.canEditProfile) {
+                return@launch
+            }
+            
             if (!checkValid()) {
                 vibrationManager.vibrate(VibrationPattern.Error)
                 return@launch
@@ -164,6 +186,10 @@ class ChannelSettingsViewModel @Inject constructor(
     
     fun delete() {
         viewModelScope.launch {
+            if (!_uiState.value.isOwner) {
+                return@launch
+            }
+            
             if (deleteChannelUseCase(uiState.value.channel.id)) {
                 _uiEffect.emit(ChannelSettingsEffect.NavigateToMain)
             } else {
@@ -197,5 +223,9 @@ class ChannelSettingsViewModel @Inject constructor(
     
     fun hideDeleteDialog() {
         _uiState.update { it.copy(showDeleteDialog = false) }
+    }
+    
+    private companion object {
+        const val TAG = "ChannelSettingsViewModel"
     }
 }
