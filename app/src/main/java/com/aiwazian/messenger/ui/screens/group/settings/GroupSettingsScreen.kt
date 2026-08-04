@@ -184,6 +184,7 @@ fun GroupSettingsScreen(
                         SectionItem(
                             leadingIcon = Icons.Rounded.AdminPanelSettings,
                             headlineText = stringResource(R.string.administrators),
+                            trailingText = uiState.adminsCount.toString(),
                             onClick = {
                                 navBackStack.add(AppRoute.GroupAdmins(groupId = uiState.group.id))
                             }
@@ -194,6 +195,7 @@ fun GroupSettingsScreen(
                         SectionItem(
                             leadingIcon = Icons.Rounded.PersonAddAlt1,
                             headlineText = stringResource(R.string.join_requests),
+                            trailingText = uiState.joinRequestsCount.toString(),
                             onClick = {
                                 navBackStack.add(AppRoute.GroupJoinRequests(groupId = uiState.group.id))
                             }

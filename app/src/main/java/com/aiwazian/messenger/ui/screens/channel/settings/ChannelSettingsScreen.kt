@@ -180,6 +180,7 @@ fun ChannelSettingsScreen(
                         SectionItem(
                             leadingIcon = Icons.Rounded.AdminPanelSettings,
                             headlineText = stringResource(R.string.administrators),
+                            trailingText = uiState.adminsCount.toString(),
                             onClick = {
                                 navBackStack.add(AppRoute.ChannelAdmins(channelId = uiState.channel.id))
                             }
@@ -190,6 +191,7 @@ fun ChannelSettingsScreen(
                         SectionItem(
                             leadingIcon = Icons.Rounded.PersonAddAlt1,
                             headlineText = stringResource(R.string.join_requests),
+                            trailingText = uiState.joinRequestsCount.toString(),
                             onClick = {
                                 navBackStack.add(AppRoute.ChannelJoinRequests(channelId = uiState.channel.id))
                             }
