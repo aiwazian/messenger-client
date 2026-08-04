@@ -54,7 +54,11 @@ fun SectionItem(
             ),
         onClick = onClick,
         colors = ButtonDefaults.textButtonColors(
-            contentColor = contentColor
+            contentColor = if (contentColor.isUnspecified) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                contentColor
+            }
         )
     ) {
         Row(
