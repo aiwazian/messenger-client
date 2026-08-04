@@ -16,6 +16,7 @@ data class ChannelAdminResponseDto(
     @SerialName("username") val username: String? = null,
     @SerialName("canManageInviteLinks") val canManageInviteLinks: Boolean = false,
     @SerialName("canEditProfile") val canEditProfile: Boolean = false,
+    @SerialName("canManageAdmins") val canManageAdmins: Boolean = false,
     @SerialName("grantedAt") val grantedAt: String? = null
 )
 
@@ -28,6 +29,7 @@ data class GroupAdminResponseDto(
     @SerialName("username") val username: String? = null,
     @SerialName("canManageInviteLinks") val canManageInviteLinks: Boolean = false,
     @SerialName("canEditProfile") val canEditProfile: Boolean = false,
+    @SerialName("canManageAdmins") val canManageAdmins: Boolean = false,
     @SerialName("tag") val tag: String? = null,
     @SerialName("grantedAt") val grantedAt: String? = null
 )
@@ -36,7 +38,8 @@ data class GroupAdminResponseDto(
 @Serializable
 data class UpsertChannelAdminRequestDto(
     @SerialName("canManageInviteLinks") val canManageInviteLinks: Boolean = false,
-    @SerialName("canEditProfile") val canEditProfile: Boolean = false
+    @SerialName("canEditProfile") val canEditProfile: Boolean = false,
+    @SerialName("canManageAdmins") val canManageAdmins: Boolean = false
 )
 
 /**
@@ -48,6 +51,7 @@ data class UpsertChannelAdminRequestDto(
 data class UpsertGroupAdminRequestDto(
     @SerialName("canManageInviteLinks") val canManageInviteLinks: Boolean = false,
     @SerialName("canEditProfile") val canEditProfile: Boolean = false,
+    @SerialName("canManageAdmins") val canManageAdmins: Boolean = false,
     @SerialName("tag") val tag: String? = null
 )
 
@@ -58,6 +62,7 @@ data class ChatAdminPermissionsResponseDto(
     @SerialName("isAdmin") val isAdmin: Boolean = false,
     @SerialName("canManageInviteLinks") val canManageInviteLinks: Boolean = false,
     @SerialName("canEditProfile") val canEditProfile: Boolean = false,
+    @SerialName("canManageAdmins") val canManageAdmins: Boolean = false,
     @SerialName("tag") val tag: String? = null
 )
 
