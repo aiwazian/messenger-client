@@ -8,9 +8,9 @@ import android.util.Log
 import com.aiwazian.messenger.domain.ChannelAdmin
 import com.aiwazian.messenger.domain.ChatAdminPermissions
 import com.aiwazian.messenger.domain.User
+import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.network.api.ChannelApi
 import com.aiwazian.messenger.network.dto.UpsertChannelAdminRequestDto
-import com.aiwazian.messenger.network.dto.toDomain
 import javax.inject.Inject
 
 /**
