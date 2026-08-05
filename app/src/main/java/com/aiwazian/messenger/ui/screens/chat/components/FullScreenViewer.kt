@@ -472,7 +472,7 @@ fun FullScreenViewer(
                 modifier = Modifier.background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
                             Color.Transparent
                         )
                     )
