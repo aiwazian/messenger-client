@@ -26,6 +26,12 @@ import androidx.media3.ui.compose.ContentFrame
 import com.aiwazian.messenger.ui.components.PlayerUi
 import kotlinx.coroutines.delay
 
+/**
+ * Plays a video of the full screen viewer.
+ *
+ * @param contentModifier applied to the video frame only, so a zoom of the frame
+ * leaves the playback controls untouched.
+ */
 @Composable
 fun VideoPlayerItem(
     uri: Uri,
@@ -33,6 +39,7 @@ fun VideoPlayerItem(
     isUiVisible: Boolean,
     isLooping: Boolean = false,
     playbackSpeed: Float = 1.0f,
+    contentModifier: Modifier = Modifier,
     onPlayingChanged: (Boolean) -> Unit = {},
     onShowUiRequest: () -> Unit = {}
 ) {
@@ -104,7 +111,9 @@ fun VideoPlayerItem(
     Box(modifier = Modifier.fillMaxSize()) {
         ContentFrame(
             player = player,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .then(contentModifier),
             keepContentOnReset = true,
             shutter = {}
         )

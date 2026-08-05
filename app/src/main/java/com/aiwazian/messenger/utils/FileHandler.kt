@@ -24,25 +24,26 @@ import javax.inject.Singleton
 
 @Singleton
 class FileHandler @Inject constructor(
-    @param:ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
+    private val apkInstaller: ApkInstaller
 ) {
     
-    fun openFile(path: String) {
+    suspend fun openFile(path: String) {
         try {
             val file = File(path)
             if (!file.exists()) {
-                Log.e("FileHandler", "File does not exist at path: $path")
+                Log.e(TAG, "File does not exist at path: $path")
                 showToast("File does not exist")
                 return
             }
             
-            if (file.extension.equals("apk", ignoreCase = true)) {
-                openApkFile(file)
+            if (file.extension.equals(EXTENSION_APK, ignoreCase = true)) {
+                installApkFile(file)
             } else {
                 openGenericFile(file)
             }
         } catch (e: Exception) {
-            Log.e("FileHandler", "Error in openFile", e)
+            Log.e(TAG, "Error in openFile", e)
             showToast("Error: ${e.message}")
         }
     }
@@ -83,13 +84,18 @@ class FileHandler @Inject constructor(
                 false
             }
         } catch (e: Exception) {
-            Log.e("FileHandler", "Error saving to gallery", e)
+            Log.e(TAG, "Error saving to gallery", e)
             false
         }
     }
 
-    private fun openApkFile(file: File) {
-        openFileWithFallback(file, "application/vnd.android.package-archive")
+    private suspend fun installApkFile(file: File) {
+        when (apkInstaller.install(file)) {
+            ApkInstallResult.STARTED -> Unit
+            ApkInstallResult.PERMISSION_REQUIRED -> showToast("Allow installing unknown apps to continue")
+            ApkInstallResult.UNTRUSTED_LOCATION -> showToast("Cannot install this file")
+            ApkInstallResult.FAILED -> showToast("Cannot install this file")
+        }
     }
     
     private fun openGenericFile(file: File) {
@@ -97,69 +103,3 @@ class FileHandler @Inject constructor(
     }
     
     private fun openFileWithFallback(file: File, mimeType: String) {
-        try {
-            val uri = FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                file
-            )
-            
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, mimeType)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            
-            val resolveInfo = context.packageManager.queryIntentActivities(intent, 0)
-            if (resolveInfo.isEmpty() || mimeType == "application/vnd.android.package-archive") {
-                intent.setDataAndType(uri, "*/*")
-            }
-            
-            val chooserIntent =
-                Intent.createChooser(intent, context.getString(R.string.app_name)).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-            
-            context.startActivity(chooserIntent)
-        } catch (e: Exception) {
-            Log.e("FileHandler", "Error opening file with fallback", e)
-            showToast("Cannot open file: ${e.javaClass.simpleName}")
-        }
-    }
-    
-    fun saveToDownloads(path: String, displayName: String? = null): Boolean {
-        val file = File(path)
-        if (!file.exists()) return false
-        
-        val mimeType = file.toUri().getFileType(context)
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, displayName ?: file.name)
-            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-        }
-        
-        val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        
-        return try {
-            val uri = context.contentResolver.insert(collection, contentValues)
-            if (uri != null) {
-                context.contentResolver.openOutputStream(uri)?.use { out ->
-                    file.inputStream().use { input ->
-                        input.copyTo(out)
-                    }
-                }
-                true
-            } else {
-                false
-            }
-        } catch (e: Exception) {
-            Log.e("FileHandler", "Error saving to downloads", e)
-            false
-        }
-    }
-
-    private fun showToast(message: String) {
-        Handler(Looper.getMainLooper()).post {
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-        }
-    }
-}
