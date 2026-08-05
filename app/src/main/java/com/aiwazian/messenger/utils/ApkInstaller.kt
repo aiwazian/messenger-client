@@ -4,12 +4,14 @@
 
 package com.aiwazian.messenger.utils
 
+import android.app.ActivityOptions
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageInstaller
 import android.os.Build
+import android.os.Bundle
 import android.util.Log
 import com.aiwazian.messenger.ApkInstallActivity
 import com.aiwazian.messenger.ApkInstallPermissionActivity
@@ -104,7 +106,31 @@ class ApkInstaller @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT
         }
         
-        return PendingIntent.getActivity(context, sessionId, intent, flags).intentSender
+        return PendingIntent.getActivity(
+            context, sessionId, intent, flags, activityStartOptions()
+        ).intentSender
+    }
+    
+    /**
+     * Delegates the background activity launch privileges of this application to
+     * the system installer.
+     *
+     * Since Android 15 the creator of a pending intent has to grant them
+     * explicitly. Without it the system drops the start of [ApkInstallActivity]
+     * with a "Background activity launch blocked" message and the installation
+     * silently stops before its confirmation.
+     */
+    private fun activityStartOptions(): Bundle? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            return null
+        }
+        
+        val options = ActivityOptions.makeBasic()
+            .setPendingIntentCreatorBackgroundActivityStartMode(
+                ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+            )
+        
+        return options.toBundle()
     }
     
     private fun isInsideApplicationStorage(file: File): Boolean = runCatching {
