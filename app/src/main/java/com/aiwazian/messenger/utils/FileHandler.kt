@@ -25,7 +25,8 @@ import javax.inject.Singleton
 
 @Singleton
 class FileHandler @Inject constructor(
-    @param:ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
+    private val apkInstaller: ApkInstaller
 ) {
     
     /**
@@ -33,7 +34,7 @@ class FileHandler @Inject constructor(
      *
      * @param path absolute file system path, "file://" URI or "content://" URI.
      */
-    fun openFile(path: String) {
+    suspend fun openFile(path: String) {
         try {
             val uri = path.toUri()
             
@@ -51,7 +52,7 @@ class FileHandler @Inject constructor(
             }
             
             if (file.extension.equals(EXTENSION_APK, ignoreCase = true)) {
-                openApkFile(file)
+                installApkFile(file)
             } else {
                 openGenericFile(file)
             }
@@ -102,8 +103,18 @@ class FileHandler @Inject constructor(
         }
     }
 
-    private fun openApkFile(file: File) {
-        openFileWithFallback(file, MIME_TYPE_APK)
+    private suspend fun installApkFile(file: File) {
+        when (apkInstaller.install(file)) {
+            ApkInstallResult.STARTED -> Unit
+            
+            ApkInstallResult.PERMISSION_REQUIRED -> {
+                showToast("Allow installing unknown apps to continue")
+            }
+            
+            ApkInstallResult.UNTRUSTED_LOCATION, ApkInstallResult.FAILED -> {
+                showToast("Cannot install this file")
+            }
+        }
     }
     
     private fun openGenericFile(file: File) {
@@ -132,7 +143,7 @@ class FileHandler @Inject constructor(
         }
         
         val resolveInfo = context.packageManager.queryIntentActivities(intent, 0)
-        if (resolveInfo.isEmpty() || mimeType == MIME_TYPE_APK) {
+        if (resolveInfo.isEmpty()) {
             intent.setDataAndType(uri, MIME_TYPE_ANY)
         }
         
@@ -202,7 +213,6 @@ class FileHandler @Inject constructor(
         const val SCHEME_FILE = "file"
         const val SCHEME_CONTENT = "content"
         const val EXTENSION_APK = "apk"
-        const val MIME_TYPE_APK = "application/vnd.android.package-archive"
         const val MIME_TYPE_ANY = "*/*"
     }
 }

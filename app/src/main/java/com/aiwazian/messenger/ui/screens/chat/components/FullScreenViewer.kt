@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -55,6 +56,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,7 +81,11 @@ import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.components.rememberZoomableState
+import com.aiwazian.messenger.ui.components.zoomableContent
+import com.aiwazian.messenger.ui.components.zoomableGestures
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -142,6 +148,7 @@ fun FullScreenViewer(
     }
     
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     
     LaunchedEffect(isUiVisible) {
         if (isUiVisible) insetsController.show(WindowInsetsCompat.Type.statusBars())
@@ -269,35 +276,59 @@ fun FullScreenViewer(
                 }) { page ->
             val item = media.getOrNull(page)
             val isCurrentPage = pagerState.currentPage == page
+            val zoomableState = rememberZoomableState()
+            
+            LaunchedEffect(isCurrentPage) {
+                if (!isCurrentPage) {
+                    zoomableState.reset()
+                }
+            }
             
             if (item == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularWavyProgressIndicator()
                 }
-            } else if (item.isVideo) {
-                VideoPlayerItem(
-                    uri = item.uri,
-                    isCurrentPage = isCurrentPage,
-                    isUiVisible = !isDragging && isUiVisible,
-                    isLooping = isVideoLooping,
-                    playbackSpeed = videoPlaybackSpeed,
-                    onPlayingChanged = { playing ->
-                        isVideoPlaying = playing
-                    },
-                    onShowUiRequest = {
-                        isUiVisible = true
-                        lastInteractionTime = System.currentTimeMillis()
-                    })
             } else {
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(item.uri)
-                        .decoderFactory(GifDecoder.Factory())
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxSize()
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .zoomableGestures(
+                            state = zoomableState,
+                            onTap = { isUiVisible = !isUiVisible },
+                            onPanBeyondEdge = { pan -> pagerState.dispatchRawDelta(-pan) },
+                            onPanBeyondEdgeFinished = {
+                                coroutineScope.launch { pagerState.settleAfterEdgePan() }
+                            }), contentAlignment = Alignment.Center
+                ) {
+                    if (item.isVideo) {
+                        VideoPlayerItem(
+                            uri = item.uri,
+                            isCurrentPage = isCurrentPage,
+                            isUiVisible = !isDragging && isUiVisible,
+                            isLooping = isVideoLooping,
+                            playbackSpeed = videoPlaybackSpeed,
+                            contentModifier = Modifier.zoomableContent(zoomableState),
+                            onPlayingChanged = { playing ->
+                                isVideoPlaying = playing
+                            },
+                            onShowUiRequest = {
+                                isUiVisible = true
+                                lastInteractionTime = System.currentTimeMillis()
+                            })
+                    } else {
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data(item.uri)
+                                .decoderFactory(GifDecoder.Factory())
+                                .build(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .zoomableContent(zoomableState)
+                        )
+                    }
+                }
             }
         }
         AnimatedVisibility(
@@ -460,6 +491,18 @@ fun FullScreenViewer(
 
 private const val MIN_PLAYBACK_SPEED = 0.1f
 private const val MAX_PLAYBACK_SPEED = 10.0f
+private const val PAGE_SETTLE_FRACTION = 0.25f
+
+private suspend fun PagerState.settleAfterEdgePan() {
+    val offsetFraction = currentPageOffsetFraction
+    val nextPage = when {
+        offsetFraction > PAGE_SETTLE_FRACTION -> currentPage + 1
+        offsetFraction < -PAGE_SETTLE_FRACTION -> currentPage - 1
+        else -> currentPage
+    }
+    
+    animateScrollToPage(nextPage.coerceIn(0, (pageCount - 1).coerceAtLeast(0)))
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
