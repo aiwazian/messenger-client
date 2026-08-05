@@ -5,9 +5,9 @@
 package com.aiwazian.messenger.ui.components
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.VectorConverter
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.MutatorMutex
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -42,16 +42,16 @@ const val MAX_CONTENT_SCALE = 1.8f
 const val DOUBLE_TAP_CONTENT_SCALE = MAX_CONTENT_SCALE
 const val CONTENT_SCALE_TOLERANCE = 1.35f
 
+/** Duration of the zoom of a double tap, in milliseconds. */
+const val DOUBLE_TAP_ANIMATION_DURATION = 160
+
+/** Duration of the animation that brings the content back into its bounds, in milliseconds. */
+const val SETTLE_ANIMATION_DURATION = 200
+
 private const val SCALE_THRESHOLD = 0.01f
 private const val EDGE_PAN_THRESHOLD = 0.5f
 
-private val SCALE_ANIMATION = spring<Float>(
-    dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow
-)
-
-private val OFFSET_ANIMATION = spring<Offset>(
-    dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow
-)
+private val ZOOM_EASING = FastOutSlowInEasing
 
 /**
  * Zoom limits of a [ZoomableState].
@@ -60,12 +60,16 @@ private val OFFSET_ANIMATION = spring<Offset>(
  * @param maxScale scale the content springs back to when it is zoomed in too far.
  * @param doubleTapScale scale a double tap applies to a content that is not zoomed yet.
  * @param tolerance how far beyond [minScale] and [maxScale] the content follows the fingers.
+ * @param doubleTapDuration duration of the zoom of a double tap, in milliseconds.
+ * @param settleDuration duration of the return into the bounds, in milliseconds.
  */
 data class ZoomableLimits(
     val minScale: Float = MIN_CONTENT_SCALE,
     val maxScale: Float = MAX_CONTENT_SCALE,
     val doubleTapScale: Float = DOUBLE_TAP_CONTENT_SCALE,
-    val tolerance: Float = CONTENT_SCALE_TOLERANCE
+    val tolerance: Float = CONTENT_SCALE_TOLERANCE,
+    val doubleTapDuration: Int = DOUBLE_TAP_ANIMATION_DURATION,
+    val settleDuration: Int = SETTLE_ANIMATION_DURATION
 )
 
 /**
@@ -93,10 +97,23 @@ class ZoomableState(private val limits: ZoomableLimits) {
     /**
      * Applies a transform gesture and returns the part of [pan] that the content
      * could not absorb because it is already at its bounds.
+     *
+     * A gesture that reports an undefined centroid, a pan or a zoom is ignored:
+     * such a value turns the whole transform into a not a number one and hides
+     * the content until the state is recreated.
      */
     fun applyTransform(centroid: Offset, pan: Offset, zoom: Float): Offset {
+        if (!centroid.isDefined() || !pan.isDefined() || !zoom.isFinite()) {
+            return Offset.Zero
+        }
+        
         val currentScale = scale
         val newScale = (currentScale * zoom).coerceIn(minGestureScale, maxGestureScale)
+        
+        if (!newScale.isFinite()) {
+            return Offset.Zero
+        }
+        
         val scaleDelta = if (currentScale == 0f) 1f else newScale / currentScale
         val anchor = centroid - contentCenter
         val requestedOffset = anchor - (anchor - offset) * scaleDelta + pan
@@ -112,6 +129,12 @@ class ZoomableState(private val limits: ZoomableLimits) {
      * Animates an over zoomed or an over panned content back into its bounds.
      */
     suspend fun settle() {
+        if (!scale.isFinite() || !offset.isDefined()) {
+            scale = limits.minScale
+            offset = Offset.Zero
+            return
+        }
+        
         val targetScale = scale.coerceIn(limits.minScale, limits.maxScale)
         val targetOffset = clampOffset(offset, targetScale)
         
@@ -119,7 +142,7 @@ class ZoomableState(private val limits: ZoomableLimits) {
             return
         }
         
-        animateTo(targetScale, targetOffset)
+        animateTo(targetScale, targetOffset, limits.settleDuration)
     }
     
     /**
@@ -127,7 +150,11 @@ class ZoomableState(private val limits: ZoomableLimits) {
      */
     suspend fun toggleZoom(tapPosition: Offset) {
         if (isZoomed) {
-            animateTo(limits.minScale, Offset.Zero)
+            animateTo(limits.minScale, Offset.Zero, limits.doubleTapDuration)
+            return
+        }
+        
+        if (!tapPosition.isDefined()) {
             return
         }
         
@@ -136,7 +163,7 @@ class ZoomableState(private val limits: ZoomableLimits) {
         val scaleDelta = if (scale == 0f) 1f else targetScale / scale
         val targetOffset = clampOffset(anchor - (anchor - offset) * scaleDelta, targetScale)
         
-        animateTo(targetScale, targetOffset)
+        animateTo(targetScale, targetOffset, limits.doubleTapDuration)
     }
     
     suspend fun reset() {
@@ -146,23 +173,29 @@ class ZoomableState(private val limits: ZoomableLimits) {
         }
     }
     
-    private suspend fun animateTo(targetScale: Float, targetOffset: Offset) {
+    private suspend fun animateTo(targetScale: Float, targetOffset: Offset, duration: Int) {
         animationMutex.mutate {
             coroutineScope {
                 val scaleAnimation = Animatable(scale)
                 val offsetAnimation = Animatable(offset, Offset.VectorConverter)
+                val scaleSpec = tween<Float>(durationMillis = duration, easing = ZOOM_EASING)
+                val offsetSpec = tween<Offset>(durationMillis = duration, easing = ZOOM_EASING)
                 
                 launch {
-                    scaleAnimation.animateTo(targetScale, SCALE_ANIMATION) { scale = value }
+                    scaleAnimation.animateTo(targetScale, scaleSpec) { scale = value }
                 }
                 launch {
-                    offsetAnimation.animateTo(targetOffset, OFFSET_ANIMATION) { offset = value }
+                    offsetAnimation.animateTo(targetOffset, offsetSpec) { offset = value }
                 }
             }
         }
     }
     
     private fun clampOffset(offset: Offset, scale: Float): Offset {
+        if (!offset.isDefined()) {
+            return Offset.Zero
+        }
+        
         val bounds = maxOffset(scale)
         return Offset(
             x = offset.x.coerceIn(-bounds.x, bounds.x), y = offset.y.coerceIn(-bounds.y, bounds.y)
@@ -247,6 +280,17 @@ fun Modifier.zoomableGestures(
                         break
                     }
                     
+                    /*
+                     * The centroid of an event that lifts the last finger is
+                     * unspecified, and transforming the content with it makes the
+                     * content disappear.
+                     */
+                    val centroid = event.calculateCentroid(useCurrent = true)
+                    
+                    if (centroid == Offset.Unspecified) {
+                        break
+                    }
+                    
                     val isPinch = event.changes.count { it.pressed } > 1
                     val zoomChange = event.calculateZoom()
                     val panChange = event.calculatePan()
@@ -275,9 +319,7 @@ fun Modifier.zoomableGestures(
                         currentOnPanBeyondEdge(panChange.x)
                     } else {
                         val unusedPan = state.applyTransform(
-                            centroid = event.calculateCentroid(useCurrent = true),
-                            pan = panChange,
-                            zoom = zoomChange
+                            centroid = centroid, pan = panChange, zoom = zoomChange
                         )
                         
                         if (!isPinch && abs(unusedPan.x) > EDGE_PAN_THRESHOLD) {
@@ -301,3 +343,5 @@ fun Modifier.zoomableGestures(
             }
         }
 }
+
+private fun Offset.isDefined(): Boolean = x.isFinite() && y.isFinite()

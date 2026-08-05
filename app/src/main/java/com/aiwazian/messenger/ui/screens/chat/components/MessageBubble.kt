@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.SaveAlt
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.Download
@@ -468,7 +469,7 @@ private fun buildDropdownActions(
     if (hasDownloadedAttachment && onSaveToDownloads != null) {
         actions.add(
             DropdownMenuAction(
-                icon = Icons.Rounded.Download,
+                icon = Icons.Outlined.SaveAlt,
                 text = UiText.StringResource(R.string.save_to_downloads),
                 onClick = onSaveToDownloads
             )
