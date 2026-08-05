@@ -10,10 +10,9 @@ import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageInstaller
 import android.os.Build
-import android.provider.Settings
 import android.util.Log
-import androidx.core.net.toUri
-import com.aiwazian.messenger.receiver.ApkInstallReceiver
+import com.aiwazian.messenger.ApkInstallActivity
+import com.aiwazian.messenger.ApkInstallPermissionActivity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -40,9 +39,16 @@ class ApkInstaller @Inject constructor(
     @param:ApplicationContext private val context: Context
 ) {
     
+    /** Whether the user allows this application to install other applications. */
+    fun canInstallPackages(): Boolean = context.packageManager.canRequestPackageInstalls()
+    
     /**
      * Copies [file] into an installation session and commits it. The system asks
      * the user to confirm the installation of a committed session.
+     *
+     * Without the install permission [ApkInstallPermissionActivity] takes over: it
+     * opens the system settings and repeats the installation once the permission
+     * is granted.
      */
     suspend fun install(file: File): ApkInstallResult = withContext(Dispatchers.IO) {
         if (!isInsideApplicationStorage(file)) {
@@ -50,8 +56,8 @@ class ApkInstaller @Inject constructor(
             return@withContext ApkInstallResult.UNTRUSTED_LOCATION
         }
         
-        if (!context.packageManager.canRequestPackageInstalls()) {
-            requestInstallPermission()
+        if (!canInstallPackages()) {
+            requestInstallPermission(file)
             return@withContext ApkInstallResult.PERMISSION_REQUIRED
         }
         
@@ -80,9 +86,16 @@ class ApkInstaller @Inject constructor(
         }
     }
     
+    /**
+     * Sends the status of a session to [ApkInstallActivity].
+     *
+     * The system installer shows the progress and the result of an installation
+     * only when its confirmation is started from an activity, so the status is
+     * delivered to an activity instead of a broadcast receiver.
+     */
     private fun createStatusReceiver(sessionId: Int): IntentSender {
-        val intent = Intent(context, ApkInstallReceiver::class.java).apply {
-            action = ApkInstallReceiver.ACTION_INSTALL_STATUS
+        val intent = Intent(context, ApkInstallActivity::class.java).apply {
+            action = ApkInstallActivity.ACTION_INSTALL_STATUS
         }
         
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -91,7 +104,7 @@ class ApkInstaller @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT
         }
         
-        return PendingIntent.getBroadcast(context, sessionId, intent, flags).intentSender
+        return PendingIntent.getActivity(context, sessionId, intent, flags).intentSender
     }
     
     private fun isInsideApplicationStorage(file: File): Boolean = runCatching {
@@ -106,18 +119,16 @@ class ApkInstaller @Inject constructor(
         context.externalCacheDir
     ).map { it.canonicalPath + File.separator }
     
-    private fun requestInstallPermission() {
-        val intent = Intent(
-            Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-            "package:${context.packageName}".toUri()
-        ).apply {
+    private fun requestInstallPermission(file: File) {
+        val intent = Intent(context, ApkInstallPermissionActivity::class.java).apply {
+            putExtra(ApkInstallPermissionActivity.EXTRA_APK_PATH, file.absolutePath)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         
         try {
             context.startActivity(intent)
         } catch (e: Exception) {
-            Log.e(TAG, "Cannot open the unknown app sources settings", e)
+            Log.e(TAG, "Cannot ask for the install permission", e)
         }
     }
     

@@ -103,13 +103,14 @@ class FileHandler @Inject constructor(
         }
     }
 
+    /**
+     * A missing install permission is handled by the installer itself, which opens
+     * the system settings and shows a bottom sheet when they are left without the
+     * permission.
+     */
     private suspend fun installApkFile(file: File) {
         when (apkInstaller.install(file)) {
-            ApkInstallResult.STARTED -> Unit
-            
-            ApkInstallResult.PERMISSION_REQUIRED -> {
-                showToast("Allow installing unknown apps to continue")
-            }
+            ApkInstallResult.STARTED, ApkInstallResult.PERMISSION_REQUIRED -> Unit
             
             ApkInstallResult.UNTRUSTED_LOCATION, ApkInstallResult.FAILED -> {
                 showToast("Cannot install this file")
