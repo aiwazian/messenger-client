@@ -71,6 +71,8 @@
     <string name="remove_folder">Quitar carpeta</string>
     <string name="pin">Alfiler</string>
     <string name="unpin">Desprender</string>
+    <string name="mark_as_read">Marcar como leído</string>
+    <string name="mark_as_unread">Marcar como no leído</string>
     <string name="folder_name">Nombre de la carpeta</string>
     <string name="included_chats">Chats incluidos</string>
     <string name="add_chats">Agregar chats</string>
@@ -323,4 +325,21 @@
     <string name="no_copy_group_description">Los miembros no podrán copiar texto, reenviar mensajes ni guardar medios del grupo.</string>
     <string name="no_copy_channel_notice">No se permite copiar ni reenviar desde este canal.</string>
     <string name="no_copy_group_notice">No se permite copiar ni reenviar desde este grupo.</string>
+    <string name="administrators">Administradores</string>
+    <string name="add_administrator">Agregar administrador</string>
+    <string name="admin_permissions">Permisos</string>
+    <string name="edit_permissions">Editar permisos</string>
+    <string name="dismiss_admin">Despedir</string>
+    <string name="dismiss_admin_confirm_message">¿Está seguro de que desea eliminar a este usuario de los administradores\?</string>
+    <string name="no_administrators">Sin administradores</string>
+    <string name="admin_removed">Administrador despedido</string>
+    <string name="failed_to_load_administrators">No se pudieron cargar los administradores</string>
+    <string name="no_users_available">No hay usuarios disponibles</string>
+    <string name="permission_invite_links_description">Puede crear y eliminar enlaces de invitación.</string>
+    <string name="edit_channel_profile">Cambiar perfil de canal</string>
+    <string name="edit_channel_profile_description">Puede cambiar el nombre del canal, la descripción y las fotos de perfil.</string>
+    <string name="edit_group_profile">Cambiar perfil de grupo</string>
+    <string name="edit_group_profile_description">Puede cambiar el nombre del grupo, la descripción y las fotos de perfil.</string>
+    <string name="member_tag">Etiqueta de miembro</string>
+    <string name="member_tag_description">La etiqueta se muestra junto al nombre del remitente en los mensajes grupales.</string>
 </resources>

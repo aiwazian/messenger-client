@@ -71,6 +71,8 @@
     <string name="remove_folder">Выдаліць тэчку</string>
     <string name="pin">Pin</string>
     <string name="unpin">Адмацаваць</string>
+    <string name="mark_as_read">Пазначыць як прачытанае</string>
+    <string name="mark_as_unread">Пазначыць як непрачытанае</string>
     <string name="folder_name">Імя тэчкі</string>
     <string name="included_chats">Уключаны чаты</string>
     <string name="add_chats">Дадаць чаты</string>
@@ -325,4 +327,21 @@
     <string name="no_copy_group_description">Удзельнікі не змогуць капіяваць тэкст, перасылаць паведамленні або захоўваць мультымедыя з групы.</string>
     <string name="no_copy_channel_notice">Капіраванне і перасылка з гэтага канала забаронена.</string>
     <string name="no_copy_group_notice">Капіраванне і перасылка з гэтай групы забаронена.</string>
+    <string name="administrators">Адміністратары</string>
+    <string name="add_administrator">Дадаць адміністратара</string>
+    <string name="admin_permissions">Дазволы</string>
+    <string name="edit_permissions">Дазволы на рэдагаванне</string>
+    <string name="dismiss_admin">Звольніць</string>
+    <string name="dismiss_admin_confirm_message">Вы ўпэўнены, што хочаце выдаліць гэтага карыстальніка з ліку адміністратараў\?</string>
+    <string name="no_administrators">Без адміністратараў</string>
+    <string name="admin_removed">Адміністратар звольнены</string>
+    <string name="failed_to_load_administrators">Не ўдалося загрузіць адміністратараў</string>
+    <string name="no_users_available">Няма даступных карыстальнікаў</string>
+    <string name="permission_invite_links_description">Можа ствараць і выдаляць спасылкі на запрашэнні.</string>
+    <string name="edit_channel_profile">Змяніць профіль канала</string>
+    <string name="edit_channel_profile_description">Можна змяніць назву канала, апісанне і фота профілю.</string>
+    <string name="edit_group_profile">Змяніць профіль групы</string>
+    <string name="edit_group_profile_description">Можна змяніць назву групы, апісанне і фота профілю.</string>
+    <string name="member_tag">Тэг удзельніка</string>
+    <string name="member_tag_description">Тэг паказваецца побач з імем адпраўніка ў групавых паведамленнях.</string>
 </resources>

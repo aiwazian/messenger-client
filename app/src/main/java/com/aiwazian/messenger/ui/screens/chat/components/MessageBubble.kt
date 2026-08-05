@@ -152,23 +152,48 @@ fun MessageBubble(
             
             Box(
                 modifier = Modifier
-                    .widthIn(min = 90.dp, max = 280.dp)
+                    .widthIn(min = 90.dp, max = 300.dp)
                     .padding(horizontal = 8.dp)
                     .clip(MaterialTheme.shapes.large)
                     .background(containerColor)
             ) {
                 Column(Modifier.width(IntrinsicSize.Max)) {
                     if (!item.isMine && item.isFirstInGroup && item.senderName != null) {
-                        Text(
-                            text = item.senderName,
-                            fontSize = 12.sp,
-                            lineHeight = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 8.dp, top = 8.dp, end = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = item.senderName,
+                                fontSize = 12.sp,
+                                lineHeight = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            
+                            if (!item.senderTag.isNullOrBlank()) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(MaterialTheme.shapes.medium)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = item.senderTag,
+                                        fontSize = 11.sp,
+                                        lineHeight = 12.sp,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
+                        }
                     }
                     
                     message.forwardedFrom?.let { forwardedFrom ->

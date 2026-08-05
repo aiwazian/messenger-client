@@ -327,4 +327,21 @@
     <string name="no_copy_group_description">Участники, включая владельца, не смогут копировать текст, пересылать сообщения и сохранять медиа из группы.</string>
     <string name="no_copy_channel_notice">Копирование и пересылка из канала запрещены.</string>
     <string name="no_copy_group_notice">Копирование и пересылка из группы запрещены.</string>
+    <string name="administrators">Администраторы</string>
+    <string name="add_administrator">Добавить администратора</string>
+    <string name="admin_permissions">Разрешения</string>
+    <string name="edit_permissions">Редактировать разрешения</string>
+    <string name="dismiss_admin">Увольнять</string>
+    <string name="dismiss_admin_confirm_message">Вы уверены, что хотите удалить этого пользователя из числа администраторов\?</string>
+    <string name="no_administrators">Нет администраторов</string>
+    <string name="admin_removed">Администратор уволен</string>
+    <string name="failed_to_load_administrators">Не удалось загрузить администраторов.</string>
+    <string name="no_users_available">Нет доступных пользователей</string>
+    <string name="permission_invite_links_description">Можно создавать и удалять ссылки для приглашений.</string>
+    <string name="edit_channel_profile">Изменить профиль канала</string>
+    <string name="edit_channel_profile_description">Можно изменить название канала, описание и фотографии профиля.</string>
+    <string name="edit_group_profile">Изменить профиль группы</string>
+    <string name="edit_group_profile_description">Можно изменить название группы, описание и фотографии профиля.</string>
+    <string name="member_tag">Тег участника</string>
+    <string name="member_tag_description">Тег отображается рядом с именем отправителя в групповых сообщениях.</string>
 </resources>

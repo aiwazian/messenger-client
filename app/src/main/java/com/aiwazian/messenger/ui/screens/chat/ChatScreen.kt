@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -69,6 +71,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -98,11 +101,9 @@ import com.aiwazian.messenger.utils.ActiveChatTracker
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import java.util.Locale
-import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(FlowPreview::class)
 @Composable
@@ -293,10 +294,9 @@ fun ChatScreen(
                 message.id > 0 && !message.isRead && message.senderId != uiState.myId
             }.maxOfOrNull { it.id }
         }.distinctUntilChanged()
-            .debounce(READ_REPORT_DEBOUNCE_MS.milliseconds)
             .collect { messageId ->
                 if (messageId != null) chatViewModel.onMessagesSeen(messageId)
-        }
+            }
     }
     
     var fileToCancelId by remember { mutableStateOf<Long?>(null) }
@@ -439,7 +439,13 @@ fun ChatScreen(
     }) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
-                modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                        end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
+                    ),
+                verticalArrangement = Arrangement.Bottom
             ) {
                 /*
                  * reverseLayout: нулевой элемент рисуется у нижней кромки экрана,
@@ -784,11 +790,3 @@ private const val PREFETCH_THRESHOLD = 10
  * При reverseLayout самое новое сообщение — это начало списка.
  */
 private const val BOTTOM_ITEM_INDEX = 0
-
-/**
- * Сколько ждать перед отправкой отметки о прочтении.
- *
- * Без паузы быстрый скролл через десятки сообщений помечал бы прочитанным всё,
- * что промелькнуло мимо экрана.
- */
-private const val READ_REPORT_DEBOUNCE_MS = 400L

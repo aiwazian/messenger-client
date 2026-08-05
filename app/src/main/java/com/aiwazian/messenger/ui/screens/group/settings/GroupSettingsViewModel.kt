@@ -10,12 +10,14 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.ChatAdminPermissions
 import com.aiwazian.messenger.enums.GroupType
 import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.isNetworkError
 import com.aiwazian.messenger.repository.GroupRepository
+import com.aiwazian.messenger.repository.group.GroupAdminsRepository
 import com.aiwazian.messenger.usecase.DeleteGroupUseCase
 import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
 import com.aiwazian.messenger.utils.UiText
@@ -37,6 +39,7 @@ import javax.inject.Inject
 class GroupSettingsViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val groupRepository: GroupRepository,
+    private val groupAdminsRepository: GroupAdminsRepository,
     private val deleteGroupUseCase: DeleteGroupUseCase,
     private val vibrationManager: VibrationManager,
     private val uploadManager: UploadManager,
@@ -52,6 +55,11 @@ class GroupSettingsViewModel @Inject constructor(
     private val downloadingAvatars = mutableSetOf<String>()
     
     fun init(groupId: Long) {
+        viewModelScope.launch {
+            loadMyPermissions(groupId)
+            loadCounters(groupId)
+        }
+        
         viewModelScope.launch {
             groupRepository.fetchById(groupId)
             groupRepository.getById(groupId).collectLatest { group ->
@@ -70,6 +78,36 @@ class GroupSettingsViewModel @Inject constructor(
         }
     }
     
+    private suspend fun loadMyPermissions(groupId: Long) {
+        groupAdminsRepository.getMyPermissions(groupId).onSuccess { permissions ->
+            _uiState.update { it.copy(permissions = permissions) }
+        }.onFailure { error ->
+            Log.e(TAG, "error load my permissions", error)
+            _uiState.update { it.copy(permissions = ChatAdminPermissions()) }
+        }
+    }
+    
+    /** Счётчики грузятся только для тех блоков, которые видны текущему пользователю. */
+    private suspend fun loadCounters(groupId: Long) {
+        val state = _uiState.value
+        
+        if (state.canManageAdmins) {
+            groupAdminsRepository.getAdmins(groupId).onSuccess { admins ->
+                _uiState.update { it.copy(adminsCount = admins.size) }
+            }.onFailure { error ->
+                Log.e(TAG, "error load admins count", error)
+            }
+        }
+        
+        if (state.isOwner) {
+            groupRepository.getJoinRequests(groupId).onSuccess { requests ->
+                _uiState.update { it.copy(joinRequestsCount = requests.size) }
+            }.onFailure { error ->
+                Log.e(TAG, "error load join requests count", error)
+            }
+        }
+    }
+    
     fun setPendingAvatarUri(uri: Uri?) {
         _uiState.update { it.copy(pendingAvatarUri = uri) }
     }
@@ -81,7 +119,7 @@ class GroupSettingsViewModel @Inject constructor(
     fun deleteAvatar(fileId: String) {
         viewModelScope.launch {
             groupRepository.deleteAvatar(_uiState.value.group.id, fileId).onFailure {
-                Log.e("GroupSettingsViewModel", "error delete avatar", it)
+                Log.e(TAG, "error delete avatar", it)
             }
         }
     }
@@ -128,11 +166,13 @@ class GroupSettingsViewModel @Inject constructor(
     }
     
     fun changeName(newName: String) {
+        if (!_uiState.value.canEditProfile) return
         _uiState.update { it.copy(group = it.group.copy(name = newName)) }
         updateHasChanges()
     }
     
     fun changeBio(newBio: String) {
+        if (!_uiState.value.canEditProfile) return
         _uiState.update { it.copy(group = it.group.copy(bio = newBio)) }
         updateHasChanges()
     }
@@ -143,6 +183,10 @@ class GroupSettingsViewModel @Inject constructor(
     
     fun save() {
         viewModelScope.launch {
+            if (!_uiState.value.canEditProfile) {
+                return@launch
+            }
+            
             if (!checkValid()) {
                 vibrationManager.vibrate(VibrationPattern.Error)
                 return@launch
@@ -163,6 +207,10 @@ class GroupSettingsViewModel @Inject constructor(
     
     fun delete() {
         viewModelScope.launch {
+            if (!_uiState.value.isOwner) {
+                return@launch
+            }
+            
             if (deleteGroupUseCase(_uiState.value.group.id)) {
                 _uiEffect.emit(GroupSettingsUiEffect.NavigateToMain)
             } else {
@@ -196,5 +244,9 @@ class GroupSettingsViewModel @Inject constructor(
         }
         
         return true
+    }
+    
+    private companion object {
+        const val TAG = "GroupSettingsViewModel"
     }
 }

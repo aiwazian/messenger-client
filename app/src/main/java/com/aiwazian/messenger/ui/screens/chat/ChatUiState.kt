@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.chat
 
 import android.net.Uri
 import com.aiwazian.messenger.domain.Chat
+import com.aiwazian.messenger.domain.ChatAdminPermissions
 import com.aiwazian.messenger.domain.InviteLinkInfo
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
@@ -27,6 +28,8 @@ data class ChatUiState(
     val isConnected: Boolean = true,
     val isJoined: Boolean = true,
     val isOwner: Boolean = false,
+    /** Права текущего пользователя в канале или группе. */
+    val myPermissions: ChatAdminPermissions = ChatAdminPermissions(),
     val isMuted: Boolean = false,
     val showDeleteChatDialog: Boolean = false,
     val showClearHistoryDialog: Boolean = false,
@@ -35,6 +38,12 @@ data class ChatUiState(
     val showLeaveDialog: Boolean = false,
     val selectedMessages: Set<Message> = emptySet(),
     val userNamesCache: Map<Long, String> = emptyMap(),
+    /**
+     * Теги участников группы: id → тег.
+     *
+     * Рисуются рядом с именем отправителя, в каналах всегда пусты.
+     */
+    val memberTagsCache: Map<Long, String> = emptyMap(),
     val myId: Long = -1L,
     /** Нужно для заголовка ответа на своё же сообщение в личном чате. */
     val myName: String = "",

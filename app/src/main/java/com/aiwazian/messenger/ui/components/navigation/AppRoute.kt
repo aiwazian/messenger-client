@@ -145,6 +145,18 @@ sealed interface AppRoute : NavKey {
     @Serializable
     data class ChannelInviteLinks(val channelId: Long) : AppRoute
     
+    /** Список администраторов канала. */
+    @Serializable
+    data class ChannelAdmins(val channelId: Long) : AppRoute
+    
+    /** Выбор подписчика для назначения администратором. */
+    @Serializable
+    data class AddChannelAdmin(val channelId: Long) : AppRoute
+    
+    /** Разрешения конкретного администратора канала. */
+    @Serializable
+    data class ChannelAdminPermissions(val channelId: Long, val userId: Long) : AppRoute
+    
     @Serializable
     data class CreateInviteLink(val channelId: Long) : AppRoute
     
@@ -165,6 +177,18 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data class GroupJoinRequests(val groupId: Long) : AppRoute
+    
+    /** Список администраторов группы. */
+    @Serializable
+    data class GroupAdmins(val groupId: Long) : AppRoute
+    
+    /** Выбор участника для назначения администратором. */
+    @Serializable
+    data class AddGroupAdmin(val groupId: Long) : AppRoute
+    
+    /** Разрешения и тег конкретного администратора группы. */
+    @Serializable
+    data class GroupAdminPermissions(val groupId: Long, val userId: Long) : AppRoute
     
     @Serializable
     data class AddMember(val groupId: Long) : AppRoute

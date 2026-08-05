@@ -4,9 +4,16 @@
 
 package com.aiwazian.messenger.ui.screens.channel.settings
 
+import android.net.Uri
 import com.aiwazian.messenger.domain.Channel
+import com.aiwazian.messenger.domain.ChatAdminPermissions
 import com.aiwazian.messenger.enums.ChannelType
 
+/**
+ * Состояние экрана настроек канала.
+ *
+ * Права приходят с сервера и решают, какие блоки вообще попадают в композицию.
+ */
 data class ChannelSettingsUiState(
     val channel: Channel = Channel(
         id = 0,
@@ -22,5 +29,24 @@ data class ChannelSettingsUiState(
     val originalChannelData: Channel? = null,
     val hasChanges: Boolean = false,
     val showDeleteDialog: Boolean = false,
-    val pendingAvatarUri: android.net.Uri? = null
-)
+    val pendingAvatarUri: Uri? = null,
+    val permissions: ChatAdminPermissions = ChatAdminPermissions(),
+    /** Показывается справа от пункта «Администраторы». */
+    val adminsCount: Int = 0,
+    /** Показывается справа от пункта «Заявки на вступление». */
+    val joinRequestsCount: Int = 0
+) {
+    
+    val isOwner: Boolean
+        get() = permissions.isOwner
+    
+    val canEditProfile: Boolean
+        get() = permissions.isOwner || permissions.canEditProfile
+    
+    val canManageInviteLinks: Boolean
+        get() = permissions.isOwner || permissions.canManageInviteLinks
+    
+    /** Владелец управляет администраторами всегда, админ — только с отдельным разрешением. */
+    val canManageAdmins: Boolean
+        get() = permissions.isOwner || permissions.canManageAdmins
+}

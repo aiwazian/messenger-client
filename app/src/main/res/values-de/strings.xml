@@ -71,6 +71,8 @@
     <string name="remove_folder">Ordner entfernen</string>
     <string name="pin">Stift</string>
     <string name="unpin">Lösen</string>
+    <string name="mark_as_read">Als gelesen markieren</string>
+    <string name="mark_as_unread">Als ungelesen markieren</string>
     <string name="folder_name">Ordnername</string>
     <string name="included_chats">Enthaltene Chats</string>
     <string name="add_chats">Chats hinzufügen</string>
@@ -321,4 +323,21 @@
     <string name="no_copy_group_description">Mitglieder können keinen Text kopieren, keine Nachrichten weiterleiten oder Medien aus der Gruppe speichern.</string>
     <string name="no_copy_channel_notice">Das Kopieren und Weiterleiten ist von diesem Kanal aus nicht gestattet.</string>
     <string name="no_copy_group_notice">Aus dieser Gruppe ist das Kopieren und Weiterleiten nicht gestattet.</string>
+    <string name="administrators">Administratoren</string>
+    <string name="add_administrator">Administrator hinzufügen</string>
+    <string name="admin_permissions">Berechtigungen</string>
+    <string name="edit_permissions">Berechtigungen bearbeiten</string>
+    <string name="dismiss_admin">Zurückweisen</string>
+    <string name="dismiss_admin_confirm_message">Möchten Sie diesen Benutzer wirklich aus den Administratoren entfernen\?</string>
+    <string name="no_administrators">Keine Administratoren</string>
+    <string name="admin_removed">Administrator entlassen</string>
+    <string name="failed_to_load_administrators">Administratoren konnten nicht geladen werden</string>
+    <string name="no_users_available">Keine Benutzer verfügbar</string>
+    <string name="permission_invite_links_description">Kann Einladungslinks erstellen und löschen.</string>
+    <string name="edit_channel_profile">Kanalprofil ändern</string>
+    <string name="edit_channel_profile_description">Kann den Kanalnamen, die Beschreibung und die Profilfotos ändern.</string>
+    <string name="edit_group_profile">Gruppenprofil ändern</string>
+    <string name="edit_group_profile_description">Kann den Gruppennamen, die Beschreibung und die Profilfotos ändern.</string>
+    <string name="member_tag">Mitglieds-Tag</string>
+    <string name="member_tag_description">Das Tag wird in Gruppennachrichten neben dem Absendernamen angezeigt.</string>
 </resources>

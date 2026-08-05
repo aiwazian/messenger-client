@@ -71,6 +71,8 @@
     <string name="remove_folder">Supprimer le dossier</string>
     <string name="pin">Épingle</string>
     <string name="unpin">Détacher</string>
+    <string name="mark_as_read">Marquer comme lu</string>
+    <string name="mark_as_unread">Marquer comme non lu</string>
     <string name="folder_name">Nom du dossier</string>
     <string name="included_chats">Discussions incluses</string>
     <string name="add_chats">Ajouter des discussions</string>
@@ -323,4 +325,21 @@
     <string name="no_copy_group_description">Les membres ne pourront pas copier de texte, transférer des messages ou enregistrer des médias du groupe.</string>
     <string name="no_copy_channel_notice">La copie et le transfert ne sont pas autorisés à partir de ce canal.</string>
     <string name="no_copy_group_notice">La copie et le transfert ne sont pas autorisés à partir de ce groupe.</string>
+    <string name="administrators">Administrateurs</string>
+    <string name="add_administrator">Ajouter un administrateur</string>
+    <string name="admin_permissions">Autorisations</string>
+    <string name="edit_permissions">Modifier les autorisations</string>
+    <string name="dismiss_admin">Rejeter</string>
+    <string name="dismiss_admin_confirm_message"><![CDATA[Êtes-vous sûr de vouloir supprimer cet utilisateur des administrateurs \?]]></string>
+    <string name="no_administrators">Aucun administrateur</string>
+    <string name="admin_removed">Administrateur licencié</string>
+    <string name="failed_to_load_administrators">Échec du chargement des administrateurs</string>
+    <string name="no_users_available">Aucun utilisateur disponible</string>
+    <string name="permission_invite_links_description">Peut créer et supprimer des liens d’invitation.</string>
+    <string name="edit_channel_profile">Changer le profil de la chaîne</string>
+    <string name="edit_channel_profile_description">Peut changer le nom de la chaîne, la description et les photos de profil.</string>
+    <string name="edit_group_profile">Changer le profil du groupe</string>
+    <string name="edit_group_profile_description">Peut changer le nom du groupe, la description et les photos de profil.</string>
+    <string name="member_tag">Balise de membre</string>
+    <string name="member_tag_description">La balise est affichée à côté du nom de l\'expéditeur dans les messages de groupe.</string>
 </resources>

@@ -11,17 +11,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,12 +31,12 @@ fun SectionToggleItem(
     supportingText: String? = null,
     isChecked: Boolean,
     enabled: Boolean = true,
-    icon: ImageVector? = null,
     onCheckedChange: () -> Unit,
 ) {
     TextButton(
         shape = RectangleShape,
         modifier = Modifier.fillMaxWidth(),
+        enabled = enabled,
         onClick = { if (enabled) onCheckedChange() },
         colors = ButtonDefaults.textButtonColors(
             contentColor = MaterialTheme.colorScheme.onSurface
@@ -51,25 +49,20 @@ fun SectionToggleItem(
                 .fillMaxWidth()
                 .padding(start = 8.dp, top = 8.dp, end = 4.dp, bottom = 8.dp)
         ) {
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.padding(end = 10.dp)
-                )
-            }
-            
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 4.dp)
+            ) {
                 Text(
                     text = text,
-                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Normal
                 )
                 if (!supportingText.isNullOrBlank()) {
                     Text(
                         text = supportingText,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Normal,
                         lineHeight = 12.sp
@@ -86,10 +79,8 @@ fun SectionToggleItem(
             }) {
                 Switch(
                     enabled = enabled,
-                    checked = isChecked, onCheckedChange = null, colors = SwitchDefaults.colors(
-                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                        checkedTrackColor = MaterialTheme.colorScheme.primary,
-                    )
+                    checked = isChecked,
+                    onCheckedChange = null,
                 )
             }
         }

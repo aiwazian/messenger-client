@@ -71,6 +71,8 @@
     <string name="remove_folder">Қалтаны жою</string>
     <string name="pin">Pin</string>
     <string name="unpin">Бекіту</string>
+    <string name="mark_as_read">Оқылған деп белгілеңіз</string>
+    <string name="mark_as_unread">Оқылмаған деп белгілеңіз</string>
     <string name="folder_name">Қалта атауы</string>
     <string name="included_chats">Қосылған чаттар</string>
     <string name="add_chats">Чаттарды қосыңыз</string>
@@ -321,4 +323,21 @@
     <string name="no_copy_group_description">Мүшелер топтан мәтінді көшіре, хабарларды қайта бағыттай немесе медианы сақтай алмайды.</string>
     <string name="no_copy_channel_notice">Бұл арнадан көшіруге және қайта жіберуге рұқсат етілмейді.</string>
     <string name="no_copy_group_notice">Бұл топтан көшіруге және қайта жіберуге рұқсат етілмейді.</string>
+    <string name="administrators">Әкімшілер</string>
+    <string name="add_administrator">Әкімші қосу</string>
+    <string name="admin_permissions">Рұқсаттар</string>
+    <string name="edit_permissions">Рұқсаттарды өңдеу</string>
+    <string name="dismiss_admin">Босату</string>
+    <string name="dismiss_admin_confirm_message">Бұл пайдаланушыны әкімшілер қатарынан өшіргіңіз келетініне сенімдісіз бе\?</string>
+    <string name="no_administrators">Әкімшілер жоқ</string>
+    <string name="admin_removed">Әкімші жұмыстан шығарылды</string>
+    <string name="failed_to_load_administrators">Әкімшілерді жүктеу сәтсіз аяқталды</string>
+    <string name="no_users_available">Қолжетімді пайдаланушылар жоқ</string>
+    <string name="permission_invite_links_description">Шақыру сілтемелерін жасай және жоя алады.</string>
+    <string name="edit_channel_profile">Арна профилін өзгерту</string>
+    <string name="edit_channel_profile_description">Арна атын, сипаттамасын және профиль фотосуреттерін өзгерте алады.</string>
+    <string name="edit_group_profile">Топ профилін өзгерту</string>
+    <string name="edit_group_profile_description">Топтың атын, сипаттамасын және профиль фотосуреттерін өзгерте алады.</string>
+    <string name="member_tag">Мүше тегі</string>
+    <string name="member_tag_description">Тег топтық хабарлардағы жіберуші атының жанында көрсетіледі.</string>
 </resources>

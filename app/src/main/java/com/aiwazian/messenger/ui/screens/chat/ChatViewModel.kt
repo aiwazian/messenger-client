@@ -36,6 +36,8 @@ import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
+import com.aiwazian.messenger.repository.channel.ChannelAdminsRepository
+import com.aiwazian.messenger.repository.group.GroupAdminsRepository
 import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.socket.OutgoingSocketEvent
 import com.aiwazian.messenger.socket.RealtimeEventSyncService
@@ -88,6 +90,8 @@ class ChatViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     private val channelRepository: ChannelRepository,
     private val groupRepository: GroupRepository,
+    private val channelAdminsRepository: ChannelAdminsRepository,
+    private val groupAdminsRepository: GroupAdminsRepository,
     private val userRepository: UserRepository,
     private val inviteLinkRepository: InviteLinkRepository,
     private val searchRepository: SearchRepository,
@@ -283,6 +287,7 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             channelRepository.fetchById(chatId)
         }
+        loadMyChannelPermissions(chatId)
         channelRepository.getById(chatId).collectLatest { channel ->
             _uiState.update {
                 it.copy(
@@ -317,6 +322,8 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             groupRepository.fetchById(chatId)
         }
+        loadMyGroupPermissions(chatId)
+        loadMemberTags(chatId)
         groupRepository.getById(chatId).collectLatest { group ->
             _uiState.update {
                 it.copy(
@@ -338,6 +345,37 @@ class ChatViewModel @Inject constructor(
                 )
             }
             if (lastMessages.isNotEmpty()) updateChatItems(lastMessages)
+        }
+    }
+
+    /**
+     * Теги участников группы грузятся одним запросом на открытие чата.
+     *
+     * Сообщения пересобираются: тег рисуется рядом с именем отправителя.
+     */
+    private fun loadMemberTags(chatId: Long) {
+        viewModelScope.launch {
+            groupAdminsRepository.getMemberTags(chatId).onSuccess { tags ->
+                if (tags.isEmpty() && _uiState.value.memberTagsCache.isEmpty()) return@onSuccess
+                _uiState.update { it.copy(memberTagsCache = tags) }
+                if (lastMessages.isNotEmpty()) updateChatItems(lastMessages)
+            }
+        }
+    }
+
+    private fun loadMyGroupPermissions(chatId: Long) {
+        viewModelScope.launch {
+            groupAdminsRepository.getMyPermissions(chatId).onSuccess { permissions ->
+                _uiState.update { it.copy(myPermissions = permissions) }
+            }
+        }
+    }
+
+    private fun loadMyChannelPermissions(chatId: Long) {
+        viewModelScope.launch {
+            channelAdminsRepository.getMyPermissions(chatId).onSuccess { permissions ->
+                _uiState.update { it.copy(myPermissions = permissions) }
+            }
         }
     }
 
@@ -551,6 +589,7 @@ class ChatViewModel @Inject constructor(
             isOwner = _uiState.value.isOwner,
             isJoined = _uiState.value.isJoined,
             userNamesCache = _uiState.value.userNamesCache,
+            memberTagsCache = _uiState.value.memberTagsCache,
             groupReadInfo = _uiState.value.groupReadInfo,
             highlightedMessageId = _uiState.value.highlightedMessageId,
             unreadAnchorMessageId = unreadAnchorMessageId,

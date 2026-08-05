@@ -32,6 +32,12 @@ sealed interface ChatItem {
          * Тем же флагом включается свайп влево по сообщению: свайп — это просто
          * второй способ вызвать «Ответить».
          */
-        val canReply: Boolean = false
+        val canReply: Boolean = false,
+        /**
+         * Тег отправителя: подпись рядом с его именем.
+         *
+         * Есть только в группах и только у тех, кому владелец его выдал.
+         */
+        val senderTag: String? = null
     ) : ChatItem
 }
