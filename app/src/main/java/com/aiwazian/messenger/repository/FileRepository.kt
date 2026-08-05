@@ -19,7 +19,7 @@ class FileRepository @Inject constructor(
         } else {
             updateFileSize(file.id, file.size)
             updateFileStatus(file.id, file.status)
-            if (existing.path == null && file.path != null) {
+            if (file.path != null && file.path != existing.path) {
                 updateFilePath(file.id, file.path)
             }
         }

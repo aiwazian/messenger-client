@@ -94,22 +94,22 @@ class DownloaderManager @Inject constructor(
                 val existing = _downloads.firstOrNull { it.fileId == fileId } ?: return@collect
                 val fileId = existing.fileId
                 val finalStatus = model.status.toDomain()
-                val finalUri = if (finalStatus == DownloadStatus.COMPLETED) {
-                    Uri.fromFile(File(model.path, model.fileName)).toString()
+                val finalPath = if (finalStatus == DownloadStatus.COMPLETED) {
+                    File(model.path, model.fileName).absolutePath
                 } else {
                     existing.localUri
                 }
                 
                 if (
                     finalStatus == DownloadStatus.COMPLETED &&
-                    !finalUri.isNullOrBlank() &&
+                    !finalPath.isNullOrBlank() &&
                     existing.status != DownloadStatus.COMPLETED
                 ) {
                     val file = FileEntity(
                         id = existing.fileId,
                         name = existing.name,
                         size = model.total,
-                        path = finalUri,
+                        path = finalPath,
                         status = DownloadStatus.COMPLETED
                     )
                     fileRepository.upsert(file)
@@ -123,7 +123,7 @@ class DownloaderManager @Inject constructor(
                         status = finalStatus,
                         size = model.total,
                         speed = model.speedInBytePerMs.toString(),
-                        localUri = finalUri
+                        localUri = finalPath
                     )
                 }
             }
