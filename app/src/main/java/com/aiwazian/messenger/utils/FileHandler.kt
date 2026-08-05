@@ -92,9 +92,14 @@ class FileHandler @Inject constructor(
     private suspend fun installApkFile(file: File) {
         when (apkInstaller.install(file)) {
             ApkInstallResult.STARTED -> Unit
-            ApkInstallResult.PERMISSION_REQUIRED -> showToast("Allow installing unknown apps to continue")
-            ApkInstallResult.UNTRUSTED_LOCATION -> showToast("Cannot install this file")
-            ApkInstallResult.FAILED -> showToast("Cannot install this file")
+            
+            ApkInstallResult.PERMISSION_REQUIRED -> {
+                showToast("Allow installing unknown apps to continue")
+            }
+            
+            ApkInstallResult.UNTRUSTED_LOCATION, ApkInstallResult.FAILED -> {
+                showToast("Cannot install this file")
+            }
         }
     }
     
@@ -103,3 +108,75 @@ class FileHandler @Inject constructor(
     }
     
     private fun openFileWithFallback(file: File, mimeType: String) {
+        try {
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+            
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, mimeType)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            
+            val resolveInfo = context.packageManager.queryIntentActivities(intent, 0)
+            if (resolveInfo.isEmpty()) {
+                intent.setDataAndType(uri, MIME_TYPE_ANY)
+            }
+            
+            val chooserIntent =
+                Intent.createChooser(intent, context.getString(R.string.app_name)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            
+            context.startActivity(chooserIntent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error opening file with fallback", e)
+            showToast("Cannot open file: ${e.javaClass.simpleName}")
+        }
+    }
+    
+    fun saveToDownloads(path: String, displayName: String? = null): Boolean {
+        val file = File(path)
+        if (!file.exists()) return false
+        
+        val mimeType = file.toUri().getFileType(context)
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, displayName ?: file.name)
+            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+        }
+        
+        val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        
+        return try {
+            val uri = context.contentResolver.insert(collection, contentValues)
+            if (uri != null) {
+                context.contentResolver.openOutputStream(uri)?.use { out ->
+                    file.inputStream().use { input ->
+                        input.copyTo(out)
+                    }
+                }
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving to downloads", e)
+            false
+        }
+    }
+
+    private fun showToast(message: String) {
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        }
+    }
+    
+    private companion object {
+        const val TAG = "FileHandler"
+        const val EXTENSION_APK = "apk"
+        const val MIME_TYPE_ANY = "*/*"
+    }
+}
