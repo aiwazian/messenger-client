@@ -34,7 +34,7 @@ class FileHandler @Inject constructor(
      *
      * @param path absolute file system path, "file://" URI or "content://" URI.
      */
-    suspend fun openFile(path: String) {
+    fun openFile(path: String) {
         try {
             val uri = path.toUri()
             
@@ -104,17 +104,12 @@ class FileHandler @Inject constructor(
     }
 
     /**
-     * A missing install permission is handled by the installer itself, which opens
-     * the system settings and shows a bottom sheet when they are left without the
-     * permission.
+     * The system installer shows the confirmation, the progress and the result of
+     * an installation and asks for the install permission when it is missing.
      */
-    private suspend fun installApkFile(file: File) {
-        when (apkInstaller.install(file)) {
-            ApkInstallResult.STARTED, ApkInstallResult.PERMISSION_REQUIRED -> Unit
-            
-            ApkInstallResult.UNTRUSTED_LOCATION, ApkInstallResult.FAILED -> {
-                showToast("Cannot install this file")
-            }
+    private fun installApkFile(file: File) {
+        if (!apkInstaller.install(file)) {
+            showToast("Cannot install this file")
         }
     }
     
