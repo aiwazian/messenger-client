@@ -7,6 +7,7 @@ package com.aiwazian.messenger.utils
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
@@ -27,29 +28,42 @@ class FileHandler @Inject constructor(
     @param:ApplicationContext private val context: Context
 ) {
     
+    /**
+     * Opens a file stored on the device.
+     *
+     * @param path absolute file system path, "file://" URI or "content://" URI.
+     */
     fun openFile(path: String) {
         try {
-            val file = File(path)
-            if (!file.exists()) {
-                Log.e("FileHandler", "File does not exist at path: $path")
+            val uri = path.toUri()
+            
+            if (uri.scheme.equals(SCHEME_CONTENT, ignoreCase = true)) {
+                startViewIntent(uri, uri.getFileType(context))
+                return
+            }
+            
+            val file = resolveLocalFile(path)
+            
+            if (file == null || !file.exists()) {
+                Log.e(TAG, "File does not exist at path: $path")
                 showToast("File does not exist")
                 return
             }
             
-            if (file.extension.equals("apk", ignoreCase = true)) {
+            if (file.extension.equals(EXTENSION_APK, ignoreCase = true)) {
                 openApkFile(file)
             } else {
                 openGenericFile(file)
             }
         } catch (e: Exception) {
-            Log.e("FileHandler", "Error in openFile", e)
+            Log.e(TAG, "Error in openFile", e)
             showToast("Error: ${e.message}")
         }
     }
     
     fun saveToGallery(path: String): Boolean {
-        val file = File(path)
-        if (!file.exists()) return false
+        val file = resolveLocalFile(path)
+        if (file == null || !file.exists()) return false
         
         val mimeType = file.toUri().getFileType(context)
         val contentValues = ContentValues().apply {
@@ -83,13 +97,13 @@ class FileHandler @Inject constructor(
                 false
             }
         } catch (e: Exception) {
-            Log.e("FileHandler", "Error saving to gallery", e)
+            Log.e(TAG, "Error saving to gallery", e)
             false
         }
     }
 
     private fun openApkFile(file: File) {
-        openFileWithFallback(file, "application/vnd.android.package-archive")
+        openFileWithFallback(file, MIME_TYPE_APK)
     }
     
     private fun openGenericFile(file: File) {
@@ -104,31 +118,51 @@ class FileHandler @Inject constructor(
                 file
             )
             
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, mimeType)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            
-            val resolveInfo = context.packageManager.queryIntentActivities(intent, 0)
-            if (resolveInfo.isEmpty() || mimeType == "application/vnd.android.package-archive") {
-                intent.setDataAndType(uri, "*/*")
-            }
-            
-            val chooserIntent =
-                Intent.createChooser(intent, context.getString(R.string.app_name)).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-            
-            context.startActivity(chooserIntent)
+            startViewIntent(uri, mimeType)
         } catch (e: Exception) {
-            Log.e("FileHandler", "Error opening file with fallback", e)
+            Log.e(TAG, "Error opening file with fallback", e)
             showToast("Cannot open file: ${e.javaClass.simpleName}")
         }
     }
     
+    private fun startViewIntent(uri: Uri, mimeType: String) {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, mimeType)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        
+        val resolveInfo = context.packageManager.queryIntentActivities(intent, 0)
+        if (resolveInfo.isEmpty() || mimeType == MIME_TYPE_APK) {
+            intent.setDataAndType(uri, MIME_TYPE_ANY)
+        }
+        
+        val chooserIntent =
+            Intent.createChooser(intent, context.getString(R.string.app_name)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+        
+        context.startActivity(chooserIntent)
+    }
+    
+    /**
+     * Uploaded files are persisted as absolute paths and downloaded ones as
+     * "file://" URIs, so both forms must resolve to the same file.
+     */
+    private fun resolveLocalFile(pathOrUri: String): File? {
+        if (pathOrUri.isBlank()) return null
+        if (pathOrUri.startsWith('/')) return File(pathOrUri)
+        
+        val uri = pathOrUri.toUri()
+        val scheme = uri.scheme
+        if (scheme != null && !scheme.equals(SCHEME_FILE, ignoreCase = true)) return null
+        
+        return uri.path?.let { File(it) }
+    }
+    
     fun saveToDownloads(path: String, displayName: String? = null): Boolean {
-        val file = File(path)
-        if (!file.exists()) return false
+        val file = resolveLocalFile(path)
+        if (file == null || !file.exists()) return false
         
         val mimeType = file.toUri().getFileType(context)
         val contentValues = ContentValues().apply {
@@ -152,7 +186,7 @@ class FileHandler @Inject constructor(
                 false
             }
         } catch (e: Exception) {
-            Log.e("FileHandler", "Error saving to downloads", e)
+            Log.e(TAG, "Error saving to downloads", e)
             false
         }
     }
@@ -161,5 +195,14 @@ class FileHandler @Inject constructor(
         Handler(Looper.getMainLooper()).post {
             Toast.makeText(context, message, Toast.LENGTH_LONG).show()
         }
+    }
+    
+    private companion object {
+        const val TAG = "FileHandler"
+        const val SCHEME_FILE = "file"
+        const val SCHEME_CONTENT = "content"
+        const val EXTENSION_APK = "apk"
+        const val MIME_TYPE_APK = "application/vnd.android.package-archive"
+        const val MIME_TYPE_ANY = "*/*"
     }
 }
