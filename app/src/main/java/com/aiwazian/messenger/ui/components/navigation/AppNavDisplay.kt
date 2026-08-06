@@ -61,7 +61,7 @@ import com.aiwazian.messenger.ui.screens.settings.data_storage.AutoDownloadMedia
 import com.aiwazian.messenger.ui.screens.settings.data_storage.DataAndStorageScreen
 import com.aiwazian.messenger.ui.screens.settings.folders.ChatFoldersScreen
 import com.aiwazian.messenger.ui.screens.settings.folders.chats.SelectFolderChatsScreen
-import com.aiwazian.messenger.ui.screens.settings.folders.create.CreateChatFolderScreen
+import com.aiwazian.messenger.ui.screens.settings.folders.editor.ChatFolderEditorScreen
 import com.aiwazian.messenger.ui.screens.settings.joinRequests.PendingJoinRequestsScreen
 import com.aiwazian.messenger.ui.screens.settings.language.SettingsLanguageScreen
 import com.aiwazian.messenger.ui.screens.settings.notification.NotificationSettingsScreen
@@ -175,7 +175,7 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsStorage> { StorageScreen() }
                     entry<AppRoute.SettingsAutoDownloadMedia> { AutoDownloadMediaScreen() }
                     entry<AppRoute.ChatFolders> { ChatFoldersScreen() }
-                    entry<AppRoute.CreateChatFolder> { CreateChatFolderScreen() }
+                    entry<AppRoute.ChatFolderEditor> { ChatFolderEditorScreen(folderId = it.folderId) }
                     entry<AppRoute.SelectFolderChats> {
                         SelectFolderChatsScreen(
                             selectedChatIds = it.selectedChatIds,
