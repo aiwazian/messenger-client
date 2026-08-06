@@ -1,0 +1,28 @@
+# Android Studio
+.idea/
+.gradle/
+.kotlin/
+build/
+app/build/
+app/release/
+local.properties
+.DS_Store
+Thumbs.db
+*.iml
+*.iws
+*.ipr
+*.bak
+
+# Firebase
+app/google-services.json
+
+# Keystore files
+*.jks
+*.keystore
+
+app/.cxx/
+
+captures/
+
+# Additional files
+*.log
