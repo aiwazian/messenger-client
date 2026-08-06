@@ -59,6 +59,9 @@ import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsAppearanceS
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsDarkThemeScreen
 import com.aiwazian.messenger.ui.screens.settings.data_storage.AutoDownloadMediaScreen
 import com.aiwazian.messenger.ui.screens.settings.data_storage.DataAndStorageScreen
+import com.aiwazian.messenger.ui.screens.settings.folders.ChatFoldersScreen
+import com.aiwazian.messenger.ui.screens.settings.folders.chats.SelectFolderChatsScreen
+import com.aiwazian.messenger.ui.screens.settings.folders.create.CreateChatFolderScreen
 import com.aiwazian.messenger.ui.screens.settings.joinRequests.PendingJoinRequestsScreen
 import com.aiwazian.messenger.ui.screens.settings.language.SettingsLanguageScreen
 import com.aiwazian.messenger.ui.screens.settings.notification.NotificationSettingsScreen
@@ -171,6 +174,14 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsDataAndStorage> { DataAndStorageScreen() }
                     entry<AppRoute.SettingsStorage> { StorageScreen() }
                     entry<AppRoute.SettingsAutoDownloadMedia> { AutoDownloadMediaScreen() }
+                    entry<AppRoute.ChatFolders> { ChatFoldersScreen() }
+                    entry<AppRoute.CreateChatFolder> { CreateChatFolderScreen() }
+                    entry<AppRoute.SelectFolderChats> {
+                        SelectFolderChatsScreen(
+                            selectedChatIds = it.selectedChatIds,
+                            selectedCategories = it.selectedCategories
+                        )
+                    }
                     entry<AppRoute.NewMessage> { NewMessageScreen() }
                     entry<AppRoute.CreateGroup> { CreateGroupScreen() }
                     entry<AppRoute.CreateChannel> { CreateChannelScreen() }
