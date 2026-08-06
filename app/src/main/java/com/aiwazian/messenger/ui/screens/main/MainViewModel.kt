@@ -7,9 +7,12 @@ package com.aiwazian.messenger.ui.screens.main
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.domain.Chat
+import com.aiwazian.messenger.domain.ChatFolder
 import com.aiwazian.messenger.enums.ConnectionState
+import com.aiwazian.messenger.repository.ChatFolderRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.SessionRepository
 import com.aiwazian.messenger.repository.UserRepository
@@ -18,10 +21,12 @@ import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.utils.AppLockManager
 import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.ThemeManager
+import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.rustore.sdk.pushclient.RuStorePushClient
@@ -30,6 +35,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
+    private val chatFolderRepository: ChatFolderRepository,
     private val appLockManager: AppLockManager,
     private val themeManager: ThemeManager,
     userRepository: UserRepository,
@@ -48,8 +54,16 @@ class MainViewModel @Inject constructor(
         webSocketClient.connect()
         
         viewModelScope.launch {
-            chatRepository.getAllChats().collectLatest { chats ->
-                _uiState.update { it.copy(chats = chats.sortedByLastMessage()) }
+            combine(
+                chatRepository.getAllChats(),
+                chatFolderRepository.getFolders()
+            ) { chats, folders ->
+                val sortedChats = chats.sortedByLastMessage()
+                Triple(sortedChats, folders, buildFolderPages(sortedChats, folders))
+            }.collectLatest { (chats, folders, folderPages) ->
+                _uiState.update {
+                    it.copy(chats = chats, folders = folders, folderPages = folderPages)
+                }
             }
         }
         
@@ -60,6 +74,7 @@ class MainViewModel @Inject constructor(
                     userRepository.fetchMe()
                     chatRepository.refreshChats()
                     chatRepository.refreshOnlineUsers()
+                    chatFolderRepository.refreshFolders()
                 }
             }
         }
@@ -132,6 +147,40 @@ class MainViewModel @Inject constructor(
     
     fun hideAccountDialog() {
         _uiState.update { it.copy(showAccountDialog = false) }
+    }
+    
+    /**
+     * Вкладка «Все чаты» идёт первой всегда. Остальные вкладки появляются, только если
+     * у пользователя есть собственные папки: иначе пейджер на главном экране не нужен.
+     */
+    private fun buildFolderPages(
+        chats: List<Chat>,
+        folders: List<ChatFolder>
+    ): List<ChatFolderPage> {
+        val allChatsPage = ChatFolderPage(
+            id = ALL_CHATS_FOLDER_ID,
+            name = UiText.StringResource(R.string.all_chats),
+            chats = chats
+        )
+        
+        if (folders.isEmpty()) {
+            return listOf(allChatsPage)
+        }
+        
+        val folderPages = folders.map { folder ->
+            ChatFolderPage(
+                id = folder.id,
+                name = UiText.DynamicString(folder.name),
+                chats = chats
+                    .filter { folder.contains(it.id) }
+                    .sortedWith(
+                        compareByDescending<Chat> { it.isPinned || folder.isPinned(it.id) }
+                            .thenByDescending { it.lastMessage?.sendTime ?: 0L }
+                    )
+            )
+        }
+        
+        return listOf(allChatsPage) + folderPages
     }
     
     private fun List<Chat>.sortedByLastMessage(): List<Chat> {
