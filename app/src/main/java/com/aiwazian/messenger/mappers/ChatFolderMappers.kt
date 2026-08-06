@@ -52,8 +52,9 @@ fun ChatFolderChatEntity.toDomain(): ChatFolderChat {
     )
 }
 
-fun ChatFolder.toEntity(): ChatFolderEntity {
+fun ChatFolder.toEntity(userId: Long): ChatFolderEntity {
     return ChatFolderEntity(
+        userId = userId,
         id = id,
         name = name,
         sortOrder = sortOrder,
@@ -61,9 +62,10 @@ fun ChatFolder.toEntity(): ChatFolderEntity {
     )
 }
 
-fun ChatFolder.toChatEntities(): List<ChatFolderChatEntity> {
+fun ChatFolder.toChatEntities(userId: Long): List<ChatFolderChatEntity> {
     return chats.map { chat ->
         ChatFolderChatEntity(
+            userId = userId,
             folderId = id,
             chatId = chat.chatId,
             isIncluded = chat.isIncluded,
