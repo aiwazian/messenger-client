@@ -16,6 +16,7 @@ import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.DataUsage
+import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.Gavel
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.MoreVert
@@ -95,6 +96,13 @@ fun SettingsScreen() {
                     headlineText = stringResource(R.string.appearance),
                     onClick = {
                         navBackStack.add(AppRoute.SettingsChat)
+                    })
+                
+                SectionItem(
+                    leadingIcon = Icons.Rounded.FolderOpen,
+                    headlineText = stringResource(R.string.chat_folders),
+                    onClick = {
+                        navBackStack.add(AppRoute.ChatFolders)
                     })
                 
                 SectionItem(

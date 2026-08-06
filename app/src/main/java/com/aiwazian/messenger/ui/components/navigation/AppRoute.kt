@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.components.navigation
 
 import androidx.navigation3.runtime.NavKey
+import com.aiwazian.messenger.enums.ChatFolderCategory
 import com.aiwazian.messenger.enums.PrivacyLevel
 import kotlinx.serialization.Serializable
 
@@ -114,6 +115,21 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data object SettingsAutoDownloadMedia : AppRoute
+    
+    /** Список папок с чатами. */
+    @Serializable
+    data object ChatFolders : AppRoute
+    
+    /** Создание новой папки с чатами. */
+    @Serializable
+    data object CreateChatFolder : AppRoute
+    
+    /** Выбор содержимого папки: поимённые чаты и категории целиком. */
+    @Serializable
+    data class SelectFolderChats(
+        val selectedChatIds: List<Long> = emptyList(),
+        val selectedCategories: List<ChatFolderCategory> = emptyList()
+    ) : AppRoute
     
     @Serializable
     data object NewMessage : AppRoute
