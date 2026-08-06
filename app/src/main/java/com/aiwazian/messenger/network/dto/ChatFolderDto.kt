@@ -20,6 +20,7 @@ data class ChatFolderDto(
 @Serializable
 data class ChatFolderChatDto(
     @SerialName("chatId") val chatId: String,
+    @SerialName("isIncluded") val isIncluded: Boolean = true,
     @SerialName("isPinned") val isPinned: Boolean = false,
     @SerialName("sortOrder") val sortOrder: Int = 0
 )
