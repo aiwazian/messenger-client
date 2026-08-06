@@ -28,6 +28,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -43,7 +44,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -111,6 +116,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -122,6 +128,7 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.BuildConfig
 import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
@@ -257,6 +264,16 @@ private fun Content(
             }
         }
     }) { innerPadding ->
+        val openChat: (Chat, String) -> Unit = { chat, chatName ->
+            navBackStack.add(
+                AppRoute.Chat(
+                    chatId = chat.id,
+                    chatName = chatName,
+                    avatarUri = chat.avatarUri?.toString()
+                )
+            )
+        }
+        
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier.padding(
@@ -266,44 +283,48 @@ private fun Content(
             ) {
                 if (uiState.chats.isEmpty()) {
                     EmptyChatPlaceholder(text = "Чтобы начать общение нажмите на поле поиска сверху экрана и найдите пользователя по его @username")
+                } else if (uiState.folderPages.size <= 1) {
+                    ChatList(
+                        chats = uiState.chats,
+                        myId = uiState.me.id,
+                        selectedChatIds = uiState.selectedChatIds,
+                        onlineUserIds = uiState.onlineUserIds,
+                        hasSelection = hasSelection,
+                        topPadding = innerPadding.calculateTopPadding(),
+                        bottomPadding = innerPadding.calculateBottomPadding(),
+                        onOpenChat = openChat,
+                        onToggleSelection = viewModel::toggleChatSelection
+                    )
                 } else {
-                    LazyColumn {
-                        item {
-                            Spacer(Modifier.height(innerPadding.calculateTopPadding()))
-                        }
-                        items(uiState.chats) { chat ->
-                            val chatName = chat.chatName.asString()
-                            val isSelected = chat.id in uiState.selectedChatIds
-                            val isOnline = ChatType.fromId(chat.id) == ChatType.PRIVATE &&
-                                    chat.id != uiState.me.id &&
-                                    chat.id in uiState.onlineUserIds
-                            ChatCard(
-                                modifier = Modifier.animateItem(),
-                                chat = chat,
-                                myId = uiState.me.id,
-                                isSelected = isSelected,
-                                isOnline = isOnline,
-                                unreadMessageCount = chat.unreadCount,
-                                onClickChat = {
-                                    if (hasSelection) {
-                                        viewModel.toggleChatSelection(chat.id)
-                                    } else {
-                                        navBackStack.add(
-                                            AppRoute.Chat(
-                                                chatId = chat.id,
-                                                chatName = chatName,
-                                                avatarUri = chat.avatarUri?.toString()
-                                            )
-                                        )
-                                    }
-                                },
-                                onLongClickChat = {
-                                    viewModel.toggleChatSelection(chat.id)
-                                })
-                        }
-                        item {
-                            Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
-                        }
+                    val pagerState = rememberPagerState(pageCount = { uiState.folderPages.size })
+                    
+                    Spacer(Modifier.height(innerPadding.calculateTopPadding()))
+                    
+                    ChatFolderTabs(
+                        pages = uiState.folderPages,
+                        selectedIndex = pagerState.currentPage,
+                        onTabClick = { index ->
+                            scope.launch {
+                                pagerState.animateScrollToPage(index)
+                            }
+                        })
+                    
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.weight(1f),
+                        userScrollEnabled = !hasSelection
+                    ) { page ->
+                        ChatList(
+                            chats = uiState.folderPages[page].chats,
+                            myId = uiState.me.id,
+                            selectedChatIds = uiState.selectedChatIds,
+                            onlineUserIds = uiState.onlineUserIds,
+                            hasSelection = hasSelection,
+                            topPadding = 0.dp,
+                            bottomPadding = innerPadding.calculateBottomPadding(),
+                            onOpenChat = openChat,
+                            onToggleSelection = viewModel::toggleChatSelection
+                        )
                     }
                 }
             }
@@ -393,6 +414,95 @@ private fun Content(
             },
             onDismissRequest = viewModel::hideAccountDialog
         )
+    }
+}
+
+/**
+ * Вкладки папок над списком чатов.
+ *
+ * Собственный LazyRow вместо TabRow: вкладок может быть много и они должны
+ * прокручиваться по ширине содержимого, а не делить экран поровну.
+ */
+@Composable
+private fun ChatFolderTabs(
+    pages: List<ChatFolderPage>, selectedIndex: Int, onTabClick: (Int) -> Unit
+) {
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        itemsIndexed(pages) { index, page ->
+            val isSelected = index == selectedIndex
+            
+            Text(
+                text = page.name.asString(),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(
+                        if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainer
+                        }
+                    )
+                    .clickable { onTabClick(index) }
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ChatList(
+    chats: List<Chat>,
+    myId: Long,
+    selectedChatIds: Set<Long>,
+    onlineUserIds: Set<Long>,
+    hasSelection: Boolean,
+    topPadding: Dp,
+    bottomPadding: Dp,
+    onOpenChat: (Chat, String) -> Unit,
+    onToggleSelection: (Long) -> Unit
+) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        item {
+            Spacer(Modifier.height(topPadding))
+        }
+        items(chats) { chat ->
+            val chatName = chat.chatName.asString()
+            val isSelected = chat.id in selectedChatIds
+            val isOnline = ChatType.fromId(chat.id) == ChatType.PRIVATE &&
+                    chat.id != myId &&
+                    chat.id in onlineUserIds
+            ChatCard(
+                modifier = Modifier.animateItem(),
+                chat = chat,
+                myId = myId,
+                isSelected = isSelected,
+                isOnline = isOnline,
+                unreadMessageCount = chat.unreadCount,
+                onClickChat = {
+                    if (hasSelection) {
+                        onToggleSelection(chat.id)
+                    } else {
+                        onOpenChat(chat, chatName)
+                    }
+                },
+                onLongClickChat = {
+                    onToggleSelection(chat.id)
+                })
+        }
+        item {
+            Spacer(Modifier.height(bottomPadding))
+        }
     }
 }
 
