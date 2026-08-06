@@ -5,43 +5,64 @@
 package com.aiwazian.messenger.repository
 
 import android.util.Log
+import com.aiwazian.messenger.database.dao.ChatFolderDao
+import com.aiwazian.messenger.database.entity.ChatFolderChatEntity
 import com.aiwazian.messenger.domain.ChatFolder
 import com.aiwazian.messenger.enums.ChatFolderCategory
+import com.aiwazian.messenger.mappers.toChatEntities
 import com.aiwazian.messenger.mappers.toDomain
+import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.network.api.ChatFolderApi
 import com.aiwazian.messenger.network.dto.CreateChatFolderRequestDto
 import com.aiwazian.messenger.network.dto.PinFolderChatsRequestDto
 import com.aiwazian.messenger.network.dto.ReorderChatFoldersRequestDto
 import com.aiwazian.messenger.network.dto.UpdateChatFolderRequestDto
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
 import javax.inject.Singleton
 
+private const val TAG = "ChatFolderRepository"
+
 /**
- * Папки с чатами живут в памяти процесса, а не в Room: список короткий и
- * запрашивается одним запросом при подключении сокета.
+ * Единый источник правды по папкам — Room. Экраны подписываются на локальный
+ * Flow и рисуются сразу при запуске, а ответ сервера только обновляет таблицы.
  */
 @Singleton
 class ChatFolderRepository @Inject constructor(
-    private val chatFolderApi: ChatFolderApi
+    private val chatFolderApi: ChatFolderApi,
+    private val chatFolderDao: ChatFolderDao
 ) {
     
-    private val _folders = MutableStateFlow<List<ChatFolder>>(emptyList())
+    fun getFolders(): Flow<List<ChatFolder>> {
+        return combine(
+            chatFolderDao.getFoldersFlow(),
+            chatFolderDao.getFolderChatsFlow()
+        ) { folders, chats ->
+            val chatsByFolder = chats.groupBy { it.folderId }
+            folders.map { folder -> folder.toDomain(chatsByFolder[folder.id].orEmpty()) }
+        }
+    }
     
-    fun getFolders(): Flow<List<ChatFolder>> = _folders.asStateFlow()
+    suspend fun getFolder(folderId: Int): ChatFolder? {
+        val folder = chatFolderDao.getFolder(folderId) ?: return null
+        return folder.toDomain(chatFolderDao.getFolderChats(folderId))
+    }
     
     suspend fun refreshFolders() {
         try {
             val response = chatFolderApi.getFolders()
             if (response.isSuccessful) {
-                _folders.value = response.body().orEmpty().map { it.toDomain() }.sortedBy { it.sortOrder }
+                val folders = response.body().orEmpty().map { it.toDomain() }
+                chatFolderDao.replaceFolders(
+                    folders = folders.map { it.toEntity() },
+                    chats = folders.flatMap { it.toChatEntities() }
+                )
             } else {
-                Log.e("ChatFolderRepository", "Failed to get chat folders: ${response.message()}")
+                Log.e(TAG, "Failed to get chat folders: ${response.message()}")
             }
         } catch (e: Exception) {
-            Log.e("ChatFolderRepository", "Error getting chat folders", e)
+            Log.e(TAG, "Error getting chat folders", e)
         }
     }
     
@@ -60,14 +81,14 @@ class ChatFolderRepository @Inject constructor(
             val body = response.body()
             if (response.isSuccessful && body != null) {
                 val folder = body.toDomain()
-                _folders.value = (_folders.value + folder).sortedBy { it.sortOrder }
+                chatFolderDao.upsertFolder(folder.toEntity(), folder.toChatEntities())
                 Result.success(folder)
             } else {
-                Log.e("ChatFolderRepository", "Failed to create chat folder: ${response.message()}")
+                Log.e(TAG, "Failed to create chat folder: ${response.message()}")
                 Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
             }
         } catch (e: Exception) {
-            Log.e("ChatFolderRepository", "Error creating chat folder", e)
+            Log.e(TAG, "Error creating chat folder", e)
             Result.failure(e)
         }
     }
@@ -88,16 +109,14 @@ class ChatFolderRepository @Inject constructor(
             val body = response.body()
             if (response.isSuccessful && body != null) {
                 val folder = body.toDomain()
-                _folders.value = _folders.value
-                    .map { if (it.id == folder.id) folder else it }
-                    .sortedBy { it.sortOrder }
+                chatFolderDao.upsertFolder(folder.toEntity(), folder.toChatEntities())
                 Result.success(folder)
             } else {
-                Log.e("ChatFolderRepository", "Failed to update chat folder: ${response.message()}")
+                Log.e(TAG, "Failed to update chat folder: ${response.message()}")
                 Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
             }
         } catch (e: Exception) {
-            Log.e("ChatFolderRepository", "Error updating chat folder", e)
+            Log.e(TAG, "Error updating chat folder", e)
             Result.failure(e)
         }
     }
@@ -106,14 +125,14 @@ class ChatFolderRepository @Inject constructor(
         return try {
             val response = chatFolderApi.deleteFolder(folderId)
             if (response.isSuccessful) {
-                _folders.value = _folders.value.filterNot { it.id == folderId }
+                chatFolderDao.deleteFolder(folderId)
                 true
             } else {
-                Log.e("ChatFolderRepository", "Failed to delete chat folder: ${response.message()}")
+                Log.e(TAG, "Failed to delete chat folder: ${response.message()}")
                 false
             }
         } catch (e: Exception) {
-            Log.e("ChatFolderRepository", "Error deleting chat folder", e)
+            Log.e(TAG, "Error deleting chat folder", e)
             false
         }
     }
@@ -133,14 +152,18 @@ class ChatFolderRepository @Inject constructor(
             val response = chatFolderApi.reorderFolders(ReorderChatFoldersRequestDto(folderIds))
             val body = response.body()
             if (response.isSuccessful && body != null) {
-                _folders.value = body.map { it.toDomain() }.sortedBy { it.sortOrder }
+                val folders = body.map { it.toDomain() }
+                chatFolderDao.replaceFolders(
+                    folders = folders.map { it.toEntity() },
+                    chats = folders.flatMap { it.toChatEntities() }
+                )
                 true
             } else {
-                Log.e("ChatFolderRepository", "Failed to reorder chat folders: ${response.message()}")
+                Log.e(TAG, "Failed to reorder chat folders: ${response.message()}")
                 false
             }
         } catch (e: Exception) {
-            Log.e("ChatFolderRepository", "Error reordering chat folders", e)
+            Log.e(TAG, "Error reordering chat folders", e)
             false
         }
     }
@@ -151,6 +174,9 @@ class ChatFolderRepository @Inject constructor(
         isPinned: Boolean
     ): Boolean {
         if (chatIds.isEmpty()) return true
+        
+        applyPinsLocally(folderId, chatIds, isPinned)
+        
         return try {
             val request = PinFolderChatsRequestDto(chatIds.map { it.toString() })
             val response = if (isPinned) {
@@ -160,20 +186,46 @@ class ChatFolderRepository @Inject constructor(
             }
             
             if (response.isSuccessful) {
-                _folders.value = _folders.value.map { folder ->
-                    if (folder.id != folderId) return@map folder
-                    folder.copy(chats = folder.chats.map { chat ->
-                        if (chat.chatId in chatIds) chat.copy(isPinned = isPinned) else chat
-                    })
-                }
                 true
             } else {
-                Log.e("ChatFolderRepository", "Failed to pin folder chats: ${response.message()}")
+                Log.e(TAG, "Failed to pin folder chats: ${response.message()}")
+                refreshFolders()
                 false
             }
         } catch (e: Exception) {
-            Log.e("ChatFolderRepository", "Error pinning folder chats", e)
+            Log.e(TAG, "Error pinning folder chats", e)
+            refreshFolders()
             false
         }
+    }
+    
+    /**
+     * Чат, попавший в папку через категорию, своей строки не имеет: чтобы
+     * закрепление было видно до ответа сервера, строка заводится локально ровно
+     * так же, как её заведёт сервер.
+     */
+    private suspend fun applyPinsLocally(
+        folderId: Int,
+        chatIds: List<Long>,
+        isPinned: Boolean
+    ) {
+        val existing = chatFolderDao.getFolderChats(folderId)
+        val existingIds = existing.map { it.chatId }.toSet()
+        
+        val updated = existing.map { chat ->
+            if (chat.chatId in chatIds) chat.copy(isPinned = isPinned) else chat
+        }
+        
+        val created = chatIds.filterNot { it in existingIds }.mapIndexed { index, chatId ->
+            ChatFolderChatEntity(
+                folderId = folderId,
+                chatId = chatId,
+                isIncluded = false,
+                isPinned = isPinned,
+                sortOrder = existing.size + index
+            )
+        }
+        
+        chatFolderDao.insertFolderChats(updated + created)
     }
 }
