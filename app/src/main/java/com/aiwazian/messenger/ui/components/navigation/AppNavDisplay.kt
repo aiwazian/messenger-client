@@ -19,6 +19,7 @@ import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDe
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.runtime.result.rememberResultEventBusNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.aiwazian.messenger.ui.screens.auth.login.LoginScreen
 import com.aiwazian.messenger.ui.screens.auth.password.PasswordScreen
@@ -109,6 +110,20 @@ fun AppNavDisplay(
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background),
                 onBack = backStack::removeLastOrNull,
+                entryDecorators = listOf(
+                    rememberSaveableStateHolderNavEntryDecorator(),
+                    rememberViewModelStoreNavEntryDecorator(),
+                    rememberResultEventBusNavEntryDecorator()
+                ),
+                transitionSpec = {
+                    slideInHorizontally { it } togetherWith slideOutHorizontally { -it / 8 }
+                },
+                popTransitionSpec = {
+                    slideInHorizontally { -it / 8 } togetherWith slideOutHorizontally { it }
+                },
+                predictivePopTransitionSpec = {
+                    slideInHorizontally { -it / 8 } togetherWith slideOutHorizontally { it }
+                },
                 entryProvider = entryProvider {
                     entry<AppRoute.Main> { MainScreen() }
                     entry<AppRoute.Chat> {
@@ -197,19 +212,6 @@ fun AppNavDisplay(
                     }
                     entry<AppRoute.Register>(metadata = HorizontalMetadata) { RegisterScreen(login = it.login) }
                 },
-                entryDecorators = listOf(
-                    rememberSaveableStateHolderNavEntryDecorator(),
-                    rememberViewModelStoreNavEntryDecorator()
-                ),
-                transitionSpec = {
-                    slideInHorizontally { it } togetherWith slideOutHorizontally { -it / 8 }
-                },
-                popTransitionSpec = {
-                    slideInHorizontally { -it / 8 } togetherWith slideOutHorizontally { it }
-                },
-                predictivePopTransitionSpec = {
-                    slideInHorizontally { -it / 8 } togetherWith slideOutHorizontally { it }
-                }
             )
         }
     }
