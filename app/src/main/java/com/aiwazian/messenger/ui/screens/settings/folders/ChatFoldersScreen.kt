@@ -14,7 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -136,7 +136,7 @@ private fun ChatFolderRow(
                     DropdownMenuItem(
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Rounded.Delete,
+                                imageVector = Icons.Rounded.DeleteOutline,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.error

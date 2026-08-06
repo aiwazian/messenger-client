@@ -15,6 +15,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -24,6 +25,8 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,9 +47,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -69,6 +70,7 @@ import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material3.AppBarWithSearch
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenuItem
@@ -82,6 +84,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBarValue
@@ -109,6 +112,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -120,6 +124,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -417,45 +422,64 @@ private fun Content(
     }
 }
 
-/**
- * Вкладки папок над списком чатов.
- *
- * Собственный LazyRow вместо TabRow: вкладок может быть много и они должны
- * прокручиваться по ширине содержимого, а не делить экран поровну.
- */
 @Composable
 private fun ChatFolderTabs(
     pages: List<ChatFolderPage>, selectedIndex: Int, onTabClick: (Int) -> Unit
 ) {
-    LazyRow(
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    PrimaryScrollableTabRow(
+        selectedTabIndex = selectedIndex,
+        modifier = Modifier
+            .padding(start = 8.dp, top = 4.dp, end = 8.dp, bottom = 8.dp)
+            .clip(CircleShape),
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        edgePadding = 0.dp,
+        indicator = {
+            Column(
+                Modifier
+                    .tabIndicatorOffset(selectedIndex)
+                    .fillMaxSize()
+                    .padding(4.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+            ) {}
+        },
+        divider = {},
+        minTabWidth = 100.dp
     ) {
-        itemsIndexed(pages) { index, page ->
-            val isSelected = index == selectedIndex
-            
-            Text(
-                text = page.name.asString(),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.onPrimary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
+        pages.forEachIndexed { index, page ->
+            val interactionSource = remember { MutableInteractionSource() }
+            val isPressed by interactionSource.collectIsPressedAsState()
+            val scale by animateFloatAsState(
+                animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+                targetValue = if (isPressed) 0.96f else 1f,
+                label = "button_${index}_scale_animation"
+            )
+            TextButton(
+                onClick = {
+                    onTabClick(index)
                 },
                 modifier = Modifier
-                    .clip(CircleShape)
-                    .background(
-                        if (isSelected) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.surfaceContainer
-                        }
-                    )
-                    .clickable { onTabClick(index) }
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            )
+                    .zIndex(1f)
+                    .graphicsLayer(scaleX = scale, scaleY = scale),
+                shape = CircleShape,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = if (index == selectedIndex) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                ),
+                contentPadding = PaddingValues(0.dp),
+                interactionSource = interactionSource
+            ) {
+                Text(
+                    text = page.name.asString(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 14.sp,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+            }
         }
     }
 }

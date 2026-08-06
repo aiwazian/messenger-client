@@ -4,14 +4,13 @@
 
 package com.aiwazian.messenger.ui.screens.settings.folders.create
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.background
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -85,7 +84,8 @@ fun CreateChatFolderScreen(viewModel: CreateChatFolderViewModel = hiltViewModel(
                 )
             } else {
                 emptyList()
-            })
+            }
+        )
     }) { innerPadding ->
         Column(
             modifier = Modifier
@@ -97,9 +97,6 @@ fun CreateChatFolderScreen(viewModel: CreateChatFolderViewModel = hiltViewModel(
                 SectionHeader(stringResource(R.string.folder_name))
             }) {
                 FramelessTextBox(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     placeholder = stringResource(R.string.folder_name),
                     value = uiState.name,
                     onValueChange = viewModel::onNameChange
