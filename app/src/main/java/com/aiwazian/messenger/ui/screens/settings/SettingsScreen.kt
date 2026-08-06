@@ -99,13 +99,6 @@ fun SettingsScreen() {
                     })
                 
                 SectionItem(
-                    leadingIcon = Icons.Rounded.FolderOpen,
-                    headlineText = stringResource(R.string.chat_folders),
-                    onClick = {
-                        navBackStack.add(AppRoute.ChatFolders)
-                    })
-                
-                SectionItem(
                     leadingIcon = Icons.Outlined.Lock,
                     headlineText = stringResource(R.string.confidentiality),
                     onClick = {
@@ -117,6 +110,13 @@ fun SettingsScreen() {
                     headlineText = stringResource(R.string.join_requests),
                     onClick = {
                         navBackStack.add(AppRoute.PendingJoinRequests)
+                    })
+                
+                SectionItem(
+                    leadingIcon = Icons.Rounded.FolderOpen,
+                    headlineText = stringResource(R.string.chat_folders),
+                    onClick = {
+                        navBackStack.add(AppRoute.ChatFolders)
                     })
                 
                 SectionItem(

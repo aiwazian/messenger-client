@@ -136,7 +136,7 @@ fun ChatFolderEditorScreen(
                 uiState.selectedCategories.forEach { category ->
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        headlineContent = { Text(category.titleText().asString()) },
+                        content = { Text(category.titleText().asString()) },
                         leadingContent = {
                             CategoryAvatar(category.icon())
                         })

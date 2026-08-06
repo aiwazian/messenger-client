@@ -31,7 +31,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -70,7 +70,6 @@ import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material3.AppBarWithSearch
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenuItem
@@ -226,23 +225,39 @@ private fun Content(
         viewModel.clearSelection()
     }
     
+    val pagerState = rememberPagerState(pageCount = { uiState.folderPages.size })
+    
     Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
         AnimatedContent(
             targetState = hasSelection, transitionSpec = {
                 fadeIn() togetherWith fadeOut()
             }) { hasSelection ->
             if (!hasSelection) {
-                DefaultTopBar(
-                    drawerState = drawerState,
-                    passcodeEnabled = uiState.hasPasscode,
-                    onLockClick = {
-                        scope.launch {
-                            viewModel.lockApp()
-                        }
-                    },
-                    socketState = socketState,
-                    onProfileClick = viewModel::showAccountDialog
-                )
+                Column {
+                    DefaultTopBar(
+                        drawerState = drawerState,
+                        passcodeEnabled = uiState.hasPasscode,
+                        onLockClick = {
+                            scope.launch {
+                                viewModel.lockApp()
+                            }
+                        },
+                        socketState = socketState,
+                        onProfileClick = viewModel::showAccountDialog
+                    )
+                    
+                    if (uiState.folderPages.isNotEmpty()) {
+                        ChatFolderTabs(
+                            pages = uiState.folderPages,
+                            selectedIndex = pagerState.currentPage,
+                            onTabClick = { index ->
+                                scope.launch {
+                                    pagerState.animateScrollToPage(index)
+                                }
+                            }
+                        )
+                    }
+                }
             } else {
                 SelectionTopBar(
                     selectedCount = uiState.selectedChatIds.size,
@@ -305,29 +320,15 @@ private fun Content(
                         onToggleSelection = viewModel::toggleChatSelection
                     )
                 } else {
-                    val pagerState = rememberPagerState(pageCount = { uiState.folderPages.size })
-                    
-                    // Закрепление относится к открытой вкладке, поэтому её id уходит во вьюмодель.
                     LaunchedEffect(pagerState.currentPage, uiState.folderPages) {
                         uiState.folderPages.getOrNull(pagerState.currentPage)?.let { page ->
                             viewModel.setActiveFolder(page.id)
                         }
                     }
                     
-                    Spacer(Modifier.height(innerPadding.calculateTopPadding()))
-                    
-                    ChatFolderTabs(
-                        pages = uiState.folderPages,
-                        selectedIndex = pagerState.currentPage,
-                        onTabClick = { index ->
-                            scope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        })
-                    
                     HorizontalPager(
                         state = pagerState,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxSize(),
                         userScrollEnabled = !hasSelection
                     ) { page ->
                         ChatList(
@@ -336,7 +337,7 @@ private fun Content(
                             selectedChatIds = uiState.selectedChatIds,
                             onlineUserIds = uiState.onlineUserIds,
                             hasSelection = hasSelection,
-                            topPadding = 0.dp,
+                            topPadding = innerPadding.calculateTopPadding(),
                             bottomPadding = innerPadding.calculateBottomPadding(),
                             onOpenChat = openChat,
                             onToggleSelection = viewModel::toggleChatSelection
@@ -435,61 +436,64 @@ private fun Content(
 
 @Composable
 private fun ChatFolderTabs(
-    pages: List<ChatFolderPage>, selectedIndex: Int, onTabClick: (Int) -> Unit
+    pages: List<ChatFolderPage>,
+    selectedIndex: Int,
+    onTabClick: (Int) -> Unit,
 ) {
-    PrimaryScrollableTabRow(
-        selectedTabIndex = selectedIndex,
-        modifier = Modifier
-            .padding(start = 8.dp, top = 4.dp, end = 8.dp, bottom = 8.dp)
-            .clip(CircleShape),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        edgePadding = 0.dp,
-        indicator = {
-            Column(
-                Modifier
-                    .tabIndicatorOffset(selectedIndex)
-                    .fillMaxSize()
-                    .padding(4.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
-            ) {}
-        },
-        divider = {},
-        minTabWidth = 100.dp
-    ) {
-        pages.forEachIndexed { index, page ->
-            val interactionSource = remember { MutableInteractionSource() }
-            val isPressed by interactionSource.collectIsPressedAsState()
-            val scale by animateFloatAsState(
-                animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
-                targetValue = if (isPressed) 0.96f else 1f,
-                label = "button_${index}_scale_animation"
-            )
-            TextButton(
-                onClick = {
-                    onTabClick(index)
-                },
-                modifier = Modifier
-                    .zIndex(1f)
-                    .graphicsLayer(scaleX = scale, scaleY = scale),
-                shape = CircleShape,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = if (index == selectedIndex) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                ),
-                contentPadding = PaddingValues(0.dp),
-                interactionSource = interactionSource
-            ) {
-                Text(
-                    text = page.name.asString(),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    lineHeight = 14.sp,
-                    modifier = Modifier.padding(horizontal = 4.dp)
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        PrimaryScrollableTabRow(
+            selectedTabIndex = selectedIndex,
+            modifier = Modifier
+                .padding(start = 8.dp, top = 4.dp, end = 8.dp, bottom = 8.dp)
+                .clip(CircleShape)
+                .width(IntrinsicSize.Max),
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            edgePadding = 0.dp,
+            indicator = {
+                Column(
+                    Modifier
+                        .tabIndicatorOffset(selectedIndex)
+                        .fillMaxSize()
+                        .padding(4.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+                ) {}
+            },
+            divider = {}
+        ) {
+            pages.forEachIndexed { index, page ->
+                val interactionSource = remember { MutableInteractionSource() }
+                val isPressed by interactionSource.collectIsPressedAsState()
+                val scale by animateFloatAsState(
+                    animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+                    targetValue = if (isPressed) 0.96f else 1f,
+                    label = "button_${index}_scale_animation"
                 )
+                Box(
+                    modifier = Modifier
+                        .zIndex(1f)
+                        .graphicsLayer(scaleX = scale, scaleY = scale)
+                        .clip(CircleShape)
+                        .clickable(
+                            onClick = { onTabClick(index) },
+                            interactionSource = interactionSource,
+                            indication = null
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = page.name.asString(),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        color = if (index == selectedIndex) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        lineHeight = 14.sp,
+                    )
+                }
             }
         }
     }

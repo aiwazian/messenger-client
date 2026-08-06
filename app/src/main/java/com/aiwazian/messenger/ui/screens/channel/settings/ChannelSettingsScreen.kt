@@ -14,7 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.AdminPanelSettings
-import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Campaign
 import androidx.compose.material.icons.outlined.PersonAddAlt
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
@@ -140,7 +140,7 @@ fun ChannelSettingsScreen(
                 SectionContainer {
                     if (uiState.isOwner) {
                         SectionItem(
-                            leadingIcon = Icons.Outlined.Lock,
+                            leadingIcon = Icons.Outlined.Campaign,
                             headlineText = stringResource(R.string.channel_type),
                             trailingText = if (uiState.channel.channelType == ChannelType.PUBLIC) {
                                 stringResource(R.string.public_channel)

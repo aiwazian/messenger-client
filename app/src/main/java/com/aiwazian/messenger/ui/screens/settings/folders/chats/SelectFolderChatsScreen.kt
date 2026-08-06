@@ -132,7 +132,7 @@ private fun CategoryRow(
     ListItem(
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.clickable(onClick = onClick),
-        headlineContent = { Text(category.titleText().asString()) },
+        content = { Text(category.titleText().asString()) },
         leadingContent = {
             Box(
                 modifier = Modifier
