@@ -78,8 +78,9 @@ class ChatFolderEditorViewModel @Inject constructor(
         }
     }
     
+    /** Лишние символы отсекаются прямо на вводе: длиннее вкладка не помещается. */
     fun onNameChange(name: String) {
-        _uiState.update { it.copy(name = name) }
+        _uiState.update { it.copy(name = name.take(MAX_FOLDER_NAME_LENGTH)) }
     }
     
     /** Результат экрана выбора чатов: список приходит целиком и заменяет прежний. */
