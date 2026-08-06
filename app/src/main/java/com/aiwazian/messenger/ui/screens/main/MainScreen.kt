@@ -90,6 +90,7 @@ import androidx.compose.material3.SearchBarValue
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberBottomSheetState
@@ -483,15 +484,16 @@ private fun ChatFolderTabs(
                 ) {
                     Text(
                         text = page.name.asString(),
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         color = if (index == selectedIndex) {
                             MaterialTheme.colorScheme.primary
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
+                        fontSize = 14.sp,
+                        lineHeight = 14.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        lineHeight = 14.sp,
                     )
                 }
             }
@@ -801,7 +803,11 @@ private fun DefaultTopBar(
                         }
                     }
                 }
-            })
+            },
+            colors = TextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
+            )
+        )
     }
     
     AppBarWithSearch(
