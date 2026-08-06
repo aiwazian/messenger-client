@@ -149,6 +149,11 @@ class MainViewModel @Inject constructor(
         _uiState.update { it.copy(showAccountDialog = false) }
     }
     
+    /** Открытая вкладка решает, где именно закреплять выделенные чаты. */
+    fun setActiveFolder(folderId: Int) {
+        _uiState.update { it.copy(activeFolderId = folderId) }
+    }
+    
     /**
      * Вкладка «Все чаты» идёт первой всегда. Остальные вкладки появляются, только если
      * у пользователя есть собственные папки: иначе пейджер на главном экране не нужен.
@@ -174,7 +179,8 @@ class MainViewModel @Inject constructor(
                 chats = chats
                     .filter { folder.contains(it.id) }
                     .sortedWith(
-                        compareByDescending<Chat> { it.isPinned || folder.isPinned(it.id) }
+                        // Глобальный Chat.isPinned здесь намеренно не учитывается.
+                        compareByDescending<Chat> { folder.isPinned(it.id) }
                             .thenByDescending { it.lastMessage?.sendTime ?: 0L }
                     )
             )
@@ -206,30 +212,55 @@ class MainViewModel @Inject constructor(
     }
     
     fun pinSelectedChats() {
-        val selectedIds = _uiState.value.selectedChatIds.toList()
-        if (selectedIds.isNotEmpty()) {
-            viewModelScope.launch {
-                chatRepository.pinChats(selectedIds)
-                clearSelection()
-            }
-        }
+        setSelectedChatsPinned(true)
     }
     
     fun unpinSelectedChats() {
-        val selectedIds = _uiState.value.selectedChatIds.toList()
-        if (selectedIds.isNotEmpty()) {
-            viewModelScope.launch {
-                chatRepository.unpinChats(selectedIds)
-                clearSelection()
+        setSelectedChatsPinned(false)
+    }
+    
+    /**
+     * Закрепление принадлежит вкладке: во «Всех чатах» меняется общий флаг чата,
+     * внутри папки — только её собственный список закреплённых.
+     */
+    private fun setSelectedChatsPinned(isPinned: Boolean) {
+        val state = _uiState.value
+        val selectedIds = state.selectedChatIds.toList()
+        if (selectedIds.isEmpty()) {
+            return
+        }
+        
+        val folderId = state.activeFolderId
+        
+        viewModelScope.launch {
+            if (folderId == ALL_CHATS_FOLDER_ID) {
+                if (isPinned) {
+                    chatRepository.pinChats(selectedIds)
+                } else {
+                    chatRepository.unpinChats(selectedIds)
+                }
+            } else {
+                if (isPinned) {
+                    chatFolderRepository.pinChats(folderId, selectedIds)
+                } else {
+                    chatFolderRepository.unpinChats(folderId, selectedIds)
+                }
             }
+            
+            clearSelection()
         }
     }
     
     fun hasUnpinnedSelectedChats(): Boolean {
-        val selectedIds = _uiState.value.selectedChatIds
-        val chats = _uiState.value.chats
-        return selectedIds.any { id ->
-            chats.find { it.id == id }?.isPinned == false
+        val state = _uiState.value
+        val folder = state.folders.find { it.id == state.activeFolderId }
+        
+        return state.selectedChatIds.any { id ->
+            if (folder == null) {
+                state.chats.find { it.id == id }?.isPinned == false
+            } else {
+                !folder.isPinned(id)
+            }
         }
     }
     

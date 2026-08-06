@@ -29,6 +29,8 @@ data class MainUiState(
     val folders: List<ChatFolder> = emptyList(),
     /** Вкладки главного экрана. Первая — «Все чаты», дальше папки в порядке sortOrder. */
     val folderPages: List<ChatFolderPage> = emptyList(),
+    /** Открытая вкладка: именно в ней закрепляются выделенные чаты. */
+    val activeFolderId: Int = ALL_CHATS_FOLDER_ID,
     val theme: ThemeOption = ThemeOption.SYSTEM,
     val selectedChatIds: Set<Long> = emptySet(),
     val onlineUserIds: Set<Long> = emptySet(),
