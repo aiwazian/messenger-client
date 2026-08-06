@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.settings.folders
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -79,9 +81,10 @@ fun ChatFoldersScreen(viewModel: ChatFoldersViewModel = hiltViewModel()) {
                     leadingIcon = Icons.Rounded.Add,
                     headlineText = stringResource(R.string.create_new_folder),
                     onClick = {
-                        navBackStack.add(AppRoute.CreateChatFolder)
+                        navBackStack.add(AppRoute.ChatFolderEditor())
                     })
                 
+                // «Все чаты» — виртуальная папка без состава, редактировать в ней нечего.
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = { Text(stringResource(R.string.all_chats)) })
@@ -89,6 +92,9 @@ fun ChatFoldersScreen(viewModel: ChatFoldersViewModel = hiltViewModel()) {
                 uiState.folders.forEach { folder ->
                     ChatFolderRow(
                         folder = folder,
+                        onEditClick = {
+                            navBackStack.add(AppRoute.ChatFolderEditor(folder.id))
+                        },
                         onDeleteClick = { viewModel.requestFolderDeletion(folder) })
                 }
             }
@@ -119,11 +125,12 @@ fun ChatFoldersScreen(viewModel: ChatFoldersViewModel = hiltViewModel()) {
 
 @Composable
 private fun ChatFolderRow(
-    folder: ChatFolder, onDeleteClick: () -> Unit
+    folder: ChatFolder, onEditClick: () -> Unit, onDeleteClick: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     
     ListItem(
+        modifier = Modifier.clickable(onClick = onEditClick),
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         headlineContent = { Text(folder.name) },
         trailingContent = {
@@ -133,6 +140,20 @@ private fun ChatFolderRow(
                 }
                 
                 AppDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    DropdownMenuItem(
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        text = { Text(stringResource(R.string.edit_folder)) },
+                        onClick = {
+                            expanded = false
+                            onEditClick()
+                        })
+                    
                     DropdownMenuItem(
                         leadingIcon = {
                             Icon(

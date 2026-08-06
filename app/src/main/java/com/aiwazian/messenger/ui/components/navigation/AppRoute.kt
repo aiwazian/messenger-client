@@ -120,9 +120,12 @@ sealed interface AppRoute : NavKey {
     @Serializable
     data object ChatFolders : AppRoute
     
-    /** Создание новой папки с чатами. */
+    /**
+     * Создание и редактирование папки ведёт один экран: поля и проверки
+     * совпадают, а [folderId] равный null означает новую папку.
+     */
     @Serializable
-    data object CreateChatFolder : AppRoute
+    data class ChatFolderEditor(val folderId: Int? = null) : AppRoute
     
     /** Выбор содержимого папки: поимённые чаты и категории целиком. */
     @Serializable
