@@ -289,6 +289,10 @@ private fun Content(
                 if (uiState.chats.isEmpty()) {
                     EmptyChatPlaceholder(text = "Чтобы начать общение нажмите на поле поиска сверху экрана и найдите пользователя по его @username")
                 } else if (uiState.folderPages.size <= 1) {
+                    LaunchedEffect(Unit) {
+                        viewModel.setActiveFolder(ALL_CHATS_FOLDER_ID)
+                    }
+                    
                     ChatList(
                         chats = uiState.chats,
                         myId = uiState.me.id,
@@ -302,6 +306,13 @@ private fun Content(
                     )
                 } else {
                     val pagerState = rememberPagerState(pageCount = { uiState.folderPages.size })
+                    
+                    // Закрепление относится к открытой вкладке, поэтому её id уходит во вьюмодель.
+                    LaunchedEffect(pagerState.currentPage, uiState.folderPages) {
+                        uiState.folderPages.getOrNull(pagerState.currentPage)?.let { page ->
+                            viewModel.setActiveFolder(page.id)
+                        }
+                    }
                     
                     Spacer(Modifier.height(innerPadding.calculateTopPadding()))
                     
