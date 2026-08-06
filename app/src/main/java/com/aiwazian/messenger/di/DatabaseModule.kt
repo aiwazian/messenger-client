@@ -12,6 +12,7 @@ import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
+import com.aiwazian.messenger.database.dao.ChatFolderDao
 import com.aiwazian.messenger.database.dao.DraftDao
 import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.GroupDao
@@ -70,4 +71,7 @@ object DatabaseModule {
     
     @Provides
     fun provideDraftDao(database: AppDatabase): DraftDao = database.draftDao()
+    
+    @Provides
+    fun provideChatFolderDao(database: AppDatabase): ChatFolderDao = database.chatFolderDao()
 }
