@@ -17,8 +17,11 @@ import com.aiwazian.messenger.network.dto.CreateChatFolderRequestDto
 import com.aiwazian.messenger.network.dto.PinFolderChatsRequestDto
 import com.aiwazian.messenger.network.dto.ReorderChatFoldersRequestDto
 import com.aiwazian.messenger.network.dto.UpdateChatFolderRequestDto
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -27,17 +30,22 @@ private const val TAG = "ChatFolderRepository"
 /**
  * Единый источник правды по папкам — Room. Экраны подписываются на локальный
  * Flow и рисуются сразу при запуске, а ответ сервера только обновляет таблицы.
+ *
+ * Записи привязаны к аккаунту, поэтому при его смене Flow сам переключается
+ * на папки новой учётной записи, не дожидаясь ответа сервера.
  */
 @Singleton
 class ChatFolderRepository @Inject constructor(
     private val chatFolderApi: ChatFolderApi,
-    private val chatFolderDao: ChatFolderDao
+    private val chatFolderDao: ChatFolderDao,
+    private val userRepository: UserRepository
 ) {
     
-    fun getFolders(): Flow<List<ChatFolder>> {
-        return combine(
-            chatFolderDao.getFoldersFlow(),
-            chatFolderDao.getFolderChatsFlow()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun getFolders(): Flow<List<ChatFolder>> = userRepository.getMe().flatMapLatest { me ->
+        combine(
+            chatFolderDao.getFoldersFlow(me.id),
+            chatFolderDao.getFolderChatsFlow(me.id)
         ) { folders, chats ->
             val chatsByFolder = chats.groupBy { it.folderId }
             folders.map { folder -> folder.toDomain(chatsByFolder[folder.id].orEmpty()) }
@@ -45,18 +53,21 @@ class ChatFolderRepository @Inject constructor(
     }
     
     suspend fun getFolder(folderId: Int): ChatFolder? {
-        val folder = chatFolderDao.getFolder(folderId) ?: return null
-        return folder.toDomain(chatFolderDao.getFolderChats(folderId))
+        val userId = currentUserId()
+        val folder = chatFolderDao.getFolder(userId, folderId) ?: return null
+        return folder.toDomain(chatFolderDao.getFolderChats(userId, folderId))
     }
     
     suspend fun refreshFolders() {
         try {
+            val userId = currentUserId()
             val response = chatFolderApi.getFolders()
             if (response.isSuccessful) {
                 val folders = response.body().orEmpty().map { it.toDomain() }
                 chatFolderDao.replaceFolders(
-                    folders = folders.map { it.toEntity() },
-                    chats = folders.flatMap { it.toChatEntities() }
+                    userId = userId,
+                    folders = folders.map { it.toEntity(userId) },
+                    chats = folders.flatMap { it.toChatEntities(userId) }
                 )
             } else {
                 Log.e(TAG, "Failed to get chat folders: ${response.message()}")
@@ -72,6 +83,7 @@ class ChatFolderRepository @Inject constructor(
         categories: List<ChatFolderCategory>
     ): Result<ChatFolder> {
         return try {
+            val userId = currentUserId()
             val request = CreateChatFolderRequestDto(
                 name = name,
                 chatIds = chatIds.map { it.toString() },
@@ -81,7 +93,10 @@ class ChatFolderRepository @Inject constructor(
             val body = response.body()
             if (response.isSuccessful && body != null) {
                 val folder = body.toDomain()
-                chatFolderDao.upsertFolder(folder.toEntity(), folder.toChatEntities())
+                chatFolderDao.upsertFolder(
+                    folder.toEntity(userId),
+                    folder.toChatEntities(userId)
+                )
                 Result.success(folder)
             } else {
                 Log.e(TAG, "Failed to create chat folder: ${response.message()}")
@@ -100,6 +115,7 @@ class ChatFolderRepository @Inject constructor(
         categories: List<ChatFolderCategory>? = null
     ): Result<ChatFolder> {
         return try {
+            val userId = currentUserId()
             val request = UpdateChatFolderRequestDto(
                 name = name,
                 chatIds = chatIds?.map { it.toString() },
@@ -109,7 +125,10 @@ class ChatFolderRepository @Inject constructor(
             val body = response.body()
             if (response.isSuccessful && body != null) {
                 val folder = body.toDomain()
-                chatFolderDao.upsertFolder(folder.toEntity(), folder.toChatEntities())
+                chatFolderDao.upsertFolder(
+                    folder.toEntity(userId),
+                    folder.toChatEntities(userId)
+                )
                 Result.success(folder)
             } else {
                 Log.e(TAG, "Failed to update chat folder: ${response.message()}")
@@ -123,9 +142,10 @@ class ChatFolderRepository @Inject constructor(
     
     suspend fun deleteFolder(folderId: Int): Boolean {
         return try {
+            val userId = currentUserId()
             val response = chatFolderApi.deleteFolder(folderId)
             if (response.isSuccessful) {
-                chatFolderDao.deleteFolder(folderId)
+                chatFolderDao.deleteFolder(userId, folderId)
                 true
             } else {
                 Log.e(TAG, "Failed to delete chat folder: ${response.message()}")
@@ -149,13 +169,15 @@ class ChatFolderRepository @Inject constructor(
     suspend fun reorderFolders(folderIds: List<Int>): Boolean {
         if (folderIds.isEmpty()) return true
         return try {
+            val userId = currentUserId()
             val response = chatFolderApi.reorderFolders(ReorderChatFoldersRequestDto(folderIds))
             val body = response.body()
             if (response.isSuccessful && body != null) {
                 val folders = body.map { it.toDomain() }
                 chatFolderDao.replaceFolders(
-                    folders = folders.map { it.toEntity() },
-                    chats = folders.flatMap { it.toChatEntities() }
+                    userId = userId,
+                    folders = folders.map { it.toEntity(userId) },
+                    chats = folders.flatMap { it.toChatEntities(userId) }
                 )
                 true
             } else {
@@ -209,7 +231,8 @@ class ChatFolderRepository @Inject constructor(
         chatIds: List<Long>,
         isPinned: Boolean
     ) {
-        val existing = chatFolderDao.getFolderChats(folderId)
+        val userId = currentUserId()
+        val existing = chatFolderDao.getFolderChats(userId, folderId)
         val existingIds = existing.map { it.chatId }.toSet()
         
         val updated = existing.map { chat ->
@@ -218,6 +241,7 @@ class ChatFolderRepository @Inject constructor(
         
         val created = chatIds.filterNot { it in existingIds }.mapIndexed { index, chatId ->
             ChatFolderChatEntity(
+                userId = userId,
                 folderId = folderId,
                 chatId = chatId,
                 isIncluded = false,
@@ -228,4 +252,6 @@ class ChatFolderRepository @Inject constructor(
         
         chatFolderDao.insertFolderChats(updated + created)
     }
+    
+    private suspend fun currentUserId(): Long = userRepository.getMe().first().id
 }
