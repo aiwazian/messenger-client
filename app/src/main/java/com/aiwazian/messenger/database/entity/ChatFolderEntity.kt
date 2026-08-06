@@ -4,12 +4,16 @@
 
 package com.aiwazian.messenger.database.entity
 
+import androidx.room3.ColumnInfo
 import androidx.room3.Entity
-import androidx.room3.PrimaryKey
 
-@Entity(tableName = "chat_folders")
+@Entity(
+    tableName = "chat_folders",
+    primaryKeys = ["userId", "id"]
+)
 data class ChatFolderEntity(
-    @PrimaryKey
+    /** Папки принадлежат аккаунту: при его смене кэш чужой учётки не показывается. */
+    @ColumnInfo(defaultValue = "0") val userId: Long,
     val id: Int,
     val name: String,
     val sortOrder: Int,

@@ -4,22 +4,24 @@
 
 package com.aiwazian.messenger.database.entity
 
+import androidx.room3.ColumnInfo
 import androidx.room3.Entity
 import androidx.room3.ForeignKey
 import androidx.room3.Index
 
 @Entity(
     tableName = "chat_folder_chats",
-    primaryKeys = ["folderId", "chatId"],
+    primaryKeys = ["userId", "folderId", "chatId"],
     foreignKeys = [ForeignKey(
         entity = ChatFolderEntity::class,
-        parentColumns = ["id"],
-        childColumns = ["folderId"],
+        parentColumns = ["userId", "id"],
+        childColumns = ["userId", "folderId"],
         onDelete = ForeignKey.CASCADE
     )],
-    indices = [Index("folderId")]
+    indices = [Index("userId", "folderId")]
 )
 data class ChatFolderChatEntity(
+    @ColumnInfo(defaultValue = "0") val userId: Long,
     val folderId: Int,
     val chatId: Long,
     /** Чат добавлен в папку поимённо, а не попал в неё через категорию. */
