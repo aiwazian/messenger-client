@@ -58,7 +58,9 @@ jobs:
       if: matrix.language  == 'java-kotlin'
       run: |
           chmod +x ./gradlew
-          ./gradlew :app:assembleDebug --no-daemon --stacktrace
+          ./gradlew :app:compileDebugSources --no-daemon --build-cache \
+            -Dorg.gradle.jvmargs="-Xmx6g -Dfile.encoding=UTF-8" \
+            -Pkotlin.daemon.jvmargs="-Xmx4g"
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
