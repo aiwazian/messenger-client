@@ -14,7 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.AdminPanelSettings
-import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.PersonAddAlt1
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
@@ -143,7 +143,7 @@ fun GroupSettingsScreen(
                 SectionContainer {
                     if (uiState.isOwner) {
                         SectionItem(
-                            leadingIcon = Icons.Outlined.Lock,
+                            leadingIcon = Icons.Outlined.Group,
                             headlineText = stringResource(R.string.group_type),
                             onClick = {
                                 navBackStack.add(AppRoute.GroupTypeSettings(uiState.group.id))

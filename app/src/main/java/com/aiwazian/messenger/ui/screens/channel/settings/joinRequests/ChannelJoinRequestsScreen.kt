@@ -4,15 +4,19 @@
 
 package com.aiwazian.messenger.ui.screens.channel.settings.joinRequests
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -25,7 +29,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.JoinRequestCard
@@ -34,6 +45,7 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.utils.LottieAnimation
 
 @Composable
 fun ChannelJoinRequestsScreen(
@@ -74,6 +86,33 @@ fun ChannelJoinRequestsScreen(
         }
     ) { paddingValues ->
         Column(Modifier.padding(paddingValues)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                val composition by rememberLottieComposition(
+                    spec = LottieCompositionSpec.Asset(LottieAnimation.INBOX)
+                )
+                
+                LottieAnimation(
+                    composition = composition,
+                    modifier = Modifier.size(100.dp),
+                    iterations = LottieConstants.IterateForever,
+                    isPlaying = true
+                )
+                
+                Text(
+                    text = stringResource(R.string.requests_to_channel_join),
+                    fontSize = 14.sp,
+                    lineHeight = 14.sp,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
             if (state.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),

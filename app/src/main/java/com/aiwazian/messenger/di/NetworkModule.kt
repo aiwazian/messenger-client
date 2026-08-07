@@ -8,6 +8,7 @@ import com.aiwazian.messenger.network.RetrofitInstance
 import com.aiwazian.messenger.network.api.AuthApi
 import com.aiwazian.messenger.network.api.ChannelApi
 import com.aiwazian.messenger.network.api.ChatApi
+import com.aiwazian.messenger.network.api.ChatFolderApi
 import com.aiwazian.messenger.network.api.GroupApi
 import com.aiwazian.messenger.network.api.MessageApi
 import com.aiwazian.messenger.network.api.PrivacyApi
@@ -62,6 +63,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideChatApi(): ChatApi = RetrofitInstance.chatApi
+    
+    @Provides
+    @Singleton
+    fun provideChatFolderApi(): ChatFolderApi = RetrofitInstance.chatFolderApi
     
     @Provides
     @Singleton

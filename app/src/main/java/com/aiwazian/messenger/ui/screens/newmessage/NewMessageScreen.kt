@@ -11,8 +11,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Group
-import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.outlined.Campaign
+import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,16 +43,16 @@ fun NewMessageScreen() {
         ) {
             SectionContainer {
                 SectionItem(
-                    leadingIcon = Icons.Rounded.Group,
-                    headlineText = stringResource(R.string.create_channel),
-                    onClick = {
-                        navBackStack.add(AppRoute.CreateChannel)
-                    })
-                SectionItem(
-                    leadingIcon = Icons.Rounded.Groups,
+                    leadingIcon = Icons.Outlined.Group,
                     headlineText = stringResource(R.string.create_group),
                     onClick = {
                         navBackStack.add(AppRoute.CreateGroup)
+                    })
+                SectionItem(
+                    leadingIcon = Icons.Outlined.Campaign,
+                    headlineText = stringResource(R.string.create_channel),
+                    onClick = {
+                        navBackStack.add(AppRoute.CreateChannel)
                     })
             }
         }

@@ -329,6 +329,7 @@
     <string name="add_administrator">Aggiungi amministratore</string>
     <string name="admin_permissions">Autorizzazioni</string>
     <string name="edit_permissions">Modifica autorizzazioni</string>
+    <string name="view_permissions">Visualizza le autorizzazioni</string>
     <string name="dismiss_admin">Congedare</string>
     <string name="dismiss_admin_confirm_message">Sei sicuro di voler rimuovere questo utente dagli amministratori\?</string>
     <string name="no_administrators">Nessun amministratore</string>
@@ -342,4 +343,11 @@
     <string name="edit_group_profile_description">Può modificare il nome del gruppo, la descrizione e le foto del profilo.</string>
     <string name="member_tag">Etichetta membro</string>
     <string name="member_tag_description">Il tag viene visualizzato accanto al nome del mittente nei messaggi di gruppo.</string>
+    <string name="manage_admins">Gestire gli amministratori</string>
+    <string name="manage_admins_description">Può aggiungere e rimuovere amministratori e modificare le loro autorizzazioni.</string>
+    <string name="requests_to_channel_join">Le richieste di iscrizione al tuo canale vengono visualizzate qui.</string>
+    <string name="requests_to_group_join">le richieste di adesione al tuo gruppo vengono visualizzate qui.</string>
+    <string name="edit_folder">Modifica cartella</string>
+    <string name="appearance_preview_incoming_text">La release call è domani alle 10:00, in mattinata manderò il link.</string>
+    <string name="appearance_preview_reply_text">Capito, ci sarò. Grazie!</string>
 </resources>

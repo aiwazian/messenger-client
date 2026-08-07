@@ -13,6 +13,7 @@ import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
+import com.aiwazian.messenger.database.dao.ChatFolderDao
 import com.aiwazian.messenger.database.dao.DraftDao
 import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.GroupDao
@@ -23,6 +24,8 @@ import com.aiwazian.messenger.database.entity.AttachmentEntity
 import com.aiwazian.messenger.database.entity.AvatarEntity
 import com.aiwazian.messenger.database.entity.ChannelEntity
 import com.aiwazian.messenger.database.entity.ChatEntity
+import com.aiwazian.messenger.database.entity.ChatFolderChatEntity
+import com.aiwazian.messenger.database.entity.ChatFolderEntity
 import com.aiwazian.messenger.database.entity.DraftEntity
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.database.entity.GroupEntity
@@ -40,9 +43,11 @@ import com.aiwazian.messenger.database.entity.UserEntity
         FileEntity::class,
         ChatEntity::class,
         AvatarEntity::class,
-        DraftEntity::class
+        DraftEntity::class,
+        ChatFolderEntity::class,
+        ChatFolderChatEntity::class
     ],
-    version = 48,
+    version = 49,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 38, to = 39),
@@ -54,6 +59,7 @@ import com.aiwazian.messenger.database.entity.UserEntity
         AutoMigration(from = 45, to = 46),
         AutoMigration(from = 46, to = 47),
         AutoMigration(from = 47, to = 48),
+        AutoMigration(from = 48, to = 49),
     ]
 )
 @ColumnTypeConverters(Converters::class)
@@ -77,4 +83,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun avatarDao(): AvatarDao
     
     abstract fun draftDao(): DraftDao
+    
+    abstract fun chatFolderDao(): ChatFolderDao
 }

@@ -5,8 +5,13 @@
 package com.aiwazian.messenger.ui.screens.main
 
 import com.aiwazian.messenger.domain.Chat
+import com.aiwazian.messenger.domain.ChatFolder
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ThemeOption
+import com.aiwazian.messenger.utils.UiText
+
+/** Папка «Все чаты» существует только на клиенте, поэтому у неё нет серверного id. */
+const val ALL_CHATS_FOLDER_ID = 0
 
 data class MainUiState(
     val me: User = User(
@@ -21,6 +26,11 @@ data class MainUiState(
     ),
     val hasPasscode: Boolean = false,
     val chats: List<Chat> = emptyList(),
+    val folders: List<ChatFolder> = emptyList(),
+    /** Вкладки главного экрана. Первая — «Все чаты», дальше папки в порядке sortOrder. */
+    val folderPages: List<ChatFolderPage> = emptyList(),
+    /** Открытая вкладка: именно в ней закрепляются выделенные чаты. */
+    val activeFolderId: Int = ALL_CHATS_FOLDER_ID,
     val theme: ThemeOption = ThemeOption.SYSTEM,
     val selectedChatIds: Set<Long> = emptySet(),
     val onlineUserIds: Set<Long> = emptySet(),
@@ -28,4 +38,10 @@ data class MainUiState(
     val askedPermission: Boolean = false,
     val showAccountDialog: Boolean = false,
     val isLocked: Boolean = false
+)
+
+data class ChatFolderPage(
+    val id: Int,
+    val name: UiText,
+    val chats: List<Chat>
 )

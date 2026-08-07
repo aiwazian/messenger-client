@@ -15,6 +15,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -24,10 +25,13 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -44,6 +48,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -77,12 +83,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBarValue
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberBottomSheetState
@@ -104,6 +112,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -111,9 +120,11 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -122,6 +133,7 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.BuildConfig
 import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
@@ -214,23 +226,52 @@ private fun Content(
         viewModel.clearSelection()
     }
     
+    val pagerState = rememberPagerState(pageCount = { uiState.folderPages.size })
+    
+    /*
+     * Переключение папок — не навигация, поэтому системный «назад» с любой
+     * папки возвращает на первую вместо выхода из приложения.
+     *
+     * Обработчик добавлен последним и перехватывает жест раньше остальных,
+     * поэтому выделение чатов и открытая шторка гасят его вручную.
+     */
+    BackHandler(enabled = !hasSelection && !drawerState.isOpen && pagerState.currentPage != 0) {
+        scope.launch {
+            pagerState.animateScrollToPage(0)
+        }
+    }
+    
     Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
         AnimatedContent(
             targetState = hasSelection, transitionSpec = {
                 fadeIn() togetherWith fadeOut()
             }) { hasSelection ->
             if (!hasSelection) {
-                DefaultTopBar(
-                    drawerState = drawerState,
-                    passcodeEnabled = uiState.hasPasscode,
-                    onLockClick = {
-                        scope.launch {
-                            viewModel.lockApp()
-                        }
-                    },
-                    socketState = socketState,
-                    onProfileClick = viewModel::showAccountDialog
-                )
+                Column {
+                    DefaultTopBar(
+                        drawerState = drawerState,
+                        passcodeEnabled = uiState.hasPasscode,
+                        onLockClick = {
+                            scope.launch {
+                                viewModel.lockApp()
+                            }
+                        },
+                        socketState = socketState,
+                        onProfileClick = viewModel::showAccountDialog
+                    )
+                    
+                    if (uiState.folderPages.isNotEmpty()) {
+                        ChatFolderTabs(
+                            pages = uiState.folderPages,
+                            selectedIndex = pagerState.currentPage,
+                            onTabClick = { index ->
+                                scope.launch {
+                                    pagerState.animateScrollToPage(index)
+                                }
+                            }
+                        )
+                    }
+                }
             } else {
                 SelectionTopBar(
                     selectedCount = uiState.selectedChatIds.size,
@@ -257,6 +298,16 @@ private fun Content(
             }
         }
     }) { innerPadding ->
+        val openChat: (Chat, String) -> Unit = { chat, chatName ->
+            navBackStack.add(
+                AppRoute.Chat(
+                    chatId = chat.id,
+                    chatName = chatName,
+                    avatarUri = chat.avatarUri?.toString()
+                )
+            )
+        }
+        
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier.padding(
@@ -266,44 +317,45 @@ private fun Content(
             ) {
                 if (uiState.chats.isEmpty()) {
                     EmptyChatPlaceholder(text = "Чтобы начать общение нажмите на поле поиска сверху экрана и найдите пользователя по его @username")
+                } else if (uiState.folderPages.size <= 1) {
+                    LaunchedEffect(Unit) {
+                        viewModel.setActiveFolder(ALL_CHATS_FOLDER_ID)
+                    }
+                    
+                    ChatList(
+                        chats = uiState.chats,
+                        myId = uiState.me.id,
+                        selectedChatIds = uiState.selectedChatIds,
+                        onlineUserIds = uiState.onlineUserIds,
+                        hasSelection = hasSelection,
+                        topPadding = innerPadding.calculateTopPadding(),
+                        bottomPadding = innerPadding.calculateBottomPadding(),
+                        onOpenChat = openChat,
+                        onToggleSelection = viewModel::toggleChatSelection
+                    )
                 } else {
-                    LazyColumn {
-                        item {
-                            Spacer(Modifier.height(innerPadding.calculateTopPadding()))
+                    LaunchedEffect(pagerState.currentPage, uiState.folderPages) {
+                        uiState.folderPages.getOrNull(pagerState.currentPage)?.let { page ->
+                            viewModel.setActiveFolder(page.id)
                         }
-                        items(uiState.chats) { chat ->
-                            val chatName = chat.chatName.asString()
-                            val isSelected = chat.id in uiState.selectedChatIds
-                            val isOnline = ChatType.fromId(chat.id) == ChatType.PRIVATE &&
-                                    chat.id != uiState.me.id &&
-                                    chat.id in uiState.onlineUserIds
-                            ChatCard(
-                                modifier = Modifier.animateItem(),
-                                chat = chat,
-                                myId = uiState.me.id,
-                                isSelected = isSelected,
-                                isOnline = isOnline,
-                                unreadMessageCount = chat.unreadCount,
-                                onClickChat = {
-                                    if (hasSelection) {
-                                        viewModel.toggleChatSelection(chat.id)
-                                    } else {
-                                        navBackStack.add(
-                                            AppRoute.Chat(
-                                                chatId = chat.id,
-                                                chatName = chatName,
-                                                avatarUri = chat.avatarUri?.toString()
-                                            )
-                                        )
-                                    }
-                                },
-                                onLongClickChat = {
-                                    viewModel.toggleChatSelection(chat.id)
-                                })
-                        }
-                        item {
-                            Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
-                        }
+                    }
+                    
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        userScrollEnabled = !hasSelection
+                    ) { page ->
+                        ChatList(
+                            chats = uiState.folderPages[page].chats,
+                            myId = uiState.me.id,
+                            selectedChatIds = uiState.selectedChatIds,
+                            onlineUserIds = uiState.onlineUserIds,
+                            hasSelection = hasSelection,
+                            topPadding = innerPadding.calculateTopPadding(),
+                            bottomPadding = innerPadding.calculateBottomPadding(),
+                            onOpenChat = openChat,
+                            onToggleSelection = viewModel::toggleChatSelection
+                        )
                     }
                 }
             }
@@ -393,6 +445,118 @@ private fun Content(
             },
             onDismissRequest = viewModel::hideAccountDialog
         )
+    }
+}
+
+@Composable
+private fun ChatFolderTabs(
+    pages: List<ChatFolderPage>,
+    selectedIndex: Int,
+    onTabClick: (Int) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        PrimaryScrollableTabRow(
+            selectedTabIndex = selectedIndex,
+            modifier = Modifier
+                .padding(start = 8.dp, top = 4.dp, end = 8.dp, bottom = 8.dp)
+                .clip(CircleShape)
+                .width(IntrinsicSize.Max),
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            edgePadding = 0.dp,
+            indicator = {
+                Column(
+                    Modifier
+                        .tabIndicatorOffset(selectedIndex)
+                        .fillMaxSize()
+                        .padding(4.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+                ) {}
+            },
+            divider = {}
+        ) {
+            pages.forEachIndexed { index, page ->
+                val interactionSource = remember { MutableInteractionSource() }
+                val isPressed by interactionSource.collectIsPressedAsState()
+                val scale by animateFloatAsState(
+                    animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+                    targetValue = if (isPressed) 0.96f else 1f,
+                    label = "button_${index}_scale_animation"
+                )
+                Box(
+                    modifier = Modifier
+                        .zIndex(1f)
+                        .graphicsLayer(scaleX = scale, scaleY = scale)
+                        .clip(CircleShape)
+                        .clickable(
+                            onClick = { onTabClick(index) },
+                            interactionSource = interactionSource,
+                            indication = null
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = page.name.asString(),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        color = if (index == selectedIndex) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        fontSize = 14.sp,
+                        lineHeight = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChatList(
+    chats: List<Chat>,
+    myId: Long,
+    selectedChatIds: Set<Long>,
+    onlineUserIds: Set<Long>,
+    hasSelection: Boolean,
+    topPadding: Dp,
+    bottomPadding: Dp,
+    onOpenChat: (Chat, String) -> Unit,
+    onToggleSelection: (Long) -> Unit
+) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        item {
+            Spacer(Modifier.height(topPadding))
+        }
+        items(chats) { chat ->
+            val chatName = chat.chatName.asString()
+            val isSelected = chat.id in selectedChatIds
+            val isOnline = ChatType.fromId(chat.id) == ChatType.PRIVATE &&
+                    chat.id != myId &&
+                    chat.id in onlineUserIds
+            ChatCard(
+                modifier = Modifier.animateItem(),
+                chat = chat,
+                myId = myId,
+                isSelected = isSelected,
+                isOnline = isOnline,
+                unreadMessageCount = chat.unreadCount,
+                onClickChat = {
+                    if (hasSelection) {
+                        onToggleSelection(chat.id)
+                    } else {
+                        onOpenChat(chat, chatName)
+                    }
+                },
+                onLongClickChat = {
+                    onToggleSelection(chat.id)
+                })
+        }
+        item {
+            Spacer(Modifier.height(bottomPadding))
+        }
     }
 }
 
@@ -652,7 +816,12 @@ private fun DefaultTopBar(
                         }
                     }
                 }
-            })
+            },
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
+            )
+        )
     }
     
     AppBarWithSearch(
@@ -664,7 +833,14 @@ private fun DefaultTopBar(
     ExpandedFullScreenSearchBar(
         state = searchBarState,
         inputField = inputField,
-        colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
+        colors = SearchBarDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            dividerColor = Color.Transparent,
+            inputFieldColors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
+            )
+        )
     ) {
         if (searchUiState.isChatLoading && searchUiState.chatResults.isEmpty()) {
             LoadingPlaceholder()
