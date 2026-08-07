@@ -116,7 +116,14 @@ fun MessageBubble(
     /** Свайп влево пересёк порог: короткая тактильная отдача. */
     onSwipeThresholdReached: (() -> Unit)? = null,
     /** Палец отпущен за порогом: начинаем ответ на это сообщение. */
-    onSwipeToReply: (() -> Unit)? = null
+    onSwipeToReply: (() -> Unit)? = null,
+    /**
+     * Меню сообщения по тапу.
+     *
+     * Выключается там, где сообщение показано только как образец: например в
+     * превью на экране внешнего вида, где действовать не над чем.
+     */
+    showContextMenu: Boolean = true
 ) {
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
@@ -143,7 +150,7 @@ fun MessageBubble(
             modifier = Modifier
                 .fillMaxWidth()
                 .combinedClickable(
-                    onClick = { expanded = true },
+                    onClick = { if (showContextMenu) expanded = true },
                     onLongClick = { },
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() })
