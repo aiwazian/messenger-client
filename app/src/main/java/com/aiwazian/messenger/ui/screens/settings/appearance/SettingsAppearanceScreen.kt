@@ -62,6 +62,8 @@ fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
                 .padding(innerPadding)
                 .verticalScroll(scrollState)
         ) {
+            AppearanceChatPreview()
+            
             val theme = when (viewModel.currentTheme.collectAsState().value) {
                 ThemeOption.DARK -> stringResource(R.string.enabled)
                 ThemeOption.LIGHT -> stringResource(R.string.disabled)
