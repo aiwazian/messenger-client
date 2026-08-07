@@ -348,4 +348,6 @@
     <string name="requests_to_channel_join">Le richieste di iscrizione al tuo canale vengono visualizzate qui.</string>
     <string name="requests_to_group_join">le richieste di adesione al tuo gruppo vengono visualizzate qui.</string>
     <string name="edit_folder">Modifica cartella</string>
+    <string name="appearance_preview_incoming_text">La release call è domani alle 10:00, in mattinata manderò il link.</string>
+    <string name="appearance_preview_reply_text">Capito, ci sarò. Grazie!</string>
 </resources>

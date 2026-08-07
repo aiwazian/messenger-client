@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Demo conversation shown on the appearance screen. -->
-    <string name="appearance_preview_peer_name">Igor</string>
-    <string name="appearance_preview_incoming_text">The release call is tomorrow at 10:00, I will send the link in the morning.</string>
-    <string name="appearance_preview_reply_text">Got it, I will be there. Thanks!</string>
-</resources>

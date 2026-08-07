@@ -23,30 +23,15 @@ import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 
-/*
- * Идентификаторы выдуманной переписки. Первая цифра задаёт тип чата,
- * поэтому чат личный.
- */
 private const val PREVIEW_CHAT_ID = 1_000_000_001L
 private const val PREVIEW_PEER_ID = 1_000_000_002L
 private const val PREVIEW_MY_ID = 1_000_000_003L
 
-/**
- * Превью переписки на экране внешнего вида.
- *
- * Личный чат из двух сообщений: входящее и ответ на него. Так видно оба
- * цвета пузыря и то, как выглядит цитата при выбранной теме и цвете.
- *
- * Собрано на настоящем [MessageBubble], поэтому превью не расходится с чатом.
- * Меню по тапу выключено: сообщений не существует и делать с ними нечего.
- */
 @Composable
 fun AppearanceChatPreview(modifier: Modifier = Modifier) {
-    // Время текущее, иначе в подписи окажется прошлая дата.
     val sendTime = remember { System.currentTimeMillis() }
     val time = remember(sendTime) { sendTime.toInstance().toPrettyTime() }
     
-    val peerName = stringResource(R.string.appearance_preview_peer_name)
     val incomingText = stringResource(R.string.appearance_preview_incoming_text)
     
     val incomingMessage = ChatItem.MessageItem(
@@ -86,7 +71,7 @@ fun AppearanceChatPreview(modifier: Modifier = Modifier) {
                 messageId = 1L,
                 chatId = PREVIEW_CHAT_ID,
                 senderId = PREVIEW_PEER_ID,
-                senderName = peerName,
+                senderName = "Karen",
                 text = incomingText
             )
         ),
