@@ -228,6 +228,19 @@ private fun Content(
     
     val pagerState = rememberPagerState(pageCount = { uiState.folderPages.size })
     
+    /*
+     * Переключение папок — не навигация, поэтому системный «назад» с любой
+     * папки возвращает на первую вместо выхода из приложения.
+     *
+     * Обработчик добавлен последним и перехватывает жест раньше остальных,
+     * поэтому выделение чатов и открытая шторка гасят его вручную.
+     */
+    BackHandler(enabled = !hasSelection && !drawerState.isOpen && pagerState.currentPage != 0) {
+        scope.launch {
+            pagerState.animateScrollToPage(0)
+        }
+    }
+    
     Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
         AnimatedContent(
             targetState = hasSelection, transitionSpec = {
