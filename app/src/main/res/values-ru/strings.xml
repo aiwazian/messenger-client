@@ -331,6 +331,7 @@
     <string name="add_administrator">Добавить администратора</string>
     <string name="admin_permissions">Разрешения</string>
     <string name="edit_permissions">Редактировать разрешения</string>
+    <string name="view_permissions">Просмотр разрешений</string>
     <string name="dismiss_admin">Увольнять</string>
     <string name="dismiss_admin_confirm_message">Вы уверены, что хотите удалить этого пользователя из числа администраторов\?</string>
     <string name="no_administrators">Нет администраторов</string>
@@ -344,4 +345,9 @@
     <string name="edit_group_profile_description">Можно изменить название группы, описание и фотографии профиля.</string>
     <string name="member_tag">Тег участника</string>
     <string name="member_tag_description">Тег отображается рядом с именем отправителя в групповых сообщениях.</string>
+    <string name="manage_admins">Управление администраторами</string>
+    <string name="manage_admins_description">Можно добавлять и удалять администраторов, а также изменять их разрешения.</string>
+    <string name="requests_to_channel_join">Здесь отображаются запросы на присоединение к вашему каналу.</string>
+    <string name="requests_to_group_join">Здесь отображаются запросы на вступление в вашу группу.</string>
+    <string name="edit_folder">Редактировать папку</string>
 </resources>

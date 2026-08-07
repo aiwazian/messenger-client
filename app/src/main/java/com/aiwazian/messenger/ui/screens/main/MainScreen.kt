@@ -805,6 +805,7 @@ private fun DefaultTopBar(
                 }
             },
             colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
             )
         )
@@ -819,7 +820,14 @@ private fun DefaultTopBar(
     ExpandedFullScreenSearchBar(
         state = searchBarState,
         inputField = inputField,
-        colors = SearchBarDefaults.colors(dividerColor = Color.Transparent)
+        colors = SearchBarDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            dividerColor = Color.Transparent,
+            inputFieldColors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer
+            )
+        )
     ) {
         if (searchUiState.isChatLoading && searchUiState.chatResults.isEmpty()) {
             LoadingPlaceholder()

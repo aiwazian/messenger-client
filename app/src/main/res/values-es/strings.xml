@@ -329,6 +329,7 @@
     <string name="add_administrator">Agregar administrador</string>
     <string name="admin_permissions">Permisos</string>
     <string name="edit_permissions">Editar permisos</string>
+    <string name="view_permissions">Ver permisos</string>
     <string name="dismiss_admin">Despedir</string>
     <string name="dismiss_admin_confirm_message">¿Está seguro de que desea eliminar a este usuario de los administradores\?</string>
     <string name="no_administrators">Sin administradores</string>
@@ -342,4 +343,9 @@
     <string name="edit_group_profile_description">Puede cambiar el nombre del grupo, la descripción y las fotos de perfil.</string>
     <string name="member_tag">Etiqueta de miembro</string>
     <string name="member_tag_description">La etiqueta se muestra junto al nombre del remitente en los mensajes grupales.</string>
+    <string name="manage_admins">Administrar administradores</string>
+    <string name="manage_admins_description">Puede agregar y eliminar administradores y cambiar sus permisos.</string>
+    <string name="requests_to_channel_join">Las solicitudes para unirse a su canal se muestran aquí.</string>
+    <string name="requests_to_group_join">Las solicitudes para unirse a su grupo se muestran aquí.</string>
+    <string name="edit_folder">Editar carpeta</string>
 </resources>

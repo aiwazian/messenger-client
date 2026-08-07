@@ -351,4 +351,7 @@
     <string name="member_tag_description">The tag is shown next to the sender name in group messages.</string>
     <string name="manage_admins">Manage administrators</string>
     <string name="manage_admins_description">Can add and remove administrators and change their permissions.</string>
+    <string name="requests_to_channel_join">Requests to join your channel are displayed here.</string>
+    <string name="requests_to_group_join">Requests to join your group are displayed here.</string>
+    <string name="edit_folder">Edit Folder</string>
 </resources>
