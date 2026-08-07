@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Demo conversation shown on the appearance screen. -->
+    <string name="appearance_preview_my_name">Igor</string>
+    <string name="appearance_preview_reply_author">Oleg</string>
+    <string name="appearance_preview_forward_author">Andrey</string>
+    <string name="appearance_preview_forwarded_text">The release call is tomorrow at 10:00, I will send the link in the morning.</string>
+    <string name="appearance_preview_reply_text">Got it, I will be there. Thanks for forwarding!</string>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Демо-переписка на экране внешнего вида. -->
+    <string name="appearance_preview_my_name">Игорь</string>
+    <string name="appearance_preview_reply_author">Олег</string>
+    <string name="appearance_preview_forward_author">Андрей</string>
+    <string name="appearance_preview_forwarded_text">Завтра в 10:00 созвон по релизу, ссылку пришлю утром.</string>
+    <string name="appearance_preview_reply_text">Понял, буду. Спасибо, что переслал!</string>
+</resources>
