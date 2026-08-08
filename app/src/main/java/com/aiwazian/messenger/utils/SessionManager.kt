@@ -49,8 +49,16 @@ object SessionManager {
     private var isResolvingSessionEnd = false
 
     /**
-     * Явный выход сам решает, куда идти дальше, поэтому 401 от запроса logout
-     * не должен запускать второй разбор.
+     * Один и тот же мёртвый токен приходит из разных источников: интерцептор,
+     * сокет, повторные попытки переподключения. Без этой отметки каждый повтор
+     * удалял бы ещё один аккаунт.
+     */
+    @Volatile
+    private var lastInvalidatedToken: String? = null
+
+    /**
+     * Явный выход сам решает, куда идти дальше, поэтому 401 от запроса logout не
+     * должен запускать второй разбор.
      */
     @Volatile
     private var suppressUnauthorizedHandling = false
@@ -94,6 +102,7 @@ object SessionManager {
     ) {
         _token.update { token }
         _isAuthorized = token.isNotEmpty()
+        lastInvalidatedToken = null
 
         val repository = authRepository
             ?: throw IllegalStateException("AuthRepository not initialized. Call init() first.")
@@ -127,8 +136,8 @@ object SessionManager {
     /**
      * Завершает текущую сессию и переключается на следующий аккаунт устройства.
      *
-     * Текущий аккаунт удаляется всегда: его токен уже недействителен (сессию
-     * отключили) или станет таким после выхода. Дальше берётся любой другой
+     * Текущий аккаунт удаляется всегда: его токен либо уже недействителен (сессию
+     * отключили), либо станет таким после выхода. Дальше берётся любой другой
      * аккаунт с непустым токеном — так выход из одного аккаунта не выкидывает
      * пользователя из остальных.
      *
@@ -198,14 +207,26 @@ object SessionManager {
             return
         }
 
+        val invalidToken = getToken()
+
+        if (invalidToken.isNotEmpty() && invalidToken == lastInvalidatedToken) {
+            return
+        }
+
+        lastInvalidatedToken = invalidToken
         _isAuthorized = false
 
         scope.launch {
-            resolutionMutex.withLock {
-                if (isResolvingSessionEnd) {
-                    return@withLock
+            val alreadyRunning = resolutionMutex.withLock {
+                val running = isResolvingSessionEnd
+                if (!running) {
+                    isResolvingSessionEnd = true
                 }
-                isResolvingSessionEnd = true
+                running
+            }
+
+            if (alreadyRunning) {
+                return@launch
             }
 
             try {

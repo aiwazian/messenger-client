@@ -4,10 +4,9 @@
 
 package com.aiwazian.messenger.ui.screens.logout
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.repository.AuthRepository
+import com.aiwazian.messenger.utils.SessionEndResolution
 import com.aiwazian.messenger.utils.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -19,9 +18,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class LogoutViewModel @Inject constructor(
-    private val authRepository: AuthRepository
-) : ViewModel() {
+class LogoutViewModel @Inject constructor() : ViewModel() {
     
     private val _uiState = MutableStateFlow(LogoutUiState())
     val uiState = _uiState.asStateFlow()
@@ -37,26 +34,20 @@ class LogoutViewModel @Inject constructor(
         _uiState.update { it.copy(isLogoutDialogVisible = false) }
     }
     
+    /**
+     * Выход касается только текущего аккаунта: если на устройстве есть другой
+     * аккаунт, приложение переключается на него вместо экрана авторизации.
+     */
     fun logout() {
         viewModelScope.launch {
-            val accounts = authRepository.getAllAccounts()
-            val currentAccount = accounts.find { it.isCurrent }
-            val otherAccounts =
-                accounts.filter { it.userId != currentAccount?.userId && it.token.isNotEmpty() }
+            val resolution = SessionManager.endCurrentSessionAndResolve(revokeOnServer = true)
             
-            authRepository.logout().onFailure { e ->
-                Log.e(
-                    "AuthManager",
-                    "Ошибка при выходе: ${e.message}"
-                )
+            val effect = when (resolution) {
+                is SessionEndResolution.SwitchedToAccount -> LogoutSideEffect.SwitchToNextAccount
+                is SessionEndResolution.NoAccountsLeft -> LogoutSideEffect.NoAccountsLeft
             }
             
-            if (otherAccounts.isNotEmpty()) {
-                SessionManager.switchAccount(otherAccounts.first().userId)
-                _sideEffect.emit(LogoutSideEffect.SwitchToNextAccount)
-            } else {
-                _sideEffect.emit(LogoutSideEffect.NoAccountsLeft)
-            }
+            _sideEffect.emit(effect)
         }
     }
 }
