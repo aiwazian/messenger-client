@@ -8,7 +8,7 @@ import android.util.Log
 import com.aiwazian.messenger.domain.Session
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.network.api.SessionApi
-import com.aiwazian.messenger.network.dto.UpdateFcmTokenDto
+import com.aiwazian.messenger.network.dto.UpdateInstallationIdDto
 import javax.inject.Inject
 
 class SessionRepository @Inject constructor(
@@ -31,16 +31,20 @@ class SessionRepository @Inject constructor(
         }
     }
     
-    suspend fun updateFcmToken(token: String): Result<Unit> {
+    /**
+     * Привязывает Firebase Installation ID к текущей сессии: в новом API FCM
+     * именно FID, а не registration token, является адресатом уведомления.
+     */
+    suspend fun updateInstallationId(installationId: String): Result<Unit> {
         return try {
-            val response = sessionApi.updateFcmToken(UpdateFcmTokenDto(token))
+            val response = sessionApi.updateInstallationId(UpdateInstallationIdDto(installationId))
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
             }
         } catch (e: Exception) {
-            Log.e("SessionRepository", "Error updating FCM token", e)
+            Log.e("SessionRepository", "Error updating installation id", e)
             Result.failure(e)
         }
     }

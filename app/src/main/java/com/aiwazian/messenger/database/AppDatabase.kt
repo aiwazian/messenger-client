@@ -31,6 +31,7 @@ import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.database.entity.GroupEntity
 import com.aiwazian.messenger.database.entity.MessageEntity
 import com.aiwazian.messenger.database.entity.UserEntity
+import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
 
 @Database(
     entities = [
@@ -47,7 +48,7 @@ import com.aiwazian.messenger.database.entity.UserEntity
         ChatFolderEntity::class,
         ChatFolderChatEntity::class
     ],
-    version = 49,
+    version = 50,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 38, to = 39),
@@ -60,6 +61,7 @@ import com.aiwazian.messenger.database.entity.UserEntity
         AutoMigration(from = 46, to = 47),
         AutoMigration(from = 47, to = 48),
         AutoMigration(from = 48, to = 49),
+        AutoMigration(from = 49, to = 50, spec = RenameFcmTokenToInstallationId::class),
     ]
 )
 @ColumnTypeConverters(Converters::class)
