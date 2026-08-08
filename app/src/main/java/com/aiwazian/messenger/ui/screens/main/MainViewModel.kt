@@ -4,17 +4,15 @@
 
 package com.aiwazian.messenger.ui.screens.main
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.ChatFolder
 import com.aiwazian.messenger.enums.ConnectionState
+import com.aiwazian.messenger.push.PushRegistrar
 import com.aiwazian.messenger.repository.ChatFolderRepository
 import com.aiwazian.messenger.repository.ChatRepository
-import com.aiwazian.messenger.repository.SessionRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.socket.WebSocketClient
@@ -22,7 +20,6 @@ import com.aiwazian.messenger.utils.AppLockManager
 import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.ThemeManager
 import com.aiwazian.messenger.utils.UiText
-import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,8 +38,7 @@ class MainViewModel @Inject constructor(
     userRepository: UserRepository,
     webSocketClient: WebSocketClient,
     private val onlineUsersTracker: OnlineUsersTracker,
-    private val accountDao: AccountDao,
-    private val sessionRepository: SessionRepository
+    private val pushRegistrar: PushRegistrar
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(MainUiState())
@@ -109,24 +105,10 @@ class MainViewModel @Inject constructor(
             }
         }
         
-        viewModelScope.launch {
-            accountDao.getCurrentAccount()?.let { account ->
-                FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
-                    if (account.fcmToken != token) {
-                        viewModelScope.launch {
-                            sessionRepository.updateFcmToken(token).onSuccess {
-                                accountDao.update(account.copy(fcmToken = token))
-                                Log.d("MainViewModel", "Token updated")
-                            }.onFailure {
-                                Log.e("MainViewModel", "Error saving token", it)
-                            }
-                        }
-                    }
-                }.addOnFailureListener { th ->
-                    Log.e("MainViewModel", "Error getting token", th)
-                }
-            }
-        }
+        // Идентификатор установки приходит в PushService.onRegistered, а не из вызова:
+        // здесь остаётся только попросить SDK зарегистрировать установку. Сессия на этом
+        // экране уже есть, поэтому пришедший FID будет куда отправить.
+        pushRegistrar.ensureRegistered()
     }
     
     suspend fun lockApp() {
