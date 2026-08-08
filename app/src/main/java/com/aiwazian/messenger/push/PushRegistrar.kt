@@ -7,10 +7,14 @@ package com.aiwazian.messenger.push
 import android.util.Log
 import com.aiwazian.messenger.database.dao.AccountDao
 import com.aiwazian.messenger.repository.SessionRepository
+import com.aiwazian.messenger.utils.SessionManager
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -24,6 +28,10 @@ import javax.inject.Singleton
  * регистрацию, а сам FID приходит в PushService.onRegistered. Поэтому «вытянуть» его по
  * требованию, как раньше делал FirebaseMessaging.getInstance().token, больше нельзя,
  * и отправка живёт в синглтоне, который переживает и сервис, и ViewModel.
+ *
+ * FID один на устройство, а аккаунтов может быть несколько, поэтому при каждой смене
+ * активного аккаунта FID переотправляется: сервер оставляет его ровно у одной
+ * сессии, и уведомления приходят только тому аккаунту, в котором сидит пользователь.
  */
 @Singleton
 class PushRegistrar @Inject constructor(
@@ -35,6 +43,23 @@ class PushRegistrar @Inject constructor(
     
     /** onRegistered и повторный register() могут сойтись: PATCH должен быть один. */
     private val mutex = Mutex()
+    
+    /** Последний FID из onRegistered: при смене аккаунта его нужно переотправить. */
+    @Volatile
+    private var lastKnownInstallationId: String? = null
+    
+    /** Токен прежнего активного аккаунта. Читается только внутри коллектора. */
+    private var lastActiveToken: String? = null
+    
+    init {
+        // Любая смена активного аккаунта — переключение, вход, выход — меняет токен сессии.
+        // Подписка именно на него гарантирует, что PATCH уйдёт уже с новым токеном:
+        // AuthInterceptor берёт его из того же SessionManager.
+        SessionManager.token
+            .filter { it.isNotEmpty() }
+            .onEach { onActiveAccountChanged(it) }
+            .launchIn(scope)
+    }
     
     /**
      * Просит SDK зарегистрировать установку. onRegistered придёт даже если установка
@@ -64,8 +89,31 @@ class PushRegistrar @Inject constructor(
         }
     }
     
+    private suspend fun onActiveAccountChanged(token: String) {
+        val previousToken = lastActiveToken
+        lastActiveToken = token
+        
+        if (previousToken != null && previousToken != token) {
+            // Сервер снимает FID со всех остальных сессий устройства, поэтому локальный
+            // кеш «FID уже отправлен» обнуляем целиком: иначе при возврате на прежний
+            // аккаунт sync() решит, что отправлять нечего, и уведомления не придут вовсе.
+            accountDao.clearInstallationIds()
+        }
+        
+        val installationId = lastKnownInstallationId
+        
+        if (installationId == null) {
+            ensureRegistered()
+            return
+        }
+        
+        sync(installationId)
+    }
+    
     private suspend fun sync(installationId: String) {
         mutex.withLock {
+            lastKnownInstallationId = installationId
+            
             val account = accountDao.getCurrentAccount()
             
             if (account == null) {

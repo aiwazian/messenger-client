@@ -5,9 +5,11 @@
 package com.aiwazian.messenger.push
 
 import android.util.Log
+import com.aiwazian.messenger.database.dao.AccountDao
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -18,6 +20,9 @@ class PushService : FirebaseMessagingService() {
     
     @Inject
     lateinit var pushRegistrar: PushRegistrar
+    
+    @Inject
+    lateinit var accountDao: AccountDao
     
     /**
      * Замена onNewToken: вместо registration token теперь приходит Firebase
@@ -42,6 +47,27 @@ class PushService : FirebaseMessagingService() {
         val body = data["body"] ?: return
         val chatId = data["chatId"]?.toLongOrNull() ?: return
         
+        if (!isForCurrentAccount(data["userId"]?.toLongOrNull())) {
+            Log.d("PushService", "Notification for another account, skipped")
+            return
+        }
+        
         notificationHelper.showMessageNotification(chatId, title, body)
+    }
+    
+    /**
+     * Уведомление показывается только активному аккаунту. Сервер держит FID только
+     * у активной сессии, но если переключение произошло без сети или пуш уже был
+     * в полёте, чужое уведомление всё равно может доехать — здесь оно отбрасывается.
+     *
+     * onMessageReceived работает на фоновом потоке FCM, а решение нужно принять до
+     * выхода из метода, поэтому один короткий запрос к базе ждём на месте.
+     */
+    private fun isForCurrentAccount(recipientId: Long?): Boolean {
+        // Нет получателя — значит сервер старее этого клиента: показываем как раньше.
+        recipientId ?: return true
+        
+        val currentUserId = runBlocking { accountDao.getCurrentAccount()?.userId }
+        return currentUserId == recipientId
     }
 }
