@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.serialization)
+    alias(libs.plugins.google.services)
     
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
@@ -13,6 +14,14 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        create("release") {
+            storeFile = file("C:\\Users\\Karen\\MessengerKeystore.jks")
+            storePassword = "brabus"
+            keyAlias = "brabus"
+            keyPassword = "brabus"
+        }
+    }
     namespace = "com.aiwazian.messenger"
     compileSdk = 37
     
@@ -26,7 +35,6 @@ android {
     
     buildTypes {
         debug {
-            applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             
             buildConfigField("String", "API_URL", "\"http://192.168.0.134:4000/api/\"")
@@ -44,7 +52,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             
             buildConfigField("String", "API_URL", "\"https://aiwazian.ru/api/\"")
             buildConfigField("String", "WS_URL", "\"wss://ws.aiwazian.ru\"")
@@ -139,7 +147,9 @@ dependencies {
     implementation(libs.coil.video)
     implementation(libs.coil.gif)
     
-    implementation(libs.pushclient)
+    // Firebase Cloud Messaging
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
     
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.common.ktx)

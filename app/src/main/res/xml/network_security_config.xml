@@ -1,7 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ Copyright (c) 2026. Aiwazian.
   -->
 
 <network-security-config>
-    <base-config cleartextTrafficPermitted="true" />
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="false">aiwazian.ru</domain>
+        <pin-set expiration="2027-06-01">
+            <pin digest="SHA-256">xovAvXBUCSgg4zYlSbxCUEn89OQeWGtfXPyXxRWJi5s=</pin>
+            <pin digest="SHA-256">diGVwiVYbubAI3RW4hB9xU8e/CH2GnkuvVFZE8zmgzI=</pin>
+            <pin digest="SHA-256">C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=</pin>
+        </pin-set>
+    </domain-config>
+
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="false">ws.aiwazian.ru</domain>
+        <pin-set expiration="2027-06-01">
+            <pin digest="SHA-256">6XnLKFRV+q5YEmW5JsGWVbPTYJixMtfAlKbnwHIysBg=</pin>
+            <pin digest="SHA-256">diGVwiVYbubAI3RW4hB9xU8e/CH2GnkuvVFZE8zmgzI=</pin>
+            <pin digest="SHA-256">C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=</pin>
+        </pin-set>
+    </domain-config>
 </network-security-config>

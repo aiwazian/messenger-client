@@ -11,7 +11,9 @@ coilGif = "2.7.0"
 coilVideo = "2.7.0"
 coreSplashscreen = "1.2.0"
 datastorePreferences = "1.2.1"
+firebaseBom = "34.17.0"
 foundation = "1.11.4"
+googleServices = "4.5.0"
 hiltAndroid = "2.60.1"
 hiltCompiler = "2.60.1"
 hiltNavigationCompose = "1.4.0"
@@ -33,7 +35,6 @@ materialIconsExtendedAndroid = "1.7.8"
 mobileads = "8.3.0"
 okhttp = "5.4.0"
 protobufJavalite = "4.35.1"
-pushclient = "7.2.0"
 retrofit = "3.0.0"
 retrofit2KotlinxSerializationConverter = "1.0.0"
 room = "3.0.1"
@@ -84,6 +85,8 @@ accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 coil-gif = { module = "io.coil-kt:coil-gif", version.ref = "coilGif" }
 coil-video = { module = "io.coil-kt:coil-video", version.ref = "coilVideo" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltCompiler" }
 ketch = { module = "com.github.khushpanchal:Ketch", version.ref = "ketch" }
@@ -92,7 +95,6 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 mobileads = { module = "com.yandex.android:mobileads", version.ref = "mobileads" }
 mobileads-compose = { module = "com.yandex.android:mobileads-compose", version.ref = "mobileads" }
 
-pushclient = { module = "ru.rustore.sdk:pushclient", version.ref = "pushclient" }
 socketio-client = { module = "io.socket:socket.io-client", version.ref = "socketio" }
 
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottieCompose" }
@@ -111,3 +113,4 @@ serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref 
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 room = { id = "androidx.room3", version.ref = "room" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

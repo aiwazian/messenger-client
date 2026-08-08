@@ -14,7 +14,6 @@ import com.yandex.mobile.ads.common.YandexAds
 import dagger.hilt.android.HiltAndroidApp
 import io.appmetrica.analytics.AppMetrica
 import io.appmetrica.analytics.AppMetricaConfig
-import ru.rustore.sdk.pushclient.RuStorePushClient
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -38,10 +37,6 @@ class Application : Application() {
             AppMetrica.enableActivityAutoTracking(this)
         }
         YandexAds.initialize(this) { }
-        RuStorePushClient.init(
-            application = this,
-            projectId = "uW0av0Fk9guM2gIW8IwhhVwMxjReEMrt"
-        )
         createNotificationChannels()
     }
     
