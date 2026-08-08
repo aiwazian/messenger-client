@@ -22,6 +22,7 @@ import com.aiwazian.messenger.utils.AppLockManager
 import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.ThemeManager
 import com.aiwazian.messenger.utils.UiText
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,7 +30,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import ru.rustore.sdk.pushclient.RuStorePushClient
 import javax.inject.Inject
 
 @HiltViewModel
@@ -111,7 +111,7 @@ class MainViewModel @Inject constructor(
         
         viewModelScope.launch {
             accountDao.getCurrentAccount()?.let { account ->
-                RuStorePushClient.getToken().addOnSuccessListener { token ->
+                FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
                     if (account.fcmToken != token) {
                         viewModelScope.launch {
                             sessionRepository.updateFcmToken(token).onSuccess {
