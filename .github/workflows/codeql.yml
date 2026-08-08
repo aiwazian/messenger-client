@@ -38,14 +38,14 @@ jobs:
 
     - name: Set up JDK 21
       if: matrix.language == 'java-kotlin'
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         distribution: temurin
         java-version: '21'
 
     - name: Set up Gradle
       if: matrix.language == 'java-kotlin'
-      uses: gradle/actions/setup-gradle@v4
+      uses: gradle/actions/setup-gradle@v5
       
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
@@ -55,7 +55,7 @@ jobs:
         queries: security-extended
 
     - name: Build Android app
-      if: matrix.language  == 'java-kotlin'
+      if: matrix.language == 'java-kotlin'
       run: |
           chmod +x ./gradlew
           ./gradlew :app:compileDebugSources --no-daemon --build-cache \

@@ -260,7 +260,7 @@ private fun Content(
                         onProfileClick = viewModel::showAccountDialog
                     )
                     
-                    if (uiState.folderPages.isNotEmpty()) {
+                    if (uiState.folderPages.size > 1) {
                         ChatFolderTabs(
                             pages = uiState.folderPages,
                             selectedIndex = pagerState.currentPage,

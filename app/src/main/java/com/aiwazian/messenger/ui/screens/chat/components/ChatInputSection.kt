@@ -104,9 +104,13 @@ import com.aiwazian.messenger.utils.DialogController
 import kotlin.math.abs
 
 @Composable
-fun ChatInputSection(uiState: ChatUiState, chatViewModel: ChatViewModel) {
+fun ChatInputSection(
+    uiState: ChatUiState,
+    chatViewModel: ChatViewModel,
+    modifier: Modifier = Modifier
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
             .imePadding()
