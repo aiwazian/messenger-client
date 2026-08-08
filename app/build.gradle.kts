@@ -14,14 +14,6 @@ plugins {
 }
 
 android {
-    signingConfigs {
-        create("release") {
-            storeFile = file("C:\\Users\\Karen\\MessengerKeystore.jks")
-            storePassword = "brabus"
-            keyAlias = "brabus"
-            keyPassword = "brabus"
-        }
-    }
     namespace = "com.aiwazian.messenger"
     compileSdk = 37
     
@@ -52,7 +44,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
             
             buildConfigField("String", "API_URL", "\"https://aiwazian.ru/api/\"")
             buildConfigField("String", "WS_URL", "\"wss://ws.aiwazian.ru\"")
