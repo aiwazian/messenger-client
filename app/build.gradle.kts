@@ -14,6 +14,14 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        create("release") {
+            storeFile = file("C:\\Users\\Karen\\MessengerKeystore.jks")
+            storePassword = "brabus"
+            keyAlias = "brabus"
+            keyPassword = "brabus"
+        }
+    }
     namespace = "com.aiwazian.messenger"
     compileSdk = 37
     
