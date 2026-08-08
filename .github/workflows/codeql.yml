@@ -46,6 +46,19 @@ jobs:
     - name: Set up Gradle
       if: matrix.language == 'java-kotlin'
       uses: gradle/actions/setup-gradle@v5
+
+    - name: Create google-services.json
+      if: matrix.language == 'java-kotlin'
+      env:
+        GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      run: |
+        if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+          echo "::error::Secret GOOGLE_SERVICES_JSON is empty or not available"
+          exit 1
+        fi
+        printf '%s' "$GOOGLE_SERVICES_JSON" | base64 -d > app/google-services.json
+        python3 -c "import json;json.load(open('app/google-services.json'))"
+        echo "OK, $(wc -c < app/google-services.json) bytes"
       
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
