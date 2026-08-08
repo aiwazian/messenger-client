@@ -41,12 +41,11 @@ class WebSocketClient @Inject constructor(
         private const val DELAY_UI_UPDATE_MS = 3000L
         
         /**
-         * Отказ авторизации на подключении сервер присылает как Unauthorized, а
-         * отключение уже живущей сессии — как auth:error. Для клиента оба события
+         * Сервер присылает это событие и когда отказывает в авторизации при
+         * подключении, и когда гасит уже живущую сессию. Для клиента оба случая
          * значат одно: текущий токен мёртв.
          */
         private const val EVENT_UNAUTHORIZED = "Unauthorized"
-        private const val EVENT_AUTH_ERROR = "auth:error"
         
         private val defaultJson = Json {
             ignoreUnknownKeys = true
@@ -68,28 +67,21 @@ class WebSocketClient @Inject constructor(
     
     init {
         /*
-         * Клиент живёт в синглтоне и переживает смену аккаунта, а токен передаётся
-         * при рукопожатии. Без переподключения сокет остался бы с токеном прошлой
-         * сессии, который сервер уже не принимает.
-         *
-         * Пока сокет ни разу не создавали, подключением управляет вызывающий код.
+         * Клиент живёт в синглтоне и переживает перезапуск активити, поэтому без
+         * этого после смены аккаунта сокет оставался бы подключённым с токеном
+         * прошлой сессии: HTTP-запросы шли бы от нового аккаунта, а события
+         * приходили бы для старого.
          */
         scope.launch {
-            sessionManager.token
-                .drop(1)
-                .distinctUntilChanged()
-                .collect { token ->
-                    if (socket == null) {
-                        return@collect
-                    }
-                    
-                    if (token.isEmpty()) {
-                        disconnect()
-                    } else {
-                        Log.d(TAG, "Token changed, reconnecting socket")
-                        reconnect()
-                    }
+            sessionManager.token.drop(1).distinctUntilChanged().collect { token ->
+                if (socket == null) return@collect
+                
+                if (token.isEmpty()) {
+                    disconnect()
+                } else {
+                    reconnect()
                 }
+            }
         }
     }
     
@@ -103,10 +95,8 @@ class WebSocketClient @Inject constructor(
     }
     
     fun disconnect() {
-        socket?.let { activeSocket ->
-            activeSocket.off()
-            activeSocket.disconnect()
-        }
+        socket?.off()
+        socket?.disconnect()
         socket = null
         socketId = null
         _connectionState.value = ConnectionState.DISCONNECTED
@@ -163,14 +153,7 @@ class WebSocketClient @Inject constructor(
             on(Socket.EVENT_CONNECT) { onConnect() }
             on(Socket.EVENT_CONNECT_ERROR) { onConnectError(it.firstOrNull() as? Exception) }
             on(Socket.EVENT_DISCONNECT) { onDisconnect() }
-            on(EVENT_UNAUTHORIZED) {
-                Log.e(TAG, "Received Unauthorized event from server")
-                onSessionRejected()
-            }
-            on(EVENT_AUTH_ERROR) {
-                Log.e(TAG, "Received auth:error event from server: session was terminated")
-                onSessionRejected()
-            }
+            on(EVENT_UNAUTHORIZED) { onSessionRejected() }
             
             onAnyIncoming { args ->
                 val eventName = args.getOrNull(0) as? String ?: return@onAnyIncoming
@@ -181,15 +164,6 @@ class WebSocketClient @Inject constructor(
             
             connect()
         }
-    }
-    
-    /**
-     * Сессия отключена сервером. Переподключаться с тем же токеном бессмысленно,
-     * поэтому сокет гасится, а дальше решает SessionManager: перейти на другой
-     * аккаунт устройства или отправить на авторизацию.
-     */
-    private fun onSessionRejected() {
-        SessionManager.notifyUnauthorized()
     }
     
     private fun onConnect() {
@@ -206,6 +180,16 @@ class WebSocketClient @Inject constructor(
     private fun onDisconnect() {
         Log.d(TAG, "Disconnected")
         _connectionState.value = ConnectionState.DISCONNECTED
+    }
+    
+    /*
+     * Сессия больше не действительна. Что делать дальше, решает SessionManager: если
+     * на устройстве есть другой аккаунт, приложение переключится на него, а экран
+     * авторизации откроется только когда аккаунтов не осталось.
+     */
+    private fun onSessionRejected() {
+        Log.e(TAG, "Сессия отклонена сервером, текущий токен больше не действителен")
+        SessionManager.notifyUnauthorized()
     }
     
     private fun handleIncomingEvent(eventName: String, jsonObject: JsonObject) {
