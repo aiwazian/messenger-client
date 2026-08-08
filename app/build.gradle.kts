@@ -52,7 +52,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
             
             buildConfigField("String", "API_URL", "\"https://aiwazian.ru/api/\"")
             buildConfigField("String", "WS_URL", "\"wss://ws.aiwazian.ru\"")
