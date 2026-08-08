@@ -73,12 +73,12 @@ class PushRegistrar @Inject constructor(
                 return@withLock
             }
             
-            if (account.fcmToken == installationId) {
+            if (account.installationId == installationId) {
                 return@withLock
             }
             
             sessionRepository.updateInstallationId(installationId).onSuccess {
-                accountDao.update(account.copy(fcmToken = installationId))
+                accountDao.update(account.copy(installationId = installationId))
                 Log.d(TAG, "Installation id updated")
             }.onFailure { e ->
                 Log.e(TAG, "Error saving installation id", e)
