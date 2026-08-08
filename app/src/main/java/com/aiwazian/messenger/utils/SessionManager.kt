@@ -4,20 +4,56 @@
 
 package com.aiwazian.messenger.utils
 
+import android.util.Log
 import com.aiwazian.messenger.database.entity.AccountEntity
 import com.aiwazian.messenger.repository.AuthRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
+/**
+ * Итог завершения текущей сессии: либо на устройстве остался ещё один аккаунт и
+ * приложение продолжает работу под ним, либо аккаунтов больше нет и нужен экран
+ * авторизации.
+ */
+sealed interface SessionEndResolution {
+    data class SwitchedToAccount(val userId: Long) : SessionEndResolution
+    data object NoAccountsLeft : SessionEndResolution
+}
 
 object SessionManager {
+
+    private const val TAG = "SessionManager"
 
     private val _token = MutableStateFlow("")
     val token = _token.asStateFlow()
 
     private var _isAuthorized = false
-    private var unauthorizedCallback: (() -> Unit)? = null
+    private var sessionEndCallback: ((SessionEndResolution) -> Unit)? = null
     private var authRepository: AuthRepository? = null
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /**
+     * Сессия может отвалиться сразу в нескольких местах: параллельные запросы
+     * получают 401 одновременно с событием сокета. Разбор должен произойти один
+     * раз, иначе будет удалено несколько аккаунтов подряд.
+     */
+    private val resolutionMutex = Mutex()
+    private var isResolvingSessionEnd = false
+
+    /**
+     * Явный выход сам решает, куда идти дальше, поэтому 401 от запроса logout
+     * не должен запускать второй разбор.
+     */
+    @Volatile
+    private var suppressUnauthorizedHandling = false
 
     var isInit = false
         private set
@@ -87,10 +123,109 @@ object SessionManager {
         authRepository?.switchAccount(userId)
         loadSession()
     }
-    
-    fun setUnauthorizedCallback(callback: () -> Unit) {
-        unauthorizedCallback = callback
+
+    /**
+     * Завершает текущую сессию и переключается на следующий аккаунт устройства.
+     *
+     * Текущий аккаунт удаляется всегда: его токен уже недействителен (сессию
+     * отключили) или станет таким после выхода. Дальше берётся любой другой
+     * аккаунт с непустым токеном — так выход из одного аккаунта не выкидывает
+     * пользователя из остальных.
+     *
+     * @param revokeOnServer нужно ли гасить сессию на сервере. При отключённой
+     * сессии её там уже нет, поэтому запрос не имеет смысла.
+     */
+    suspend fun endCurrentSessionAndResolve(revokeOnServer: Boolean): SessionEndResolution {
+        val repository = authRepository
+
+        if (repository == null) {
+            Log.e(TAG, "AuthRepository не инициализирован")
+            return SessionEndResolution.NoAccountsLeft
+        }
+
+        val accounts = repository.getAllAccounts()
+        val currentUserId = accounts.find { it.isCurrent }?.userId
+
+        val nextAccount = accounts.firstOrNull {
+            it.userId != currentUserId && it.token.isNotEmpty()
+        }
+
+        suppressUnauthorizedHandling = true
+
+        try {
+            if (revokeOnServer) {
+                repository.logout().onFailure { error ->
+                    Log.e(TAG, "Ошибка при выходе на сервере: ${error.message}")
+                }
+            } else {
+                repository.clearCurrentToken()
+            }
+
+            if (nextAccount == null) {
+                _token.update { "" }
+                _isAuthorized = false
+                return SessionEndResolution.NoAccountsLeft
+            }
+
+            switchAccount(nextAccount.userId)
+
+            /*
+             * Токен мог не подтянуться, если строка аккаунта успела испортиться.
+             * Тогда честнее показать авторизацию, чем оставить приложение без
+             * рабочей сессии.
+             */
+            if (getToken().isEmpty()) {
+                Log.e(TAG, "Не удалось переключиться на аккаунт ${nextAccount.userId}")
+                _isAuthorized = false
+                return SessionEndResolution.NoAccountsLeft
+            }
+
+            return SessionEndResolution.SwitchedToAccount(nextAccount.userId)
+        } finally {
+            suppressUnauthorizedHandling = false
+        }
     }
-    
-    fun getUnauthorizedCallback() = unauthorizedCallback
+
+    /**
+     * Сообщает, что текущая сессия больше недействительна: пришёл 401 или сокет
+     * получил событие об отключении сессии.
+     *
+     * Вызывается из потоков без корутин (интерцептор OkHttp, колбэк сокета),
+     * поэтому работа с базой уходит в фон, а результат отдаётся в колбэк.
+     */
+    fun notifyUnauthorized() {
+        if (suppressUnauthorizedHandling) {
+            return
+        }
+
+        _isAuthorized = false
+
+        scope.launch {
+            resolutionMutex.withLock {
+                if (isResolvingSessionEnd) {
+                    return@withLock
+                }
+                isResolvingSessionEnd = true
+            }
+
+            try {
+                val resolution = endCurrentSessionAndResolve(revokeOnServer = false)
+                Log.d(TAG, "Сессия завершена, результат: $resolution")
+                sessionEndCallback?.invoke(resolution)
+            } catch (e: Exception) {
+                Log.e(TAG, "Ошибка при разборе завершённой сессии", e)
+                sessionEndCallback?.invoke(SessionEndResolution.NoAccountsLeft)
+            } finally {
+                resolutionMutex.withLock {
+                    isResolvingSessionEnd = false
+                }
+            }
+        }
+    }
+
+    fun setSessionEndCallback(callback: (SessionEndResolution) -> Unit) {
+        sessionEndCallback = callback
+    }
+
+    fun getSessionEndCallback() = sessionEndCallback
 }
