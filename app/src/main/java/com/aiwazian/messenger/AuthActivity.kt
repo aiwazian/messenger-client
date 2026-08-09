@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.aiwazian.messenger.analytics.AnalyticsTracker
 import com.aiwazian.messenger.ui.components.navigation.AppNavDisplay
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.theme.ApplicationTheme
@@ -23,11 +24,23 @@ class AuthActivity : ComponentActivity() {
         installSplashScreen()
         
         enableEdgeToEdge()
+        AnalyticsTracker.setCurrentUser(null)
+        AnalyticsTracker.trackAuthScreenOpen()
         
         setContent {
             ApplicationTheme {
                 AppNavDisplay(AppRoute.Login)
             }
         }
+    }
+    
+    override fun onStart() {
+        super.onStart()
+        AnalyticsTracker.startSession(this, isAuthorized = false)
+    }
+    
+    override fun onStop() {
+        AnalyticsTracker.endSession(this)
+        super.onStop()
     }
 }

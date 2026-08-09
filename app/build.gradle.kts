@@ -138,9 +138,10 @@ dependencies {
     implementation(libs.coil.video)
     implementation(libs.coil.gif)
     
-    // Firebase Cloud Messaging
+    // Firebase Cloud Messaging & Analytics
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
+    implementation(libs.firebase.analytics)
     
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.common.ktx)

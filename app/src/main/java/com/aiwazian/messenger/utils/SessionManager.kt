@@ -35,6 +35,7 @@ object SessionManager {
     val token = _token.asStateFlow()
 
     private var _isAuthorized = false
+    private var currentUserId: Long? = null
     private var sessionEndCallback: ((SessionEndResolution) -> Unit)? = null
     private var authRepository: AuthRepository? = null
 
@@ -75,22 +76,30 @@ object SessionManager {
         return _token.value
     }
 
+    fun getCurrentUserId(): Long? {
+        return currentUserId
+    }
+
     fun setAuthorized(value: Boolean) {
         _isAuthorized = value
     }
 
     suspend fun loadSession() {
-        var currentToken = authRepository?.getCurrentToken() ?: ""
+        val repository = authRepository
+        var currentToken = repository?.getCurrentToken() ?: ""
+        var loadedUserId = repository?.getAllAccounts()?.find { it.isCurrent }?.userId
         
         if (currentToken.isEmpty()) {
-            val fallback = authRepository?.getFirstAccountWithToken()
+            val fallback = repository?.getFirstAccountWithToken()
             if (fallback != null) {
-                authRepository?.setCurrent(fallback.userId)
+                repository.setCurrent(fallback.userId)
                 currentToken = fallback.token
+                loadedUserId = fallback.userId
             }
         }
 
         _token.update { currentToken }
+        currentUserId = loadedUserId?.takeIf { currentToken.isNotEmpty() }
         _isAuthorized = currentToken.isNotEmpty()
         isInit = true
     }
@@ -101,6 +110,7 @@ object SessionManager {
         createdAt: Long
     ) {
         _token.update { token }
+        currentUserId = userId.takeIf { token.isNotEmpty() }
         _isAuthorized = token.isNotEmpty()
         lastInvalidatedToken = null
 
@@ -119,6 +129,7 @@ object SessionManager {
     
     suspend fun logout() {
         _token.update { "" }
+        currentUserId = null
         _isAuthorized = false
         authRepository?.clearCurrentToken()
     }
@@ -172,6 +183,7 @@ object SessionManager {
 
             if (nextAccount == null) {
                 _token.update { "" }
+                this.currentUserId = null
                 _isAuthorized = false
                 return SessionEndResolution.NoAccountsLeft
             }
@@ -185,6 +197,7 @@ object SessionManager {
              */
             if (getToken().isEmpty()) {
                 Log.e(TAG, "Не удалось переключиться на аккаунт ${nextAccount.userId}")
+                this.currentUserId = null
                 _isAuthorized = false
                 return SessionEndResolution.NoAccountsLeft
             }
