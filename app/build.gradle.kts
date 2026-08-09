@@ -70,7 +70,6 @@ android {
 dependencies {
     implementation(libs.mobileads)
     implementation(libs.mobileads.compose)
-    implementation(libs.analytics)
     
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
