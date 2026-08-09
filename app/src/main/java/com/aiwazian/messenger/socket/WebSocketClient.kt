@@ -10,8 +10,14 @@ import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.utils.SessionManager
 import io.socket.client.IO
 import io.socket.client.Socket
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -34,6 +40,13 @@ class WebSocketClient @Inject constructor(
         private const val RECONNECTION_DELAY_MS = 1000L
         private const val DELAY_UI_UPDATE_MS = 3000L
         
+        /**
+         * Сервер присылает это событие и когда отказывает в авторизации при
+         * подключении, и когда гасит уже живущую сессию. Для клиента оба случая
+         * значат одно: текущий токен мёртв.
+         */
+        private const val EVENT_UNAUTHORIZED = "Unauthorized"
+        
         private val defaultJson = Json {
             ignoreUnknownKeys = true
             isLenient = true
@@ -47,8 +60,30 @@ class WebSocketClient @Inject constructor(
     
     private val messageHandlers = mutableMapOf<String, MutableList<(JsonObject) -> Unit>>()
     
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    
     private var socket: Socket? = null
     var socketId: String? = null
+    
+    init {
+        /*
+         * Клиент живёт в синглтоне и переживает перезапуск активити, поэтому без
+         * этого после смены аккаунта сокет оставался бы подключённым с токеном
+         * прошлой сессии: HTTP-запросы шли бы от нового аккаунта, а события
+         * приходили бы для старого.
+         */
+        scope.launch {
+            sessionManager.token.drop(1).distinctUntilChanged().collect { token ->
+                if (socket == null) return@collect
+                
+                if (token.isEmpty()) {
+                    disconnect()
+                } else {
+                    reconnect()
+                }
+            }
+        }
+    }
     
     fun connect() {
         if (_connectionState.value == ConnectionState.CONNECTED ||
@@ -57,6 +92,19 @@ class WebSocketClient @Inject constructor(
         
         _connectionState.value = ConnectionState.CONNECTING
         establishConnection()
+    }
+    
+    fun disconnect() {
+        socket?.off()
+        socket?.disconnect()
+        socket = null
+        socketId = null
+        _connectionState.value = ConnectionState.DISCONNECTED
+    }
+    
+    private fun reconnect() {
+        disconnect()
+        connect()
     }
     
     fun <Dto : Any, Domain : Any> subscribeToEvent(
@@ -105,10 +153,7 @@ class WebSocketClient @Inject constructor(
             on(Socket.EVENT_CONNECT) { onConnect() }
             on(Socket.EVENT_CONNECT_ERROR) { onConnectError(it.firstOrNull() as? Exception) }
             on(Socket.EVENT_DISCONNECT) { onDisconnect() }
-            on("Unauthorized") {
-                Log.e(TAG, "Received Unauthorized event from server")
-                SessionManager.getUnauthorizedCallback()?.invoke()
-            }
+            on(EVENT_UNAUTHORIZED) { onSessionRejected() }
             
             onAnyIncoming { args ->
                 val eventName = args.getOrNull(0) as? String ?: return@onAnyIncoming
@@ -135,6 +180,16 @@ class WebSocketClient @Inject constructor(
     private fun onDisconnect() {
         Log.d(TAG, "Disconnected")
         _connectionState.value = ConnectionState.DISCONNECTED
+    }
+    
+    /*
+     * Сессия больше не действительна. Что делать дальше, решает SessionManager: если
+     * на устройстве есть другой аккаунт, приложение переключится на него, а экран
+     * авторизации откроется только когда аккаунтов не осталось.
+     */
+    private fun onSessionRejected() {
+        Log.e(TAG, "Сессия отклонена сервером, текущий токен больше не действителен")
+        SessionManager.notifyUnauthorized()
     }
     
     private fun handleIncomingEvent(eventName: String, jsonObject: JsonObject) {

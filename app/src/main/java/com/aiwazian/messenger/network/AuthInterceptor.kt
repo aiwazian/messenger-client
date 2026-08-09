@@ -39,8 +39,12 @@ class AuthInterceptor(
         val response = chain.proceed(authRequest)
         
         if (response.code == 401) {
-            SessionManager.setAuthorized(false)
-            SessionManager.getUnauthorizedCallback()?.invoke()
+            /*
+             * Сервер перестал принимать токен: сессию отключили или удалили. Дальше
+             * решает SessionManager — переключиться на другой аккаунт устройства или
+             * отправить на авторизацию.
+             */
+            SessionManager.notifyUnauthorized()
         }
         
         return response

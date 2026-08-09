@@ -53,6 +53,7 @@ import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.utils.SessionEndResolution
 import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.Job
@@ -91,7 +92,12 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                 }
                 
                 SettingsPrivacySideEffect.NavigateToLogin -> {
-                    SessionManager.getUnauthorizedCallback()?.invoke()
+                    /*
+                     * Аккаунт удалён вместе с локальными данными устройства,
+                     * переключаться не на что — нужен экран авторизации.
+                     */
+                    SessionManager.getSessionEndCallback()
+                        ?.invoke(SessionEndResolution.NoAccountsLeft)
                 }
             }
         }

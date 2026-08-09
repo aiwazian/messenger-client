@@ -17,6 +17,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.aiwazian.messenger.ui.components.navigation.AppNavDisplay
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.theme.ApplicationTheme
+import com.aiwazian.messenger.utils.SessionEndResolution
 import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.ThemeManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -36,15 +37,17 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        SessionManager.setUnauthorizedCallback {
-            val intent = Intent(
-                this,
-                AuthActivity::class.java
-            ).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        /*
+         * Сессия может закончиться в любой момент: её отключили с другого
+         * устройства или сервер перестал принимать токен. Пока на устройстве
+         * остаётся другой аккаунт, приложение просто перезапускается под ним, и
+         * экран авторизации не показывается.
+         */
+        SessionManager.setSessionEndCallback { resolution ->
+            when (resolution) {
+                is SessionEndResolution.SwitchedToAccount -> restartWithNextAccount()
+                is SessionEndResolution.NoAccountsLeft -> openAuthScreen()
             }
-            startActivity(intent)
-            finish()
         }
         
         val hasSession = runBlocking {
@@ -53,7 +56,7 @@ class MainActivity : AppCompatActivity() {
         }
         
         if (!hasSession) {
-            SessionManager.getUnauthorizedCallback()?.invoke()
+            openAuthScreen()
             return
         }
         
@@ -106,6 +109,35 @@ class MainActivity : AppCompatActivity() {
                 startRoute = AppRoute.Chat(chatId, null)
             }
             return
+        }
+    }
+    
+    /**
+     * Перезапуск под новым аккаунтом: экраны и view-модели прошлого аккаунта
+     * держат его данные, поэтому задача пересобирается с нуля.
+     */
+    private fun restartWithNextAccount() {
+        restartTask(MainActivity::class.java)
+    }
+    
+    private fun openAuthScreen() {
+        restartTask(AuthActivity::class.java)
+    }
+    
+    /**
+     * Решение о завершении сессии приходит из фонового потока, а работать с
+     * активити можно только на главном.
+     */
+    private fun restartTask(target: Class<*>) {
+        runOnUiThread {
+            val intent = Intent(
+                this,
+                target
+            ).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            startActivity(intent)
+            finish()
         }
     }
 }
