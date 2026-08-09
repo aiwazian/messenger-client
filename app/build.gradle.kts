@@ -70,7 +70,6 @@ android {
 dependencies {
     implementation(libs.mobileads)
     implementation(libs.mobileads.compose)
-    implementation(libs.analytics)
     
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -138,9 +137,10 @@ dependencies {
     implementation(libs.coil.video)
     implementation(libs.coil.gif)
     
-    // Firebase Cloud Messaging
+    // Firebase Cloud Messaging & Analytics
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
+    implementation(libs.firebase.analytics)
     
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.common.ktx)

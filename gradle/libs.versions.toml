@@ -2,7 +2,6 @@
 accompanistNavigationMaterial = "0.36.0"
 accompanistSystemuicontroller = "0.36.0"
 agp = "9.3.1"
-analytics = "8.5.0"
 animation = "1.11.4"
 biometric = "1.1.0"
 browser = "1.10.0"
@@ -46,7 +45,6 @@ hilt = "2.60.1"
 ksp = "2.3.10"
 
 [libraries]
-analytics = { module = "io.appmetrica.analytics:analytics", version.ref = "analytics" }
 androidx-animation = { module = "androidx.compose.animation:animation", version.ref = "animation" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
@@ -85,6 +83,7 @@ accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 coil-gif = { module = "io.coil-kt:coil-gif", version.ref = "coilGif" }
 coil-video = { module = "io.coil-kt:coil-video", version.ref = "coilVideo" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }

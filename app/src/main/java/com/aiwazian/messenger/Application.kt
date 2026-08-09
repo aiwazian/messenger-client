@@ -10,10 +10,9 @@ import android.app.NotificationManager
 import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.utils.SessionManager
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.yandex.mobile.ads.common.YandexAds
 import dagger.hilt.android.HiltAndroidApp
-import io.appmetrica.analytics.AppMetrica
-import io.appmetrica.analytics.AppMetricaConfig
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -29,13 +28,15 @@ class Application : Application() {
         super.onCreate()
         
         SessionManager.init(authRepository)
-        if (!BuildConfig.DEBUG) {
-            val config = AppMetricaConfig.newConfigBuilder("a68ca89d-5f0f-4637-9132-d49550bd5471")
-                .withLocationTracking(true)
-                .build()
-            AppMetrica.activate(this, config)
-            AppMetrica.enableActivityAutoTracking(this)
-        }
+        
+        /*
+         * Статистика собирается только в релизных сборках: события с debugа
+         * только портят цифры в отчётах. В debug-сборке сбор дополнительно
+         * глушится флагом firebase_analytics_collection_deactivated в манифесте.
+         */
+        FirebaseAnalytics.getInstance(this)
+            .setAnalyticsCollectionEnabled(!BuildConfig.DEBUG)
+        
         YandexAds.initialize(this) { }
         createNotificationChannels()
     }
