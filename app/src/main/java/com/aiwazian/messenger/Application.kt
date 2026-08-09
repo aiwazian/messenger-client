@@ -7,7 +7,6 @@ package com.aiwazian.messenger
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import com.aiwazian.messenger.analytics.AnalyticsTracker
 import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.utils.SessionManager
@@ -30,7 +29,6 @@ class Application : Application() {
         super.onCreate()
         
         SessionManager.init(authRepository)
-        AnalyticsTracker.init(this)
         if (!BuildConfig.DEBUG) {
             val config = AppMetricaConfig.newConfigBuilder("a68ca89d-5f0f-4637-9132-d49550bd5471")
                 .withLocationTracking(true)

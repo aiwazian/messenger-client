@@ -14,7 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.aiwazian.messenger.analytics.AnalyticsTracker
 import com.aiwazian.messenger.ui.components.navigation.AppNavDisplay
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.theme.ApplicationTheme
@@ -46,17 +45,15 @@ class MainActivity : AppCompatActivity() {
          */
         SessionManager.setSessionEndCallback { resolution ->
             when (resolution) {
-                is SessionEndResolution.SwitchedToAccount -> restartWithNextAccount(resolution.userId)
+                is SessionEndResolution.SwitchedToAccount -> restartWithNextAccount()
                 is SessionEndResolution.NoAccountsLeft -> openAuthScreen()
             }
         }
         
-        val currentUserId = runBlocking {
+        val hasSession = runBlocking {
             SessionManager.loadSession()
-            SessionManager.getCurrentUserId()
+            SessionManager.hasAnySession()
         }
-        val hasSession = currentUserId != null
-        AnalyticsTracker.setCurrentUser(currentUserId)
         
         if (!hasSession) {
             openAuthScreen()
@@ -72,8 +69,6 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             handleIntent(intent)
         }
-        
-        AnalyticsTracker.trackMainScreenOpen()
         
         setContent {
             val selectedTheme by themeManager.currentTheme.collectAsState()
@@ -100,16 +95,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    override fun onStart() {
-        super.onStart()
-        AnalyticsTracker.startSession(this, isAuthorized = true)
-    }
-    
-    override fun onStop() {
-        AnalyticsTracker.endSession(this)
-        super.onStop()
-    }
-    
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleIntent(intent, isNewIntent = true)
@@ -131,13 +116,11 @@ class MainActivity : AppCompatActivity() {
      * Перезапуск под новым аккаунтом: экраны и view-модели прошлого аккаунта
      * держат его данные, поэтому задача пересобирается с нуля.
      */
-    private fun restartWithNextAccount(userId: Long) {
-        AnalyticsTracker.setCurrentUser(userId)
+    private fun restartWithNextAccount() {
         restartTask(MainActivity::class.java)
     }
     
     private fun openAuthScreen() {
-        AnalyticsTracker.setCurrentUser(null)
         restartTask(AuthActivity::class.java)
     }
     
