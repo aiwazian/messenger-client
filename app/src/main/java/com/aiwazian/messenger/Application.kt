@@ -29,13 +29,7 @@ class Application : Application() {
         
         SessionManager.init(authRepository)
         
-        /*
-         * Статистика собирается только в релизных сборках: события с debugа
-         * только портят цифры в отчётах. В debug-сборке сбор дополнительно
-         * глушится флагом firebase_analytics_collection_deactivated в манифесте.
-         */
-        FirebaseAnalytics.getInstance(this)
-            .setAnalyticsCollectionEnabled(!BuildConfig.DEBUG)
+        FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(!BuildConfig.DEBUG)
         
         YandexAds.initialize(this) { }
         createNotificationChannels()
