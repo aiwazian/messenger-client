@@ -10,9 +10,8 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.extensions.isNetworkError
 import com.aiwazian.messenger.repository.ChannelRepository
-import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.UserRepository
-import com.aiwazian.messenger.ui.components.ShareItem
+import com.aiwazian.messenger.usecase.GetShareTargetsUseCase
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.UiText
@@ -30,9 +29,9 @@ import javax.inject.Inject
 @HiltViewModel
 class ChannelInviteLinksViewModel @Inject constructor(
     private val channelRepository: ChannelRepository,
-    private val chatRepository: ChatRepository,
     private val userRepository: UserRepository,
     private val clipboardService: ClipboardService,
+    private val getShareTargetsUseCase: GetShareTargetsUseCase,
     private val sendMessageUseCase: SendMessageUseCase
 ) : ViewModel() {
     
@@ -123,27 +122,18 @@ class ChannelInviteLinksViewModel @Inject constructor(
     private fun loadAvailableChats() {
         viewModelScope.launch {
             val me = userRepository.getMe().first()
-            chatRepository.getAllChats().firstOrNull()?.let { chats ->
-                val filtered = chats.filter { chat ->
-                    val type = ChatType.fromId(chat.id)
-                    when (type) {
-                        ChatType.PRIVATE, ChatType.GROUP -> true
-                        ChatType.CHANNEL -> {
-                            val channel = channelRepository.getById(chat.id).firstOrNull()
-                            channel?.ownerId == me.id
-                        }
-                        else -> false
+            
+            val targets = getShareTargetsUseCase(_uiState.value.selectedChatIds) { chat ->
+                when (ChatType.fromId(chat.id)) {
+                    ChatType.PRIVATE, ChatType.GROUP -> true
+                    ChatType.CHANNEL -> {
+                        channelRepository.getById(chat.id).firstOrNull()?.ownerId == me.id
                     }
-                }.map { chat ->
-                    ShareItem(
-                        id = chat.id,
-                        name = chat.chatName,
-                        isSelected = _uiState.value.selectedChatIds.contains(chat.id),
-                        avatarUri = chat.avatarUri
-                    )
+                    else -> false
                 }
-                _uiState.update { it.copy(availableChats = filtered) }
             }
+            
+            _uiState.update { it.copy(availableChats = targets) }
         }
     }
     
