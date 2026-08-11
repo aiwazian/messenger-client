@@ -26,10 +26,13 @@ fun AppDropdownMenuItem(
     contentPadding: PaddingValues = MenuDefaults.DropdownMenuItemContentPadding,
     interactionSource: MutableInteractionSource? = null
 ) {
-    val colors: MenuItemColors = MenuDefaults.itemColors(
+    val colors = MenuItemColors(
         textColor = contentColor,
         leadingIconColor = contentColor,
-        trailingIconColor = contentColor
+        trailingIconColor = contentColor,
+        disabledTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
     )
     
     DropdownMenuItem(
