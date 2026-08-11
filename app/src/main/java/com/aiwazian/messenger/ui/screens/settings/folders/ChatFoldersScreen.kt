@@ -21,7 +21,6 @@ import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -52,6 +51,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.ChatFolder
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -138,7 +138,7 @@ fun ChatFoldersScreen(viewModel: ChatFoldersViewModel = hiltViewModel()) {
             title = stringResource(R.string.remove_folder),
             onDismissRequest = viewModel::cancelFolderDeletion,
             content = {
-                Text("Это не затронет чаты, которые в ней находятся.")
+                Text(stringResource(R.string.delete_folder_confirm_message))
             },
             buttons = {
                 TextButton(onClick = viewModel::cancelFolderDeletion) {
@@ -172,7 +172,7 @@ private fun ChatFolderRow(
                 }
                 
                 AppDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    DropdownMenuItem(
+                    AppDropdownMenuItem(
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Rounded.Edit,
@@ -186,25 +186,20 @@ private fun ChatFolderRow(
                             onEditClick()
                         })
                     
-                    DropdownMenuItem(
+                    AppDropdownMenuItem(
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Rounded.DeleteOutline,
                                 contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.error
+                                modifier = Modifier.size(20.dp)
                             )
                         },
-                        text = {
-                            Text(
-                                text = stringResource(R.string.delete),
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        },
+                        text = { Text(stringResource(R.string.delete)) },
                         onClick = {
                             expanded = false
                             onDeleteClick()
-                        })
+                        },
+                        contentColor = MaterialTheme.colorScheme.error)
                 }
             }
         })
