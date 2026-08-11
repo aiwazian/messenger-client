@@ -13,19 +13,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.DropdownMenuGroup
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuGroupShapes
-import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppDropdownMenuPopup
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 
@@ -80,7 +78,7 @@ fun MessageDropdownMenu(
                 clickable.forEach { action ->
                     val color =
                         if (action.isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-                    DropdownMenuItem(
+                    AppDropdownMenuItem(
                         leadingIcon = {
                             Icon(
                                 imageVector = action.icon,
@@ -92,14 +90,7 @@ fun MessageDropdownMenu(
                             onDismissRequest()
                             action.onClick?.invoke()
                         },
-                        colors = MenuItemColors(
-                            textColor = color,
-                            leadingIconColor = color,
-                            trailingIconColor = color,
-                            disabledTextColor = Color.Unspecified,
-                            disabledLeadingIconColor = Color.Unspecified,
-                            disabledTrailingIconColor = Color.Unspecified
-                        )
+                        contentColor = color
                     )
                 }
             }
