@@ -1,0 +1,8 @@
+<resources>
+    <string name="channel_management">Управление каналом</string>
+    <string name="group_management">Управление группой</string>
+    <string name="transfer_ownership">Передать права владения</string>
+    <string name="select_new_owner">Выбор нового владельца</string>
+    <string name="transfer_ownership_confirm_message">Вы точно хотите передать права владения этому пользователю? Вы потеряете права владельца.</string>
+    <string name="transfer_ownership_failed">Не удалось передать права владения</string>
+</resources>

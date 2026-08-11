@@ -12,9 +12,6 @@ import com.aiwazian.messenger.network.api.ChannelApi
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import javax.inject.Inject
 
-/**
- * Участники канала: подписчики, блокировки, заявки на вступление и ссылки-приглашения.
- */
 class ChannelMembersRepository @Inject constructor(
     private val channelApi: ChannelApi
 ) {
@@ -81,6 +78,20 @@ class ChannelMembersRepository @Inject constructor(
         }
     }
     
+    suspend fun transferOwnership(channelId: Long, userId: Long): Result<Unit> {
+        return try {
+            val response = channelApi.transferOwnership(channelId, userId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Transfer ownership failed ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error transferring channel ownership", e)
+            Result.failure(e)
+        }
+    }
+    
     suspend fun getBannedUsers(
         channelId: Long,
         skip: Int = 0,
@@ -96,7 +107,7 @@ class ChannelMembersRepository @Inject constructor(
                 Result.success(emptyList())
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка при получении заблокированных пользователей", e)
+            Log.e(TAG, "Error getting banned users", e)
             Result.failure(e)
         }
     }
@@ -110,7 +121,7 @@ class ChannelMembersRepository @Inject constructor(
                 Result.failure(Exception("Ban failed"))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка при блокировке пользователя", e)
+            Log.e(TAG, "Error banning user", e)
             Result.failure(e)
         }
     }
@@ -124,7 +135,7 @@ class ChannelMembersRepository @Inject constructor(
                 Result.failure(Exception("Unban failed"))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка при разблокировке пользователя", e)
+            Log.e(TAG, "Error unbanning user", e)
             Result.failure(e)
         }
     }
@@ -158,7 +169,7 @@ class ChannelMembersRepository @Inject constructor(
                 Result.failure(Exception("Accept join request failed"))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка при принятии заявки", e)
+            Log.e(TAG, "Error accepting join request", e)
             Result.failure(e)
         }
     }
@@ -172,7 +183,7 @@ class ChannelMembersRepository @Inject constructor(
                 Result.failure(Exception("Reject join request failed"))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка при отклонении заявки", e)
+            Log.e(TAG, "Error rejecting join request", e)
             Result.failure(e)
         }
     }

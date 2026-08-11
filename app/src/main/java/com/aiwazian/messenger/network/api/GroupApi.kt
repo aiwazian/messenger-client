@@ -45,33 +45,24 @@ interface GroupApi {
         @Query("search") search: String? = null
     ): Response<List<UserResponseDto>>
 
-    /**
-     * Теги участников группы.
-     *
-     * Доступно любому участнику: тег рисуется рядом с именем отправителя.
-     */
     @GET("groups/{groupId}/member-tags")
     suspend fun getMemberTags(
         @Path("groupId") groupId: Long
     ): Response<List<GroupMemberTagResponseDto>>
 
-    /** Список администраторов группы: владелец и админы с правом управления админами. */
     @GET("groups/{groupId}/admins")
     suspend fun getAdmins(@Path("groupId") groupId: Long): Response<List<GroupAdminResponseDto>>
 
-    /** Участники, которых можно назначить администраторами: без владельца. */
     @GET("groups/{groupId}/admins/candidates")
     suspend fun getAdminCandidates(
         @Path("groupId") groupId: Long
     ): Response<List<UserResponseDto>>
 
-    /** Права текущего пользователя в группе. */
     @GET("groups/{groupId}/admins/me")
     suspend fun getMyGroupPermissions(
         @Path("groupId") groupId: Long
     ): Response<ChatAdminPermissionsResponseDto>
 
-    /** Назначить администратора или перезаписать его права и тег. */
     @PUT("groups/{groupId}/admins/{userId}")
     suspend fun upsertAdmin(
         @Path("groupId") groupId: Long,
@@ -79,9 +70,14 @@ interface GroupApi {
         @Body request: UpsertGroupAdminRequestDto
     ): Response<GroupAdminResponseDto>
 
-    /** Снять администратора вместе с его тегом. */
     @DELETE("groups/{groupId}/admins/{userId}")
     suspend fun removeAdmin(
+        @Path("groupId") groupId: Long,
+        @Path("userId") userId: Long
+    ): Response<Unit>
+
+    @POST("groups/{groupId}/transfer-ownership/{userId}")
+    suspend fun transferOwnership(
         @Path("groupId") groupId: Long,
         @Path("userId") userId: Long
     ): Response<Unit>
@@ -103,11 +99,6 @@ interface GroupApi {
         @Body request: UpdateGroupRequestDto
     ): Response<GroupResponseDto>
 
-    /**
-     * Включает или выключает запрет копирования контента группы.
-     *
-     * Сервер допускает вызов только владельцу группы.
-     */
     @PATCH("groups/{groupId}/no-copy")
     suspend fun setNoCopy(
         @Path("groupId") groupId: Long,
