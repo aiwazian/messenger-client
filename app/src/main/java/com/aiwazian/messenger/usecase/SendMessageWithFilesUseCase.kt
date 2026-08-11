@@ -107,7 +107,10 @@ class SendMessageWithFilesUseCase @Inject constructor(
             
             val initResponse = chatRepository.initFileUpload(
                 chatId, FileInitRequestDto(
-                    name = fileName, size = fileSize, mimeType = mimeType
+                    name = fileName,
+                    size = fileSize,
+                    mimeType = mimeType,
+                    category = attachment.type
                 )
             )
             
@@ -120,7 +123,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
             
             uploadManager.upload(
                 fileUri = attachment.localUri,
-                uploadUrl = initResponse.signedUrl,
+                upload = initResponse,
                 fileId = initResponse.fileId,
             ).onSuccess {
                 uploadResults.add(

@@ -135,7 +135,7 @@ class GroupSettingsViewModel @Inject constructor(
             ).onSuccess { uploadInfo ->
                 uploadManager.upload(
                     fileUri = uri,
-                    uploadUrl = uploadInfo.signedUrl,
+                    upload = uploadInfo,
                     fileId = uploadInfo.fileId
                 ).onSuccess {
                     groupRepository.confirmUploadAvatar(groupId, uploadInfo.fileId).onFailure {

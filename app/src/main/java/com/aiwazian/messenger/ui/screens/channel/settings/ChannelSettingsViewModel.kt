@@ -135,7 +135,7 @@ class ChannelSettingsViewModel @Inject constructor(
             ).onSuccess { uploadInfo ->
                 uploadManager.upload(
                     fileUri = uri,
-                    uploadUrl = uploadInfo.signedUrl,
+                    upload = uploadInfo,
                     fileId = uploadInfo.fileId
                 ).onSuccess {
                     channelRepository.confirmUploadAvatar(channelId, uploadInfo.fileId).onFailure {
