@@ -16,11 +16,9 @@ import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.PersonRemove
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -33,7 +31,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -41,6 +38,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.GroupAdmin
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -147,11 +145,6 @@ fun GroupAdminsScreen(
     }
 }
 
-/**
- * Карточка администратора.
- *
- * В своей карточке действий над правами нет: разрешения можно только посмотреть.
- */
 @Composable
 private fun GroupAdminItem(
     admin: GroupAdmin,
@@ -177,7 +170,7 @@ private fun GroupAdminItem(
                 onDismissRequest = { showMenu = false }
             ) {
                 if (isCurrentUser) {
-                    DropdownMenuItem(
+                    AppDropdownMenuItem(
                         text = { Text(stringResource(R.string.view_permissions)) },
                         onClick = {
                             showMenu = false
@@ -188,7 +181,7 @@ private fun GroupAdminItem(
                         }
                     )
                 } else {
-                    DropdownMenuItem(
+                    AppDropdownMenuItem(
                         text = { Text(stringResource(R.string.edit_permissions)) },
                         onClick = {
                             showMenu = false
@@ -198,7 +191,7 @@ private fun GroupAdminItem(
                             Icon(Icons.Rounded.Tune, null)
                         }
                     )
-                    DropdownMenuItem(
+                    AppDropdownMenuItem(
                         text = { Text(stringResource(R.string.dismiss_admin)) },
                         onClick = {
                             showMenu = false
@@ -207,14 +200,7 @@ private fun GroupAdminItem(
                         leadingIcon = {
                             Icon(Icons.Rounded.PersonRemove, null)
                         },
-                        colors = MenuItemColors(
-                            textColor = MaterialTheme.colorScheme.error,
-                            leadingIconColor = MaterialTheme.colorScheme.error,
-                            trailingIconColor = MaterialTheme.colorScheme.error,
-                            disabledTextColor = Color.Unspecified,
-                            disabledLeadingIconColor = Color.Unspecified,
-                            disabledTrailingIconColor = Color.Unspecified
-                        )
+                        contentColor = MaterialTheme.colorScheme.error
                     )
                 }
             }
