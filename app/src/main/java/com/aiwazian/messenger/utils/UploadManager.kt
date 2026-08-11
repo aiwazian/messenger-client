@@ -13,12 +13,14 @@ import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.getFolderNameFromMimeType
+import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.repository.FileRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -35,17 +37,35 @@ class UploadManager @Inject constructor(
 ) {
     private val activeUploads = mutableMapOf<String, okhttp3.Call>()
     
+    /**
+     * Загружает файл по форме, подписанной сервером (S3 presigned POST).
+     *
+     * Раньше здесь был PUT по одной ссылке, и S3 принимал что угодно: и файл
+     * произвольного размера, и любой Content-Type. Теперь ограничения зашиты в
+     * политику формы, поэтому лишние поля [FileInitResponseDto.fields] обязаны
+     * уйти в запрос без изменений и строго до части с файлом.
+     */
     suspend fun upload(
         fileUri: Uri,
-        uploadUrl: String,
+        upload: FileInitResponseDto,
         fileId: String,
         maxAttempts: Int = 3
     ): Result<String> = withContext(Dispatchers.IO) {
+        val fileSize = fileUri.getFileSize(context) ?: 0
+        
+        // Проверка ради понятной ошибки: иначе пользователь после долгой загрузки
+        // получит от S3 голый 403 без объяснений.
+        if (upload.maxSizeBytes > 0 && fileSize > upload.maxSizeBytes) {
+            return@withContext Result.failure(
+                IOException("File size $fileSize exceeds limit of ${upload.maxSizeBytes} bytes")
+            )
+        }
+        
         repeat(maxAttempts) { attempt ->
             try {
-                val fileSize = fileUri.getFileSize(context) ?: 0
                 val fileType = fileUri.getFileType(context)
                 val contentType = fileType.toMediaTypeOrNull()
+                val fileName = fileUri.getFileName(context) ?: "file"
                 
                 val requestBody = ProgressRequestBody(contentType, fileSize, { progress ->
                     // TODO Update progress
@@ -54,14 +74,24 @@ class UploadManager @Inject constructor(
                         ?: throw IOException("Unable to open input stream")
                 }
                 
-                val request = Request.Builder().url(uploadUrl).put(requestBody).build()
+                val multipartBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
+                
+                upload.fields.forEach { (key, value) ->
+                    multipartBuilder.addFormDataPart(key, value)
+                }
+                
+                // Файл строго последней частью — так требует политика S3.
+                multipartBuilder.addFormDataPart("file", fileName, requestBody)
+                
+                val request = Request.Builder().url(upload.url).post(multipartBuilder.build())
+                    .build()
                 val call = okHttpClient.newCall(request)
                 activeUploads[fileId] = call
                 
                 val response = call.execute()
                 
                 if (response.isSuccessful) {
-                    val extension = fileUri.getFileName(context)?.substringAfterLast('.', "")
+                    val extension = fileName.substringAfterLast('.', "")
                     val folderName = fileType.getFolderNameFromMimeType()
                     val path =
                         File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
@@ -75,6 +105,14 @@ class UploadManager @Inject constructor(
                     return@withContext Result.success(filePath)
                 } else {
                     activeUploads.remove(fileId)
+                    
+                    // 4xx означает, что файл не прошёл политику: повтор ничего не изменит.
+                    if (response.code in 400..499) {
+                        return@withContext Result.failure(
+                            IOException("Upload rejected by storage with code ${response.code}")
+                        )
+                    }
+                    
                     if (attempt < maxAttempts - 1) {
                         delay((1_000 * (attempt + 1)).milliseconds)
                     } else {

@@ -147,7 +147,7 @@ class SettingsProfileViewModel @Inject constructor(
             ).onSuccess { uploadInfo ->
                 uploadManager.upload(
                     fileUri = uri,
-                    uploadUrl = uploadInfo.signedUrl,
+                    upload = uploadInfo,
                     fileId = uploadInfo.fileId
                 ).onSuccess {
                     userRepository.confirmUploadAvatar(uploadInfo.fileId).onSuccess {

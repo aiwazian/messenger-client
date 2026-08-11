@@ -88,13 +88,30 @@ data class EditMessageRequestDto(
 data class FileInitRequestDto(
     @SerialName("name") val name: String,
     @SerialName("size") val size: Long,
-    @SerialName("mimeType") val mimeType: String
+    @SerialName("mimeType") val mimeType: String,
+    /**
+     * Что именно мы собираемся отправить.
+     *
+     * Сервер зашивает категорию в политику загрузки, поэтому подменить картинку
+     * на исполняемый файл уже не выйдет: S3 отклонит запрос по Content-Type.
+     * Для аватарок категорию проставляет сам сервер, клиенту её слать не нужно.
+     */
+    @SerialName("category") val category: AttachmentType = AttachmentType.FILE
 )
 
+/**
+ * Форма загрузки, подписанная сервером (S3 presigned POST).
+ *
+ * [fields] нужно положить в multipart-запрос до части с файлом — в этом порядке
+ * S3 проверяет политику. Поле файла всегда называется "file".
+ */
 @Serializable
 data class FileInitResponseDto(
-    @SerialName("signedUrl") val signedUrl: String,
-    @SerialName("fileId") val fileId: String
+    @SerialName("url") val url: String,
+    @SerialName("fields") val fields: Map<String, String> = emptyMap(),
+    @SerialName("fileId") val fileId: String,
+    /** Максимально допустимый размер, чтобы не гнать заведомо отклоняемый файл. */
+    @SerialName("maxSizeBytes") val maxSizeBytes: Long = 0
 )
 
 @Serializable
