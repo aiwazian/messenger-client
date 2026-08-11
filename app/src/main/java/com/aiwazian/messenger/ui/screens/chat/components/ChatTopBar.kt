@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.BookmarkBorder
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -52,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -184,7 +184,7 @@ fun ChatTopBar(
                 }
                 AppDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
                     action.dropdownActions.forEach { action ->
-                        DropdownMenuItem(leadingIcon = {
+                        AppDropdownMenuItem(leadingIcon = {
                             Icon(action.icon, null)
                         }, text = {
                             Text(action.text.asString())

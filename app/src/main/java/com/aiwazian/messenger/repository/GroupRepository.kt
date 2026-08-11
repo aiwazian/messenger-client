@@ -14,18 +14,6 @@ import com.aiwazian.messenger.repository.group.GroupMembersRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-/**
- * Единая точка входа для работы с группой.
- *
- * Реализация разделена на узкие репозитории:
- * [GroupCrudRepository] — данные самой группы и аватары,
- * [GroupMembersRepository] — участники, блокировки, заявки и ссылки-приглашения,
- * [com.aiwazian.messenger.repository.group.GroupContentProtectionRepository] —
- * запрет копирования.
- *
- * В новом коде лучше внедрять нужный узкий репозиторий напрямую, этот класс оставлен
- * для существующих экранов.
- */
 class GroupRepository @Inject constructor(
     private val crudRepository: GroupCrudRepository,
     private val membersRepository: GroupMembersRepository
@@ -79,6 +67,9 @@ class GroupRepository @Inject constructor(
     
     suspend fun addMembers(groupId: Long, userIds: List<Long>): Result<Unit> =
         membersRepository.addMembers(groupId, userIds)
+    
+    suspend fun transferOwnership(groupId: Long, userId: Long): Result<Unit> =
+        membersRepository.transferOwnership(groupId, userId)
     
     suspend fun getBannedUsers(
         id: Long,

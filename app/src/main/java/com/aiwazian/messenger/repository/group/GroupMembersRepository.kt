@@ -15,9 +15,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
-/**
- * Участники группы: состав, приглашения, блокировки, заявки и ссылки-приглашения.
- */
 class GroupMembersRepository @Inject constructor(
     private val groupApi: GroupApi,
     private val crudRepository: GroupCrudRepository
@@ -50,7 +47,7 @@ class GroupMembersRepository @Inject constructor(
                 emit(dtos.map { it.toDomain() })
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка при получении доступных пользователей", e)
+            Log.e(TAG, "Error getting available users", e)
         }
     }
     
@@ -66,7 +63,21 @@ class GroupMembersRepository @Inject constructor(
                 Result.failure(Exception("Add members failed"))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка при добавлении участников", e)
+            Log.e(TAG, "Error adding members", e)
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun transferOwnership(groupId: Long, userId: Long): Result<Unit> {
+        return try {
+            val response = groupApi.transferOwnership(groupId, userId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Transfer ownership failed ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error transferring group ownership", e)
             Result.failure(e)
         }
     }
@@ -101,7 +112,7 @@ class GroupMembersRepository @Inject constructor(
                 Result.failure(Exception("Join failed"))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка при присоединении к группе", e)
+            Log.e(TAG, "Error joining group", e)
             Result.failure(e)
         }
     }
@@ -115,7 +126,7 @@ class GroupMembersRepository @Inject constructor(
                 Result.failure(Exception("Leave failed ${response.errorBody()}"))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка при выходе из группы", e)
+            Log.e(TAG, "Error leaving group", e)
             Result.failure(e)
         }
     }
@@ -129,7 +140,7 @@ class GroupMembersRepository @Inject constructor(
                 Result.failure(Exception("Kick failed"))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка при исключении пользователя", e)
+            Log.e(TAG, "Error kicking user", e)
             Result.failure(e)
         }
     }
@@ -143,7 +154,7 @@ class GroupMembersRepository @Inject constructor(
                 Result.failure(Exception("Ban failed"))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка при бане пользователя", e)
+            Log.e(TAG, "Error banning user", e)
             Result.failure(e)
         }
     }
@@ -157,7 +168,7 @@ class GroupMembersRepository @Inject constructor(
                 Result.failure(Exception("Unban failed"))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка при разбане пользователя", e)
+            Log.e(TAG, "Error unbanning user", e)
             Result.failure(e)
         }
     }
@@ -191,7 +202,7 @@ class GroupMembersRepository @Inject constructor(
                 Result.failure(Exception("Accept join request failed"))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка при принятии заявки", e)
+            Log.e(TAG, "Error accepting join request", e)
             Result.failure(e)
         }
     }
@@ -205,7 +216,7 @@ class GroupMembersRepository @Inject constructor(
                 Result.failure(Exception("Reject join request failed"))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка при отклонении заявки", e)
+            Log.e(TAG, "Error rejecting join request", e)
             Result.failure(e)
         }
     }

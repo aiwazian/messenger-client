@@ -20,7 +20,6 @@ sealed interface AppRoute : NavKey {
         val chatId: Long,
         val chatName: String? = null,
         val avatarUri: String? = null,
-        /** Открыть чат сразу на этом сообщении (переход по ответу/пересылке). */
         val scrollToMessageId: Long? = null
     ) : AppRoute
     
@@ -73,7 +72,6 @@ sealed interface AppRoute : NavKey {
     @Serializable
     data class SettingsInvites(val level: PrivacyLevel) : AppRoute
     
-    /** Кто может перейти в мой профиль по заголовку «Переслано от». */
     @Serializable
     data class SettingsForwardedProfile(val level: PrivacyLevel) : AppRoute
     
@@ -116,18 +114,12 @@ sealed interface AppRoute : NavKey {
     @Serializable
     data object SettingsAutoDownloadMedia : AppRoute
     
-    /** Список папок с чатами. */
     @Serializable
     data object ChatFolders : AppRoute
     
-    /**
-     * Создание и редактирование папки ведёт один экран: поля и проверки
-     * совпадают, а [folderId] равный null означает новую папку.
-     */
     @Serializable
     data class ChatFolderEditor(val folderId: Int? = null) : AppRoute
     
-    /** Выбор содержимого папки: поимённые чаты и категории целиком. */
     @Serializable
     data class SelectFolderChats(
         val selectedChatIds: List<Long> = emptyList(),
@@ -150,6 +142,12 @@ sealed interface AppRoute : NavKey {
     data class ChannelSettings(val channelId: Long) : AppRoute
     
     @Serializable
+    data class ChannelManagement(val channelId: Long) : AppRoute
+    
+    @Serializable
+    data class ChannelTransferOwnership(val channelId: Long) : AppRoute
+    
+    @Serializable
     data class ChannelTypeSettings(val channelId: Long) : AppRoute
     
     @Serializable
@@ -164,15 +162,12 @@ sealed interface AppRoute : NavKey {
     @Serializable
     data class ChannelInviteLinks(val channelId: Long) : AppRoute
     
-    /** Список администраторов канала. */
     @Serializable
     data class ChannelAdmins(val channelId: Long) : AppRoute
     
-    /** Выбор подписчика для назначения администратором. */
     @Serializable
     data class AddChannelAdmin(val channelId: Long) : AppRoute
     
-    /** Разрешения конкретного администратора канала. */
     @Serializable
     data class ChannelAdminPermissions(val channelId: Long, val userId: Long) : AppRoute
     
@@ -181,6 +176,12 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data class GroupSettings(val groupId: Long) : AppRoute
+    
+    @Serializable
+    data class GroupManagement(val groupId: Long) : AppRoute
+    
+    @Serializable
+    data class GroupTransferOwnership(val groupId: Long) : AppRoute
     
     @Serializable
     data class GroupTypeSettings(val groupId: Long) : AppRoute
@@ -197,15 +198,12 @@ sealed interface AppRoute : NavKey {
     @Serializable
     data class GroupJoinRequests(val groupId: Long) : AppRoute
     
-    /** Список администраторов группы. */
     @Serializable
     data class GroupAdmins(val groupId: Long) : AppRoute
     
-    /** Выбор участника для назначения администратором. */
     @Serializable
     data class AddGroupAdmin(val groupId: Long) : AppRoute
     
-    /** Разрешения и тег конкретного администратора группы. */
     @Serializable
     data class GroupAdminPermissions(val groupId: Long, val userId: Long) : AppRoute
     

@@ -9,6 +9,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.ReadMessagePayload
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.push.NotificationHelper
+import com.aiwazian.messenger.repository.ChatFolderRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.ActiveChatTracker
@@ -28,6 +29,7 @@ class RealtimeEventSyncService @Inject constructor(
     @param:ApplicationContext private val context: Context,
     webSocketClient: WebSocketClient,
     private val chatRepository: ChatRepository,
+    private val chatFolderRepository: ChatFolderRepository,
     private val userRepository: UserRepository,
     private val onlineUsersTracker: OnlineUsersTracker,
     private val notificationHelper: NotificationHelper
@@ -84,7 +86,7 @@ class RealtimeEventSyncService @Inject constructor(
                 chatRepository.deleteLocalMessage(payload.messageId)
             }
         }
-
+        
         webSocketClient.subscribeToEvent(WebSocketEvent.MessageEdit) { message ->
             serviceScope.launch {
                 chatRepository.updateLocalMessage(
@@ -149,6 +151,18 @@ class RealtimeEventSyncService @Inject constructor(
             }
         }
         
+        webSocketClient.subscribeToEvent(WebSocketEvent.ChatFolderNew) { folder ->
+            serviceScope.launch {
+                chatFolderRepository.applyRemoteFolder(folder)
+            }
+        }
+        
+        webSocketClient.subscribeToEvent(WebSocketEvent.ChatFolderDeleted) { payload ->
+            serviceScope.launch {
+                chatFolderRepository.applyRemoteFolderDeleted(payload.folderId)
+            }
+        }
+        
         webSocketClient.subscribeToEvent(WebSocketEvent.UserOnline) { payload ->
             onlineUsersTracker.setOnline(payload.userId)
         }
@@ -158,14 +172,6 @@ class RealtimeEventSyncService @Inject constructor(
         }
     }
     
-    /**
-     * В какой чат положить входящее событие.
-     *
-     * id пользователя равен id его личного чата, поэтому в личной переписке смотреть надо
-     * на senderId: Олег (id 1) пишет «в чат 2», и без пересчёта Андрей (id 2) кладёт это
-     * сообщение себе в «Избранное». В группе и канале chatId общий для всех участников,
-     * там берётся именно он.
-     */
     private fun resolveChatId(chatId: Long, senderId: Long, myId: Long): Long {
         return when (ChatType.fromId(chatId)) {
             ChatType.PRIVATE -> if (chatId == myId) senderId else chatId

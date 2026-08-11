@@ -14,11 +14,9 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -31,12 +29,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -99,7 +97,7 @@ fun ChannelBlockedUsersScreen(
                                     expanded = showMenu,
                                     onDismissRequest = { showMenu = false }
                                 ) {
-                                    DropdownMenuItem(
+                                    AppDropdownMenuItem(
                                         text = { Text(stringResource(R.string.unblock)) },
                                         onClick = {
                                             showMenu = false
@@ -108,14 +106,7 @@ fun ChannelBlockedUsersScreen(
                                         leadingIcon = {
                                             Icon(Icons.Rounded.CheckCircle, null)
                                         },
-                                        colors = MenuItemColors(
-                                            textColor = MaterialTheme.colorScheme.primary,
-                                            leadingIconColor = MaterialTheme.colorScheme.primary,
-                                            trailingIconColor = MaterialTheme.colorScheme.primary,
-                                            disabledTextColor = Color.Unspecified,
-                                            disabledLeadingIconColor = Color.Unspecified,
-                                            disabledTrailingIconColor = Color.Unspecified
-                                        )
+                                        contentColor = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             },

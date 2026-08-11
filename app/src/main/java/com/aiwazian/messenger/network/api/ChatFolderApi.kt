@@ -13,6 +13,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -23,7 +24,10 @@ interface ChatFolderApi {
     suspend fun getFolders(): Response<List<ChatFolderDto>>
     
     @POST("chat-folders")
-    suspend fun createFolder(@Body request: CreateChatFolderRequestDto): Response<ChatFolderDto>
+    suspend fun createFolder(
+        @Body request: CreateChatFolderRequestDto,
+        @Header("x-socket-id") socketId: String? = null
+    ): Response<ChatFolderDto>
     
     @PATCH("chat-folders/{folderId}")
     suspend fun updateFolder(
@@ -32,7 +36,10 @@ interface ChatFolderApi {
     ): Response<ChatFolderDto>
     
     @DELETE("chat-folders/{folderId}")
-    suspend fun deleteFolder(@Path("folderId") folderId: Int): Response<Unit>
+    suspend fun deleteFolder(
+        @Path("folderId") folderId: Int,
+        @Header("x-socket-id") socketId: String? = null
+    ): Response<Unit>
     
     @POST("chat-folders/{folderId}/pin")
     suspend fun pinChats(

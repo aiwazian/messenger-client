@@ -17,6 +17,7 @@ import com.aiwazian.messenger.network.dto.CreateChatFolderRequestDto
 import com.aiwazian.messenger.network.dto.PinFolderChatsRequestDto
 import com.aiwazian.messenger.network.dto.ReorderChatFoldersRequestDto
 import com.aiwazian.messenger.network.dto.UpdateChatFolderRequestDto
+import com.aiwazian.messenger.socket.WebSocketClient
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -27,18 +28,12 @@ import javax.inject.Singleton
 
 private const val TAG = "ChatFolderRepository"
 
-/**
- * Единый источник правды по папкам — Room. Экраны подписываются на локальный
- * Flow и рисуются сразу при запуске, а ответ сервера только обновляет таблицы.
- *
- * Записи привязаны к аккаунту, поэтому при его смене Flow сам переключается
- * на папки новой учётной записи, не дожидаясь ответа сервера.
- */
 @Singleton
 class ChatFolderRepository @Inject constructor(
     private val chatFolderApi: ChatFolderApi,
     private val chatFolderDao: ChatFolderDao,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val webSocketClient: WebSocketClient
 ) {
     
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -89,7 +84,7 @@ class ChatFolderRepository @Inject constructor(
                 chatIds = chatIds.map { it.toString() },
                 categories = categories
             )
-            val response = chatFolderApi.createFolder(request)
+            val response = chatFolderApi.createFolder(request, webSocketClient.socketId)
             val body = response.body()
             if (response.isSuccessful && body != null) {
                 val folder = body.toDomain()
@@ -143,7 +138,7 @@ class ChatFolderRepository @Inject constructor(
     suspend fun deleteFolder(folderId: Int): Boolean {
         return try {
             val userId = currentUserId()
-            val response = chatFolderApi.deleteFolder(folderId)
+            val response = chatFolderApi.deleteFolder(folderId, webSocketClient.socketId)
             if (response.isSuccessful) {
                 chatFolderDao.deleteFolder(userId, folderId)
                 true
@@ -157,6 +152,19 @@ class ChatFolderRepository @Inject constructor(
         }
     }
     
+    suspend fun applyRemoteFolder(folder: ChatFolder) {
+        val userId = currentUserId()
+        chatFolderDao.upsertFolder(
+            folder.toEntity(userId),
+            folder.toChatEntities(userId)
+        )
+    }
+    
+    suspend fun applyRemoteFolderDeleted(folderId: Int) {
+        val userId = currentUserId()
+        chatFolderDao.deleteFolder(userId, folderId)
+    }
+    
     suspend fun pinChats(folderId: Int, chatIds: List<Long>): Boolean {
         return setChatsPinned(folderId, chatIds, true)
     }
@@ -165,7 +173,6 @@ class ChatFolderRepository @Inject constructor(
         return setChatsPinned(folderId, chatIds, false)
     }
     
-    /** Порядок вкладок: позиция id в списке становится новым порядком папки. */
     suspend fun reorderFolders(folderIds: List<Int>): Boolean {
         if (folderIds.isEmpty()) return true
         return try {
@@ -221,11 +228,6 @@ class ChatFolderRepository @Inject constructor(
         }
     }
     
-    /**
-     * Чат, попавший в папку через категорию, своей строки не имеет: чтобы
-     * закрепление было видно до ответа сервера, строка заводится локально ровно
-     * так же, как её заведёт сервер.
-     */
     private suspend fun applyPinsLocally(
         folderId: Int,
         chatIds: List<Long>,

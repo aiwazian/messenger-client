@@ -15,6 +15,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -25,6 +26,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -46,6 +48,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -65,14 +68,16 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Create
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material3.AppBarWithSearch
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -88,6 +93,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBarValue
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
@@ -143,6 +149,7 @@ import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.ChatCard
@@ -228,13 +235,6 @@ private fun Content(
     
     val pagerState = rememberPagerState(pageCount = { uiState.folderPages.size })
     
-    /*
-     * Переключение папок — не навигация, поэтому системный «назад» с любой
-     * папки возвращает на первую вместо выхода из приложения.
-     *
-     * Обработчик добавлен последним и перехватывает жест раньше остальных,
-     * поэтому выделение чатов и открытая шторка гасят его вручную.
-     */
     BackHandler(enabled = !hasSelection && !drawerState.isOpen && pagerState.currentPage != 0) {
         scope.launch {
             pagerState.animateScrollToPage(0)
@@ -268,7 +268,11 @@ private fun Content(
                                 scope.launch {
                                     pagerState.animateScrollToPage(index)
                                 }
-                            }
+                            },
+                            onEditFolder = { folderId ->
+                                navBackStack.add(AppRoute.ChatFolderEditor(folderId))
+                            },
+                            onDeleteFolder = viewModel::requestFolderDeletion
                         )
                     }
                 }
@@ -446,6 +450,27 @@ private fun Content(
             onDismissRequest = viewModel::hideAccountDialog
         )
     }
+    
+    uiState.folderPendingDeletion?.let {
+        AppDialog(
+            title = stringResource(R.string.remove_folder),
+            onDismissRequest = viewModel::cancelFolderDeletion,
+            content = {
+                Text(stringResource(R.string.delete_folder_confirm_message))
+            },
+            buttons = {
+                TextButton(onClick = viewModel::cancelFolderDeletion) {
+                    Text(stringResource(R.string.cancel))
+                }
+                
+                TextButton(
+                    onClick = viewModel::confirmFolderDeletion,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(text = stringResource(R.string.delete))
+                }
+            })
+    }
 }
 
 @Composable
@@ -453,6 +478,8 @@ private fun ChatFolderTabs(
     pages: List<ChatFolderPage>,
     selectedIndex: Int,
     onTabClick: (Int) -> Unit,
+    onEditFolder: (Int) -> Unit,
+    onDeleteFolder: (Int) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         PrimaryScrollableTabRow(
@@ -462,13 +489,13 @@ private fun ChatFolderTabs(
                 .clip(CircleShape)
                 .width(IntrinsicSize.Max),
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            edgePadding = 0.dp,
+            edgePadding = 4.dp,
             indicator = {
                 Column(
                     Modifier
                         .tabIndicatorOffset(selectedIndex)
                         .fillMaxSize()
-                        .padding(4.dp)
+                        .padding(vertical = 4.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
                 ) {}
@@ -483,31 +510,73 @@ private fun ChatFolderTabs(
                     targetValue = if (isPressed) 0.96f else 1f,
                     label = "button_${index}_scale_animation"
                 )
+                var expanded by remember { mutableStateOf(false) }
+                val backgroundColor by animateColorAsState(
+                    targetValue = if (expanded && selectedIndex != index) {
+                        MaterialTheme.colorScheme.surfaceContainerHighest
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0f)
+                    }
+                )
                 Box(
                     modifier = Modifier
-                        .zIndex(1f)
-                        .graphicsLayer(scaleX = scale, scaleY = scale)
-                        .clip(CircleShape)
-                        .clickable(
-                            onClick = { onTabClick(index) },
-                            interactionSource = interactionSource,
-                            indication = null
-                        ),
+                        .padding(vertical = 4.dp)
+                        .zIndex(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = page.name.asString(),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        color = if (index == selectedIndex) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        fontSize = 14.sp,
-                        lineHeight = 14.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Box(
+                        modifier = Modifier
+                            .graphicsLayer(scaleX = scale, scaleY = scale)
+                            .widthIn(min = TabRowDefaults.ScrollableTabRowMinTabWidth)
+                            .clip(CircleShape)
+                            .background(backgroundColor)
+                            .combinedClickable(
+                                onClick = { onTabClick(index) },
+                                onLongClick = if (index != 0) {
+                                    {
+                                        expanded = !expanded
+                                    }
+                                } else null,
+                                interactionSource = interactionSource,
+                                indication = null
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = page.name.asString(),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                            color = if (index == selectedIndex) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    AppDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }) {
+                        AppDropdownMenuItem(
+                            leadingIcon = {
+                                Icon(Icons.Rounded.Edit, null)
+                            }, text = {
+                                Text(stringResource(R.string.edit_folder))
+                            }, onClick = {
+                                expanded = false
+                                onEditFolder(page.id)
+                            })
+                        AppDropdownMenuItem(leadingIcon = {
+                            Icon(Icons.Rounded.DeleteOutline, null)
+                        }, text = {
+                            Text(stringResource(R.string.delete))
+                        }, onClick = {
+                            expanded = false
+                            onDeleteFolder(page.id)
+                        }, contentColor = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
         }
@@ -606,7 +675,7 @@ private fun SelectionTopBar(
             }
             
             AppDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
-                DropdownMenuItem(
+                AppDropdownMenuItem(
                     leadingIcon = {
                         Icon(
                             Icons.Outlined.PushPin,
@@ -625,7 +694,7 @@ private fun SelectionTopBar(
                         }
                     })
                 
-                DropdownMenuItem(
+                AppDropdownMenuItem(
                     leadingIcon = {
                         Icon(
                             if (hasUnreadChats) Icons.Outlined.MarkChatRead

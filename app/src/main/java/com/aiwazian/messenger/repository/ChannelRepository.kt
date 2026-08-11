@@ -14,18 +14,6 @@ import com.aiwazian.messenger.repository.channel.ChannelMembersRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-/**
- * Единая точка входа для работы с каналом.
- *
- * Реализация разделена на узкие репозитории:
- * [ChannelCrudRepository] — данные самого канала и аватары,
- * [ChannelMembersRepository] — участники, блокировки, заявки и ссылки-приглашения,
- * [com.aiwazian.messenger.repository.channel.ChannelContentProtectionRepository] —
- * запрет копирования.
- *
- * В новом коде лучше внедрять нужный узкий репозиторий напрямую, этот класс оставлен
- * для существующих экранов.
- */
 class ChannelRepository @Inject constructor(
     private val crudRepository: ChannelCrudRepository,
     private val membersRepository: ChannelMembersRepository
@@ -80,6 +68,9 @@ class ChannelRepository @Inject constructor(
     
     suspend fun kickUser(channelId: Long, userId: Long): Result<Unit> =
         membersRepository.kickUser(channelId, userId)
+    
+    suspend fun transferOwnership(channelId: Long, userId: Long): Result<Unit> =
+        membersRepository.transferOwnership(channelId, userId)
     
     suspend fun getBannedUsers(
         channelId: Long,

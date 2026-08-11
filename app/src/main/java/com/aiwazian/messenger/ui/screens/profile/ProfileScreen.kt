@@ -32,7 +32,6 @@ import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -80,6 +79,7 @@ import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -653,7 +653,7 @@ private fun TopBar(
                 }
                 AppDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
                     action.dropdownActions.forEach { action ->
-                        DropdownMenuItem(leadingIcon = {
+                        AppDropdownMenuItem(leadingIcon = {
                             Icon(action.icon, null)
                         }, text = {
                             Text(action.text.asString())

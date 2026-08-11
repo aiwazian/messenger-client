@@ -43,25 +43,21 @@ interface ChannelApi {
         @Query("search") search: String? = null
     ): Response<List<UserResponseDto>>
 
-    /** Список администраторов канала: владелец и админы с правом управления админами. */
     @GET("channels/{channelId}/admins")
     suspend fun getAdmins(
         @Path("channelId") channelId: Long
     ): Response<List<ChannelAdminResponseDto>>
 
-    /** Подписчики, которых можно назначить администраторами: без владельца. */
     @GET("channels/{channelId}/admins/candidates")
     suspend fun getAdminCandidates(
         @Path("channelId") channelId: Long
     ): Response<List<UserResponseDto>>
 
-    /** Права текущего пользователя в канале. */
     @GET("channels/{channelId}/admins/me")
     suspend fun getMyChannelPermissions(
         @Path("channelId") channelId: Long
     ): Response<ChatAdminPermissionsResponseDto>
 
-    /** Назначить администратора или перезаписать его права. */
     @PUT("channels/{channelId}/admins/{userId}")
     suspend fun upsertAdmin(
         @Path("channelId") channelId: Long,
@@ -69,9 +65,14 @@ interface ChannelApi {
         @Body request: UpsertChannelAdminRequestDto
     ): Response<ChannelAdminResponseDto>
 
-    /** Снять администратора канала. */
     @DELETE("channels/{channelId}/admins/{userId}")
     suspend fun removeAdmin(
+        @Path("channelId") channelId: Long,
+        @Path("userId") userId: Long
+    ): Response<Unit>
+
+    @POST("channels/{channelId}/transfer-ownership/{userId}")
+    suspend fun transferOwnership(
         @Path("channelId") channelId: Long,
         @Path("userId") userId: Long
     ): Response<Unit>
@@ -82,11 +83,6 @@ interface ChannelApi {
         @Body request: UpdateChannelRequestDto
     ): Response<ChannelResponseDto>
 
-    /**
-     * Включает или выключает запрет копирования контента канала.
-     *
-     * Сервер допускает вызов только владельцу канала.
-     */
     @PATCH("channels/{channelId}/no-copy")
     suspend fun setNoCopy(
         @Path("channelId") channelId: Long,

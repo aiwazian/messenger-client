@@ -32,7 +32,6 @@ import androidx.compose.material.icons.rounded.Downloading
 import androidx.compose.material.icons.rounded.EditCalendar
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -76,6 +75,7 @@ import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
@@ -84,14 +84,8 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-/**
- * Ширина сетки медиа, когда родитель спрашивает размер без ограничений
- * (intrinsic-измерение из-за `Modifier.width(IntrinsicSize.Max)` у колонки пузыря).
- * Соответствует максимальной ширине пузыря за вычетом горизонтальных отступов.
- */
 private val MediaGridFallbackWidth = 264.dp
 
-/** Предел размера лейаута в Compose: больше — падает IllegalStateException. */
 private const val MaxLayoutDimension = 16_777_215
 
 @Composable
@@ -106,23 +100,12 @@ fun MessageBubble(
     onVoiceSeek: (MessageAttachment, Int) -> Unit = { _, _ -> },
     onLinkClicked: ((String) -> Unit)? = null,
     onUsernameClicked: ((String) -> Unit)? = null,
-    /** Клик по почтовому адресу в тексте. */
     onEmailClicked: ((String) -> Unit)? = null,
     onSaveToDownloads: (() -> Unit)? = null,
-    /** Клик по цитате: прыжок к оригиналу или переход в чат оригинала. */
     onReplyPreviewClick: (() -> Unit)? = null,
-    /** Клик по заголовку «Переслано от». */
     onForwardedFromClick: (() -> Unit)? = null,
-    /** Свайп влево пересёк порог: короткая тактильная отдача. */
     onSwipeThresholdReached: (() -> Unit)? = null,
-    /** Палец отпущен за порогом: начинаем ответ на это сообщение. */
     onSwipeToReply: (() -> Unit)? = null,
-    /**
-     * Меню сообщения по тапу.
-     *
-     * Выключается там, где сообщение показано только как образец: например в
-     * превью на экране внешнего вида, где действовать не над чем.
-     */
     showContextMenu: Boolean = true
 ) {
     val message = item.message
@@ -362,7 +345,7 @@ fun MessageBubble(
                             val name = listOfNotNull(reader.firstName, reader.lastName)
                                 .joinToString(" ").ifEmpty { reader.userId.toString() }
                             val readTime = reader.readAt.toInstance().toPrettyTime()
-                            DropdownMenuItem(
+                            AppDropdownMenuItem(
                                 leadingIcon = {
                                     Box(
                                         modifier = Modifier
@@ -458,7 +441,7 @@ private fun buildDropdownActions(
                 count % 10 == 1 && count % 100 != 11 -> "просмотр"
                 count % 10 in 2..4 && count % 100 !in 12..14 -> "просмотра"
                 else -> "просмотров"
-            } // TODO plural string
+            }
             actions.add(
                 DropdownMenuAction(
                     icon = Icons.Rounded.DoneAll,
@@ -501,12 +484,6 @@ fun ImageGridCustomLayout(
         val count = measurables.size.coerceAtMost(10)
         if (count == 0) return@Layout layout(0, 0) {}
         
-        /*
-         * При intrinsic-измерении (колонка пузыря использует IntrinsicSize.Max)
-         * ограничения приходят бесконечными: maxWidth == Int.MAX_VALUE.
-         * Без этого fallback лейаут пытался сообщить размер 2147483647 и падал
-         * с IllegalStateException: Size(...) is out of range.
-         */
         val width = (if (constraints.hasBoundedWidth) constraints.maxWidth
         else MediaGridFallbackWidth.roundToPx()).coerceIn(0, MaxLayoutDimension)
         
