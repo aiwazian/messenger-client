@@ -504,7 +504,11 @@ private fun ChatFolderTabs(
                             .background(backgroundColor)
                             .combinedClickable(
                                 onClick = { onTabClick(index) },
-                                onLongClick = { expanded = !expanded },
+                                onLongClick = if (index != 0) {
+                                    {
+                                        expanded = !expanded
+                                    }
+                                } else null,
                                 interactionSource = interactionSource,
                                 indication = null
                             ),
