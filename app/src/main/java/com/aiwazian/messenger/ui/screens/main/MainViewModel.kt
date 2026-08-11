@@ -105,9 +105,6 @@ class MainViewModel @Inject constructor(
             }
         }
         
-        // Идентификатор установки приходит в PushService.onRegistered, а не из вызова:
-        // здесь остаётся только попросить SDK зарегистрировать установку. Сессия на этом
-        // экране уже есть, поэтому пришедший FID будет куда отправить.
         pushRegistrar.ensureRegistered()
     }
     
@@ -131,15 +128,28 @@ class MainViewModel @Inject constructor(
         _uiState.update { it.copy(showAccountDialog = false) }
     }
     
-    /** Открытая вкладка решает, где именно закреплять выделенные чаты. */
     fun setActiveFolder(folderId: Int) {
         _uiState.update { it.copy(activeFolderId = folderId) }
     }
     
-    /**
-     * Вкладка «Все чаты» идёт первой всегда. Остальные вкладки появляются, только если
-     * у пользователя есть собственные папки: иначе пейджер на главном экране не нужен.
-     */
+    fun requestFolderDeletion(folderId: Int) {
+        val folder = _uiState.value.folders.find { it.id == folderId } ?: return
+        _uiState.update { it.copy(folderPendingDeletion = folder) }
+    }
+    
+    fun cancelFolderDeletion() {
+        _uiState.update { it.copy(folderPendingDeletion = null) }
+    }
+    
+    fun confirmFolderDeletion() {
+        val folder = _uiState.value.folderPendingDeletion ?: return
+        _uiState.update { it.copy(folderPendingDeletion = null) }
+        
+        viewModelScope.launch {
+            chatFolderRepository.deleteFolder(folder.id)
+        }
+    }
+    
     private fun buildFolderPages(
         chats: List<Chat>,
         folders: List<ChatFolder>
@@ -161,7 +171,6 @@ class MainViewModel @Inject constructor(
                 chats = chats
                     .filter { folder.contains(it.id) }
                     .sortedWith(
-                        // Глобальный Chat.isPinned здесь намеренно не учитывается.
                         compareByDescending<Chat> { folder.isPinned(it.id) }
                             .thenByDescending { it.lastMessage?.sendTime ?: 0L }
                     )
@@ -201,10 +210,6 @@ class MainViewModel @Inject constructor(
         setSelectedChatsPinned(false)
     }
     
-    /**
-     * Закрепление принадлежит вкладке: во «Всех чатах» меняется общий флаг чата,
-     * внутри папки — только её собственный список закреплённых.
-     */
     private fun setSelectedChatsPinned(isPinned: Boolean) {
         val state = _uiState.value
         val selectedIds = state.selectedChatIds.toList()
@@ -246,7 +251,6 @@ class MainViewModel @Inject constructor(
         }
     }
     
-    /** Хотя бы один из выделенных чатов не прочитан. */
     fun hasUnreadSelectedChats(): Boolean {
         val selectedIds = _uiState.value.selectedChatIds
         val chats = _uiState.value.chats
@@ -255,10 +259,6 @@ class MainViewModel @Inject constructor(
         }
     }
     
-    /**
-     * На сервер уходят только реально непрочитанные чаты: уже прочитанные из выделения
-     * отсеиваются на клиенте.
-     */
     fun markSelectedChatsRead() {
         val state = _uiState.value
         val unreadIds = state.selectedChatIds.filter { id ->
