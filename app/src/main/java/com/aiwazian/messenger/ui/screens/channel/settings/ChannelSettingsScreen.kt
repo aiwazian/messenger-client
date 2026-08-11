@@ -20,12 +20,8 @@ import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.PeopleOutline
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,9 +35,7 @@ import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
-import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppSnackbar
-import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -74,11 +68,6 @@ fun ChannelSettingsScreen(
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
             when (effect) {
-                ChannelSettingsEffect.NavigateToMain -> {
-                    navBackStack.clear()
-                    navBackStack.add(AppRoute.Main)
-                }
-                
                 ChannelSettingsEffect.NavigateToBack -> navBackStack.removeLastOrNull()
                 
                 is ChannelSettingsEffect.ShowSnackbar -> {
@@ -210,33 +199,12 @@ fun ChannelSettingsScreen(
             if (uiState.isOwner) {
                 SectionContainer {
                     SectionItem(
-                        headlineText = stringResource(R.string.delete_channel),
-                        contentColor = MaterialTheme.colorScheme.error,
-                        onClick = viewModel::showDeleteDialog
+                        headlineText = stringResource(R.string.channel_management),
+                        onClick = {
+                            navBackStack.add(AppRoute.ChannelManagement(channelId = uiState.channel.id))
+                        }
                     )
                 }
-            }
-            
-            if (uiState.showDeleteDialog) {
-                AppDialog(
-                    title = stringResource(R.string.delete_channel),
-                    onDismissRequest = viewModel::hideDeleteDialog,
-                    buttons = {
-                        TextButton(onClick = viewModel::hideDeleteDialog) {
-                            Text(stringResource(R.string.cancel))
-                        }
-                        
-                        CountdownTextButton(
-                            text = stringResource(R.string.delete_channel),
-                            seconds = 5,
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                            onClickWhileRunning = viewModel::vibrate,
-                            onClickAfterFinish = viewModel::delete
-                        )
-                    },
-                    content = {
-                        Text("Вы точно хотите удалить канал?")
-                    })
             }
         }
     }

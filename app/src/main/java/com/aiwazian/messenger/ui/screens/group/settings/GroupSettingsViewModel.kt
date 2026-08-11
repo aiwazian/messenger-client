@@ -18,7 +18,6 @@ import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.isNetworkError
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.group.GroupAdminsRepository
-import com.aiwazian.messenger.usecase.DeleteGroupUseCase
 import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.UploadManager
@@ -40,7 +39,6 @@ class GroupSettingsViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val groupRepository: GroupRepository,
     private val groupAdminsRepository: GroupAdminsRepository,
-    private val deleteGroupUseCase: DeleteGroupUseCase,
     private val vibrationManager: VibrationManager,
     private val uploadManager: UploadManager,
     private val downloadAvatarUseCase: DownloadAvatarUseCase
@@ -87,7 +85,6 @@ class GroupSettingsViewModel @Inject constructor(
         }
     }
     
-    /** Счётчики грузятся только для тех блоков, которые видны текущему пользователю. */
     private suspend fun loadCounters(groupId: Long) {
         val state = _uiState.value
         
@@ -199,33 +196,6 @@ class GroupSettingsViewModel @Inject constructor(
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }
-    }
-    
-    fun vibrate() {
-        vibrationManager.vibrate(VibrationPattern.Error)
-    }
-    
-    fun delete() {
-        viewModelScope.launch {
-            if (!_uiState.value.isOwner) {
-                return@launch
-            }
-            
-            if (deleteGroupUseCase(_uiState.value.group.id)) {
-                _uiEffect.emit(GroupSettingsUiEffect.NavigateToMain)
-            } else {
-                _uiEffect.emit(GroupSettingsUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_delete_group)))
-                vibrationManager.vibrate(VibrationPattern.Error)
-            }
-        }
-    }
-    
-    fun showDeleteDialog() {
-        _uiState.update { it.copy(showDeleteDialog = true) }
-    }
-    
-    fun hideDeleteDialog() {
-        _uiState.update { it.copy(showDeleteDialog = false) }
     }
     
     private fun checkValid(): Boolean {
