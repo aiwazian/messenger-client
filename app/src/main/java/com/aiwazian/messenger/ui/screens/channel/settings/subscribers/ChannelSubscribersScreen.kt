@@ -14,11 +14,9 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.PersonRemove
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -31,13 +29,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -107,7 +105,7 @@ fun ChannelSubscribersScreen(
                                     expanded = showMenu,
                                     onDismissRequest = { showMenu = false }
                                 ) {
-                                    DropdownMenuItem(
+                                    AppDropdownMenuItem(
                                         text = { Text(stringResource(R.string.kick)) },
                                         onClick = {
                                             showMenu = false
@@ -116,16 +114,9 @@ fun ChannelSubscribersScreen(
                                         leadingIcon = {
                                             Icon(Icons.Rounded.PersonRemove, null)
                                         },
-                                        colors = MenuItemColors(
-                                            textColor = MaterialTheme.colorScheme.error,
-                                            leadingIconColor = MaterialTheme.colorScheme.error,
-                                            trailingIconColor = MaterialTheme.colorScheme.error,
-                                            disabledTextColor = Color.Unspecified,
-                                            disabledLeadingIconColor = Color.Unspecified,
-                                            disabledTrailingIconColor = Color.Unspecified
-                                        )
+                                        contentColor = MaterialTheme.colorScheme.error
                                     )
-                                    DropdownMenuItem(
+                                    AppDropdownMenuItem(
                                         text = { Text(stringResource(R.string.block_user)) },
                                         onClick = {
                                             showMenu = false
@@ -134,14 +125,7 @@ fun ChannelSubscribersScreen(
                                         leadingIcon = {
                                             Icon(Icons.Rounded.Block, null)
                                         },
-                                        colors = MenuItemColors(
-                                            textColor = MaterialTheme.colorScheme.error,
-                                            leadingIconColor = MaterialTheme.colorScheme.error,
-                                            trailingIconColor = MaterialTheme.colorScheme.error,
-                                            disabledTextColor = Color.Unspecified,
-                                            disabledLeadingIconColor = Color.Unspecified,
-                                            disabledTrailingIconColor = Color.Unspecified
-                                        )
+                                        contentColor = MaterialTheme.colorScheme.error
                                     )
                                 }
                             },
