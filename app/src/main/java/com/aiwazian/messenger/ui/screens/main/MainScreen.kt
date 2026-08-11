@@ -75,9 +75,9 @@ import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material3.AppBarWithSearch
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -149,6 +149,7 @@ import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.ChatCard
@@ -267,7 +268,11 @@ private fun Content(
                                 scope.launch {
                                     pagerState.animateScrollToPage(index)
                                 }
-                            }
+                            },
+                            onEditFolder = { folderId ->
+                                navBackStack.add(AppRoute.ChatFolderEditor(folderId))
+                            },
+                            onDeleteFolder = viewModel::requestFolderDeletion
                         )
                     }
                 }
@@ -445,6 +450,27 @@ private fun Content(
             onDismissRequest = viewModel::hideAccountDialog
         )
     }
+    
+    uiState.folderPendingDeletion?.let {
+        AppDialog(
+            title = stringResource(R.string.remove_folder),
+            onDismissRequest = viewModel::cancelFolderDeletion,
+            content = {
+                Text(stringResource(R.string.delete_folder_confirm_message))
+            },
+            buttons = {
+                TextButton(onClick = viewModel::cancelFolderDeletion) {
+                    Text(stringResource(R.string.cancel))
+                }
+                
+                TextButton(
+                    onClick = viewModel::confirmFolderDeletion,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(text = stringResource(R.string.delete))
+                }
+            })
+    }
 }
 
 @Composable
@@ -452,6 +478,8 @@ private fun ChatFolderTabs(
     pages: List<ChatFolderPage>,
     selectedIndex: Int,
     onTabClick: (Int) -> Unit,
+    onEditFolder: (Int) -> Unit,
+    onDeleteFolder: (Int) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         PrimaryScrollableTabRow(
@@ -531,17 +559,23 @@ private fun ChatFolderTabs(
                     AppDropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }) {
-                        DropdownMenuItem(
+                        AppDropdownMenuItem(
                             leadingIcon = {
                                 Icon(Icons.Rounded.Edit, null)
                             }, text = {
                                 Text(stringResource(R.string.edit_folder))
-                            }, onClick = {})
-                        DropdownMenuItem(leadingIcon = {
+                            }, onClick = {
+                                expanded = false
+                                onEditFolder(page.id)
+                            })
+                        AppDropdownMenuItem(leadingIcon = {
                             Icon(Icons.Rounded.DeleteOutline, null)
                         }, text = {
                             Text(stringResource(R.string.delete))
-                        }, onClick = {})
+                        }, onClick = {
+                            expanded = false
+                            onDeleteFolder(page.id)
+                        }, contentColor = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -641,7 +675,7 @@ private fun SelectionTopBar(
             }
             
             AppDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
-                DropdownMenuItem(
+                AppDropdownMenuItem(
                     leadingIcon = {
                         Icon(
                             Icons.Outlined.PushPin,
@@ -660,7 +694,7 @@ private fun SelectionTopBar(
                         }
                     })
                 
-                DropdownMenuItem(
+                AppDropdownMenuItem(
                     leadingIcon = {
                         Icon(
                             if (hasUnreadChats) Icons.Outlined.MarkChatRead
