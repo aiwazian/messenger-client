@@ -15,7 +15,6 @@ import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,6 +40,7 @@ import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ShareBottomSheet
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -208,31 +208,26 @@ private fun InviteLinkItem(
                     viewModel.setExpandedMenuId(null)
                 }
             ) {
-                DropdownMenuItem(
+                AppDropdownMenuItem(
                     text = { Text(stringResource(R.string.share)) },
                     onClick = { viewModel.shareLink(link.id) },
                     leadingIcon = { Icon(Icons.Rounded.Share, null) }
                 )
-                DropdownMenuItem(
+                AppDropdownMenuItem(
                     text = { Text(stringResource(R.string.copy)) },
                     onClick = { viewModel.copyLink(link.id) },
                     leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }
                 )
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = stringResource(R.string.delete),
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    },
+                AppDropdownMenuItem(
+                    text = { Text(stringResource(R.string.delete)) },
                     onClick = { viewModel.showDeleteConfirmation(link.id) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Rounded.DeleteOutline,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
+                            contentDescription = null
                         )
-                    }
+                    },
+                    contentColor = MaterialTheme.colorScheme.error
                 )
             }
         }
