@@ -37,7 +37,6 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -81,6 +80,7 @@ import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.rememberZoomableState
 import com.aiwazian.messenger.ui.components.zoomableContent
 import com.aiwazian.messenger.ui.components.zoomableGestures
@@ -91,14 +91,6 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
-/**
- * Одна страница просмотрщика.
- *
- * Тип приходит из вложения сообщения, а не угадывается по URI: у файлов,
- * скачанных с сервера, имени вида `<fileId>` часто вообще без расширения,
- * и mime-тип определялся как application/octet-stream — видео и гифки
- * показывались пустым экраном.
- */
 data class ViewerMediaItem(
     val uri: Uri,
     val isVideo: Boolean
@@ -387,7 +379,7 @@ fun FullScreenViewer(
                             AppDropdownMenu(
                                 expanded = showVideoSettings,
                                 onDismissRequest = { showVideoSettings = false }) {
-                                DropdownMenuItem(text = {
+                                AppDropdownMenuItem(text = {
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
@@ -406,24 +398,23 @@ fun FullScreenViewer(
                                 }, leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Rounded.Speed,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurface
+                                        contentDescription = null
                                     )
                                 })
-                                DropdownMenuItem(text = {
-                                    Text(
-                                        text = stringResource(R.string.loop),
-                                        color = if (isVideoLooping) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                    )
+                                AppDropdownMenuItem(text = {
+                                    Text(text = stringResource(R.string.loop))
                                 }, onClick = {
                                     onVideoLoopingChange(!isVideoLooping)
                                     showVideoSettings = false
                                 }, leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Rounded.Repeat,
-                                        contentDescription = null,
-                                        tint = if (isVideoLooping) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                        contentDescription = null
                                     )
+                                }, contentColor = if (isVideoLooping) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
                                 })
                             }
                         }
@@ -448,19 +439,15 @@ fun FullScreenViewer(
                                 expanded = showMoreActions,
                                 onDismissRequest = { showMoreActions = false }) {
                                 if (canDownloadMedia && currentItem != null) {
-                                    DropdownMenuItem(text = {
-                                        Text(
-                                            text = stringResource(R.string.save_to_gallery),
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
+                                    AppDropdownMenuItem(text = {
+                                        Text(text = stringResource(R.string.save_to_gallery))
                                     }, onClick = {
                                         onSaveToGallery(currentItem.uri)
                                         showMoreActions = false
                                     }, leadingIcon = {
                                         Icon(
                                             imageVector = Icons.Rounded.SaveAlt,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurface
+                                            contentDescription = null
                                         )
                                     })
                                 }
