@@ -36,6 +36,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.ButtonDefaults
@@ -69,14 +70,14 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppBottomSheet
-
 import com.aiwazian.messenger.utils.UiText
 
 data class ShareItem(
     val id: Long,
     val name: UiText,
     val isSelected: Boolean,
-    val avatarUri: Uri? = null
+    val avatarUri: Uri? = null,
+    val isSavedMessages: Boolean = false
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,6 +90,7 @@ fun ShareBottomSheet(
 ) {
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val hasSelected = remember(items) { items.any { it.isSelected } }
+    val orderedItems = remember(items) { items.sortedByDescending { it.isSavedMessages } }
     
     AppBottomSheet(
         onDismissRequest = onDismiss,
@@ -137,7 +139,7 @@ fun ShareBottomSheet(
                     )
                 }
                 
-                items(items, key = { it.id }) { item ->
+                items(orderedItems, key = { it.id }) { item ->
                     ShareChatCard(item) {
                         onItemClick(item.id)
                     }
@@ -214,12 +216,30 @@ fun ShareChatCard(item: ShareItem, onClick: () -> Unit) {
                         stiffness = Spring.StiffnessMediumLow
                     )
                 )
-                ChatAvatar(
-                    id = item.id,
-                    chatName = item.name.asString(),
-                    avatarUri = item.avatarUri,
-                    size = avatarSize
-                )
+                
+                if (item.isSavedMessages) {
+                    Box(
+                        modifier = Modifier
+                            .size(avatarSize)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.BookmarkBorder,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(avatarSize * 0.56f)
+                        )
+                    }
+                } else {
+                    ChatAvatar(
+                        id = item.id,
+                        chatName = item.name.asString(),
+                        avatarUri = item.avatarUri,
+                        size = avatarSize
+                    )
+                }
                 
                 androidx.compose.animation.AnimatedVisibility(
                     visible = item.isSelected,
@@ -254,4 +274,3 @@ fun ShareChatCard(item: ShareItem, onClick: () -> Unit) {
         }
     }
 }
-
