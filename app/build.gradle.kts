@@ -142,6 +142,9 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.analytics)
     
+    // Google Play In-App Updates
+    implementation(libs.play.app.update)
+    
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.common.ktx)
     implementation(libs.androidx.media3.ui.compose)
