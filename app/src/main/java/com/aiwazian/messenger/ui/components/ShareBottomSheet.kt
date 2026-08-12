@@ -38,12 +38,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
@@ -140,6 +142,17 @@ fun ShareBottomSheet(
                         onValueChange = { searchQuery = it },
                         placeholder = { Text(stringResource(R.string.search)) },
                         leadingIcon = { Icon(Icons.Rounded.Search, null) },
+                        trailingIcon = {
+                            androidx.compose.animation.AnimatedVisibility(
+                                visible = searchQuery.isNotEmpty(),
+                                enter = expressiveScaleIn,
+                                exit = expressiveScaleOut
+                            ) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Rounded.Close, null)
+                                }
+                            }
+                        },
                         singleLine = true,
                         shape = CircleShape,
                         colors = TextFieldDefaults.colors(
