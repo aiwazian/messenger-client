@@ -425,16 +425,22 @@ fun MessageBubble(
     }
 }
 
-/** «сегодня в 14:03», «вчера в 22:10» или полная дата для более старых прочтений. */
-private fun formatReadTime(readAt: Long): String {
+/**
+ * «сегодня в 14:03», «вчера в 22:10» или «12 авг. в 14:42».
+ *
+ * @param todayPrefix слово перед временем для сегодняшнего дня. В списке читателей
+ * нужно «сегодня в 14:03», а в строке «Прочитано в 14:03» оно было бы лишним.
+ */
+private fun formatReadTime(readAt: Long, todayPrefix: String = "сегодня "): String {
     val instant = readAt.toInstance()
     val readDate = instant.atZone(ZoneId.systemDefault())
     val today = LocalDate.now()
+    val time = instant.toPrettyTime()
     
     return when (readDate.toLocalDate()) {
-        today -> "сегодня в " + instant.toPrettyTime()
-        today.minusDays(1) -> "вчера в " + instant.toPrettyTime()
-        else -> readDate.format(DateTimeFormatter.ofPattern("d MMMM HH:mm"))
+        today -> todayPrefix + "в " + time
+        today.minusDays(1) -> "вчера в " + time
+        else -> readDate.format(DateTimeFormatter.ofPattern("d MMM")) + " в " + time
     }
 }
 
@@ -466,25 +472,25 @@ private fun buildDropdownActions(
     
     if (item.isMine && !isSavedMessages) {
         val readInfo = item.readInfo
-        val isRead = item.isRead
         
-        if (item.chatType == ChatType.PRIVATE && isRead == true) {
-            val now = LocalDate.now()
-            val msgDate = item.message.sendTime.toInstance().atZone(ZoneId.systemDefault())
-                .toLocalDate()
-            val label = if (msgDate == now) {
-                "Прочитано в " + item.message.sendTime.toInstance().toPrettyTime()
-            } else {
-                "Прочитано " + item.message.sendTime.toInstance().atZone(ZoneId.systemDefault())
-                    .format(DateTimeFormatter.ofPattern("d MMMM HH:mm"))
-            }
-            actions.add(
-                DropdownMenuAction(
-                    icon = Icons.Rounded.DoneAll,
-                    text = UiText.DynamicString(label),
-                    onClick = null
+        if (item.chatType == ChatType.PRIVATE) {
+            /*
+             * Строка показывается только пока известно точное время прочтения: оно живёт
+             * трое суток в Redis. Дальше пункт исчезает целиком — сам факт прочтения
+             * виден по двум галочкам в самом сообщении, и повторять его словами нечего.
+             */
+            val readAt = readInfo?.maxOfOrNull { it.readAt }
+            
+            if (readAt != null) {
+                val label = "Прочитано " + formatReadTime(readAt, todayPrefix = "")
+                actions.add(
+                    DropdownMenuAction(
+                        icon = Icons.Rounded.DoneAll,
+                        text = UiText.DynamicString(label),
+                        onClick = null
+                    )
                 )
-            )
+            }
         } else if (item.chatType == ChatType.GROUP && !readInfo.isNullOrEmpty()) {
             val count = readInfo.size
             val word = when {
