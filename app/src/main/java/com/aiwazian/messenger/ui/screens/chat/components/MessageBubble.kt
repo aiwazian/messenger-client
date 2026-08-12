@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
@@ -65,6 +64,7 @@ import coil.request.ImageRequest
 import coil.request.videoFrameMillis
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.MessageAttachment
+import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.DownloadStatus
@@ -76,6 +76,7 @@ import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
+import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
@@ -106,6 +107,10 @@ fun MessageBubble(
     onForwardedFromClick: (() -> Unit)? = null,
     onSwipeThresholdReached: (() -> Unit)? = null,
     onSwipeToReply: (() -> Unit)? = null,
+    readerAvatars: Map<Long, Uri?> = emptyMap(),
+    onReadersRequested: ((List<Long>) -> Unit)? = null,
+    onSenderNameClick: (() -> Unit)? = null,
+    onReaderClick: ((MessageReadInfo) -> Unit)? = null,
     showContextMenu: Boolean = true
 ) {
     val message = item.message
@@ -157,6 +162,7 @@ fun MessageBubble(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
+                            /* Имя отправителя в группе — точка входа в его профиль. */
                             Text(
                                 text = item.senderName,
                                 fontSize = 12.sp,
@@ -165,6 +171,15 @@ fun MessageBubble(
                                 color = MaterialTheme.colorScheme.primary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
+                                modifier = if (onSenderNameClick != null) {
+                                    Modifier.clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = onSenderNameClick
+                                    )
+                                } else {
+                                    Modifier
+                                }
                             )
                             
                             if (!item.senderTag.isNullOrBlank()) {
@@ -326,15 +341,20 @@ fun MessageBubble(
                     )
                 }
                 
+                /* Свежие просмотры сверху: порядок с сервера мог быть нарушен событиями в реалтайме. */
+                val readers = remember(item.readInfo) {
+                    item.readInfo.orEmpty().sortedByDescending { it.readAt }
+                }
+                
                 MessageDropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
                     actions = buildDropdownActions(item, isSavedMessages, onSaveToDownloads) {
+                        onReadersRequested?.invoke(readers.map { it.userId })
                         showReadersDropdown = true
                     }
                 )
                 
-                val readers = item.readInfo.orEmpty()
                 if (readers.isNotEmpty()) {
                     AppDropdownMenu(
                         expanded = showReadersDropdown,
@@ -342,33 +362,28 @@ fun MessageBubble(
                         properties = PopupProperties(focusable = true)
                     ) {
                         readers.forEach { reader ->
-                            val name = listOfNotNull(reader.firstName, reader.lastName)
-                                .joinToString(" ").ifEmpty { reader.userId.toString() }
-                            val readTime = reader.readAt.toInstance().toPrettyTime()
+                            val name = listOf(reader.firstName, reader.lastName.orEmpty())
+                                .filter { it.isNotBlank() }
+                                .joinToString(" ")
+                                .ifBlank { reader.userId.toString() }
+                            val readTime = formatReadTime(reader.readAt)
                             AppDropdownMenuItem(
                                 leadingIcon = {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.primaryContainer),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = reader.firstName.firstOrNull()?.uppercase()
-                                                ?: "?",
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
+                                    ChatAvatar(
+                                        id = reader.userId,
+                                        chatName = name,
+                                        avatarUri = readerAvatars[reader.userId],
+                                        size = 36.dp
+                                    )
                                 },
                                 text = {
                                     Column {
                                         Text(
                                             text = name,
                                             fontSize = 14.sp,
-                                            lineHeight = 18.sp
+                                            lineHeight = 18.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
                                             text = readTime,
@@ -378,13 +393,29 @@ fun MessageBubble(
                                         )
                                     }
                                 },
-                                onClick = { showReadersDropdown = false }
+                                onClick = {
+                                    showReadersDropdown = false
+                                    onReaderClick?.invoke(reader)
+                                }
                             )
                         }
                     }
                 }
             }
         }
+    }
+}
+
+/** «сегодня в 14:03», «вчера в 22:10» или полная дата для более старых прочтений. */
+private fun formatReadTime(readAt: Long): String {
+    val instant = readAt.toInstance()
+    val readDate = instant.atZone(ZoneId.systemDefault())
+    val today = LocalDate.now()
+    
+    return when (readDate.toLocalDate()) {
+        today -> "сегодня в " + instant.toPrettyTime()
+        today.minusDays(1) -> "вчера в " + instant.toPrettyTime()
+        else -> readDate.format(DateTimeFormatter.ofPattern("d MMMM HH:mm"))
     }
 }
 
