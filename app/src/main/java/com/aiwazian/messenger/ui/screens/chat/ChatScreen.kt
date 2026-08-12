@@ -82,6 +82,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
+import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppSnackbar
@@ -137,6 +138,8 @@ fun ChatScreen(
     
     val navBackStack = LocalNavBackStack.current
     val uiState by chatViewModel.uiState.collectAsState()
+    val readersViewModel: MessageReadersViewModel = hiltViewModel()
+    val readerAvatars by readersViewModel.avatars.collectAsState()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
     
@@ -546,6 +549,32 @@ fun ChatScreen(
                                 onSwipeThresholdReached = chatViewModel::vibrateTactile,
                                 onSwipeToReply = {
                                     chatViewModel.startReply(item.message)
+                                },
+                                readerAvatars = readerAvatars,
+                                onReadersRequested = readersViewModel::onReadersRequested,
+                                /* В канале автор сообщения — сам канал, профиль открывать не из чего. */
+                                onSenderNameClick = if (item.chatType == ChatType.GROUP) {
+                                    {
+                                        navBackStack.add(
+                                            AppRoute.Profile(
+                                                profileId = item.message.senderId,
+                                                profileName = item.senderName
+                                            )
+                                        )
+                                    }
+                                } else null,
+                                onReaderClick = { reader ->
+                                    val readerName = listOf(
+                                        reader.firstName,
+                                        reader.lastName.orEmpty()
+                                    ).filter { it.isNotBlank() }.joinToString(" ")
+                                    navBackStack.add(
+                                        AppRoute.Profile(
+                                            profileId = reader.userId,
+                                            profileName = readerName.ifBlank { null },
+                                            avatarUri = readerAvatars[reader.userId]?.toString()
+                                        )
+                                    )
                                 })
                         }
                     }
