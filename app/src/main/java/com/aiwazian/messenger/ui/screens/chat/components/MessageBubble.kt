@@ -19,11 +19,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.SaveAlt
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DoneAll
@@ -32,6 +32,7 @@ import androidx.compose.material.icons.rounded.Downloading
 import androidx.compose.material.icons.rounded.EditCalendar
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -65,6 +66,7 @@ import coil.request.ImageRequest
 import coil.request.videoFrameMillis
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.MessageAttachment
+import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.DownloadStatus
@@ -76,6 +78,7 @@ import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
+import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
@@ -106,6 +109,10 @@ fun MessageBubble(
     onForwardedFromClick: (() -> Unit)? = null,
     onSwipeThresholdReached: (() -> Unit)? = null,
     onSwipeToReply: (() -> Unit)? = null,
+    readerAvatars: Map<Long, Uri?> = emptyMap(),
+    onReadersRequested: ((List<Long>) -> Unit)? = null,
+    onSenderNameClick: (() -> Unit)? = null,
+    onReaderClick: ((MessageReadInfo) -> Unit)? = null,
     showContextMenu: Boolean = true
 ) {
     val message = item.message
@@ -157,6 +164,7 @@ fun MessageBubble(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
+                            /* Имя отправителя в группе — точка входа в его профиль. */
                             Text(
                                 text = item.senderName,
                                 fontSize = 12.sp,
@@ -165,6 +173,15 @@ fun MessageBubble(
                                 color = MaterialTheme.colorScheme.primary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
+                                modifier = if (onSenderNameClick != null) {
+                                    Modifier.clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = onSenderNameClick
+                                    )
+                                } else {
+                                    Modifier
+                                }
                             )
                             
                             if (!item.senderTag.isNullOrBlank()) {
@@ -326,49 +343,66 @@ fun MessageBubble(
                     )
                 }
                 
+                /* Свежие просмотры сверху: порядок с сервера мог быть нарушен событиями в реалтайме. */
+                val readers = remember(item.readInfo) {
+                    item.readInfo.orEmpty().sortedByDescending { it.readAt }
+                }
+                
                 MessageDropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
                     actions = buildDropdownActions(item, isSavedMessages, onSaveToDownloads) {
+                        onReadersRequested?.invoke(readers.map { it.userId })
                         showReadersDropdown = true
                     }
                 )
                 
-                val readers = item.readInfo.orEmpty()
                 if (readers.isNotEmpty()) {
                     AppDropdownMenu(
                         expanded = showReadersDropdown,
                         onDismissRequest = { showReadersDropdown = false },
                         properties = PopupProperties(focusable = true)
                     ) {
+                        /* Возврат в меню сообщения: попапы независимы, поэтому просто меняем флаги. */
+                        AppDropdownMenuItem(
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                    contentDescription = "Назад"
+                                )
+                            },
+                            text = { },
+                            onClick = {
+                                showReadersDropdown = false
+                                expanded = true
+                            }
+                        )
+                        
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 10.dp))
+                        
                         readers.forEach { reader ->
-                            val name = listOfNotNull(reader.firstName, reader.lastName)
-                                .joinToString(" ").ifEmpty { reader.userId.toString() }
-                            val readTime = reader.readAt.toInstance().toPrettyTime()
+                            val name = listOf(reader.firstName, reader.lastName.orEmpty())
+                                .filter { it.isNotBlank() }
+                                .joinToString(" ")
+                                .ifBlank { reader.userId.toString() }
+                            val readTime = formatReadTime(reader.readAt)
                             AppDropdownMenuItem(
                                 leadingIcon = {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.primaryContainer),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = reader.firstName.firstOrNull()?.uppercase()
-                                                ?: "?",
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
+                                    ChatAvatar(
+                                        id = reader.userId,
+                                        chatName = name,
+                                        avatarUri = readerAvatars[reader.userId],
+                                        size = 30.dp
+                                    )
                                 },
                                 text = {
                                     Column {
                                         Text(
                                             text = name,
                                             fontSize = 14.sp,
-                                            lineHeight = 18.sp
+                                            lineHeight = 18.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
                                             text = readTime,
@@ -378,13 +412,35 @@ fun MessageBubble(
                                         )
                                     }
                                 },
-                                onClick = { showReadersDropdown = false }
+                                onClick = {
+                                    showReadersDropdown = false
+                                    onReaderClick?.invoke(reader)
+                                }
                             )
                         }
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * «сегодня в 14:03», «вчера в 22:10» или «12 авг. в 14:42».
+ *
+ * @param todayPrefix слово перед временем для сегодняшнего дня. В списке читателей
+ * нужно «сегодня в 14:03», а в строке «Прочитано в 14:03» оно было бы лишним.
+ */
+private fun formatReadTime(readAt: Long, todayPrefix: String = "сегодня "): String {
+    val instant = readAt.toInstance()
+    val readDate = instant.atZone(ZoneId.systemDefault())
+    val today = LocalDate.now()
+    val time = instant.toPrettyTime()
+    
+    return when (readDate.toLocalDate()) {
+        today -> todayPrefix + "в " + time
+        today.minusDays(1) -> "вчера в $time"
+        else -> readDate.format(DateTimeFormatter.ofPattern("d MMM")) + " в " + time
     }
 }
 
@@ -416,25 +472,25 @@ private fun buildDropdownActions(
     
     if (item.isMine && !isSavedMessages) {
         val readInfo = item.readInfo
-        val isRead = item.isRead
         
-        if (item.chatType == ChatType.PRIVATE && isRead == true) {
-            val now = LocalDate.now()
-            val msgDate = item.message.sendTime.toInstance().atZone(ZoneId.systemDefault())
-                .toLocalDate()
-            val label = if (msgDate == now) {
-                "Прочитано в " + item.message.sendTime.toInstance().toPrettyTime()
-            } else {
-                "Прочитано " + item.message.sendTime.toInstance().atZone(ZoneId.systemDefault())
-                    .format(DateTimeFormatter.ofPattern("d MMMM HH:mm"))
-            }
-            actions.add(
-                DropdownMenuAction(
-                    icon = Icons.Rounded.DoneAll,
-                    text = UiText.DynamicString(label),
-                    onClick = null
+        if (item.chatType == ChatType.PRIVATE) {
+            /*
+             * Строка показывается только пока известно точное время прочтения: оно живёт
+             * трое суток в Redis. Дальше пункт исчезает целиком — сам факт прочтения
+             * виден по двум галочкам в самом сообщении, и повторять его словами нечего.
+             */
+            val readAt = readInfo?.maxOfOrNull { it.readAt }
+            
+            if (readAt != null) {
+                val label = "Прочитано " + formatReadTime(readAt, todayPrefix = "")
+                actions.add(
+                    DropdownMenuAction(
+                        icon = Icons.Rounded.DoneAll,
+                        text = UiText.DynamicString(label),
+                        onClick = null
+                    )
                 )
-            )
+            }
         } else if (item.chatType == ChatType.GROUP && !readInfo.isNullOrEmpty()) {
             val count = readInfo.size
             val word = when {
