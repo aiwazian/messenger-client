@@ -392,7 +392,7 @@ fun MessageBubble(
                                         id = reader.userId,
                                         chatName = name,
                                         avatarUri = readerAvatars[reader.userId],
-                                        size = 36.dp
+                                        size = 30.dp
                                     )
                                 },
                                 text = {
@@ -439,7 +439,7 @@ private fun formatReadTime(readAt: Long, todayPrefix: String = "сегодня "
     
     return when (readDate.toLocalDate()) {
         today -> todayPrefix + "в " + time
-        today.minusDays(1) -> "вчера в " + time
+        today.minusDays(1) -> "вчера в $time"
         else -> readDate.format(DateTimeFormatter.ofPattern("d MMM")) + " в " + time
     }
 }
