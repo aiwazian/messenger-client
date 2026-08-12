@@ -8,9 +8,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.isNetworkError
-import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository
-import com.aiwazian.messenger.ui.components.ShareItem
+import com.aiwazian.messenger.usecase.GetShareTargetsUseCase
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.UiText
@@ -19,7 +18,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,8 +25,8 @@ import javax.inject.Inject
 @HiltViewModel
 class GroupInviteLinksViewModel @Inject constructor(
     private val groupRepository: GroupRepository,
-    private val chatRepository: ChatRepository,
     private val clipboardService: ClipboardService,
+    private val getShareTargetsUseCase: GetShareTargetsUseCase,
     private val sendMessageUseCase: SendMessageUseCase
 ) : ViewModel() {
     
@@ -115,17 +113,8 @@ class GroupInviteLinksViewModel @Inject constructor(
     
     private fun loadAvailableChats() {
         viewModelScope.launch {
-            chatRepository.getAllChats().firstOrNull()?.let { chats ->
-                val shareItems = chats.map { chat ->
-                    ShareItem(
-                        id = chat.id,
-                        name = chat.chatName,
-                        isSelected = _uiState.value.selectedChatIds.contains(chat.id),
-                        avatarUri = chat.avatarUri
-                    )
-                }
-                _uiState.update { it.copy(availableChats = shareItems) }
-            }
+            val targets = getShareTargetsUseCase(_uiState.value.selectedChatIds)
+            _uiState.update { it.copy(availableChats = targets) }
         }
     }
     

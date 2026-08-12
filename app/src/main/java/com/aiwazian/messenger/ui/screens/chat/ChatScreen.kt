@@ -719,7 +719,8 @@ fun ChatScreen(
                     id = chat.id,
                     name = chat.chatName,
                     isSelected = chat.id in uiState.selectedForwardChatIds,
-                    avatarUri = chat.avatarUri
+                    avatarUri = chat.avatarUri,
+                    isSavedMessages = chat.id == uiState.myId
                 )
             },
             onItemClick = chatViewModel::toggleForwardTarget,

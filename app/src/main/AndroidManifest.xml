@@ -106,6 +106,24 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".ShareActivity"
+            android:configChanges="locale|layoutDirection"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Messenger.Transparent"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".MainActivity"
             android:configChanges="locale|layoutDirection"
             android:exported="true"
