@@ -54,12 +54,15 @@ import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -89,8 +92,18 @@ fun ShareBottomSheet(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    val context = LocalContext.current
+    var searchQuery by remember { mutableStateOf("") }
     val hasSelected = remember(items) { items.any { it.isSelected } }
-    val orderedItems = remember(items) { items.sortedByDescending { it.isSavedMessages } }
+    val visibleItems = remember(items, searchQuery, context) {
+        val ordered = items.sortedByDescending { it.isSavedMessages }
+        val query = searchQuery.trim()
+        if (query.isEmpty()) {
+            ordered
+        } else {
+            ordered.filter { it.name.asString(context).contains(query, ignoreCase = true) }
+        }
+    }
     
     AppBottomSheet(
         onDismissRequest = onDismiss,
@@ -123,10 +136,11 @@ fun ShareBottomSheet(
                     }
                     
                     TextField(
-                        value = "",
-                        onValueChange = {},
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
                         placeholder = { Text(stringResource(R.string.search)) },
                         leadingIcon = { Icon(Icons.Rounded.Search, null) },
+                        singleLine = true,
                         shape = CircleShape,
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -139,7 +153,7 @@ fun ShareBottomSheet(
                     )
                 }
                 
-                items(orderedItems, key = { it.id }) { item ->
+                items(visibleItems, key = { it.id }) { item ->
                     ShareChatCard(item) {
                         onItemClick(item.id)
                     }
