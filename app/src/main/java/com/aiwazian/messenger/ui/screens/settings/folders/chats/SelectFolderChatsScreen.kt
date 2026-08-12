@@ -7,13 +7,12 @@ package com.aiwazian.messenger.ui.screens.settings.folders.chats
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
@@ -41,6 +40,7 @@ import com.aiwazian.messenger.enums.ChatFolderCategory
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -82,44 +82,44 @@ fun SelectFolderChatsScreen(
                 )
             } else {
                 emptyList()
-            })
+            }
+        )
     }) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
         ) {
-            item {
+            SectionContainer {
                 FramelessTextBox(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     placeholder = stringResource(R.string.search),
                     value = uiState.query,
                     onValueChange = viewModel::onQueryChange
                 )
             }
             
-            items(uiState.visibleCategories) { category ->
-                CategoryRow(
-                    category = category,
-                    isSelected = category in uiState.selectedCategories,
-                    onClick = { viewModel.toggleCategory(category) })
-            }
-            
-            items(uiState.chats) { chat ->
-                ProfileCard(
-                    id = chat.id,
-                    headlineText = chat.chatName.asString(),
-                    avatarUri = chat.avatarUri,
-                    trailingContent = {
-                        Checkbox(
-                            checked = chat.id in uiState.selectedChatIds,
-                            onCheckedChange = null,
-                            modifier = Modifier.padding(vertical = 14.dp, horizontal = 4.dp)
-                        )
-                    },
-                    onClick = { viewModel.toggleChat(chat.id) })
+            SectionContainer {
+                uiState.visibleCategories.forEach { category ->
+                    CategoryRow(
+                        category = category,
+                        isSelected = category in uiState.selectedCategories,
+                        onClick = { viewModel.toggleCategory(category) })
+                }
+                
+                uiState.chats.forEach { chat ->
+                    ProfileCard(
+                        id = chat.id,
+                        headlineText = chat.chatName.asString(),
+                        avatarUri = chat.avatarUri,
+                        trailingContent = {
+                            Checkbox(
+                                checked = chat.id in uiState.selectedChatIds,
+                                onCheckedChange = null,
+                                modifier = Modifier.padding(vertical = 14.dp, horizontal = 4.dp)
+                            )
+                        },
+                        onClick = { viewModel.toggleChat(chat.id) })
+                }
             }
         }
     }
