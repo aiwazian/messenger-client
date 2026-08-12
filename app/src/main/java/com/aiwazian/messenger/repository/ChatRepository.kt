@@ -60,6 +60,7 @@ class ChatRepository @Inject constructor(
     private val messageApi: MessageApi,
     private val messageDao: MessageDao,
     private val attachmentDao: AttachmentDao,
+    private val readInfoCache: MessageReadInfoCache,
     private val fileRepository: FileRepository,
     private val chatDao: ChatDao,
     private val draftDao: DraftDao,
@@ -274,6 +275,7 @@ class ChatRepository @Inject constructor(
                 }
                 
                 saveMessagesToDb(messages)
+                readInfoCache.update(messages)
                 Result.success(messages)
             } else {
                 Log.e(
@@ -291,6 +293,10 @@ class ChatRepository @Inject constructor(
     /**
      * Содержимое текущего окна истории из Room.
      * Единственный источник данных для списка сообщений в чате.
+     *
+     * Список просмотров подмешивается из MessageReadInfoCache: в Room его нет и быть
+     * не должно, поэтому без этого шага «N просмотров» и время прочтения терялись бы
+     * ровно в тот момент, когда ответ сервера уходит в локальный кэш сообщений.
      */
     fun getMessagesWindowFlow(
         userId: Long,
@@ -314,10 +320,12 @@ class ChatRepository @Inject constructor(
             else -> return emptyFlow()
         }
         
-        return source.map { list ->
+        return combine(source, readInfoCache.readInfo) { list, readInfo ->
             list.map { messageWithAttachments ->
                 val attachments = messageWithAttachments.attachments.map { it.toDomain() }
-                messageWithAttachments.message.toDomain(attachments)
+                val message = messageWithAttachments.message.toDomain(attachments)
+                
+                readInfo[message.id]?.let { message.copy(readInfo = it) } ?: message
             }
         }
     }
@@ -361,6 +369,7 @@ class ChatRepository @Inject constructor(
                 } else {
                     val page = body.toDomain()
                     saveMessagesToDb(page.messages)
+                    readInfoCache.update(page.messages)
                     applyUnreadState(chatId, page.unreadCount, page.firstUnreadMessageId)
                     Result.success(page)
                 }
@@ -835,6 +844,7 @@ class ChatRepository @Inject constructor(
     
     suspend fun deleteLocalMessage(messageId: Long) {
         messageDao.deleteMessageById(messageId)
+        readInfoCache.forget(messageId)
     }
     
     suspend fun editMessage(
@@ -877,6 +887,7 @@ class ChatRepository @Inject constructor(
         userRepository.getMe().firstOrNull()?.id?.let { userId ->
             messageDao.clearChatHistory(userId, chatId)
         }
+        readInfoCache.clear()
     }
     
     suspend fun deleteChatMessages(chatId: Long, clearForRecipient: Boolean = false): Boolean {
