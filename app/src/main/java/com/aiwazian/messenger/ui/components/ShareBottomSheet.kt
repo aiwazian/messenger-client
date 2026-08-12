@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
@@ -113,62 +114,66 @@ fun ShareBottomSheet(
         contentPadding = PaddingValues()
     ) {
         Box(modifier = Modifier.fillMaxHeight()) {
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(80.dp),
-                state = rememberLazyGridState(),
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(
-                    start = 10.dp,
-                    top = 10.dp,
-                    end = 10.dp,
-                    bottom = 80.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                stickyHeader {
-                    val interactionSource = remember { MutableInteractionSource() }
-                    
-                    LaunchedEffect(interactionSource) {
-                        interactionSource.interactions.collect { interaction ->
-                            if (interaction is PressInteraction.Release) {
-                                sheetState.expand()
-                            }
+            Column(modifier = Modifier.fillMaxSize()) {
+                val interactionSource = remember { MutableInteractionSource() }
+                
+                LaunchedEffect(interactionSource) {
+                    interactionSource.interactions.collect { interaction ->
+                        if (interaction is PressInteraction.Release) {
+                            sheetState.expand()
                         }
                     }
-                    
-                    TextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text(stringResource(R.string.search)) },
-                        leadingIcon = { Icon(Icons.Rounded.Search, null) },
-                        trailingIcon = {
-                            androidx.compose.animation.AnimatedVisibility(
-                                visible = searchQuery.isNotEmpty(),
-                                enter = expressiveScaleIn,
-                                exit = expressiveScaleOut
-                            ) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Rounded.Close, null)
-                                }
-                            }
-                        },
-                        singleLine = true,
-                        shape = CircleShape,
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                        ),
-                        modifier = Modifier.statusBarsPadding(),
-                        interactionSource = interactionSource
-                    )
                 }
                 
-                items(visibleItems, key = { it.id }) { item ->
-                    ShareChatCard(item) {
-                        onItemClick(item.id)
+                TextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text(stringResource(R.string.search)) },
+                    leadingIcon = { Icon(Icons.Rounded.Search, null) },
+                    trailingIcon = {
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = searchQuery.isNotEmpty(),
+                            enter = expressiveScaleIn,
+                            exit = expressiveScaleOut
+                        ) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Rounded.Close, null)
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = CircleShape,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                    ),
+                    modifier = Modifier
+                        .padding(start = 10.dp, top = 10.dp)
+                        .statusBarsPadding(),
+                    interactionSource = interactionSource
+                )
+                
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(80.dp),
+                    state = rememberLazyGridState(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentPadding = PaddingValues(
+                        start = 10.dp,
+                        top = 10.dp,
+                        end = 10.dp,
+                        bottom = 80.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(visibleItems, key = { it.id }) { item ->
+                        ShareChatCard(item) {
+                            onItemClick(item.id)
+                        }
                     }
                 }
             }
