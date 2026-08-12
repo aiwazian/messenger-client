@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.SaveAlt
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DoneAll
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.rounded.Downloading
 import androidx.compose.material.icons.rounded.EditCalendar
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -361,6 +363,23 @@ fun MessageBubble(
                         onDismissRequest = { showReadersDropdown = false },
                         properties = PopupProperties(focusable = true)
                     ) {
+                        /* Возврат в меню сообщения: попапы независимы, поэтому просто меняем флаги. */
+                        AppDropdownMenuItem(
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                    contentDescription = "Назад"
+                                )
+                            },
+                            text = { },
+                            onClick = {
+                                showReadersDropdown = false
+                                expanded = true
+                            }
+                        )
+                        
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 10.dp))
+                        
                         readers.forEach { reader ->
                             val name = listOf(reader.firstName, reader.lastName.orEmpty())
                                 .filter { it.isNotBlank() }
