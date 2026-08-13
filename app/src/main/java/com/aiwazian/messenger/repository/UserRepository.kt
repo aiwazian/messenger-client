@@ -9,6 +9,7 @@ import androidx.core.net.toUri
 import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.UserDao
 import com.aiwazian.messenger.database.entity.AvatarEntity
+import com.aiwazian.messenger.domain.AvatarNotFoundException
 import com.aiwazian.messenger.domain.OwnedChannel
 import com.aiwazian.messenger.domain.PendingJoinRequest
 import com.aiwazian.messenger.domain.User
@@ -52,10 +53,14 @@ class UserRepository @Inject constructor(
                     userDao.insert(user.toEntity())
                     
                     val avatars = user.avatars.map { it.toEntity(user.id) }
-                    avatarDao.insertAvatars(avatars)
                     
-                    if (user.avatars.isEmpty()) {
+                    /*
+                     * Сервер отдал полный список: аватарки, которых в нём нет, уберёт сам DAO.
+                     */
+                    if (avatars.isEmpty()) {
                         avatarDao.deleteAvatarsByUserId(user.id)
+                    } else {
+                        avatarDao.insertAvatars(avatars)
                     }
                 }
             }
@@ -90,10 +95,11 @@ class UserRepository @Inject constructor(
                     userDao.insert(user.toEntity())
                     
                     val avatars = dto.avatars.map { it.toEntity(user.id) }
-                    avatarDao.insertAvatars(avatars)
                     
-                    if (dto.avatars.isEmpty()) {
+                    if (avatars.isEmpty()) {
                         avatarDao.deleteAvatarsByUserId(user.id)
+                    } else {
+                        avatarDao.insertAvatars(avatars)
                     }
                 }
             }
@@ -185,6 +191,12 @@ class UserRepository @Inject constructor(
                 } else {
                     Result.failure(Exception("Empty body"))
                 }
+            } else if (response.code() == 404 || response.code() == 410) {
+                /*
+                 * Аватарку уже заменили или удалили: это не сбой, а повод выбросить
+                 * строку из кэша — этим занимается DownloadAvatarUseCase.
+                 */
+                Result.failure(AvatarNotFoundException(fileId))
             } else {
                 Result.failure(Exception("Unsuccessful request: ${response.errorBody()}"))
             }
@@ -215,15 +227,19 @@ class UserRepository @Inject constructor(
             val currentAvatars = avatarDao.getAvatarsByUserId(user.id)
             val newSortOrder = (currentAvatars.maxOfOrNull { it.sortOrder } ?: 0) + 1
             
-            avatarDao.insertAvatars(
-                listOf(
-                    AvatarEntity(
-                        fileId = fileId,
-                        userId = user.id,
-                        sortOrder = newSortOrder
-                    )
-                )
+            /*
+             * Здесь важно добавить к уже сохранённым: свежезагруженная аватарка пока
+             * есть только локально, поэтому сверка с серверным списком снесла бы её,
+             * а остальные — всё остальное. Поэтому пачка собирается из текущих строк
+             * плюс новая.
+             */
+            val newAvatar = AvatarEntity(
+                fileId = fileId,
+                userId = user.id,
+                sortOrder = newSortOrder
             )
+            
+            avatarDao.insertAvatars(currentAvatars + newAvatar)
         }
     }
     
