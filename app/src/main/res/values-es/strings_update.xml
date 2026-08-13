@@ -1,6 +1,0 @@
-<resources>
-    <string name="update_downloaded_title">Actualización lista</string>
-    <string name="update_downloaded_message">Se ha descargado una nueva versión de la aplicación. Reinicia para completar la instalación.</string>
-    <string name="update_restart">Reiniciar</string>
-    <string name="update_later">Más tarde</string>
-</resources>

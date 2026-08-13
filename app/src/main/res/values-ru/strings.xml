@@ -363,4 +363,8 @@
     <string name="delete_group_confirm_message">Вы точно хотите удалить группу для себя и всех участников?</string>
     <string name="share_sent">Отправлено</string>
     <string name="share_send_failed">Не удалось отправить</string>
+    <string name="update_downloaded_title">Обновление готово</string>
+    <string name="update_downloaded_message">Новая версия приложения загружена. Перезапустите, чтобы завершить установку.</string>
+    <string name="update_restart">Перезапустить</string>
+    <string name="update_later">Позже</string>
 </resources>

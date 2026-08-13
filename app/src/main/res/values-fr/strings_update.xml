@@ -1,6 +1,0 @@
-<resources>
-    <string name="update_downloaded_title">Mise à jour prête</string>
-    <string name="update_downloaded_message">Une nouvelle version de l\'application a été téléchargée. Redémarrez pour terminer l\'installation.</string>
-    <string name="update_restart">Redémarrer</string>
-    <string name="update_later">Plus tard</string>
-</resources>
