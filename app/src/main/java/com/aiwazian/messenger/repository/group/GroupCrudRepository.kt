@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.core.net.toUri
 import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.GroupDao
+import com.aiwazian.messenger.domain.AvatarNotFoundException
 import com.aiwazian.messenger.domain.Group
 import com.aiwazian.messenger.enums.GroupType
 import com.aiwazian.messenger.mappers.toDomain
@@ -62,7 +63,17 @@ class GroupCrudRepository @Inject constructor(
                     groupDao.insert(group.toEntity())
                     
                     val avatars = dto.avatars.map { it.toGroupEntity(group.id) }
-                    avatarDao.insertAvatars(avatars)
+                    
+                    /*
+                     * Сервер отдал полный список аватарок: пропавшие уберёт сам DAO, а
+                     * случай «аватарку удалили совсем» приходит пустым списком и требует
+                     * явной чистки: иначе в кэше осталась бы старая картинка.
+                     */
+                    if (avatars.isEmpty()) {
+                        avatarDao.deleteAvatarsByGroupId(group.id)
+                    } else {
+                        avatarDao.insertAvatars(avatars)
+                    }
                 }
             } else {
                 Log.e(TAG, "Failed to get group $groupId: ${response.message()}")
@@ -217,6 +228,9 @@ class GroupCrudRepository @Inject constructor(
                 } else {
                     Result.failure(Exception("Empty body"))
                 }
+            } else if (response.code() == 404 || response.code() == 410) {
+                /* Файла больше нет: DownloadAvatarUseCase уберёт аватарку из Room. */
+                Result.failure(AvatarNotFoundException(fileId))
             } else {
                 Result.failure(Exception("Unsuccessful request: ${response.errorBody()}"))
             }

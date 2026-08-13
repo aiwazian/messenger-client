@@ -18,10 +18,12 @@ import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.ChatAdminPermissions
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.enums.PrivacyLevel
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
+import com.aiwazian.messenger.repository.PrivacyRepository
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.repository.channel.ChannelAdminsRepository
@@ -65,6 +67,7 @@ class ProfileViewModel @Inject constructor(
     private val groupAdminsRepository: GroupAdminsRepository,
     private val searchRepository: SearchRepository,
     private val inviteLinkRepository: InviteLinkRepository,
+    private val privacyRepository: PrivacyRepository,
     private val shortcutManager: ShortcutManager,
     private val clipboardService: ClipboardService,
     private val vibrationManager: VibrationManager,
@@ -108,8 +111,23 @@ class ProfileViewModel @Inject constructor(
         }
         
         loadMyPermissions(profileId)
-        setupUserObserver()
-        loadProfile()
+        
+        /*
+         * loadProfile() выбирает ветку сравнением profileId с myId, поэтому
+         * запускать его раньше, чем известен свой идентификатор, нельзя. Из-за
+         * этого свой же профиль уходил в ветку «чужой пользователь», где статус
+         * берётся из списка онлайна, а сам пользователь в этот список никогда не
+         * попадает: сервер не рассылает человеку событие о его собственном
+         * статусе. В итоге на своём профиле всегда было «в сети недавно».
+         */
+        viewModelScope.launch {
+            userRepository.getMe().firstOrNull()?.let { user ->
+                _uiState.update { it.copy(myId = user.id) }
+                recalculateActions()
+            }
+            
+            loadProfile()
+        }
     }
     
     /**
@@ -134,12 +152,24 @@ class ProfileViewModel @Inject constructor(
         }
     }
     
-    private fun setupUserObserver() {
-        viewModelScope.launch {
-            userRepository.getMe().firstOrNull()?.let { user ->
-                _uiState.update { it.copy(myId = user.id) }
-                recalculateActions()
-            }
+    /**
+     * Подпись под своим именем.
+     *
+     * Свой статус не приходит по вебсокету и не попадает в список онлайна, зато
+     * он и не нужен: приложение открыто, значит пользователь в сети. Показываем
+     * ровно то, что видят собеседники, поэтому при приватности «Никто» вместо
+     * «в сети» остаётся «в сети недавно».
+     *
+     * Если настройку получить не удалось, считаем статус видимым: на сервере это
+     * тоже значение по умолчанию.
+     */
+    private suspend fun resolveMyPresenceSubtitle(): UiText {
+        val lastSeenPrivacy = privacyRepository.getPrivacySettings().getOrNull()?.lastSeen
+        
+        return if (lastSeenPrivacy == PrivacyLevel.NOBODY) {
+            UiText.StringResource(R.string.last_seen_recently)
+        } else {
+            UiText.StringResource(R.string.online)
         }
     }
     
@@ -171,7 +201,7 @@ class ProfileViewModel @Inject constructor(
                             _uiState.update {
                                 it.copy(
                                     title = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
-                                    subTitle = UiText.DynamicString(""),
+                                    subTitle = resolveMyPresenceSubtitle(),
                                     profile = profile,
                                     avatars = user.avatars.map { avatar -> avatar.uri }
                                 )

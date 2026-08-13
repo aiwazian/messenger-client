@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -36,6 +37,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -162,34 +164,41 @@ fun MessageBubble(
                                 .fillMaxWidth()
                                 .padding(start = 8.dp, top = 8.dp, end = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            /* Имя отправителя в группе — точка входа в его профиль. */
-                            Text(
-                                text = item.senderName,
-                                fontSize = 12.sp,
-                                lineHeight = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                            Box(
                                 modifier = if (onSenderNameClick != null) {
-                                    Modifier.clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                        onClick = onSenderNameClick
-                                    )
+                                    Modifier
+                                        .clip(MaterialTheme.shapes.small)
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = ripple(color = MaterialTheme.colorScheme.primary),
+                                            onClick = onSenderNameClick,
+                                        )
+                                        .padding(horizontal = 4.dp)
                                 } else {
                                     Modifier
                                 }
-                            )
+                            ) {
+                                Text(
+                                    text = item.senderName,
+                                    fontSize = 12.sp,
+                                    lineHeight = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
                             
                             if (!item.senderTag.isNullOrBlank()) {
+                                Spacer(Modifier.width(4.dp))
+                                
                                 Box(
                                     modifier = Modifier
                                         .clip(MaterialTheme.shapes.medium)
                                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-                                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                                        .padding(horizontal = 4.dp)
                                 ) {
                                     Text(
                                         text = item.senderTag,
@@ -459,7 +468,7 @@ private fun buildDropdownActions(
         val label = if (editedDate.toLocalDate() == now) {
             "Изменено в $editedTime"
         } else {
-            "Изменено " + editedDate.format(DateTimeFormatter.ofPattern("d MMMM HH:mm"))
+            "Изменено " + editedDate.format(DateTimeFormatter.ofPattern("d MMM 'в' HH:mm"))
         }
         actions.add(
             DropdownMenuAction(

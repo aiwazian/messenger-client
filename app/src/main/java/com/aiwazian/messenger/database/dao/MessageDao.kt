@@ -7,22 +7,63 @@ package com.aiwazian.messenger.database.dao
 import androidx.room3.Dao
 import androidx.room3.Query
 import androidx.room3.Transaction
+import androidx.room3.Upsert
 import com.aiwazian.messenger.database.entity.MessageEntity
 import com.aiwazian.messenger.database.entity.MessageWithAttachments
 import com.aiwazian.messenger.enums.MessageStatus
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Кэш сообщений, разделённый по аккаунтам.
+ *
+ * Условие по владельцу везде берётся подзапросом из таблицы account, а не
+ * параметром: активный аккаунт там уже хранится, и это единственный источник
+ * правды. Иначе каждый вызывающий обязан был бы таскать за собой свой id и
+ * ошибка в одном месте снова показала бы чужую переписку.
+ */
 @Dao
 interface MessageDao {
-    @androidx.room3.Upsert
-    suspend fun saveMessages(messages: List<MessageEntity>)
+    
+    /**
+     * Сохранение сообщений с присвоением владельца.
+     *
+     * Upsert перезаписывает строку целиком и возвращает ownerId к нулю, поэтому
+     * владелец проставляется сразу после записи — иначе свежее сообщение стало бы
+     * невидимым для всех аккаунтов. Тот, кто последним получил сообщение с сервера,
+     * и становится владельцем строки: остальные перечитают её при открытии чата.
+     */
+    @Transaction
+    suspend fun saveMessages(messages: List<MessageEntity>) {
+        upsertMessages(messages)
+        claimUnownedMessages()
+    }
+    
+    @Upsert
+    suspend fun upsertMessages(messages: List<MessageEntity>)
+    
+    /**
+     * Присвоить активному аккаунту строки без владельца.
+     *
+     * EXISTS защищает от записи NULL в NOT NULL колонку, когда в базе нет активного
+     * аккаунта: сообщения тогда просто ждут ближайшего входа.
+     */
+    @Query(
+        "UPDATE message " +
+                "SET ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
+                "WHERE ownerId = 0 " +
+                "AND EXISTS (SELECT 1 FROM account WHERE isCurrent = 1)"
+    )
+    suspend fun claimUnownedMessages()
     
     @Transaction
     @Query(
         "SELECT * FROM (" +
                 "SELECT * FROM message " +
-                "WHERE (senderId = :senderId AND chatId = :chatId) " +
-                "OR (senderId = :chatId AND chatId = :senderId) " +
+                "WHERE ((senderId = :senderId AND chatId = :chatId) " +
+                "OR (senderId = :chatId AND chatId = :senderId)) " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "ORDER BY sendTime DESC " +
                 "LIMIT :limit OFFSET :offset" +
                 ") " +
@@ -36,8 +77,10 @@ interface MessageDao {
     @Query(
         "SELECT * FROM (" +
                 "SELECT * FROM message " +
-                   "WHERE chatId = :chatId " +
-                   "OR senderId = :chatId " +
+                   "WHERE (chatId = :chatId " +
+                   "OR senderId = :chatId) " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "ORDER BY sendTime DESC " +
                 "LIMIT :limit OFFSET :offset" +
                 ") " +
@@ -48,14 +91,22 @@ interface MessageDao {
     ): Flow<List<MessageWithAttachments>>
     
     @Transaction
-    @Query("SELECT * FROM message WHERE id = :messageId LIMIT 1")
+    @Query(
+        "SELECT * FROM message " +
+                "WHERE id = :messageId " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
+                "LIMIT 1"
+    )
     suspend fun getMessageById(messageId: Long): MessageWithAttachments?
     
     @Transaction
     @Query(
         "SELECT * FROM message " +
-                "WHERE (senderId = :userId AND chatId = :chatId) " +
-                "OR (chatId = :userId AND senderId = :chatId) " +
+                "WHERE ((senderId = :userId AND chatId = :chatId) " +
+                "OR (chatId = :userId AND senderId = :chatId)) " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "ORDER BY sendTime DESC " +
                 "LIMIT 1"
     )
@@ -65,6 +116,8 @@ interface MessageDao {
     @Query(
         "SELECT * FROM message " +
                 "WHERE chatId = :chatId " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "ORDER BY sendTime DESC " +
                 "LIMIT 1"
     )
@@ -72,25 +125,53 @@ interface MessageDao {
     
     @Query(
         "DELETE FROM message " +
-                "WHERE (senderId = :userId AND chatId = :chatId) " +
+                "WHERE ((senderId = :userId AND chatId = :chatId) " +
                 "OR (senderId = :chatId AND chatId = :userId) " +
-                "OR (senderId = :chatId AND chatId = :chatId)"
+                "OR (senderId = :chatId AND chatId = :chatId)) " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
     )
     suspend fun clearChatHistory(userId: Long, chatId: Long)
     
-    @Query("DELETE FROM message WHERE id = :id")
+    @Query(
+        "DELETE FROM message " +
+                "WHERE id = :id " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
+    )
     suspend fun deleteMessageById(id: Long)
 
-    @Query("UPDATE message SET text = :text, editedAt = :editedAt WHERE id = :id")
+    @Query(
+        "UPDATE message SET text = :text, editedAt = :editedAt " +
+                "WHERE id = :id " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
+    )
     suspend fun updateMessageTextAndEditedAt(id: Long, text: String, editedAt: Long?)
     
-    @Query("UPDATE message SET status = :status WHERE id = :id")
+    @Query(
+        "UPDATE message SET status = :status " +
+                "WHERE id = :id " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
+    )
     suspend fun updateMessageStatus(id: Long, status: MessageStatus)
 
-    @Query("UPDATE message SET id = :newId WHERE id = :oldId")
+    @Query(
+        "UPDATE message SET id = :newId " +
+                "WHERE id = :oldId " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
+    )
     suspend fun updateMessageId(oldId: Long, newId: Long)
     
-    @Query("DELETE FROM message WHERE chatId NOT IN (:chatIds)")
+    /** Чаты пропали из списка своего аккаунта: кэш чужих аккаунтов при этом не трогаем. */
+    @Query(
+        "DELETE FROM message " +
+                "WHERE chatId NOT IN (:chatIds) " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
+    )
     suspend fun deleteMessagesNotInChatIds(chatIds: List<Long>)
     
     @Query(
@@ -98,6 +179,8 @@ interface MessageDao {
                 "WHERE ((senderId = :userId AND chatId = :chatId) " +
                 "OR (senderId = :chatId AND chatId = :userId) " +
                 "OR (chatId = :chatId)) " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "AND sendTime >= :minTime AND sendTime <= :maxTime " +
                 "AND id > 0 AND id NOT IN (:ids)"
     )
@@ -109,15 +192,24 @@ interface MessageDao {
         ids: List<Long>
     )
     
+    /** Полная очистка таблицы: используется при выходе, поэтому без фильтра по владельцу. */
     @Query("DELETE FROM message")
     suspend fun deleteAll()
     
-    @Query("UPDATE message SET isRead = :isRead WHERE id = :id")
+    @Query(
+        "UPDATE message SET isRead = :isRead " +
+                "WHERE id = :id " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
+    )
     suspend fun updateMessageReadStatus(id: Long, isRead: Boolean)
     
     @Query(
         "UPDATE message SET isRead = :isRead " +
-                "WHERE chatId = :chatId AND senderId = :senderId AND sendTime <= :upToSendTime AND isRead = 0"
+                "WHERE chatId = :chatId AND senderId = :senderId " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
+                "AND sendTime <= :upToSendTime AND isRead = 0"
     )
     suspend fun updateReadStatusBySenderUpTo(
         chatId: Long, senderId: Long, upToSendTime: Long, isRead: Boolean
@@ -133,12 +225,19 @@ interface MessageDao {
         """
         UPDATE message SET isRead = 1 
         WHERE chatId = :chatId AND senderId != :myId 
+            AND ownerId = (SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) 
             AND sendTime <= :upToSendTime AND isRead = 0
     """
     )
     suspend fun markIncomingReadUpTo(chatId: Long, myId: Long, upToSendTime: Long)
     
-    @Query("UPDATE message SET isRead = 1 WHERE chatId = :chatId AND senderId != :myId AND isRead = 0")
+    @Query(
+        "UPDATE message SET isRead = 1 " +
+                "WHERE chatId = :chatId AND senderId != :myId " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
+                "AND isRead = 0"
+    )
     suspend fun markAllIncomingRead(chatId: Long, myId: Long)
     
     /**
@@ -155,6 +254,8 @@ interface MessageDao {
         "SELECT * FROM message " +
                 "WHERE ((senderId = :senderId AND chatId = :chatId) " +
                 "OR (senderId = :chatId AND chatId = :senderId)) " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "AND ((id >= :fromId AND id <= :toId) OR (:includePending = 1 AND id < 0)) " +
                 "ORDER BY sendTime ASC, id ASC"
     )
@@ -167,6 +268,8 @@ interface MessageDao {
     @Query(
         "SELECT * FROM message " +
                 "WHERE (chatId = :chatId OR senderId = :chatId) " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "AND ((id >= :fromId AND id <= :toId) OR (:includePending = 1 AND id < 0)) " +
                 "ORDER BY sendTime ASC, id ASC"
     )
@@ -179,6 +282,8 @@ interface MessageDao {
         "SELECT id FROM message " +
                 "WHERE ((senderId = :senderId AND chatId = :chatId) " +
                 "OR (senderId = :chatId AND chatId = :senderId)) " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "AND id > 0 " +
                 "ORDER BY sendTime DESC, id DESC LIMIT :limit"
     )
@@ -188,6 +293,8 @@ interface MessageDao {
     @Query(
         "SELECT id FROM message " +
                 "WHERE (chatId = :chatId OR senderId = :chatId) " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "AND id > 0 " +
                 "ORDER BY sendTime DESC, id DESC LIMIT :limit"
     )

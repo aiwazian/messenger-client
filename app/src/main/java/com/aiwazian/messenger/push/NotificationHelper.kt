@@ -35,6 +35,7 @@ import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.utils.ActiveChatTracker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -56,6 +57,11 @@ class NotificationHelper @Inject constructor(
     companion object {
         private const val MAX_MESSAGES = 5
         private const val ICON_SIZE_DP = 192
+        
+        /** История показанных уведомлений по чатам: ключ — chatId. */
+        private const val NOTIFICATIONS_PREFS = "NOTIFICATIONS"
+        
+        private const val CHAT_SHORTCUT_PREFIX = "chat_"
     }
     
     private data class MessageData(
@@ -120,7 +126,7 @@ class NotificationHelper @Inject constructor(
         chatName: String,
         avatarBitmap: Bitmap?
     ) {
-        val shortcutId = "chat_$chatId"
+        val shortcutId = "$CHAT_SHORTCUT_PREFIX$chatId"
         val person = createPerson(chatName, avatarBitmap, chatId)
         
         val intent = Intent(context, MainActivity::class.java).apply {
@@ -148,6 +154,14 @@ class NotificationHelper @Inject constructor(
         avatarUri: Uri? = null
     ) {
         scope.launch {
+            /*
+             * Чат уже открыт на экране: пользователь читает эти сообщения прямо
+             * сейчас. Проверка стоит здесь, а не только в обработчике вебсокета,
+             * чтобы её не обходил пуш от Firebase, пришедший в момент, когда сокет
+             * переподключался.
+             */
+            if (ActiveChatTracker.activeChatId.value == chatId) return@launch
+            
             val chatInfo = when (ChatType.fromId(chatId)) {
                 ChatType.PRIVATE -> database.userDao().getWithAvatars(chatId)?.let {
                     val name = "${it.user.firstName} ${it.user.lastName.orEmpty()}".trim()
@@ -215,7 +229,7 @@ class NotificationHelper @Inject constructor(
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
                 .setOnlyAlertOnce(false)
-                .setShortcutId("chat_$chatId")
+                .setShortcutId("$CHAT_SHORTCUT_PREFIX$chatId")
                 .build()
             
             val notificationId = chatId.toInt()
@@ -232,11 +246,37 @@ class NotificationHelper @Inject constructor(
     fun clearChatNotifications(chatId: Long) {
         saveMessages(context, chatId, emptyList())
         NotificationManagerCompat.from(context).cancel(chatId.toInt())
-        ShortcutManagerCompat.removeDynamicShortcuts(context, listOf("chat_$chatId"))
+        ShortcutManagerCompat.removeDynamicShortcuts(
+            context,
+            listOf("$CHAT_SHORTCUT_PREFIX$chatId")
+        )
+    }
+    
+    /**
+     * Убрать все уведомления и ярлыки чатов — при смене аккаунта или выходе.
+     *
+     * Шторка и ярлыки живут вне процесса и ничего не знают про аккаунты: без
+     * этой чистки новый аккаунт видел бы чужие сообщения, а нажатие вело бы в чат,
+     * которого у него нет.
+     *
+     * Удаляются только ярлыки чатов, а не все динамические: остальные к аккаунту не
+     * привязаны, и терять их незачем.
+     */
+    fun clearAllNotifications() {
+        val prefs = context.getSharedPreferences(NOTIFICATIONS_PREFS, Context.MODE_PRIVATE)
+        val chatShortcutIds = prefs.all.keys.map { "$CHAT_SHORTCUT_PREFIX$it" }
+        
+        prefs.edit { clear() }
+        
+        NotificationManagerCompat.from(context).cancelAll()
+        
+        if (chatShortcutIds.isNotEmpty()) {
+            ShortcutManagerCompat.removeDynamicShortcuts(context, chatShortcutIds)
+        }
     }
     
     private fun loadMessages(context: Context, chatId: Long): List<MessageData> {
-        val prefs = context.getSharedPreferences("NOTIFICATIONS", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences(NOTIFICATIONS_PREFS, Context.MODE_PRIVATE)
         val raw = prefs.getString(chatId.toString(), null) ?: return emptyList()
         return try {
             val jsonArray = JSONArray(raw)
@@ -253,7 +293,7 @@ class NotificationHelper @Inject constructor(
     private fun saveMessages(context: Context, chatId: Long, messages: List<MessageData>) {
         val jsonArray = JSONArray()
         messages.forEach { jsonArray.put(it.toJson()) }
-        context.getSharedPreferences("NOTIFICATIONS", Context.MODE_PRIVATE).edit {
+        context.getSharedPreferences(NOTIFICATIONS_PREFS, Context.MODE_PRIVATE).edit {
             putString(chatId.toString(), jsonArray.toString())
         }
     }

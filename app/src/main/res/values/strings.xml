@@ -371,4 +371,7 @@
     <string name="update_downloaded_message">A new version of the app has been downloaded. Restart to finish installing.</string>
     <string name="update_restart">Restart</string>
     <string name="update_later">Later</string>
+    <string name="last_seen_time">Last seen at %1$s</string>
+    <string name="last_seen_yesterday_time">Last seen yesterday at %1$s</string>
+    <string name="last_seen_date_time">Last seen %1$s at %2$s</string>
 </resources>

@@ -108,11 +108,13 @@ fun ShareBottomSheet(
     
     AppBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        contentPadding = PaddingValues()
+        sheetState = sheetState
     ) {
         Box(modifier = Modifier.fillMaxHeight()) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 val interactionSource = remember { MutableInteractionSource() }
                 
                 LaunchedEffect(interactionSource) {
@@ -149,7 +151,6 @@ fun ShareBottomSheet(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(10.dp)
                         .statusBarsPadding(),
                     interactionSource = interactionSource
                 )
@@ -160,12 +161,7 @@ fun ShareBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    contentPadding = PaddingValues(
-                        start = 10.dp,
-                        top = 10.dp,
-                        end = 10.dp,
-                        bottom = 80.dp
-                    ),
+                    contentPadding = PaddingValues(bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {

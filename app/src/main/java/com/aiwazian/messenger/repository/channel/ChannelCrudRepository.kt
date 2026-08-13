@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.core.net.toUri
 import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.ChannelDao
+import com.aiwazian.messenger.domain.AvatarNotFoundException
 import com.aiwazian.messenger.domain.Channel
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.mappers.toChannelEntity
@@ -83,7 +84,16 @@ class ChannelCrudRepository @Inject constructor(
                     channelDao.insert(channel.toEntity())
                     
                     val avatars = dto.avatars.map { it.toChannelEntity(channel.id) }
-                    avatarDao.insertAvatars(avatars)
+                    
+                    /*
+                     * Сервер отдал полный список аватарок: пропавшие уберёт сам DAO, а
+                     * пустой список — это «аватарок больше нет» и требует явной чистки.
+                     */
+                    if (avatars.isEmpty()) {
+                        avatarDao.deleteAvatarsByChannelId(channel.id)
+                    } else {
+                        avatarDao.insertAvatars(avatars)
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -211,6 +221,9 @@ class ChannelCrudRepository @Inject constructor(
                 } else {
                     Result.failure(Exception("Empty body"))
                 }
+            } else if (response.code() == 404 || response.code() == 410) {
+                /* Файла больше нет: DownloadAvatarUseCase уберёт аватарку из Room. */
+                Result.failure(AvatarNotFoundException(fileId))
             } else {
                 Result.failure(Exception("Unsuccessful request: ${response.errorBody()}"))
             }

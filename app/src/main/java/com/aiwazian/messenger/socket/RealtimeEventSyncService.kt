@@ -8,6 +8,7 @@ import android.content.Context
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.ReadMessagePayload
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.push.NotificationHelper
 import com.aiwazian.messenger.repository.ChatFolderRepository
 import com.aiwazian.messenger.repository.ChatRepository
@@ -19,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -169,6 +171,32 @@ class RealtimeEventSyncService @Inject constructor(
         
         webSocketClient.subscribeToEvent(WebSocketEvent.UserOffline) { payload ->
             onlineUsersTracker.setOffline(payload.userId)
+        }
+        
+        /*
+         * Открытый чат гасит свои уведомления сам: пользователь уже читает эти
+         * сообщения. Слушаем активный чат, а не конкретный экран, поэтому это
+         * работает при любом способе открытия — из списка, из поиска, по тапу на
+         * само уведомление — и убирает те уведомления, что успели прилететь пушем
+         * до того, как чат открылся.
+         */
+        serviceScope.launch {
+            ActiveChatTracker.activeChatId.filterNotNull().collect { chatId ->
+                notificationHelper.clearChatNotifications(chatId)
+            }
+        }
+        
+        /*
+         * Пока сокет лежал, события о статусах проходили мимо, и список онлайна
+         * оставался таким, каким был на момент обрыва. После каждого подключения
+         * он берётся с сервера заново.
+         */
+        serviceScope.launch {
+            webSocketClient.connectionState.collect { state ->
+                if (state != ConnectionState.CONNECTED) return@collect
+                
+                chatRepository.refreshOnlineUsers()
+            }
         }
     }
     
