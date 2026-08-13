@@ -367,4 +367,7 @@
     <string name="update_downloaded_message">Новая версия приложения загружена. Перезапустите, чтобы завершить установку.</string>
     <string name="update_restart">Перезапустить</string>
     <string name="update_later">Позже</string>
+    <string name="last_seen_time">В сети в %1$s</string>
+    <string name="last_seen_yesterday_time">В сети вчера в %1$s</string>
+    <string name="last_seen_date_time">В сети %1$s в %2$s</string>
 </resources>

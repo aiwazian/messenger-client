@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="last_seen_time">Última vez a las %1$s</string>
-    <string name="last_seen_yesterday_time">Última vez ayer a las %1$s</string>
-    <string name="last_seen_date_time">Última vez el %1$s a las %2$s</string>
-</resources>

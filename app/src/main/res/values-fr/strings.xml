@@ -365,4 +365,7 @@
     <string name="update_downloaded_message">Une nouvelle version de l\'application a été téléchargée. Redémarrez pour terminer l\'installation.</string>
     <string name="update_restart">Redémarrer</string>
     <string name="update_later">Plus tard</string>
+    <string name="last_seen_time">Vu à %1$s</string>
+    <string name="last_seen_yesterday_time">Vu hier à %1$s</string>
+    <string name="last_seen_date_time">Vu le %1$s à %2$s</string>
 </resources>

@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Last seen subtitle: today, yesterday and older dates. -->
-    <string name="last_seen_time">Last seen at %1$s</string>
-    <string name="last_seen_yesterday_time">Last seen yesterday at %1$s</string>
-    <string name="last_seen_date_time">Last seen %1$s at %2$s</string>
-</resources>

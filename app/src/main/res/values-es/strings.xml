@@ -365,4 +365,7 @@
     <string name="update_downloaded_message">Se ha descargado una nueva versión de la aplicación. Reinicia para completar la instalación.</string>
     <string name="update_restart">Reiniciar</string>
     <string name="update_later">Más tarde</string>
+    <string name="last_seen_time">Última vez a las %1$s</string>
+    <string name="last_seen_yesterday_time">Última vez ayer a las %1$s</string>
+    <string name="last_seen_date_time">Última vez el %1$s a las %2$s</string>
 </resources>

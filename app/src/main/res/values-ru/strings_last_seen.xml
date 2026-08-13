@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="last_seen_time">В сети в %1$s</string>
-    <string name="last_seen_yesterday_time">В сети вчера в %1$s</string>
-    <string name="last_seen_date_time">В сети %1$s в %2$s</string>
-</resources>

@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="last_seen_time">Ultimo accesso alle %1$s</string>
-    <string name="last_seen_yesterday_time">Ultimo accesso ieri alle %1$s</string>
-    <string name="last_seen_date_time">Ultimo accesso il %1$s alle %2$s</string>
-</resources>
