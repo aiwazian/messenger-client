@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="last_seen_time">Vu à %1$s</string>
+    <string name="last_seen_yesterday_time">Vu hier à %1$s</string>
+    <string name="last_seen_date_time">Vu le %1$s à %2$s</string>
+</resources>
