@@ -35,6 +35,7 @@ import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.utils.ActiveChatTracker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -148,6 +149,14 @@ class NotificationHelper @Inject constructor(
         avatarUri: Uri? = null
     ) {
         scope.launch {
+            /*
+             * Чат уже открыт на экране: пользователь читает эти сообщения прямо
+             * сейчас. Проверка стоит здесь, а не только в обработчике вебсокета,
+             * чтобы её не обходил пуш от Firebase, пришедший в момент, когда сокет
+             * переподключался.
+             */
+            if (ActiveChatTracker.activeChatId.value == chatId) return@launch
+            
             val chatInfo = when (ChatType.fromId(chatId)) {
                 ChatType.PRIVATE -> database.userDao().getWithAvatars(chatId)?.let {
                     val name = "${it.user.firstName} ${it.user.lastName.orEmpty()}".trim()
