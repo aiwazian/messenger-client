@@ -37,14 +37,16 @@ fun MessageFooter(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (isEdited) {
+            Spacer(modifier = Modifier.size(2.dp))
             Text(
                 text = stringResource(R.string.edited).lowercase(),
                 fontSize = 10.sp,
                 lineHeight = 10.sp,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(modifier = Modifier.size(2.dp))
+            Spacer(modifier = Modifier.size(4.dp))
         }
+        
         Text(
             text = time,
             fontSize = 10.sp,

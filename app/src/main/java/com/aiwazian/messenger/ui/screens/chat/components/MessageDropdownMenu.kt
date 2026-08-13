@@ -44,7 +44,7 @@ fun MessageDropdownMenu(
     AppDropdownMenuPopup(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
-        modifier = Modifier.widthIn(max = 220.dp)
+        modifier = Modifier.widthIn(max = 240.dp)
     ) {
         if (nonClickable.isNotEmpty() || clickable.isNotEmpty()) {
             DropdownMenuGroup(
@@ -53,7 +53,7 @@ fun MessageDropdownMenu(
             ) {
                 nonClickable.forEach { action ->
                     Row(
-                        modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 4.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
@@ -66,6 +66,7 @@ fun MessageDropdownMenu(
                         Text(
                             text = action.text.asString(),
                             fontSize = 13.sp,
+                            lineHeight = 14.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
