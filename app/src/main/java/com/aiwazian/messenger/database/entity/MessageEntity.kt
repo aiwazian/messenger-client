@@ -6,12 +6,16 @@ package com.aiwazian.messenger.database.entity
 
 import androidx.room3.ColumnInfo
 import androidx.room3.Entity
+import androidx.room3.Index
 import androidx.room3.PrimaryKey
 import com.aiwazian.messenger.enums.MessageStatus
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 
-@Entity("message")
+@Entity(
+    tableName = "message",
+    indices = [Index(value = ["ownerId", "chatId"])]
+)
 data class MessageEntity(
     @PrimaryKey val id: Long,
     val senderId: Long,
@@ -43,6 +47,20 @@ data class MessageEntity(
     val forwardedFromChatId: Long? = null,
     val forwardedFromName: String? = null,
     /** Имя ForwardSourceAccess; хранится строкой, чтобы не плодить конвертеры Room. */
-    val forwardedFromAccess: String? = null
+    val forwardedFromAccess: String? = null,
     // endregion
+    
+    /**
+     * Аккаунт, которому принадлежит эта копия сообщения.
+     *
+     * На устройстве живёт несколько аккаунтов, и у одного и того же сообщения isRead
+     * у них разное: в группе «прочитано» относится к конкретному читателю, а не к
+     * сообщению. Общая на всех строка давала чужие галочки, чужие непрочитанные и
+     * чистку кэша одного аккаунта вместе с кэшом другого.
+     *
+     * 0 — владелец ещё не присвоен: его проставляет MessageDao.saveMessages по
+     * таблице account. Поле стоит последним, чтобы не ломать позиционные вызовы
+     * конструктора.
+     */
+    @ColumnInfo(defaultValue = "0") val ownerId: Long = 0
 )
