@@ -361,4 +361,8 @@
     <string name="delete_group_confirm_message"><![CDATA[Êtes-vous sûr de vouloir supprimer ce groupe pour vous-même et tous les membres \?]]></string>
     <string name="share_sent">Envoyé</string>
     <string name="share_send_failed">Échec de l\'envoi</string>
+    <string name="update_downloaded_title">Mise à jour prête</string>
+    <string name="update_downloaded_message">Une nouvelle version de l\'application a été téléchargée. Redémarrez pour terminer l\'installation.</string>
+    <string name="update_restart">Redémarrer</string>
+    <string name="update_later">Plus tard</string>
 </resources>

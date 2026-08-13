@@ -367,4 +367,8 @@
     <string name="delete_group_confirm_message">Are you sure you want to delete this group for yourself and all members?</string>
     <string name="share_sent">Sent</string>
     <string name="share_send_failed">Failed to send</string>
+    <string name="update_downloaded_title">Update ready</string>
+    <string name="update_downloaded_message">A new version of the app has been downloaded. Restart to finish installing.</string>
+    <string name="update_restart">Restart</string>
+    <string name="update_later">Later</string>
 </resources>

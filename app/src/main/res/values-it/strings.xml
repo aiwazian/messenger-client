@@ -361,4 +361,8 @@
     <string name="delete_group_confirm_message">Sei sicuro di voler eliminare questo gruppo per te e tutti i membri\?</string>
     <string name="share_sent">Inviato</string>
     <string name="share_send_failed">Impossibile inviare</string>
+    <string name="update_downloaded_title">Aggiornamento pronto</string>
+    <string name="update_downloaded_message">È stata scaricata una nuova versione dell\'app. Riavvia per completare l\'installazione.</string>
+    <string name="update_restart">Riavvia</string>
+    <string name="update_later">Più tardi</string>
 </resources>
