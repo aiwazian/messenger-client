@@ -7,7 +7,9 @@ package com.aiwazian.messenger.ui.screens.main
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.User
+import com.aiwazian.messenger.push.NotificationHelper
 import com.aiwazian.messenger.repository.AuthRepository
+import com.aiwazian.messenger.repository.MessageReadInfoCache
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,7 +35,9 @@ sealed interface AccountSwitcherSideEffect {
 @HiltViewModel
 class AccountSwitcherViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val notificationHelper: NotificationHelper,
+    private val messageReadInfoCache: MessageReadInfoCache
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(AccountSwitcherUiState())
@@ -76,6 +80,14 @@ class AccountSwitcherViewModel @Inject constructor(
     
     fun switchAccount(userId: Long) {
         viewModelScope.launch {
+            /*
+             * Шторка и списки просмотров относятся к прежнему аккаунту. Уведомления живут
+             * вне процесса, а кэш просмотров — в памяти Application, поэтому
+             * перезапуск Activity их не сбросит: чистим вручную до смены сессии.
+             */
+            notificationHelper.clearAllNotifications()
+            messageReadInfoCache.clear()
+            
             SessionManager.switchAccount(userId)
             _sideEffect.emit(AccountSwitcherSideEffect.AccountSwitched)
         }
