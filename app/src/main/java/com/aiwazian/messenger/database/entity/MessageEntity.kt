@@ -22,6 +22,12 @@ data class MessageEntity(
     val chatId: Long,
     val text: String?,
     val sendTime: Long,
+    /**
+     * Когда сообщение правили.
+     *
+     * Сервер хранит это время в Redis трое суток и потом отдаёт пустое поле,
+     * поэтому сам факт правки лежит в [isEdited], а не выводится отсюда.
+     */
     val editedAt: Long? = null,
     val messageType: MessageType,
     val systemMessageEventType: SystemMessageEventType?,
@@ -59,8 +65,17 @@ data class MessageEntity(
      * чистку кэша одного аккаунта вместе с кэшом другого.
      *
      * 0 — владелец ещё не присвоен: его проставляет MessageDao.saveMessages по
-     * таблице account. Поле стоит последним, чтобы не ломать позиционные вызовы
-     * конструктора.
+     * таблице account. Поле добавлено в конец списка, чтобы не ломать позиционные
+     * вызовы конструктора.
      */
-    @ColumnInfo(defaultValue = "0") val ownerId: Long = 0
+    @ColumnInfo(defaultValue = "0") val ownerId: Long = 0,
+    
+    /**
+     * Сообщение правили хотя бы раз.
+     *
+     * Флаг приходит с сервера всегда, а [editedAt] — только трое суток после
+     * правки. Без отдельной колонки подпись «изменено» слетала бы с сообщения при
+     * первой же перезакачке истории на четвёртый день.
+     */
+    @ColumnInfo(defaultValue = "0") val isEdited: Boolean = false
 )
