@@ -348,7 +348,8 @@ fun MessageBubble(
                         time = item.time,
                         isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
                         status = message.status,
-                        isEdited = message.editedAt != null
+                        /* Флаг, а не editedAt: время правки живёт трое суток, подпись — всегда. */
+                        isEdited = message.isEdited
                     )
                 }
                 
@@ -461,6 +462,11 @@ private fun buildDropdownActions(
 ): List<DropdownMenuAction> {
     val actions = mutableListOf<DropdownMenuAction>()
     
+    /*
+     * Пункт с точным временем правки живёт столько же, сколько запись в Redis, —
+     * трое суток. Дальше сервер отдаёт editedAt пустым и показывать нечего: сам
+     * факт правки остаётся виден по подписи «изменено» в самом сообщении.
+     */
     if (item.message.editedAt != null) {
         val editedTime = item.message.editedAt.toInstance().toPrettyTime()
         val editedDate = item.message.editedAt.toInstance().atZone(ZoneId.systemDefault())
