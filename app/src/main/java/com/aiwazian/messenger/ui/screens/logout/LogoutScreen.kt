@@ -13,8 +13,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -72,6 +72,7 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
                     context.startActivity(intent)
                     (context as? Activity)?.finish()
                 }
+                
                 is LogoutSideEffect.LogoutSuccess -> {
                     val intent = Intent(
                         context,
@@ -99,7 +100,7 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
                 SectionHeader(title = stringResource(R.string.alternative_options))
             }) {
                 SectionItem(
-                    leadingIcon = Icons.Rounded.PersonAdd,
+                    leadingIcon = Icons.Outlined.PersonAdd,
                     headlineText = stringResource(R.string.add_account),
                     supportingText = "Войдите в другой аккаунт, не выходя из текущего.",
                     onClick = {
@@ -110,7 +111,7 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
                     headlineText = stringResource(R.string.clear_cache),
                     supportingText = "Освободите память устройства, файлы останутся в облаке.",
                     onClick = {
-                        navBackStack.add(AppRoute.SettingsDataAndStorage)
+                        navBackStack.add(AppRoute.SettingsStorage)
                     })
             }
             
