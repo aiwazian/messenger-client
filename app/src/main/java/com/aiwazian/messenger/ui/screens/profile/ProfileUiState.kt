@@ -8,6 +8,7 @@ import android.net.Uri
 import com.aiwazian.messenger.domain.ChatAdminPermissions
 import com.aiwazian.messenger.domain.InviteLinkInfo
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.ui.components.ShareItem
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.utils.UiText
 
@@ -36,7 +37,11 @@ data class ProfileUiState(
     val profileChannelInfo: ProfileChannelInfo? = null,
     val showBlockDialog: Boolean = false,
     val isBlockedStateForDialog: Boolean = false,
-    val permissions: ChatAdminPermissions = ChatAdminPermissions()
+    val permissions: ChatAdminPermissions = ChatAdminPermissions(),
+    val shareText: String = "",
+    val shareTargets: List<ShareItem> = emptyList(),
+    val selectedShareChatIds: Set<Long> = emptySet(),
+    val showShareBottomSheet: Boolean = false
 ) {
     
     /**

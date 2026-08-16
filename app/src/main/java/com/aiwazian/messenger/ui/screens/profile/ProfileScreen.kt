@@ -9,6 +9,7 @@ import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalFlexBoxApi
 import androidx.compose.foundation.layout.FlexAlignItems
 import androidx.compose.foundation.layout.FlexBox
@@ -30,7 +31,9 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -82,6 +85,7 @@ import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ChatCard
+import com.aiwazian.messenger.ui.components.ShareBottomSheet
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -257,7 +261,9 @@ fun ProfileScreen(
                         onChatClick = viewModel::onChatButtonClicked,
                         onEditClick = { navBackStack.add(AppRoute.SettingsProfile) },
                         onLinkClicked = viewModel::onLinkClicked,
-                        onUsernameClicked = viewModel::onUsernameClicked
+                        onUsernameClicked = viewModel::onUsernameClicked,
+                        onCopyClick = viewModel::copyToClipboard,
+                        onShareClick = viewModel::onShareUsername
                     )
                     
                     is Profile.Channel -> ChannelProfile(
@@ -266,7 +272,9 @@ fun ProfileScreen(
                         onJoinClick = viewModel::onJoinClicked,
                         onLeaveClick = viewModel::showLeaveDialog,
                         onLinkClicked = viewModel::onLinkClicked,
-                        onUsernameClicked = viewModel::onUsernameClicked
+                        onUsernameClicked = viewModel::onUsernameClicked,
+                        onCopyClick = viewModel::copyToClipboard,
+                        onShareClick = viewModel::onShareUsername
                     )
                     
                     is Profile.Group -> GroupProfile(
@@ -276,7 +284,9 @@ fun ProfileScreen(
                         onJoinClick = viewModel::onJoinClicked,
                         onLeaveClick = viewModel::showLeaveDialog,
                         onLinkClicked = viewModel::onLinkClicked,
-                        onUsernameClicked = viewModel::onUsernameClicked
+                        onUsernameClicked = viewModel::onUsernameClicked,
+                        onCopyClick = viewModel::copyToClipboard,
+                        onShareClick = viewModel::onShareUsername
                     )
                     
                     else -> {}
@@ -293,6 +303,15 @@ fun ProfileScreen(
             }, onConfirm = {
                 viewModel.onLeaveConfirmed()
             }, profileName = leaveDialogData!!.first, chatType = leaveDialogData!!.second
+        )
+    }
+    
+    if (uiState.showShareBottomSheet) {
+        ShareBottomSheet(
+            items = uiState.shareTargets,
+            onItemClick = viewModel::toggleShareTarget,
+            onSendClick = viewModel::sendShare,
+            onDismiss = viewModel::dismissShareBottomSheet
         )
     }
     
@@ -345,6 +364,60 @@ fun ProfileScreen(
     }
 }
 
+/**
+ * Строка профиля с выпадающим меню.
+ *
+ * [AppDropdownMenu] не принимает modifier и строится относительно родителя,
+ * поэтому строка завёрнута в свой Box: иначе меню прижималось бы к верху всего
+ * блока, а не к нажатой строке.
+ *
+ * Ссылки и упоминания внутри текста обрабатываются своими обработчиками и
+ * до меню не доходят, так что тап по ссылке по-прежнему открывает ссылку.
+ */
+@Composable
+private fun SectionItemWithMenu(
+    headlineText: String,
+    supportingText: String,
+    onLinkClicked: ((String) -> Unit)? = null,
+    onUsernameClicked: ((String) -> Unit)? = null,
+    menuContent: @Composable ColumnScope.(dismiss: () -> Unit) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    
+    Box {
+        SectionItem(
+            headlineText = headlineText,
+            supportingText = supportingText,
+            onLinkClicked = onLinkClicked,
+            onUsernameClicked = onUsernameClicked,
+            onClick = { expanded = true },
+            onLongClick = { expanded = true }
+        )
+        
+        AppDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            menuContent { expanded = false }
+        }
+    }
+}
+
+@Composable
+private fun CopyMenuItem(onClick: () -> Unit) {
+    AppDropdownMenuItem(
+        leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) },
+        text = { Text(stringResource(R.string.copy)) },
+        onClick = onClick
+    )
+}
+
+@Composable
+private fun ShareMenuItem(onClick: () -> Unit) {
+    AppDropdownMenuItem(
+        leadingIcon = { Icon(Icons.Rounded.Share, null) },
+        text = { Text(stringResource(R.string.share)) },
+        onClick = onClick
+    )
+}
+
 @Composable
 private fun GroupProfile(
     myId: Long,
@@ -353,7 +426,9 @@ private fun GroupProfile(
     onJoinClick: () -> Unit,
     onLeaveClick: () -> Unit,
     onLinkClicked: (String) -> Unit,
-    onUsernameClicked: (String) -> Unit
+    onUsernameClicked: (String) -> Unit,
+    onCopyClick: (String) -> Unit,
+    onShareClick: (String) -> Unit
 ) {
     Column {
         ProfileActions(
@@ -389,20 +464,40 @@ private fun GroupProfile(
         )
         
         SectionContainer {
-            if (!group.bio.isNullOrBlank()) {
-                SectionItem(
-                    headlineText = group.bio,
+            val bio = group.bio
+            
+            if (!bio.isNullOrBlank()) {
+                SectionItemWithMenu(
+                    headlineText = bio,
                     supportingText = stringResource(R.string.description),
                     onLinkClicked = onLinkClicked,
                     onUsernameClicked = onUsernameClicked
-                )
+                ) { dismiss ->
+                    CopyMenuItem {
+                        onCopyClick(bio)
+                        dismiss()
+                    }
+                }
             }
             
-            if (!group.username.isNullOrBlank()) {
-                SectionItem(
-                    headlineText = "@" + group.username,
+            val username = group.username
+            
+            if (!username.isNullOrBlank()) {
+                val usernameText = "@$username"
+                
+                SectionItemWithMenu(
+                    headlineText = usernameText,
                     supportingText = stringResource(R.string.public_link)
-                )
+                ) { dismiss ->
+                    CopyMenuItem {
+                        onCopyClick(usernameText)
+                        dismiss()
+                    }
+                    ShareMenuItem {
+                        onShareClick(usernameText)
+                        dismiss()
+                    }
+                }
             }
         }
     }
@@ -415,7 +510,9 @@ private fun ChannelProfile(
     onJoinClick: () -> Unit,
     onLeaveClick: () -> Unit,
     onLinkClicked: (String) -> Unit,
-    onUsernameClicked: (String) -> Unit
+    onUsernameClicked: (String) -> Unit,
+    onCopyClick: (String) -> Unit,
+    onShareClick: (String) -> Unit
 ) {
     Column {
         ProfileActions(
@@ -444,20 +541,40 @@ private fun ChannelProfile(
         )
         
         SectionContainer {
-            if (!channel.bio.isNullOrBlank()) {
-                SectionItem(
-                    headlineText = channel.bio,
+            val bio = channel.bio
+            
+            if (!bio.isNullOrBlank()) {
+                SectionItemWithMenu(
+                    headlineText = bio,
                     supportingText = stringResource(R.string.description),
                     onLinkClicked = onLinkClicked,
                     onUsernameClicked = onUsernameClicked
-                )
+                ) { dismiss ->
+                    CopyMenuItem {
+                        onCopyClick(bio)
+                        dismiss()
+                    }
+                }
             }
             
-            if (!channel.username.isNullOrBlank()) {
-                SectionItem(
-                    headlineText = "@" + channel.username,
+            val username = channel.username
+            
+            if (!username.isNullOrBlank()) {
+                val usernameText = "@$username"
+                
+                SectionItemWithMenu(
+                    headlineText = usernameText,
                     supportingText = stringResource(R.string.public_link)
-                )
+                ) { dismiss ->
+                    CopyMenuItem {
+                        onCopyClick(usernameText)
+                        dismiss()
+                    }
+                    ShareMenuItem {
+                        onShareClick(usernameText)
+                        dismiss()
+                    }
+                }
             }
         }
     }
@@ -472,7 +589,9 @@ private fun UserProfile(
     onChatClick: () -> Unit,
     onEditClick: () -> Unit,
     onLinkClicked: (String) -> Unit,
-    onUsernameClicked: (String) -> Unit
+    onUsernameClicked: (String) -> Unit,
+    onCopyClick: (String) -> Unit,
+    onShareClick: (String) -> Unit
 ) {
     val navBackStack = LocalNavBackStack.current
     
@@ -520,20 +639,40 @@ private fun UserProfile(
         }
         
         SectionContainer {
-            if (!user.bio.isNullOrBlank()) {
-                SectionItem(
-                    headlineText = user.bio,
+            val bio = user.bio
+            
+            if (!bio.isNullOrBlank()) {
+                SectionItemWithMenu(
+                    headlineText = bio,
                     supportingText = stringResource(R.string.bio),
                     onLinkClicked = onLinkClicked,
                     onUsernameClicked = onUsernameClicked
-                )
+                ) { dismiss ->
+                    CopyMenuItem {
+                        onCopyClick(bio)
+                        dismiss()
+                    }
+                }
             }
             
-            if (!user.username.isNullOrBlank()) {
-                SectionItem(
-                    headlineText = "@" + user.username,
+            val username = user.username
+            
+            if (!username.isNullOrBlank()) {
+                val usernameText = "@$username"
+                
+                SectionItemWithMenu(
+                    headlineText = usernameText,
                     supportingText = stringResource(R.string.username)
-                )
+                ) { dismiss ->
+                    CopyMenuItem {
+                        onCopyClick(usernameText)
+                        dismiss()
+                    }
+                    ShareMenuItem {
+                        onShareClick(usernameText)
+                        dismiss()
+                    }
+                }
             }
             
             if (user.dateOfBirth != null) {
