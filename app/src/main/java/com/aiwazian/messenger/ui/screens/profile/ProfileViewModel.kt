@@ -802,4 +802,34 @@ class ProfileViewModel @Inject constructor(
     }
     
     fun dismissBlockDialog() {
-        _uiState.
+        _uiState.update { it.copy(showBlockDialog = false) }
+    }
+    
+    fun toggleBlockUser() {
+        val isBlocked = _uiState.value.isBlockedStateForDialog
+        val userId = _uiState.value.id
+        viewModelScope.launch {
+            val result = if (isBlocked) {
+                userRepository.unblockUser(userId)
+            } else {
+                userRepository.blockUser(userId)
+            }
+            if (result.isSuccess) {
+                _uiEffect.tryEmit(
+                    ProfileUiEffect.ShowSnackbar(
+                        UiText.StringResource(
+                            if (isBlocked) R.string.user_unblocked else R.string.user_blocked
+                        )
+                    )
+                )
+            } else {
+                _uiEffect.tryEmit(ProfileUiEffect.ShowSnackbar(UiText.DynamicString("Ошибка")))
+            }
+            dismissBlockDialog()
+        }
+    }
+    
+    private companion object {
+        const val TAG = "ProfileViewModel"
+    }
+}
