@@ -488,6 +488,7 @@ private fun ChatFolderTabs(
                 .padding(start = 8.dp, top = 4.dp, end = 8.dp, bottom = 8.dp)
                 .clip(CircleShape)
                 .width(IntrinsicSize.Max),
+            contentColor = MaterialTheme.colorScheme.onSurface,
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
             edgePadding = 4.dp,
             indicator = {

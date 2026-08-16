@@ -185,7 +185,6 @@ fun ShareBottomSheet(
                         .fillMaxWidth()
                         .navigationBarsPadding()
                         .imePadding()
-                        .padding(10.dp)
                         .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) },
                     colors = ButtonDefaults.textButtonColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer

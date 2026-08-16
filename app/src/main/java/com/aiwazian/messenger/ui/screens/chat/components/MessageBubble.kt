@@ -25,13 +25,13 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.outlined.SaveAlt
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Downloading
 import androidx.compose.material.icons.rounded.EditCalendar
 import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.SaveAlt
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -530,7 +530,7 @@ private fun buildDropdownActions(
     if (hasDownloadedAttachment && onSaveToDownloads != null) {
         actions.add(
             DropdownMenuAction(
-                icon = Icons.Outlined.SaveAlt,
+                icon = Icons.Rounded.SaveAlt,
                 text = UiText.StringResource(R.string.save_to_downloads),
                 onClick = onSaveToDownloads
             )

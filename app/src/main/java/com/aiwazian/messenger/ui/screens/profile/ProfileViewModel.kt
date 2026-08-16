@@ -32,11 +32,13 @@ import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
+import com.aiwazian.messenger.usecase.GetShareTargetsUseCase
 import com.aiwazian.messenger.usecase.JoinViaInviteLinkUseCase
 import com.aiwazian.messenger.usecase.LeaveChatUseCase
 import com.aiwazian.messenger.utils.ActiveChatTracker
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.LastSeenHelper
+import com.aiwazian.messenger.utils.MessageSendQueue
 import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.ShortcutManager
 import com.aiwazian.messenger.utils.UiText
@@ -71,7 +73,9 @@ class ProfileViewModel @Inject constructor(
     private val shortcutManager: ShortcutManager,
     private val clipboardService: ClipboardService,
     private val vibrationManager: VibrationManager,
+    private val messageSendQueue: MessageSendQueue,
     private val downloadAvatarUseCase: DownloadAvatarUseCase,
+    private val getShareTargetsUseCase: GetShareTargetsUseCase,
     private val joinViaInviteLinkUseCase: JoinViaInviteLinkUseCase,
     private val joinChannelUseCase: com.aiwazian.messenger.usecase.JoinChannelUseCase,
     private val joinGroupUseCase: com.aiwazian.messenger.usecase.JoinGroupUseCase,
@@ -180,8 +184,83 @@ class ProfileViewModel @Inject constructor(
         )
     }
     
+    /**
+     * Начиная с Android 13 система сама показывает плашку о копировании, поэтому
+     * свой снекбар не нужен: иначе об одном действии сообщают дважды.
+     */
     fun copyToClipboard(text: String) {
         clipboardService.copy(text)
+    }
+    
+    /**
+     * «Поделиться» из меню у username: в выбранные чаты уйдёт текст «@username».
+     */
+    fun onShareUsername(username: String) {
+        val text = if (username.startsWith("@")) username else "@$username"
+        
+        _uiState.update {
+            it.copy(
+                shareText = text,
+                shareTargets = emptyList(),
+                selectedShareChatIds = emptySet(),
+                showShareBottomSheet = true
+            )
+        }
+        
+        viewModelScope.launch {
+            val targets = getShareTargetsUseCase()
+            _uiState.update { it.copy(shareTargets = targets) }
+        }
+    }
+    
+    fun toggleShareTarget(chatId: Long) {
+        _uiState.update { state ->
+            val selected = if (state.selectedShareChatIds.contains(chatId)) {
+                state.selectedShareChatIds - chatId
+            } else {
+                state.selectedShareChatIds + chatId
+            }
+            
+            state.copy(
+                selectedShareChatIds = selected,
+                shareTargets = state.shareTargets.map {
+                    if (it.id == chatId) it.copy(isSelected = selected.contains(it.id)) else it
+                }
+            )
+        }
+    }
+    
+    /**
+     * Отправка идёт через [MessageSendQueue]: шторка закрывается сразу, а сообщение
+     * доедет, даже если пользователь тут же уйдёт с экрана.
+     */
+    fun sendShare() {
+        val state = _uiState.value
+        val text = state.shareText
+        val chatIds = state.selectedShareChatIds
+        
+        if (text.isBlank() || chatIds.isEmpty()) return
+        
+        chatIds.forEach { chatId ->
+            messageSendQueue.enqueueText(chatId = chatId, text = text)
+        }
+        
+        dismissShareBottomSheet()
+        
+        viewModelScope.launch {
+            _uiEffect.emit(ProfileUiEffect.ShowSnackbar(UiText.StringResource(R.string.share_sent)))
+        }
+    }
+    
+    fun dismissShareBottomSheet() {
+        _uiState.update {
+            it.copy(
+                shareText = "",
+                shareTargets = emptyList(),
+                selectedShareChatIds = emptySet(),
+                showShareBottomSheet = false
+            )
+        }
     }
     
     private fun loadProfile() {

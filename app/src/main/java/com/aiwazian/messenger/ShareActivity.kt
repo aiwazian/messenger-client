@@ -5,6 +5,7 @@
 package com.aiwazian.messenger
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -29,8 +30,11 @@ class ShareActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         
         val sharedText = extractSharedText(intent)
+        val sharedFiles = extractSharedFiles(intent)
         
-        if (sharedText.isNullOrBlank()) {
+        // Система может прислать текст, файлы или то и другое сразу — закрываемся
+        // только если отправлять вообще нечего.
+        if (sharedText.isNullOrBlank() && sharedFiles.isEmpty()) {
             finish()
             return
         }
@@ -62,6 +66,7 @@ class ShareActivity : AppCompatActivity() {
             ) {
                 ShareScreen(
                     sharedText = sharedText,
+                    sharedFiles = sharedFiles,
                     onClose = { finish() }
                 )
             }
@@ -74,5 +79,22 @@ class ShareActivity : AppCompatActivity() {
         }
         
         return intent.getStringExtra(Intent.EXTRA_TEXT)
+    }
+    
+    /**
+     * ACTION_SEND приносит одну ссылку, ACTION_SEND_MULTIPLE — список.
+     *
+     * Типизированные версии getParcelableExtra появились только в API 33, а
+     * IntentCompat — в свежих версиях androidx.core, поэтому здесь осознанно
+     * используются deprecated-перегрузки: они работают на всех версиях.
+     */
+    @Suppress("DEPRECATION")
+    private fun extractSharedFiles(intent: Intent): List<Uri> = when (intent.action) {
+        Intent.ACTION_SEND -> listOfNotNull(intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM))
+        
+        Intent.ACTION_SEND_MULTIPLE ->
+            intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM).orEmpty()
+        
+        else -> emptyList()
     }
 }
