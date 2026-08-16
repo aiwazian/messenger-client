@@ -27,7 +27,7 @@ import java.io.File
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration
 
 @Singleton
 class UploadManager @Inject constructor(
@@ -44,12 +44,15 @@ class UploadManager @Inject constructor(
      * произвольного размера, и любой Content-Type. Теперь ограничения зашиты в
      * политику формы, поэтому лишние поля [FileInitResponseDto.fields] обязаны
      * уйти в запрос без изменений и строго до части с файлом.
+     *
+     * Количество попыток не ограничено: обрыв сети или 5xx только откладывают
+     * следующую попытку. Неудачей заканчиваются лишь отказы, которые повтор не
+     * изменит, — превышение лимита размера и 4xx от хранилища.
      */
     suspend fun upload(
         fileUri: Uri,
         upload: FileInitResponseDto,
-        fileId: String,
-        maxAttempts: Int = 3
+        fileId: String
     ): Result<String> = withContext(Dispatchers.IO) {
         val fileSize = fileUri.getFileSize(context) ?: 0
         
@@ -61,7 +64,10 @@ class UploadManager @Inject constructor(
             )
         }
         
-        repeat(maxAttempts) { attempt ->
+        var attempt = 1
+        var nextDelay = RetryPolicy.INITIAL_DELAY
+        
+        while (true) {
             try {
                 val fileType = fileUri.getFileType(context)
                 val contentType = fileType.toMediaTypeOrNull()
@@ -103,40 +109,43 @@ class UploadManager @Inject constructor(
                     
                     activeUploads.remove(fileId)
                     return@withContext Result.success(filePath)
-                } else {
-                    activeUploads.remove(fileId)
-                    
-                    // 4xx означает, что файл не прошёл политику: повтор ничего не изменит.
-                    if (response.code in 400..499) {
-                        return@withContext Result.failure(
-                            IOException("Upload rejected by storage with code ${response.code}")
-                        )
-                    }
-                    
-                    if (attempt < maxAttempts - 1) {
-                        delay((1_000 * (attempt + 1)).milliseconds)
-                    } else {
-                        return@withContext Result.failure(
-                            Exception("UploadManager request unsuccessful after $maxAttempts attempts")
-                        )
-                    }
                 }
-            } catch (e: Exception) {
+                
                 activeUploads.remove(fileId)
-                Log.e("UploadManager", "Upload error: ${e.message}", e)
-                if (attempt < maxAttempts - 1) {
-                    delay((1_000L * (attempt + 1)).milliseconds)
-                } else {
-                    return@withContext Result.failure(e)
+                
+                // 4xx означает, что файл не прошёл политику: повтор ничего не изменит.
+                if (response.code in 400..499) {
+                    return@withContext Result.failure(
+                        IOException("Upload rejected by storage with code ${response.code}")
+                    )
                 }
+                
+                Log.w(
+                    "UploadManager",
+                    "Upload attempt $attempt failed with code ${response.code}, next try in $nextDelay"
+                )
+            } catch (e: IOException) {
+                activeUploads.remove(fileId)
+                Log.e("UploadManager", "Upload attempt $attempt error: ${e.message}", e)
             }
+            
+            delay(nextDelay)
+            nextDelay = increase(nextDelay)
+            attempt++
         }
-        return@withContext Result.failure(Exception("Failed to upload after $maxAttempts attempts"))
+        
+        @Suppress("UNREACHABLE_CODE")
+        return@withContext Result.failure(IOException("Upload loop finished unexpectedly"))
     }
     
     fun cancel(fileId: String) {
         activeUploads[fileId]?.cancel()
         activeUploads.remove(fileId)
+    }
+    
+    private fun increase(current: Duration): Duration {
+        val increased = current * 2.0
+        return if (increased > RetryPolicy.MAX_DELAY) RetryPolicy.MAX_DELAY else increased
     }
     
     private fun saveFileLocally(uri: Uri, pathName: String): String {
