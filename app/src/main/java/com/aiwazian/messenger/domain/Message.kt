@@ -49,6 +49,7 @@ data class Message(
     val chatId: Long,
     val text: String?,
     val sendTime: Long,
+    /** Когда именно правили. Известно только трое суток после правки. */
     val editedAt: Long? = null,
     val isRead: Boolean,
     val status: MessageStatus = MessageStatus.SENT,
@@ -57,5 +58,13 @@ data class Message(
     val attachments: List<MessageAttachment>,
     val readInfo: List<MessageReadInfo>? = null,
     val replyTo: MessageReplyPreview? = null,
-    val forwardedFrom: ForwardedFrom? = null
+    val forwardedFrom: ForwardedFrom? = null,
+    /**
+     * Сообщение правили хотя бы раз.
+     *
+     * Отдельный флаг нужен, потому что editedAt пропадает через трое суток, а
+     * подпись «изменено» у сообщения должна оставаться навсегда. Поле добавлено
+     * в конец, чтобы не ломать позиционные вызовы конструктора.
+     */
+    val isEdited: Boolean = false
 )

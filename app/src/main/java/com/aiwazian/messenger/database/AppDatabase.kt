@@ -48,7 +48,7 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         ChatFolderEntity::class,
         ChatFolderChatEntity::class
     ],
-    version = 51,
+    version = 52,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 38, to = 39),
@@ -64,6 +64,8 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         AutoMigration(from = 49, to = 50, spec = RenameFcmTokenToInstallationId::class),
         /* 51: у сообщений появился владелец — аккаунт, для которого они закэшированы. */
         AutoMigration(from = 50, to = 51),
+        /* 52: факт правки отделён от времени правки: оно живёт только трое суток. */
+        AutoMigration(from = 51, to = 52),
     ]
 )
 @ColumnTypeConverters(Converters::class)

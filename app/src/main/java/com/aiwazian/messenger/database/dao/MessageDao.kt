@@ -141,8 +141,15 @@ interface MessageDao {
     )
     suspend fun deleteMessageById(id: Long)
 
+    /**
+     * Сохранить результат правки: новый текст, время и сам факт правки.
+     *
+     * isEdited проставляется здесь же и безусловно: запрос вызывается только по
+     * факту изменения, а editedAt через трое суток придёт с сервера пустым и
+     * больше не годится в качестве признака.
+     */
     @Query(
-        "UPDATE message SET text = :text, editedAt = :editedAt " +
+        "UPDATE message SET text = :text, editedAt = :editedAt, isEdited = 1 " +
                 "WHERE id = :id " +
                 "AND ownerId = " +
                 "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"

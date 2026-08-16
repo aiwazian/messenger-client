@@ -57,7 +57,16 @@ data class MessageDto(
     @SerialName("chatId") val chatId: Long,
     @SerialName("text") val text: String? = null,
     @SerialName("sendTime") val sendTime: Long,
+    /** Точное время правки. Сервер держит его в Redis, поэтому приходит только трое суток. */
     @SerialName("editedAt") val editedAt: Long? = null,
+    /**
+     * Сообщение правили хотя бы раз.
+     *
+     * Поле приходит только у изменённых сообщений: гонять false в каждой строке
+     * истории смысла нет. Пустое поле у старого сервера означает, что о правке
+     * можно судить только по editedAt.
+     */
+    @SerialName("isEdited") val isEdited: Boolean? = null,
     @SerialName("isRead") val isRead: Boolean? = null,
     @SerialName("messageType") val messageType: MessageType = MessageType.TEXT,
     @SerialName("systemEventType") val systemEventType: SystemMessageEventType? = null,
