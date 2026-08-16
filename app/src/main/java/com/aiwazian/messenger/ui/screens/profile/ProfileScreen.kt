@@ -38,6 +38,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorPosition
+import androidx.compose.material3.MenuDefaults.rememberDropdownMenuPopupPositionProvider
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -84,7 +86,6 @@ import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppSnackbar
-import com.aiwazian.messenger.ui.app.rememberRightAlignedDropdownMenuPositionProvider
 import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.ShareBottomSheet
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -213,86 +214,101 @@ fun ProfileScreen(
             contentColor = if (hasAvatar) Color.White else Color.Unspecified
         )
     }) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-        ) {
-            Box(contentAlignment = Alignment.TopCenter) {
-                if (uiState.avatars.isNotEmpty()) {
-                    ProfileImageCarousel(
-                        modifier = Modifier.padding(bottom = 10.dp),
-                        avatars = uiState.avatars,
-                        profileId = uiState.id
-                    )
+        Box {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+            ) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                    if (uiState.avatars.isNotEmpty()) {
+                        ProfileImageCarousel(
+                            modifier = Modifier.padding(bottom = 10.dp),
+                            avatars = uiState.avatars,
+                            profileId = uiState.id
+                        )
+                    } else {
+                        Spacer(Modifier.padding(top = innerPadding.calculateTopPadding()))
+                    }
                 }
                 
-                if (hasAvatar) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(innerPadding.calculateTopPadding())
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Black.copy(alpha = 0.6f), Color.Transparent
-                                    )
-                                )
-                            )
+                Box(
+                    modifier = Modifier.padding(
+                        start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                        end = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
+                        bottom = innerPadding.calculateBottomPadding()
                     )
-                } else {
-                    Spacer(Modifier.padding(top = innerPadding.calculateTopPadding()))
+                ) {
+                    when (val profile = uiState.profile) {
+                        is Profile.User -> UserProfile(
+                            myId = uiState.myId,
+                            userId = uiState.id,
+                            user = profile,
+                            channelInfo = uiState.profileChannelInfo,
+                            onChatClick = viewModel::onChatButtonClicked,
+                            onEditClick = { navBackStack.add(AppRoute.SettingsProfile) },
+                            onLinkClicked = viewModel::onLinkClicked,
+                            onUsernameClicked = viewModel::onUsernameClicked,
+                            onCopyClick = viewModel::copyToClipboard,
+                            onShareClick = viewModel::onShareUsername
+                        )
+                        
+                        is Profile.Channel -> ChannelProfile(
+                            myId = uiState.myId,
+                            channel = profile,
+                            onJoinClick = viewModel::onJoinClicked,
+                            onLeaveClick = viewModel::showLeaveDialog,
+                            onLinkClicked = viewModel::onLinkClicked,
+                            onUsernameClicked = viewModel::onUsernameClicked,
+                            onCopyClick = viewModel::copyToClipboard,
+                            onShareClick = viewModel::onShareUsername
+                        )
+                        
+                        is Profile.Group -> GroupProfile(
+                            myId = uiState.myId,
+                            group = profile,
+                            onChatClick = viewModel::onChatButtonClicked,
+                            onJoinClick = viewModel::onJoinClicked,
+                            onLeaveClick = viewModel::showLeaveDialog,
+                            onLinkClicked = viewModel::onLinkClicked,
+                            onUsernameClicked = viewModel::onUsernameClicked,
+                            onCopyClick = viewModel::copyToClipboard,
+                            onShareClick = viewModel::onShareUsername
+                        )
+                        
+                        else -> {}
+                    }
                 }
             }
             
             Box(
-                modifier = Modifier.padding(
-                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
-                    end = innerPadding.calculateEndPadding(
-                        LayoutDirection.Ltr
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(innerPadding.calculateTopPadding())
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.8f),
+                                Color.Transparent
+                            )
+                        )
                     )
-                )
-            ) {
-                when (val profile = uiState.profile) {
-                    is Profile.User -> UserProfile(
-                        myId = uiState.myId,
-                        userId = uiState.id,
-                        user = profile,
-                        channelInfo = uiState.profileChannelInfo,
-                        onChatClick = viewModel::onChatButtonClicked,
-                        onEditClick = { navBackStack.add(AppRoute.SettingsProfile) },
-                        onLinkClicked = viewModel::onLinkClicked,
-                        onUsernameClicked = viewModel::onUsernameClicked,
-                        onCopyClick = viewModel::copyToClipboard,
-                        onShareClick = viewModel::onShareUsername
+            )
+            
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .height(innerPadding.calculateBottomPadding())
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                            )
+                        )
                     )
-                    
-                    is Profile.Channel -> ChannelProfile(
-                        myId = uiState.myId,
-                        channel = profile,
-                        onJoinClick = viewModel::onJoinClicked,
-                        onLeaveClick = viewModel::showLeaveDialog,
-                        onLinkClicked = viewModel::onLinkClicked,
-                        onUsernameClicked = viewModel::onUsernameClicked,
-                        onCopyClick = viewModel::copyToClipboard,
-                        onShareClick = viewModel::onShareUsername
-                    )
-                    
-                    is Profile.Group -> GroupProfile(
-                        myId = uiState.myId,
-                        group = profile,
-                        onChatClick = viewModel::onChatButtonClicked,
-                        onJoinClick = viewModel::onJoinClicked,
-                        onLeaveClick = viewModel::showLeaveDialog,
-                        onLinkClicked = viewModel::onLinkClicked,
-                        onUsernameClicked = viewModel::onUsernameClicked,
-                        onCopyClick = viewModel::copyToClipboard,
-                        onShareClick = viewModel::onShareUsername
-                    )
-                    
-                    else -> {}
-                }
-            }
+            )
         }
     }
     
@@ -301,9 +317,10 @@ fun ProfileScreen(
             onDismiss = {
                 showLeaveDialog = false
                 viewModel.hideLeaveDialog()
-            }, onConfirm = {
-                viewModel.onLeaveConfirmed()
-            }, profileName = leaveDialogData!!.first, chatType = leaveDialogData!!.second
+            },
+            onConfirm = viewModel::onLeaveConfirmed,
+            profileName = leaveDialogData!!.first,
+            chatType = leaveDialogData!!.second
         )
     }
     
@@ -399,7 +416,7 @@ private fun SectionItemWithMenu(
         AppDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            popupPositionProvider = rememberRightAlignedDropdownMenuPositionProvider()
+            popupPositionProvider = rememberDropdownMenuPopupPositionProvider(MenuAnchorPosition.End)
         ) {
             menuContent { expanded = false }
         }
