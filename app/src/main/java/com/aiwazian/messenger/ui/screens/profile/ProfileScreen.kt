@@ -84,6 +84,7 @@ import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppSnackbar
+import com.aiwazian.messenger.ui.app.rememberRightAlignedDropdownMenuPositionProvider
 import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.ShareBottomSheet
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -369,7 +370,8 @@ fun ProfileScreen(
  *
  * [AppDropdownMenu] не принимает modifier и строится относительно родителя,
  * поэтому строка завёрнута в свой Box: иначе меню прижималось бы к верху всего
- * блока, а не к нажатой строке.
+ * блока, а не к нажатой строке. Провайдер позиции дополнительно прижимает меню
+ * к правому краю строки.
  *
  * Ссылки и упоминания внутри текста обрабатываются своими обработчиками и
  * до меню не доходят, так что тап по ссылке по-прежнему открывает ссылку.
@@ -394,7 +396,11 @@ private fun SectionItemWithMenu(
             onLongClick = { expanded = true }
         )
         
-        AppDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        AppDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            popupPositionProvider = rememberRightAlignedDropdownMenuPositionProvider()
+        ) {
             menuContent { expanded = false }
         }
     }
