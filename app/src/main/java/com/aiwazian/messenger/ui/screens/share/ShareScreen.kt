@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.share
 
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -15,15 +16,16 @@ import com.aiwazian.messenger.ui.components.ShareBottomSheet
 
 @Composable
 fun ShareScreen(
-    sharedText: String,
+    sharedText: String?,
+    sharedFiles: List<Uri> = emptyList(),
     onClose: () -> Unit,
     viewModel: ShareViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     
-    LaunchedEffect(sharedText) {
-        viewModel.init(sharedText)
+    LaunchedEffect(sharedText, sharedFiles) {
+        viewModel.init(sharedText.orEmpty(), sharedFiles)
     }
     
     LaunchedEffect(Unit) {

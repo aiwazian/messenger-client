@@ -121,6 +121,29 @@
 
                 <data android:mimeType="text/plain" />
             </intent-filter>
+
+            <!--
+              ~ Один файл любого типа: фото, видео, документ, архив.
+              -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="*/*" />
+            </intent-filter>
+
+            <!--
+              ~ Выделенные в галерее несколько файлов приходят отдельным
+              ~ действием, и без этого фильтра приложения в списке не видно.
+              -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="*/*" />
+            </intent-filter>
         </activity>
 
         <activity

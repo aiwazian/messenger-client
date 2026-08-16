@@ -13,6 +13,12 @@ import android.webkit.MimeTypeMap
 import java.io.FileInputStream
 
 fun Uri.getFileName(context: Context): String? {
+    // ContentResolver не умеет запрашивать file://-ссылки, а именно такие идут от
+    // голосовых и из кэша системного «Поделиться».
+    if (scheme == "file") {
+        return lastPathSegment
+    }
+    
     return context.contentResolver.query(this, null, null, null, null)?.use { cursor ->
         if (cursor.moveToFirst()) {
             val index = cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)

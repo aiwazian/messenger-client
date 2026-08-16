@@ -4,11 +4,13 @@
 
 package com.aiwazian.messenger.ui.screens.share
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.usecase.GetShareTargetsUseCase
-import com.aiwazian.messenger.usecase.SendMessageUseCase
+import com.aiwazian.messenger.utils.MessageSendQueue
+import com.aiwazian.messenger.utils.SharedFileCache
 import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -22,7 +24,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ShareViewModel @Inject constructor(
     private val getShareTargetsUseCase: GetShareTargetsUseCase,
-    private val sendMessageUseCase: SendMessageUseCase
+    private val sharedFileCache: SharedFileCache,
+    private val messageSendQueue: MessageSendQueue
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ShareUiState())
@@ -31,10 +34,13 @@ class ShareViewModel @Inject constructor(
     private val _uiEffect = MutableSharedFlow<ShareUiEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
     
-    fun init(sharedText: String) {
-        if (_uiState.value.sharedText == sharedText) return
+    private var isInitialized = false
+    
+    fun init(sharedText: String, sharedFiles: List<Uri> = emptyList()) {
+        if (isInitialized) return
+        isInitialized = true
         
-        _uiState.update { it.copy(sharedText = sharedText) }
+        _uiState.update { it.copy(sharedText = sharedText, sharedFiles = sharedFiles) }
         loadTargets()
     }
     
@@ -62,27 +68,47 @@ class ShareViewModel @Inject constructor(
         }
     }
     
+    /**
+     * Отправка уходит в [MessageSendQueue], а не в viewModelScope: окно закроется
+     * сразу, и вместе с ним умер бы каждый незаконченный запрос.
+     */
     fun send() {
         val state = _uiState.value
         val text = state.sharedText
+        val files = state.sharedFiles
         val chatIds = state.selectedChatIds
         
-        if (state.isSending || text.isBlank() || chatIds.isEmpty()) return
+        if (state.isSending || chatIds.isEmpty()) return
+        if (text.isBlank() && files.isEmpty()) return
         
         _uiState.update { it.copy(isSending = true) }
         
         viewModelScope.launch {
-            runCatching {
-                chatIds.forEach { chatId ->
-                    sendMessageUseCase(chatId, text)
-                }
-            }.onSuccess {
-                _uiEffect.emit(ShareUiEffect.ShowToast(UiText.StringResource(R.string.share_sent)))
-            }.onFailure {
+            val cachedFiles = if (files.isEmpty()) emptyList() else sharedFileCache.cache(files)
+            
+            if (files.isNotEmpty() && cachedFiles.isEmpty()) {
+                _uiState.update { it.copy(isSending = false) }
                 _uiEffect.emit(ShareUiEffect.ShowToast(UiText.StringResource(R.string.share_send_failed)))
+                _uiEffect.emit(ShareUiEffect.Close)
+                return@launch
+            }
+            
+            chatIds.forEach { chatId ->
+                if (cachedFiles.isEmpty()) {
+                    messageSendQueue.enqueueText(chatId = chatId, text = text)
+                } else {
+                    // Подпись из системного шара уезжает вместе с файлами одним
+                    // сообщением, а не отдельно.
+                    messageSendQueue.enqueueFiles(
+                        chatId = chatId,
+                        uris = cachedFiles,
+                        text = text.ifBlank { null }
+                    )
+                }
             }
             
             _uiState.update { it.copy(isSending = false) }
+            _uiEffect.emit(ShareUiEffect.ShowToast(UiText.StringResource(R.string.share_sent)))
             _uiEffect.emit(ShareUiEffect.Close)
         }
     }
