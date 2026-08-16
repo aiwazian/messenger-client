@@ -37,8 +37,8 @@ import javax.inject.Inject
  * Каждый сетевой шаг повторяется по отдельности и без ограничения попыток:
  * пересоздавать локальное сообщение или заново загружать уже принятый файл при
  * обрыве сети не нужно. Статус ERROR остаётся только для отказов, которые повтор
- * не изменит: их отдаёт [UploadManager] (например, файл больше разрешённого
- * размера или хранилище ответило 4xx).
+ * не изменит: их отдаёт [UploadManager] — например, файл больше разрешённого
+ * размера или хранилище ответило 4xx.
  */
 class SendMessageWithFilesUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
@@ -115,8 +115,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
             val fileSize = attachment.size
             val mimeType = attachment.localUri!!.getFileType(context)
             
-            // Ссылку на загрузку выдаёт сервер, поэтому запрашиваем её столько
-            // раз, сколько нужно: без неё загружать просто некуда.
+            // Ссылку на загрузку выдаёт сервер, и без неё загружать просто некуда,
+            // поэтому запрашиваем столько раз, сколько понадобится.
             val initResponse = RetryPolicy.retryForever("initUpload#$tempId/$fileId") {
                 val response = chatRepository.initFileUpload(
                     chatId, FileInitRequestDto(
@@ -143,6 +143,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 fileUri = attachment.localUri,
                 upload = initResponse,
                 fileId = initResponse.fileId,
+                maxAttempts = UploadManager.UNLIMITED_ATTEMPTS
             )
             
             uploadResult.onSuccess {

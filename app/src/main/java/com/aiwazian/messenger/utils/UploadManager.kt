@@ -45,19 +45,25 @@ class UploadManager @Inject constructor(
      * политику формы, поэтому лишние поля [FileInitResponseDto.fields] обязаны
      * уйти в запрос без изменений и строго до части с файлом.
      *
-     * Количество попыток не ограничено: обрыв сети или 5xx только откладывают
-     * следующую попытку. Неудачей заканчиваются лишь отказы, которые повтор не
-     * изменит, — превышение лимита размера и 4xx от хранилища.
+     * @param maxAttempts сколько раз пробовать. Загрузки, чей прогресс ждёт
+     * пользователь на экране (аватарки), обязаны когда-то завершиться, поэтому
+     * по умолчанию их три. Вложения сообщений передают [UNLIMITED_ATTEMPTS]:
+     * обрыв сети или 5xx только откладывает следующую попытку, а задержка
+     * растёт до [RetryPolicy.MAX_DELAY].
+     *
+     * Неудачей сразу заканчиваются только отказы, которые повтор не изменит:
+     * превышение лимита размера и 4xx от хранилища.
      */
     suspend fun upload(
         fileUri: Uri,
         upload: FileInitResponseDto,
-        fileId: String
+        fileId: String,
+        maxAttempts: Int = DEFAULT_MAX_ATTEMPTS
     ): Result<String> = withContext(Dispatchers.IO) {
         val fileSize = fileUri.getFileSize(context) ?: 0
         
-        // Проверка ради понятной ошибки: иначе пользователь после долгой загрузки
-        // получит от S3 голый 403 без объяснений.
+        // Проверка ради понятной ошибки: иначе после долгой загрузки придёт
+        // голый 403 от S3 без объяснений.
         if (upload.maxSizeBytes > 0 && fileSize > upload.maxSizeBytes) {
             return@withContext Result.failure(
                 IOException("File size $fileSize exceeds limit of ${upload.maxSizeBytes} bytes")
@@ -66,8 +72,9 @@ class UploadManager @Inject constructor(
         
         var attempt = 1
         var nextDelay = RetryPolicy.INITIAL_DELAY
+        var lastError: IOException? = null
         
-        while (true) {
+        while (attempt <= maxAttempts) {
             try {
                 val fileType = fileUri.getFileType(context)
                 val contentType = fileType.toMediaTypeOrNull()
@@ -113,29 +120,29 @@ class UploadManager @Inject constructor(
                 
                 activeUploads.remove(fileId)
                 
-                // 4xx означает, что файл не прошёл политику: повтор ничего не изменит.
+                // 4xx — файл не прошёл политику формы: повтор ничего не изменит.
                 if (response.code in 400..499) {
                     return@withContext Result.failure(
                         IOException("Upload rejected by storage with code ${response.code}")
                     )
                 }
                 
-                Log.w(
-                    "UploadManager",
-                    "Upload attempt $attempt failed with code ${response.code}, next try in $nextDelay"
-                )
+                lastError = IOException("Upload failed with code ${response.code}")
+                Log.w("UploadManager", "Upload attempt $attempt failed: ${response.code}")
             } catch (e: IOException) {
                 activeUploads.remove(fileId)
+                lastError = e
                 Log.e("UploadManager", "Upload attempt $attempt error: ${e.message}", e)
             }
+            
+            if (attempt == maxAttempts) break
             
             delay(nextDelay)
             nextDelay = increase(nextDelay)
             attempt++
         }
         
-        @Suppress("UNREACHABLE_CODE")
-        return@withContext Result.failure(IOException("Upload loop finished unexpectedly"))
+        Result.failure(lastError ?: IOException("Upload failed"))
     }
     
     fun cancel(fileId: String) {
@@ -160,5 +167,12 @@ class UploadManager @Inject constructor(
         }
         
         return targetFile.absolutePath
+    }
+    
+    companion object {
+        const val DEFAULT_MAX_ATTEMPTS = 3
+        
+        /** Повторять, пока файл не уйдёт либо его не отклонят окончательно. */
+        const val UNLIMITED_ATTEMPTS = Int.MAX_VALUE
     }
 }
