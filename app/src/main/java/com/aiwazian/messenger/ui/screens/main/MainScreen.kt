@@ -511,6 +511,13 @@ private fun ChatFolderTabs(
                         MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0f)
                     }
                 )
+                val accentColor by animateColorAsState(
+                    targetValue = if (index == selectedIndex) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
                 Box(
                     modifier = Modifier
                         .padding(vertical = 4.dp)
@@ -542,26 +549,30 @@ private fun ChatFolderTabs(
                         ) {
                             Text(
                                 text = page.name.asString(),
-                                color = if (index == selectedIndex) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
+                                color = accentColor,
                                 fontSize = 14.sp,
                                 lineHeight = 14.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                             
-                            /*
-                             * Счётчик приезжает вместе со ChatFolderPage, поэтому бейдж
-                             * обновляется сам при прочтении чата, ручной пометке и новом сообщении.
-                             */
-                            if (page.unreadChatCount > 0) {
-                                Badge(containerColor = MaterialTheme.colorScheme.primary) {
+                            AnimatedVisibility(
+                                visible = page.unreadChatCount > 0,
+                                enter = expressiveScaleIn,
+                                exit = expressiveScaleOut
+                            ) {
+                                val containerColor by animateColorAsState(
+                                    targetValue = if (selectedIndex == index) {
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                    } else {
+                                        Color(0xFFC6C6C6)
+                                    }
+                                )
+                                Badge(containerColor = containerColor) {
                                     Text(
                                         text = page.unreadChatCount.toString(),
-                                        style = MaterialTheme.typography.bodySmall
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.surface
                                     )
                                 }
                             }
