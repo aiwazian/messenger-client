@@ -296,4 +296,22 @@ class MainViewModel @Inject constructor(
             }
         }
     }
+    
+    /**
+     * «Прочитать все» из меню таба папки.
+     *
+     * На сервер уходят только те чаты папки, которые сейчас не прочитаны:
+     * одним запросом на пачку, а не по запросу на каждый чат.
+     */
+    fun markFolderChatsRead(folderId: Int) {
+        val page = _uiState.value.folderPages.find { it.id == folderId } ?: return
+        val unreadIds = page.chats.filter { it.isUnread }.map { it.id }
+        if (unreadIds.isEmpty()) {
+            return
+        }
+        
+        viewModelScope.launch {
+            chatRepository.markChatsRead(unreadIds)
+        }
+    }
 }

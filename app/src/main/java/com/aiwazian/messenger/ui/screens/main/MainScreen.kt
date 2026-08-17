@@ -277,7 +277,11 @@ private fun Content(
                             onEditFolder = { folderId ->
                                 navBackStack.add(AppRoute.ChatFolderEditor(folderId))
                             },
-                            onDeleteFolder = viewModel::requestFolderDeletion
+                            onEditFolders = {
+                                navBackStack.add(AppRoute.ChatFolders)
+                            },
+                            onDeleteFolder = viewModel::requestFolderDeletion,
+                            onMarkFolderRead = viewModel::markFolderChatsRead
                         )
                     }
                 }
@@ -471,7 +475,9 @@ private fun ChatFolderTabs(
     selectedIndex: Int,
     onTabClick: (Int) -> Unit,
     onEditFolder: (Int) -> Unit,
+    onEditFolders: () -> Unit,
     onDeleteFolder: (Int) -> Unit,
+    onMarkFolderRead: (Int) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         PrimaryScrollableTabRow(
@@ -496,6 +502,8 @@ private fun ChatFolderTabs(
             divider = {}
         ) {
             pages.forEachIndexed { index, page ->
+                /** У «Все чаты» нет своего папки-объекта: его меню отличается. */
+                val isAllChats = page.id == ALL_CHATS_FOLDER_ID
                 val interactionSource = remember { MutableInteractionSource() }
                 val isPressed by interactionSource.collectIsPressedAsState()
                 val scale by animateFloatAsState(
@@ -532,11 +540,9 @@ private fun ChatFolderTabs(
                             .background(backgroundColor)
                             .combinedClickable(
                                 onClick = { onTabClick(index) },
-                                onLongClick = if (index != 0) {
-                                    {
-                                        expanded = !expanded
-                                    }
-                                } else null,
+                                onLongClick = {
+                                    expanded = !expanded
+                                },
                                 interactionSource = interactionSource,
                                 indication = null
                             ),
@@ -585,19 +591,43 @@ private fun ChatFolderTabs(
                             leadingIcon = {
                                 Icon(Icons.Rounded.Edit, null)
                             }, text = {
-                                Text(stringResource(R.string.edit_folder))
+                                Text(
+                                    stringResource(
+                                        if (isAllChats) R.string.edit_folders
+                                        else R.string.edit_folder
+                                    )
+                                )
                             }, onClick = {
                                 expanded = false
-                                onEditFolder(page.id)
+                                if (isAllChats) {
+                                    onEditFolders()
+                                } else {
+                                    onEditFolder(page.id)
+                                }
                             })
-                        AppDropdownMenuItem(leadingIcon = {
-                            Icon(Icons.Rounded.DeleteOutline, null)
-                        }, text = {
-                            Text(stringResource(R.string.delete))
-                        }, onClick = {
-                            expanded = false
-                            onDeleteFolder(page.id)
-                        }, contentColor = MaterialTheme.colorScheme.error)
+                        
+                        if (page.unreadChatCount > 0) {
+                            AppDropdownMenuItem(
+                                leadingIcon = {
+                                    Icon(Icons.Outlined.MarkChatRead, null)
+                                }, text = {
+                                    Text(stringResource(R.string.mark_all_as_read))
+                                }, onClick = {
+                                    expanded = false
+                                    onMarkFolderRead(page.id)
+                                })
+                        }
+                        
+                        if (!isAllChats) {
+                            AppDropdownMenuItem(leadingIcon = {
+                                Icon(Icons.Rounded.DeleteOutline, null)
+                            }, text = {
+                                Text(stringResource(R.string.delete))
+                            }, onClick = {
+                                expanded = false
+                                onDeleteFolder(page.id)
+                            }, contentColor = MaterialTheme.colorScheme.error)
+                        }
                     }
                 }
             }
