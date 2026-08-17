@@ -73,6 +73,7 @@
     <string name="unpin">Unpin</string>
     <string name="mark_as_read">Mark as read</string>
     <string name="mark_as_unread">Mark as unread</string>
+    <string name="mark_all_as_read">Mark all as read</string>
     <string name="folder_name">Folder name</string>
     <string name="included_chats">Included Chats</string>
     <string name="add_chats">Add Chats</string>
@@ -354,6 +355,7 @@
     <string name="requests_to_channel_join">Requests to join your channel are displayed here.</string>
     <string name="requests_to_group_join">Requests to join your group are displayed here.</string>
     <string name="edit_folder">Edit Folder</string>
+    <string name="edit_folders">Edit Folders</string>
     <string name="appearance_preview_incoming_text">The release call is tomorrow at 10:00, I will send the link in the morning.</string>
     <string name="appearance_preview_reply_text">Got it, I will be there. Thanks!</string>
     <string name="delete_folder_confirm_message">This will not affect the chats inside it.</string>

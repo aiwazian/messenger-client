@@ -120,12 +120,12 @@ class MainViewModel @Inject constructor(
         _uiState.update { it.copy(showNotificationBottomSheet = false) }
     }
     
-    fun showAccountDialog() {
-        _uiState.update { it.copy(showAccountDialog = true) }
+    fun showAccountSheet() {
+        _uiState.update { it.copy(showAccountBottomSheet = true) }
     }
     
-    fun hideAccountDialog() {
-        _uiState.update { it.copy(showAccountDialog = false) }
+    fun hideAccountSheet() {
+        _uiState.update { it.copy(showAccountBottomSheet = false) }
     }
     
     fun setActiveFolder(folderId: Int) {
@@ -157,7 +157,8 @@ class MainViewModel @Inject constructor(
         val allChatsPage = ChatFolderPage(
             id = ALL_CHATS_FOLDER_ID,
             name = UiText.StringResource(R.string.all_chats),
-            chats = chats
+            chats = chats,
+            unreadChatCount = chats.countUnread()
         )
         
         if (folders.isEmpty()) {
@@ -165,19 +166,31 @@ class MainViewModel @Inject constructor(
         }
         
         val folderPages = folders.map { folder ->
+            val folderChats = chats
+                .filter { folder.contains(it.id) }
+                .sortedWith(
+                    compareByDescending<Chat> { folder.isPinned(it.id) }
+                        .thenByDescending { it.lastMessage?.sendTime ?: 0L }
+                )
+            
             ChatFolderPage(
                 id = folder.id,
                 name = UiText.DynamicString(folder.name),
-                chats = chats
-                    .filter { folder.contains(it.id) }
-                    .sortedWith(
-                        compareByDescending<Chat> { folder.isPinned(it.id) }
-                            .thenByDescending { it.lastMessage?.sendTime ?: 0L }
-                    )
+                chats = folderChats,
+                unreadChatCount = folderChats.countUnread()
             )
         }
         
         return listOf(allChatsPage) + folderPages
+    }
+    
+    /**
+     * Бейдж у названия папки считает непрочитанные чаты, а не сообщения. Пересчёт
+     * идёт на каждой эмиссии потока чатов, поэтому прочтение чата, ручная пометка
+     * прочитанным/непрочитанным и новое сообщение сразу меняют число.
+     */
+    private fun List<Chat>.countUnread(): Int {
+        return this.count { it.isUnread }
     }
     
     private fun List<Chat>.sortedByLastMessage(): List<Chat> {
@@ -281,6 +294,24 @@ class MainViewModel @Inject constructor(
                 chatRepository.markChatsUnread(selectedIds)
                 clearSelection()
             }
+        }
+    }
+    
+    /**
+     * «Прочитать все» из меню таба папки.
+     *
+     * На сервер уходят только те чаты папки, которые сейчас не прочитаны:
+     * одним запросом на пачку, а не по запросу на каждый чат.
+     */
+    fun markFolderChatsRead(folderId: Int) {
+        val page = _uiState.value.folderPages.find { it.id == folderId } ?: return
+        val unreadIds = page.chats.filter { it.isUnread }.map { it.id }
+        if (unreadIds.isEmpty()) {
+            return
+        }
+        
+        viewModelScope.launch {
+            chatRepository.markChatsRead(unreadIds)
         }
     }
 }

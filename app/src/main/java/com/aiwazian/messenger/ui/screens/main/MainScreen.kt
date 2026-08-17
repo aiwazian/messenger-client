@@ -75,6 +75,7 @@ import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material3.AppBarWithSearch
+import androidx.compose.material3.Badge
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
@@ -201,7 +202,14 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
         gesturesEnabled = uiState.selectedChatIds.isEmpty(),
         drawerState = drawerState,
         drawerContent = {
-            DrawerContent(drawerState = drawerState, user = uiState.me, theme = uiState.theme)
+            DrawerContent(
+                drawerState = drawerState,
+                user = uiState.me,
+                theme = uiState.theme,
+                showAccountSheet = uiState.showAccountBottomSheet,
+                onShowAccountSheet = viewModel::showAccountSheet,
+                onHideAccountSheet = viewModel::hideAccountSheet
+            )
         },
     ) {
         Content(drawerState, viewModel)
@@ -226,8 +234,6 @@ private fun Content(
     val uiState by viewModel.uiState.collectAsState()
     val hasSelection = uiState.selectedChatIds.isNotEmpty()
     val socketState by viewModel.socketState.collectAsState()
-    val accountSwitcherViewModel: AccountSwitcherViewModel = hiltViewModel()
-    val accountSwitcherState by accountSwitcherViewModel.uiState.collectAsState()
     
     BackHandler(hasSelection) {
         viewModel.clearSelection()
@@ -256,8 +262,7 @@ private fun Content(
                                 viewModel.lockApp()
                             }
                         },
-                        socketState = socketState,
-                        onProfileClick = viewModel::showAccountDialog
+                        socketState = socketState
                     )
                     
                     if (uiState.folderPages.size > 1) {
@@ -272,7 +277,11 @@ private fun Content(
                             onEditFolder = { folderId ->
                                 navBackStack.add(AppRoute.ChatFolderEditor(folderId))
                             },
-                            onDeleteFolder = viewModel::requestFolderDeletion
+                            onEditFolders = {
+                                navBackStack.add(AppRoute.ChatFolders)
+                            },
+                            onDeleteFolder = viewModel::requestFolderDeletion,
+                            onMarkFolderRead = viewModel::markFolderChatsRead
                         )
                     }
                 }
@@ -438,19 +447,6 @@ private fun Content(
         }
     }
     
-    if (uiState.showAccountDialog) {
-        AccountSwitcherDialog(
-            currentUser = accountSwitcherState.currentUser,
-            otherAccounts = accountSwitcherState.otherAccounts,
-            onAccountClick = accountSwitcherViewModel::switchAccount,
-            onAddAccount = {
-                viewModel.hideAccountDialog()
-                navBackStack.add(AppRoute.Login)
-            },
-            onDismissRequest = viewModel::hideAccountDialog
-        )
-    }
-    
     uiState.folderPendingDeletion?.let {
         AppDialog(
             title = stringResource(R.string.remove_folder),
@@ -479,7 +475,9 @@ private fun ChatFolderTabs(
     selectedIndex: Int,
     onTabClick: (Int) -> Unit,
     onEditFolder: (Int) -> Unit,
+    onEditFolders: () -> Unit,
     onDeleteFolder: (Int) -> Unit,
+    onMarkFolderRead: (Int) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         PrimaryScrollableTabRow(
@@ -504,6 +502,8 @@ private fun ChatFolderTabs(
             divider = {}
         ) {
             pages.forEachIndexed { index, page ->
+                /** У «Все чаты» нет своего папки-объекта: его меню отличается. */
+                val isAllChats = page.id == ALL_CHATS_FOLDER_ID
                 val interactionSource = remember { MutableInteractionSource() }
                 val isPressed by interactionSource.collectIsPressedAsState()
                 val scale by animateFloatAsState(
@@ -517,6 +517,13 @@ private fun ChatFolderTabs(
                         MaterialTheme.colorScheme.surfaceContainerHighest
                     } else {
                         MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0f)
+                    }
+                )
+                val accentColor by animateColorAsState(
+                    targetValue = if (index == selectedIndex) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 )
                 Box(
@@ -533,29 +540,49 @@ private fun ChatFolderTabs(
                             .background(backgroundColor)
                             .combinedClickable(
                                 onClick = { onTabClick(index) },
-                                onLongClick = if (index != 0) {
-                                    {
-                                        expanded = !expanded
-                                    }
-                                } else null,
+                                onLongClick = {
+                                    expanded = !expanded
+                                },
                                 interactionSource = interactionSource,
                                 indication = null
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = page.name.asString(),
+                        Row(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                            color = if (index == selectedIndex) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            fontSize = 14.sp,
-                            lineHeight = 14.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = page.name.asString(),
+                                color = accentColor,
+                                fontSize = 14.sp,
+                                lineHeight = 14.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            
+                            AnimatedVisibility(
+                                visible = page.unreadChatCount > 0,
+                                enter = expressiveScaleIn,
+                                exit = expressiveScaleOut
+                            ) {
+                                val containerColor by animateColorAsState(
+                                    targetValue = if (selectedIndex == index) {
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                    } else {
+                                        Color(0xFFC6C6C6)
+                                    }
+                                )
+                                Badge(containerColor = containerColor) {
+                                    Text(
+                                        text = page.unreadChatCount.toString(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.surface
+                                    )
+                                }
+                            }
+                        }
                     }
                     AppDropdownMenu(
                         expanded = expanded,
@@ -564,19 +591,43 @@ private fun ChatFolderTabs(
                             leadingIcon = {
                                 Icon(Icons.Rounded.Edit, null)
                             }, text = {
-                                Text(stringResource(R.string.edit_folder))
+                                Text(
+                                    stringResource(
+                                        if (isAllChats) R.string.edit_folders
+                                        else R.string.edit_folder
+                                    )
+                                )
                             }, onClick = {
                                 expanded = false
-                                onEditFolder(page.id)
+                                if (isAllChats) {
+                                    onEditFolders()
+                                } else {
+                                    onEditFolder(page.id)
+                                }
                             })
-                        AppDropdownMenuItem(leadingIcon = {
-                            Icon(Icons.Rounded.DeleteOutline, null)
-                        }, text = {
-                            Text(stringResource(R.string.delete))
-                        }, onClick = {
-                            expanded = false
-                            onDeleteFolder(page.id)
-                        }, contentColor = MaterialTheme.colorScheme.error)
+                        
+                        if (page.unreadChatCount > 0) {
+                            AppDropdownMenuItem(
+                                leadingIcon = {
+                                    Icon(Icons.Outlined.MarkChatRead, null)
+                                }, text = {
+                                    Text(stringResource(R.string.mark_all_as_read))
+                                }, onClick = {
+                                    expanded = false
+                                    onMarkFolderRead(page.id)
+                                })
+                        }
+                        
+                        if (!isAllChats) {
+                            AppDropdownMenuItem(leadingIcon = {
+                                Icon(Icons.Rounded.DeleteOutline, null)
+                            }, text = {
+                                Text(stringResource(R.string.delete))
+                            }, onClick = {
+                                expanded = false
+                                onDeleteFolder(page.id)
+                            }, contentColor = MaterialTheme.colorScheme.error)
+                        }
                     }
                 }
             }
@@ -764,34 +815,16 @@ private fun DefaultTopBar(
     passcodeEnabled: Boolean,
     onLockClick: () -> Unit,
     socketState: ConnectionState,
-    onProfileClick: () -> Unit,
-    searchViewModel: SearchViewModel = hiltViewModel(),
-    accountSwitcherViewModel: AccountSwitcherViewModel = hiltViewModel()
+    searchViewModel: SearchViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
     val navBackStack = LocalNavBackStack.current
     val searchUiState by searchViewModel.uiState.collectAsState()
-    val accountSwitcherState by accountSwitcherViewModel.uiState.collectAsState()
     val textFieldState = rememberTextFieldState(searchUiState.query)
     val searchBarState = rememberSearchBarState()
     val scope = rememberCoroutineScope()
     
     LaunchedEffect(textFieldState.text) {
         searchViewModel.onQueryChange(textFieldState.text.toString())
-    }
-    
-    LaunchedEffect(Unit) {
-        accountSwitcherViewModel.sideEffect.collectLatest { sideEffect ->
-            when (sideEffect) {
-                is AccountSwitcherSideEffect.AccountSwitched -> {
-                    val intent = Intent(context, MainActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
-                    context.startActivity(intent)
-                    (context as? Activity)?.finish()
-                }
-            }
-        }
     }
     
     val inputField = @Composable {
@@ -852,25 +885,12 @@ private fun DefaultTopBar(
             trailingIcon = {
                 AnimatedContent(searchBarState.currentValue) {
                     if (it == SearchBarValue.Collapsed) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (passcodeEnabled) {
-                                IconButton(onClick = onLockClick) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.LockOpen,
-                                        contentDescription = "Lock"
-                                    )
-                                }
-                            }
-                            accountSwitcherState.currentUser?.let { currentUser ->
-                                IconButton(onClick = onProfileClick) {
-                                    ChatAvatar(
-                                        id = currentUser.id,
-                                        chatName = currentUser.firstName,
-                                        avatarUri = currentUser.avatars.firstOrNull()?.uri,
-                                        size = 30.dp,
-                                        sharedTransition = false
-                                    )
-                                }
+                        if (passcodeEnabled) {
+                            IconButton(onClick = onLockClick) {
+                                Icon(
+                                    imageVector = Icons.Rounded.LockOpen,
+                                    contentDescription = "Lock"
+                                )
                             }
                         }
                     } else if (textFieldState.text.isNotEmpty()) {
@@ -931,57 +951,57 @@ private fun DefaultTopBar(
     }
 }
 
+/**
+ * Тот же набор действий, что был в диалоге смены аккаунта: текущий аккаунт,
+ * остальные аккаунты устройства и кнопка добавления внизу.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AccountSwitcherDialog(
+private fun AccountSwitcherBottomSheet(
     currentUser: User?,
     otherAccounts: List<User>,
     onAccountClick: (Long) -> Unit,
     onAddAccount: () -> Unit,
     onDismissRequest: () -> Unit
 ) {
-    AppDialog(
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    
+    AppBottomSheet(
         onDismissRequest = onDismissRequest,
-        content = {
+        sheetState = sheetState
+    ) {
+        currentUser?.let { user ->
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                currentUser?.let { user ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        ChatAvatar(
-                            id = user.id,
-                            chatName = user.firstName,
-                            avatarUri = user.avatars.firstOrNull()?.uri,
-                            size = 64.dp,
-                            sharedTransition = false
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-                otherAccounts.forEach { account ->
-                    AccountRow(
-                        user = account,
-                        onClick = { onAccountClick(account.id) }
-                    )
-                }
-                AddAccountRow(onClick = onAddAccount)
+                ChatAvatar(
+                    id = user.id,
+                    chatName = user.firstName,
+                    avatarUri = user.avatars.firstOrNull()?.uri,
+                    size = 64.dp,
+                    sharedTransition = false
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
-        },
-        buttons = {
-            TextButton(onClick = onDismissRequest) {
-                Text(stringResource(R.string.cancel))
-            }
-        })
+        }
+        
+        otherAccounts.forEach { account ->
+            AccountRow(
+                user = account,
+                onClick = { onAccountClick(account.id) }
+            )
+        }
+        
+        AddAccountRow(onClick = onAddAccount)
+    }
 }
 
 @Composable
@@ -1048,11 +1068,33 @@ private fun AddAccountRow(onClick: () -> Unit) {
 
 @Composable
 private fun DrawerContent(
-    drawerState: DrawerState, user: User, theme: ThemeOption
+    drawerState: DrawerState,
+    user: User,
+    theme: ThemeOption,
+    showAccountSheet: Boolean,
+    onShowAccountSheet: () -> Unit,
+    onHideAccountSheet: () -> Unit,
+    accountSwitcherViewModel: AccountSwitcherViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val navBackStack = LocalNavBackStack.current
     val scope = rememberCoroutineScope()
     val screenHeight = LocalWindowInfo.current.containerDpSize.height
+    val accountSwitcherState by accountSwitcherViewModel.uiState.collectAsState()
+    
+    LaunchedEffect(Unit) {
+        accountSwitcherViewModel.sideEffect.collectLatest { sideEffect ->
+            when (sideEffect) {
+                is AccountSwitcherSideEffect.AccountSwitched -> {
+                    val intent = Intent(context, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+                    context.startActivity(intent)
+                    (context as? Activity)?.finish()
+                }
+            }
+        }
+    }
     
     val verticalPadding = if (screenHeight < 400.dp) {
         20.dp
@@ -1075,15 +1117,28 @@ private fun DrawerContent(
         windowInsets = WindowInsets()
     ) {
         Column(modifier = Modifier.statusBarsPadding()) {
-            Text(
-                text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = verticalPadding),
-                fontSize = 24.sp,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = verticalPadding),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                    modifier = Modifier.weight(1f),
+                    fontSize = 24.sp,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                IconButton(onClick = onShowAccountSheet) {
+                    Icon(
+                        imageVector = Icons.Rounded.MoreVert, contentDescription = null
+                    )
+                }
+            }
             
             DrawerItem(
                 label = stringResource(R.string.profile), icon = Icons.Outlined.AccountCircle
@@ -1165,6 +1220,22 @@ private fun DrawerContent(
             state = bannerState, modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
+        )
+    }
+    
+    if (showAccountSheet) {
+        AccountSwitcherBottomSheet(
+            currentUser = accountSwitcherState.currentUser,
+            otherAccounts = accountSwitcherState.otherAccounts,
+            onAccountClick = accountSwitcherViewModel::switchAccount,
+            onAddAccount = {
+                onHideAccountSheet()
+                scope.launch {
+                    drawerState.close()
+                }
+                navBackStack.add(AppRoute.Login)
+            },
+            onDismissRequest = onHideAccountSheet
         )
     }
 }

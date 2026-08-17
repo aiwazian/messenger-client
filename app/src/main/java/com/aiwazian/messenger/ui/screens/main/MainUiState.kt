@@ -34,12 +34,14 @@ data class MainUiState(
     val onlineUserIds: Set<Long> = emptySet(),
     val showNotificationBottomSheet: Boolean = false,
     val askedPermission: Boolean = false,
-    val showAccountDialog: Boolean = false,
+    val showAccountBottomSheet: Boolean = false,
     val isLocked: Boolean = false
 )
 
 data class ChatFolderPage(
     val id: Int,
     val name: UiText,
-    val chats: List<Chat>
+    val chats: List<Chat>,
+    /** Сколько чатов папки выглядят непрочитанными: бейдж у названия таба. */
+    val unreadChatCount: Int = 0
 )
