@@ -75,6 +75,7 @@ import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material3.AppBarWithSearch
+import androidx.compose.material3.Badge
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
@@ -201,7 +202,14 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
         gesturesEnabled = uiState.selectedChatIds.isEmpty(),
         drawerState = drawerState,
         drawerContent = {
-            DrawerContent(drawerState = drawerState, user = uiState.me, theme = uiState.theme)
+            DrawerContent(
+                drawerState = drawerState,
+                user = uiState.me,
+                theme = uiState.theme,
+                showAccountSheet = uiState.showAccountBottomSheet,
+                onShowAccountSheet = viewModel::showAccountSheet,
+                onHideAccountSheet = viewModel::hideAccountSheet
+            )
         },
     ) {
         Content(drawerState, viewModel)
@@ -226,8 +234,6 @@ private fun Content(
     val uiState by viewModel.uiState.collectAsState()
     val hasSelection = uiState.selectedChatIds.isNotEmpty()
     val socketState by viewModel.socketState.collectAsState()
-    val accountSwitcherViewModel: AccountSwitcherViewModel = hiltViewModel()
-    val accountSwitcherState by accountSwitcherViewModel.uiState.collectAsState()
     
     BackHandler(hasSelection) {
         viewModel.clearSelection()
@@ -256,8 +262,7 @@ private fun Content(
                                 viewModel.lockApp()
                             }
                         },
-                        socketState = socketState,
-                        onProfileClick = viewModel::showAccountDialog
+                        socketState = socketState
                     )
                     
                     if (uiState.folderPages.size > 1) {
@@ -438,19 +443,6 @@ private fun Content(
         }
     }
     
-    if (uiState.showAccountDialog) {
-        AccountSwitcherDialog(
-            currentUser = accountSwitcherState.currentUser,
-            otherAccounts = accountSwitcherState.otherAccounts,
-            onAccountClick = accountSwitcherViewModel::switchAccount,
-            onAddAccount = {
-                viewModel.hideAccountDialog()
-                navBackStack.add(AppRoute.Login)
-            },
-            onDismissRequest = viewModel::hideAccountDialog
-        )
-    }
-    
     uiState.folderPendingDeletion?.let {
         AppDialog(
             title = stringResource(R.string.remove_folder),
@@ -543,19 +535,37 @@ private fun ChatFolderTabs(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = page.name.asString(),
+                        Row(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                            color = if (index == selectedIndex) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            fontSize = 14.sp,
-                            lineHeight = 14.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = page.name.asString(),
+                                color = if (index == selectedIndex) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                fontSize = 14.sp,
+                                lineHeight = 14.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            
+                            /*
+                             * Счётчик приезжает вместе со ChatFolderPage, поэтому бейдж
+                             * обновляется сам при прочтении чата, ручной пометке и новом сообщении.
+                             */
+                            if (page.unreadChatCount > 0) {
+                                Badge(containerColor = MaterialTheme.colorScheme.primary) {
+                                    Text(
+                                        text = page.unreadChatCount.toString(),
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+                        }
                     }
                     AppDropdownMenu(
                         expanded = expanded,
@@ -764,34 +774,16 @@ private fun DefaultTopBar(
     passcodeEnabled: Boolean,
     onLockClick: () -> Unit,
     socketState: ConnectionState,
-    onProfileClick: () -> Unit,
-    searchViewModel: SearchViewModel = hiltViewModel(),
-    accountSwitcherViewModel: AccountSwitcherViewModel = hiltViewModel()
+    searchViewModel: SearchViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
     val navBackStack = LocalNavBackStack.current
     val searchUiState by searchViewModel.uiState.collectAsState()
-    val accountSwitcherState by accountSwitcherViewModel.uiState.collectAsState()
     val textFieldState = rememberTextFieldState(searchUiState.query)
     val searchBarState = rememberSearchBarState()
     val scope = rememberCoroutineScope()
     
     LaunchedEffect(textFieldState.text) {
         searchViewModel.onQueryChange(textFieldState.text.toString())
-    }
-    
-    LaunchedEffect(Unit) {
-        accountSwitcherViewModel.sideEffect.collectLatest { sideEffect ->
-            when (sideEffect) {
-                is AccountSwitcherSideEffect.AccountSwitched -> {
-                    val intent = Intent(context, MainActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
-                    context.startActivity(intent)
-                    (context as? Activity)?.finish()
-                }
-            }
-        }
     }
     
     val inputField = @Composable {
@@ -852,25 +844,12 @@ private fun DefaultTopBar(
             trailingIcon = {
                 AnimatedContent(searchBarState.currentValue) {
                     if (it == SearchBarValue.Collapsed) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (passcodeEnabled) {
-                                IconButton(onClick = onLockClick) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.LockOpen,
-                                        contentDescription = "Lock"
-                                    )
-                                }
-                            }
-                            accountSwitcherState.currentUser?.let { currentUser ->
-                                IconButton(onClick = onProfileClick) {
-                                    ChatAvatar(
-                                        id = currentUser.id,
-                                        chatName = currentUser.firstName,
-                                        avatarUri = currentUser.avatars.firstOrNull()?.uri,
-                                        size = 30.dp,
-                                        sharedTransition = false
-                                    )
-                                }
+                        if (passcodeEnabled) {
+                            IconButton(onClick = onLockClick) {
+                                Icon(
+                                    imageVector = Icons.Rounded.LockOpen,
+                                    contentDescription = "Lock"
+                                )
                             }
                         }
                     } else if (textFieldState.text.isNotEmpty()) {
@@ -931,57 +910,57 @@ private fun DefaultTopBar(
     }
 }
 
+/**
+ * Тот же набор действий, что был в диалоге смены аккаунта: текущий аккаунт,
+ * остальные аккаунты устройства и кнопка добавления внизу.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AccountSwitcherDialog(
+private fun AccountSwitcherBottomSheet(
     currentUser: User?,
     otherAccounts: List<User>,
     onAccountClick: (Long) -> Unit,
     onAddAccount: () -> Unit,
     onDismissRequest: () -> Unit
 ) {
-    AppDialog(
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    
+    AppBottomSheet(
         onDismissRequest = onDismissRequest,
-        content = {
+        sheetState = sheetState
+    ) {
+        currentUser?.let { user ->
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                currentUser?.let { user ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        ChatAvatar(
-                            id = user.id,
-                            chatName = user.firstName,
-                            avatarUri = user.avatars.firstOrNull()?.uri,
-                            size = 64.dp,
-                            sharedTransition = false
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-                otherAccounts.forEach { account ->
-                    AccountRow(
-                        user = account,
-                        onClick = { onAccountClick(account.id) }
-                    )
-                }
-                AddAccountRow(onClick = onAddAccount)
+                ChatAvatar(
+                    id = user.id,
+                    chatName = user.firstName,
+                    avatarUri = user.avatars.firstOrNull()?.uri,
+                    size = 64.dp,
+                    sharedTransition = false
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
-        },
-        buttons = {
-            TextButton(onClick = onDismissRequest) {
-                Text(stringResource(R.string.cancel))
-            }
-        })
+        }
+        
+        otherAccounts.forEach { account ->
+            AccountRow(
+                user = account,
+                onClick = { onAccountClick(account.id) }
+            )
+        }
+        
+        AddAccountRow(onClick = onAddAccount)
+    }
 }
 
 @Composable
@@ -1048,11 +1027,33 @@ private fun AddAccountRow(onClick: () -> Unit) {
 
 @Composable
 private fun DrawerContent(
-    drawerState: DrawerState, user: User, theme: ThemeOption
+    drawerState: DrawerState,
+    user: User,
+    theme: ThemeOption,
+    showAccountSheet: Boolean,
+    onShowAccountSheet: () -> Unit,
+    onHideAccountSheet: () -> Unit,
+    accountSwitcherViewModel: AccountSwitcherViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val navBackStack = LocalNavBackStack.current
     val scope = rememberCoroutineScope()
     val screenHeight = LocalWindowInfo.current.containerDpSize.height
+    val accountSwitcherState by accountSwitcherViewModel.uiState.collectAsState()
+    
+    LaunchedEffect(Unit) {
+        accountSwitcherViewModel.sideEffect.collectLatest { sideEffect ->
+            when (sideEffect) {
+                is AccountSwitcherSideEffect.AccountSwitched -> {
+                    val intent = Intent(context, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+                    context.startActivity(intent)
+                    (context as? Activity)?.finish()
+                }
+            }
+        }
+    }
     
     val verticalPadding = if (screenHeight < 400.dp) {
         20.dp
@@ -1075,15 +1076,28 @@ private fun DrawerContent(
         windowInsets = WindowInsets()
     ) {
         Column(modifier = Modifier.statusBarsPadding()) {
-            Text(
-                text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = verticalPadding),
-                fontSize = 24.sp,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = verticalPadding),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                    modifier = Modifier.weight(1f),
+                    fontSize = 24.sp,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                IconButton(onClick = onShowAccountSheet) {
+                    Icon(
+                        imageVector = Icons.Rounded.MoreVert, contentDescription = null
+                    )
+                }
+            }
             
             DrawerItem(
                 label = stringResource(R.string.profile), icon = Icons.Outlined.AccountCircle
@@ -1165,6 +1179,22 @@ private fun DrawerContent(
             state = bannerState, modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
+        )
+    }
+    
+    if (showAccountSheet) {
+        AccountSwitcherBottomSheet(
+            currentUser = accountSwitcherState.currentUser,
+            otherAccounts = accountSwitcherState.otherAccounts,
+            onAccountClick = accountSwitcherViewModel::switchAccount,
+            onAddAccount = {
+                onHideAccountSheet()
+                scope.launch {
+                    drawerState.close()
+                }
+                navBackStack.add(AppRoute.Login)
+            },
+            onDismissRequest = onHideAccountSheet
         )
     }
 }
