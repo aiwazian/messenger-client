@@ -51,7 +51,7 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         ChatFolderChatEntity::class,
         NotificationSettingsEntity::class
     ],
-    version = 53,
+    version = 54,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 38, to = 39),
@@ -71,6 +71,8 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         AutoMigration(from = 51, to = 52),
         /* 53: настройки уведомлений по категориям чатов. */
         AutoMigration(from = 52, to = 53),
+        /* 54: чат помнит, выключены ли по нему уведомления. */
+        AutoMigration(from = 53, to = 54),
     ]
 )
 @ColumnTypeConverters(Converters::class)
