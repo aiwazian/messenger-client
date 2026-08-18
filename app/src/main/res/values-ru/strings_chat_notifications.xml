@@ -4,4 +4,20 @@
     <string name="chat_enable_notifications">Включить уведомления</string>
     <string name="chat_notifications_disabled">Уведомления отключены</string>
     <string name="chat_notifications_enabled">Уведомления включены</string>
+    <string name="notification_exception_disabled">Без уведомлений</string>
+    <string name="notification_exception_enabled">С уведомлениями</string>
+    <string name="delete_exception">Удалить исключение</string>
+    <string name="exception_deleted">Исключение удалено</string>
+    <string name="delete_all_exceptions">Удалить все исключения</string>
+    <string name="delete_all_exceptions_confirm">Вы уверены, что хотите удалить все исключения? Эти чаты снова будут следовать настройкам своих категорий.</string>
+    <string name="all_exceptions_deleted">Все исключения удалены</string>
+    <string name="notification_exceptions_empty">Нет исключений</string>
+    <string name="failed_to_delete_exception">Не удалось удалить исключение</string>
+    <string name="failed_to_delete_exceptions">Не удалось удалить исключения</string>
+    <plurals name="notification_exceptions_count">
+        <item quantity="one">%1$d исключение</item>
+        <item quantity="few">%1$d исключения</item>
+        <item quantity="many">%1$d исключений</item>
+        <item quantity="other">%1$d исключения</item>
+    </plurals>
 </resources>

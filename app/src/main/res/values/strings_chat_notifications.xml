@@ -4,4 +4,18 @@
     <string name="chat_enable_notifications">Enable notifications</string>
     <string name="chat_notifications_disabled">Notifications disabled</string>
     <string name="chat_notifications_enabled">Notifications enabled</string>
+    <string name="notification_exception_disabled">Notifications off</string>
+    <string name="notification_exception_enabled">Notifications on</string>
+    <string name="delete_exception">Delete exception</string>
+    <string name="exception_deleted">Exception deleted</string>
+    <string name="delete_all_exceptions">Delete all exceptions</string>
+    <string name="delete_all_exceptions_confirm">Are you sure you want to delete all exceptions? These chats will follow their category settings.</string>
+    <string name="all_exceptions_deleted">All exceptions deleted</string>
+    <string name="notification_exceptions_empty">No exceptions</string>
+    <string name="failed_to_delete_exception">Failed to delete exception</string>
+    <string name="failed_to_delete_exceptions">Failed to delete exceptions</string>
+    <plurals name="notification_exceptions_count">
+        <item quantity="one">%1$d exception</item>
+        <item quantity="other">%1$d exceptions</item>
+    </plurals>
 </resources>
