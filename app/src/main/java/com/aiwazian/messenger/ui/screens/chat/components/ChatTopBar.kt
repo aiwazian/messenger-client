@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -67,6 +69,8 @@ fun ChatTopBar(
     isConnected: Boolean,
     chatId: Long,
     myId: Long,
+    isMuted: Boolean = false,
+    onToggleNotifications: () -> Unit = {},
     onBackClick: () -> Unit
 ) {
     val navBackStack = LocalNavBackStack.current
@@ -129,14 +133,29 @@ fun ChatTopBar(
                             verticalArrangement = Arrangement.Center,
                             modifier = Modifier.padding(end = 8.dp)
                         ) {
-                            Text(
-                                text = title,
-                                maxLines = 1,
-                                fontSize = 18.sp,
-                                lineHeight = 16.sp,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.sharedElement(key = "chat-name-$chatId")
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = title,
+                                    maxLines = 1,
+                                    fontSize = 18.sp,
+                                    lineHeight = 16.sp,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.sharedElement(key = "chat-name-$chatId")
+                                )
+                                
+                                /* Тот же перечёркнутый колокольчик, что и в списке чатов. */
+                                if (isMuted) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.NotificationsOff,
+                                        contentDescription = stringResource(R.string.chat_notifications_disabled),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
                             
                             AnimatedContent(
                                 targetState = isConnected, transitionSpec = {
@@ -172,7 +191,7 @@ fun ChatTopBar(
                 Icon(Icons.AutoMirrored.Rounded.ArrowBack, null)
             }
         }, actions = {
-            topBarActions.forEach { action ->
+            topBarActions.forEachIndexed { index, action ->
                 var expand by remember { mutableStateOf(false) }
                 IconButton(
                     onClick = {
@@ -183,13 +202,36 @@ fun ChatTopBar(
                     Icon(action.icon, null)
                 }
                 AppDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
-                    action.dropdownActions.forEach { action ->
+                    action.dropdownActions.forEach { dropdownAction ->
                         AppDropdownMenuItem(leadingIcon = {
-                            Icon(action.icon, null)
+                            Icon(dropdownAction.icon, null)
                         }, text = {
-                            Text(action.text.asString())
+                            Text(dropdownAction.text.asString())
                         }, onClick = {
-                            action.onClick?.invoke()
+                            dropdownAction.onClick?.invoke()
+                            expand = false
+                        })
+                    }
+                    
+                    /*
+                     * Пункт про уведомления всегда в последнем меню ряда — тех самых трёх точках,
+                     * а не в каждом выпадающем списке шапки.
+                     */
+                    if (index == topBarActions.lastIndex) {
+                        AppDropdownMenuItem(leadingIcon = {
+                            Icon(
+                                if (isMuted) Icons.Outlined.Notifications
+                                else Icons.Outlined.NotificationsOff, null
+                            )
+                        }, text = {
+                            Text(
+                                stringResource(
+                                    if (isMuted) R.string.chat_enable_notifications
+                                    else R.string.chat_disable_notifications
+                                )
+                            )
+                        }, onClick = {
+                            onToggleNotifications()
                             expand = false
                         })
                     }
