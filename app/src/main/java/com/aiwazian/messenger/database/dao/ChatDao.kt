@@ -100,4 +100,17 @@ interface ChatDao {
     """
     )
     suspend fun setManuallyUnread(userId: Long, chatIds: List<Long>, isManuallyUnread: Boolean)
+    
+    /**
+     * Колокольчик в ChatCard и в шапке чата.
+     *
+     * Пишется до ответа сервера, чтобы пункт меню срабатывал сразу, и возвращается
+     * назад, если запрос не прошёл.
+     */
+    @Query("UPDATE chats SET isMuted = :isMuted WHERE userId = :userId AND chatId = :chatId")
+    suspend fun setMuted(userId: Long, chatId: Long, isMuted: Boolean)
+    
+    /** null — чата нет в кэше, решать судьбу уведомления придётся по категории. */
+    @Query("SELECT isMuted FROM chats WHERE userId = :userId AND chatId = :chatId")
+    suspend fun isMuted(userId: Long, chatId: Long): Boolean?
 }
