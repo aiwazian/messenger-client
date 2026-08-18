@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.Campaign
+import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -62,6 +65,7 @@ fun NotificationSettingsScreen(viewModel: NotificationSettingsViewModel = hiltVi
                         uiState.privateChatExceptions
                     ),
                     isChecked = uiState.settings.privateChats,
+                    leadingIcon = Icons.Outlined.Person,
                     onClick = {
                         navBackStack.add(
                             AppRoute.SettingsNotificationCategory(ChatFolderCategory.PRIVATE_CHATS)
@@ -77,6 +81,7 @@ fun NotificationSettingsScreen(viewModel: NotificationSettingsViewModel = hiltVi
                         uiState.groupExceptions
                     ),
                     isChecked = uiState.settings.groups,
+                    leadingIcon = Icons.Outlined.Group,
                     onClick = {
                         navBackStack.add(
                             AppRoute.SettingsNotificationCategory(ChatFolderCategory.GROUPS)
@@ -92,6 +97,7 @@ fun NotificationSettingsScreen(viewModel: NotificationSettingsViewModel = hiltVi
                         uiState.channelExceptions
                     ),
                     isChecked = uiState.settings.channels,
+                    leadingIcon = Icons.Outlined.Campaign,
                     onClick = {
                         navBackStack.add(
                             AppRoute.SettingsNotificationCategory(ChatFolderCategory.CHANNELS)

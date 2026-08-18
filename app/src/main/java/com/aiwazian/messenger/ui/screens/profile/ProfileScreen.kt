@@ -38,8 +38,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorPosition
-import androidx.compose.material3.MenuDefaults.rememberDropdownMenuPopupPositionProvider
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -415,8 +413,7 @@ private fun SectionItemWithMenu(
         
         AppDropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false },
-            popupPositionProvider = rememberDropdownMenuPopupPositionProvider(MenuAnchorPosition.End)
+            onDismissRequest = { expanded = false }
         ) {
             menuContent { expanded = false }
         }
