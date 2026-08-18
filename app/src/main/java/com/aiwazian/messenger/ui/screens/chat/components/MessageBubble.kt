@@ -395,7 +395,7 @@ fun MessageBubble(
                                 .filter { it.isNotBlank() }
                                 .joinToString(" ")
                                 .ifBlank { reader.userId.toString() }
-                            val readTime = formatReadTime(reader.readAt)
+                            val readTime = formatStatusTime(reader.readAt, todayVerb = "сегодня")
                             AppDropdownMenuItem(
                                 leadingIcon = {
                                     ChatAvatar(
@@ -436,21 +436,28 @@ fun MessageBubble(
 }
 
 /**
- * «сегодня в 14:03», «вчера в 22:10» или «12 авг. в 14:42».
+ * «Прочитано в 14:03» сегодня, «вчера в 22:10» и «12 августа в 14:42» дальше.
  *
- * @param todayPrefix слово перед временем для сегодняшнего дня. В списке читателей
- * нужно «сегодня в 14:03», а в строке «Прочитано в 14:03» оно было бы лишним.
+ * Один формат на все статусы сразу: раньше прочтение умело «вчера», а правка в тот же
+ * день писалась датой, и два соседних пункта меню выглядели по-разному.
+ *
+ * Слово-статус остаётся только у сегодняшних отметок: в «Прочитано вчера в 22:10» оно
+ * только удлиняет строку. Что именно произошло, видно по иконке рядом — галочки
+ * у прочтения, календарь у правки.
+ *
+ * @param todayVerb слово перед временем для сегодняшнего дня: «Прочитано», «Изменено»
+ * или «сегодня» в списке читателей.
  */
-private fun formatReadTime(readAt: Long, todayPrefix: String = "сегодня "): String {
-    val instant = readAt.toInstance()
-    val readDate = instant.atZone(ZoneId.systemDefault())
+private fun formatStatusTime(timestamp: Long, todayVerb: String): String {
+    val instant = timestamp.toInstance()
+    val date = instant.atZone(ZoneId.systemDefault())
     val today = LocalDate.now()
     val time = instant.toPrettyTime()
     
-    return when (readDate.toLocalDate()) {
-        today -> todayPrefix + "в " + time
+    return when (date.toLocalDate()) {
+        today -> "$todayVerb в $time"
         today.minusDays(1) -> "вчера в $time"
-        else -> readDate.format(DateTimeFormatter.ofPattern("d MMM")) + " в " + time
+        else -> date.format(DateTimeFormatter.ofPattern("d MMMM")) + " в " + time
     }
 }
 
@@ -468,18 +475,12 @@ private fun buildDropdownActions(
      * факт правки остаётся виден по подписи «изменено» в самом сообщении.
      */
     if (item.message.editedAt != null) {
-        val editedTime = item.message.editedAt.toInstance().toPrettyTime()
-        val editedDate = item.message.editedAt.toInstance().atZone(ZoneId.systemDefault())
-        val now = LocalDate.now()
-        val label = if (editedDate.toLocalDate() == now) {
-            "Изменено в $editedTime"
-        } else {
-            "Изменено " + editedDate.format(DateTimeFormatter.ofPattern("d MMM 'в' HH:mm"))
-        }
         actions.add(
             DropdownMenuAction(
                 icon = Icons.Rounded.EditCalendar,
-                text = UiText.DynamicString(label),
+                text = UiText.DynamicString(
+                    formatStatusTime(item.message.editedAt, todayVerb = "Изменено")
+                ),
                 onClick = null
             )
         )
@@ -497,11 +498,12 @@ private fun buildDropdownActions(
             val readAt = readInfo?.maxOfOrNull { it.readAt }
             
             if (readAt != null) {
-                val label = "Прочитано " + formatReadTime(readAt, todayPrefix = "")
                 actions.add(
                     DropdownMenuAction(
                         icon = Icons.Rounded.DoneAll,
-                        text = UiText.DynamicString(label),
+                        text = UiText.DynamicString(
+                            formatStatusTime(readAt, todayVerb = "Прочитано")
+                        ),
                         onClick = null
                     )
                 )
