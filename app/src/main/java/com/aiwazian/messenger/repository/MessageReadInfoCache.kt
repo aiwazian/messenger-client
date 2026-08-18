@@ -57,6 +57,38 @@ class MessageReadInfoCache @Inject constructor() {
         }
     }
     
+    /**
+     * Добавляет читателя по событию из сокета, не дожидаясь ответа сервера.
+     *
+     * Без этого прочтение при открытом чате давало только вторую галочку: время
+     * прочтения появлялось только после перезахода в чат, когда история скачивалась
+     * заново.
+     *
+     * Запись того же читателя заменяется, а не добавляется второй: иначе повторное
+     * открытие чата собеседником показало бы его в списке просмотров дважды. Новая
+     * отметка встаёт в начало: сервер отдаёт читателей от свежих к старым, и порядок
+     * не должен зависеть от того, пришли данные запросом или событием.
+     *
+     * Сообщения без записи в кэше тоже попадают сюда: до первого прочтения их там
+     * и не было.
+     */
+    fun addReader(messageIds: List<Long>, reader: MessageReadInfo) {
+        if (messageIds.isEmpty()) return
+        
+        _readInfo.update { current ->
+            val updated = current.toMutableMap()
+            
+            messageIds.forEach { messageId ->
+                val existing = updated[messageId].orEmpty()
+                
+                updated[messageId] =
+                    listOf(reader) + existing.filter { it.userId != reader.userId }
+            }
+            
+            updated
+        }
+    }
+    
     /** Сообщение удалено — читатели вместе с ним. */
     fun forget(messageId: Long) {
         _readInfo.update { current ->

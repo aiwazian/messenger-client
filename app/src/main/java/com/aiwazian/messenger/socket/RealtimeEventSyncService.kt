@@ -12,6 +12,7 @@ import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.push.NotificationHelper
 import com.aiwazian.messenger.repository.ChatFolderRepository
 import com.aiwazian.messenger.repository.ChatRepository
+import com.aiwazian.messenger.repository.ReadReceiptApplier
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.ActiveChatTracker
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -34,7 +35,8 @@ class RealtimeEventSyncService @Inject constructor(
     private val chatFolderRepository: ChatFolderRepository,
     private val userRepository: UserRepository,
     private val onlineUsersTracker: OnlineUsersTracker,
-    private val notificationHelper: NotificationHelper
+    private val notificationHelper: NotificationHelper,
+    private val readReceiptApplier: ReadReceiptApplier
 ) {
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
@@ -66,7 +68,8 @@ class RealtimeEventSyncService @Inject constructor(
                         chatId,
                         title,
                         body,
-                        chat?.avatarUri
+                        chat?.avatarUri,
+                        message.sendTime
                     )
                 }
             }
@@ -102,11 +105,19 @@ class RealtimeEventSyncService @Inject constructor(
         webSocketClient.subscribeToEvent(WebSocketEvent.ReadMessage) { payload ->
             serviceScope.launch {
                 chatRepository.markMessageAsRead(payload.chatId, payload.messageId)
+                readReceiptApplier.apply(payload)
             }
         }
         
         webSocketClient.subscribeToEvent(WebSocketEvent.ChatRead) { payload ->
             serviceScope.launch {
+                /*
+                 * Время прочтения проставляется до разветвления по типу чата: в группе событие
+                 * уходит экрану чата и дальше сюда не возвращается, а «Прочитано в 17:10»
+                 * нужно в обоих случаях.
+                 */
+                readReceiptApplier.apply(payload)
+                
                 if (ChatType.fromId(payload.chatId) == ChatType.GROUP) {
                     _groupReadEvents.emit(payload)
                     return@launch
