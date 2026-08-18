@@ -20,7 +20,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionToggleItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
@@ -51,9 +50,7 @@ fun NotificationSettingsScreen(viewModel: NotificationSettingsViewModel = hiltVi
         )
     }) { innerPadding ->
         Column(Modifier.padding(innerPadding)) {
-            SectionContainer(footer = {
-                SectionDescription(text = stringResource(R.string.notifications_description))
-            }) {
+            SectionContainer {
                 SectionToggleItem(
                     text = stringResource(R.string.private_chats),
                     isChecked = settings.privateChats,
