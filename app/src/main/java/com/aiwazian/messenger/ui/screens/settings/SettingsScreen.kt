@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.Gavel
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.Outbox
 import androidx.compose.material.icons.rounded.PrivacyTip
 import androidx.compose.material3.Scaffold
@@ -83,13 +84,12 @@ fun SettingsScreen() {
                 header = {
                     SectionHeader(stringResource(R.string.settings))
                 }) {
-                //                SectionItem(
-                //                    leadingIcon = Icons.Rounded.NotificationsNone,
-                //                    headlineText = stringResource(R.string.notifications),
-                //                    onClick = {
-                //                        navBackStack.add(AppRoute.SettingsNotifications)
-                //                    }
-                //                )
+                SectionItem(
+                    leadingIcon = Icons.Rounded.NotificationsNone,
+                    headlineText = stringResource(R.string.notifications),
+                    onClick = {
+                        navBackStack.add(AppRoute.SettingsNotifications)
+                    })
                 
                 SectionItem(
                     leadingIcon = Icons.Rounded.ChatBubbleOutline,

@@ -35,6 +35,7 @@ import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.repository.NotificationSettingsRepository
 import com.aiwazian.messenger.utils.ActiveChatTracker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -49,7 +50,8 @@ import javax.inject.Singleton
 @Singleton
 class NotificationHelper @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val database: AppDatabase
+    private val database: AppDatabase,
+    private val notificationSettingsRepository: NotificationSettingsRepository
 ) {
     
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -147,11 +149,16 @@ class NotificationHelper @Inject constructor(
         ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
     }
     
+    /**
+     * @param sendTime когда сообщение было отправлено, а не когда пуш доехал. Уходит в
+     * setWhen и в MessagingStyle, чтобы часовой давности сообщение не выглядело свежим.
+     */
     fun showMessageNotification(
         chatId: Long,
         title: String,
         body: String,
-        avatarUri: Uri? = null
+        avatarUri: Uri? = null,
+        sendTime: Long = System.currentTimeMillis()
     ) {
         scope.launch {
             /*
@@ -161,6 +168,14 @@ class NotificationHelper @Inject constructor(
              * переподключался.
              */
             if (ActiveChatTracker.activeChatId.value == chatId) return@launch
+            
+            /*
+             * Вторая линия обороны после серверного фильтра. Настройка могла не
+             * доехать до сервера, пуш мог уйти раньше её изменения, да и сама
+             * отправка не мгновенная — а пользователь ждёт тишины сразу после
+             * переключения тумблера.
+             */
+            if (!notificationSettingsRepository.isEnabledFor(chatId)) return@launch
             
             val chatInfo = when (ChatType.fromId(chatId)) {
                 ChatType.PRIVATE -> database.userDao().getWithAvatars(chatId)?.let {
@@ -193,7 +208,7 @@ class NotificationHelper @Inject constructor(
             val person = createPerson(resolvedTitle, circularAvatar, chatId)
             
             val history = loadMessages(context, chatId).toMutableList()
-            val newMessage = MessageData(body, System.currentTimeMillis())
+            val newMessage = MessageData(body, sendTime)
             history.add(newMessage)
             val trimmedHistory = history.takeLast(MAX_MESSAGES)
             saveMessages(context, chatId, trimmedHistory)
@@ -230,6 +245,8 @@ class NotificationHelper @Inject constructor(
                 .setAutoCancel(true)
                 .setOnlyAlertOnce(false)
                 .setShortcutId("$CHAT_SHORTCUT_PREFIX$chatId")
+                .setWhen(sendTime)
+                .setShowWhen(true)
                 .build()
             
             val notificationId = chatId.toInt()
