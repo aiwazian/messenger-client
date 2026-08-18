@@ -17,6 +17,7 @@ import com.aiwazian.messenger.database.dao.DraftDao
 import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.database.dao.MessageDao
+import com.aiwazian.messenger.database.dao.NotificationSettingsDao
 import com.aiwazian.messenger.database.dao.UserDao
 import dagger.Module
 import dagger.Provides
@@ -74,4 +75,8 @@ object DatabaseModule {
     
     @Provides
     fun provideChatFolderDao(database: AppDatabase): ChatFolderDao = database.chatFolderDao()
+    
+    @Provides
+    fun provideNotificationSettingsDao(database: AppDatabase): NotificationSettingsDao =
+        database.notificationSettingsDao()
 }

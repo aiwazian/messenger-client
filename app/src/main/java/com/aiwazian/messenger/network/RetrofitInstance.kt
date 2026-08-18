@@ -11,6 +11,7 @@ import com.aiwazian.messenger.network.api.ChatApi
 import com.aiwazian.messenger.network.api.ChatFolderApi
 import com.aiwazian.messenger.network.api.GroupApi
 import com.aiwazian.messenger.network.api.MessageApi
+import com.aiwazian.messenger.network.api.NotificationSettingsApi
 import com.aiwazian.messenger.network.api.PrivacyApi
 import com.aiwazian.messenger.network.api.SearchApi
 import com.aiwazian.messenger.network.api.SessionApi
@@ -65,4 +66,7 @@ object RetrofitInstance {
     val searchApi: SearchApi by lazy { retrofit.create(SearchApi::class.java) }
     val sessionApi: SessionApi by lazy { retrofit.create(SessionApi::class.java) }
     val privacyApi: PrivacyApi by lazy { retrofit.create(PrivacyApi::class.java) }
+    val notificationSettingsApi: NotificationSettingsApi by lazy {
+        retrofit.create(NotificationSettingsApi::class.java)
+    }
 }

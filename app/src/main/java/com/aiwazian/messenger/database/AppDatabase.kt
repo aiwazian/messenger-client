@@ -18,6 +18,7 @@ import com.aiwazian.messenger.database.dao.DraftDao
 import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.database.dao.MessageDao
+import com.aiwazian.messenger.database.dao.NotificationSettingsDao
 import com.aiwazian.messenger.database.dao.UserDao
 import com.aiwazian.messenger.database.entity.AccountEntity
 import com.aiwazian.messenger.database.entity.AttachmentEntity
@@ -30,6 +31,7 @@ import com.aiwazian.messenger.database.entity.DraftEntity
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.database.entity.GroupEntity
 import com.aiwazian.messenger.database.entity.MessageEntity
+import com.aiwazian.messenger.database.entity.NotificationSettingsEntity
 import com.aiwazian.messenger.database.entity.UserEntity
 import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
 
@@ -46,9 +48,10 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         AvatarEntity::class,
         DraftEntity::class,
         ChatFolderEntity::class,
-        ChatFolderChatEntity::class
+        ChatFolderChatEntity::class,
+        NotificationSettingsEntity::class
     ],
-    version = 52,
+    version = 53,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 38, to = 39),
@@ -66,6 +69,8 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         AutoMigration(from = 50, to = 51),
         /* 52: факт правки отделён от времени правки: оно живёт только трое суток. */
         AutoMigration(from = 51, to = 52),
+        /* 53: настройки уведомлений по категориям чатов. */
+        AutoMigration(from = 52, to = 53),
     ]
 )
 @ColumnTypeConverters(Converters::class)
@@ -91,4 +96,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun draftDao(): DraftDao
     
     abstract fun chatFolderDao(): ChatFolderDao
+    
+    abstract fun notificationSettingsDao(): NotificationSettingsDao
 }

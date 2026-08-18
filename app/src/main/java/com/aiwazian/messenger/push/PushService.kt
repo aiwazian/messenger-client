@@ -52,7 +52,20 @@ class PushService : FirebaseMessagingService() {
             return
         }
         
-        notificationHelper.showMessageNotification(chatId, title, body)
+        /*
+         * Время отправки берётся с сервера, а не из момента доставки: пуш мог
+         * пролежать в очереди FCM час, и без этого старое сообщение выглядело бы
+         * только что написанным. Старый сервер поля не пришлёт — тогда прежнее
+         * поведение.
+         */
+        val sendTime = data["sendTime"]?.toLongOrNull() ?: System.currentTimeMillis()
+        
+        notificationHelper.showMessageNotification(
+            chatId = chatId,
+            title = title,
+            body = body,
+            sendTime = sendTime
+        )
     }
     
     /**
