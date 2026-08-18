@@ -15,6 +15,7 @@ import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface NotificationSettingsApi {
 
@@ -24,7 +25,7 @@ interface NotificationSettingsApi {
     @PATCH("users/me/notifications")
     suspend fun updateNotificationSettings(@Body request: UpdateNotificationSettingsRequestDto): Response<NotificationSettingsResponseDto>
 
-    /** Все исключения сразу: понадобятся отдельному экрану со списком чатов. */
+    /** Все исключения сразу: для экрана со списком чатов. */
     @GET("users/me/notifications/chats")
     suspend fun getChatNotificationSettings(): Response<List<ChatNotificationSettingDto>>
 
@@ -38,4 +39,10 @@ interface NotificationSettingsApi {
     /** Убирает исключение: чат снова следует настройке своей категории. */
     @DELETE("users/me/notifications/chats/{chatId}")
     suspend fun deleteChatNotificationSetting(@Path("chatId") chatId: Long): Response<Unit>
+
+    /** Убирает все исключения разом; category сужает удаление до одной категории. */
+    @DELETE("users/me/notifications/chats")
+    suspend fun deleteAllChatNotificationSettings(
+        @Query("category") category: String? = null
+    ): Response<Unit>
 }

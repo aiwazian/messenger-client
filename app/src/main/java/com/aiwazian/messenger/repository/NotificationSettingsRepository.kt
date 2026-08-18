@@ -11,14 +11,18 @@ import com.aiwazian.messenger.database.dao.NotificationSettingsDao
 import com.aiwazian.messenger.database.entity.NotificationSettingsEntity
 import com.aiwazian.messenger.domain.ChatNotificationException
 import com.aiwazian.messenger.domain.NotificationSettings
+import com.aiwazian.messenger.enums.ChatFolderCategory
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.network.api.NotificationSettingsApi
 import com.aiwazian.messenger.network.dto.UpdateChatNotificationSettingRequestDto
 import com.aiwazian.messenger.network.dto.UpdateNotificationSettingsRequestDto
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -38,6 +42,16 @@ class NotificationSettingsRepository @Inject constructor(
     private val chatDao: ChatDao,
     private val accountDao: AccountDao
 ) {
+    
+    /**
+     * Кэш исключений в памяти: один на приложение, репозиторий — Singleton.
+     *
+     * В Room не кладётся, чтобы не заводить лишнюю таблицу и миграцию: строк
+     * немного, а на старте и при коннекте список всё равно перечитывается с
+     * сервера. Экран настроек, экран категории и список чатов читают его отсюда,
+     * поэтому удаление исключения на одном экране сразу видно на другом.
+     */
+    private val chatExceptions = MutableStateFlow<List<ChatNotificationException>>(emptyList())
     
     /**
      * Текущие настройки активного аккаунта.
@@ -137,6 +151,23 @@ class NotificationSettingsRepository @Inject constructor(
         emitAll(chatDao.getChatByIdFlow(userId, chatId).map { it?.isMuted == true })
     }
     
+    /** Исключения для экранов категорий и колокольчика в списке чатов. */
+    fun observeChatExceptions(): Flow<List<ChatNotificationException>> = chatExceptions.asStateFlow()
+    
+    /** Перечитать исключения с сервера в общий кэш. */
+    suspend fun refreshChatExceptions() {
+        try {
+            val response = notificationSettingsApi.getChatNotificationSettings()
+            
+            if (response.isSuccessful) {
+                chatExceptions.value = response.body().orEmpty()
+                    .map { ChatNotificationException(it.chatId, it.enabled) }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Не удалось загрузить исключения чатов", e)
+        }
+    }
+    
     /**
      * Добавить чат в исключения: уведомления по нему всегда включены или всегда
      * выключены, независимо от настройки его категории.
@@ -158,6 +189,7 @@ class NotificationSettingsRepository @Inject constructor(
             )
             
             if (response.isSuccessful) {
+                upsertException(chatId, enabled)
                 Result.success(Unit)
             } else {
                 chatDao.setMuted(userId, chatId, previous)
@@ -170,11 +202,8 @@ class NotificationSettingsRepository @Inject constructor(
     }
     
     /**
-     * Все исключения разом — для будущего экрана со списком чатов, выключенных
-     * или включённых принудительно.
-     *
-     * В Room не кладётся: список нужен только открытому экрану, а итоговое состояние
-     * каждого чата и так лежит в таблице chats.
+     * Все исключения разом — для экрана со списком чатов, выключенных или
+     * включённых принудительно.
      */
     suspend fun getChatExceptions(): List<ChatNotificationException> {
         return try {
@@ -194,17 +223,40 @@ class NotificationSettingsRepository @Inject constructor(
     /**
      * Убрать чат из исключений: он снова следует настройке своей категории.
      *
-     * Локальный флаг здесь не трогается: новое итоговое состояние считает сервер и
-     * присылает событием chat:notifications.
+     * Достаточно убрать чат из кэша: колокольчик в списке чатов пересчитается
+     * из категории и обновлённого кэша исключений.
      */
     suspend fun removeChatException(chatId: Long): Result<Unit> {
         return try {
             val response = notificationSettingsApi.deleteChatNotificationSetting(chatId)
             
             if (response.isSuccessful) {
+                removeExceptionFromCache(chatId)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Failed to delete chat notification setting: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Убрать все исключения выбранной категории разом.
+     *
+     * Кнопка «Удалить все» на экране категории: одним запросом снимаем исключения
+     * только этой категории, чужие не трогаем.
+     */
+    suspend fun removeAllChatExceptions(category: ChatFolderCategory): Result<Unit> {
+        return try {
+            val response =
+                notificationSettingsApi.deleteAllChatNotificationSettings(category.name)
+            
+            if (response.isSuccessful) {
+                chatExceptions.update { list -> list.filterNot { category.matches(it.chatId) } }
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to delete chat notification settings: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -215,6 +267,7 @@ class NotificationSettingsRepository @Inject constructor(
     suspend fun applyRemoteChatSetting(chatId: Long, enabled: Boolean) {
         val userId = currentUserId() ?: return
         chatDao.setMuted(userId, chatId, !enabled)
+        upsertException(chatId, enabled)
     }
     
     /**
@@ -238,6 +291,18 @@ class NotificationSettingsRepository @Inject constructor(
         val settings = notificationSettingsDao.get(userId)?.toDomain() ?: return true
         
         return settings.isEnabledFor(ChatType.fromId(chatId))
+    }
+    
+    /** Свежее исключение — наверх, как отдаёт сервер. */
+    private fun upsertException(chatId: Long, enabled: Boolean) {
+        chatExceptions.update { list ->
+            listOf(ChatNotificationException(chatId, enabled)) +
+                list.filterNot { it.chatId == chatId }
+        }
+    }
+    
+    private fun removeExceptionFromCache(chatId: Long) {
+        chatExceptions.update { list -> list.filterNot { it.chatId == chatId } }
     }
     
     private suspend fun currentUserId(): Long? = accountDao.getCurrentAccount()?.userId
