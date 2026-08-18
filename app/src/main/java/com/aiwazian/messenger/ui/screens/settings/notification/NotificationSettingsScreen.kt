@@ -15,9 +15,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.enums.ChatFolderCategory
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionToggleItem
@@ -28,7 +31,7 @@ import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 fun NotificationSettingsScreen(viewModel: NotificationSettingsViewModel = hiltViewModel()) {
     val navBackStack = LocalNavBackStack.current
     
-    val settings by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     
     /*
      * Локальный кэш показывается сразу, но настройку могли поменять на другом
@@ -53,16 +56,49 @@ fun NotificationSettingsScreen(viewModel: NotificationSettingsViewModel = hiltVi
             SectionContainer {
                 SectionToggleItem(
                     text = stringResource(R.string.private_chats),
-                    isChecked = settings.privateChats,
-                    onCheckedChange = viewModel::togglePrivateChats)
+                    supportingText = pluralStringResource(
+                        R.plurals.notification_exceptions_count,
+                        uiState.privateChatExceptions,
+                        uiState.privateChatExceptions
+                    ),
+                    isChecked = uiState.settings.privateChats,
+                    onClick = {
+                        navBackStack.add(
+                            AppRoute.SettingsNotificationCategory(ChatFolderCategory.PRIVATE_CHATS)
+                        )
+                    },
+                    onCheckedChange = viewModel::togglePrivateChats
+                )
                 SectionToggleItem(
                     text = stringResource(R.string.groups),
-                    isChecked = settings.groups,
-                    onCheckedChange = viewModel::toggleGroups)
+                    supportingText = pluralStringResource(
+                        R.plurals.notification_exceptions_count,
+                        uiState.groupExceptions,
+                        uiState.groupExceptions
+                    ),
+                    isChecked = uiState.settings.groups,
+                    onClick = {
+                        navBackStack.add(
+                            AppRoute.SettingsNotificationCategory(ChatFolderCategory.GROUPS)
+                        )
+                    },
+                    onCheckedChange = viewModel::toggleGroups
+                )
                 SectionToggleItem(
                     text = stringResource(R.string.channels),
-                    isChecked = settings.channels,
-                    onCheckedChange = viewModel::toggleChannels)
+                    supportingText = pluralStringResource(
+                        R.plurals.notification_exceptions_count,
+                        uiState.channelExceptions,
+                        uiState.channelExceptions
+                    ),
+                    isChecked = uiState.settings.channels,
+                    onClick = {
+                        navBackStack.add(
+                            AppRoute.SettingsNotificationCategory(ChatFolderCategory.CHANNELS)
+                        )
+                    },
+                    onCheckedChange = viewModel::toggleChannels
+                )
             }
         }
     }
