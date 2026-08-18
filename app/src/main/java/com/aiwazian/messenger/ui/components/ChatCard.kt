@@ -55,8 +55,8 @@ import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.sharedElement
+import com.aiwazian.messenger.extensions.toChatListTime
 import com.aiwazian.messenger.extensions.toInstance
-import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 
@@ -244,7 +244,7 @@ private fun LastMessageSendTime(lastMessage: Message, isSavedMessages: Boolean, 
     val isMyMessage = lastMessage.senderId == myId
     val showCheckmarks = !isSavedMessages && isMyMessage
     
-    val sendTime = lastMessage.sendTime.toInstance().toPrettyTime()
+    val sendTime = lastMessage.sendTime.toInstance().toChatListTime()
     
     Row(
         verticalAlignment = Alignment.CenterVertically,
