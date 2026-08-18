@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -79,13 +80,21 @@ fun ChatCard(
             onClick = onClickChat, onLongClick = onLongClickChat
         ),
         content = {
-            Text(
-                text = chat.chatName.asString(),
-                maxLines = 1,
-                fontSize = 16.sp,
-                lineHeight = 16.sp,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = chat.chatName.asString(),
+                    maxLines = 1,
+                    fontSize = 16.sp,
+                    lineHeight = 16.sp,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(weight = 1f, fill = false)
+                )
+                
+                /* Колокольчик прижат к названию, а не к краю строки: он часть имени чата. */
+                if (chat.isMuted) {
+                    MutedIcon()
+                }
+            }
         },
         supportingContent = {
             var text = AnnotatedString("")
@@ -270,6 +279,19 @@ private fun PinIcon() {
         modifier = Modifier
             .rotate(45f)
             .size(12.dp),
+    )
+}
+
+/** Чат в исключениях с выключенными уведомлениями — перечёркнутый колокольчик. */
+@Composable
+private fun MutedIcon() {
+    Icon(
+        imageVector = Icons.Outlined.NotificationsOff,
+        contentDescription = stringResource(R.string.chat_notifications_disabled),
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .padding(start = 6.dp)
+            .size(16.dp)
     )
 }
 

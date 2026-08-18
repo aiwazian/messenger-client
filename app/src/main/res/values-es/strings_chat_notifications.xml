@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_disable_notifications">Desactivar notificaciones</string>
+    <string name="chat_enable_notifications">Activar notificaciones</string>
+    <string name="chat_notifications_disabled">Notificaciones desactivadas</string>
+    <string name="chat_notifications_enabled">Notificaciones activadas</string>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_disable_notifications">Выключить уведомления</string>
+    <string name="chat_enable_notifications">Включить уведомления</string>
+    <string name="chat_notifications_disabled">Уведомления отключены</string>
+    <string name="chat_notifications_enabled">Уведомления включены</string>
+</resources>
