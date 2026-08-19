@@ -109,6 +109,12 @@ sealed interface AppRoute : NavKey {
     data class SettingsNotificationCategory(val category: ChatFolderCategory) : AppRoute
     
     @Serializable
+    data class SettingsNotificationException(val chatId: Long) : AppRoute
+    
+    @Serializable
+    data class SelectNotificationExceptionChat(val category: ChatFolderCategory) : AppRoute
+    
+    @Serializable
     data object SettingsDataAndStorage : AppRoute
     
     @Serializable
