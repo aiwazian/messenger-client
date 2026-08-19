@@ -12,7 +12,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.NotificationsOff
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +46,7 @@ import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ProfileCard
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
@@ -107,37 +112,55 @@ fun NotificationCategoryScreen(
                     CircularWavyProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
                 
-                uiState.exceptions.isEmpty() -> {
-                    Text(
-                        text = stringResource(R.string.notification_exceptions_empty),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 32.dp)
-                    )
-                }
-                
                 else -> {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState())
                     ) {
-                        SectionContainer {
-                            uiState.exceptions.forEach { item ->
-                                ExceptionCard(
-                                    item = item,
-                                    onRemove = { viewModel.removeException(item.chatId) }
-                                )
-                            }
-                        }
-                        
+                        /*
+                         * Кнопка добавления стоит выше списка и не прячется, когда исключений
+                         * нет: пустой экран без неё оставляет пользователя ни с чем.
+                         */
                         SectionContainer {
                             SectionItem(
-                                headlineText = stringResource(R.string.delete_all_exceptions),
-                                contentColor = MaterialTheme.colorScheme.error,
-                                onClick = viewModel::showDeleteAllDialog
+                                headlineText = stringResource(R.string.notification_exception_add),
+                                leadingIcon = Icons.Outlined.Add,
+                                onClick = {
+                                    navBackStack.add(AppRoute.SelectNotificationExceptionChat(category))
+                                }
                             )
+                        }
+                        
+                        if (uiState.exceptions.isEmpty()) {
+                            Text(
+                                text = stringResource(R.string.notification_exceptions_empty),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .padding(top = 32.dp)
+                            )
+                        } else {
+                            SectionContainer {
+                                uiState.exceptions.forEach { item ->
+                                    ExceptionCard(
+                                        item = item,
+                                        onConfigure = {
+                                            navBackStack.add(AppRoute.SettingsNotificationException(item.chatId))
+                                        },
+                                        onToggle = { viewModel.toggleException(item) },
+                                        onRemove = { viewModel.removeException(item.chatId) }
+                                    )
+                                }
+                            }
+                            
+                            SectionContainer {
+                                SectionItem(
+                                    headlineText = stringResource(R.string.delete_all_exceptions),
+                                    contentColor = MaterialTheme.colorScheme.error,
+                                    onClick = viewModel::showDeleteAllDialog
+                                )
+                            }
                         }
                     }
                 }
@@ -170,6 +193,8 @@ fun NotificationCategoryScreen(
 @Composable
 private fun ExceptionCard(
     item: NotificationExceptionItem,
+    onConfigure: () -> Unit,
+    onToggle: () -> Unit,
     onRemove: () -> Unit
 ) {
     var isMenuExpanded by remember { mutableStateOf(false) }
@@ -196,6 +221,52 @@ private fun ExceptionCard(
             expanded = isMenuExpanded,
             onDismissRequest = { isMenuExpanded = false }
         ) {
+            AppDropdownMenuItem(
+                text = { Text(stringResource(R.string.notification_exception_configure)) },
+                onClick = {
+                    isMenuExpanded = false
+                    onConfigure()
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = null
+                    )
+                }
+            )
+            
+            /*
+             * Подпись говорит о действии, а не о текущем состоянии: если уведомления
+             * включены, предлагаем их выключить.
+             */
+            AppDropdownMenuItem(
+                text = {
+                    Text(
+                        stringResource(
+                            if (item.enabled) {
+                                R.string.chat_disable_notifications
+                            } else {
+                                R.string.chat_enable_notifications
+                            }
+                        )
+                    )
+                },
+                onClick = {
+                    isMenuExpanded = false
+                    onToggle()
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = if (item.enabled) {
+                            Icons.Outlined.NotificationsOff
+                        } else {
+                            Icons.Outlined.Notifications
+                        },
+                        contentDescription = null
+                    )
+                }
+            )
+            
             AppDropdownMenuItem(
                 text = { Text(stringResource(R.string.delete_exception)) },
                 onClick = {
