@@ -6,6 +6,8 @@ package com.aiwazian.messenger.usecase
 
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Chat
+import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.ui.components.ShareItem
@@ -16,7 +18,8 @@ import javax.inject.Inject
 
 class GetShareTargetsUseCase @Inject constructor(
     private val chatRepository: ChatRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val channelRepository: ChannelRepository
 ) {
     suspend operator fun invoke(
         selectedChatIds: Set<Long> = emptySet(),
@@ -36,6 +39,7 @@ class GetShareTargetsUseCase @Inject constructor(
         
         for (chat in chats) {
             if (chat.id == myId) continue
+            if (!canWriteTo(chat, myId)) continue
             if (!canShareTo(chat)) continue
             
             targets.add(
@@ -49,5 +53,25 @@ class GetShareTargetsUseCase @Inject constructor(
         }
         
         return targets
+    }
+    
+    /**
+     * Писать в канал пока может только владелец, поэтому каналы, на которые
+     * пользователь просто подписан, в списке не нужны: сообщение туда всё равно
+     * не уйдёт.
+     *
+     * Личные чаты и группы доступны всем участникам, а чат неизвестного типа
+     * лучше не показывать вовсе.
+     */
+    private suspend fun canWriteTo(chat: Chat, myId: Long): Boolean {
+        return when (ChatType.fromId(chat.id)) {
+            ChatType.CHANNEL -> {
+                channelRepository.getByIdOrNull(chat.id).firstOrNull()?.ownerId == myId
+            }
+            
+            ChatType.UNKNOWN -> false
+            
+            else -> true
+        }
     }
 }
