@@ -174,14 +174,20 @@ class NotificationSettingsRepository @Inject constructor(
      *
      * Колокольчик рисуется до ответа сервера и возвращается назад, если запрос не
      * прошёл: иначе интерфейс обещает тишину, которой не будет.
+     *
+     * В кэш исключений новое состояние кладётся так же сразу: подпись строки и её
+     * меню на экране категории читаются оттуда, и ждать ответа сервера, чтобы
+     * перерисовать только что нажатую строку, незачем.
      */
     suspend fun setChatNotifications(chatId: Long, enabled: Boolean): Result<Unit> {
         val userId = currentUserId()
             ?: return Result.failure(IllegalStateException("Нет активного аккаунта"))
         
-        val previous = chatDao.isMuted(userId, chatId) ?: false
+        val previousMuted = chatDao.isMuted(userId, chatId) ?: false
+        val previousException = chatExceptions.value.firstOrNull { it.chatId == chatId }
         
         chatDao.setMuted(userId, chatId, !enabled)
+        upsertException(chatId, enabled)
         
         return try {
             val response = notificationSettingsApi.setChatNotificationSetting(
@@ -189,14 +195,13 @@ class NotificationSettingsRepository @Inject constructor(
             )
             
             if (response.isSuccessful) {
-                upsertException(chatId, enabled)
                 Result.success(Unit)
             } else {
-                chatDao.setMuted(userId, chatId, previous)
+                rollbackChatSetting(userId, chatId, previousMuted, previousException)
                 Result.failure(Exception("Failed to update chat notifications: ${response.code()}"))
             }
         } catch (e: Exception) {
-            chatDao.setMuted(userId, chatId, previous)
+            rollbackChatSetting(userId, chatId, previousMuted, previousException)
             Result.failure(e)
         }
     }
@@ -223,8 +228,9 @@ class NotificationSettingsRepository @Inject constructor(
     /**
      * Убрать чат из исключений: он снова следует настройке своей категории.
      *
-     * Достаточно убрать чат из кэша: колокольчик в списке чатов пересчитается
-     * из категории и обновлённого кэша исключений.
+     * Кроме кэша пересчитываем и колокольчик: свежий isMuted сервер пришлёт только
+     * со следующим списком чатов, а строка в списке и шапка чата должны быть правы
+     * уже сейчас.
      */
     suspend fun removeChatException(chatId: Long): Result<Unit> {
         return try {
@@ -232,6 +238,7 @@ class NotificationSettingsRepository @Inject constructor(
             
             if (response.isSuccessful) {
                 removeExceptionFromCache(chatId)
+                resetChatMutedToCategory(chatId)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Failed to delete chat notification setting: ${response.code()}"))
@@ -253,7 +260,10 @@ class NotificationSettingsRepository @Inject constructor(
                 notificationSettingsApi.deleteAllChatNotificationSettings(category.name)
             
             if (response.isSuccessful) {
+                val removed = chatExceptions.value.filter { category.matches(it.chatId) }
                 chatExceptions.update { list -> list.filterNot { category.matches(it.chatId) } }
+                removed.forEach { resetChatMutedToCategory(it.chatId) }
+                
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Failed to delete chat notification settings: ${response.code()}"))
@@ -303,6 +313,38 @@ class NotificationSettingsRepository @Inject constructor(
     
     private fun removeExceptionFromCache(chatId: Long) {
         chatExceptions.update { list -> list.filterNot { it.chatId == chatId } }
+    }
+    
+    /**
+     * Вернуть чат в состояние до неудавшегося запроса.
+     *
+     * Исключения не было — убираем добавленное; было — возвращаем прежнее
+     * значение, иначе экран останется с исключением, которого на сервере нет.
+     */
+    private suspend fun rollbackChatSetting(
+        userId: Long,
+        chatId: Long,
+        muted: Boolean,
+        exception: ChatNotificationException?
+    ) {
+        chatDao.setMuted(userId, chatId, muted)
+        
+        if (exception == null) {
+            removeExceptionFromCache(chatId)
+        } else {
+            upsertException(exception.chatId, exception.enabled)
+        }
+    }
+    
+    /**
+     * Исключение снято — чат снова живёт по настройке своей категории, и колокольчик
+     * считаем сами по тем же правилам, что и сервер.
+     */
+    private suspend fun resetChatMutedToCategory(chatId: Long) {
+        val userId = currentUserId() ?: return
+        val settings = notificationSettingsDao.get(userId)?.toDomain() ?: NotificationSettings()
+        
+        chatDao.setMuted(userId, chatId, !settings.isEnabledFor(ChatType.fromId(chatId)))
     }
     
     private suspend fun currentUserId(): Long? = accountDao.getCurrentAccount()?.userId
