@@ -4,4 +4,8 @@
     <string name="chat_enable_notifications">Attiva le notifiche</string>
     <string name="chat_notifications_disabled">Notifiche disattivate</string>
     <string name="chat_notifications_enabled">Notifiche attivate</string>
+    <string name="notification_exception_configure">Configura</string>
+    <string name="notification_exception_add">Aggiungi eccezione</string>
+    <string name="notification_exception_receive">Ricevi notifiche</string>
+    <string name="notification_exception_update_failed">Impossibile modificare le notifiche</string>
 </resources>

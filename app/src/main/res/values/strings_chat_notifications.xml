@@ -6,6 +6,10 @@
     <string name="chat_notifications_enabled">Notifications enabled</string>
     <string name="notification_exception_disabled">Notifications off</string>
     <string name="notification_exception_enabled">Notifications on</string>
+    <string name="notification_exception_configure">Configure</string>
+    <string name="notification_exception_add">Add exception</string>
+    <string name="notification_exception_receive">Receive notifications</string>
+    <string name="notification_exception_update_failed">Failed to update notifications</string>
     <string name="delete_exception">Delete exception</string>
     <string name="exception_deleted">Exception deleted</string>
     <string name="delete_all_exceptions">Delete all exceptions</string>
