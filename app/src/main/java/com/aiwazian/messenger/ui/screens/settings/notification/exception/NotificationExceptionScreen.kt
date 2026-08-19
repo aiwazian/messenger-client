@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -32,6 +33,7 @@ import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.section.SectionToggleItem
 import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -40,6 +42,9 @@ import kotlinx.coroutines.launch
  *
  * Открывается и из списка исключений, и при добавлении нового из списка чатов:
  * экран один, различается только строка удаления.
+ *
+ * Изменения сохраняются галочкой в шапке — она доступна всегда, чтобы не
+ * приходилось гадать, засчитался ли выбор.
  */
 @Composable
 fun NotificationExceptionScreen(
@@ -89,6 +94,12 @@ fun NotificationExceptionScreen(
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
                     onClick = navBackStack::removeLastOrNull
+                ),
+                actions = listOf(
+                    TopBarAction(
+                        icon = Icons.Rounded.Check,
+                        onClick = viewModel::save
+                    )
                 )
             )
         },
@@ -107,7 +118,7 @@ fun NotificationExceptionScreen(
             
             /*
              * Исключения ещё нет — удалять нечего: экран открыт из списка чатов,
-             * и строка появится сама, как только переключатель создаст исключение.
+             * и строка появится, когда исключение будет сохранено.
              */
             if (uiState.hasException) {
                 SectionContainer {
