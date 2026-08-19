@@ -82,48 +82,6 @@ class NotificationCategoryViewModel @Inject constructor(
         }
     }
     
-    /**
-     * Переключить исключение прямо из меню, не заходя в настройки: строка
-     * перерисуется из кэша, поэтому здесь только сообщение о результате.
-     */
-    fun toggleException(item: NotificationExceptionItem) {
-        val enabled = !item.enabled
-        
-        viewModelScope.launch {
-            notificationSettingsRepository.setChatNotifications(item.chatId, enabled)
-                .onSuccess {
-                    val message = if (enabled) {
-                        R.string.chat_notifications_enabled
-                    } else {
-                        R.string.chat_notifications_disabled
-                    }
-                    
-                    _sideEffect.emit(NotificationCategorySideEffect.ShowSnackbar(message))
-                }
-                .onFailure {
-                    _sideEffect.emit(NotificationCategorySideEffect.ShowSnackbar(R.string.notification_exception_update_failed))
-                    vibrationManager.vibrate(VibrationPattern.Error)
-                }
-        }
-    }
-    
-    /**
-     * Удалить одно исключение. Список обновится сам через кэш, здесь только
-     * отчитываемся о результате.
-     */
-    fun removeException(chatId: Long) {
-        viewModelScope.launch {
-            notificationSettingsRepository.removeChatException(chatId)
-                .onSuccess {
-                    _sideEffect.emit(NotificationCategorySideEffect.ShowSnackbar(R.string.exception_deleted))
-                }
-                .onFailure {
-                    _sideEffect.emit(NotificationCategorySideEffect.ShowSnackbar(R.string.failed_to_delete_exception))
-                    vibrationManager.vibrate(VibrationPattern.Error)
-                }
-        }
-    }
-    
     fun showDeleteAllDialog() {
         _uiState.update { it.copy(showDeleteAllDialog = true) }
     }

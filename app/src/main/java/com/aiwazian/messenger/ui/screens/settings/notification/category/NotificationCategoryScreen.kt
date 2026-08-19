@@ -13,12 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.outlined.NotificationsOff
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -42,8 +37,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatFolderCategory
 import com.aiwazian.messenger.ui.app.AppDialog
-import com.aiwazian.messenger.ui.app.AppDropdownMenu
-import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -145,11 +138,9 @@ fun NotificationCategoryScreen(
                                 uiState.exceptions.forEach { item ->
                                     ExceptionCard(
                                         item = item,
-                                        onConfigure = {
+                                        onClick = {
                                             navBackStack.add(AppRoute.SettingsNotificationException(item.chatId))
-                                        },
-                                        onToggle = { viewModel.toggleException(item) },
-                                        onRemove = { viewModel.removeException(item.chatId) }
+                                        }
                                     )
                                 }
                             }
@@ -190,15 +181,15 @@ fun NotificationCategoryScreen(
     }
 }
 
+/**
+ * Строка исключения ведёт сразу в его настройки: меню из двух пунктов было лишним
+ * шагом до того же экрана, где есть и переключатель, и удаление.
+ */
 @Composable
 private fun ExceptionCard(
     item: NotificationExceptionItem,
-    onConfigure: () -> Unit,
-    onToggle: () -> Unit,
-    onRemove: () -> Unit
+    onClick: () -> Unit
 ) {
-    var isMenuExpanded by remember { mutableStateOf(false) }
-    
     val chat = item.chat
     val name = if (chat != null) chat.chatName.asString() else ""
     
@@ -208,81 +199,13 @@ private fun ExceptionCard(
         stringResource(R.string.notification_exception_disabled)
     }
     
-    Box {
-        ProfileCard(
-            id = item.chatId,
-            headlineText = name,
-            avatarUri = chat?.avatarUri,
-            supportingText = supportingText,
-            onClick = { isMenuExpanded = true }
-        )
-        
-        AppDropdownMenu(
-            expanded = isMenuExpanded,
-            onDismissRequest = { isMenuExpanded = false }
-        ) {
-            AppDropdownMenuItem(
-                text = { Text(stringResource(R.string.notification_exception_configure)) },
-                onClick = {
-                    isMenuExpanded = false
-                    onConfigure()
-                },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Outlined.Settings,
-                        contentDescription = null
-                    )
-                }
-            )
-            
-            /*
-             * Подпись говорит о действии, а не о текущем состоянии: если уведомления
-             * включены, предлагаем их выключить.
-             */
-            AppDropdownMenuItem(
-                text = {
-                    Text(
-                        stringResource(
-                            if (item.enabled) {
-                                R.string.chat_disable_notifications
-                            } else {
-                                R.string.chat_enable_notifications
-                            }
-                        )
-                    )
-                },
-                onClick = {
-                    isMenuExpanded = false
-                    onToggle()
-                },
-                leadingIcon = {
-                    Icon(
-                        imageVector = if (item.enabled) {
-                            Icons.Outlined.NotificationsOff
-                        } else {
-                            Icons.Outlined.Notifications
-                        },
-                        contentDescription = null
-                    )
-                }
-            )
-            
-            AppDropdownMenuItem(
-                text = { Text(stringResource(R.string.delete_exception)) },
-                onClick = {
-                    isMenuExpanded = false
-                    onRemove()
-                },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Outlined.Delete,
-                        contentDescription = null
-                    )
-                },
-                contentColor = MaterialTheme.colorScheme.error
-            )
-        }
-    }
+    ProfileCard(
+        id = item.chatId,
+        headlineText = name,
+        avatarUri = chat?.avatarUri,
+        supportingText = supportingText,
+        onClick = onClick
+    )
 }
 
 private fun categoryTitleRes(category: ChatFolderCategory): Int {
