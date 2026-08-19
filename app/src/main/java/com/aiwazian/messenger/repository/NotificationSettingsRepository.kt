@@ -128,6 +128,47 @@ class NotificationSettingsRepository @Inject constructor(
         }
     }
     
+    /**
+     * Сбросить всё: исключения снимаются целиком, категории возвращаются к
+     * состоянию по умолчанию — всё включено.
+     *
+     * Сначала сервер, потом кэш: если запрос не прошёл, локально всё остаётся как
+     * было, иначе экран покажет чистые настройки, а пуши продолжат ходить по старым.
+     */
+    suspend fun resetAll(): Result<Unit> {
+        val userId = currentUserId()
+            ?: return Result.failure(IllegalStateException("Нет активного аккаунта"))
+        
+        return try {
+            val response = notificationSettingsApi.deleteAllChatNotificationSettings(category = null)
+            
+            if (!response.isSuccessful) {
+                return Result.failure(
+                    Exception("Failed to delete chat notification settings: ${response.code()}")
+                )
+            }
+            
+            val removed = chatExceptions.value
+            chatExceptions.value = emptyList()
+            removed.forEach { resetChatMutedToCategory(it.chatId) }
+            
+            val result = update(NotificationSettings())
+            
+            /*
+             * Колокольчики гасим только после того, как категории действительно
+             * включились: иначе чат молчит по своей категории, а список показывает
+             * его обычным.
+             */
+            if (result.isSuccess) {
+                chatDao.clearMuted(userId)
+            }
+            
+            result
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
     /** Настройку поменяли в другой сессии — событие пришло по сокету. */
     suspend fun applyRemote(settings: NotificationSettings) {
         val userId = currentUserId() ?: return

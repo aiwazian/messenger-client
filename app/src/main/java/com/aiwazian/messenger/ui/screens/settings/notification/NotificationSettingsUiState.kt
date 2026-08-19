@@ -14,5 +14,6 @@ data class NotificationSettingsUiState(
     val settings: NotificationSettings = NotificationSettings(),
     val privateChatExceptions: Int = 0,
     val groupExceptions: Int = 0,
-    val channelExceptions: Int = 0
+    val channelExceptions: Int = 0,
+    val showResetDialog: Boolean = false
 )

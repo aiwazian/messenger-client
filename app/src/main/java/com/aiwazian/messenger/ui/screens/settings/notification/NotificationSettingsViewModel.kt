@@ -13,6 +13,7 @@ import com.aiwazian.messenger.repository.NotificationSettingsRepository
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -26,6 +27,9 @@ class NotificationSettingsViewModel @Inject constructor(
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
+    /** Диалог подтверждения сброса — чисто экранное состояние, в базе ему делать нечего. */
+    private val resetDialogVisible = MutableStateFlow(false)
+    
     /**
      * Состояние читается из Room и кэша исключений, а не хранится в экране: так
      * переключатель сам подхватывает и событие с другого устройства, и откат при
@@ -33,13 +37,15 @@ class NotificationSettingsViewModel @Inject constructor(
      */
     val uiState: StateFlow<NotificationSettingsUiState> = combine(
         notificationSettingsRepository.observe(),
-        notificationSettingsRepository.observeChatExceptions()
-    ) { settings, exceptions ->
+        notificationSettingsRepository.observeChatExceptions(),
+        resetDialogVisible
+    ) { settings, exceptions, showResetDialog ->
         NotificationSettingsUiState(
             settings = settings,
             privateChatExceptions = exceptions.count { ChatFolderCategory.PRIVATE_CHATS.matches(it.chatId) },
             groupExceptions = exceptions.count { ChatFolderCategory.GROUPS.matches(it.chatId) },
-            channelExceptions = exceptions.count { ChatFolderCategory.CHANNELS.matches(it.chatId) }
+            channelExceptions = exceptions.count { ChatFolderCategory.CHANNELS.matches(it.chatId) },
+            showResetDialog = showResetDialog
         )
     }.stateIn(
         scope = viewModelScope,
@@ -59,6 +65,29 @@ class NotificationSettingsViewModel @Inject constructor(
     fun toggleGroups() = update { it.copy(groups = !it.groups) }
     
     fun toggleChannels() = update { it.copy(channels = !it.channels) }
+    
+    fun showResetDialog() {
+        resetDialogVisible.value = true
+    }
+    
+    fun hideResetDialog() {
+        resetDialogVisible.value = false
+    }
+    
+    /**
+     * Сброс: сервер снимает все исключения, а категории возвращаются к «всё
+     * включено». Экран перерисуется сам: состояние он читает из репозитория.
+     */
+    fun resetSettings() {
+        viewModelScope.launch {
+            hideResetDialog()
+            
+            notificationSettingsRepository.resetAll().onFailure { e ->
+                Log.e(TAG, "Ошибка при сбросе настроек уведомлений", e)
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
+    }
     
     /**
      * Каждое переключение сразу уходит на сервер — кнопки «Сохранить» здесь нет.

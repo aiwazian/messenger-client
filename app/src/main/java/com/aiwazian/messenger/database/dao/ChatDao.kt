@@ -67,7 +67,7 @@ interface ChatDao {
     
     /**
      * Локальный инкремент на случай, если message:new опередило chat:unread.
-     * firstUnreadMessageId выставляется только если был пуст: граница не должна съезжать вниз.
+     * firstUnreadMessageId выставляется только если был пуст: граница не должна съехать вниз.
      *
      * Ручная пометка снимается: появились настоящие непрочитанные, бейдж должен показать число.
      */
@@ -109,6 +109,13 @@ interface ChatDao {
      */
     @Query("UPDATE chats SET isMuted = :isMuted WHERE userId = :userId AND chatId = :chatId")
     suspend fun setMuted(userId: Long, chatId: Long, isMuted: Boolean)
+    
+    /**
+     * Сброс настроек уведомлений: исключений больше нет, категории включены —
+     * молчать в списке чатов больше некому.
+     */
+    @Query("UPDATE chats SET isMuted = 0 WHERE userId = :userId")
+    suspend fun clearMuted(userId: Long)
     
     /** null — чата нет в кэше, решать судьбу уведомления придётся по категории. */
     @Query("SELECT isMuted FROM chats WHERE userId = :userId AND chatId = :chatId")
