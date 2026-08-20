@@ -27,8 +27,13 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.content.MediaType
+import androidx.compose.foundation.content.ReceiveContentListener
+import androidx.compose.foundation.content.consume
+import androidx.compose.foundation.content.contentReceiver
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -101,12 +106,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
-import com.aiwazian.messenger.ui.screens.chat.KeyboardMediaViewModel
 import com.aiwazian.messenger.utils.DialogController
 import kotlin.math.abs
 
@@ -240,6 +243,7 @@ private fun JoinButton(onClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun InputMessage(
     uiState: ChatUiState, chatViewModel: ChatViewModel
@@ -289,9 +293,6 @@ private fun InputMessage(
                 chatViewModel.sendFiles(uris)
             }
         })
-    
-    // GIF и стикеры с клавиатуры: сначала копия в своём кэше, потом отправка.
-    val keyboardMediaViewModel: KeyboardMediaViewModel = hiltViewModel()
     
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -415,16 +416,22 @@ private fun InputMessage(
                             .fillMaxWidth()
                             .alpha(textFieldAlpha)
                             .focusRequester(focusRequester)
-                            // Выбранный на клавиатуре GIF уходит отдельным сообщением.
-                            .keyboardMediaReceiver(context) { uris, releasePermission ->
-                                keyboardMediaViewModel.cache(uris) { cached ->
-                                    releasePermission()
-                                    
-                                    if (cached.isNotEmpty()) {
-                                        chatViewModel.sendFiles(cached)
+                            // Выбранный на клавиатуре GIF сразу уходит сообщением.
+                            .contentReceiver(ReceiveContentListener { content ->
+                                if (content.hasMediaType(MediaType.Image)) {
+                                    content.consume { item ->
+                                        val uri = item.uri
+                                        
+                                        if (uri != null) {
+                                            chatViewModel.sendFiles(listOf(uri))
+                                        }
+                                        
+                                        uri != null
                                     }
+                                } else {
+                                    content
                                 }
-                            },
+                            }),
                         textStyle = MaterialTheme.typography.bodyLarge.copy(
                             color = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 16.sp
