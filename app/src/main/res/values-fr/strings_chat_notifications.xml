@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_disable_notifications">Désactiver les notifications</string>
+    <string name="chat_enable_notifications">Activer les notifications</string>
+    <string name="chat_notifications_disabled">Notifications désactivées</string>
+    <string name="chat_notifications_enabled">Notifications activées</string>
+    <string name="notification_exception_configure">Configurer</string>
+    <string name="notification_exception_add">Ajouter une exception</string>
+    <string name="notification_exception_receive">Recevoir les notifications</string>
+    <string name="notification_exception_update_failed">Impossible de modifier les notifications</string>
+    <string name="notification_reset">Réinitialiser les paramètres de notification</string>
+    <string name="notification_reset_description">Réinitialiser tous les paramètres de notification particuliers des discussions</string>
+    <string name="notification_reset_confirm">Voulez-vous vraiment réinitialiser les paramètres de notification ? Toutes les exceptions seront supprimées et les notifications seront activées partout.</string>
+    <string name="notification_reset_action">Réinitialiser</string>
+</resources>

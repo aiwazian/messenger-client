@@ -15,5 +15,10 @@ data class ChatResponseDto(
     @SerialName("lastMessage") val lastMessage: MessageDto? = null,
     @SerialName("unreadCount") val unreadCount: Int = 0,
     @SerialName("firstUnreadMessageId") val firstUnreadMessageId: Long? = null,
-    @SerialName("isManuallyUnread") val isManuallyUnread: Boolean = false
+    @SerialName("isManuallyUnread") val isManuallyUnread: Boolean = false,
+    /**
+     * Итоговое состояние уведомлений, а не наличие исключения: чат без своей
+     * настройки берёт значение из категории.
+     */
+    @SerialName("isMuted") val isMuted: Boolean = false
 )

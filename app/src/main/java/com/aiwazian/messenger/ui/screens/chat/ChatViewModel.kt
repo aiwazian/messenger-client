@@ -34,6 +34,7 @@ import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
+import com.aiwazian.messenger.repository.ReplyDraftCache
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.repository.channel.ChannelAdminsRepository
@@ -95,6 +96,7 @@ class ChatViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val inviteLinkRepository: InviteLinkRepository,
     private val searchRepository: SearchRepository,
+    private val replyDraftCache: ReplyDraftCache,
     private val clipboardService: ClipboardService,
     private val webSocketClient: WebSocketClient,
     private val downloaderManager: DownloaderManager,
@@ -195,12 +197,24 @@ class ChatViewModel @Inject constructor(
         observeMessages()
     }
 
+    /**
+     * Черновик чата: набранный текст и начатый ответ.
+     *
+     * Текст лежит в Room и переживает перезапуск приложения, ответ — в кэше
+     * на время жизни процесса. Вместе они возвращают поле ввода ровно в то
+     * состояние, в котором пользователь вышел из чата.
+     */
     private fun loadDraft(chatId: Long) {
         viewModelScope.launch {
             val myId = userRepository.getMe().first().id
             val draft = chatRepository.getDraftFlow(myId, chatId).firstOrNull()
             if (!draft.isNullOrBlank()) {
                 _uiState.update { it.copy(messageText = draft) }
+            }
+
+            val reply = replyDraftCache.get(myId, chatId)
+            if (reply != null) {
+                _uiState.update { it.copy(replyToMessage = reply) }
             }
         }
     }
@@ -867,6 +881,9 @@ class ChatViewModel @Inject constructor(
      *
      * Ответ и редактирование взаимоисключают друг друга: если шла правка
      * сообщения, она отменяется, а поле ввода очищается.
+     *
+     * Начатый ответ переживает выход из чата: превью ложится в общий кэш
+     * и возвращается в панель над полем ввода при повторном входе.
      */
     fun startReply(message: Message) {
         if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
@@ -896,6 +913,7 @@ class ChatViewModel @Inject constructor(
         if (chatType != ChatType.PRIVATE) loadUserName(message.senderId)
 
         _uiState.update { it.copy(replyToMessage = preview) }
+        replyDraftCache.save(state.myId, state.chatId, preview)
     }
 
     /** Клик по панели ответа над полем ввода — прыжок к цитируемому сообщению. */
@@ -904,13 +922,18 @@ class ChatViewModel @Inject constructor(
         jumpToMessage(preview.messageId)
     }
 
-    /** Крестик в панели ответа: сбрасываем ответ и чистим поле ввода. */
+    /**
+     * Крестик в панели ответа: сбрасываем только сам ответ.
+     *
+     * Набранный текст остаётся в поле ввода: пользователь отказывается
+     * от цитаты, а не от того, что успел написать.
+     */
     fun cancelReply() {
         clearReply()
-        changeText("")
     }
 
     private fun clearReply() {
+        replyDraftCache.clear(_uiState.value.myId, _uiState.value.chatId)
         if (_uiState.value.replyToMessage == null) return
         _uiState.update { it.copy(replyToMessage = null) }
     }

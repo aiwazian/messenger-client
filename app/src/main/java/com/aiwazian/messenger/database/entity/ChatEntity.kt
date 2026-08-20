@@ -24,5 +24,13 @@ data class ChatEntity(
      *
      * Непрочитанных сообщений при этом может не быть вовсе — бейдж рисуется пустым.
      */
-    @ColumnInfo(defaultValue = "0") val isManuallyUnread: Boolean = false
+    @ColumnInfo(defaultValue = "0") val isManuallyUnread: Boolean = false,
+    /**
+     * Уведомления по чату выключены.
+     *
+     * Лежит рядом с чатом, а не в отдельной таблице исключений: списку чатов нужен
+     * готовый ответ без довычисления категорий, иначе колокольчик пришлось бы считать
+     * на каждой карточке при каждой отрисовке.
+     */
+    @ColumnInfo(defaultValue = "0") val isMuted: Boolean = false
 )

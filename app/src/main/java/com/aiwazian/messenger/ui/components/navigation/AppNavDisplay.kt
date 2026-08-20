@@ -69,6 +69,9 @@ import com.aiwazian.messenger.ui.screens.settings.folders.editor.ChatFolderEdito
 import com.aiwazian.messenger.ui.screens.settings.joinRequests.PendingJoinRequestsScreen
 import com.aiwazian.messenger.ui.screens.settings.language.SettingsLanguageScreen
 import com.aiwazian.messenger.ui.screens.settings.notification.NotificationSettingsScreen
+import com.aiwazian.messenger.ui.screens.settings.notification.category.NotificationCategoryScreen
+import com.aiwazian.messenger.ui.screens.settings.notification.exception.NotificationExceptionScreen
+import com.aiwazian.messenger.ui.screens.settings.notification.exception.chats.SelectExceptionChatScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.SettingsPrivacyScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.bio.SettingsBioScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.blockedUsers.BlockedUserListScreen
@@ -153,6 +156,15 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsDarkTheme> { SettingsDarkThemeScreen() }
                     entry<AppRoute.SettingsChat> { SettingsAppearanceScreen() }
                     entry<AppRoute.SettingsNotifications> { NotificationSettingsScreen() }
+                    entry<AppRoute.SettingsNotificationCategory> {
+                        NotificationCategoryScreen(category = it.category)
+                    }
+                    entry<AppRoute.SettingsNotificationException> {
+                        NotificationExceptionScreen(chatId = it.chatId)
+                    }
+                    entry<AppRoute.SelectNotificationExceptionChat> {
+                        SelectExceptionChatScreen(category = it.category)
+                    }
                     entry<AppRoute.SettingsPrivacy> { SettingsPrivacyScreen() }
                     entry<AppRoute.SettingsLastSeen> { SettingsLastSeenScreen(level = it.level) }
                     entry<AppRoute.SettingsSecurity> { SettingsSecurityScreen() }

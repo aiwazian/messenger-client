@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -55,8 +56,8 @@ import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.sharedElement
+import com.aiwazian.messenger.extensions.toChatListTime
 import com.aiwazian.messenger.extensions.toInstance
-import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 
@@ -79,13 +80,21 @@ fun ChatCard(
             onClick = onClickChat, onLongClick = onLongClickChat
         ),
         content = {
-            Text(
-                text = chat.chatName.asString(),
-                maxLines = 1,
-                fontSize = 16.sp,
-                lineHeight = 16.sp,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = chat.chatName.asString(),
+                    maxLines = 1,
+                    fontSize = 16.sp,
+                    lineHeight = 16.sp,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(weight = 1f, fill = false)
+                )
+                
+                /* Колокольчик прижат к названию, а не к краю строки: он часть имени чата. */
+                if (chat.isMuted) {
+                    MutedIcon()
+                }
+            }
         },
         supportingContent = {
             var text = AnnotatedString("")
@@ -244,7 +253,7 @@ private fun LastMessageSendTime(lastMessage: Message, isSavedMessages: Boolean, 
     val isMyMessage = lastMessage.senderId == myId
     val showCheckmarks = !isSavedMessages && isMyMessage
     
-    val sendTime = lastMessage.sendTime.toInstance().toPrettyTime()
+    val sendTime = lastMessage.sendTime.toInstance().toChatListTime()
     
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -270,6 +279,19 @@ private fun PinIcon() {
         modifier = Modifier
             .rotate(45f)
             .size(12.dp),
+    )
+}
+
+/** Чат в исключениях с выключенными уведомлениями — перечёркнутый колокольчик. */
+@Composable
+private fun MutedIcon() {
+    Icon(
+        imageVector = Icons.Outlined.NotificationsOff,
+        contentDescription = stringResource(R.string.chat_notifications_disabled),
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .padding(start = 6.dp)
+            .size(16.dp)
     )
 }
 

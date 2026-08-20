@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_disable_notifications">Desactivar notificaciones</string>
+    <string name="chat_enable_notifications">Activar notificaciones</string>
+    <string name="chat_notifications_disabled">Notificaciones desactivadas</string>
+    <string name="chat_notifications_enabled">Notificaciones activadas</string>
+    <string name="notification_exception_configure">Configurar</string>
+    <string name="notification_exception_add">Añadir excepción</string>
+    <string name="notification_exception_receive">Recibir notificaciones</string>
+    <string name="notification_exception_update_failed">No se pudieron cambiar las notificaciones</string>
+    <string name="notification_reset">Restablecer ajustes de notificaciones</string>
+    <string name="notification_reset_description">Restablecer todos los ajustes especiales de notificaciones de chats concretos</string>
+    <string name="notification_reset_confirm">¿Seguro que quieres restablecer los ajustes de notificaciones? Se eliminarán todas las excepciones y las notificaciones se activarán en todas partes.</string>
+    <string name="notification_reset_action">Restablecer</string>
+</resources>

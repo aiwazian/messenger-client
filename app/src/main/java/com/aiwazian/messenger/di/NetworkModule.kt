@@ -11,6 +11,7 @@ import com.aiwazian.messenger.network.api.ChatApi
 import com.aiwazian.messenger.network.api.ChatFolderApi
 import com.aiwazian.messenger.network.api.GroupApi
 import com.aiwazian.messenger.network.api.MessageApi
+import com.aiwazian.messenger.network.api.NotificationSettingsApi
 import com.aiwazian.messenger.network.api.PrivacyApi
 import com.aiwazian.messenger.network.api.SearchApi
 import com.aiwazian.messenger.network.api.SessionApi
@@ -87,6 +88,11 @@ object NetworkModule {
     @Provides
     @Singleton
     fun providePrivacyApi(): PrivacyApi = RetrofitInstance.privacyApi
+    
+    @Provides
+    @Singleton
+    fun provideNotificationSettingsApi(): NotificationSettingsApi =
+        RetrofitInstance.notificationSettingsApi
     
     @Provides
     @Singleton

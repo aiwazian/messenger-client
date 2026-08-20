@@ -223,6 +223,28 @@ interface MessageDao {
     )
     
     /**
+     * id своих сообщений в чате до указанного времени отправки.
+     *
+     * Нужны, чтобы по событию о прочтении проставить время прочтения тем же
+     * сообщениям, которым событие ставит вторую галочку.
+     *
+     * Условие по chatId работает и для личного чата, и для группы: у своих сообщений
+     * там лежит собеседник и id группы соответственно — ровно то, что приходит
+     * в событии.
+     *
+     * id > 0 отсекает локальные отправляемые сообщения: их ещё нет на сервере,
+     * и прочитаны они быть не могут.
+     */
+    @Query(
+        "SELECT id FROM message " +
+                "WHERE senderId = :myId AND chatId = :chatId " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
+                "AND id > 0 AND sendTime <= :upToSendTime"
+    )
+    suspend fun getOwnMessageIdsUpTo(chatId: Long, myId: Long, upToSendTime: Long): List<Long>
+    
+    /**
      * Отметить прочитанными все входящие сообщения до указанного времени.
      *
      * В группе отметка только по одному senderId оставляла бы сообщения

@@ -11,6 +11,7 @@ import com.aiwazian.messenger.domain.ChatUnreadPayload
 import com.aiwazian.messenger.domain.DeleteChatPayload
 import com.aiwazian.messenger.domain.DeleteMessagePayload
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.domain.NotificationSettings
 import com.aiwazian.messenger.domain.PinChatPayload
 import com.aiwazian.messenger.domain.PresencePayload
 import com.aiwazian.messenger.domain.ReadMessagePayload
@@ -18,6 +19,7 @@ import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.network.dto.ChatFolderDto
 import com.aiwazian.messenger.network.dto.ChatResponseDto
 import com.aiwazian.messenger.network.dto.MessageDto
+import com.aiwazian.messenger.network.dto.NotificationSettingsResponseDto
 import kotlinx.serialization.DeserializationStrategy
 
 sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
@@ -114,5 +116,18 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
         override val eventName = "chat_folder:deleted"
         override val deserializer = ChatFolderDeletedPayload.serializer()
         override val mapper: (ChatFolderDeletedPayload) -> ChatFolderDeletedPayload = { it }
+    }
+    
+    /**
+     * Настройки уведомлений поменялись в другой сессии этого же аккаунта.
+     *
+     * Событие приходит всем устройствам, кроме того, где переключатель трогали.
+     */
+    data object NotificationSettingsUpdate :
+        WebSocketEvent<NotificationSettingsResponseDto, NotificationSettings> {
+        override val eventName = "settings:notifications"
+        override val deserializer = NotificationSettingsResponseDto.serializer()
+        override val mapper: (NotificationSettingsResponseDto) -> NotificationSettings =
+            NotificationSettingsResponseDto::toDomain
     }
 }

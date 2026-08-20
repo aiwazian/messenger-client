@@ -9,10 +9,12 @@ import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.ChatFolder
+import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.push.PushRegistrar
 import com.aiwazian.messenger.repository.ChatFolderRepository
 import com.aiwazian.messenger.repository.ChatRepository
+import com.aiwazian.messenger.repository.NotificationSettingsRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.socket.WebSocketClient
@@ -33,6 +35,7 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     private val chatFolderRepository: ChatFolderRepository,
+    private val notificationSettingsRepository: NotificationSettingsRepository,
     private val appLockManager: AppLockManager,
     private val themeManager: ThemeManager,
     userRepository: UserRepository,
@@ -50,11 +53,25 @@ class MainViewModel @Inject constructor(
         webSocketClient.connect()
         
         viewModelScope.launch {
+            /*
+             * Колокольчик в списке чатов считается на лету из настроек категорий и
+             * исключений: переключение категории на экране настроек должно сразу
+             * гасить или возвращать звук у всех её чатов, кроме исключений, без
+             * похода на сервер. Исключение по чату сильнее его категории.
+             */
             combine(
                 chatRepository.getAllChats(),
-                chatFolderRepository.getFolders()
-            ) { chats, folders ->
-                val sortedChats = chats.sortedByLastMessage()
+                chatFolderRepository.getFolders(),
+                notificationSettingsRepository.observe(),
+                notificationSettingsRepository.observeChatExceptions()
+            ) { chats, folders, settings, exceptions ->
+                val overrides = exceptions.associate { it.chatId to it.enabled }
+                val resolvedChats = chats.map { chat ->
+                    val enabled = overrides[chat.id]
+                        ?: settings.isEnabledFor(ChatType.fromId(chat.id))
+                    if (chat.isMuted == !enabled) chat else chat.copy(isMuted = !enabled)
+                }
+                val sortedChats = resolvedChats.sortedByLastMessage()
                 Triple(sortedChats, folders, buildFolderPages(sortedChats, folders))
             }.collectLatest { (chats, folders, folderPages) ->
                 _uiState.update {
@@ -71,6 +88,8 @@ class MainViewModel @Inject constructor(
                     chatRepository.refreshChats()
                     chatRepository.refreshOnlineUsers()
                     chatFolderRepository.refreshFolders()
+                    notificationSettingsRepository.refresh()
+                    notificationSettingsRepository.refreshChatExceptions()
                 }
             }
         }

@@ -27,8 +27,13 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.content.MediaType
+import androidx.compose.foundation.content.consume
+import androidx.compose.foundation.content.contentReceiver
+import androidx.compose.foundation.content.hasMediaType
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -65,6 +70,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -75,6 +81,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
@@ -85,8 +93,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -233,6 +243,7 @@ private fun JoinButton(onClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun InputMessage(
     uiState: ChatUiState, chatViewModel: ChatViewModel
@@ -240,6 +251,40 @@ private fun InputMessage(
     var attachmentModal by remember { mutableStateOf(DialogController()) }
     var micTranslationX by remember { mutableFloatStateOf(0f) }
     var micTranslationY by remember { mutableFloatStateOf(0f) }
+    
+    val focusRequester = remember { FocusRequester() }
+    
+    /*
+     * Текст сообщения живёт во ViewModel, позиция курсора — здесь.
+     * Значение поля подтягиваем только когда текст пришёл снаружи: черновик,
+     * правка сообщения, очистка после отправки. На своих же изменениях курсор
+     * иначе прыгал бы в конец при наборе в середине строки.
+     */
+    var textFieldValue by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = uiState.messageText, selection = TextRange(uiState.messageText.length)
+            )
+        )
+    }
+    
+    LaunchedEffect(uiState.messageText) {
+        if (uiState.messageText != textFieldValue.text) {
+            textFieldValue = TextFieldValue(
+                text = uiState.messageText, selection = TextRange(uiState.messageText.length)
+            )
+        }
+    }
+    
+    // Правка сообщения: поле ввода само получает фокус, курсор — в конце текста.
+    LaunchedEffect(uiState.editingMessageId) {
+        if (uiState.editingMessageId == null) return@LaunchedEffect
+        
+        textFieldValue = TextFieldValue(
+            text = uiState.messageText, selection = TextRange(uiState.messageText.length)
+        )
+        focusRequester.requestFocus()
+    }
     
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments(), onResult = { uris: List<Uri> ->
@@ -359,11 +404,33 @@ private fun InputMessage(
                     )
                     
                     BasicTextField(
-                        value = uiState.messageText,
-                        onValueChange = chatViewModel::changeText,
+                        value = textFieldValue,
+                        onValueChange = { newValue ->
+                            textFieldValue = newValue
+                            
+                            if (newValue.text != uiState.messageText) {
+                                chatViewModel.changeText(newValue.text)
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .alpha(textFieldAlpha),
+                            .alpha(textFieldAlpha)
+                            .focusRequester(focusRequester)
+                            .contentReceiver { content ->
+                                if (content.hasMediaType(MediaType.Image)) {
+                                    content.consume { item ->
+                                        val uri = item.uri
+                                        
+                                        if (uri != null) {
+                                            chatViewModel.sendFiles(listOf(uri))
+                                        }
+                                        
+                                        uri != null
+                                    }
+                                } else {
+                                    content
+                                }
+                            },
                         textStyle = MaterialTheme.typography.bodyLarge.copy(
                             color = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 16.sp
@@ -376,7 +443,7 @@ private fun InputMessage(
                                     vertical = 12.dp, horizontal = 14.dp
                                 )
                             ) {
-                                if (uiState.messageText.isEmpty() && !uiState.isRecording) {
+                                if (textFieldValue.text.isEmpty() && !uiState.isRecording) {
                                     Text(
                                         text = stringResource(R.string.message),
                                         style = MaterialTheme.typography.bodyLarge.copy(

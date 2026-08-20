@@ -120,9 +120,13 @@ fun ChatScreen(
     chatViewModel: ChatViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val notificationsViewModel: ChatNotificationsViewModel = hiltViewModel()
     
     LaunchedEffect(Unit) {
         chatViewModel.init(chatId, chatName, avatarUri?.toUri())
+        
+        /* Колокольчик и пункт меню знают только свой чат. */
+        notificationsViewModel.bind(chatId)
         
         if (scrollToMessageId != null) {
             chatViewModel.jumpToMessageWhenReady(scrollToMessageId)
@@ -140,6 +144,7 @@ fun ChatScreen(
     val uiState by chatViewModel.uiState.collectAsState()
     val readersViewModel: MessageReadersViewModel = hiltViewModel()
     val readerAvatars by readersViewModel.avatars.collectAsState()
+    val isChatMuted by notificationsViewModel.isMuted.collectAsState()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
     
@@ -392,6 +397,19 @@ fun ChatScreen(
         }
     }
     
+    /* Уведомления выключены или включены — говорим об этом тем же snackbar, что и чат. */
+    LaunchedEffect(Unit) {
+        notificationsViewModel.snackbar.collect { message ->
+            snackbarJob?.cancel()
+            snackbarJob = scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = message.asString(context),
+                    duration = SnackbarDuration.Short
+                )
+            }
+        }
+    }
+    
     Scaffold(snackbarHost = {
         if (!uiState.showFullScreenViewer) {
             AppSnackbar(snackbarHostState)
@@ -405,6 +423,8 @@ fun ChatScreen(
             isConnected = uiState.isConnected,
             chatId = uiState.chatId,
             myId = uiState.myId,
+            isMuted = isChatMuted,
+            onToggleNotifications = notificationsViewModel::toggle,
             onBackClick = onBackClick
         )
     }, bottomBar = {
