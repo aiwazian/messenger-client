@@ -658,12 +658,14 @@ private fun InputMessage(
     }
     
     if (attachmentModal.isVisible) {
-        AttachmentBottomSheet(
+        MediaPickerBottomSheet(
+            chatId = uiState.chatId,
+            replyTo = uiState.replyToMessage,
             onDismissRequest = attachmentModal::hide,
             onFileSystemClick = { filePickerLauncher.launch(arrayOf("*/*")) },
-            onFileSelected = { uris ->
+            onSent = {
                 attachmentModal.hide()
-                chatViewModel.sendFiles(uris)
+                chatViewModel.cancelReply()
             })
     }
 }
