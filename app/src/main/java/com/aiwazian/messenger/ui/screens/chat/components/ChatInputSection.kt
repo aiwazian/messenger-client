@@ -101,10 +101,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
+import com.aiwazian.messenger.ui.screens.chat.KeyboardMediaViewModel
 import com.aiwazian.messenger.utils.DialogController
 import kotlin.math.abs
 
@@ -288,6 +290,9 @@ private fun InputMessage(
             }
         })
     
+    // GIF и стикеры с клавиатуры: сначала копия в своём кэше, потом отправка.
+    val keyboardMediaViewModel: KeyboardMediaViewModel = hiltViewModel()
+    
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -409,7 +414,17 @@ private fun InputMessage(
                         modifier = Modifier
                             .fillMaxWidth()
                             .alpha(textFieldAlpha)
-                            .focusRequester(focusRequester),
+                            .focusRequester(focusRequester)
+                            // Выбранный на клавиатуре GIF уходит отдельным сообщением.
+                            .keyboardMediaReceiver(context) { uris, releasePermission ->
+                                keyboardMediaViewModel.cache(uris) { cached ->
+                                    releasePermission()
+                                    
+                                    if (cached.isNotEmpty()) {
+                                        chatViewModel.sendFiles(cached)
+                                    }
+                                }
+                            },
                         textStyle = MaterialTheme.typography.bodyLarge.copy(
                             color = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 16.sp
