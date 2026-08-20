@@ -27,6 +27,15 @@
         android:maxSdkVersion="32"
         tools:ignore="ScopedStorage" />
 
+    <!--
+      ~ Своя сетка галереи в шторке вложений читает MediaStore напрямую,
+      ~ поэтому нужен доступ к фото и видео. VISUAL_USER_SELECTED — это
+      ~ вариант «Выбрать фото» на Android 14 и новее.
+      -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+
     <uses-permission
         android:name="android.permission.FOREGROUND_SERVICE"
         tools:ignore="ForegroundServicesPolicy" />

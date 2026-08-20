@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_picker_file">File</string>
+    <string name="media_picker_caption">Aggiungi una didascalia…</string>
+    <string name="media_picker_permission">Consenti l\'accesso a foto e video</string>
+    <string name="media_picker_permission_action">Consenti</string>
+    <string name="media_picker_empty">Nessuna foto o video</string>
+</resources>

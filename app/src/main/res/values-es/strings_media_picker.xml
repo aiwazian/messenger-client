@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_picker_file">Archivo</string>
+    <string name="media_picker_caption">Añadir un pie de foto…</string>
+    <string name="media_picker_permission">Permite el acceso a fotos y vídeos</string>
+    <string name="media_picker_permission_action">Permitir</string>
+    <string name="media_picker_empty">No hay fotos ni vídeos</string>
+</resources>
