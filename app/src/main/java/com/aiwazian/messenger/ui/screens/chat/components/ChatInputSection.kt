@@ -31,9 +31,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.content.MediaType
-import androidx.compose.foundation.content.ReceiveContentListener
 import androidx.compose.foundation.content.consume
 import androidx.compose.foundation.content.contentReceiver
+import androidx.compose.foundation.content.hasMediaType
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -416,8 +416,7 @@ private fun InputMessage(
                             .fillMaxWidth()
                             .alpha(textFieldAlpha)
                             .focusRequester(focusRequester)
-                            // Выбранный на клавиатуре GIF сразу уходит сообщением.
-                            .contentReceiver(ReceiveContentListener { content ->
+                            .contentReceiver { content ->
                                 if (content.hasMediaType(MediaType.Image)) {
                                     content.consume { item ->
                                         val uri = item.uri
@@ -431,7 +430,7 @@ private fun InputMessage(
                                 } else {
                                     content
                                 }
-                            }),
+                            },
                         textStyle = MaterialTheme.typography.bodyLarge.copy(
                             color = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 16.sp
