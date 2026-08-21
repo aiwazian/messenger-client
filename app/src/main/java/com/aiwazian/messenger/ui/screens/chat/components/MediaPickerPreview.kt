@@ -4,15 +4,15 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
+import android.view.WindowManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -24,6 +24,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,13 +34,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import coil.compose.AsyncImage
-import coil.decode.GifDecoder
-import coil.request.ImageRequest
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.aiwazian.messenger.domain.DeviceMediaItem
 
 /**
@@ -46,6 +49,10 @@ import com.aiwazian.messenger.domain.DeviceMediaItem
  *
  * Это отдельное окно, а не оверлей: шторка вложений живёт в своём окне, и
  * растянуть внутри неё что-то на весь экран нельзя.
+ *
+ * Своё окно по умолчанию укладывается между системными панелями, поэтому его просят
+ * этого не делать: иначе картинка обрывалась бы под панелью уведомлений, а не
+ * заходила за неё, как в [FullScreenViewer].
  *
  * Видео проигрывается тем же [VideoPlayerItem], что и в чате, только без
  * скорости и зацикливания: здесь это лишние настройки.
@@ -59,12 +66,49 @@ fun MediaPickerPreview(
     onDismiss: () -> Unit
 ) {
     Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        onDismissRequest = onDismiss, properties = DialogProperties(
+            usePlatformDefaultWidth = false, decorFitsSystemWindows = false
+        )
     ) {
-        val context = LocalContext.current
-        
         var isUiVisible by remember { mutableStateOf(true) }
+        
+        val view = LocalView.current
+        val dialogWindow = (view.parent as? DialogWindowProvider)?.window
+        val isLightSurface = MaterialTheme.colorScheme.surface.luminance() > 0.5f
+        
+        val insetsController = remember(view, dialogWindow) {
+            if (dialogWindow == null) {
+                return@remember null
+            }
+            
+            /* Само окно диалога под вырез экрана не зайдёт. */
+            dialogWindow.attributes = dialogWindow.attributes.apply {
+                layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+            }
+            
+            WindowCompat.getInsetsController(dialogWindow, view).apply {
+                systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        }
+        
+        LaunchedEffect(insetsController, isUiVisible, isLightSurface) {
+            val controller = insetsController ?: return@LaunchedEffect
+            
+            controller.isAppearanceLightStatusBars = isLightSurface
+            
+            if (isUiVisible) {
+                controller.show(WindowInsetsCompat.Type.statusBars())
+            } else {
+                controller.hide(WindowInsetsCompat.Type.statusBars())
+            }
+        }
+        
+        DisposableEffect(insetsController) {
+            onDispose {
+                insetsController?.show(WindowInsetsCompat.Type.statusBars())
+            }
+        }
         
         val pagerState = rememberPagerState(
             initialPage = initialIndex.coerceIn(0, (media.size - 1).coerceAtLeast(0)),
@@ -74,40 +118,19 @@ fun MediaPickerPreview(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface)
+                .navigationBarsPadding()
         ) {
             HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                 val item = media[page]
                 
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    if (item.isVideo) {
-                        VideoPlayerItem(
-                            uri = item.uri,
-                            isCurrentPage = pagerState.currentPage == page,
-                            isUiVisible = isUiVisible,
-                            isLooping = false,
-                            playbackSpeed = 1f,
-                            contentModifier = Modifier,
-                            onPlayingChanged = {},
-                            onShowUiRequest = { isUiVisible = true })
-                    } else {
-                        AsyncImage(
-                            model = ImageRequest.Builder(context)
-                                .data(item.uri)
-                                .decoderFactory(GifDecoder.Factory())
-                                .build(),
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null
-                                ) {
-                                    isUiVisible = !isUiVisible
-                                }
-                        )
-                    }
-                }
+                ZoomableMediaPage(
+                    uri = item.uri,
+                    isVideo = item.isVideo,
+                    isCurrentPage = pagerState.currentPage == page,
+                    pagerState = pagerState,
+                    onTap = { isUiVisible = !isUiVisible },
+                    isVideoUiVisible = isUiVisible,
+                    onShowVideoUiRequest = { isUiVisible = true })
             }
             
             AnimatedVisibility(
