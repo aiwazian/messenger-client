@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -165,9 +164,7 @@ fun MediaPickerBottomSheet(
                 else -> {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(GRID_COLUMNS),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 420.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         contentPadding = PaddingValues(
                             start = 2.dp, top = 2.dp, end = 2.dp, bottom = 88.dp
                         ),
@@ -189,9 +186,10 @@ fun MediaPickerBottomSheet(
             }
             
             HorizontalFloatingToolbar(
+                contentPadding = PaddingValues(0.dp),
                 expanded = true, modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(horizontal = 12.dp, vertical = 12.dp)
+                    .padding(10.dp)
             ) {
                 AnimatedContent(
                     targetState = uiState.selected.isNotEmpty(),
