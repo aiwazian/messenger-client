@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -41,6 +42,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -51,7 +53,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -68,6 +69,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
@@ -193,9 +195,8 @@ fun MediaPickerBottomSheet(
                 }
             }
             
-            HorizontalFloatingToolbar(
-                contentPadding = PaddingValues(0.dp),
-                expanded = true, modifier = Modifier
+            MediaPickerToolbar(
+                modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) }
                     .navigationBarsPadding()
@@ -232,6 +233,35 @@ fun MediaPickerBottomSheet(
             selectionNumber = { item -> uiState.selected.indexOf(item.uri) + 1 },
             onToggleSelection = { item -> viewModel.toggleSelection(item.uri) },
             onDismiss = { previewIndex = null })
+    }
+}
+
+/**
+ * Нижняя панель шторки: плавающая плашка, размер которой задаём мы сами.
+ *
+ * Готовый HorizontalFloatingToolbar рассчитан на ряд кнопок и берёт тот размер,
+ * который запросило содержимое, а поле ввода запрашивает всё, что дают: панель
+ * раздувало на весь экран, и обратно она уже не собиралась.
+ *
+ * Здесь высота зажата между [TOOLBAR_MIN_HEIGHT] и [TOOLBAR_MAX_HEIGHT], а ширину
+ * по-прежнему диктует содержимое: ряд кнопок остаётся компактным по центру, а
+ * строка подписи занимает всю ширину.
+ */
+@Composable
+private fun MediaPickerToolbar(
+    modifier: Modifier = Modifier, content: @Composable () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .shadow(elevation = TOOLBAR_ELEVATION, shape = TOOLBAR_SHAPE)
+            .background(
+                color = MaterialTheme.colorScheme.surfaceContainer, shape = TOOLBAR_SHAPE
+            )
+            .clip(TOOLBAR_SHAPE)
+            .heightIn(min = TOOLBAR_MIN_HEIGHT, max = TOOLBAR_MAX_HEIGHT)
+            .padding(4.dp), contentAlignment = Alignment.Center
+    ) {
+        content()
     }
 }
 
@@ -505,5 +535,9 @@ private fun Context.hasMediaPermission(): Boolean = when {
 private fun Context.isGranted(permission: String): Boolean =
     ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 
+private val TOOLBAR_SHAPE = RoundedCornerShape(28.dp)
+private val TOOLBAR_ELEVATION = 3.dp
+private val TOOLBAR_MIN_HEIGHT = 56.dp
+private val TOOLBAR_MAX_HEIGHT = 120.dp
 private const val GRID_COLUMNS = 3
 private const val SELECTED_SCALE = 0.9f
