@@ -31,6 +31,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -74,6 +77,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -94,6 +98,10 @@ import java.util.Locale
  * Выбор нумерованный, и порядок номеров — это порядок вложений в сообщении.
  * Подпись и отправка живут в нижней панели, а до первого выбора там же лежит
  * переключение между галереей и файлами.
+ *
+ * Нижняя панель приклеена к низу экрана, а не к низу шторки: её поднимают на
+ * текущее смещение шторки, поэтому и на половину экрана, и на весь экран она
+ * стоит на одном месте. Так же сделана кнопка отправки в ShareBottomSheet.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -137,7 +145,7 @@ fun MediaPickerBottomSheet(
         onDismissRequest = onDismissRequest,
         contentPadding = PaddingValues(0.dp)
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
+        Box(modifier = Modifier.fillMaxSize()) {
             when {
                 !hasPermission -> {
                     MediaPickerNotice(
@@ -149,7 +157,7 @@ fun MediaPickerBottomSheet(
                 uiState.isLoading && uiState.media.isEmpty() -> {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .fillMaxSize()
                             .padding(top = 32.dp, bottom = 104.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -164,7 +172,7 @@ fun MediaPickerBottomSheet(
                 else -> {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(GRID_COLUMNS),
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
                             start = 2.dp, top = 2.dp, end = 2.dp, bottom = 88.dp
                         ),
@@ -189,6 +197,9 @@ fun MediaPickerBottomSheet(
                 contentPadding = PaddingValues(0.dp),
                 expanded = true, modifier = Modifier
                     .align(Alignment.BottomCenter)
+                    .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) }
+                    .navigationBarsPadding()
+                    .imePadding()
                     .padding(10.dp)
             ) {
                 AnimatedContent(
@@ -434,10 +445,10 @@ private fun MediaPickerNotice(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .padding(start = 16.dp, top = 32.dp, end = 16.dp, bottom = 104.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
     ) {
         Text(
             text = text,

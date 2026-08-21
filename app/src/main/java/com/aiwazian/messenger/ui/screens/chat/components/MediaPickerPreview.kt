@@ -60,7 +60,8 @@ import com.aiwazian.messenger.ui.components.rememberDismissDragState
  *
  * Вертикальный свайп закрывает предпросмотр так же, как в чате, но только пока
  * медиа в исходном размере: увеличенное забирает свайп себе и только чуть-чуть
- * сдвигается.
+ * сдвигается. Пока палец ведёт медиа, фон тает, поэтому окно просят не затемнять
+ * то, что под ним: иначе за фоном была бы чернота, а не шторка вложений.
  *
  * Видео проигрывается тем же [VideoPlayerItem], что и в чате, только без
  * скорости и зацикливания: здесь это лишние настройки.
@@ -94,6 +95,9 @@ fun MediaPickerPreview(
                 layoutInDisplayCutoutMode =
                     WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
             }
+            
+            /* Затемнение под окном сделало бы фон свайпа чёрным, а не цветом темы. */
+            dialogWindow.setDimAmount(0f)
             
             WindowCompat.getInsetsController(dialogWindow, view).apply {
                 systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE

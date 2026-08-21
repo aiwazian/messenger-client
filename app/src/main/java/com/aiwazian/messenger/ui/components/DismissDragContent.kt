@@ -26,6 +26,12 @@ import kotlin.math.abs
 /** Как далеко надо увести содержимое, чтобы оно закрылось, в пикселях. */
 const val DISMISS_DRAG_THRESHOLD = 300f
 
+/** Прозрачность фона, пока содержимое смотрят обычно, без свайпа. */
+const val DISMISS_BACKGROUND_MAX_ALPHA = 1f
+
+/** Прозрачность фона у порога закрытия: ниже она уже не опускается. */
+const val DISMISS_BACKGROUND_MIN_ALPHA = 0.2f
+
 /**
  * Состояние вертикального свайпа, который закрывает просмотрщик.
  *
@@ -171,11 +177,19 @@ fun Modifier.dismissDragOffset(state: DismissDragState): Modifier {
     return this.graphicsLayer { translationY = animatedOffsetY }
 }
 
-/** Прозрачность фона, который тает по мере свайпа. */
+/**
+ * Прозрачность фона, который тает по мере свайпа: [maxAlpha] в покое и [minAlpha]
+ * у самого порога закрытия. Совсем прозрачным фон не становится, иначе за ним
+ * будет видно чёрное затемнение окна, а не цвет темы.
+ */
 @Composable
-fun DismissDragState.animatedBackgroundAlpha(): Float {
+fun DismissDragState.animatedBackgroundAlpha(
+    maxAlpha: Float = DISMISS_BACKGROUND_MAX_ALPHA,
+    minAlpha: Float = DISMISS_BACKGROUND_MIN_ALPHA
+): Float {
     val alpha by animateFloatAsState(
-        targetValue = 1f - progress, label = "dismissDragBackgroundAlpha"
+        targetValue = maxAlpha - (maxAlpha - minAlpha) * progress,
+        label = "dismissDragBackgroundAlpha"
     )
     
     return alpha
