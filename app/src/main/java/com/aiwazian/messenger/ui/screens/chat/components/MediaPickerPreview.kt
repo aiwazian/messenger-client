@@ -43,6 +43,10 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.aiwazian.messenger.domain.DeviceMediaItem
+import com.aiwazian.messenger.ui.components.animatedBackgroundAlpha
+import com.aiwazian.messenger.ui.components.dismissDragGestures
+import com.aiwazian.messenger.ui.components.dismissDragOffset
+import com.aiwazian.messenger.ui.components.rememberDismissDragState
 
 /**
  * Предпросмотр галереи во весь экран.
@@ -53,6 +57,10 @@ import com.aiwazian.messenger.domain.DeviceMediaItem
  * Своё окно по умолчанию укладывается между системными панелями, поэтому его просят
  * этого не делать: иначе картинка обрывалась бы под панелью уведомлений, а не
  * заходила за неё, как в [FullScreenViewer].
+ *
+ * Вертикальный свайп закрывает предпросмотр так же, как в чате, но только пока
+ * медиа в исходном размере: увеличенное забирает свайп себе и только чуть-чуть
+ * сдвигается.
  *
  * Видео проигрывается тем же [VideoPlayerItem], что и в чате, только без
  * скорости и зацикливания: здесь это лишние настройки.
@@ -114,13 +122,24 @@ fun MediaPickerPreview(
             initialPage = initialIndex.coerceIn(0, (media.size - 1).coerceAtLeast(0)),
             pageCount = { media.size })
         
+        val dismissDragState = rememberDismissDragState()
+        val backgroundAlpha = dismissDragState.animatedBackgroundAlpha()
+        
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = backgroundAlpha))
                 .navigationBarsPadding()
         ) {
-            HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+            HorizontalPager(
+                state = pagerState, modifier = Modifier
+                    .fillMaxSize()
+                    .dismissDragGestures(
+                        state = dismissDragState,
+                        onTap = { isUiVisible = !isUiVisible },
+                        onDismiss = onDismiss
+                    )
+                    .dismissDragOffset(dismissDragState)) { page ->
                 val item = media[page]
                 
                 ZoomableMediaPage(
@@ -129,12 +148,12 @@ fun MediaPickerPreview(
                     isCurrentPage = pagerState.currentPage == page,
                     pagerState = pagerState,
                     onTap = { isUiVisible = !isUiVisible },
-                    isVideoUiVisible = isUiVisible,
+                    isVideoUiVisible = !dismissDragState.isDragging && isUiVisible,
                     onShowVideoUiRequest = { isUiVisible = true })
             }
             
             AnimatedVisibility(
-                visible = isUiVisible,
+                visible = !dismissDragState.isDragging && isUiVisible,
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopCenter),

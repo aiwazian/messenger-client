@@ -7,15 +7,9 @@ package com.aiwazian.messenger.ui.screens.chat.components
 import android.app.Activity
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,7 +45,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,7 +53,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
@@ -75,9 +67,12 @@ import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
+import com.aiwazian.messenger.ui.components.animatedBackgroundAlpha
+import com.aiwazian.messenger.ui.components.dismissDragGestures
+import com.aiwazian.messenger.ui.components.dismissDragOffset
+import com.aiwazian.messenger.ui.components.rememberDismissDragState
 import kotlinx.coroutines.delay
 import java.util.Locale
-import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -99,27 +94,14 @@ fun FullScreenViewer(
     onDismiss: () -> Unit
 ) {
     var isUiVisible by remember { mutableStateOf(true) }
-    var dragOffsetY by remember { mutableFloatStateOf(0f) }
-    var isDragging by remember { mutableStateOf(false) }
     var showVideoSettings by remember { mutableStateOf(false) }
     var showSpeedBottomSheet by remember { mutableStateOf(false) }
     var showMoreActions by remember { mutableStateOf(false) }
     var isVideoPlaying by remember { mutableStateOf(false) }
     var lastInteractionTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
     
-    val dismissThresholdPx = 300f
-    
-    val animatedOffsetY by animateFloatAsState(
-        targetValue = dragOffsetY, animationSpec = if (isDragging) snap()
-        else spring(
-            dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium
-        ), label = "photoOffsetY"
-    )
-    
-    val backgroundAlpha by animateFloatAsState(
-        targetValue = (1f - (abs(dragOffsetY) / dismissThresholdPx).coerceIn(0f, 1f)),
-        label = "backgroundAlpha"
-    )
+    val dismissDragState = rememberDismissDragState()
+    val backgroundAlpha = dismissDragState.animatedBackgroundAlpha()
     
     val view = LocalView.current
     val window = remember { (view.context as Activity).window }
@@ -178,81 +160,12 @@ fun FullScreenViewer(
         HorizontalPager(
             state = pagerState, modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) {
-                    awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        val pointerId = down.id
-                        
-                        var previousY = down.position.y
-                        var dragDetected = false
-                        var totalDragY = 0f
-                        var totalDragX: Float
-                        var isHorizontalScroll = false
-                        var wasConsumed = false
-                        
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            
-                            val change =
-                                event.changes.firstOrNull { it.id == pointerId }
-                                    ?: event.changes.firstOrNull() ?: break
-                            
-                            if (change.isConsumed) {
-                                wasConsumed = true
-                                previousY = change.position.y
-                                if (!change.pressed) break
-                                continue
-                            }
-                            
-                            val dy = change.position.y - previousY
-                            val dx = change.position.x - down.position.x
-                            previousY = change.position.y
-                            
-                            if (!dragDetected && !isHorizontalScroll) {
-                                totalDragY += dy
-                                totalDragX = dx
-                                
-                                if (abs(totalDragX) > viewConfiguration.touchSlop && abs(totalDragX) > abs(
-                                        totalDragY
-                                    )
-                                ) {
-                                    isHorizontalScroll = true
-                                } else if (abs(totalDragY) > viewConfiguration.touchSlop) {
-                                    dragDetected = true
-                                    isDragging = true
-                                    dragOffsetY = totalDragY
-                                    change.consume()
-                                }
-                            } else if (dragDetected) {
-                                change.consume()
-                                totalDragY += dy
-                                dragOffsetY = totalDragY
-                            }
-                            
-                            if (!change.pressed) break
-                        }
-                        
-                        when {
-                            !dragDetected && !isHorizontalScroll && !wasConsumed -> {
-                                isUiVisible = !isUiVisible
-                            }
-                            
-                            abs(totalDragY) > dismissThresholdPx && dragDetected -> {
-                                onDismiss()
-                            }
-                            
-                            else -> {
-                                isDragging = false
-                                dragOffsetY = 0f
-                            }
-                        }
-                        
-                        isDragging = false
-                    }
-                }
-                .graphicsLayer {
-                    translationY = animatedOffsetY
-                }) { page ->
+                .dismissDragGestures(
+                    state = dismissDragState,
+                    onTap = { isUiVisible = !isUiVisible },
+                    onDismiss = onDismiss
+                )
+                .dismissDragOffset(dismissDragState)) { page ->
             val item = media.getOrNull(page)
             val isCurrentPage = pagerState.currentPage == page
             
@@ -267,7 +180,7 @@ fun FullScreenViewer(
                     isCurrentPage = isCurrentPage,
                     pagerState = pagerState,
                     onTap = { isUiVisible = !isUiVisible },
-                    isVideoUiVisible = !isDragging && isUiVisible,
+                    isVideoUiVisible = !dismissDragState.isDragging && isUiVisible,
                     isVideoLooping = isVideoLooping,
                     videoPlaybackSpeed = videoPlaybackSpeed,
                     onVideoPlayingChanged = { playing ->
@@ -280,7 +193,7 @@ fun FullScreenViewer(
             }
         }
         AnimatedVisibility(
-            visible = !isDragging && isUiVisible,
+            visible = !dismissDragState.isDragging && isUiVisible,
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter),
