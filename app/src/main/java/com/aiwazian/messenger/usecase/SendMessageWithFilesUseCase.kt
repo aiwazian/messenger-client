@@ -7,6 +7,7 @@ package com.aiwazian.messenger.usecase
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.aiwazian.messenger.domain.AttachmentUploadException
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReplyPreview
@@ -34,11 +35,16 @@ import javax.inject.Inject
 /**
  * Отправка сообщения с вложениями: файлы, фото, видео и голосовые.
  *
- * Каждый сетевой шаг повторяется по отдельности и без ограничения попыток:
- * пересоздавать локальное сообщение или заново загружать уже принятый файл при
- * обрыве сети не нужно. Статус ERROR остаётся только для отказов, которые повтор
- * не изменит: их отдаёт [UploadManager] — например, файл больше разрешённого
- * размера или хранилище ответило 4xx.
+ * Попыток столько, сколько понадобится. Одна попытка — это свежая ссылка на
+ * загрузку плюс сама загрузка: форму подписывает сервер на ограниченное время,
+ * поэтому после долгого обрыва сети повторять нужно с начала, а не с той же
+ * формой. Пока попытки продолжаются, сообщение обязано оставаться
+ * «отправляется», иначе восклицательный знак мигал бы в чате на каждой
+ * неудаче.
+ *
+ * Статус ERROR остаётся ровно для отказов, которые повтор не изменит, — они
+ * приходят как [AttachmentUploadException]: файл удалили, перенесли либо
+ * отобрали к нему доступ, и файл не проходит по размеру.
  */
 class SendMessageWithFilesUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
@@ -110,15 +116,20 @@ class SendMessageWithFilesUseCase @Inject constructor(
         val uploadResults = mutableListOf<AttachmentInputDto>()
         
         attachments.forEach { attachment ->
-            val fileId = attachment.fileId
             val fileName = attachment.name
             val fileSize = attachment.size
-            val mimeType = attachment.localUri!!.getFileType(context)
+            val sourceUri = attachment.localUri!!
+            val mimeType = sourceUri.getFileType(context)
             
-            // Ссылку на загрузку выдаёт сервер, и без неё загружать просто некуда,
-            // поэтому запрашиваем столько раз, сколько понадобится.
-            val initResponse = RetryPolicy.retryForever("initUpload#$tempId/$fileId") {
-                val response = chatRepository.initFileUpload(
+            // Идентификатор записи о файле меняется на серверный после каждой
+            // выданной формы, и переименовывать дальше нужно уже его.
+            var localFileId = attachment.fileId
+            
+            val uploadedFileId = RetryPolicy.retryForever(
+                operation = "upload#$tempId/${attachment.fileId}",
+                isPermanent = { it is AttachmentUploadException }
+            ) {
+                val initResponse = chatRepository.initFileUpload(
                     chatId, FileInitRequestDto(
                         name = fileName,
                         size = fileSize,
@@ -127,48 +138,58 @@ class SendMessageWithFilesUseCase @Inject constructor(
                     )
                 )
                 
-                if (response != null) {
-                    Result.success(response)
-                } else {
-                    Result.failure(IOException("Unable to init upload for $fileName"))
-                }
-            }.getOrElse {
-                chatRepository.updateMessageStatus(tempId, MessageStatus.ERROR)
-                return Result.failure(it)
-            }
-            
-            fileRepository.updateFileId(fileId, initResponse.fileId)
-            
-            val uploadResult = uploadManager.upload(
-                fileUri = attachment.localUri,
-                upload = initResponse,
-                fileId = initResponse.fileId,
-                maxAttempts = UploadManager.UNLIMITED_ATTEMPTS
-            )
-            
-            uploadResult.onSuccess {
-                uploadResults.add(
-                    AttachmentInputDto(
-                        fileId = initResponse.fileId,
-                        type = attachment.type
+                if (initResponse == null) {
+                    keepSending(tempId)
+                    return@retryForever Result.failure<String>(
+                        IOException("Unable to init upload for $fileName")
                     )
+                }
+                
+                fileRepository.updateFileId(localFileId, initResponse.fileId)
+                localFileId = initResponse.fileId
+                
+                val uploadResult = uploadManager.upload(
+                    fileUri = sourceUri,
+                    upload = initResponse,
+                    fileId = initResponse.fileId,
+                    maxAttempts = UploadManager.UNLIMITED_ATTEMPTS
                 )
-            }.onFailure { error ->
-                // Сюда попадаем только на безнадёжном отказе: обрывы сети
-                // UploadManager переживает сам.
-                Log.e("SendMessageWithFiles", "Upload rejected: ${error.message}", error)
+                
+                if (uploadResult.isFailure) {
+                    keepSending(tempId)
+                }
+                
+                uploadResult.map { initResponse.fileId }
+            }.getOrElse { error ->
+                // Сюда попадаем только на безнадёжном отказе: обрывы сети и
+                // просроченные формы отправка переживает сама.
+                Log.e(TAG, "Upload of $fileName rejected for good", error)
+                fileRepository.updateFileStatus(localFileId, DownloadStatus.FAILED)
                 chatRepository.updateMessageStatus(tempId, MessageStatus.ERROR)
                 return Result.failure(error)
             }
+            
+            uploadResults.add(
+                AttachmentInputDto(
+                    fileId = uploadedFileId,
+                    type = attachment.type
+                )
+            )
         }
         
         val result = RetryPolicy.retryForever("confirmUpload#$tempId") {
-            chatRepository.confirmFileUpload(
+            val attempt = chatRepository.confirmFileUpload(
                 chatId,
                 uploadResults,
                 text,
                 replyTo?.messageId
             )
+            
+            if (attempt.isFailure) {
+                keepSending(tempId)
+            }
+            
+            attempt
         }
         
         result.onSuccess {
@@ -179,10 +200,23 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 chatRepository.fetchChatByIdFromServer(chatId)
             }
         }.onFailure {
-            Log.e("SendMessageWithFiles", "Confirmation failed", it)
+            Log.e(TAG, "Confirmation failed", it)
             chatRepository.updateMessageStatus(tempId, MessageStatus.ERROR)
         }
         
         return result
+    }
+    
+    /**
+     * Неудачная попытка не должна проступать в чат: пока повторы продолжаются,
+     * сообщение остаётся «отправляется», даже если репозиторий успел пометить
+     * его ошибкой.
+     */
+    private suspend fun keepSending(tempId: Long) {
+        chatRepository.updateMessageStatus(tempId, MessageStatus.SENDING)
+    }
+    
+    private companion object {
+        const val TAG = "SendMessageWithFiles"
     }
 }

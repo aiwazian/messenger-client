@@ -8,6 +8,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.aiwazian.messenger.di.FileClient
+import com.aiwazian.messenger.domain.AttachmentUploadException
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
@@ -24,6 +25,7 @@ import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -51,8 +53,14 @@ class UploadManager @Inject constructor(
      * обрыв сети или 5xx только откладывает следующую попытку, а задержка
      * растёт до [RetryPolicy.MAX_DELAY].
      *
-     * Неудачей сразу заканчиваются только отказы, которые повтор не изменит:
-     * превышение лимита размера и 4xx от хранилища.
+     * Отказ 4xx возвращается сразу, но приговором не является: подпись формы
+     * живёт ограниченное время, и повторять с той же формой действительно
+     * бессмысленно, а вот с новой попытка обычно проходит. Запросить её —
+     * дело вызывающей стороны.
+     *
+     * Окончательно неудачными заканчиваются только отказы из
+     * [AttachmentUploadException]: файла больше нет либо он не проходит по
+     * размеру.
      */
     suspend fun upload(
         fileUri: Uri,
@@ -66,7 +74,7 @@ class UploadManager @Inject constructor(
         // голый 403 от S3 без объяснений.
         if (upload.maxSizeBytes > 0 && fileSize > upload.maxSizeBytes) {
             return@withContext Result.failure(
-                IOException("File size $fileSize exceeds limit of ${upload.maxSizeBytes} bytes")
+                AttachmentUploadException.TooLarge(fileSize, upload.maxSizeBytes)
             )
         }
         
@@ -75,6 +83,15 @@ class UploadManager @Inject constructor(
         var lastError: IOException? = null
         
         while (attempt <= maxAttempts) {
+            // Источник проверяется перед каждой попыткой: пока отправка ждала
+            // сеть, файл могли удалить или перенести — тогда повторять нечего.
+            val missingSource = findMissingSource(fileUri)
+            
+            if (missingSource != null) {
+                activeUploads.remove(fileId)
+                return@withContext Result.failure(missingSource)
+            }
+            
             try {
                 val fileType = fileUri.getFileType(context)
                 val contentType = fileType.toMediaTypeOrNull()
@@ -120,7 +137,8 @@ class UploadManager @Inject constructor(
                 
                 activeUploads.remove(fileId)
                 
-                // 4xx — файл не прошёл политику формы: повтор ничего не изменит.
+                // 4xx — форма больше не годится: истекла подпись либо файл не
+                // прошёл её политику. С этой формой повторять нечего, нужна новая.
                 if (response.code in 400..499) {
                     return@withContext Result.failure(
                         IOException("Upload rejected by storage with code ${response.code}")
@@ -128,11 +146,23 @@ class UploadManager @Inject constructor(
                 }
                 
                 lastError = IOException("Upload failed with code ${response.code}")
-                Log.w("UploadManager", "Upload attempt $attempt failed: ${response.code}")
+                Log.w(TAG, "Upload attempt $attempt failed: ${response.code}")
+            } catch (e: FileNotFoundException) {
+                activeUploads.remove(fileId)
+                return@withContext Result.failure(
+                    AttachmentUploadException.SourceMissing(fileUri.toString(), e)
+                )
+            } catch (e: SecurityException) {
+                // Доступ к чужой content://-ссылке могли отозвать: файл стал
+                // недостижим ровно так же, как удалённый.
+                activeUploads.remove(fileId)
+                return@withContext Result.failure(
+                    AttachmentUploadException.SourceMissing(fileUri.toString(), e)
+                )
             } catch (e: IOException) {
                 activeUploads.remove(fileId)
                 lastError = e
-                Log.e("UploadManager", "Upload attempt $attempt error: ${e.message}", e)
+                Log.e(TAG, "Upload attempt $attempt error: ${e.message}", e)
             }
             
             if (attempt == maxAttempts) break
@@ -148,6 +178,33 @@ class UploadManager @Inject constructor(
     fun cancel(fileId: String) {
         activeUploads[fileId]?.cancel()
         activeUploads.remove(fileId)
+    }
+    
+    /**
+     * Открывает источник на пробу.
+     *
+     * @return отказ, если файла больше нет: удалили, перенесли либо отобрали
+     * доступ. Прочие ошибки чтения — обычная неудачная попытка, и о них здесь
+     * ничего не сообщается.
+     */
+    private fun findMissingSource(fileUri: Uri): AttachmentUploadException.SourceMissing? {
+        return try {
+            val stream = context.contentResolver.openInputStream(fileUri)
+            
+            if (stream == null) {
+                AttachmentUploadException.SourceMissing(fileUri.toString())
+            } else {
+                stream.close()
+                null
+            }
+        } catch (e: FileNotFoundException) {
+            AttachmentUploadException.SourceMissing(fileUri.toString(), e)
+        } catch (e: SecurityException) {
+            AttachmentUploadException.SourceMissing(fileUri.toString(), e)
+        } catch (e: IOException) {
+            Log.w(TAG, "Unable to probe $fileUri: ${e.message}", e)
+            null
+        }
     }
     
     private fun increase(current: Duration): Duration {
@@ -174,5 +231,7 @@ class UploadManager @Inject constructor(
         
         /** Повторять, пока файл не уйдёт либо его не отклонят окончательно. */
         const val UNLIMITED_ATTEMPTS = Int.MAX_VALUE
+        
+        private const val TAG = "UploadManager"
     }
 }
