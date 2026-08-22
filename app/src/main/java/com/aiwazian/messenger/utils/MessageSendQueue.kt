@@ -19,13 +19,15 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Отправка в скоупе приложения — для экранов, которые закрываются сразу после
- * нажатия «Отправить».
+ * Отправка без экрана — для тех, кто закрывается сразу после нажатия
+ * «Отправить».
  *
  * Системное «Поделиться» и шторка в профиле исчезают быстрее, чем успевает
- * уйти запрос, а вместе с ними умирал бы viewModelScope и все повторные
- * попытки. Здесь отправка привязана к жизни процесса, а сами повторы живут
- * внутри use case — см. [SendMessageUseCase] и [SendMessageWithFilesUseCase].
+ * уйти запрос, и ждать результат там просто некому. Сами повторы живут в
+ * скоупе приложения внутри use case — см. [SendMessageUseCase] и
+ * [SendMessageWithFilesUseCase], — поэтому очередь нужна не для того, чтобы
+ * отправка выжила, а чтобы у неё был владелец: локальный id для отмены и
+ * защита от повторного нажатия.
  */
 @Singleton
 class MessageSendQueue @Inject constructor(
@@ -85,6 +87,11 @@ class MessageSendQueue @Inject constructor(
     
     fun cancel(tempId: Long) {
         jobs.remove(tempId)?.cancel()
+        
+        // Отмена ожидания больше ничего не останавливает: сама отправка живёт в
+        // скоупе приложения, и прервать её может только сам use case.
+        sendMessageUseCase.cancel(tempId)
+        sendMessageWithFilesUseCase.cancel(tempId)
     }
     
     private fun enqueue(tempId: Long, block: suspend () -> Unit) {

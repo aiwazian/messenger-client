@@ -7,6 +7,7 @@ package com.aiwazian.messenger.usecase
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.aiwazian.messenger.di.ApplicationScope
 import com.aiwazian.messenger.domain.AttachmentUploadException
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
@@ -24,16 +25,28 @@ import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.FileRepository
 import com.aiwazian.messenger.repository.UserRepository
+import com.aiwazian.messenger.utils.AttachmentOutbox
 import com.aiwazian.messenger.utils.RetryPolicy
 import com.aiwazian.messenger.utils.UploadManager
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Отправка сообщения с вложениями: файлы, фото, видео и голосовые.
+ *
+ * Сама отправка идёт в скоупе приложения, поэтому уход из чата, поворот экрана
+ * и сворачивание её не прерывают: вызывающая сторона лишь ждёт результат, и её
+ * отмена обрывает ожидание, а не загрузку. Остановить отправку по-настоящему
+ * можно через [cancel].
  *
  * Попыток столько, сколько понадобится. Одна попытка — это свежая ссылка на
  * загрузку плюс сама загрузка: форму подписывает сервер на ограниченное время,
@@ -46,19 +59,47 @@ import javax.inject.Inject
  * приходят как [AttachmentUploadException]: файл удалили, перенесли либо
  * отобрали к нему доступ, и файл не проходит по размеру.
  */
+@Singleton
 class SendMessageWithFilesUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
+    @param:ApplicationScope private val appScope: CoroutineScope,
     private val chatRepository: ChatRepository,
     private val userRepository: UserRepository,
     private val fileRepository: FileRepository,
+    private val attachmentOutbox: AttachmentOutbox,
     private val uploadManager: UploadManager
 ) {
+    private val running = ConcurrentHashMap<Long, Deferred<Result<Message>>>()
+    
     suspend operator fun invoke(
         chatId: Long,
         uris: List<Uri>,
         text: String?,
         tempId: Long = -System.currentTimeMillis(),
         replyTo: MessageReplyPreview? = null
+    ): Result<Message> {
+        val sending = appScope.async(start = CoroutineStart.LAZY) {
+            send(chatId, uris, text, tempId, replyTo)
+        }
+        
+        running.put(tempId, sending)?.cancel()
+        sending.invokeOnCompletion { running.remove(tempId, sending) }
+        sending.start()
+        
+        return sending.await()
+    }
+    
+    /** Останавливает отправку, которая продолжается в скоупе приложения. */
+    fun cancel(tempId: Long) {
+        running.remove(tempId)?.cancel()
+    }
+    
+    private suspend fun send(
+        chatId: Long,
+        uris: List<Uri>,
+        text: String?,
+        tempId: Long,
+        replyTo: MessageReplyPreview?
     ): Result<Message> {
         val myId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
@@ -118,7 +159,10 @@ class SendMessageWithFilesUseCase @Inject constructor(
         attachments.forEach { attachment ->
             val fileName = attachment.name
             val fileSize = attachment.size
-            val sourceUri = attachment.localUri!!
+            
+            // Доступ к выбранному файлу живёт не дольше задачи приложения, а
+            // повторы — сколько понадобится, поэтому грузим со своей копии.
+            val sourceUri = attachmentOutbox.keep(attachment.localUri!!, attachment.fileId)
             val mimeType = sourceUri.getFileType(context)
             
             // Идентификатор записи о файле меняется на серверный после каждой
@@ -164,10 +208,13 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 // Сюда попадаем только на безнадёжном отказе: обрывы сети и
                 // просроченные формы отправка переживает сама.
                 Log.e(TAG, "Upload of $fileName rejected for good", error)
+                attachmentOutbox.release(sourceUri)
                 fileRepository.updateFileStatus(localFileId, DownloadStatus.FAILED)
                 chatRepository.updateMessageStatus(tempId, MessageStatus.ERROR)
                 return Result.failure(error)
             }
+            
+            attachmentOutbox.release(sourceUri)
             
             uploadResults.add(
                 AttachmentInputDto(
