@@ -57,7 +57,6 @@ import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -121,7 +120,7 @@ import java.util.Locale
  * диалог, кнопка в заглушке ведёт в настройки приложения: повторный запрос там
  * вернулся бы мгновенно и с тем же ответом, а кнопка выглядела бы сломанной.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MediaPickerBottomSheet(
     chatId: Long,
