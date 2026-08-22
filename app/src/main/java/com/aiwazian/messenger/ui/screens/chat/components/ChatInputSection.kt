@@ -106,10 +106,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
+import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import com.aiwazian.messenger.utils.DialogController
 import kotlin.math.abs
 
@@ -254,6 +256,9 @@ private fun InputMessage(
     
     val focusRequester = remember { FocusRequester() }
     
+    /* Отправка вложений общая со шторкой: там же лежит и подпись к ним. */
+    val mediaPickerViewModel: MediaPickerViewModel = hiltViewModel()
+    
     /*
      * Текст сообщения живёт во ViewModel, позиция курсора — здесь.
      * Значение поля подтягиваем только когда текст пришёл снаружи: черновик,
@@ -286,11 +291,25 @@ private fun InputMessage(
         focusRequester.requestFocus()
     }
     
+    /*
+     * Файлы из системного выбора уходят той же очередью, что и галерея, и
+     * забирают с собой черновик: раньше текст оставался в поле ввода и уходил
+     * отдельным сообщением после файлов.
+     */
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments(), onResult = { uris: List<Uri> ->
             if (uris.isNotEmpty()) {
                 attachmentModal.hide()
-                chatViewModel.sendFiles(uris)
+                
+                mediaPickerViewModel.sendUris(
+                    chatId = uiState.chatId,
+                    uris = uris,
+                    caption = uiState.messageText,
+                    replyTo = uiState.replyToMessage
+                )
+                
+                chatViewModel.changeText("")
+                chatViewModel.cancelReply()
             }
         })
     
@@ -661,10 +680,13 @@ private fun InputMessage(
         MediaPickerBottomSheet(
             chatId = uiState.chatId,
             replyTo = uiState.replyToMessage,
+            caption = uiState.messageText,
+            onCaptionChange = chatViewModel::changeText,
             onDismissRequest = attachmentModal::hide,
             onFileSystemClick = { filePickerLauncher.launch(arrayOf("*/*")) },
             onSent = {
                 attachmentModal.hide()
+                chatViewModel.changeText("")
                 chatViewModel.cancelReply()
             })
     }
