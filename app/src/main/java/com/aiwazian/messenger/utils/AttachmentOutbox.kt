@@ -18,15 +18,20 @@ import javax.inject.Singleton
 /**
  * Свои копии вложений, которые ждут отправки.
  *
- * Системный выбор файла и выбор из галереи дают доступ к content://-ссылке
- * ровно на время жизни задачи приложения: ушёл из чата, свернул, вернулся
- * через полчаса — и читать уже нечего, отправка упирается в отобранный
- * доступ. Поэтому содержимое перекладывается к нам, а дальше по конвейеру
- * идёт file://-ссылка на свою копию.
+ * Системный выбор файла и выбор из галереи дают доступ к content://-ссылке ровно
+ * на время жизни задачи приложения: ушёл из чата, свернул, вернулся через
+ * полчаса — и читать уже нечего, отправка упирается в отобранный доступ.
+ * Поэтому содержимое сразу перекладывается к нам, а дальше по конвейеру идёт
+ * file://-ссылка на свою копию.
  *
  * Кэш для этого не подходит: систему ничто не удержит от его очистки посреди
- * отправки большого видео. [SharedFileCache] делает то же самое для
- * системного «Поделиться», но живёт в cacheDir и работает со списками.
+ * отправки большого видео. [SharedFileCache] делает то же самое для системного
+ * «Поделиться», но живёт в cacheDir и работает со списками.
+ *
+ * Каждая копия лежит в своей папке, названной по вложению. Так имя файла
+ * остаётся исходным: на сервер и в чат оно уходит уже из пути копии, и
+ * поднятая после перезапуска отправка не превращает photo.jpg в
+ * temp_-17_0_photo.jpg.
  */
 @Singleton
 class AttachmentOutbox @Inject constructor(
@@ -34,22 +39,23 @@ class AttachmentOutbox @Inject constructor(
 ) {
     
     /**
-     * @return ссылку на свою копию либо исходную ссылку, если копировать
-     * незачем или не удалось: голосовые, кэш «Поделиться» и прошлые копии уже
-     * лежат у нас, а про удалённый файл честнее доложит сама отправка.
+     * @param key имя вложения внутри отправки: по нему копия находится после
+     * перезапуска.
+     * @return ссылку на свою копию либо исходную ссылку, если копировать незачем
+     * или не удалось: голосовые и кэш «Поделиться» уже лежат у нас, а про
+     * удалённый файл честнее доложит сама отправка.
      */
-    suspend fun keep(uri: Uri, fileId: String): Uri = withContext(Dispatchers.IO) {
+    suspend fun keep(uri: Uri, key: String): Uri = withContext(Dispatchers.IO) {
         if (uri.scheme == SCHEME_FILE) {
             return@withContext uri
         }
         
-        val directory = File(context.filesDir, DIRECTORY_NAME)
-        directory.mkdirs()
-        
         // Имя берётся, пока ссылка ещё читаема: без него потеряется расширение,
-        // а вместе с ним и mime-тип на следующей попытке.
-        val name = uri.getFileName(context)?.replace('/', '_') ?: fileId
-        val target = File(directory, "${fileId}_$name")
+        // а с ним и mime-тип на следующей попытке.
+        val name = uri.getFileName(context)?.replace('/', '_') ?: key
+        val directory = File(File(context.filesDir, DIRECTORY_NAME), key)
+        directory.mkdirs()
+        val target = File(directory, name)
         
         if (target.exists() && target.length() > 0) {
             return@withContext Uri.fromFile(target)
@@ -69,24 +75,50 @@ class AttachmentOutbox @Inject constructor(
         }
     }
     
-    /** Копия больше не нужна: сообщение ушло либо отправка окончательно отменена. */
+    /** Копия больше не нужна: сообщение ушло либо отправка окончательно провалилась. */
     fun release(uri: Uri) {
+        directoryOf(uri)?.deleteRecursively()
+    }
+    
+    /**
+     * Выбрасывает копии, за которыми не стоит ни одна отправка: мусор от
+     * прошлых запусков, убитых посреди загрузки.
+     *
+     * @param keep ссылки, которые сейчас в работе.
+     */
+    suspend fun cleanUp(keep: List<Uri>) = withContext(Dispatchers.IO) {
+        val directories = File(context.filesDir, DIRECTORY_NAME).listFiles()
+            ?: return@withContext
+        
+        val kept = keep.mapNotNull { directoryOf(it)?.absolutePath }.toSet()
+        val threshold = System.currentTimeMillis() - MIN_AGE_MS
+        
+        directories.forEach { directory ->
+            // Свежие копии не трогаем: отправка могла начаться уже после того,
+            // как сюда ушёл список.
+            if (directory.absolutePath !in kept && directory.lastModified() < threshold) {
+                directory.deleteRecursively()
+            }
+        }
+    }
+    
+    /** Папка копии либо null, если ссылка не наша. */
+    private fun directoryOf(uri: Uri): File? {
         if (uri.scheme != SCHEME_FILE) {
-            return
+            return null
         }
         
-        val file = File(uri.path ?: return)
+        val directory = File(uri.path ?: return null).parentFile ?: return null
         
-        // Удаляем только своё: по этому же конвейеру идут голосовые и копии из
-        // «Поделиться», их трогать нельзя.
-        if (file.parentFile?.name == DIRECTORY_NAME) {
-            file.delete()
-        }
+        return if (directory.parentFile?.name == DIRECTORY_NAME) directory else null
     }
     
     private companion object {
         const val TAG = "AttachmentOutbox"
         const val SCHEME_FILE = "file"
         const val DIRECTORY_NAME = "outbox"
+        
+        /** Насколько свежие копии переживают уборку, даже если о них никто не помнит. */
+        const val MIN_AGE_MS = 60L * 60 * 1000
     }
 }

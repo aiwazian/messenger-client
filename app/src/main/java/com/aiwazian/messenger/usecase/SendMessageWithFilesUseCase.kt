@@ -26,6 +26,7 @@ import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.FileRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.AttachmentOutbox
+import com.aiwazian.messenger.utils.PendingSendStore
 import com.aiwazian.messenger.utils.RetryPolicy
 import com.aiwazian.messenger.utils.UploadManager
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -44,9 +45,10 @@ import javax.inject.Singleton
  * Отправка сообщения с вложениями: файлы, фото, видео и голосовые.
  *
  * Сама отправка идёт в скоупе приложения, поэтому уход из чата, поворот экрана
- * и сворачивание её не прерывают: вызывающая сторона лишь ждёт результат, и её
- * отмена обрывает ожидание, а не загрузку. Остановить отправку по-настоящему
- * можно через [cancel].
+ * и сворачивание приложения её не прерывают: вызывающая сторона лишь ждёт
+ * результат, и её отмена обрывает ожидание, а не загрузку. Остановить отправку
+ * по-настоящему можно через [cancel]. Смерть процесса переживает запись в
+ * [PendingSendStore] — после перезапуска отправка поднимается с тех же копий.
  *
  * Попыток столько, сколько понадобится. Одна попытка — это свежая ссылка на
  * загрузку плюс сама загрузка: форму подписывает сервер на ограниченное время,
@@ -67,6 +69,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
     private val userRepository: UserRepository,
     private val fileRepository: FileRepository,
     private val attachmentOutbox: AttachmentOutbox,
+    private val pendingSendStore: PendingSendStore,
     private val uploadManager: UploadManager
 ) {
     private val running = ConcurrentHashMap<Long, Deferred<Result<Message>>>()
@@ -103,6 +106,20 @@ class SendMessageWithFilesUseCase @Inject constructor(
     ): Result<Message> {
         val myId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
+        
+        // Доступ к выбранному файлу живёт не дольше задачи приложения, а повторы
+        // — сколько понадобится, поэтому грузим со своих копий.
+        val sourceUris = uris.mapIndexed { index, uri ->
+            attachmentOutbox.keep(uri, "temp_${tempId}_$index")
+        }
+        
+        pendingSendStore.remember(
+            tempId = tempId,
+            chatId = chatId,
+            uris = sourceUris,
+            text = text,
+            replyTo = replyTo
+        )
         
         val attachments = uris.mapIndexed { index, uri ->
             var fileName = uri.getFileName(context) ?: "file"
@@ -156,13 +173,10 @@ class SendMessageWithFilesUseCase @Inject constructor(
         
         val uploadResults = mutableListOf<AttachmentInputDto>()
         
-        attachments.forEach { attachment ->
+        attachments.forEachIndexed { index, attachment ->
             val fileName = attachment.name
             val fileSize = attachment.size
-            
-            // Доступ к выбранному файлу живёт не дольше задачи приложения, а
-            // повторы — сколько понадобится, поэтому грузим со своей копии.
-            val sourceUri = attachmentOutbox.keep(attachment.localUri!!, attachment.fileId)
+            val sourceUri = sourceUris[index]
             val mimeType = sourceUri.getFileType(context)
             
             // Идентификатор записи о файле меняется на серверный после каждой
@@ -208,13 +222,11 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 // Сюда попадаем только на безнадёжном отказе: обрывы сети и
                 // просроченные формы отправка переживает сама.
                 Log.e(TAG, "Upload of $fileName rejected for good", error)
-                attachmentOutbox.release(sourceUri)
+                giveUp(tempId, sourceUris)
                 fileRepository.updateFileStatus(localFileId, DownloadStatus.FAILED)
                 chatRepository.updateMessageStatus(tempId, MessageStatus.ERROR)
                 return Result.failure(error)
             }
-            
-            attachmentOutbox.release(sourceUri)
             
             uploadResults.add(
                 AttachmentInputDto(
@@ -240,6 +252,11 @@ class SendMessageWithFilesUseCase @Inject constructor(
         }
         
         result.onSuccess {
+            // Первым делом: смерть процесса именно здесь отправила бы сообщение
+            // второй раз после перезапуска.
+            pendingSendStore.forget(tempId)
+            sourceUris.forEach { uri -> attachmentOutbox.release(uri) }
+            
             chatRepository.updateMessageId(tempId, it.id)
             val localChat = chatRepository.getById(chatId).firstOrNull()
             
@@ -248,6 +265,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
             }
         }.onFailure {
             Log.e(TAG, "Confirmation failed", it)
+            giveUp(tempId, sourceUris)
             chatRepository.updateMessageStatus(tempId, MessageStatus.ERROR)
         }
         
@@ -261,6 +279,12 @@ class SendMessageWithFilesUseCase @Inject constructor(
      */
     private suspend fun keepSending(tempId: Long) {
         chatRepository.updateMessageStatus(tempId, MessageStatus.SENDING)
+    }
+    
+    /** Отправка окончена безнадёжно: ни копии, ни запись о ней больше не нужны. */
+    private suspend fun giveUp(tempId: Long, sourceUris: List<Uri>) {
+        pendingSendStore.forget(tempId)
+        sourceUris.forEach { uri -> attachmentOutbox.release(uri) }
     }
     
     private companion object {
