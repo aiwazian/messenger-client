@@ -23,7 +23,6 @@ data class MediaPickerUiState(
     val media: List<DeviceMediaItem> = emptyList(),
     /** Порядок важен: номер в кружке — это позиция в этом списке. */
     val selected: List<Uri> = emptyList(),
-    val caption: String = "",
     val isLoading: Boolean = false
 )
 
@@ -33,6 +32,10 @@ data class MediaPickerUiState(
  * Отправка идёт через [MessageSendQueue], а не через viewModelScope: шторка
  * закрывается сразу после нажатия, и своя корутина не дожила бы до конца
  * загрузки файлов.
+ *
+ * Подпись здесь больше не хранится — это черновик чата из ChatViewModel. Своя
+ * подпись означала бы два разных текста: набранный в поле ввода пропадал бы
+ * при открытии шторки, а набранный в шторке — при её закрытии.
  */
 @HiltViewModel
 class MediaPickerViewModel @Inject constructor(
@@ -55,7 +58,7 @@ class MediaPickerViewModel @Inject constructor(
     
     /** Шторка каждый раз открывается с чистым выбором. */
     fun reset() {
-        _uiState.update { it.copy(selected = emptyList(), caption = "") }
+        _uiState.update { it.copy(selected = emptyList()) }
     }
     
     fun toggleSelection(uri: Uri) {
@@ -71,26 +74,36 @@ class MediaPickerViewModel @Inject constructor(
         }
     }
     
-    fun changeCaption(caption: String) {
-        _uiState.update { it.copy(caption = caption) }
-    }
-    
     suspend fun thumbnail(uri: Uri): Bitmap? = deviceMediaRepository.getVideoThumbnail(uri)
     
-    fun send(chatId: Long, replyTo: MessageReplyPreview?) {
-        val state = _uiState.value
+    fun send(chatId: Long, replyTo: MessageReplyPreview?, caption: String) {
+        val selected = _uiState.value.selected
         
-        if (state.selected.isEmpty()) {
+        if (selected.isEmpty()) {
+            return
+        }
+        
+        sendUris(chatId = chatId, uris = selected, caption = caption, replyTo = replyTo)
+        
+        _uiState.update { it.copy(selected = emptyList()) }
+    }
+    
+    /**
+     * Файлы из системного выбора уходят тем же путём, что и галерея.
+     *
+     * Раньше их отправлял ChatViewModel, и подпись к ним прикрепить было нечем:
+     * текст оставался в поле ввода и уходил отдельным сообщением.
+     */
+    fun sendUris(chatId: Long, uris: List<Uri>, caption: String, replyTo: MessageReplyPreview?) {
+        if (uris.isEmpty()) {
             return
         }
         
         messageSendQueue.enqueueFiles(
             chatId = chatId,
-            uris = state.selected,
-            text = state.caption.trim().ifBlank { null },
+            uris = uris,
+            text = caption.trim().ifBlank { null },
             replyTo = replyTo
         )
-        
-        _uiState.update { it.copy(selected = emptyList(), caption = "") }
     }
 }

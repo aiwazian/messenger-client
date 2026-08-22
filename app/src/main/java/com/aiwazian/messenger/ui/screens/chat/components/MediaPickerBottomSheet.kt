@@ -109,6 +109,10 @@ import java.util.Locale
  * Подпись и отправка живут в нижней панели, а до первого выбора там же лежит
  * переключение между галереей и файлами.
  *
+ * Подпись — это черновик чата, а не отдельное поле: текст, набранный в чате до
+ * нажатия на скрепку, уже лежит в ней, а правки видны в поле ввода, если
+ * шторку закрыли, ничего не отправив.
+ *
  * Нижняя панель приклеена к низу экрана, а не к низу шторки: её поднимают на
  * текущее смещение шторки, поэтому и на половину экрана, и на весь экран она
  * стоит на одном месте. Так же сделана кнопка отправки в ShareBottomSheet.
@@ -122,6 +126,8 @@ import java.util.Locale
 fun MediaPickerBottomSheet(
     chatId: Long,
     replyTo: MessageReplyPreview?,
+    caption: String,
+    onCaptionChange: (String) -> Unit,
     onDismissRequest: () -> Unit,
     onFileSystemClick: () -> Unit,
     onSent: () -> Unit
@@ -252,10 +258,12 @@ fun MediaPickerBottomSheet(
                 ) { hasSelection ->
                     if (hasSelection) {
                         CaptionRow(
-                            caption = uiState.caption,
-                            onCaptionChange = viewModel::changeCaption,
+                            caption = caption,
+                            onCaptionChange = onCaptionChange,
                             onSendClick = {
-                                viewModel.send(chatId = chatId, replyTo = replyTo)
+                                viewModel.send(
+                                    chatId = chatId, replyTo = replyTo, caption = caption
+                                )
                                 onSent()
                             })
                     } else {
