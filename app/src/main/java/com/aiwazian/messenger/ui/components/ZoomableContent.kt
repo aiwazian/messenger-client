@@ -38,9 +38,9 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 const val MIN_CONTENT_SCALE = 1f
-const val MAX_CONTENT_SCALE = 2f
-const val DOUBLE_TAP_CONTENT_SCALE = 1.5f
-const val CONTENT_SCALE_TOLERANCE = 1.35f
+const val MAX_CONTENT_SCALE = 4f
+const val DOUBLE_TAP_CONTENT_SCALE = 2f
+const val CONTENT_SCALE_TOLERANCE = 2f
 
 /** Duration of the zoom of a double tap, in milliseconds. */
 const val DOUBLE_TAP_ANIMATION_DURATION = 160

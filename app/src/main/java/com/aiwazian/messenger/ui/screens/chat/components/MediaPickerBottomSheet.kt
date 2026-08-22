@@ -31,14 +31,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
@@ -147,7 +148,7 @@ fun MediaPickerBottomSheet(
         onDismissRequest = onDismissRequest,
         contentPadding = PaddingValues(0.dp)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize()) {
             when {
                 !hasPermission -> {
                     MediaPickerNotice(
@@ -159,7 +160,7 @@ fun MediaPickerBottomSheet(
                 uiState.isLoading && uiState.media.isEmpty() -> {
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .fillMaxWidth()
                             .padding(top = 32.dp, bottom = 104.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -176,11 +177,18 @@ fun MediaPickerBottomSheet(
                         columns = GridCells.Fixed(GRID_COLUMNS),
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
-                            start = 2.dp, top = 2.dp, end = 2.dp, bottom = 88.dp
+                            start = 2.dp, top = 2.dp, end = 2.dp, bottom = 70.dp
                         ),
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
+                        item(span = { GridItemSpan(GRID_COLUMNS) }) {
+                            Spacer(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .statusBarsPadding()
+                            )
+                        }
                         itemsIndexed(
                             items = uiState.media,
                             key = { _, item -> item.id }) { index, item ->
@@ -190,6 +198,13 @@ fun MediaPickerBottomSheet(
                                 loadThumbnail = { uri -> viewModel.thumbnail(uri) },
                                 onClick = { previewIndex = index },
                                 onToggleSelection = { viewModel.toggleSelection(item.uri) })
+                        }
+                        item(span = { GridItemSpan(GRID_COLUMNS) }) {
+                            Spacer(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .navigationBarsPadding()
+                            )
                         }
                     }
                 }
@@ -242,10 +257,6 @@ fun MediaPickerBottomSheet(
  * Готовый HorizontalFloatingToolbar рассчитан на ряд кнопок и берёт тот размер,
  * который запросило содержимое, а поле ввода запрашивает всё, что дают: панель
  * раздувало на весь экран, и обратно она уже не собиралась.
- *
- * Здесь высота зажата между [TOOLBAR_MIN_HEIGHT] и [TOOLBAR_MAX_HEIGHT], а ширину
- * по-прежнему диктует содержимое: ряд кнопок остаётся компактным по центру, а
- * строка подписи занимает всю ширину.
  */
 @Composable
 private fun MediaPickerToolbar(
@@ -257,9 +268,8 @@ private fun MediaPickerToolbar(
             .background(
                 color = MaterialTheme.colorScheme.surfaceContainer, shape = TOOLBAR_SHAPE
             )
-            .clip(TOOLBAR_SHAPE)
-            .heightIn(min = TOOLBAR_MIN_HEIGHT, max = TOOLBAR_MAX_HEIGHT)
-            .padding(4.dp), contentAlignment = Alignment.Center
+            .clip(TOOLBAR_SHAPE),
+        contentAlignment = Alignment.Center
     ) {
         content()
     }
@@ -284,10 +294,10 @@ internal fun MediaSelectionBadge(
     
     Box(
         modifier = modifier
-            .size(26.dp)
+            .size(28.dp)
             .clip(CircleShape)
             .background(containerColor)
-            .border(width = 2.dp, color = MaterialTheme.colorScheme.surface, shape = CircleShape)
+            .border(width = 2.dp, color = MaterialTheme.colorScheme.outline, shape = CircleShape)
             .then(
                 if (onClick != null) {
                     Modifier.clickable(onClick = onClick)
@@ -395,6 +405,7 @@ private fun VideoThumbnail(
 @Composable
 private fun SourceRow(onFileClick: () -> Unit) {
     Row(
+        modifier = Modifier.padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -432,18 +443,24 @@ private fun CaptionRow(
     caption: String, onCaptionChange: (String) -> Unit, onSendClick: () -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom
     ) {
         BasicTextField(
             value = caption,
             onValueChange = onCaptionChange,
             modifier = Modifier.weight(1f),
             textStyle = MaterialTheme.typography.bodyLarge.copy(
-                color = MaterialTheme.colorScheme.onSurface, lineHeight = 16.sp
+                color = MaterialTheme.colorScheme.onSurface,
+                lineHeight = 16.sp
             ),
-            maxLines = 3,
+            maxLines = 5,
+            minLines = 1,
             decorationBox = { innerTextField ->
-                Box(modifier = Modifier.padding(horizontal = 8.dp)) {
+                Box(
+                    modifier = Modifier.padding(
+                        vertical = 12.dp, horizontal = 14.dp
+                    )
+                ) {
                     if (caption.isEmpty()) {
                         Text(
                             text = stringResource(R.string.media_picker_caption),
@@ -456,7 +473,9 @@ private fun CaptionRow(
                 }
             },
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Sentences
+            )
         )
         
         IconButton(onClick = onSendClick) {
@@ -475,8 +494,10 @@ private fun MediaPickerNotice(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(start = 16.dp, top = 32.dp, end = 16.dp, bottom = 104.dp),
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
     ) {
@@ -537,7 +558,5 @@ private fun Context.isGranted(permission: String): Boolean =
 
 private val TOOLBAR_SHAPE = RoundedCornerShape(28.dp)
 private val TOOLBAR_ELEVATION = 3.dp
-private val TOOLBAR_MIN_HEIGHT = 56.dp
-private val TOOLBAR_MAX_HEIGHT = 120.dp
 private const val GRID_COLUMNS = 3
 private const val SELECTED_SCALE = 0.9f
