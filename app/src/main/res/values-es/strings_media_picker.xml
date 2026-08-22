@@ -5,4 +5,7 @@
     <string name="media_picker_permission">Permite el acceso a fotos y vídeos</string>
     <string name="media_picker_permission_action">Permitir</string>
     <string name="media_picker_empty">No hay fotos ni vídeos</string>
+    <string name="media_picker_reset_title">Restablecer selección</string>
+    <string name="media_picker_reset_message">¿Cerrar el menú de adjuntos?</string>
+    <string name="media_picker_reset_action">Restablecer</string>
 </resources>

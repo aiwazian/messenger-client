@@ -22,6 +22,9 @@ import javax.inject.Singleton
  *
  * Системный выбор файлов отдаёт только то, что пользователь уже отметил, а
  * шторке вложений нужна вся галерея целиком, чтобы показать её сеткой.
+ *
+ * GIF для MediaStore — обычная картинка, поэтому он приходит той же выборкой,
+ * что и фото, и отличается только типом файла.
  */
 @Singleton
 class DeviceMediaRepository @Inject constructor(
@@ -32,6 +35,7 @@ class DeviceMediaRepository @Inject constructor(
             val projection = arrayOf(
                 MediaStore.Files.FileColumns._ID,
                 MediaStore.Files.FileColumns.MEDIA_TYPE,
+                MediaStore.Files.FileColumns.MIME_TYPE,
                 MediaStore.Files.FileColumns.DURATION
             )
             
@@ -55,6 +59,8 @@ class DeviceMediaRepository @Inject constructor(
                 val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
                 val typeColumn =
                     cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
+                val mimeColumn =
+                    cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
                 val durationColumn =
                     cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DURATION)
                 
@@ -74,7 +80,8 @@ class DeviceMediaRepository @Inject constructor(
                             id = id,
                             uri = ContentUris.withAppendedId(collection, id),
                             isVideo = isVideo,
-                            durationMs = cursor.getLong(durationColumn)
+                            durationMs = cursor.getLong(durationColumn),
+                            isGif = cursor.getString(mimeColumn) == GIF_MIME_TYPE
                         )
                     )
                 }
@@ -84,12 +91,12 @@ class DeviceMediaRepository @Inject constructor(
         }
     
     /**
-     * Кадр для превью видео.
+     * Кадр для превью видео и GIF.
      *
-     * Coil без coil-video кадр из файла не достанет, а MediaStore отдаёт
-     * готовую миниатюру.
+     * Coil без coil-video кадр видео не достанет, а GIF он проигрывал бы прямо
+     * в сетке. MediaStore на оба случая отдаёт готовую неподвижную миниатюру.
      */
-    suspend fun getVideoThumbnail(uri: Uri, size: Int = THUMBNAIL_SIZE): Bitmap? =
+    suspend fun getThumbnail(uri: Uri, size: Int = THUMBNAIL_SIZE): Bitmap? =
         withContext(Dispatchers.IO) {
             runCatching {
                 context.contentResolver.loadThumbnail(uri, Size(size, size), null)
@@ -99,5 +106,6 @@ class DeviceMediaRepository @Inject constructor(
     private companion object {
         const val DEFAULT_LIMIT = 500
         const val THUMBNAIL_SIZE = 300
+        const val GIF_MIME_TYPE = "image/gif"
     }
 }

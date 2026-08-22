@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
-import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.aiwazian.messenger.ui.components.rememberZoomableState
 import com.aiwazian.messenger.ui.components.zoomableContent
@@ -34,6 +34,11 @@ import kotlinx.coroutines.launch
  *
  * Просмотрщик в чате и предпросмотр в шторке вложений используют одну и ту же
  * страницу, поэтому зум у них ведёт себя одинаково.
+ *
+ * GIF во весь экран проигрывается сам: декодер отдаёт анимированный рисунок, а
+ * Coil запускает его при появлении. Взят ImageDecoderDecoder, а не GifDecoder:
+ * он же умеет анимированные WebP и HEIF. В сетке шторки вместо этого стоит
+ * кадр из MediaStore, поэтому лента там не шевелится.
  *
  * @param isCurrentPage открыта ли страница сейчас: у соседних зум сбрасывается.
  * @param pagerState листалка, которой отдаются горизонтальные свайпы увеличенного
@@ -91,7 +96,7 @@ internal fun ZoomableMediaPage(
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(uri)
-                    .decoderFactory(GifDecoder.Factory())
+                    .decoderFactory(ImageDecoderDecoder.Factory())
                     .build(),
                 contentDescription = null,
                 onSuccess = { success ->

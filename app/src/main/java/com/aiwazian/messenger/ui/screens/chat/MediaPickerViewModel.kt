@@ -74,7 +74,8 @@ class MediaPickerViewModel @Inject constructor(
         }
     }
     
-    suspend fun thumbnail(uri: Uri): Bitmap? = deviceMediaRepository.getVideoThumbnail(uri)
+    /** Кадр для видео и GIF: в сетке они стоят неподвижно. */
+    suspend fun thumbnail(uri: Uri): Bitmap? = deviceMediaRepository.getThumbnail(uri)
     
     fun send(chatId: Long, replyTo: MessageReplyPreview?, caption: String) {
         val selected = _uiState.value.selected
