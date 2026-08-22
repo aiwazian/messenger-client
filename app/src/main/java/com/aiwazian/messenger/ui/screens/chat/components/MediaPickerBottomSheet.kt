@@ -5,11 +5,15 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -83,8 +87,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -105,6 +112,10 @@ import java.util.Locale
  * Нижняя панель приклеена к низу экрана, а не к низу шторки: её поднимают на
  * текущее смещение шторки, поэтому и на половину экрана, и на весь экран она
  * стоит на одном месте. Так же сделана кнопка отправки в ShareBottomSheet.
+ *
+ * Доступ к галерее запрашивается при открытии. Если система больше не покажет
+ * диалог, кнопка в заглушке ведёт в настройки приложения: повторный запрос там
+ * вернулся бы мгновенно и с тем же ответом, а кнопка выглядела бы сломанной.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -121,14 +132,24 @@ fun MediaPickerBottomSheet(
     
     val context = LocalContext.current
     var hasPermission by remember { mutableStateOf(context.hasMediaPermission()) }
+    var wasAsked by remember { mutableStateOf(false) }
     var previewIndex by remember { mutableStateOf<Int?>(null) }
     
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) {
         hasPermission = context.hasMediaPermission()
+        wasAsked = true
         
         if (hasPermission) {
+            viewModel.loadMedia()
+        }
+    }
+    
+    /* Доступ могли выдать руками в настройках — ловим возвращение в приложение. */
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        if (!hasPermission && context.hasMediaPermission()) {
+            hasPermission = true
             viewModel.loadMedia()
         }
     }
@@ -154,7 +175,13 @@ fun MediaPickerBottomSheet(
                     MediaPickerNotice(
                         text = stringResource(R.string.media_picker_permission),
                         actionText = stringResource(R.string.media_picker_permission_action),
-                        onActionClick = { permissionLauncher.launch(mediaPermissions()) })
+                        onActionClick = {
+                            if (context.canRequestMediaPermission(wasAsked)) {
+                                permissionLauncher.launch(mediaPermissions())
+                            } else {
+                                context.openAppSettings()
+                            }
+                        })
                 }
                 
                 uiState.isLoading && uiState.media.isEmpty() -> {
@@ -555,6 +582,46 @@ private fun Context.hasMediaPermission(): Boolean = when {
 
 private fun Context.isGranted(permission: String): Boolean =
     ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+
+/**
+ * Покажет ли система диалог доступа ещё раз.
+ *
+ * После отказа «Больше не спрашивать» лаунчер молча возвращает прежний ответ:
+ * диалога нет, экран не меняется, кнопка выглядит сломанной. Признак того, что
+ * диалог ещё будет, — shouldShowRequestPermissionRationale хотя бы по одному
+ * разрешению. До первого запроса он тоже false, поэтому первый раз спрашиваем
+ * в любом случае.
+ */
+private fun Context.canRequestMediaPermission(wasAsked: Boolean): Boolean {
+    if (!wasAsked) return true
+    
+    val activity = findActivity() ?: return false
+    
+    return mediaPermissions().any {
+        ActivityCompat.shouldShowRequestPermissionRationale(activity, it)
+    }
+}
+
+/** Сведения о приложении: единственный путь к доступу после «Больше не спрашивать». */
+private fun Context.openAppSettings() {
+    val intent = Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)
+    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    
+    startActivity(intent)
+}
+
+/** Activity под Compose-контекстом: она нужна для проверки rationale. */
+private fun Context.findActivity(): Activity? {
+    var current: Context = this
+    
+    while (current is ContextWrapper) {
+        if (current is Activity) return current
+        current = current.baseContext
+    }
+    
+    return null
+}
 
 private val TOOLBAR_SHAPE = RoundedCornerShape(28.dp)
 private val TOOLBAR_ELEVATION = 3.dp
