@@ -69,6 +69,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,7 +99,9 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 /**
@@ -115,6 +118,11 @@ import java.util.Locale
  * Нижняя панель приклеена к низу экрана, а не к низу шторки: её поднимают на
  * текущее смещение шторки, поэтому и на половину экрана, и на весь экран она
  * стоит на одном месте. Так же сделана кнопка отправки в ShareBottomSheet.
+ *
+ * Закрытие с непустым выбором спрашивает подтверждение: кнопка «назад» и
+ * нажатие мимо шторки иначе молча теряли бы отмеченные медиа. Шторку к этому
+ * моменту система уже увела вниз, поэтому отмена возвращает её на место, а
+ * набранный текст не трогает ни один из ответов — он живёт в поле ввода чата.
  *
  * Доступ к галерее запрашивается при открытии. Если система больше не покажет
  * диалог, кнопка в заглушке ведёт в настройки приложения: повторный запрос там
@@ -134,11 +142,13 @@ fun MediaPickerBottomSheet(
     val viewModel: MediaPickerViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    val coroutineScope = rememberCoroutineScope()
     
     val context = LocalContext.current
     var hasPermission by remember { mutableStateOf(context.hasMediaPermission()) }
     var wasAsked by remember { mutableStateOf(false) }
     var previewIndex by remember { mutableStateOf<Int?>(null) }
+    var isResetDialogVisible by remember { mutableStateOf(false) }
     
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -171,7 +181,13 @@ fun MediaPickerBottomSheet(
     
     AppBottomSheet(
         sheetState = sheetState,
-        onDismissRequest = onDismissRequest,
+        onDismissRequest = {
+            if (uiState.selected.isEmpty()) {
+                onDismissRequest()
+            } else {
+                isResetDialogVisible = true
+            }
+        },
         contentPadding = PaddingValues(0.dp)
     ) {
         Box(Modifier.fillMaxSize()) {
@@ -283,6 +299,21 @@ fun MediaPickerBottomSheet(
             onToggleSelection = { item -> viewModel.toggleSelection(item.uri) },
             onDismiss = { previewIndex = null })
     }
+    
+    if (isResetDialogVisible) {
+        MediaPickerResetDialog(
+            onCancel = {
+                isResetDialogVisible = false
+                
+                /* Шторку уже увели вниз — поднимаем обратно вместе с выбором. */
+                coroutineScope.launch { sheetState.show() }
+            },
+            onReset = {
+                isResetDialogVisible = false
+                viewModel.reset()
+                onDismissRequest()
+            })
+    }
 }
 
 /**
@@ -379,16 +410,14 @@ private fun MediaGridItem(
                 .clip(MaterialTheme.shapes.small)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
         ) {
-            if (item.isVideo) {
-                VideoThumbnail(item = item, loadThumbnail = loadThumbnail)
+            if (item.isVideo || item.isGif) {
+                MediaThumbnail(item = item, loadThumbnail = loadThumbnail)
                 
-                Text(
-                    text = formatDuration(item.durationMs),
+                MediaGridLabel(
+                    text = if (item.isGif) GIF_LABEL else formatDuration(item.durationMs),
                     modifier = Modifier
                         .align(Alignment.BottomStart)
-                        .padding(4.dp),
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelSmall
+                        .padding(4.dp)
                 )
             } else {
                 AsyncImage(
@@ -412,10 +441,14 @@ private fun MediaGridItem(
 }
 
 /**
- * Кадр видео из MediaStore: Coil без coil-video превью не соберёт.
+ * Кадр видео или GIF из MediaStore.
+ *
+ * Coil без coil-video превью видео не соберёт, а GIF он проиграл бы прямо в
+ * сетке: анимация в ленте отвлекает и греет батарею. MediaStore на оба случая
+ * отдаёт готовый неподвижный кадр, а движется GIF уже на весь экран.
  */
 @Composable
-private fun VideoThumbnail(
+private fun MediaThumbnail(
     item: DeviceMediaItem, loadThumbnail: suspend (Uri) -> Bitmap?
 ) {
     var bitmap by remember(item.uri) { mutableStateOf<Bitmap?>(null) }
@@ -434,6 +467,24 @@ private fun VideoThumbnail(
             modifier = Modifier.fillMaxSize()
         )
     }
+}
+
+/**
+ * Плашка в углу превью: длительность видео или пометка GIF.
+ *
+ * Подложка нужна светлым кадрам: белый текст на снегу или на песке не читался.
+ */
+@Composable
+private fun MediaGridLabel(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        modifier = modifier
+            .clip(LABEL_SHAPE)
+            .background(Color.Black.copy(alpha = LABEL_SCRIM_ALPHA))
+            .padding(horizontal = 4.dp, vertical = 1.dp),
+        color = Color.White,
+        style = MaterialTheme.typography.labelSmall
+    )
 }
 
 @Composable
@@ -549,10 +600,52 @@ private fun MediaPickerNotice(
     }
 }
 
+/**
+ * Подтверждение закрытия шторки с выбранными медиа.
+ *
+ * Отмена только закрывает диалог, сброс — ещё и шторку. Текст сообщения не
+ * трогает ни то, ни другое: он остаётся в поле ввода чата.
+ */
+@Composable
+private fun MediaPickerResetDialog(onCancel: () -> Unit, onReset: () -> Unit) {
+    AppDialog(
+        title = stringResource(R.string.media_picker_reset_title),
+        onDismissRequest = onCancel,
+        content = {
+            Text(
+                text = stringResource(R.string.media_picker_reset_message), lineHeight = 16.sp
+            )
+        },
+        buttons = {
+            TextButton(onClick = onCancel) {
+                Text(text = stringResource(R.string.cancel))
+            }
+            
+            TextButton(
+                onClick = onReset, colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text(text = stringResource(R.string.media_picker_reset_action))
+            }
+        })
+}
+
+/**
+ * 2:02:03 у длинного видео и 3:05 у короткого: часы показываем только когда они
+ * есть, иначе минутный ролик выглядел бы как запись на час.
+ */
 private fun formatDuration(durationMs: Long): String {
     val totalSeconds = durationMs / 1000
+    val hours = totalSeconds / 3600
+    val minutes = totalSeconds % 3600 / 60
+    val seconds = totalSeconds % 60
     
-    return String.format(Locale.ROOT, "%d:%02d", totalSeconds / 60, totalSeconds % 60)
+    return if (hours > 0) {
+        String.format(Locale.ROOT, "%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format(Locale.ROOT, "%d:%02d", minutes, seconds)
+    }
 }
 
 private fun mediaPermissions(): Array<String> = when {
@@ -632,5 +725,8 @@ private fun Context.findActivity(): Activity? {
 
 private val TOOLBAR_SHAPE = RoundedCornerShape(28.dp)
 private val TOOLBAR_ELEVATION = 3.dp
+private val LABEL_SHAPE = RoundedCornerShape(6.dp)
+private const val LABEL_SCRIM_ALPHA = 0.45f
+private const val GIF_LABEL = "GIF"
 private const val GRID_COLUMNS = 3
 private const val SELECTED_SCALE = 0.9f
