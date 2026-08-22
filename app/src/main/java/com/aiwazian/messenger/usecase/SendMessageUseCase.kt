@@ -9,7 +9,6 @@ import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.enums.MessageStatus
 import com.aiwazian.messenger.repository.ChatRepository
-import com.aiwazian.messenger.utils.PendingSendStore
 import com.aiwazian.messenger.utils.RetryPolicy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -27,15 +26,18 @@ import javax.inject.Singleton
  * переводила сообщение в статус «ошибка», и повтор оставался ручным.
  *
  * Цикл живёт в скоупе приложения, поэтому уход с экрана и сворачивание его не
- * обрывают: вызывающая сторона лишь ждёт результат. Смерть процесса переживает
- * запись в [PendingSendStore]. Остановить отправку можно через [cancel] либо
- * [com.aiwazian.messenger.utils.MessageSendQueue.cancel].
+ * обрывают: вызывающая сторона лишь ждёт результат. Остановить отправку можно
+ * через [cancel] либо [com.aiwazian.messenger.utils.MessageSendQueue.cancel].
+ *
+ * Смерть процесса цикл не переживает, и записи на диске здесь больше нет: текст
+ * целиком лежит в самом сообщении, поэтому оборванную отправку поднимает
+ * [com.aiwazian.messenger.utils.FailedSendRetrier] при следующем открытии чата.
+ * Файлы так не восстановить, им запись нужна — см. [SendMessageWithFilesUseCase].
  */
 @Singleton
 class SendMessageUseCase @Inject constructor(
     @param:ApplicationScope private val appScope: CoroutineScope,
-    private val chatRepository: ChatRepository,
-    private val pendingSendStore: PendingSendStore
+    private val chatRepository: ChatRepository
 ) {
     private val running = ConcurrentHashMap<Long, Deferred<Result<Message>>>()
     
@@ -63,20 +65,21 @@ class SendMessageUseCase @Inject constructor(
         running.remove(tempId)?.cancel()
     }
     
+    /**
+     * Идёт ли отправка прямо сейчас.
+     *
+     * Нужно тем, кто досылает зависшие сообщения со стороны: сообщение может
+     * долго висеть «отправляется» с работающим циклом повторов внутри, и
+     * повторная постановка в очередь только оборвала бы его на полпути.
+     */
+    fun isRunning(tempId: Long): Boolean = running[tempId]?.isActive == true
+    
     private suspend fun send(
         chatId: Long,
         message: String,
         localId: Long,
         replyTo: MessageReplyPreview?
     ): Result<Message> {
-        pendingSendStore.remember(
-            tempId = localId,
-            chatId = chatId,
-            uris = emptyList(),
-            text = message,
-            replyTo = replyTo
-        )
-        
         val result = RetryPolicy.retryForever("sendText#$localId") {
             val attempt = chatRepository.sendMessage(chatId, message, localId, replyTo)
             
@@ -91,17 +94,12 @@ class SendMessageUseCase @Inject constructor(
         }
         
         result.onSuccess {
-            // Первым делом: смерть процесса именно здесь отправила бы сообщение
-            // второй раз после перезапуска.
-            pendingSendStore.forget(localId)
-            
             val localChat = chatRepository.getById(chatId).firstOrNull()
             
             if (localChat == null) {
                 chatRepository.fetchChatByIdFromServer(chatId)
             }
         }.onFailure {
-            pendingSendStore.forget(localId)
             chatRepository.updateMessageStatus(localId, MessageStatus.ERROR)
         }
         
