@@ -104,30 +104,6 @@ import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-/**
- * Шторка вложений: лента фото и видео устройства сеткой в три столбца.
- *
- * Выбор нумерованный, и порядок номеров — это порядок вложений в сообщении.
- * Подпись и отправка живут в нижней панели, а до первого выбора там же лежит
- * переключение между галереей и файлами.
- *
- * Подпись — это черновик чата, а не отдельное поле: текст, набранный в чате до
- * нажатия на скрепку, уже лежит в ней, а правки видны в поле ввода, если
- * шторку закрыли, ничего не отправив.
- *
- * Нижняя панель приклеена к низу экрана, а не к низу шторки: её поднимают на
- * текущее смещение шторки, поэтому и на половину экрана, и на весь экран она
- * стоит на одном месте. Так же сделана кнопка отправки в ShareBottomSheet.
- *
- * Закрытие с непустым выбором спрашивает подтверждение: кнопка «назад» и
- * нажатие мимо шторки иначе молча теряли бы отмеченные медиа. Шторку к этому
- * моменту система уже увела вниз, поэтому отмена возвращает её на место, а
- * набранный текст не трогает ни один из ответов — он живёт в поле ввода чата.
- *
- * Доступ к галерее запрашивается при открытии. Если система больше не покажет
- * диалог, кнопка в заглушке ведёт в настройки приложения: повторный запрос там
- * вернулся бы мгновенно и с тем же ответом, а кнопка выглядела бы сломанной.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MediaPickerBottomSheet(
@@ -161,7 +137,6 @@ fun MediaPickerBottomSheet(
         }
     }
     
-    /* Доступ могли выдать руками в настройках — ловим возвращение в приложение. */
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (!hasPermission && context.hasMediaPermission()) {
             hasPermission = true
@@ -188,6 +163,7 @@ fun MediaPickerBottomSheet(
                 isResetDialogVisible = true
             }
         },
+        modifier = Modifier.imePadding(),
         contentPadding = PaddingValues(0.dp)
     ) {
         Box(Modifier.fillMaxSize()) {
@@ -316,13 +292,6 @@ fun MediaPickerBottomSheet(
     }
 }
 
-/**
- * Нижняя панель шторки: плавающая плашка, размер которой задаём мы сами.
- *
- * Готовый HorizontalFloatingToolbar рассчитан на ряд кнопок и берёт тот размер,
- * который запросило содержимое, а поле ввода запрашивает всё, что дают: панель
- * раздувало на весь экран, и обратно она уже не собиралась.
- */
 @Composable
 private fun MediaPickerToolbar(
     modifier: Modifier = Modifier, content: @Composable () -> Unit
@@ -340,9 +309,6 @@ private fun MediaPickerToolbar(
     }
 }
 
-/**
- * Кружок выбора: пустой, а у выбранного внутри его порядковый номер.
- */
 @Composable
 internal fun MediaSelectionBadge(
     number: Int, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null
@@ -440,13 +406,6 @@ private fun MediaGridItem(
     }
 }
 
-/**
- * Кадр видео или GIF из MediaStore.
- *
- * Coil без coil-video превью видео не соберёт, а GIF он проиграл бы прямо в
- * сетке: анимация в ленте отвлекает и греет батарею. MediaStore на оба случая
- * отдаёт готовый неподвижный кадр, а движется GIF уже на весь экран.
- */
 @Composable
 private fun MediaThumbnail(
     item: DeviceMediaItem, loadThumbnail: suspend (Uri) -> Bitmap?
@@ -469,11 +428,6 @@ private fun MediaThumbnail(
     }
 }
 
-/**
- * Плашка в углу превью: длительность видео или пометка GIF.
- *
- * Подложка нужна светлым кадрам: белый текст на снегу или на песке не читался.
- */
 @Composable
 private fun MediaGridLabel(text: String, modifier: Modifier = Modifier) {
     Text(
@@ -600,12 +554,6 @@ private fun MediaPickerNotice(
     }
 }
 
-/**
- * Подтверждение закрытия шторки с выбранными медиа.
- *
- * Отмена только закрывает диалог, сброс — ещё и шторку. Текст сообщения не
- * трогает ни то, ни другое: он остаётся в поле ввода чата.
- */
 @Composable
 private fun MediaPickerResetDialog(onCancel: () -> Unit, onReset: () -> Unit) {
     AppDialog(
@@ -631,10 +579,6 @@ private fun MediaPickerResetDialog(onCancel: () -> Unit, onReset: () -> Unit) {
         })
 }
 
-/**
- * 2:02:03 у длинного видео и 3:05 у короткого: часы показываем только когда они
- * есть, иначе минутный ролик выглядел бы как запись на час.
- */
 private fun formatDuration(durationMs: Long): String {
     val totalSeconds = durationMs / 1000
     val hours = totalSeconds / 3600
@@ -683,15 +627,6 @@ private fun Context.hasMediaPermission(): Boolean = when {
 private fun Context.isGranted(permission: String): Boolean =
     ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 
-/**
- * Покажет ли система диалог доступа ещё раз.
- *
- * После отказа «Больше не спрашивать» лаунчер молча возвращает прежний ответ:
- * диалога нет, экран не меняется, кнопка выглядит сломанной. Признак того, что
- * диалог ещё будет, — shouldShowRequestPermissionRationale хотя бы по одному
- * разрешению. До первого запроса он тоже false, поэтому первый раз спрашиваем
- * в любом случае.
- */
 private fun Context.canRequestMediaPermission(wasAsked: Boolean): Boolean {
     if (!wasAsked) return true
     
@@ -702,7 +637,6 @@ private fun Context.canRequestMediaPermission(wasAsked: Boolean): Boolean {
     }
 }
 
-/** Сведения о приложении: единственный путь к доступу после «Больше не спрашивать». */
 private fun Context.openAppSettings() {
     val intent = Intent(
         Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)
@@ -711,7 +645,6 @@ private fun Context.openAppSettings() {
     startActivity(intent)
 }
 
-/** Activity под Compose-контекстом: она нужна для проверки rationale. */
 private fun Context.findActivity(): Activity? {
     var current: Context = this
     
