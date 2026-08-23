@@ -138,22 +138,14 @@ class ChatViewModel @Inject constructor(
     private var searchCursorId: Long? = null
     private var lastMessages: List<Message> = emptyList()
 
-    /** Стек возврата: id сообщений, из которых был совершён переход. */
     private val returnStack = ArrayDeque<Long>()
 
-    /** Видимо ли сейчас самое нижнее сообщение списка. */
     private var isViewportAtBottom = true
 
-    /**
-     * Сообщение, перед которым рисуется «Unread messages». Ставится один раз при
-     * открытии чата и не меняется, когда счётчик непрочитанных ползёт вниз.
-     */
     private var unreadAnchorMessageId: Long? = null
 
-    /** Максимальный id, про который уже сказали серверу «прочитано». */
     private var reportedReadUpToId = 0L
 
-    /** Самый новый id в окне: нужен, чтобы отличить новое сообщение от перерисовки. */
     private var lastKnownNewestId = 0L
 
     private var isInit = false
@@ -197,13 +189,6 @@ class ChatViewModel @Inject constructor(
         observeMessages()
     }
 
-    /**
-     * Черновик чата: набранный текст и начатый ответ.
-     *
-     * Текст лежит в Room и переживает перезапуск приложения, ответ — в кэше
-     * на время жизни процесса. Вместе они возвращают поле ввода ровно в то
-     * состояние, в котором пользователь вышел из чата.
-     */
     private fun loadDraft(chatId: Long) {
         viewModelScope.launch {
             val myId = userRepository.getMe().first().id
@@ -326,12 +311,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Открытие чата само по себе ничего не помечает прочитанным.
-     *
-     * Отметка уходит только из onMessagesSeen — по сообщениям, которые реально
-     * показались на экране больше чем наполовину.
-     */
     private suspend fun loadGroupInfo(chatId: Long, myId: Long) {
         viewModelScope.launch {
             groupRepository.fetchById(chatId)
@@ -362,11 +341,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Теги участников группы грузятся одним запросом на открытие чата.
-     *
-     * Сообщения пересобираются: тег рисуется рядом с именем отправителя.
-     */
     private fun loadMemberTags(chatId: Long) {
         viewModelScope.launch {
             groupAdminsRepository.getMemberTags(chatId).onSuccess { tags ->
@@ -621,11 +595,6 @@ class ChatViewModel @Inject constructor(
             onLoadUserName = ::loadUserName
         )
 
-        /*
-         * UI рисует список с reverseLayout, поэтому отдаём его уже перевёрнутым:
-         * нулевой элемент — самое новое сообщение и «низ» чата.
-         * Группировка и разделители считаются по-старому, по хронологии.
-         */
         val chatItems = mapper.map(messages).asReversed()
         val newMediaItems = messages.flatMap { it.attachments }
             .filter { it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF }
@@ -650,31 +619,18 @@ class ChatViewModel @Inject constructor(
     }
 
     // region Прокрутка к сообщению и догрузка окна
-
-    /** Скролл вверх: страница старше текущего окна. */
     fun loadOlderMessages() {
         val pager = messagePager ?: return
         viewModelScope.launch { pager.loadBefore() }
     }
 
-    /** Скролл вниз: страница новее текущего окна (актуально после прыжка в середину). */
     fun loadNewerMessages() {
         val pager = messagePager ?: return
         viewModelScope.launch { pager.loadAfter() }
     }
 
-    /** Совместимость со старым вызовом из UI. */
     fun loadMoreMessages() = loadOlderMessages()
 
-    /**
-     * Единая точка входа для перехода к любому сообщению чата:
-     * ответы, закреплённые, результаты поиска.
-     *
-     * Промежуточные сообщения не грузятся: сразу берётся окно вокруг цели.
-     *
-     * @param messageId id целевого сообщения.
-     * @param returnToMessageId id сообщения, из которого прыгаем (для кнопки «вернуться»).
-     */
     fun jumpToMessage(messageId: Long, returnToMessageId: Long? = null) {
         val pager = messagePager ?: return
         viewModelScope.launch {
@@ -700,12 +656,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Прыжок к сообщению сразу после открытия чата.
-     *
-     * Окно сообщений в этот момент ещё может грузиться, поэтому ждём
-     * инициализацию пейджера.
-     */
     fun jumpToMessageWhenReady(messageId: Long) {
         viewModelScope.launch {
             var attempts = 0
@@ -718,17 +668,12 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /** Возврат к сообщению, из которого был совершён переход. */
     fun jumpBack() {
         val messageId = returnStack.removeLastOrNull() ?: return
         _uiState.update { it.copy(canJumpBack = returnStack.isNotEmpty()) }
         jumpToMessage(messageId)
     }
 
-    /**
-     * FloatingActionButton: сразу в конец чата.
-     * Один запрос за последними сообщениями, без прокрутки и догрузки промежуточных страниц.
-     */
     fun jumpToLatest() {
         viewModelScope.launch { jumpToLatestInternal() }
     }
@@ -763,7 +708,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /** Вызывается из UI, когда скролл к цели выполнен. */
     fun onScrollTargetHandled(requestId: Long) {
         val target = _uiState.value.scrollTarget ?: return
         if (target.requestId != requestId) return
@@ -851,7 +795,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /** Клик по результату поиска. */
     fun onSearchResultClicked(hit: MessageSearchHit) = jumpToMessage(hit.id)
     // endregion
 
@@ -859,32 +802,10 @@ class ChatViewModel @Inject constructor(
         const val PAGE_SIZE = 50
         const val AROUND_RADIUS = 25
         const val MAX_WINDOW_MESSAGES = 400
-
-        /** Первое непрочитанное ставим ниже середины экрана. */
-        /**
-         * Граница прочитанного уезжает почти к верхней кромке: всё непрочитанное
-         * должно быть ниже него, чтобы счётчик таял по мере скролла вниз.
-         */
         const val UNREAD_VIEWPORT_FRACTION = 0.08f
     }
 
     // region Ответ на сообщение
-
-    /**
-     * «Ответить» в меню сообщения.
-     *
-     * Превью собирается сразу, чтобы панель над полем ввода и локальное
-     * pending-сообщение выглядели одинаково до ответа сервера.
-     *
-     * Заголовок: в группе и канале — название чата, в личном чате — имя автора
-     * сообщения (своё имя, если отвечаем сами себе).
-     *
-     * Ответ и редактирование взаимоисключают друг друга: если шла правка
-     * сообщения, она отменяется, а поле ввода очищается.
-     *
-     * Начатый ответ переживает выход из чата: превью ложится в общий кэш
-     * и возвращается в панель над полем ввода при повторном входе.
-     */
     fun startReply(message: Message) {
         if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
 
@@ -916,18 +837,11 @@ class ChatViewModel @Inject constructor(
         replyDraftCache.save(state.myId, state.chatId, preview)
     }
 
-    /** Клик по панели ответа над полем ввода — прыжок к цитируемому сообщению. */
     fun onReplyPanelClicked() {
         val preview = _uiState.value.replyToMessage ?: return
         jumpToMessage(preview.messageId)
     }
 
-    /**
-     * Крестик в панели ответа: сбрасываем только сам ответ.
-     *
-     * Набранный текст остаётся в поле ввода: пользователь отказывается
-     * от цитаты, а не от того, что успел написать.
-     */
     fun cancelReply() {
         clearReply()
     }
@@ -938,12 +852,6 @@ class ChatViewModel @Inject constructor(
         _uiState.update { it.copy(replyToMessage = null) }
     }
 
-    /**
-     * Клик по блоку ответа внутри сообщения.
-     *
-     * Оригинал в этом же чате — прыжок по истории с возможностью вернуться,
-     * иначе — открываем чужой чат сразу на нужном сообщении.
-     */
     fun onReplyPreviewClicked(message: Message) {
         val preview = message.replyTo ?: return
 
@@ -962,16 +870,11 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /**
-     * В личном чате chatId сообщения — это получатель, поэтому у двух сообщений
-     * одного диалога chatId разные: мой id и id собеседника.
-     */
     private fun isInCurrentChat(preview: MessageReplyPreview): Boolean {
         val state = _uiState.value
         val originChatId = preview.chatId ?: return true
         if (originChatId == state.chatId) return true
-        return ChatType.fromId(state.chatId) == ChatType.PRIVATE &&
-                (originChatId == state.myId || originChatId == state.chatId)
+        return ChatType.fromId(state.chatId) == ChatType.PRIVATE && originChatId == state.myId
     }
     // endregion
 
@@ -1029,7 +932,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /** Отправка копий во все выбранные чаты одним запросом. */
     fun confirmForward() {
         if (!copyPolicy.canForward) return
         val state = _uiState.value
@@ -1062,13 +964,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Клик по заголовку «Переслано от…».
-     *
-     * Доступность считает сервер: публичные и подписанные чаты — OPEN,
-     * закрытые и скрытые настройками приватности — RESTRICTED.
-     * Тултип при RESTRICTED показывает сам MessageBubble.
-     */
     fun onForwardedFromClicked(message: Message) {
         val forwardedFrom = message.forwardedFrom ?: return
         if (forwardedFrom.access != ForwardSourceAccess.OPEN) return
@@ -1179,15 +1074,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /**
-     * «Изменить» в меню сообщения.
-     *
-     * Пересланные сообщения редактировать нельзя: это копия чужого текста,
-     * такую же проверку делает сервер.
-     *
-     * Редактирование и ответ взаимоисключают друг друга: начатый ответ
-     * сбрасывается, а в поле ввода остаётся только текст правимого сообщения.
-     */
     fun startEditing(message: Message) {
         if (message.forwardedFrom != null) return
 
@@ -1221,15 +1107,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Сообщения до messageId реально побывали в поле зрения больше чем наполовину.
-     *
-     * Единственное место, откуда уходит отметка о прочтении: ни открытие чата,
-     * ни загрузка истории сами по себе ничего прочитанным не помечают.
-     *
-     * Вызывается из UI с дебаунсом и всегда одним максимальным id: один запрос
-     * на пачку вместо запроса на каждое сообщение.
-     */
     fun onMessagesSeen(messageId: Long) {
         if (messageId <= reportedReadUpToId) return
         reportedReadUpToId = messageId
@@ -1238,17 +1115,10 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /** Сообщается из UI: видно ли самое нижнее сообщение списка. */
     fun onViewportAtBottomChanged(atBottom: Boolean) {
         isViewportAtBottom = atBottom
     }
 
-    /**
-     * Новое сообщение в окне.
-     *
-     * Крутим вниз только если пользователь уже стоит внизу либо отправил своё:
-     * иначе чтение старой переписки прерывалось бы прыжком в конец.
-     */
     private fun handleNewestMessage(messages: List<Message>, isAtLive: Boolean) {
         val newest = messages.lastOrNull() ?: return
         val newestId = newest.id
@@ -1425,10 +1295,6 @@ class ChatViewModel @Inject constructor(
         voicePlayerManager.play(queue, fileId, startPositionMs)
     }
 
-    /**
-     * Очередь голосовых идёт по времени, поэтому перевёрнутый для UI список
-     * разворачивается обратно: иначе автопереход играл бы сообщения вспять.
-     */
     private fun buildVoiceQueue(items: List<ChatItem>, chatName: UiText): List<VoiceQueueItem> {
         val title = chatName.asString(context).ifBlank { context.getString(R.string.voice_message) }
         return items.asReversed().filterIsInstance<ChatItem.MessageItem>()
@@ -1523,8 +1389,6 @@ class ChatViewModel @Inject constructor(
     // endregion
 
     // region Utilities
-
-    /** Копирование текста в буфер обмена. При запрете копирования не выполняется. */
     fun copyToClipboard(text: String?) {
         if (!copyPolicy.canCopyText) return
         text?.let { clipboardService.copy(it) }
@@ -1532,12 +1396,6 @@ class ChatViewModel @Inject constructor(
 
     fun vibrate() = vibrationManager.vibrate(VibrationPattern.Error)
 
-    /**
-     * Короткий тактильный отклик.
-     *
-     * Свайп сообщения влево вызывает его один раз, когда палец перешёл порог,
-     * после которого отпускание начнёт ответ.
-     */
     fun vibrateTactile() = vibrationManager.vibrate(VibrationPattern.TactileResponse)
 
     fun selectMessage(message: Message) =
@@ -1609,9 +1467,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Почтовый адрес не открываем в CustomTabs как ссылку: нужно почтовое приложение.
-     */
     fun onEmailClicked(email: String) {
         viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenEmail(email)) }
     }

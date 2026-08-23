@@ -9,6 +9,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.socket.RealtimeEventSyncService
+import com.aiwazian.messenger.utils.FailedSendRetrier
+import com.aiwazian.messenger.utils.PendingSendResumer
 import com.aiwazian.messenger.utils.SessionManager
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.yandex.mobile.ads.common.YandexAds
@@ -24,10 +26,24 @@ class Application : Application() {
     @Inject
     lateinit var realtimeEventSyncService: RealtimeEventSyncService
     
+    @Inject
+    lateinit var pendingSendResumer: PendingSendResumer
+    
+    @Inject
+    lateinit var failedSendRetrier: FailedSendRetrier
+    
     override fun onCreate() {
         super.onCreate()
         
         SessionManager.init(authRepository)
+        
+        // Прошлый запуск могли убить посреди отправки файлов: сообщение и
+        // вложения доедут сами, без ручного повтора.
+        pendingSendResumer.resume()
+        
+        // Текст оборванной отправки лежит в самом сообщении, поэтому такие
+        // сообщения дошлются при открытии своего чата.
+        failedSendRetrier.start()
         
         FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(!BuildConfig.DEBUG)
         

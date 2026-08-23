@@ -15,12 +15,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalContext
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.ContentFrame
 import com.aiwazian.messenger.ui.components.PlayerUi
@@ -31,6 +34,8 @@ import kotlinx.coroutines.delay
  *
  * @param contentModifier applied to the video frame only, so a zoom of the frame
  * leaves the playback controls untouched.
+ * @param onContentSizeChanged called with the size of the video frame once it is
+ * known, which is what tells a zoom how much of the screen the video covers.
  */
 @Composable
 fun VideoPlayerItem(
@@ -41,7 +46,8 @@ fun VideoPlayerItem(
     playbackSpeed: Float = 1.0f,
     contentModifier: Modifier = Modifier,
     onPlayingChanged: (Boolean) -> Unit = {},
-    onShowUiRequest: () -> Unit = {}
+    onShowUiRequest: () -> Unit = {},
+    onContentSizeChanged: (Size) -> Unit = {}
 ) {
     val context = LocalContext.current
     
@@ -74,14 +80,19 @@ fun VideoPlayerItem(
         }
     }
     
-    val currentIsLooping by androidx.compose.runtime.rememberUpdatedState(isLooping)
-    val currentOnShowUiRequest by androidx.compose.runtime.rememberUpdatedState(onShowUiRequest)
+    val currentIsLooping by rememberUpdatedState(isLooping)
+    val currentOnShowUiRequest by rememberUpdatedState(onShowUiRequest)
+    val currentOnContentSizeChanged by rememberUpdatedState(onContentSizeChanged)
 
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
                 isPlaying = playing
                 onPlayingChanged(playing)
+            }
+            
+            override fun onVideoSizeChanged(videoSize: VideoSize) {
+                currentOnContentSizeChanged(videoSize.toContentSize())
             }
             
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -95,6 +106,10 @@ fun VideoPlayerItem(
             }
         }
         player.addListener(listener)
+        
+        /* Размер кадра мог стать известен ещё до того, как слушатель повесили. */
+        currentOnContentSizeChanged(player.videoSize.toContentSize())
+        
         onDispose {
             player.removeListener(listener)
             player.release()
@@ -149,4 +164,14 @@ fun VideoPlayerItem(
             )
         }
     }
+}
+
+/**
+ * Размер кадра, у которого анаморфные видео растянуты обратно: зуму важно только
+ * соотношение сторон. У неизвестного размера обе стороны нулевые.
+ */
+private fun VideoSize.toContentSize(): Size {
+    val pixelRatio = if (pixelWidthHeightRatio > 0f) pixelWidthHeightRatio else 1f
+    
+    return Size(width * pixelRatio, height.toFloat())
 }

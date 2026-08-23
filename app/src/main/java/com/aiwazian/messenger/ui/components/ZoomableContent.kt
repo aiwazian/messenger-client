@@ -38,9 +38,9 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 const val MIN_CONTENT_SCALE = 1f
-const val MAX_CONTENT_SCALE = 1.8f
-const val DOUBLE_TAP_CONTENT_SCALE = MAX_CONTENT_SCALE
-const val CONTENT_SCALE_TOLERANCE = 1.35f
+const val MAX_CONTENT_SCALE = 4f
+const val DOUBLE_TAP_CONTENT_SCALE = 2f
+const val CONTENT_SCALE_TOLERANCE = 2f
 
 /** Duration of the zoom of a double tap, in milliseconds. */
 const val DOUBLE_TAP_ANIMATION_DURATION = 160
@@ -48,8 +48,22 @@ const val DOUBLE_TAP_ANIMATION_DURATION = 160
 /** Duration of the animation that brings the content back into its bounds, in milliseconds. */
 const val SETTLE_ANIMATION_DURATION = 200
 
+/**
+ * How far past its vertical bounds the content follows the fingers, as a part of
+ * the height of the viewport.
+ */
+const val CONTENT_OVERSCROLL_FRACTION = 0.15f
+
 private const val SCALE_THRESHOLD = 0.01f
 private const val EDGE_PAN_THRESHOLD = 0.5f
+
+/**
+ * How much pan past the vertical bounds the state keeps, in overscroll distances.
+ *
+ * Dragging further than that stops moving the content at all, which is what makes
+ * the resistance feel like an end of the content and not like a slower drag.
+ */
+private const val OVERSCROLL_SLACK = 4f
 
 private val ZOOM_EASING = FastOutSlowInEasing
 
@@ -62,6 +76,8 @@ private val ZOOM_EASING = FastOutSlowInEasing
  * @param tolerance how far beyond [minScale] and [maxScale] the content follows the fingers.
  * @param doubleTapDuration duration of the zoom of a double tap, in milliseconds.
  * @param settleDuration duration of the return into the bounds, in milliseconds.
+ * @param overscrollFraction how far past its vertical bounds the content follows the
+ * fingers, as a part of the height of the viewport.
  */
 data class ZoomableLimits(
     val minScale: Float = MIN_CONTENT_SCALE,
@@ -69,11 +85,18 @@ data class ZoomableLimits(
     val doubleTapScale: Float = DOUBLE_TAP_CONTENT_SCALE,
     val tolerance: Float = CONTENT_SCALE_TOLERANCE,
     val doubleTapDuration: Int = DOUBLE_TAP_ANIMATION_DURATION,
-    val settleDuration: Int = SETTLE_ANIMATION_DURATION
+    val settleDuration: Int = SETTLE_ANIMATION_DURATION,
+    val overscrollFraction: Float = CONTENT_OVERSCROLL_FRACTION
 )
 
 /**
  * Holds the zoom and the pan of a single piece of content.
+ *
+ * The state knows two sizes: the viewport, reported by [updateContainerSize], and
+ * the content itself, reported by [updateContentSize]. Only the second one tells
+ * how much of the viewport the content really covers, and therefore how far it may
+ * be panned: a wide photo keeps empty bands above and below itself even when it is
+ * zoomed, and there is nothing to show there.
  */
 @Stable
 class ZoomableState(private val limits: ZoomableLimits) {
@@ -81,22 +104,46 @@ class ZoomableState(private val limits: ZoomableLimits) {
     var scale by mutableFloatStateOf(limits.minScale)
         private set
     
-    var offset by mutableStateOf(Offset.Zero)
-        private set
+    /**
+     * Pan the gestures accumulated. It may point past the vertical bounds: that
+     * part is damped by [offset] instead of being cut off, so a content that
+     * cannot move any further still follows the finger a little.
+     */
+    private var rawOffset by mutableStateOf(Offset.Zero)
+    
+    /** Pan the content is drawn with. */
+    val offset: Offset
+        get() = Offset(rawOffset.x, dampOverscroll(rawOffset.y, maxOffset(scale).y))
     
     val isZoomed: Boolean
         get() = scale > limits.minScale + SCALE_THRESHOLD
     
+    private var containerSize by mutableStateOf(Size.Zero)
     private var contentSize by mutableStateOf(Size.Zero)
     private val animationMutex = MutatorMutex()
     
-    fun updateContentSize(size: IntSize) {
-        contentSize = size.toSize()
+    /** Reports the size of the viewport the content is drawn in. */
+    fun updateContainerSize(size: IntSize) {
+        containerSize = size.toSize()
+    }
+    
+    /**
+     * Reports the size the content has on its own. The unit does not matter, only
+     * the ratio of the sides is used, so the size of a bitmap or of a video frame
+     * both work.
+     */
+    fun updateContentSize(size: Size) {
+        contentSize = if (size.isUsable()) size else Size.Zero
     }
     
     /**
      * Applies a transform gesture and returns the part of [pan] that the content
      * could not absorb because it is already at its bounds.
+     *
+     * Horizontally the pan is cut off at the bound, and the rest is handed back to
+     * the caller, which turns it into a page change. Vertically it is kept instead,
+     * damped by [offset]: a swipe of a zoomed content has to move the content a
+     * little and let it spring back, not to close the viewer.
      *
      * A gesture that reports an undefined centroid, a pan or a zoom is ignored:
      * such a value turns the whole transform into a not a number one and hides
@@ -115,30 +162,39 @@ class ZoomableState(private val limits: ZoomableLimits) {
         }
         
         val scaleDelta = if (currentScale == 0f) 1f else newScale / currentScale
-        val anchor = centroid - contentCenter
-        val requestedOffset = anchor - (anchor - offset) * scaleDelta + pan
-        val clampedOffset = clampOffset(requestedOffset, newScale)
+        val anchor = centroid - containerCenter
+        val requestedOffset = anchor - (anchor - rawOffset) * scaleDelta + pan
+        val bounds = maxOffset(newScale)
+        val verticalSlack = bounds.y + overscrollDistance * OVERSCROLL_SLACK
+        val allowedOffset = Offset(
+            x = requestedOffset.x.coerceIn(-bounds.x, bounds.x),
+            y = requestedOffset.y.coerceIn(-verticalSlack, verticalSlack)
+        )
         
         scale = newScale
-        offset = clampedOffset
+        rawOffset = allowedOffset
         
-        return requestedOffset - clampedOffset
+        return requestedOffset - allowedOffset
     }
     
     /**
      * Animates an over zoomed or an over panned content back into its bounds.
+     *
+     * A content that has no room to move vertically comes back to the centre, and
+     * a content that is taller than the viewport comes back to the edge it was
+     * pulled away from.
      */
     suspend fun settle() {
-        if (!scale.isFinite() || !offset.isDefined()) {
+        if (!scale.isFinite() || !rawOffset.isDefined()) {
             scale = limits.minScale
-            offset = Offset.Zero
+            rawOffset = Offset.Zero
             return
         }
         
         val targetScale = scale.coerceIn(limits.minScale, limits.maxScale)
-        val targetOffset = clampOffset(offset, targetScale)
+        val targetOffset = clampOffset(rawOffset, targetScale)
         
-        if (targetScale == scale && targetOffset == offset) {
+        if (targetScale == scale && targetOffset == rawOffset) {
             return
         }
         
@@ -159,9 +215,9 @@ class ZoomableState(private val limits: ZoomableLimits) {
         }
         
         val targetScale = limits.doubleTapScale
-        val anchor = tapPosition - contentCenter
+        val anchor = tapPosition - containerCenter
         val scaleDelta = if (scale == 0f) 1f else targetScale / scale
-        val targetOffset = clampOffset(anchor - (anchor - offset) * scaleDelta, targetScale)
+        val targetOffset = clampOffset(anchor - (anchor - rawOffset) * scaleDelta, targetScale)
         
         animateTo(targetScale, targetOffset, limits.doubleTapDuration)
     }
@@ -169,7 +225,7 @@ class ZoomableState(private val limits: ZoomableLimits) {
     suspend fun reset() {
         animationMutex.mutate {
             scale = limits.minScale
-            offset = Offset.Zero
+            rawOffset = Offset.Zero
         }
     }
     
@@ -177,7 +233,7 @@ class ZoomableState(private val limits: ZoomableLimits) {
         animationMutex.mutate {
             coroutineScope {
                 val scaleAnimation = Animatable(scale)
-                val offsetAnimation = Animatable(offset, Offset.VectorConverter)
+                val offsetAnimation = Animatable(rawOffset, Offset.VectorConverter)
                 val scaleSpec = tween<Float>(durationMillis = duration, easing = ZOOM_EASING)
                 val offsetSpec = tween<Offset>(durationMillis = duration, easing = ZOOM_EASING)
                 
@@ -185,7 +241,7 @@ class ZoomableState(private val limits: ZoomableLimits) {
                     scaleAnimation.animateTo(targetScale, scaleSpec) { scale = value }
                 }
                 launch {
-                    offsetAnimation.animateTo(targetOffset, offsetSpec) { offset = value }
+                    offsetAnimation.animateTo(targetOffset, offsetSpec) { rawOffset = value }
                 }
             }
         }
@@ -202,15 +258,74 @@ class ZoomableState(private val limits: ZoomableLimits) {
         )
     }
     
+    /**
+     * Half of the room the content has to move in, per axis.
+     *
+     * It is zero on an axis the content does not overflow, and a pan along such an
+     * axis only gets the damped movement of [dampOverscroll].
+     */
     private fun maxOffset(scale: Float): Offset {
-        val overflow = (scale - 1f).coerceAtLeast(0f)
+        val content = fittedContentSize
         return Offset(
-            x = contentSize.width * overflow / 2f, y = contentSize.height * overflow / 2f
+            x = ((content.width * scale - containerSize.width) / 2f).coerceAtLeast(0f),
+            y = ((content.height * scale - containerSize.height) / 2f).coerceAtLeast(0f)
         )
     }
     
-    private val contentCenter: Offset
-        get() = Offset(contentSize.width / 2f, contentSize.height / 2f)
+    /**
+     * Damps the part of [value] that is past [bound]: the content keeps following
+     * the finger, but slower and slower, and never gets further than one overscroll
+     * distance away from its bound.
+     */
+    private fun dampOverscroll(value: Float, bound: Float): Float {
+        if (!value.isFinite()) {
+            return 0f
+        }
+        
+        val excess = abs(value) - bound
+        
+        if (excess <= 0f) {
+            return value
+        }
+        
+        val direction = if (value < 0f) -1f else 1f
+        val limit = overscrollDistance
+        
+        if (limit <= 0f) {
+            return direction * bound
+        }
+        
+        return direction * (bound + limit * (1f - 1f / (excess / limit + 1f)))
+    }
+    
+    /**
+     * Size the content covers inside the viewport before the zoom.
+     *
+     * The viewers draw with ContentScale.Fit, so the content keeps the ratio of its
+     * sides and one of them stays shorter than the viewport. Until the size of the
+     * content is known the viewport is used instead, which is the size a content
+     * that fills it exactly would have.
+     */
+    private val fittedContentSize: Size
+        get() {
+            val content = contentSize
+            
+            if (!containerSize.isUsable() || !content.isUsable()) {
+                return containerSize
+            }
+            
+            val fitScale = minOf(
+                containerSize.width / content.width, containerSize.height / content.height
+            )
+            
+            return Size(content.width * fitScale, content.height * fitScale)
+        }
+    
+    private val overscrollDistance: Float
+        get() = containerSize.height * limits.overscrollFraction
+    
+    private val containerCenter: Offset
+        get() = Offset(containerSize.width / 2f, containerSize.height / 2f)
     
     private val minGestureScale: Float
         get() = limits.minScale / limits.tolerance
@@ -228,17 +343,21 @@ fun rememberZoomableState(limits: ZoomableLimits = ZoomableLimits()): ZoomableSt
  * Draws the content with the zoom and the pan of [state].
  */
 fun Modifier.zoomableContent(state: ZoomableState): Modifier = graphicsLayer {
+    val contentOffset = state.offset
+    
     scaleX = state.scale
     scaleY = state.scale
-    translationX = state.offset.x
-    translationY = state.offset.y
+    translationX = contentOffset.x
+    translationY = contentOffset.y
 }
 
 /**
  * Detects the pinch, drag and double tap gestures that zoom and pan [state].
  *
  * Gestures that the content does not use stay unconsumed, so a parent pager keeps
- * receiving the swipes of a content that is not zoomed.
+ * receiving the swipes of a content that is not zoomed. A zoomed content, on the
+ * other hand, consumes them, which is what keeps a vertical swipe from closing
+ * the viewer.
  *
  * @param onTap called for a tap that is not a part of a zoom gesture.
  * @param onPanBeyondEdge called with the horizontal drag amount that a zoomed content
@@ -258,7 +377,7 @@ fun Modifier.zoomableGestures(
     val currentOnPanBeyondEdgeFinished by rememberUpdatedState(onPanBeyondEdgeFinished)
     
     return this
-        .onSizeChanged(state::updateContentSize)
+        .onSizeChanged(state::updateContainerSize)
         .pointerInput(state) {
             detectTapGestures(
                 onTap = { currentOnTap() },
@@ -345,3 +464,6 @@ fun Modifier.zoomableGestures(
 }
 
 private fun Offset.isDefined(): Boolean = x.isFinite() && y.isFinite()
+
+private fun Size.isUsable(): Boolean =
+    width.isFinite() && height.isFinite() && width > 0f && height > 0f

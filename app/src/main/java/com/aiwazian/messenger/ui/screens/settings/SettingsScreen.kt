@@ -13,8 +13,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.Gavel
@@ -85,17 +85,17 @@ fun SettingsScreen() {
                     SectionHeader(stringResource(R.string.settings))
                 }) {
                 SectionItem(
+                    leadingIcon = Icons.Outlined.ColorLens,
+                    headlineText = stringResource(R.string.appearance),
+                    onClick = {
+                        navBackStack.add(AppRoute.SettingsChat)
+                    })
+                
+                SectionItem(
                     leadingIcon = Icons.Rounded.NotificationsNone,
                     headlineText = stringResource(R.string.notifications),
                     onClick = {
                         navBackStack.add(AppRoute.SettingsNotifications)
-                    })
-                
-                SectionItem(
-                    leadingIcon = Icons.Rounded.ChatBubbleOutline,
-                    headlineText = stringResource(R.string.appearance),
-                    onClick = {
-                        navBackStack.add(AppRoute.SettingsChat)
                     })
                 
                 SectionItem(

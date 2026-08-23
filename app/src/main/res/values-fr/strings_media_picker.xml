@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_picker_file">Fichier</string>
+    <string name="media_picker_caption">Ajouter une légende…</string>
+    <string name="media_picker_permission">Autorisez l\'accès aux photos et vidéos</string>
+    <string name="media_picker_permission_action">Autoriser</string>
+    <string name="media_picker_empty">Aucune photo ni vidéo</string>
+    <string name="media_picker_reset_title">Réinitialiser la sélection</string>
+    <string name="media_picker_reset_message">Fermer le menu des pièces jointes ?</string>
+    <string name="media_picker_reset_action">Réinitialiser</string>
+</resources>
