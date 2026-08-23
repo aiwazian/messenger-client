@@ -32,6 +32,8 @@ import javax.inject.Singleton
 @Singleton
 class MessageSendQueue @Inject constructor(
     @param:ApplicationScope private val appScope: CoroutineScope,
+    private val pendingSendStore: PendingSendStore,
+    private val attachmentOutbox: AttachmentOutbox,
     private val sendMessageUseCase: SendMessageUseCase,
     private val sendMessageWithFilesUseCase: SendMessageWithFilesUseCase
 ) {
@@ -85,6 +87,10 @@ class MessageSendQueue @Inject constructor(
         return tempId
     }
     
+    /**
+     * Останавливает отправку и убирает за ней: пока запись о начатой отправке
+     * лежит на диске, [PendingSendResumer] поднимет её при следующем запуске.
+     */
     fun cancel(tempId: Long) {
         jobs.remove(tempId)?.cancel()
         
@@ -92,6 +98,15 @@ class MessageSendQueue @Inject constructor(
         // скоупе приложения, и прервать её может только сам use case.
         sendMessageUseCase.cancel(tempId)
         sendMessageWithFilesUseCase.cancel(tempId)
+        
+        appScope.launch { forget(tempId) }
+    }
+    
+    private suspend fun forget(tempId: Long) {
+        val pending = pendingSendStore.find(tempId)
+        
+        pendingSendStore.forget(tempId)
+        pending?.uris?.forEach { uri -> attachmentOutbox.release(uri) }
     }
     
     private fun enqueue(tempId: Long, block: suspend () -> Unit) {

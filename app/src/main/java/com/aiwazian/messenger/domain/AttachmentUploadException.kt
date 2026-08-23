@@ -24,6 +24,15 @@ sealed class AttachmentUploadException(message: String, cause: Throwable? = null
         AttachmentUploadException("Attachment source $uri is gone", cause)
     
     /**
+     * В источнике нет ни байта: файл повреждён либо запись в него так и не
+     * закончилась. Сервер отклоняет такую загрузку ещё на выдаче формы —
+     * «size must not be less than 1», — и на следующей попытке ответ будет тем
+     * же: размер сам не вырастет.
+     */
+    class Empty(val uri: String) :
+        AttachmentUploadException("Attachment source $uri is empty")
+    
+    /**
      * Файл не проходит по лимиту из подписанной сервером формы. Хранилище
      * отклонит его на любой попытке, поэтому ждать нечего.
      */

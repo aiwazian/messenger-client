@@ -140,6 +140,12 @@ class PendingSendStore @Inject constructor(
         }
     }
     
+    /**
+     * Запись об одной отправке: нужна тем, кто её останавливает — вместе с
+     * записью надо убрать и копии файлов, а их ссылки лежат только в ней.
+     */
+    suspend fun find(tempId: Long): PendingSend? = all().firstOrNull { it.tempId == tempId }
+    
     @Serializable
     private data class Record(
         val tempId: Long,

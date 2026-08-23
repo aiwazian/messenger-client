@@ -7,11 +7,13 @@ package com.aiwazian.messenger.usecase
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.di.ApplicationScope
 import com.aiwazian.messenger.domain.AttachmentUploadException
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReplyPreview
+import com.aiwazian.messenger.domain.SendCancelledException
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.DownloadStatus
@@ -36,6 +38,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import java.io.File
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -57,9 +60,16 @@ import javax.inject.Singleton
  * «отправляется», иначе восклицательный знак мигал бы в чате на каждой
  * неудаче.
  *
+ * Отмена приходит сюда не вызовом, а исчезновением сообщения: «Отменить
+ * отправку» живёт в модели экрана, удаляет локальное сообщение и про этот цикл
+ * ничего не знает. Поэтому перед каждой попыткой сообщение проверяется в базе,
+ * и если его больше нет — цикл останавливается и убирает копии вместе с
+ * записью о начатой отправке. Без этой проверки запросы уходили бы вечно, а
+ * запись поднимала бы отменённую отправку после каждого запуска.
+ *
  * Статус ERROR остаётся ровно для отказов, которые повтор не изменит, — они
  * приходят как [AttachmentUploadException]: файл удалили, перенесли либо
- * отобрали к нему доступ, и файл не проходит по размеру.
+ * отобрали к нему доступ, файл пуст (повреждён), файл не проходит по размеру.
  */
 @Singleton
 class SendMessageWithFilesUseCase @Inject constructor(
@@ -68,6 +78,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
     private val chatRepository: ChatRepository,
     private val userRepository: UserRepository,
     private val fileRepository: FileRepository,
+    private val messageDao: MessageDao,
     private val attachmentOutbox: AttachmentOutbox,
     private val pendingSendStore: PendingSendStore,
     private val uploadManager: UploadManager
@@ -112,14 +123,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
         val sourceUris = uris.mapIndexed { index, uri ->
             attachmentOutbox.keep(uri, "temp_${tempId}_$index")
         }
-        
-        pendingSendStore.remember(
-            tempId = tempId,
-            chatId = chatId,
-            uris = sourceUris,
-            text = text,
-            replyTo = replyTo
-        )
         
         val attachments = uris.mapIndexed { index, uri ->
             var fileName = uri.getFileName(context) ?: "file"
@@ -171,11 +174,21 @@ class SendMessageWithFilesUseCase @Inject constructor(
         
         chatRepository.saveLocalMessage(tempMessage)
         
+        // Запись о начатой отправке появляется после самого сообщения, а не до:
+        // смерть процесса между ними оставила бы запись без сообщения, и досылка
+        // после перезапуска вернула бы в чат то, чего пользователь там не видел.
+        pendingSendStore.remember(
+            tempId = tempId,
+            chatId = chatId,
+            uris = sourceUris,
+            text = text,
+            replyTo = replyTo
+        )
+        
         val uploadResults = mutableListOf<AttachmentInputDto>()
         
         attachments.forEachIndexed { index, attachment ->
             val fileName = attachment.name
-            val fileSize = attachment.size
             val sourceUri = sourceUris[index]
             val mimeType = sourceUri.getFileType(context)
             
@@ -185,8 +198,22 @@ class SendMessageWithFilesUseCase @Inject constructor(
             
             val uploadedFileId = RetryPolicy.retryForever(
                 operation = "upload#$tempId/${attachment.fileId}",
-                isPermanent = { it is AttachmentUploadException }
+                isPermanent = { it is AttachmentUploadException || it is SendCancelledException }
             ) {
+                if (isCancelled(tempId)) {
+                    return@retryForever Result.failure<String>(SendCancelledException(tempId))
+                }
+                
+                // Размер спрашиваем заново на каждой попытке: у повреждённого
+                // файла он нулевой, и сервер отказывает ещё на выдаче формы.
+                val fileSize = sizeOf(sourceUri)
+                
+                if (fileSize <= 0) {
+                    return@retryForever Result.failure<String>(
+                        AttachmentUploadException.Empty(sourceUri.toString())
+                    )
+                }
+                
                 val initResponse = chatRepository.initFileUpload(
                     chatId, FileInitRequestDto(
                         name = fileName,
@@ -221,8 +248,14 @@ class SendMessageWithFilesUseCase @Inject constructor(
             }.getOrElse { error ->
                 // Сюда попадаем только на безнадёжном отказе: обрывы сети и
                 // просроченные формы отправка переживает сама.
-                Log.e(TAG, "Upload of $fileName rejected for good", error)
                 giveUp(tempId, sourceUris)
+                
+                if (error is SendCancelledException) {
+                    Log.i(TAG, "Upload of $fileName dropped: send #$tempId is cancelled")
+                    return Result.failure(error)
+                }
+                
+                Log.e(TAG, "Upload of $fileName rejected for good", error)
                 fileRepository.updateFileStatus(localFileId, DownloadStatus.FAILED)
                 chatRepository.updateMessageStatus(tempId, MessageStatus.ERROR)
                 return Result.failure(error)
@@ -236,7 +269,14 @@ class SendMessageWithFilesUseCase @Inject constructor(
             )
         }
         
-        val result = RetryPolicy.retryForever("confirmUpload#$tempId") {
+        val result = RetryPolicy.retryForever(
+            operation = "confirmUpload#$tempId",
+            isPermanent = { it is AttachmentUploadException || it is SendCancelledException }
+        ) {
+            if (isCancelled(tempId)) {
+                return@retryForever Result.failure<Message>(SendCancelledException(tempId))
+            }
+            
             val attempt = chatRepository.confirmFileUpload(
                 chatId,
                 uploadResults,
@@ -263,13 +303,44 @@ class SendMessageWithFilesUseCase @Inject constructor(
             if (localChat == null) {
                 chatRepository.fetchChatByIdFromServer(chatId)
             }
-        }.onFailure {
-            Log.e(TAG, "Confirmation failed", it)
+        }.onFailure { error ->
             giveUp(tempId, sourceUris)
-            chatRepository.updateMessageStatus(tempId, MessageStatus.ERROR)
+            
+            if (error is SendCancelledException) {
+                Log.i(TAG, "Confirmation of #$tempId dropped: send is cancelled")
+            } else {
+                Log.e(TAG, "Confirmation failed", error)
+                chatRepository.updateMessageStatus(tempId, MessageStatus.ERROR)
+            }
         }
         
         return result
+    }
+    
+    /**
+     * Отправку отменили: кнопка удаляет локальное сообщение, и это единственный
+     * след, который доходит до скоупа приложения.
+     *
+     * Сбой чтения базы считаем за «сообщение на месте»: оборвать из-за него
+     * живую отправку хуже, чем сделать лишнюю попытку.
+     */
+    private suspend fun isCancelled(tempId: Long): Boolean = try {
+        messageDao.getMessageById(tempId) == null
+    } catch (e: Exception) {
+        Log.e(TAG, "Unable to check message #$tempId", e)
+        false
+    }
+    
+    /**
+     * Размер файла на диске. У своей копии он читается напрямую: спрашивать
+     * размер file://-ссылки у ContentResolver незачем.
+     */
+    private fun sizeOf(uri: Uri): Long {
+        if (uri.scheme == SCHEME_FILE) {
+            return uri.path?.let { File(it).length() } ?: 0
+        }
+        
+        return uri.getFileSize(context) ?: 0
     }
     
     /**
@@ -289,5 +360,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
     
     private companion object {
         const val TAG = "SendMessageWithFiles"
+        const val SCHEME_FILE = "file"
     }
 }
