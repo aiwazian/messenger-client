@@ -10,7 +10,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -22,7 +21,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -77,7 +75,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -94,6 +91,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import coil.decode.BitmapFactoryDecoder
+import coil.decode.VideoFrameDecoder
 import coil.request.ImageRequest
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.DeviceMediaItem
@@ -219,7 +218,6 @@ fun MediaPickerBottomSheet(
                             MediaGridItem(
                                 item = item,
                                 number = uiState.selected.indexOf(item.uri) + 1,
-                                loadThumbnail = { uri -> viewModel.thumbnail(uri) },
                                 onClick = { previewIndex = index },
                                 onToggleSelection = { viewModel.toggleSelection(item.uri) })
                         }
@@ -349,11 +347,7 @@ internal fun MediaSelectionBadge(
 
 @Composable
 private fun MediaGridItem(
-    item: DeviceMediaItem,
-    number: Int,
-    loadThumbnail: suspend (Uri) -> Bitmap?,
-    onClick: () -> Unit,
-    onToggleSelection: () -> Unit
+    item: DeviceMediaItem, number: Int, onClick: () -> Unit, onToggleSelection: () -> Unit
 ) {
     val context = LocalContext.current
     
@@ -376,24 +370,38 @@ private fun MediaGridItem(
                 .clip(MaterialTheme.shapes.small)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
         ) {
+            /*
+             * Кадр видео достаёт coil-video, а картинкам и GIF намеренно ставится
+             * обычный декодер: в сетке гифка должна стоять неподвижно, анимация
+             * включается только в предпросмотре во весь экран.
+             *
+             * Раньше миниатюры приходили готовыми битмапами из MediaStore, и у
+             * каждой ячейки была своя корутина: при прокрутке кадр декодировался
+             * заново, а у файлов без готовой миниатюры ячейка оставалась пустой.
+             */
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(item.uri)
+                    .decoderFactory(
+                        if (item.isVideo) {
+                            VideoFrameDecoder.Factory()
+                        } else {
+                            BitmapFactoryDecoder.Factory()
+                        }
+                    )
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+            
             if (item.isVideo || item.isGif) {
-                MediaThumbnail(item = item, loadThumbnail = loadThumbnail)
-                
                 MediaGridLabel(
                     text = if (item.isGif) GIF_LABEL else formatDuration(item.durationMs),
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(4.dp)
-                )
-            } else {
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(item.uri)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
                 )
             }
         }
@@ -402,28 +410,6 @@ private fun MediaGridItem(
             number = number, modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(4.dp), onClick = onToggleSelection
-        )
-    }
-}
-
-@Composable
-private fun MediaThumbnail(
-    item: DeviceMediaItem, loadThumbnail: suspend (Uri) -> Bitmap?
-) {
-    var bitmap by remember(item.uri) { mutableStateOf<Bitmap?>(null) }
-    
-    LaunchedEffect(item.uri) {
-        bitmap = loadThumbnail(item.uri)
-    }
-    
-    val thumbnail = bitmap
-    
-    if (thumbnail != null) {
-        Image(
-            bitmap = thumbnail.asImageBitmap(),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
         )
     }
 }

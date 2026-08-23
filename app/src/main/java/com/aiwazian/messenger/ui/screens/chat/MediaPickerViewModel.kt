@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.chat
 
-import android.graphics.Bitmap
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -36,6 +35,8 @@ data class MediaPickerUiState(
  * Подпись здесь больше не хранится — это черновик чата из ChatViewModel. Своя
  * подпись означала бы два разных текста: набранный в поле ввода пропадал бы
  * при открытии шторки, а набранный в шторке — при её закрытии.
+ *
+ * Миниатюр здесь тоже нет: кадры для сетки рисует Coil прямо в ячейке.
  */
 @HiltViewModel
 class MediaPickerViewModel @Inject constructor(
@@ -73,9 +74,6 @@ class MediaPickerViewModel @Inject constructor(
             state.copy(selected = selected)
         }
     }
-    
-    /** Кадр для видео и GIF: в сетке они стоят неподвижно. */
-    suspend fun thumbnail(uri: Uri): Bitmap? = deviceMediaRepository.getThumbnail(uri)
     
     fun send(chatId: Long, replyTo: MessageReplyPreview?, caption: String) {
         val selected = _uiState.value.selected

@@ -6,10 +6,7 @@ package com.aiwazian.messenger.repository
 
 import android.content.ContentUris
 import android.content.Context
-import android.graphics.Bitmap
-import android.net.Uri
 import android.provider.MediaStore
-import android.util.Size
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +22,11 @@ import javax.inject.Singleton
  *
  * GIF для MediaStore — обычная картинка, поэтому он приходит той же выборкой,
  * что и фото, и отличается только типом файла.
+ *
+ * Миниатюры репозиторий не отдаёт: кадр видео и первый кадр GIF рисует Coil в
+ * самой ячейке. Раньше здесь был loadThumbnail из MediaStore, но у него нет ни
+ * кэша между прокрутками, ни отмены загрузки уехавшей ячейки, а файлам без
+ * готовой миниатюры он возвращал пустоту.
  */
 @Singleton
 class DeviceMediaRepository @Inject constructor(
@@ -90,22 +92,8 @@ class DeviceMediaRepository @Inject constructor(
             media
         }
     
-    /**
-     * Кадр для превью видео и GIF.
-     *
-     * Coil без coil-video кадр видео не достанет, а GIF он проигрывал бы прямо
-     * в сетке. MediaStore на оба случая отдаёт готовую неподвижную миниатюру.
-     */
-    suspend fun getThumbnail(uri: Uri, size: Int = THUMBNAIL_SIZE): Bitmap? =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                context.contentResolver.loadThumbnail(uri, Size(size, size), null)
-            }.getOrNull()
-        }
-    
     private companion object {
         const val DEFAULT_LIMIT = 500
-        const val THUMBNAIL_SIZE = 300
         const val GIF_MIME_TYPE = "image/gif"
     }
 }
