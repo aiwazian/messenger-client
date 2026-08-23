@@ -54,6 +54,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldDecorator
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
@@ -76,6 +80,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -93,10 +98,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -260,24 +263,26 @@ private fun InputMessage(
     val mediaPickerViewModel: MediaPickerViewModel = hiltViewModel()
     
     /*
-     * Текст сообщения живёт во ViewModel, позиция курсора — здесь.
-     * Значение поля подтягиваем только когда текст пришёл снаружи: черновик,
-     * правка сообщения, очистка после отправки. На своих же изменениях курсор
-     * иначе прыгал бы в конец при наборе в середине строки.
+     * Текст сообщения живёт во ViewModel, а набор и курсор — в TextFieldState.
+     * Поле само хранит и правит свой текст, поэтому onValueChange здесь больше
+     * нет: правки уезжают во ViewModel потоком, а курсор поле ведёт само.
      */
-    var textFieldValue by remember {
-        mutableStateOf(
-            TextFieldValue(
-                text = uiState.messageText, selection = TextRange(uiState.messageText.length)
-            )
-        )
+    val textFieldState = rememberTextFieldState(initialText = uiState.messageText)
+    
+    LaunchedEffect(textFieldState, chatViewModel) {
+        snapshotFlow { textFieldState.text.toString() }.collect { text ->
+            chatViewModel.changeText(text)
+        }
     }
     
+    /*
+     * Внутрь забираем только текст, пришедший не от пользователя: черновик,
+     * правка сообщения, очистка после отправки. Своё же значение обратно не
+     * кладём — курсор иначе прыгал бы в конец при наборе в середине строки.
+     */
     LaunchedEffect(uiState.messageText) {
-        if (uiState.messageText != textFieldValue.text) {
-            textFieldValue = TextFieldValue(
-                text = uiState.messageText, selection = TextRange(uiState.messageText.length)
-            )
+        if (uiState.messageText != textFieldState.text.toString()) {
+            textFieldState.setTextAndPlaceCursorAtEnd(uiState.messageText)
         }
     }
     
@@ -285,9 +290,7 @@ private fun InputMessage(
     LaunchedEffect(uiState.editingMessageId) {
         if (uiState.editingMessageId == null) return@LaunchedEffect
         
-        textFieldValue = TextFieldValue(
-            text = uiState.messageText, selection = TextRange(uiState.messageText.length)
-        )
+        textFieldState.setTextAndPlaceCursorAtEnd(uiState.messageText)
         focusRequester.requestFocus()
     }
     
@@ -423,14 +426,7 @@ private fun InputMessage(
                     )
                     
                     BasicTextField(
-                        value = textFieldValue,
-                        onValueChange = { newValue ->
-                            textFieldValue = newValue
-                            
-                            if (newValue.text != uiState.messageText) {
-                                chatViewModel.changeText(newValue.text)
-                            }
-                        },
+                        state = textFieldState,
                         modifier = Modifier
                             .fillMaxWidth()
                             .alpha(textFieldAlpha)
@@ -454,15 +450,20 @@ private fun InputMessage(
                             color = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 16.sp
                         ),
-                        maxLines = 5,
-                        minLines = 1,
-                        decorationBox = { innerTextField ->
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences
+                        ),
+                        lineLimits = TextFieldLineLimits.MultiLine(
+                            minHeightInLines = 1, maxHeightInLines = 5
+                        ),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        decorator = TextFieldDecorator { innerTextField ->
                             Box(
                                 modifier = Modifier.padding(
                                     vertical = 12.dp, horizontal = 14.dp
                                 )
                             ) {
-                                if (textFieldValue.text.isEmpty() && !uiState.isRecording) {
+                                if (textFieldState.text.isEmpty() && !uiState.isRecording) {
                                     Text(
                                         text = stringResource(R.string.message),
                                         style = MaterialTheme.typography.bodyLarge.copy(
@@ -473,12 +474,7 @@ private fun InputMessage(
                                 }
                                 innerTextField()
                             }
-                        },
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Sentences
-                        )
-                    )
+                        })
                     
                     VoiceRecordingStatus(
                         uiState = uiState,
