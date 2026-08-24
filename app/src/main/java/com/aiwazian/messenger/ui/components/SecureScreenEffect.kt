@@ -4,14 +4,12 @@
 
 package com.aiwazian.messenger.ui.components
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import android.view.Window
 import android.view.WindowManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalView
+import com.aiwazian.messenger.extensions.findActivity
 
 @Composable
 fun SecureScreenEffect(enabled: Boolean) {
@@ -49,13 +47,4 @@ private object SecureScreenFlag {
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
     }
-}
-
-private fun Context.findActivity(): Activity? {
-    var current: Context? = this
-    while (current is ContextWrapper) {
-        if (current is Activity) return current
-        current = current.baseContext
-    }
-    return null
 }
