@@ -44,15 +44,22 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.ui.components.animatedBackgroundAlpha
+import com.aiwazian.messenger.ui.components.animatedOffsetY
 import com.aiwazian.messenger.ui.components.dismissDragGestures
-import com.aiwazian.messenger.ui.components.dismissDragOffset
+import com.aiwazian.messenger.ui.components.mediaHeroBackground
+import com.aiwazian.messenger.ui.components.mediaHeroContainer
+import com.aiwazian.messenger.ui.components.mediaHeroContent
+import com.aiwazian.messenger.ui.components.pickerMediaKey
 import com.aiwazian.messenger.ui.components.rememberDismissDragState
+import com.aiwazian.messenger.ui.components.rememberMediaHeroState
 
 /**
  * Предпросмотр галереи во весь экран.
  *
  * Это отдельное окно, а не оверлей: шторка вложений живёт в своём окне, и
- * растянуть внутри неё что-то на весь экран нельзя.
+ * растянуть внутри неё что-то на весь экран нельзя. По той же причине переход
+ * из миниатюры считается по экранным границам: штатный shared element рисует
+ * оверлей только внутри своего окна и через границу окон не работает.
  *
  * Своё окно по умолчанию укладывается между системными панелями, поэтому его просят
  * этого не делать: иначе картинка обрывалась бы под панелью уведомлений, а не
@@ -74,8 +81,25 @@ fun MediaPickerPreview(
     onToggleSelection: (DeviceMediaItem) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val pagerState = rememberPagerState(
+        initialPage = initialIndex.coerceIn(0, (media.size - 1).coerceAtLeast(0)),
+        pageCount = { media.size })
+    
+    val dismissDragState = rememberDismissDragState()
+    val backgroundAlpha = dismissDragState.animatedBackgroundAlpha()
+    
+    /*
+     * Переход создаётся до окна: его же спрашивает само окно, когда его закрывают
+     * кнопкой «name», и ответить надо раньше, чем окно успеет исчезнуть.
+     */
+    val hero = rememberMediaHeroState(
+        originKey = media.getOrNull(pagerState.currentPage)?.let { pickerMediaKey(it.uri) },
+        dragOffsetY = dismissDragState.animatedOffsetY(),
+        onDismissed = onDismiss
+    )
+    
     Dialog(
-        onDismissRequest = onDismiss, properties = DialogProperties(
+        onDismissRequest = hero::dismiss, properties = DialogProperties(
             usePlatformDefaultWidth = false, decorFitsSystemWindows = false
         )
     ) {
@@ -122,18 +146,12 @@ fun MediaPickerPreview(
             }
         }
         
-        val pagerState = rememberPagerState(
-            initialPage = initialIndex.coerceIn(0, (media.size - 1).coerceAtLeast(0)),
-            pageCount = { media.size })
-        
-        val dismissDragState = rememberDismissDragState()
-        val backgroundAlpha = dismissDragState.animatedBackgroundAlpha()
-        
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = backgroundAlpha))
+                .mediaHeroBackground(hero, MaterialTheme.colorScheme.surface) { backgroundAlpha }
                 .navigationBarsPadding()
+                .mediaHeroContainer(hero)
         ) {
             HorizontalPager(
                 state = pagerState, modifier = Modifier
@@ -141,9 +159,9 @@ fun MediaPickerPreview(
                     .dismissDragGestures(
                         state = dismissDragState,
                         onTap = { isUiVisible = !isUiVisible },
-                        onDismiss = onDismiss
+                        onDismiss = hero::dismiss
                     )
-                    .dismissDragOffset(dismissDragState)) { page ->
+                    .mediaHeroContent(hero)) { page ->
                 val item = media[page]
                 
                 ZoomableMediaPage(
@@ -157,7 +175,7 @@ fun MediaPickerPreview(
             }
             
             AnimatedVisibility(
-                visible = !dismissDragState.isDragging && isUiVisible,
+                visible = !dismissDragState.isDragging && isUiVisible && hero.isSettled,
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopCenter),
@@ -169,7 +187,7 @@ fun MediaPickerPreview(
                 TopAppBar(
                     title = {}, navigationIcon = {
                         IconButton(
-                            onClick = onDismiss, colors = IconButtonDefaults.iconButtonColors(
+                            onClick = hero::dismiss, colors = IconButtonDefaults.iconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainer
                             )
                         ) {
