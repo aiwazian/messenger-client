@@ -12,7 +12,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
-import com.aiwazian.messenger.ui.components.mediaTransitionOrigin
 import com.aiwazian.messenger.ui.components.navigation.LocalSharedTransitionScope
 
 /**
@@ -21,11 +20,6 @@ import com.aiwazian.messenger.ui.components.navigation.LocalSharedTransitionScop
  * Оба composable, которые должны быть «shared», обязаны использовать одинаковый [key].
  * Используй [sharedElement] когда контент на обоих экранах визуально идентичен
  * (например, одна и та же картинка).
- *
- * Помимо штатного перехода между экранами здесь запоминаются экранные границы
- * элемента. Они нужны там, где штатный переход бессилен: полноэкранный
- * просмотр и шторка вложений открываются в своих окнах, а оверлей shared element
- * рисуется только внутри своего окна.
  *
  * @param key уникальный ключ, связывающий элементы на двух экранах
  * @param zIndexInOverlay z-порядок элемента в оверлее во время перехода
@@ -39,14 +33,12 @@ fun Modifier.sharedElement(
     val sharedTransitionScope = LocalSharedTransitionScope.current
     val animatedContentScope = LocalNavAnimatedContentScope.current
     return with(sharedTransitionScope) {
-        this@sharedElement
-            .mediaTransitionOrigin(key.toString())
-            .sharedElement(
-                sharedContentState = rememberSharedContentState(key = key),
-                animatedVisibilityScope = animatedContentScope,
-                zIndexInOverlay = zIndexInOverlay,
-                placeholderSize = placeHolderSize
-            )
+        this@sharedElement.sharedElement(
+            sharedContentState = rememberSharedContentState(key = key),
+            animatedVisibilityScope = animatedContentScope,
+            zIndexInOverlay = zIndexInOverlay,
+            placeholderSize = placeHolderSize
+        )
     }
 }
 
