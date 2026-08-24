@@ -99,7 +99,8 @@ import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDialog
-import com.aiwazian.messenger.ui.components.mediaTransitionOrigin
+import com.aiwazian.messenger.ui.components.mediaTransitionBounds
+import com.aiwazian.messenger.ui.components.mediaTransitionVisibility
 import com.aiwazian.messenger.ui.components.pickerMediaKey
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import kotlinx.coroutines.launch
@@ -352,15 +353,22 @@ private fun MediaGridItem(
     item: DeviceMediaItem, number: Int, onClick: () -> Unit, onToggleSelection: () -> Unit
 ) {
     val context = LocalContext.current
+    val key = pickerMediaKey(item.uri)
     
     val scale by animateFloatAsState(
         targetValue = if (number > 0) SELECTED_SCALE else 1f, label = "media_item_scale"
     )
     
+    /*
+     * Пока медиа открыто в предпросмотре, ячейка пустеет целиком — вместе с
+     * подложкой и номером выбора. На полпути свайпа фон прозрачен, и любой
+     * остаток ячейки читался бы как второй экземпляр поднятого кадра.
+     */
     Box(
         modifier = Modifier
             .aspectRatio(1f)
             .clickable(onClick = onClick)
+            .mediaTransitionVisibility(key)
     ) {
         Box(
             modifier = Modifier
@@ -375,7 +383,7 @@ private fun MediaGridItem(
                  * Сообщается уменьшенная рамка выбранного медиа, а не исходная ячейка:
                  * предпросмотр должен возвращаться ровно туда, где миниатюра видна.
                  */
-                .mediaTransitionOrigin(pickerMediaKey(item.uri))
+                .mediaTransitionBounds(key)
         ) {
             /*
              * Кадр видео достаёт coil-video, а картинкам и GIF намеренно ставится
