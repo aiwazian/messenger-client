@@ -201,7 +201,7 @@ fun FullScreenViewer(
                     isCurrentPage = isCurrentPage,
                     pagerState = pagerState,
                     onTap = { isUiVisible = !isUiVisible },
-                    isVideoUiVisible = !dismissDragState.isDragging && isUiVisible,
+                    isVideoUiVisible = !dismissDragState.isDragging && isUiVisible && hero.isSettled,
                     isVideoLooping = isVideoLooping,
                     videoPlaybackSpeed = videoPlaybackSpeed,
                     onVideoPlayingChanged = { playing ->
@@ -210,7 +210,8 @@ fun FullScreenViewer(
                     onShowVideoUiRequest = {
                         isUiVisible = true
                         lastInteractionTime = System.currentTimeMillis()
-                    })
+                    },
+                    onHeroContentSizeChanged = hero::updateContentSize)
             }
         }
         AnimatedVisibility(
