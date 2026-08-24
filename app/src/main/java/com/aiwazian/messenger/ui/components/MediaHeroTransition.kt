@@ -66,11 +66,16 @@ private val CLOSE_SPEC: AnimationSpec<Float> =
  * Миниатюра забывается, как только уходит из композиции. Именно так переход
  * узнаёт, что возвращаться некуда: улетевшего за пределы экрана элемента списка
  * больше нет.
+ *
+ * Здесь же отмечается, какие миниатюры сейчас прятать: пока содержимое поднято
+ * на весь экран, второй его копии в списке быть не должно.
  */
 @Stable
 class MediaOriginRegistry {
     
     private val bounds = mutableStateMapOf<String, Rect>()
+    
+    private val hidden = mutableStateMapOf<String, Int>()
     
     fun report(key: String, rect: Rect) {
         bounds[key] = rect
@@ -81,6 +86,28 @@ class MediaOriginRegistry {
     }
     
     fun boundsOf(key: String?): Rect? = key?.let { bounds[it] }
+    
+    /**
+     * Просит спрятать миниатюру [key] до парного [show].
+     *
+     * Счётчик, а не флаг: одно и то же вложение может встретиться в переписке
+     * дважды, и вернуть миниатюру вправе только последний отпустивший.
+     */
+    internal fun hide(key: String) {
+        hidden[key] = (hidden[key] ?: 0) + 1
+    }
+    
+    internal fun show(key: String) {
+        val rest = (hidden[key] ?: 0) - 1
+        
+        if (rest > 0) {
+            hidden[key] = rest
+        } else {
+            hidden.remove(key)
+        }
+    }
+    
+    internal fun isHidden(key: String): Boolean = hidden.containsKey(key)
 }
 
 private val GlobalMediaOriginRegistry = MediaOriginRegistry()
@@ -99,9 +126,21 @@ fun chatMediaKey(uri: Uri): String = uri.toString()
  */
 fun pickerMediaKey(uri: Uri): String = "picker:$uri"
 
+/**
+ * Запоминает, где на экране лежит миниатюра [key], и прячет её на время просмотра.
+ *
+ * Годится там, где миниатюра и есть весь элемент. Когда прятать нужно больше,
+ * чем измерять, — например, всю ячейку сетки, а границы брать по уменьшенной
+ * рамке внутри неё — берутся отдельные [mediaTransitionBounds] и
+ * [mediaTransitionVisibility].
+ */
+@Composable
+fun Modifier.mediaTransitionOrigin(key: String): Modifier =
+    this.mediaTransitionBounds(key).mediaTransitionVisibility(key)
+
 /** Запоминает, где на экране лежит миниатюра [key], пока она видна. */
 @Composable
-fun Modifier.mediaTransitionOrigin(key: String): Modifier {
+fun Modifier.mediaTransitionBounds(key: String): Modifier {
     val registry = LocalMediaOriginRegistry.current
     val view = LocalView.current
     
@@ -111,6 +150,24 @@ fun Modifier.mediaTransitionOrigin(key: String): Modifier {
     
     return this.onGloballyPositioned { coordinates ->
         registry.report(key, coordinates.boundsOnScreen(view))
+    }
+}
+
+/**
+ * Прячет содержимое, пока медиа [key] показывают во весь экран.
+ *
+ * Пропускается только отрисовка. Разметка остаётся на месте: спрятанная
+ * миниатюра обязана и дальше сообщать свои границы, иначе возвращаться будет
+ * некуда, и содержимое уедет за край экрана вместо неё.
+ */
+@Composable
+fun Modifier.mediaTransitionVisibility(key: String): Modifier {
+    val registry = LocalMediaOriginRegistry.current
+    
+    return this.drawWithContent {
+        if (!registry.isHidden(key)) {
+            drawContent()
+        }
     }
 }
 
@@ -181,6 +238,16 @@ class MediaHeroState internal constructor(
     /** Просмотрщик стоит на месте: ни открывается, ни закрывается. */
     val isSettled: Boolean
         get() = !isOpening && !isClosing
+    
+    /**
+     * Просмотрщик разметил себя и знает, куда рисовать содержимое.
+     *
+     * До этого момента прятать миниатюру рано: предпросмотр галереи живёт в
+     * своём окне, и опустевшая ячейка успела бы мигнуть раньше первого кадра
+     * перехода.
+     */
+    internal val isReady: Boolean
+        get() = !container.isEmpty
     
     /** Насколько фон просмотрщика уже проявился: от нуля до единицы. */
     val backgroundFraction: Float
@@ -300,8 +367,14 @@ class MediaHeroState internal constructor(
 /**
  * Создаёт переход и сразу разворачивает содержимое из миниатюры [originKey].
  *
+ * Пока просмотрщик на экране, миниатюра [originKey] спрятана: иначе рядом с
+ * поднятым содержимым остаётся его копия, и переход выглядит подменой, а не
+ * переносом. Возвращается миниатюра только вместе с уходом просмотрщика из
+ * композиции, то есть уже после доигравшей анимации.
+ *
  * @param originKey миниатюра того, что показано сейчас, а не того, с чего начали:
- * после перелистывания возвращаться надо в соседнюю миниатюру.
+ * после перелистывания возвращаться надо в соседнюю миниатюру, а предыдущая
+ * должна снова проявиться.
  * @param dragOffsetY текущее смещение от вертикального свайпа.
  * @param onDismissed вызывается, когда просмотрщик уже можно убирать с экрана.
  */
@@ -324,6 +397,14 @@ fun rememberMediaHeroState(
     state.originKey = originKey
     state.dragOffsetY = dragOffsetY
     state.onDismissed = { currentOnDismissed() }
+    
+    val hiddenKey = originKey.takeIf { state.isReady }
+    
+    DisposableEffect(registry, hiddenKey) {
+        hiddenKey?.let(registry::hide)
+        
+        onDispose { hiddenKey?.let(registry::show) }
+    }
     
     LaunchedEffect(state) { state.open() }
     
