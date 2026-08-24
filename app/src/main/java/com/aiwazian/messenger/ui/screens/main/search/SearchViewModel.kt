@@ -30,7 +30,7 @@ class SearchViewModel @Inject constructor(
     private val PAGE_SIZE = 20
     
     fun onQueryChange(newQuery: String) {
-        _uiState.update { it.copy(query = newQuery) }
+        _uiState.update { it.copy(query = newQuery.normalizeSearchQuery()) }
         resetAndSearch()
     }
     
@@ -76,3 +76,13 @@ class SearchViewModel @Inject constructor(
         }
     }
 }
+
+/**
+ * Собачка в начале отбрасывается: username копируют из профиля или
+ * ссылки вместе с ней, а сервер ищет по чистому имени, и «@olega» не
+ * находил ничего. Внутри строки символ осмысленный и остаётся как есть.
+ *
+ * Пробелы снимаются с двух сторон и после собачки: клавиатура любит
+ * добавлять пробел к подсказке, а вставляют и «@ olega».
+ */
+private fun String.normalizeSearchQuery(): String = trim().trimStart('@').trim()

@@ -9,7 +9,7 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.navigation.AppNavDisplay
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.theme.ApplicationTheme
@@ -46,12 +47,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        /*
-         * Сессия может закончиться в любой момент: её отключили с другого
-         * устройства или сервер перестал принимать токен. Пока на устройстве
-         * остаётся другой аккаунт, приложение просто перезапускается под ним, и
-         * экран авторизации не показывается.
-         */
         SessionManager.setSessionEndCallback { resolution ->
             when (resolution) {
                 is SessionEndResolution.SwitchedToAccount -> restartWithNextAccount()
@@ -75,11 +70,6 @@ class MainActivity : AppCompatActivity() {
         
         enableEdgeToEdge()
         
-        /*
-         * Проверка обновления привязана к жизненному циклу активити и создаётся
-         * здесь, а не выше: пользователю без сессии показывается экран входа, и
-         * дёргать Play в этот момент незачем.
-         */
         inAppUpdateManager = InAppUpdateManager(this) {
             isUpdateReadyToInstall = true
         }
@@ -140,10 +130,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    /**
-     * Перезапуск под новым аккаунтом: экраны и view-модели прошлого аккаунта
-     * держат его данные, поэтому задача пересобирается с нуля.
-     */
     private fun restartWithNextAccount() {
         restartTask(MainActivity::class.java)
     }
@@ -152,10 +138,6 @@ class MainActivity : AppCompatActivity() {
         restartTask(AuthActivity::class.java)
     }
     
-    /**
-     * Решение о завершении сессии приходит из фонового потока, а работать с
-     * активити можно только на главном.
-     */
     private fun restartTask(target: Class<*>) {
         runOnUiThread {
             val intent = Intent(
@@ -170,28 +152,25 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-/**
- * Обновление скачано, но ставится только после перезапуска. Диалог закрывается
- * кнопкой «Позже» — приложение продолжает работать на старой версии, а пакет
- * дождётся следующего раза.
- */
 @Composable
 private fun UpdateReadyDialog(
     onRestart: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    AppDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.update_downloaded_title)) },
-        text = { Text(stringResource(R.string.update_downloaded_message)) },
-        confirmButton = {
-            TextButton(onClick = onRestart) {
-                Text(stringResource(R.string.update_restart))
-            }
+        title = stringResource(R.string.update_downloaded_title),
+        content = {
+            Text(stringResource(R.string.update_downloaded_message))
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.update_later))
+        buttons = {
+            Row {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.update_later))
+                }
+                TextButton(onClick = onRestart) {
+                    Text(stringResource(R.string.update_restart))
+                }
             }
         }
     )

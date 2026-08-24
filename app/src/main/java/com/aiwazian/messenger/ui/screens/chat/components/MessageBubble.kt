@@ -81,7 +81,9 @@ import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.ChatAvatar
+import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.formatDuration
+import com.aiwazian.messenger.ui.components.mediaTransitionOrigin
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
 import com.aiwazian.messenger.utils.UiText
@@ -687,7 +689,16 @@ private fun Placeable.PlacementScope.placeGrid(
 private fun VideoThumbnail(videoUri: Uri, onClick: () -> Unit) {
     val context = LocalContext.current
     
-    Box(Modifier.clickable(onClick = onClick)) {
+    /*
+     * Миниатюра гаснет целиком, вместе с подписью, пока это же видео открыто во
+     * весь экран: рядом с поднятым кадром его копия читается как подмена, а не
+     * как перенос. Место в сетке при этом остаётся — в него и возвращаемся.
+     */
+    Box(
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .mediaTransitionOrigin(chatMediaKey(videoUri))
+    ) {
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data(videoUri)
@@ -723,7 +734,12 @@ private fun VideoThumbnail(videoUri: Uri, onClick: () -> Unit) {
 private fun ImageThumbnail(imageUri: Uri, isGif: Boolean, onClick: () -> Unit) {
     val context = LocalContext.current
     
-    Box(Modifier.clickable(onClick = onClick)) {
+    /* Гаснет вся миниатюра вместе с пометкой GIF: причины в [VideoThumbnail]. */
+    Box(
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .mediaTransitionOrigin(chatMediaKey(imageUri))
+    ) {
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data(imageUri)

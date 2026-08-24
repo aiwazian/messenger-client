@@ -162,17 +162,33 @@ fun Modifier.dismissDragGestures(
 }
 
 /**
+ * Смещение, с которым сейчас надо рисовать содержимое: сразу за пальцем во
+ * время свайпа и плавно обратно, когда свайпа не хватило.
+ *
+ * Просмотрщикам, которые закрываются переходом в миниатюру, смещение нужно
+ * числом: оно входит в расчёт границ, из которых стартует уменьшение. Отдельный
+ * слой отрисовки такой переход только сломал бы, сдвинув уже уменьшенное
+ * содержимое ещё раз.
+ */
+@Composable
+fun DismissDragState.animatedOffsetY(): Float {
+    val animatedOffsetY by animateFloatAsState(
+        targetValue = offsetY, animationSpec = if (isDragging) snap()
+        else spring(
+            dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium
+        ), label = "dismissDragOffsetY"
+    )
+    
+    return animatedOffsetY
+}
+
+/**
  * Смещает содержимое туда, куда его увёл свайп, и плавно возвращает на место, когда
  * свайпа не хватило.
  */
 @Composable
 fun Modifier.dismissDragOffset(state: DismissDragState): Modifier {
-    val animatedOffsetY by animateFloatAsState(
-        targetValue = state.offsetY, animationSpec = if (state.isDragging) snap()
-        else spring(
-            dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium
-        ), label = "dismissDragOffsetY"
-    )
+    val animatedOffsetY = state.animatedOffsetY()
     
     return this.graphicsLayer { translationY = animatedOffsetY }
 }
