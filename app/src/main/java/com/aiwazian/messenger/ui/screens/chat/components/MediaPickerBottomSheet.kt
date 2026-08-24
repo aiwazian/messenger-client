@@ -5,9 +5,7 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.Manifest
-import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -97,6 +95,7 @@ import coil.request.ImageRequest
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.domain.MessageReplyPreview
+import com.aiwazian.messenger.extensions.findActivity
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.mediaTransitionBounds
@@ -677,17 +676,6 @@ private fun Context.openAppSettings() {
     ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     
     startActivity(intent)
-}
-
-private fun Context.findActivity(): Activity? {
-    var current: Context = this
-    
-    while (current is ContextWrapper) {
-        if (current is Activity) return current
-        current = current.baseContext
-    }
-    
-    return null
 }
 
 private val TOOLBAR_SHAPE = RoundedCornerShape(28.dp)
