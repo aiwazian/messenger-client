@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.app.Activity
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -68,9 +69,14 @@ import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.animatedBackgroundAlpha
+import com.aiwazian.messenger.ui.components.animatedOffsetY
+import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.dismissDragGestures
-import com.aiwazian.messenger.ui.components.dismissDragOffset
+import com.aiwazian.messenger.ui.components.mediaHeroBackground
+import com.aiwazian.messenger.ui.components.mediaHeroContainer
+import com.aiwazian.messenger.ui.components.mediaHeroContent
 import com.aiwazian.messenger.ui.components.rememberDismissDragState
+import com.aiwazian.messenger.ui.components.rememberMediaHeroState
 import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -126,6 +132,20 @@ fun FullScreenViewer(
         initialPage = initialPage.coerceIn(0, (media.size - 1).coerceAtLeast(0)),
         pageCount = { media.size })
     
+    /*
+     * Переход привязан к миниатюре той страницы, которую сейчас смотрят, а не к той,
+     * с которой открыли: иначе после листания медиа улетало бы в чужой пузырёк.
+     * Если такой миниатюры на экране нет, переход сам уведёт медиа за край экрана.
+     */
+    val hero = rememberMediaHeroState(
+        originKey = media.getOrNull(pagerState.currentPage)?.let { chatMediaKey(it.uri) },
+        dragOffsetY = dismissDragState.animatedOffsetY(),
+        onDismissed = onDismiss
+    )
+    
+    /* Чат закрывал просмотрщик мгновенно, поэтому кнопку назад берёт на себя переход. */
+    BackHandler { hero.dismiss() }
+    
     LaunchedEffect(pagerState.currentPage) {
         isVideoPlaying = false
     }
@@ -142,8 +162,9 @@ fun FullScreenViewer(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = backgroundAlpha))
+            .mediaHeroBackground(hero, MaterialTheme.colorScheme.surface) { backgroundAlpha }
             .navigationBarsPadding()
+            .mediaHeroContainer(hero)
             .pointerInput(Unit) {
                 awaitPointerEventScope {
                     while (true) {
@@ -163,9 +184,9 @@ fun FullScreenViewer(
                 .dismissDragGestures(
                     state = dismissDragState,
                     onTap = { isUiVisible = !isUiVisible },
-                    onDismiss = onDismiss
+                    onDismiss = hero::dismiss
                 )
-                .dismissDragOffset(dismissDragState)) { page ->
+                .mediaHeroContent(hero)) { page ->
             val item = media.getOrNull(page)
             val isCurrentPage = pagerState.currentPage == page
             
@@ -193,7 +214,7 @@ fun FullScreenViewer(
             }
         }
         AnimatedVisibility(
-            visible = !dismissDragState.isDragging && isUiVisible,
+            visible = !dismissDragState.isDragging && isUiVisible && hero.isSettled,
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter),
@@ -219,7 +240,7 @@ fun FullScreenViewer(
             TopAppBar(
                 title = {}, navigationIcon = {
                     IconButton(
-                        onClick = onDismiss, colors = IconButtonDefaults.iconButtonColors(
+                        onClick = hero::dismiss, colors = IconButtonDefaults.iconButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainer
                         )
                     ) {
