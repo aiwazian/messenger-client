@@ -64,8 +64,8 @@ private val CLOSE_SPEC: AnimationSpec<Float> =
  * шторки, а её предпросмотр — в своём собственном.
  *
  * Миниатюра забывается, как только уходит из композиции. Именно так переход
- * узнаёт, что возвращаться некуда: пролистанного за пределы экрана элемента в
- * списке уже нет.
+ * узнаёт, что возвращаться некуда: улетевшего за пределы экрана элемента списка
+ * больше нет.
  */
 @Stable
 class MediaOriginRegistry {
@@ -99,9 +99,7 @@ fun chatMediaKey(uri: Uri): String = uri.toString()
  */
 fun pickerMediaKey(uri: Uri): String = "picker:$uri"
 
-/**
- * Запоминает, где на экране лежит миниатюра [key], пока она видна.
- */
+/** Запоминает, где на экране лежит миниатюра [key], пока она видна. */
 @Composable
 fun Modifier.mediaTransitionOrigin(key: String): Modifier {
     val registry = LocalMediaOriginRegistry.current
@@ -122,8 +120,8 @@ internal fun LayoutCoordinates.boundsOnScreen(view: View): Rect =
 /**
  * Где начинается окно [this] на экране.
  *
- * Разница между положением одного и того же места в окне и на экране и есть
- * сдвиг самого окна: свой способ спросить его напрямую есть не у каждого окна.
+ * Разница между положением одной и той же точки в окне и на экране и есть
+ * сдвиг самого окна.
  */
 private fun View.windowOffsetOnScreen(): Offset {
     val onScreen = IntArray(2)
@@ -146,16 +144,16 @@ internal data class MediaHeroFrame(
  * Переход содержимого между миниатюрой и полным экраном.
  *
  * Содержимое всегда занимает весь просмотрщик, а к миниатюре его приводят
- * масштаб, сдвиг и обрезка: так одна и та же анимация работает и с фотографией,
- * и с видео, и с гифкой, и переживает зум, потому что зум живёт внутри
- * содержимого и уезжает вместе с ним.
+ * масштаб, сдвиг и обрезка. Поэтому одна и та же анимация работает и с фото,
+ * и с видео, и с гифкой, и переживает зум: зум живёт внутри содержимого и
+ * уезжает в миниатюру вместе с ним, без сброса.
  *
  * Вертикальный свайп сюда же и передаётся: [dragOffsetY] входит в границы
- * открытого состояния, поэтому отпущенное на полпути содержимое уменьшается
- * именно оттуда, где его оставил палец, а не прыгает сначала в центр.
+ * открытого состояния, и отпущенное на полпути содержимое уменьшается именно
+ * оттуда, где его оставил палец, а не прыгает сначала в центр.
  *
  * Когда миниатюры на экране нет, возвращаться некуда, и содержимое просто
- * уезжает за край и тает вместе с фоном.
+ * уезжает за край экрана и тает вместе с фоном.
  */
 @Stable
 class MediaHeroState internal constructor(
@@ -213,3 +211,165 @@ class MediaHeroState internal constructor(
     
     internal suspend fun open() {
         isOpening = true
+        expansion.animateTo(1f, OPEN_SPEC)
+        isOpening = false
+    }
+    
+    /**
+     * Закрывает просмотрщик и сообщает об этом владельцу, когда анимация доиграла.
+     *
+     * До этого момента просмотрщик обязан оставаться в композиции, иначе
+     * анимировать будет нечего.
+     */
+    fun dismiss() {
+        if (isClosing) {
+            return
+        }
+        
+        isClosing = true
+        
+        scope.launch {
+            if (origin != null) {
+                expansion.animateTo(0f, CLOSE_SPEC)
+            } else {
+                exit.animateTo(1f, CLOSE_SPEC)
+            }
+            
+            onDismissed()
+        }
+    }
+    
+    internal fun frame(size: Size): MediaHeroFrame {
+        val full = Rect(Offset.Zero, size)
+        
+        /*
+         * Границы просмотрщика приходят только после разметки. До этого считать
+         * нечего, а показать содержимое во весь экран — значит мигнуть им до того,
+         * как оно выедет из миниатюры.
+         */
+        if (container.isEmpty || size.width <= 0f || size.height <= 0f) {
+            return MediaHeroFrame(rect = full, scale = 1f, cornerRadius = 0f, alpha = 0f)
+        }
+        
+        val progress = expansion.value
+        val escaped = exit.value
+        val dragged = full.translate(0f, dragOffsetY)
+        val origin = origin
+        
+        if (origin == null) {
+            /*
+             * Уезжаем в ту же сторону, куда тянул палец, и вниз во всех остальных
+             * случаях: разворот содержимого посреди жеста выглядит рывком.
+             */
+            val travel = if (dragOffsetY < 0f) {
+                -(size.height + dragOffsetY)
+            } else {
+                size.height - dragOffsetY
+            }
+            
+            return MediaHeroFrame(
+                rect = dragged.translate(0f, escaped * travel),
+                scale = 1f,
+                cornerRadius = 0f,
+                alpha = progress * (1f - escaped)
+            )
+        }
+        
+        val target = origin.translate(-container.left, -container.top)
+        val rect = lerp(target, dragged, progress)
+        
+        return MediaHeroFrame(
+            rect = rect,
+            /*
+             * Миниатюра обрезана по своему квадрату, а полный экран вписывает
+             * картинку целиком. Больший из двух масштабов закрывает всю область
+             * миниатюры, а лишнее срезает обрезка — тот же эффект, что у Crop.
+             */
+            scale = max(rect.width / size.width, rect.height / size.height),
+            cornerRadius = lerp(cornerRadiusPx, 0f, progress),
+            alpha = 1f
+        )
+    }
+    
+    internal fun clipPath(frame: MediaHeroFrame): Path = clipPath.apply {
+        rewind()
+        addRoundRect(RoundRect(frame.rect, CornerRadius(frame.cornerRadius)))
+    }
+}
+
+/**
+ * Создаёт переход и сразу разворачивает содержимое из миниатюры [originKey].
+ *
+ * @param originKey миниатюра того, что показано сейчас, а не того, с чего начали:
+ * после перелистывания возвращаться надо в соседнюю миниатюру.
+ * @param dragOffsetY текущее смещение от вертикального свайпа.
+ * @param onDismissed вызывается, когда просмотрщик уже можно убирать с экрана.
+ */
+@Composable
+fun rememberMediaHeroState(
+    originKey: String?, dragOffsetY: Float, onDismissed: () -> Unit
+): MediaHeroState {
+    val registry = LocalMediaOriginRegistry.current
+    val view = LocalView.current
+    val scope = rememberCoroutineScope()
+    val cornerRadiusPx = with(LocalDensity.current) { MEDIA_ORIGIN_CORNER_RADIUS.toPx() }
+    val currentOnDismissed by rememberUpdatedState(onDismissed)
+    
+    val state = remember(registry, view, scope) {
+        MediaHeroState(
+            registry = registry, view = view, cornerRadiusPx = cornerRadiusPx, scope = scope
+        )
+    }
+    
+    state.originKey = originKey
+    state.dragOffsetY = dragOffsetY
+    state.onDismissed = { currentOnDismissed() }
+    
+    LaunchedEffect(state) { state.open() }
+    
+    return state
+}
+
+/** Область, относительно которой считаются границы перехода. */
+@Composable
+fun Modifier.mediaHeroContainer(state: MediaHeroState): Modifier {
+    val view = LocalView.current
+    
+    return this.onGloballyPositioned { coordinates ->
+        state.container = coordinates.boundsOnScreen(view)
+    }
+}
+
+/**
+ * Рисует содержимое там и таким, как требует текущий кадр перехода.
+ *
+ * Обрезка стоит снаружи преобразования, иначе она масштабировалась бы вместе с
+ * содержимым и ничего не обрезала.
+ */
+fun Modifier.mediaHeroContent(state: MediaHeroState): Modifier = this
+    .drawWithContent {
+        val frame = state.frame(size)
+        
+        clipPath(state.clipPath(frame)) { this@drawWithContent.drawContent() }
+    }
+    .graphicsLayer {
+        val frame = state.frame(size)
+        
+        scaleX = frame.scale
+        scaleY = frame.scale
+        translationX = frame.rect.center.x - size.width / 2f
+        translationY = frame.rect.center.y - size.height / 2f
+        alpha = frame.alpha
+    }
+
+/**
+ * Заливает фон просмотрщика, гася его вместе с переходом.
+ *
+ * @param alpha непрозрачность, которую задаёт сам просмотрщик: обычно она уже
+ * учитывает вертикальный свайп.
+ */
+fun Modifier.mediaHeroBackground(
+    state: MediaHeroState, color: Color, alpha: () -> Float
+): Modifier = this.drawBehind {
+    drawRect(color = color, alpha = (alpha() * state.backgroundFraction).coerceIn(0f, 1f))
+}
