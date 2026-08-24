@@ -812,6 +812,12 @@ fun ChatScreen(
             .indexOfFirst { it.fileId == tapped?.fileId }
             .coerceAtLeast(0)
         
+        /*
+         * Своего BackHandler здесь нет нарочно: он регистрировался после просмотрщика,
+         * поэтому выигрывал кнопку назад и закрывал всё мгновенно, без анимации
+         * возврата в миниатюру. Теперь кнопку обрабатывает сам [FullScreenViewer] и
+         * зовёт onDismiss уже после того, как медиа уехало на место.
+         */
         FullScreenViewer(
             media = viewerMedia,
             initialPage = viewerInitialPage,
@@ -824,9 +830,6 @@ fun ChatScreen(
             onSaveToGallery = chatViewModel::saveToGallery,
             onDismiss = chatViewModel::clearMediaUrl
         )
-        BackHandler {
-            chatViewModel.clearMediaUrl()
-        }
         Box(
             modifier = Modifier
                 .fillMaxSize()
