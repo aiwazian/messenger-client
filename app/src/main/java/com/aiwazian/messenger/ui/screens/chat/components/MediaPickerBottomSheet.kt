@@ -17,7 +17,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -354,10 +354,33 @@ private fun MediaGridItem(
 ) {
     val context = LocalContext.current
     val key = pickerMediaKey(item.uri)
+    val isSelected = number > 0
     
-    val scale by animateFloatAsState(
-        targetValue = if (number > 0) SELECTED_SCALE else 1f, label = "media_item_scale"
-    )
+    val fastSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
+    val settleSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
+    
+    val scale = remember { Animatable(if (isSelected) SELECTED_SCALE else 1f) }
+    
+    /*
+     * Выбор отыгрывается в два шага: ячейка проваливается ниже конечного размера
+     * и возвращается к нему. Одна пружина сразу до конечного значения читалась
+     * бы как обычное уменьшение, без отклика на нажатие.
+     *
+     * Совпадение с конечным значением означает первый кадр: ячейку с готовым
+     * выбором только что вернули в окно прокрутки, отыгрывать нечего.
+     */
+    LaunchedEffect(isSelected) {
+        val target = if (isSelected) SELECTED_SCALE else 1f
+        
+        if (scale.value == target) return@LaunchedEffect
+        
+        if (isSelected) {
+            scale.animateTo(SELECTED_OVERSHOOT_SCALE, fastSpec)
+            scale.animateTo(target, settleSpec)
+        } else {
+            scale.animateTo(target, fastSpec)
+        }
+    }
     
     /*
      * Пока медиа открыто в предпросмотре, ячейка пустеет целиком — вместе с
@@ -374,10 +397,20 @@ private fun MediaGridItem(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
+                    scaleX = scale.value
+                    scaleY = scale.value
+                    
+                    /*
+                     * Невыбранная сетка стоит острыми углами встык: скругление
+                     * принадлежит только выбранной ячейке и растёт тем же
+                     * движением, что и уменьшение. Провал ниже конечного
+                     * масштаба обрезается — радиус доходит до предела и ждёт там.
+                     */
+                    val rounding = ((1f - scale.value) / (1f - SELECTED_SCALE)).coerceIn(0f, 1f)
+                    
+                    shape = RoundedCornerShape(SELECTED_CORNER_RADIUS * rounding)
+                    clip = true
                 }
-                .clip(MaterialTheme.shapes.small)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 /*
                  * Сообщается уменьшенная рамка выбранного медиа, а не исходная ячейка:
@@ -660,7 +693,9 @@ private fun Context.findActivity(): Activity? {
 private val TOOLBAR_SHAPE = RoundedCornerShape(28.dp)
 private val TOOLBAR_ELEVATION = 3.dp
 private val LABEL_SHAPE = RoundedCornerShape(6.dp)
+private val SELECTED_CORNER_RADIUS = 12.dp
 private const val LABEL_SCRIM_ALPHA = 0.45f
 private const val GIF_LABEL = "GIF"
 private const val GRID_COLUMNS = 3
 private const val SELECTED_SCALE = 0.9f
+private const val SELECTED_OVERSHOOT_SCALE = 0.85f
