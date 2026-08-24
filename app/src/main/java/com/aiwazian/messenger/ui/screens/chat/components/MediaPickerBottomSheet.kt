@@ -99,6 +99,8 @@ import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.components.mediaTransitionOrigin
+import com.aiwazian.messenger.ui.components.pickerMediaKey
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -369,6 +371,11 @@ private fun MediaGridItem(
                 }
                 .clip(MaterialTheme.shapes.small)
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                /*
+                 * Сообщается уменьшенная рамка выбранного медиа, а не исходная ячейка:
+                 * предпросмотр должен возвращаться ровно туда, где миниатюра видна.
+                 */
+                .mediaTransitionOrigin(pickerMediaKey(item.uri))
         ) {
             /*
              * Кадр видео достаёт coil-video, а картинкам и GIF намеренно ставится
