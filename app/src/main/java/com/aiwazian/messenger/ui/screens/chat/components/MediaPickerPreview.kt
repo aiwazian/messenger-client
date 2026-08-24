@@ -90,7 +90,7 @@ fun MediaPickerPreview(
     
     /*
      * Переход создаётся до окна: его же спрашивает само окно, когда его закрывают
-     * кнопкой «name», и ответить надо раньше, чем окно успеет исчезнуть.
+     * кнопкой «назад», и ответить надо раньше, чем окно успеет исчезнуть.
      */
     val hero = rememberMediaHeroState(
         originKey = media.getOrNull(pagerState.currentPage)?.let { pickerMediaKey(it.uri) },
@@ -170,8 +170,9 @@ fun MediaPickerPreview(
                     isCurrentPage = pagerState.currentPage == page,
                     pagerState = pagerState,
                     onTap = { isUiVisible = !isUiVisible },
-                    isVideoUiVisible = !dismissDragState.isDragging && isUiVisible,
-                    onShowVideoUiRequest = { isUiVisible = true })
+                    isVideoUiVisible = !dismissDragState.isDragging && isUiVisible && hero.isSettled,
+                    onShowVideoUiRequest = { isUiVisible = true },
+                    onHeroContentSizeChanged = hero::updateContentSize)
             }
             
             AnimatedVisibility(
