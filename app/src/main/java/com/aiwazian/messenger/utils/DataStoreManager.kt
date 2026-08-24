@@ -101,7 +101,7 @@ class DataStoreManager @Inject constructor(
     
     fun getTheme() = getValue(Keys.THEME, ThemeOption.SYSTEM.name)
     
-    fun getDynamicColor() = getValue(Keys.DYNAMIC_COLOR, true)
+    fun getDynamicColor() = getValue(Keys.DYNAMIC_COLOR, false)
     
     fun getVideoLooping() = getValue(Keys.VIDEO_LOOPING, false)
     
