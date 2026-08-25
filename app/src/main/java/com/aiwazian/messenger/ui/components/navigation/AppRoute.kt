@@ -24,6 +24,12 @@ sealed interface AppRoute : NavKey {
     ) : AppRoute
     
     @Serializable
+    data class ChatMedia(
+        val chatId: Long,
+        val chatName: String? = null
+    ) : AppRoute
+    
+    @Serializable
     data class Profile(
         val profileId: Long,
         val profileName: String? = null,
