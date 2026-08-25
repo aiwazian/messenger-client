@@ -209,17 +209,17 @@ private fun InviteLinkItem(
                 }
             ) {
                 AppDropdownMenuItem(
-                    text = { Text(stringResource(R.string.share)) },
+                    text = stringResource(R.string.share),
                     onClick = { viewModel.shareLink(link.id) },
                     leadingIcon = { Icon(Icons.Rounded.Share, null) }
                 )
                 AppDropdownMenuItem(
-                    text = { Text(stringResource(R.string.copy)) },
+                    text = stringResource(R.string.copy),
                     onClick = { viewModel.copyLink(link.id) },
                     leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) }
                 )
                 AppDropdownMenuItem(
-                    text = { Text(stringResource(R.string.delete)) },
+                    text = stringResource(R.string.delete),
                     onClick = { viewModel.showDeleteConfirmation(link.id) },
                     leadingIcon = {
                         Icon(
