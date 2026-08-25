@@ -209,7 +209,7 @@ private fun BlockedUserItem(
                     onDismissRequest = { isMenuExpanded = false }
                 ) {
                     AppDropdownMenuItem(
-                        text = { Text(stringResource(R.string.unblock)) },
+                        text = stringResource(R.string.unblock),
                         onClick = {
                             isMenuExpanded = false
                             onUnblockClick()

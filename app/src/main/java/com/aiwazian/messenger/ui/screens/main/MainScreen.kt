@@ -33,7 +33,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -89,7 +88,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBarValue
@@ -151,6 +149,7 @@ import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
+import com.aiwazian.messenger.ui.app.AppPrimaryScrollableTabRow
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.ChatCard
@@ -479,155 +478,129 @@ private fun ChatFolderTabs(
     onDeleteFolder: (Int) -> Unit,
     onMarkFolderRead: (Int) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        PrimaryScrollableTabRow(
-            selectedTabIndex = selectedIndex,
-            modifier = Modifier
-                .padding(start = 8.dp, top = 4.dp, end = 8.dp, bottom = 8.dp)
-                .clip(CircleShape)
-                .width(IntrinsicSize.Max),
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            edgePadding = 4.dp,
-            indicator = {
-                Column(
-                    Modifier
-                        .tabIndicatorOffset(selectedIndex)
-                        .fillMaxSize()
-                        .padding(vertical = 4.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
-                ) {}
-            },
-            divider = {}
-        ) {
-            pages.forEachIndexed { index, page ->
-                /** У «Все чаты» нет своего папки-объекта: его меню отличается. */
-                val isAllChats = page.id == ALL_CHATS_FOLDER_ID
-                val interactionSource = remember { MutableInteractionSource() }
-                val isPressed by interactionSource.collectIsPressedAsState()
-                val scale by animateFloatAsState(
-                    animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
-                    targetValue = if (isPressed) 0.96f else 1f,
-                    label = "button_${index}_scale_animation"
-                )
-                var expanded by remember { mutableStateOf(false) }
-                val backgroundColor by animateColorAsState(
-                    targetValue = if (expanded && selectedIndex != index) {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0f)
-                    }
-                )
-                val accentColor by animateColorAsState(
-                    targetValue = if (index == selectedIndex) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
+    AppPrimaryScrollableTabRow(selectedTabIndex = selectedIndex) {
+        pages.forEachIndexed { index, page ->
+            /** У «Все чаты» нет своего папки-объекта: его меню отличается. */
+            val isAllChats = page.id == ALL_CHATS_FOLDER_ID
+            val interactionSource = remember { MutableInteractionSource() }
+            val isPressed by interactionSource.collectIsPressedAsState()
+            val scale by animateFloatAsState(
+                animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+                targetValue = if (isPressed) 0.96f else 1f,
+                label = "button_${index}_scale_animation"
+            )
+            var expanded by remember { mutableStateOf(false) }
+            val backgroundColor by animateColorAsState(
+                targetValue = if (expanded && selectedIndex != index) {
+                    MaterialTheme.colorScheme.surfaceContainerHighest
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0f)
+                }
+            )
+            val accentColor by animateColorAsState(
+                targetValue = if (index == selectedIndex) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 4.dp)
+                    .zIndex(1f),
+                contentAlignment = Alignment.Center
+            ) {
                 Box(
                     modifier = Modifier
-                        .padding(vertical = 4.dp)
-                        .zIndex(1f),
+                        .graphicsLayer(scaleX = scale, scaleY = scale)
+                        .widthIn(min = TabRowDefaults.ScrollableTabRowMinTabWidth)
+                        .clip(CircleShape)
+                        .background(backgroundColor)
+                        .combinedClickable(
+                            onClick = { onTabClick(index) },
+                            onLongClick = {
+                                expanded = !expanded
+                            },
+                            interactionSource = interactionSource,
+                            indication = null
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .graphicsLayer(scaleX = scale, scaleY = scale)
-                            .widthIn(min = TabRowDefaults.ScrollableTabRowMinTabWidth)
-                            .clip(CircleShape)
-                            .background(backgroundColor)
-                            .combinedClickable(
-                                onClick = { onTabClick(index) },
-                                onLongClick = {
-                                    expanded = !expanded
-                                },
-                                interactionSource = interactionSource,
-                                indication = null
-                            ),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        Text(
+                            text = page.name.asString(),
+                            color = accentColor,
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        
+                        AnimatedVisibility(
+                            visible = page.unreadChatCount > 0,
+                            enter = expressiveScaleIn,
+                            exit = expressiveScaleOut
                         ) {
-                            Text(
-                                text = page.name.asString(),
-                                color = accentColor,
-                                fontSize = 14.sp,
-                                lineHeight = 14.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            
-                            AnimatedVisibility(
-                                visible = page.unreadChatCount > 0,
-                                enter = expressiveScaleIn,
-                                exit = expressiveScaleOut
-                            ) {
-                                val containerColor by animateColorAsState(
-                                    targetValue = if (selectedIndex == index) {
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                                    } else {
-                                        Color(0xFFC6C6C6)
-                                    }
-                                )
-                                Badge(containerColor = containerColor) {
-                                    Text(
-                                        text = page.unreadChatCount.toString(),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.surface
-                                    )
+                            val containerColor by animateColorAsState(
+                                targetValue = if (selectedIndex == index) {
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                } else {
+                                    Color(0xFFC6C6C6)
                                 }
+                            )
+                            Badge(containerColor = containerColor) {
+                                Text(
+                                    text = page.unreadChatCount.toString(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.surface
+                                )
                             }
                         }
                     }
-                    AppDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }) {
+                }
+                AppDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }) {
+                    AppDropdownMenuItem(
+                        leadingIcon = {
+                            Icon(Icons.Rounded.Edit, null)
+                        },
+                        text = stringResource(
+                            if (isAllChats) R.string.edit_folders
+                            else R.string.edit_folder
+                        ),
+                        onClick = {
+                            expanded = false
+                            if (isAllChats) {
+                                onEditFolders()
+                            } else {
+                                onEditFolder(page.id)
+                            }
+                        })
+                    
+                    if (page.unreadChatCount > 0) {
                         AppDropdownMenuItem(
                             leadingIcon = {
-                                Icon(Icons.Rounded.Edit, null)
-                            }, text = {
-                                Text(
-                                    stringResource(
-                                        if (isAllChats) R.string.edit_folders
-                                        else R.string.edit_folder
-                                    )
-                                )
-                            }, onClick = {
+                                Icon(Icons.Outlined.MarkChatRead, null)
+                            },
+                            text = stringResource(R.string.mark_all_as_read),
+                            onClick = {
                                 expanded = false
-                                if (isAllChats) {
-                                    onEditFolders()
-                                } else {
-                                    onEditFolder(page.id)
-                                }
+                                onMarkFolderRead(page.id)
                             })
-                        
-                        if (page.unreadChatCount > 0) {
-                            AppDropdownMenuItem(
-                                leadingIcon = {
-                                    Icon(Icons.Outlined.MarkChatRead, null)
-                                }, text = {
-                                    Text(stringResource(R.string.mark_all_as_read))
-                                }, onClick = {
-                                    expanded = false
-                                    onMarkFolderRead(page.id)
-                                })
-                        }
-                        
-                        if (!isAllChats) {
-                            AppDropdownMenuItem(leadingIcon = {
-                                Icon(Icons.Rounded.DeleteOutline, null)
-                            }, text = {
-                                Text(stringResource(R.string.delete))
-                            }, onClick = {
-                                expanded = false
-                                onDeleteFolder(page.id)
-                            }, contentColor = MaterialTheme.colorScheme.error)
-                        }
+                    }
+                    
+                    if (!isAllChats) {
+                        AppDropdownMenuItem(leadingIcon = {
+                            Icon(Icons.Rounded.DeleteOutline, null)
+                        }, text = stringResource(R.string.delete), onClick = {
+                            expanded = false
+                            onDeleteFolder(page.id)
+                        }, contentColor = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -737,7 +710,7 @@ private fun SelectionTopBar(
                                 .rotate(45f)
                         )
                     },
-                    text = { Text(stringResource(if (hasUnpinnedChats) R.string.pin else R.string.unpin)) },
+                    text = stringResource(if (hasUnpinnedChats) R.string.pin else R.string.unpin),
                     onClick = {
                         if (hasUnpinnedChats) {
                             onPinClick()
@@ -755,14 +728,10 @@ private fun SelectionTopBar(
                             modifier = Modifier.size(20.dp)
                         )
                     },
-                    text = {
-                        Text(
-                            stringResource(
-                                if (hasUnreadChats) R.string.mark_as_read
-                                else R.string.mark_as_unread
-                            )
-                        )
-                    },
+                    text = stringResource(
+                        if (hasUnreadChats) R.string.mark_as_read
+                        else R.string.mark_as_unread
+                    ),
                     onClick = {
                         expand = false
                         if (hasUnreadChats) {
