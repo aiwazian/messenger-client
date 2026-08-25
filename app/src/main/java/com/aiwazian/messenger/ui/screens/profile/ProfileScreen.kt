@@ -424,7 +424,7 @@ private fun SectionItemWithMenu(
 private fun CopyMenuItem(onClick: () -> Unit) {
     AppDropdownMenuItem(
         leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) },
-        text = { Text(stringResource(R.string.copy)) },
+        text = stringResource(R.string.copy),
         onClick = onClick
     )
 }
@@ -433,7 +433,7 @@ private fun CopyMenuItem(onClick: () -> Unit) {
 private fun ShareMenuItem(onClick: () -> Unit) {
     AppDropdownMenuItem(
         leadingIcon = { Icon(Icons.Rounded.Share, null) },
-        text = { Text(stringResource(R.string.share)) },
+        text = stringResource(R.string.share),
         onClick = onClick
     )
 }
@@ -814,9 +814,7 @@ private fun TopBar(
                     action.dropdownActions.forEach { action ->
                         AppDropdownMenuItem(leadingIcon = {
                             Icon(action.icon, null)
-                        }, text = {
-                            Text(action.text.asString())
-                        }, onClick = {
+                        }, text = action.text.asString(), onClick = {
                             action.onClick?.invoke()
                             expand = false
                         })
