@@ -3,7 +3,6 @@
     <string name="chat_media">Media</string>
     <string name="chat_media_tab">Media</string>
     <string name="chat_files_tab">File</string>
-    <string name="chat_media_empty">Ancora nessun media in questa chat</string>
-    <string name="chat_files_empty">Ancora nessun file in questa chat</string>
+    <string name="chat_attachments_empty">Ancora nessun allegato in questa chat</string>
     <string name="chat_media_load_error">Impossibile caricare gli allegati</string>
 </resources>

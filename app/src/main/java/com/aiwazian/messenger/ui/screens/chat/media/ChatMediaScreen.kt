@@ -67,6 +67,10 @@ private enum class ChatMediaTab(@param:StringRes val titleRes: Int) {
 /**
  * Галерея чата: фото с видео на одной вкладке, документы на другой.
  *
+ * Вкладка появляется только под своё содержимое: в чате без документов
+ * кнопки «Файлы» нет вовсе, а не есть с надписью «здесь ничего нет».
+ * Пустой чат показывает одну надпись вместо двух пустых вкладок.
+ *
  * Полный экран не свой, а тот же [FullScreenViewer], что и в переписке: зум,
  * листание, настройки видео и возврат в квадрат при свайпе вниз так
  * достаются целиком и без второго комплекта жестов.
@@ -80,7 +84,25 @@ fun ChatMediaScreen(
     val navBackStack = LocalNavBackStack.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(pageCount = { ChatMediaTab.entries.size })
+    
+    /*
+     * Пересчитывается не на каждой догруженной странице, а только когда
+     * список из пустого стал непустым: от состава вкладок зависит число
+     * страниц листалки.
+     */
+    val tabs = remember(uiState.media.isEmpty(), uiState.files.isEmpty()) {
+        buildList {
+            if (uiState.media.isNotEmpty()) {
+                add(ChatMediaTab.MEDIA)
+            }
+            
+            if (uiState.files.isNotEmpty()) {
+                add(ChatMediaTab.FILES)
+            }
+        }
+    }
+    
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
     
     LaunchedEffect(chatId) { viewModel.init(chatId) }
     
@@ -101,8 +123,33 @@ fun ChatMediaScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            /*
+             * Пока хотя бы один из двух запросов идёт, состав вкладок ещё
+             * неизвестен: показанное сразу «нет вложений» сменилось бы
+             * вкладками через мгновение.
+             */
+            if (uiState.isMediaLoading || uiState.isFilesLoading) {
+                LoadingState()
+                
+                return@Column
+            }
+            
+            if (tabs.isEmpty()) {
+                EmptyState(
+                    text = stringResource(
+                        if (uiState.hasError) {
+                            R.string.chat_media_load_error
+                        } else {
+                            R.string.chat_attachments_empty
+                        }
+                    )
+                )
+                
+                return@Column
+            }
+            
             AppPrimaryScrollableTabRow(selectedTabIndex = pagerState.currentPage) {
-                ChatMediaTab.entries.forEachIndexed { index, tab ->
+                tabs.forEachIndexed { index, tab ->
                     AppTab(
                         selected = pagerState.currentPage == index,
                         text = stringResource(tab.titleRes),
@@ -114,10 +161,9 @@ fun ChatMediaScreen(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize()
             ) { page ->
-                when (ChatMediaTab.entries[page]) {
+                when (tabs.getOrNull(page)) {
                     ChatMediaTab.MEDIA -> MediaTab(
                         items = uiState.media,
-                        isLoading = uiState.isMediaLoading,
                         onItemClick = viewModel::onMediaClick,
                         onVisibleItems = viewModel::onMediaVisible,
                         onLoadMore = viewModel::loadMoreMedia
@@ -125,10 +171,11 @@ fun ChatMediaScreen(
                     
                     ChatMediaTab.FILES -> FilesTab(
                         items = uiState.files,
-                        isLoading = uiState.isFilesLoading,
                         onItemClick = viewModel::onFileClick,
                         onLoadMore = viewModel::loadMoreFiles
                     )
+                    
+                    null -> Unit
                 }
             }
         }
@@ -161,7 +208,6 @@ fun ChatMediaScreen(
 @Composable
 private fun MediaTab(
     items: List<ChatMediaItem>,
-    isLoading: Boolean,
     onItemClick: (ChatMediaItem) -> Unit,
     onVisibleItems: (List<ChatMediaItem>) -> Unit,
     onLoadMore: () -> Unit
@@ -188,14 +234,6 @@ private fun MediaTab(
             }
     }
     
-    if (items.isEmpty()) {
-        EmptyState(
-            text = stringResource(R.string.chat_media_empty),
-            isLoading = isLoading
-        )
-        return
-    }
-    
     LazyVerticalGrid(
         columns = GridCells.Fixed(MEDIA_COLUMNS),
         state = gridState,
@@ -213,7 +251,6 @@ private fun MediaTab(
 @Composable
 private fun FilesTab(
     items: List<ChatMediaItem>,
-    isLoading: Boolean,
     onItemClick: (ChatMediaItem) -> Unit,
     onLoadMore: () -> Unit
 ) {
@@ -229,14 +266,6 @@ private fun FilesTab(
             }
     }
     
-    if (items.isEmpty()) {
-        EmptyState(
-            text = stringResource(R.string.chat_files_empty),
-            isLoading = isLoading
-        )
-        return
-    }
-    
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
@@ -249,18 +278,24 @@ private fun FilesTab(
 }
 
 @Composable
-private fun EmptyState(text: String, isLoading: Boolean) {
+private fun LoadingState() {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        if (isLoading) {
-            CircularWavyProgressIndicator()
-        } else {
-            Text(
-                text = text,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        CircularWavyProgressIndicator()
+    }
+}
+
+@Composable
+private fun EmptyState(text: String) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
