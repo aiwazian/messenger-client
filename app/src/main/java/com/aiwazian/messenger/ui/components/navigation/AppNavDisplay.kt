@@ -40,6 +40,7 @@ import com.aiwazian.messenger.ui.screens.channel.settings.subscribers.ChannelSub
 import com.aiwazian.messenger.ui.screens.channel.settings.transfer.ChannelTransferOwnershipScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.type.ChannelTypeSettingsScreen
 import com.aiwazian.messenger.ui.screens.chat.ChatScreen
+import com.aiwazian.messenger.ui.screens.chat.media.ChatMediaScreen
 import com.aiwazian.messenger.ui.screens.group.create.CreateGroupScreen
 import com.aiwazian.messenger.ui.screens.group.settings.GroupSettingsScreen
 import com.aiwazian.messenger.ui.screens.group.settings.addMember.AddMemberScreen
@@ -142,6 +143,12 @@ fun AppNavDisplay(
                             chatName = it.chatName,
                             avatarUri = it.avatarUri,
                             scrollToMessageId = it.scrollToMessageId
+                        )
+                    }
+                    entry<AppRoute.ChatMedia> {
+                        ChatMediaScreen(
+                            chatId = it.chatId,
+                            chatName = it.chatName
                         )
                     }
                     entry<AppRoute.Profile>(metadata = PredictiveBackMetadata) {
