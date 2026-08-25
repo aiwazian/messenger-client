@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_media">Médias</string>
+    <string name="chat_media_tab">Médias</string>
+    <string name="chat_files_tab">Fichiers</string>
+    <string name="chat_media_empty">Pas encore de médias dans cette discussion</string>
+    <string name="chat_files_empty">Pas encore de fichiers dans cette discussion</string>
+    <string name="chat_media_load_error">Impossible de charger les pièces jointes</string>
+</resources>

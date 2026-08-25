@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_media">Медиа</string>
+    <string name="chat_media_tab">Медиа</string>
+    <string name="chat_files_tab">Файлы</string>
+    <string name="chat_media_empty">В этом чате пока нет медиа</string>
+    <string name="chat_files_empty">В этом чате пока нет файлов</string>
+    <string name="chat_media_load_error">Не удалось загрузить вложения</string>
+</resources>
