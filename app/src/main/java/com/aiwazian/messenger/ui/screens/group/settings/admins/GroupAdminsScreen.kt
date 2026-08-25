@@ -171,7 +171,7 @@ private fun GroupAdminItem(
             ) {
                 if (isCurrentUser) {
                     AppDropdownMenuItem(
-                        text = { Text(stringResource(R.string.view_permissions)) },
+                        text = stringResource(R.string.view_permissions),
                         onClick = {
                             showMenu = false
                             onOpenPermissions()
@@ -182,7 +182,7 @@ private fun GroupAdminItem(
                     )
                 } else {
                     AppDropdownMenuItem(
-                        text = { Text(stringResource(R.string.edit_permissions)) },
+                        text = stringResource(R.string.edit_permissions),
                         onClick = {
                             showMenu = false
                             onOpenPermissions()
@@ -192,7 +192,7 @@ private fun GroupAdminItem(
                         }
                     )
                     AppDropdownMenuItem(
-                        text = { Text(stringResource(R.string.dismiss_admin)) },
+                        text = stringResource(R.string.dismiss_admin),
                         onClick = {
                             showMenu = false
                             onDemote()
