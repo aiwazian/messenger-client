@@ -4,17 +4,12 @@
 
 package com.aiwazian.messenger.ui.components.topBar
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,39 +18,16 @@ import androidx.compose.ui.Modifier
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 
-/**
- * @param subtitle пояснение под заголовком: чего и сколько на экране.
- *
- * Размер и цвет задаются здесь, а не на стороне вызывающего: иначе каждый
- * экран повторял бы оформление руками и шапки разъехались бы по приложению.
- */
 @Composable
 fun PageTopBar(
     modifier: Modifier = Modifier,
     title: @Composable () -> Unit = { },
     navigationIcon: NavigationIcon,
     actions: List<TopBarAction> = emptyList(),
-    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
-    subtitle: (@Composable () -> Unit)? = null
+    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors()
 ) {
     TopAppBar(
-        title = {
-            if (subtitle == null) {
-                title()
-            } else {
-                Column {
-                    title()
-                    
-                    ProvideTextStyle(MaterialTheme.typography.labelMedium) {
-                        CompositionLocalProvider(
-                            LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant
-                        ) {
-                            subtitle()
-                        }
-                    }
-                }
-            }
-        },
+        title = title,
         modifier = modifier,
         navigationIcon = {
             IconButton(onClick = { navigationIcon.onClick() }) {

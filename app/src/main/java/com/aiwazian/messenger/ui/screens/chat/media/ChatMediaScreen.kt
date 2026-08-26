@@ -57,10 +57,8 @@ import com.aiwazian.messenger.ui.screens.chat.media.components.ChatVoiceCard
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
-/** Три столбца: такая ячейка ещё читаема и на узком экране. */
 private const val MEDIA_COLUMNS = 3
 
-/** За сколько ячеек до конца просить следующую страницу. */
 private const val PREFETCH_DISTANCE = 12
 
 private enum class ChatMediaTab(@param:StringRes val titleRes: Int) {
@@ -69,17 +67,6 @@ private enum class ChatMediaTab(@param:StringRes val titleRes: Int) {
     VOICES(R.string.chat_voices_tab)
 }
 
-/**
- * Галерея чата: фото с видео, документы и голосовые по вкладкам.
- *
- * Вкладка появляется только под своё содержимое: в чате без документов
- * кнопки «Файлы» нет вовсе, а не есть с надписью «здесь ничего нет».
- * Пустой чат показывает одну надпись вместо трёх пустых вкладок.
- *
- * Полный экран не свой, а тот же [FullScreenViewer], что и в переписке: зум,
- * листание, настройки видео и возврат в квадрат при свайпе вниз так
- * достаются целиком и без второго комплекта жестов.
- */
 @Composable
 fun ChatMediaScreen(
     chatId: Long,
@@ -90,11 +77,6 @@ fun ChatMediaScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     
-    /*
-     * Пересчитывается не на каждой догруженной странице, а только когда
-     * список из пустого стал непустым: от состава вкладок зависит число
-     * страниц листалки.
-     */
     val tabs = remember(
         uiState.media.isEmpty(),
         uiState.files.isEmpty(),
@@ -123,7 +105,6 @@ fun ChatMediaScreen(
     val counts = uiState.counts
     val currentTab = tabs.getOrNull(pagerState.currentPage)
     
-    /* Подпись говорит про открытую вкладку, а не про всё сразу. */
     val subtitleText = if (counts == null || currentTab == null) {
         null
     } else {
@@ -148,20 +129,23 @@ fun ChatMediaScreen(
         topBar = {
             PageTopBar(
                 title = {
-                    Text(text = resolvedChatName ?: stringResource(R.string.chat_media))
+                    Column {
+                        Text(text = resolvedChatName ?: stringResource(R.string.chat_media))
+                        
+                        subtitleText?.let { text ->
+                            Text(
+                                text = text,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
                 },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = { navBackStack.removeLastOrNull() }),
-                subtitle = subtitleText?.let { text ->
-                    {
-                        Text(
-                            text = text,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                })
+                    onClick = { navBackStack.removeLastOrNull() }))
         }) { innerPadding ->
         Column(
             modifier = Modifier
@@ -171,12 +155,6 @@ fun ChatMediaScreen(
             val isLoading =
                 uiState.isMediaLoading || uiState.isFilesLoading || uiState.isVoicesLoading
             
-            /*
-             * Ожидание держится только пока показать нечего: состав вкладок ещё
-             * неизвестен, и показанное сразу «нет вложений» сменилось бы вкладками
-             * через мгновение. Кэш это ожидание снимает: пришедшее из Room уже
-             * можно показывать, не дожидаясь сети.
-             */
             if (isLoading && tabs.isEmpty()) {
                 LoadingState()
                 
@@ -243,7 +221,6 @@ fun ChatMediaScreen(
     }
     
     if (uiState.showFullScreenViewer) {
-        /* Смотреть можно только скачанное, поэтому список страниц уже просеян. */
         val viewerMedia = remember(uiState.media) {
             uiState.media.mapNotNull { item ->
                 item.localUri?.let { uri ->
@@ -266,12 +243,6 @@ fun ChatMediaScreen(
     }
 }
 
-/**
- * Подпись вкладки «Медиа»: «142 фото, 421 видео».
- *
- * Нулевые части опускаются: в чате без видео строка не должна кончаться
- * бессмысленным «0 видео».
- */
 @Composable
 private fun mediaCountsText(counts: ChatMediaCounts): String? {
     val photos = if (counts.photos > 0) {
@@ -300,10 +271,6 @@ private fun MediaTab(
 ) {
     val gridState = rememberLazyGridState()
     
-    /*
-     * Загружается то, что реально видно, а не вся пришедшая страница: одним
-     * броском можно пролететь пол-галереи, и качать промелькнувшее незачем.
-     */
     LaunchedEffect(gridState, items) {
         snapshotFlow { gridState.layoutInfo.visibleItemsInfo.map { it.index } }
             .distinctUntilChanged()
@@ -363,12 +330,6 @@ private fun FilesTab(
     }
 }
 
-/**
- * Голосовые чата.
- *
- * Видимое докачивается само, как в сетке медиа: без файла нет ни длины
- * записи, ни возможности её проиграть, а записи легче фотографий.
- */
 @Composable
 private fun VoicesTab(
     items: List<ChatMediaItem>,
