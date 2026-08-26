@@ -204,13 +204,23 @@ fun ChatTopBar(
                 }
                 AppDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
                     /*
-                     * Уведомления и медиа стоят первыми и только в последнем меню ряда —
+                     * Медиа и уведомления стоят первыми и только в последнем меню ряда —
                      * тех самых трёх точках, а не в каждом выпадающем списке шапки.
                      *
-                     * Удаление чата и очистка истории уходят под них: спутать удаление с
-                     * выключением звука дороже, чем сделать лишнее движение пальцем.
+                     * «Медиа» открывает меню: это самый безобидный пункт и тянутся к нему
+                     * чаще всего. Удаление чата и выход из канала уходят под них: спутать
+                     * их с выключением звука дороже, чем сделать лишнее движение пальцем.
                      */
                     if (index == topBarActions.lastIndex) {
+                        AppDropdownMenuItem(leadingIcon = {
+                            Icon(Icons.Outlined.PermMedia, null)
+                        }, text = stringResource(R.string.chat_media), onClick = {
+                            expand = false
+                            navBackStack.add(
+                                AppRoute.ChatMedia(chatId = chatId, chatName = title)
+                            )
+                        })
+                        
                         AppDropdownMenuItem(leadingIcon = {
                             Icon(
                                 if (isMuted) Icons.Outlined.Notifications
@@ -222,15 +232,6 @@ fun ChatTopBar(
                         ), onClick = {
                             onToggleNotifications()
                             expand = false
-                        })
-                        
-                        AppDropdownMenuItem(leadingIcon = {
-                            Icon(Icons.Outlined.PermMedia, null)
-                        }, text = stringResource(R.string.chat_media), onClick = {
-                            expand = false
-                            navBackStack.add(
-                                AppRoute.ChatMedia(chatId = chatId, chatName = title)
-                            )
                         })
                     }
                     
