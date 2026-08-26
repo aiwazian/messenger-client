@@ -1195,18 +1195,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun onDeleteMessagesConfirmed() {
-        viewModelScope.launch {
-            if (chatRepository.deleteChatMessages(
-                    _uiState.value.chatId,
-                    _uiState.value.deleteForRecipient
-                )
-            ) {
-                hideClearHistoryDialog()
-            }
-        }
-    }
-
     fun onDeleteMessageConfirmed() {
         viewModelScope.launch {
             val deleteForRecipient = _uiState.value.deleteForRecipient
@@ -1225,12 +1213,6 @@ class ChatViewModel @Inject constructor(
 
     fun hideDeleteChatDialog() =
         _uiState.update { it.copy(showDeleteChatDialog = false, deleteForRecipient = false) }
-
-    fun showClearHistoryDialog() =
-        _uiState.update { it.copy(showClearHistoryDialog = true, deleteForRecipient = false) }
-
-    fun hideClearHistoryDialog() =
-        _uiState.update { it.copy(showClearHistoryDialog = false, deleteForRecipient = false) }
 
     fun showDeleteMessageDialog() =
         _uiState.update { it.copy(showDeleteMessageDialog = true, deleteForRecipient = false) }

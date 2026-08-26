@@ -32,7 +32,6 @@ data class ChatUiState(
     val myPermissions: ChatAdminPermissions = ChatAdminPermissions(),
     val isMuted: Boolean = false,
     val showDeleteChatDialog: Boolean = false,
-    val showClearHistoryDialog: Boolean = false,
     val showDeleteMessageDialog: Boolean = false,
     val deleteForRecipient: Boolean = false,
     val showLeaveDialog: Boolean = false,
