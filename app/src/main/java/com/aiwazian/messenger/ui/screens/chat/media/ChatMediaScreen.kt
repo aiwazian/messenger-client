@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.chat.media
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,7 +39,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.ChatMediaCounts
@@ -132,9 +133,9 @@ fun ChatMediaScreen(
                     Column {
                         Text(text = resolvedChatName ?: stringResource(R.string.chat_media))
                         
-                        subtitleText?.let { text ->
+                        AnimatedContent(targetState = subtitleText) { text ->
                             Text(
-                                text = text,
+                                text = text ?: "",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
