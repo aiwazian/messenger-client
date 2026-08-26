@@ -3,7 +3,7 @@
   -->
 
 <resources>
-    
+
     <string name="search">Поиск</string>
     <string name="message">Сообщение</string>
     <string name="settings">Настройки</string>
@@ -372,4 +372,74 @@
     <string name="last_seen_time">В сети в %1$s</string>
     <string name="last_seen_yesterday_time">В сети вчера в %1$s</string>
     <string name="last_seen_date_time">В сети %1$s в %2$s</string>
+    <string name="chat_media">Медиа</string>
+    <string name="chat_media_tab">Медиа</string>
+    <string name="chat_files_tab">Файлы</string>
+    <string name="chat_voices_tab">Голосовые</string>
+    <string name="chat_attachments_empty">В этом чате пока нет вложений</string>
+    <string name="chat_media_load_error">Не удалось загрузить вложения</string>
+
+    <string name="chat_voice_sent_at">в %1$s</string>
+    <string name="chat_voice_sent_on">%1$s в %2$s</string>
+
+    <plurals name="chat_media_photos_count">
+        <item quantity="one">%1$d фото</item>
+        <item quantity="few">%1$d фото</item>
+        <item quantity="many">%1$d фото</item>
+        <item quantity="other">%1$d фото</item>
+    </plurals>
+    <plurals name="chat_media_videos_count">
+        <item quantity="one">%1$d видео</item>
+        <item quantity="few">%1$d видео</item>
+        <item quantity="many">%1$d видео</item>
+        <item quantity="other">%1$d видео</item>
+    </plurals>
+    <plurals name="chat_media_files_count">
+        <item quantity="one">%1$d файл</item>
+        <item quantity="few">%1$d файла</item>
+        <item quantity="many">%1$d файлов</item>
+        <item quantity="other">%1$d файлов</item>
+    </plurals>
+    <plurals name="chat_media_voices_count">
+        <item quantity="one">%1$d голосовое сообщение</item>
+        <item quantity="few">%1$d голосовых сообщения</item>
+        <item quantity="many">%1$d голосовых сообщений</item>
+        <item quantity="other">%1$d голосовых сообщений</item>
+    </plurals>
+    <string name="chat_disable_notifications">Выключить уведомления</string>
+    <string name="chat_enable_notifications">Включить уведомления</string>
+    <string name="chat_notifications_disabled">Уведомления отключены</string>
+    <string name="chat_notifications_enabled">Уведомления включены</string>
+    <string name="notification_exception_disabled">Без уведомлений</string>
+    <string name="notification_exception_enabled">С уведомлениями</string>
+    <string name="notification_exception_configure">Настроить</string>
+    <string name="notification_exception_add">Добавить исключение</string>
+    <string name="notification_exception_receive">Получать уведомления</string>
+    <string name="notification_exception_update_failed">Не удалось изменить уведомления</string>
+    <string name="notification_reset">Сбросить настройки уведомлений</string>
+    <string name="notification_reset_description">Сбросить все особые настройки уведомлений для отдельных чатов</string>
+    <string name="notification_reset_confirm">Вы уверены, что хотите сбросить настройки уведомлений? Все исключения будут удалены, а уведомления включены везде.</string>
+    <string name="notification_reset_action">Сбросить</string>
+    <string name="delete_exception">Удалить исключение</string>
+    <string name="exception_deleted">Исключение удалено</string>
+    <string name="delete_all_exceptions">Удалить все исключения</string>
+    <string name="delete_all_exceptions_confirm">Вы уверены, что хотите удалить все исключения? Эти чаты снова будут следовать настройкам своих категорий.</string>
+    <string name="all_exceptions_deleted">Все исключения удалены</string>
+    <string name="notification_exceptions_empty">Нет исключений</string>
+    <string name="failed_to_delete_exception">Не удалось удалить исключение</string>
+    <string name="failed_to_delete_exceptions">Не удалось удалить исключения</string>
+    <plurals name="notification_exceptions_count">
+        <item quantity="one">%1$d исключение</item>
+        <item quantity="few">%1$d исключения</item>
+        <item quantity="many">%1$d исключений</item>
+        <item quantity="other">%1$d исключения</item>
+    </plurals>
+    <string name="media_picker_file">Файл</string>
+    <string name="media_picker_caption">Добавить подпись…</string>
+    <string name="media_picker_permission">Разрешите доступ к фото и видео</string>
+    <string name="media_picker_permission_action">Разрешить</string>
+    <string name="media_picker_empty">Нет фото и видео</string>
+    <string name="media_picker_reset_title">Сбросить выбор</string>
+    <string name="media_picker_reset_message">Закрыть меню вложений?</string>
+    <string name="media_picker_reset_action">Сбросить</string>
 </resources>

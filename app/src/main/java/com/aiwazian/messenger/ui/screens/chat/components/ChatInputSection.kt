@@ -112,6 +112,8 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.ui.animations.expressiveScaleIn
+import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
@@ -486,8 +488,8 @@ private fun InputMessage(
             
             AnimatedVisibility(
                 visible = !uiState.isRecording && uiState.editingMessageId == null,
-                enter = fadeIn() + scaleIn(),
-                exit = fadeOut() + scaleOut()
+                enter = expressiveScaleIn,
+                exit = expressiveScaleOut
             ) {
                 IconButton(onClick = attachmentModal::show) {
                     Icon(
@@ -499,172 +501,181 @@ private fun InputMessage(
                 }
             }
             
-            if (uiState.messageText.trim().isEmpty() || uiState.isRecording) {
-                Box(
-                    modifier = Modifier
-                        .zIndex(if (uiState.isRecording) 10f else 0f)
-                        .pointerInput(uiState.isRecordingLocked) {
-                            if (uiState.isRecordingLocked) {
-                                detectTapGestures(
-                                    onTap = {
-                                        chatViewModel.stopRecordingAndSend()
-                                    })
-                            } else {
-                                awaitPointerEventScope {
-                                    while (true) {
-                                        val downEvent = awaitFirstDown()
-                                        downEvent.consume()
-                                        
-                                        if (ContextCompat.checkSelfPermission(
-                                                context, android.Manifest.permission.RECORD_AUDIO
-                                            ) == PackageManager.PERMISSION_GRANTED
-                                        ) {
-                                            val releasedBeforeLongPress = withTimeoutOrNull(200L) {
+            AnimatedContent(
+                targetState = uiState.messageText.trim().isEmpty() || uiState.isRecording,
+                transitionSpec = {
+                    expressiveScaleIn togetherWith expressiveScaleOut
+                }
+            ) { showMic ->
+                if (showMic) {
+                    Box(
+                        modifier = Modifier
+                            .zIndex(if (uiState.isRecording) 10f else 0f)
+                            .pointerInput(uiState.isRecordingLocked) {
+                                if (uiState.isRecordingLocked) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            chatViewModel.stopRecordingAndSend()
+                                        })
+                                } else {
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            val downEvent = awaitFirstDown()
+                                            downEvent.consume()
+                                            
+                                            if (ContextCompat.checkSelfPermission(
+                                                    context,
+                                                    android.Manifest.permission.RECORD_AUDIO
+                                                ) == PackageManager.PERMISSION_GRANTED
+                                            ) {
+                                                val releasedBeforeLongPress =
+                                                    withTimeoutOrNull(200L) {
+                                                        do {
+                                                            val event = awaitPointerEvent()
+                                                            event.changes.forEach { it.consume() }
+                                                        } while (event.changes.any { it.pressed })
+                                                        true
+                                                    } ?: false
+                                                
+                                                if (releasedBeforeLongPress) {
+                                                    micTranslationX = 0f
+                                                    micTranslationY = 0f
+                                                    continue
+                                                }
+                                                
+                                                chatViewModel.startRecording()
+                                            } else {
+                                                permissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
                                                 do {
                                                     val event = awaitPointerEvent()
                                                     event.changes.forEach { it.consume() }
                                                 } while (event.changes.any { it.pressed })
-                                                true
-                                            } ?: false
-                                            
-                                            if (releasedBeforeLongPress) {
-                                                micTranslationX = 0f
-                                                micTranslationY = 0f
                                                 continue
                                             }
                                             
-                                            chatViewModel.startRecording()
-                                        } else {
-                                            permissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+                                            var isCanceled = false
+                                            var isLocked = false
+                                            micTranslationX = 0f
+                                            micTranslationY = 0f
+                                            val startX = downEvent.position.x
+                                            val startY = downEvent.position.y
+                                            
+                                            var lockedAxis: String? = null
+                                            
                                             do {
                                                 val event = awaitPointerEvent()
                                                 event.changes.forEach { it.consume() }
-                                            } while (event.changes.any { it.pressed })
-                                            continue
-                                        }
-                                        
-                                        var isCanceled = false
-                                        var isLocked = false
-                                        micTranslationX = 0f
-                                        micTranslationY = 0f
-                                        val startX = downEvent.position.x
-                                        val startY = downEvent.position.y
-                                        
-                                        var lockedAxis: String? = null
-                                        
-                                        do {
-                                            val event = awaitPointerEvent()
-                                            event.changes.forEach { it.consume() }
-                                            val position = event.changes.first().position
-                                            val currentX = position.x
-                                            val currentY = position.y
-                                            val deltaX = currentX - startX
-                                            val deltaY = currentY - startY
-                                            
-                                            if (lockedAxis == null) {
-                                                if (deltaX < -20f && abs(deltaX) > abs(
-                                                        deltaY
-                                                    )
-                                                ) {
-                                                    lockedAxis = "X"
-                                                } else if (deltaY < -20f && abs(deltaY) > abs(
-                                                        deltaX
-                                                    )
-                                                ) {
-                                                    lockedAxis = "Y"
+                                                val position = event.changes.first().position
+                                                val currentX = position.x
+                                                val currentY = position.y
+                                                val deltaX = currentX - startX
+                                                val deltaY = currentY - startY
+                                                
+                                                if (lockedAxis == null) {
+                                                    if (deltaX < -20f && abs(deltaX) > abs(
+                                                            deltaY
+                                                        )
+                                                    ) {
+                                                        lockedAxis = "X"
+                                                    } else if (deltaY < -20f && abs(deltaY) > abs(
+                                                            deltaX
+                                                        )
+                                                    ) {
+                                                        lockedAxis = "Y"
+                                                    }
+                                                } else if (abs(deltaX) < 20f && abs(deltaY) < 20f) {
+                                                    lockedAxis = null
                                                 }
-                                            } else if (abs(deltaX) < 20f && abs(deltaY) < 20f) {
-                                                lockedAxis = null
-                                            }
+                                                
+                                                if (deltaY < -250f && !isLocked && !isCanceled) {
+                                                    chatViewModel.lockRecording()
+                                                    isLocked = true
+                                                    micTranslationX = 0f
+                                                    micTranslationY = 0f
+                                                } else if (deltaX < -250f && !isCanceled && !isLocked) {
+                                                    chatViewModel.cancelRecording()
+                                                    isCanceled = true
+                                                    micTranslationX = 0f
+                                                    micTranslationY = 0f
+                                                } else if (!isCanceled && !isLocked) {
+                                                    micTranslationX =
+                                                        if (lockedAxis == "X" || lockedAxis == null) deltaX.coerceAtMost(
+                                                            0f
+                                                        ) else 0f
+                                                    micTranslationY =
+                                                        if (lockedAxis == "Y" || lockedAxis == null) deltaY.coerceAtMost(
+                                                            0f
+                                                        ) else 0f
+                                                }
+                                            } while (event.changes.any { it.pressed })
                                             
-                                            if (deltaY < -250f && !isLocked && !isCanceled) {
-                                                chatViewModel.lockRecording()
-                                                isLocked = true
-                                                micTranslationX = 0f
-                                                micTranslationY = 0f
-                                            } else if (deltaX < -250f && !isCanceled && !isLocked) {
-                                                chatViewModel.cancelRecording()
-                                                isCanceled = true
-                                                micTranslationX = 0f
-                                                micTranslationY = 0f
-                                            } else if (!isCanceled && !isLocked) {
-                                                micTranslationX =
-                                                    if (lockedAxis == "X" || lockedAxis == null) deltaX.coerceAtMost(
-                                                        0f
-                                                    ) else 0f
-                                                micTranslationY =
-                                                    if (lockedAxis == "Y" || lockedAxis == null) deltaY.coerceAtMost(
-                                                        0f
-                                                    ) else 0f
+                                            if (!isCanceled && !isLocked) {
+                                                chatViewModel.stopRecordingAndSend()
                                             }
-                                        } while (event.changes.any { it.pressed })
-                                        
-                                        if (!isCanceled && !isLocked) {
-                                            chatViewModel.stopRecordingAndSend()
+                                            micTranslationX = 0f
+                                            micTranslationY = 0f
                                         }
-                                        micTranslationX = 0f
-                                        micTranslationY = 0f
                                     }
                                 }
-                            }
-                        }, contentAlignment = Alignment.Center
-                ) {
-                    VoiceRecordingLockedIcon(uiState, micTranslationY)
-                    
-                    Box(
-                        modifier = Modifier.graphicsLayer {
-                            translationX = micTranslationX
-                            scaleX = swipeScale
-                            scaleY = swipeScale
-                        }) {
-                        if (uiState.isRecording) {
-                            VoiceRecordingAmplitudeEffect(animatedAmplitude)
-                        }
-                        
-                        val micBackColor by animateColorAsState(
-                            targetValue = if (uiState.isRecording) MaterialTheme.colorScheme.primary else Color.Transparent,
-                            animationSpec = tween(
-                                durationMillis = 200, easing = FastOutSlowInEasing
-                            )
-                        )
+                            }, contentAlignment = Alignment.Center
+                    ) {
+                        VoiceRecordingLockedIcon(uiState, micTranslationY)
                         
                         Box(
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .size(48.dp)
-                                .padding(2.dp)
-                                .clip(CircleShape)
-                                .background(micBackColor), contentAlignment = Alignment.Center
-                        ) {
-                            AnimatedContent(
-                                targetState = uiState.isRecordingLocked,
-                                transitionSpec = { scaleIn() togetherWith scaleOut() }) { isLocked ->
-                                Icon(
-                                    imageVector = if (isLocked) Icons.AutoMirrored.Rounded.Send else Icons.Rounded.Mic,
-                                    contentDescription = null,
-                                    tint = if (uiState.isRecording) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
+                            modifier = Modifier.graphicsLayer {
+                                translationX = micTranslationX
+                                scaleX = swipeScale
+                                scaleY = swipeScale
+                            }) {
+                            if (uiState.isRecording) {
+                                VoiceRecordingAmplitudeEffect(animatedAmplitude)
+                            }
+                            
+                            val micBackColor by animateColorAsState(
+                                targetValue = if (uiState.isRecording) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                animationSpec = tween(
+                                    durationMillis = 200, easing = FastOutSlowInEasing
                                 )
+                            )
+                            
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .size(48.dp)
+                                    .padding(2.dp)
+                                    .clip(CircleShape)
+                                    .background(micBackColor), contentAlignment = Alignment.Center
+                            ) {
+                                AnimatedContent(
+                                    targetState = uiState.isRecordingLocked,
+                                    transitionSpec = { scaleIn() togetherWith scaleOut() }) { isLocked ->
+                                    Icon(
+                                        imageVector = if (isLocked) Icons.AutoMirrored.Rounded.Send else Icons.Rounded.Mic,
+                                        contentDescription = null,
+                                        tint = if (uiState.isRecording) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
                     }
-                }
-            } else {
-                IconButton(onClick = chatViewModel::onSendMessageClicked) {
-                    AnimatedContent(
-                        targetState = uiState.editingMessageId != null,
-                        transitionSpec = { fadeIn() + scaleIn() togetherWith fadeOut() + scaleOut() }) { isEditing ->
-                        if (isEditing) {
-                            Icon(
-                                imageVector = Icons.Rounded.Done,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.Send,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
+                } else {
+                    IconButton(onClick = chatViewModel::onSendMessageClicked) {
+                        AnimatedContent(
+                            targetState = uiState.editingMessageId != null,
+                            transitionSpec = { expressiveScaleIn togetherWith expressiveScaleOut }) { isEditing ->
+                            if (isEditing) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Done,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.Send,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
                 }

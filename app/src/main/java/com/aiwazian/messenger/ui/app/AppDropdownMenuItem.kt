@@ -52,24 +52,17 @@ fun AppDropdownMenuItem(
     
     DropdownMenuItem(
         text = {
-            if (supportingText == null) {
+            Column {
                 Text(
                     text = text,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 14.sp
                 )
-            } else {
-                Column {
-                    Text(
-                        text = text,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                if (supportingText != null) {
                     Text(
                         text = supportingText,
                         fontSize = 12.sp,
                         lineHeight = 14.sp,
-                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

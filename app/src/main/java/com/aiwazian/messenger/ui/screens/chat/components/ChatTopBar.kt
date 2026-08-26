@@ -53,6 +53,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.sharedElement
+import com.aiwazian.messenger.ui.animations.expressiveScaleIn
+import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
@@ -147,14 +149,20 @@ fun ChatTopBar(
                                     modifier = Modifier.sharedElement(key = "chat-name-$chatId")
                                 )
                                 
-                                /* Тот же перечёркнутый колокольчик, что и в списке чатов. */
-                                if (isMuted) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.NotificationsOff,
-                                        contentDescription = stringResource(R.string.chat_notifications_disabled),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(16.dp)
-                                    )
+                                AnimatedContent(
+                                    targetState = isMuted,
+                                    transitionSpec = {
+                                        expressiveScaleIn togetherWith expressiveScaleOut
+                                    }
+                                ) { muted ->
+                                    if (muted) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.NotificationsOff,
+                                            contentDescription = stringResource(R.string.chat_notifications_disabled),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
                                 }
                             }
                             
@@ -221,18 +229,19 @@ fun ChatTopBar(
                             )
                         })
                         
-                        AppDropdownMenuItem(leadingIcon = {
-                            Icon(
-                                if (isMuted) Icons.Outlined.Notifications
-                                else Icons.Outlined.NotificationsOff, null
-                            )
-                        }, text = stringResource(
-                            if (isMuted) R.string.chat_enable_notifications
-                            else R.string.chat_disable_notifications
-                        ), onClick = {
-                            onToggleNotifications()
-                            expand = false
-                        })
+                        AppDropdownMenuItem(
+                            leadingIcon = {
+                                Icon(
+                                    if (isMuted) Icons.Outlined.Notifications
+                                    else Icons.Outlined.NotificationsOff, null
+                                )
+                            }, text = stringResource(
+                                if (isMuted) R.string.chat_enable_notifications
+                                else R.string.chat_disable_notifications
+                            ), onClick = {
+                                onToggleNotifications()
+                                expand = false
+                            })
                     }
                     
                     action.dropdownActions.forEach { dropdownAction ->
