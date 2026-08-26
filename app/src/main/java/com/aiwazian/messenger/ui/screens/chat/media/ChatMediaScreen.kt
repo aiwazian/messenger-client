@@ -34,11 +34,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.ChatMediaCounts
 import com.aiwazian.messenger.domain.ChatMediaItem
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.ui.app.AppPrimaryScrollableTabRow
@@ -50,6 +53,7 @@ import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
 import com.aiwazian.messenger.ui.screens.chat.media.components.ChatFileCard
 import com.aiwazian.messenger.ui.screens.chat.media.components.ChatMediaCell
+import com.aiwazian.messenger.ui.screens.chat.media.components.ChatVoiceCard
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
@@ -61,15 +65,16 @@ private const val PREFETCH_DISTANCE = 12
 
 private enum class ChatMediaTab(@param:StringRes val titleRes: Int) {
     MEDIA(R.string.chat_media_tab),
-    FILES(R.string.chat_files_tab)
+    FILES(R.string.chat_files_tab),
+    VOICES(R.string.chat_voices_tab)
 }
 
 /**
- * Галерея чата: фото с видео на одной вкладке, документы на другой.
+ * Галерея чата: фото с видео, документы и голосовые по вкладкам.
  *
  * Вкладка появляется только под своё содержимое: в чате без документов
  * кнопки «Файлы» нет вовсе, а не есть с надписью «здесь ничего нет».
- * Пустой чат показывает одну надпись вместо двух пустых вкладок.
+ * Пустой чат показывает одну надпись вместо трёх пустых вкладок.
  *
  * Полный экран не свой, а тот же [FullScreenViewer], что и в переписке: зум,
  * листание, настройки видео и возврат в квадрат при свайпе вниз так
@@ -90,7 +95,11 @@ fun ChatMediaScreen(
      * список из пустого стал непустым: от состава вкладок зависит число
      * страниц листалки.
      */
-    val tabs = remember(uiState.media.isEmpty(), uiState.files.isEmpty()) {
+    val tabs = remember(
+        uiState.media.isEmpty(),
+        uiState.files.isEmpty(),
+        uiState.voices.isEmpty()
+    ) {
         buildList {
             if (uiState.media.isNotEmpty()) {
                 add(ChatMediaTab.MEDIA)
@@ -99,6 +108,10 @@ fun ChatMediaScreen(
             if (uiState.files.isNotEmpty()) {
                 add(ChatMediaTab.FILES)
             }
+            
+            if (uiState.voices.isNotEmpty()) {
+                add(ChatMediaTab.VOICES)
+            }
         }
     }
     
@@ -106,29 +119,65 @@ fun ChatMediaScreen(
     
     LaunchedEffect(chatId) { viewModel.init(chatId) }
     
+    val resolvedChatName = chatName?.takeIf { it.isNotBlank() }
+    val counts = uiState.counts
+    val currentTab = tabs.getOrNull(pagerState.currentPage)
+    
+    /* Подпись говорит про открытую вкладку, а не про всё сразу. */
+    val subtitleText = if (counts == null || currentTab == null) {
+        null
+    } else {
+        when (currentTab) {
+            ChatMediaTab.MEDIA -> mediaCountsText(counts)
+            
+            ChatMediaTab.FILES -> pluralStringResource(
+                R.plurals.chat_media_files_count,
+                counts.files,
+                counts.files
+            )
+            
+            ChatMediaTab.VOICES -> pluralStringResource(
+                R.plurals.chat_media_voices_count,
+                counts.voices,
+                counts.voices
+            )
+        }
+    }
+    
     Scaffold(
         topBar = {
             PageTopBar(
                 title = {
-                    Text(text = chatName?.takeIf { it.isNotBlank() }
-                        ?: stringResource(R.string.chat_media))
+                    Text(text = resolvedChatName ?: stringResource(R.string.chat_media))
                 },
                 navigationIcon = NavigationIcon(
                     icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = { navBackStack.removeLastOrNull() })
-            )
+                    onClick = { navBackStack.removeLastOrNull() }),
+                subtitle = subtitleText?.let { text ->
+                    {
+                        Text(
+                            text = text,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                })
         }) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            val isLoading =
+                uiState.isMediaLoading || uiState.isFilesLoading || uiState.isVoicesLoading
+            
             /*
-             * Пока хотя бы один из двух запросов идёт, состав вкладок ещё
-             * неизвестен: показанное сразу «нет вложений» сменилось бы
-             * вкладками через мгновение.
+             * Ожидание держится только пока показать нечего: состав вкладок ещё
+             * неизвестен, и показанное сразу «нет вложений» сменилось бы вкладками
+             * через мгновение. Кэш это ожидание снимает: пришедшее из Room уже
+             * можно показывать, не дожидаясь сети.
              */
-            if (uiState.isMediaLoading || uiState.isFilesLoading) {
+            if (isLoading && tabs.isEmpty()) {
                 LoadingState()
                 
                 return@Column
@@ -175,6 +224,18 @@ fun ChatMediaScreen(
                         onLoadMore = viewModel::loadMoreFiles
                     )
                     
+                    ChatMediaTab.VOICES -> VoicesTab(
+                        items = uiState.voices,
+                        chatName = resolvedChatName,
+                        myId = uiState.myId,
+                        playingFileId = uiState.playingFileId,
+                        isPlaying = uiState.isVoicePlaying,
+                        onItemClick = viewModel::onVoiceClick,
+                        onVisibleItems = viewModel::onVoicesVisible,
+                        onDurationResolved = viewModel::onVoiceDurationResolved,
+                        onLoadMore = viewModel::loadMoreVoices
+                    )
+                    
                     null -> Unit
                 }
             }
@@ -203,6 +264,31 @@ fun ChatMediaScreen(
             onDismiss = viewModel::onViewerDismiss
         )
     }
+}
+
+/**
+ * Подпись вкладки «Медиа»: «142 фото, 421 видео».
+ *
+ * Нулевые части опускаются: в чате без видео строка не должна кончаться
+ * бессмысленным «0 видео».
+ */
+@Composable
+private fun mediaCountsText(counts: ChatMediaCounts): String? {
+    val photos = if (counts.photos > 0) {
+        pluralStringResource(R.plurals.chat_media_photos_count, counts.photos, counts.photos)
+    } else {
+        null
+    }
+    
+    val videos = if (counts.videos > 0) {
+        pluralStringResource(R.plurals.chat_media_videos_count, counts.videos, counts.videos)
+    } else {
+        null
+    }
+    
+    return listOfNotNull(photos, videos)
+        .takeIf { it.isNotEmpty() }
+        ?.joinToString(", ")
 }
 
 @Composable
@@ -273,6 +359,59 @@ private fun FilesTab(
     ) {
         items(items = items, key = { it.id }) { item ->
             ChatFileCard(file = item, onClick = { onItemClick(item) })
+        }
+    }
+}
+
+/**
+ * Голосовые чата.
+ *
+ * Видимое докачивается само, как в сетке медиа: без файла нет ни длины
+ * записи, ни возможности её проиграть, а записи легче фотографий.
+ */
+@Composable
+private fun VoicesTab(
+    items: List<ChatMediaItem>,
+    chatName: String?,
+    myId: Long,
+    playingFileId: String?,
+    isPlaying: Boolean,
+    onItemClick: (ChatMediaItem) -> Unit,
+    onVisibleItems: (List<ChatMediaItem>) -> Unit,
+    onDurationResolved: (ChatMediaItem, Int) -> Unit,
+    onLoadMore: () -> Unit
+) {
+    val listState = rememberLazyListState()
+    val youLabel = stringResource(R.string.you)
+    
+    LaunchedEffect(listState, items) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.map { it.index } }
+            .distinctUntilChanged()
+            .collect { visible ->
+                if (visible.isEmpty()) {
+                    return@collect
+                }
+                
+                onVisibleItems(visible.mapNotNull(items::getOrNull))
+                
+                if (visible.max() >= items.lastIndex - PREFETCH_DISTANCE) {
+                    onLoadMore()
+                }
+            }
+    }
+    
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        items(items = items, key = { it.id }) { item ->
+            ChatVoiceCard(
+                voice = item,
+                author = if (item.senderId == myId) youLabel else chatName,
+                isPlaying = isPlaying && playingFileId == item.fileId,
+                onClick = { onItemClick(item) },
+                onDurationResolved = { durationMs -> onDurationResolved(item, durationMs) })
         }
     }
 }
