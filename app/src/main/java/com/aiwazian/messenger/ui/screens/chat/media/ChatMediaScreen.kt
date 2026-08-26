@@ -6,15 +6,19 @@ package com.aiwazian.messenger.ui.screens.chat.media
 
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -30,6 +34,7 @@ import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,6 +43,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -110,103 +117,145 @@ fun ChatMediaScreen(
     
     Scaffold(
         topBar = {
-            PageTopBar(
-                title = {
-                    Column {
-                        Text(text = resolvedChatName ?: stringResource(R.string.chat_media))
-                        
-                        AnimatedContent(
-                            targetState = pagerState.currentPage,
-                            transitionSpec = {
-                                val direction = if (targetState > initialState) 1 else -1
-                                
-                                slideInHorizontally { width -> direction * width } togetherWith
-                                    slideOutHorizontally { width -> -direction * width }
-                            }) { page ->
-                            Text(
-                                text = tabCountsText(tabs.getOrNull(page), counts) ?: "",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.labelMedium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+            Column {
+                PageTopBar(
+                    title = {
+                        Column {
+                            Text(text = resolvedChatName ?: stringResource(R.string.chat_media))
+                            
+                            AnimatedContent(
+                                targetState = pagerState.currentPage,
+                                transitionSpec = {
+                                    val direction = if (targetState > initialState) 1 else -1
+                                    
+                                    slideInHorizontally { width -> direction * width } + fadeIn() togetherWith
+                                            slideOutHorizontally { width -> -direction * width } + fadeOut()
+                                }) { page ->
+                                tabCountsText(tabs.getOrNull(page), counts)?.let { text ->
+                                    Text(
+                                        text = text,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
                         }
-                    }
-                },
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = { navBackStack.removeLastOrNull() }))
-        }) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            val isLoading =
-                uiState.isMediaLoading || uiState.isFilesLoading || uiState.isVoicesLoading
-            
-            if (isLoading && tabs.isEmpty()) {
-                LoadingState()
-                
-                return@Column
-            }
-            
-            if (tabs.isEmpty()) {
-                EmptyState(
-                    text = stringResource(
-                        if (uiState.hasError) {
-                            R.string.chat_media_load_error
-                        } else {
-                            R.string.chat_attachments_empty
-                        }
-                    )
+                    },
+                    navigationIcon = NavigationIcon(
+                        icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                        onClick = navBackStack::removeLastOrNull
+                    ),
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
                 
-                return@Column
-            }
-            
-            AppPrimaryScrollableTabRow(selectedTabIndex = pagerState.currentPage) {
-                tabs.forEachIndexed { index, tab ->
-                    AppTab(
-                        selected = pagerState.currentPage == index,
-                        text = stringResource(tab.titleRes),
-                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } })
+                if (tabs.isNotEmpty()) {
+                    AppPrimaryScrollableTabRow(selectedTabIndex = pagerState.currentPage) {
+                        tabs.forEachIndexed { index, tab ->
+                            AppTab(
+                                selected = pagerState.currentPage == index,
+                                text = stringResource(tab.titleRes),
+                                onClick = { scope.launch { pagerState.animateScrollToPage(index) } })
+                        }
+                    }
                 }
             }
-            
-            HorizontalPager(
-                state = pagerState,
+        }) { innerPadding ->
+        Box {
+            Column(
                 modifier = Modifier.fillMaxSize()
-            ) { page ->
-                when (tabs.getOrNull(page)) {
-                    ChatMediaTab.MEDIA -> MediaTab(
-                        items = uiState.media,
-                        onItemClick = viewModel::onMediaClick,
-                        onVisibleItems = viewModel::onMediaVisible,
-                        onLoadMore = viewModel::loadMoreMedia
+            ) {
+                val isLoading =
+                    uiState.isMediaLoading || uiState.isFilesLoading || uiState.isVoicesLoading
+                
+                if (isLoading && tabs.isEmpty()) {
+                    LoadingState()
+                    
+                    return@Column
+                }
+                
+                if (tabs.isEmpty()) {
+                    EmptyState(
+                        text = stringResource(
+                            if (uiState.hasError) {
+                                R.string.chat_media_load_error
+                            } else {
+                                R.string.chat_attachments_empty
+                            }
+                        )
                     )
                     
-                    ChatMediaTab.FILES -> FilesTab(
-                        items = uiState.files,
-                        onItemClick = viewModel::onFileClick,
-                        onLoadMore = viewModel::loadMoreFiles
-                    )
-                    
-                    ChatMediaTab.VOICES -> VoicesTab(
-                        items = uiState.voices,
-                        chatName = resolvedChatName,
-                        myId = uiState.myId,
-                        playingFileId = uiState.playingFileId,
-                        isPlaying = uiState.isVoicePlaying,
-                        onItemClick = viewModel::onVoiceClick,
-                        onVisibleItems = viewModel::onVoicesVisible,
-                        onDurationResolved = viewModel::onVoiceDurationResolved,
-                        onLoadMore = viewModel::loadMoreVoices
-                    )
-                    
-                    null -> Unit
+                    return@Column
+                }
+                
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    when (tabs.getOrNull(page)) {
+                        ChatMediaTab.MEDIA -> MediaTab(
+                            items = uiState.media,
+                            onItemClick = viewModel::onMediaClick,
+                            onVisibleItems = viewModel::onMediaVisible,
+                            onLoadMore = viewModel::loadMoreMedia,
+                            contentPadding = innerPadding
+                        )
+                        
+                        ChatMediaTab.FILES -> FilesTab(
+                            items = uiState.files,
+                            onItemClick = viewModel::onFileClick,
+                            onLoadMore = viewModel::loadMoreFiles,
+                            contentPadding = innerPadding
+                        )
+                        
+                        ChatMediaTab.VOICES -> VoicesTab(
+                            items = uiState.voices,
+                            chatName = resolvedChatName,
+                            myId = uiState.myId,
+                            playingFileId = uiState.playingFileId,
+                            isPlaying = uiState.isVoicePlaying,
+                            onItemClick = viewModel::onVoiceClick,
+                            onVisibleItems = viewModel::onVoicesVisible,
+                            onDurationResolved = viewModel::onVoiceDurationResolved,
+                            onLoadMore = viewModel::loadMoreVoices,
+                            contentPadding = innerPadding
+                        )
+                        
+                        null -> Unit
+                    }
                 }
             }
+            
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(innerPadding.calculateTopPadding())
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+                    .align(Alignment.TopCenter)
+            )
+            
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(innerPadding.calculateBottomPadding())
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                            )
+                        )
+                    )
+                    .align(Alignment.BottomCenter)
+            )
         }
     }
     
@@ -280,7 +329,8 @@ private fun MediaTab(
     items: List<ChatMediaItem>,
     onItemClick: (ChatMediaItem) -> Unit,
     onVisibleItems: (List<ChatMediaItem>) -> Unit,
-    onLoadMore: () -> Unit
+    onLoadMore: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues.Zero
 ) {
     val gridState = rememberLazyGridState()
     
@@ -304,7 +354,7 @@ private fun MediaTab(
         columns = GridCells.Fixed(MEDIA_COLUMNS),
         state = gridState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(2.dp),
+        contentPadding = contentPadding,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
@@ -318,7 +368,8 @@ private fun MediaTab(
 private fun FilesTab(
     items: List<ChatMediaItem>,
     onItemClick: (ChatMediaItem) -> Unit,
-    onLoadMore: () -> Unit
+    onLoadMore: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues.Zero
 ) {
     val listState = rememberLazyListState()
     
@@ -335,7 +386,7 @@ private fun FilesTab(
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 8.dp)
+        contentPadding = contentPadding
     ) {
         items(items = items, key = { it.id }) { item ->
             ChatFileCard(file = item, onClick = { onItemClick(item) })
@@ -353,7 +404,8 @@ private fun VoicesTab(
     onItemClick: (ChatMediaItem) -> Unit,
     onVisibleItems: (List<ChatMediaItem>) -> Unit,
     onDurationResolved: (ChatMediaItem, Int) -> Unit,
-    onLoadMore: () -> Unit
+    onLoadMore: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues.Zero
 ) {
     val listState = rememberLazyListState()
     val youLabel = stringResource(R.string.you)
@@ -377,7 +429,7 @@ private fun VoicesTab(
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 8.dp)
+        contentPadding = contentPadding
     ) {
         items(items = items, key = { it.id }) { item ->
             ChatVoiceCard(
