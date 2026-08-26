@@ -6,6 +6,9 @@ package com.aiwazian.messenger.ui.screens.chat.media
 
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -104,27 +107,6 @@ fun ChatMediaScreen(
     
     val resolvedChatName = chatName?.takeIf { it.isNotBlank() }
     val counts = uiState.counts
-    val currentTab = tabs.getOrNull(pagerState.currentPage)
-    
-    val subtitleText = if (counts == null || currentTab == null) {
-        null
-    } else {
-        when (currentTab) {
-            ChatMediaTab.MEDIA -> mediaCountsText(counts)
-            
-            ChatMediaTab.FILES -> pluralStringResource(
-                R.plurals.chat_media_files_count,
-                counts.files,
-                counts.files
-            )
-            
-            ChatMediaTab.VOICES -> pluralStringResource(
-                R.plurals.chat_media_voices_count,
-                counts.voices,
-                counts.voices
-            )
-        }
-    }
     
     Scaffold(
         topBar = {
@@ -133,9 +115,16 @@ fun ChatMediaScreen(
                     Column {
                         Text(text = resolvedChatName ?: stringResource(R.string.chat_media))
                         
-                        AnimatedContent(targetState = subtitleText) { text ->
+                        AnimatedContent(
+                            targetState = pagerState.currentPage,
+                            transitionSpec = {
+                                val direction = if (targetState > initialState) 1 else -1
+                                
+                                slideInHorizontally { width -> direction * width } togetherWith
+                                    slideOutHorizontally { width -> -direction * width }
+                            }) { page ->
                             Text(
-                                text = text ?: "",
+                                text = tabCountsText(tabs.getOrNull(page), counts) ?: "",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
@@ -240,6 +229,29 @@ fun ChatMediaScreen(
             onVideoPlaybackSpeedChange = viewModel::onVideoPlaybackSpeedChange,
             onSaveToGallery = viewModel::onSaveToGallery,
             onDismiss = viewModel::onViewerDismiss
+        )
+    }
+}
+
+@Composable
+private fun tabCountsText(tab: ChatMediaTab?, counts: ChatMediaCounts?): String? {
+    if (tab == null || counts == null) {
+        return null
+    }
+    
+    return when (tab) {
+        ChatMediaTab.MEDIA -> mediaCountsText(counts)
+        
+        ChatMediaTab.FILES -> pluralStringResource(
+            R.plurals.chat_media_files_count,
+            counts.files,
+            counts.files
+        )
+        
+        ChatMediaTab.VOICES -> pluralStringResource(
+            R.plurals.chat_media_voices_count,
+            counts.voices,
+            counts.voices
         )
     }
 }
