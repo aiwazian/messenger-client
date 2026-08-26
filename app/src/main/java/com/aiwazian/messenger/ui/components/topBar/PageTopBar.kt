@@ -6,7 +6,6 @@ package com.aiwazian.messenger.ui.components.topBar
 
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
@@ -57,7 +56,7 @@ fun PageTopBar(
                     onDismissRequest = { expand = false }) {
                     action.dropdownActions.forEach { item ->
                         AppDropdownMenuItem(
-                            text = { Text(item.text.asString()) },
+                            text = item.text.asString(),
                             onClick = {
                                 expand = false
                                 item.onClick?.invoke()

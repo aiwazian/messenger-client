@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.NotificationsOff
+import androidx.compose.material.icons.outlined.PermMedia
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -202,20 +203,12 @@ fun ChatTopBar(
                     Icon(action.icon, null)
                 }
                 AppDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
-                    action.dropdownActions.forEach { dropdownAction ->
-                        AppDropdownMenuItem(leadingIcon = {
-                            Icon(dropdownAction.icon, null)
-                        }, text = {
-                            Text(dropdownAction.text.asString())
-                        }, onClick = {
-                            dropdownAction.onClick?.invoke()
-                            expand = false
-                        })
-                    }
-                    
                     /*
-                     * Пункт про уведомления всегда в последнем меню ряда — тех самых трёх точках,
-                     * а не в каждом выпадающем списке шапки.
+                     * Уведомления и медиа стоят первыми и только в последнем меню ряда —
+                     * тех самых трёх точках, а не в каждом выпадающем списке шапки.
+                     *
+                     * Удаление чата и очистка истории уходят под них: спутать удаление с
+                     * выключением звука дороже, чем сделать лишнее движение пальцем.
                      */
                     if (index == topBarActions.lastIndex) {
                         AppDropdownMenuItem(leadingIcon = {
@@ -223,15 +216,29 @@ fun ChatTopBar(
                                 if (isMuted) Icons.Outlined.Notifications
                                 else Icons.Outlined.NotificationsOff, null
                             )
-                        }, text = {
-                            Text(
-                                stringResource(
-                                    if (isMuted) R.string.chat_enable_notifications
-                                    else R.string.chat_disable_notifications
-                                )
-                            )
-                        }, onClick = {
+                        }, text = stringResource(
+                            if (isMuted) R.string.chat_enable_notifications
+                            else R.string.chat_disable_notifications
+                        ), onClick = {
                             onToggleNotifications()
+                            expand = false
+                        })
+                        
+                        AppDropdownMenuItem(leadingIcon = {
+                            Icon(Icons.Outlined.PermMedia, null)
+                        }, text = stringResource(R.string.chat_media), onClick = {
+                            expand = false
+                            navBackStack.add(
+                                AppRoute.ChatMedia(chatId = chatId, chatName = title)
+                            )
+                        })
+                    }
+                    
+                    action.dropdownActions.forEach { dropdownAction ->
+                        AppDropdownMenuItem(leadingIcon = {
+                            Icon(dropdownAction.icon, null)
+                        }, text = dropdownAction.text.asString(), onClick = {
+                            dropdownAction.onClick?.invoke()
                             expand = false
                         })
                     }

@@ -383,7 +383,7 @@ fun MessageBubble(
                                     contentDescription = "Назад"
                                 )
                             },
-                            text = { },
+                            text = "",
                             onClick = {
                                 showReadersDropdown = false
                                 expanded = true
@@ -407,23 +407,8 @@ fun MessageBubble(
                                         size = 30.dp
                                     )
                                 },
-                                text = {
-                                    Column {
-                                        Text(
-                                            text = name,
-                                            fontSize = 14.sp,
-                                            lineHeight = 18.sp,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Text(
-                                            text = readTime,
-                                            fontSize = 12.sp,
-                                            lineHeight = 14.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                },
+                                text = name,
+                                supportingText = readTime,
                                 onClick = {
                                     showReadersDropdown = false
                                     onReaderClick?.invoke(reader)

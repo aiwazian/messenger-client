@@ -106,7 +106,7 @@ fun ChannelSubscribersScreen(
                                     onDismissRequest = { showMenu = false }
                                 ) {
                                     AppDropdownMenuItem(
-                                        text = { Text(stringResource(R.string.kick)) },
+                                        text = stringResource(R.string.kick),
                                         onClick = {
                                             showMenu = false
                                             viewModel.showKickDialog(user.id)
@@ -117,7 +117,7 @@ fun ChannelSubscribersScreen(
                                         contentColor = MaterialTheme.colorScheme.error
                                     )
                                     AppDropdownMenuItem(
-                                        text = { Text(stringResource(R.string.block_user)) },
+                                        text = stringResource(R.string.block_user),
                                         onClick = {
                                             showMenu = false
                                             viewModel.showBlockDialog(user.id)

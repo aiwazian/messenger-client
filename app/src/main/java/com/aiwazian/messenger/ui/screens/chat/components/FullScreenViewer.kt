@@ -270,43 +270,47 @@ fun FullScreenViewer(
                             AppDropdownMenu(
                                 expanded = showVideoSettings,
                                 onDismissRequest = { showVideoSettings = false }) {
-                                AppDropdownMenuItem(text = {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Text(text = stringResource(R.string.speed))
-                                        
+                                /*
+                                 * Текущая скорость — справа, а не вторым словом в названии:
+                                 * это состояние пункта, а не его имя.
+                                 */
+                                AppDropdownMenuItem(
+                                    text = stringResource(R.string.speed),
+                                    onClick = {
+                                        showVideoSettings = false
+                                        showSpeedBottomSheet = true
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Speed,
+                                            contentDescription = null
+                                        )
+                                    },
+                                    trailingIcon = {
                                         Text(
                                             text = String.format(
                                                 Locale.ROOT, "%.1f", videoPlaybackSpeed
                                             ) + 'x',
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
-                                    }
-                                }, onClick = {
-                                    showVideoSettings = false
-                                    showSpeedBottomSheet = true
-                                }, leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Speed,
-                                        contentDescription = null
-                                    )
-                                })
-                                AppDropdownMenuItem(text = {
-                                    Text(text = stringResource(R.string.loop))
-                                }, onClick = {
-                                    onVideoLoopingChange(!isVideoLooping)
-                                    showVideoSettings = false
-                                }, leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Repeat,
-                                        contentDescription = null
-                                    )
-                                }, contentColor = if (isVideoLooping) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                })
+                                    })
+                                AppDropdownMenuItem(
+                                    text = stringResource(R.string.loop),
+                                    onClick = {
+                                        onVideoLoopingChange(!isVideoLooping)
+                                        showVideoSettings = false
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Repeat,
+                                            contentDescription = null
+                                        )
+                                    },
+                                    contentColor = if (isVideoLooping) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    })
                             }
                         }
                         
@@ -330,17 +334,18 @@ fun FullScreenViewer(
                                 expanded = showMoreActions,
                                 onDismissRequest = { showMoreActions = false }) {
                                 if (canDownloadMedia && currentItem != null) {
-                                    AppDropdownMenuItem(text = {
-                                        Text(text = stringResource(R.string.save_to_gallery))
-                                    }, onClick = {
-                                        onSaveToGallery(currentItem.uri)
-                                        showMoreActions = false
-                                    }, leadingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Rounded.SaveAlt,
-                                            contentDescription = null
-                                        )
-                                    })
+                                    AppDropdownMenuItem(
+                                        text = stringResource(R.string.save_to_gallery),
+                                        onClick = {
+                                            onSaveToGallery(currentItem.uri)
+                                            showMoreActions = false
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Rounded.SaveAlt,
+                                                contentDescription = null
+                                            )
+                                        })
                                 }
                             }
                         }

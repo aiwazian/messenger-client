@@ -180,7 +180,7 @@ private fun ChatFolderRow(
                                 modifier = Modifier.size(20.dp)
                             )
                         },
-                        text = { Text(stringResource(R.string.edit_folder)) },
+                        text = stringResource(R.string.edit_folder),
                         onClick = {
                             expanded = false
                             onEditClick()
@@ -194,7 +194,7 @@ private fun ChatFolderRow(
                                 modifier = Modifier.size(20.dp)
                             )
                         },
-                        text = { Text(stringResource(R.string.delete)) },
+                        text = stringResource(R.string.delete),
                         onClick = {
                             expanded = false
                             onDeleteClick()

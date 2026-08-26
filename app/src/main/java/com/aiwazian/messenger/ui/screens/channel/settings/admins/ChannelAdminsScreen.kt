@@ -168,7 +168,7 @@ private fun ChannelAdminItem(
             ) {
                 if (isCurrentUser) {
                     AppDropdownMenuItem(
-                        text = { Text(stringResource(R.string.view_permissions)) },
+                        text = stringResource(R.string.view_permissions),
                         onClick = {
                             showMenu = false
                             onOpenPermissions()
@@ -179,7 +179,7 @@ private fun ChannelAdminItem(
                     )
                 } else {
                     AppDropdownMenuItem(
-                        text = { Text(stringResource(R.string.edit_permissions)) },
+                        text = stringResource(R.string.edit_permissions),
                         onClick = {
                             showMenu = false
                             onOpenPermissions()
@@ -189,7 +189,7 @@ private fun ChannelAdminItem(
                         }
                     )
                     AppDropdownMenuItem(
-                        text = { Text(stringResource(R.string.dismiss_admin)) },
+                        text = stringResource(R.string.dismiss_admin),
                         onClick = {
                             showMenu = false
                             onDemote()

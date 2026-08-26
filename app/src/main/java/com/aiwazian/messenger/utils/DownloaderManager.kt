@@ -20,6 +20,9 @@ import com.ketch.Status
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.io.File
@@ -46,6 +49,16 @@ class DownloaderManager @Inject constructor(
         .build(context)
     
     private val _downloads = mutableListOf<DownloadItem>()
+    
+    private val _activeDownloads = MutableStateFlow<List<DownloadItem>>(emptyList())
+    
+    /**
+     * Текущая очередь скачивания со свежим прогрессом.
+     *
+     * Раньше прогресс жил только внутри менеджера, и экран мог узнать только
+     * итог из Room: полоску загрузки заполнить было нечем.
+     */
+    val activeDownloads: StateFlow<List<DownloadItem>> = _activeDownloads.asStateFlow()
     
     /**
      * Ставит файл в очередь скачивания.
@@ -91,6 +104,7 @@ class DownloaderManager @Inject constructor(
             )
             
             _downloads.add(item)
+            publish()
             
             fileRepository.updateFileStatus(fileId, DownloadStatus.DOWNLOADING)
             
@@ -128,6 +142,7 @@ class DownloaderManager @Inject constructor(
                     )
                     fileRepository.upsert(file)
                     _downloads.remove(existing)
+                    publish()
                 } else {
                     val index = _downloads.indexOfFirst { it.id == existing.id }
                     
@@ -142,6 +157,7 @@ class DownloaderManager @Inject constructor(
                             speed = model.speedInBytePerMs.toString(),
                             localUri = finalPath
                         )
+                        publish()
                     }
                 }
             }
@@ -153,6 +169,7 @@ class DownloaderManager @Inject constructor(
         if (index != -1) {
             ketch.pause(_downloads[index].id)
             _downloads[index] = _downloads[index].copy(status = DownloadStatus.PAUSED)
+            publish()
         }
         fileRepository.updateFileStatus(fileId, DownloadStatus.PAUSED)
     }
@@ -162,6 +179,7 @@ class DownloaderManager @Inject constructor(
         if (index != -1) {
             ketch.resume(_downloads[index].id)
             _downloads[index] = _downloads[index].copy(status = DownloadStatus.DOWNLOADING)
+            publish()
         }
         fileRepository.updateFileStatus(fileId, DownloadStatus.DOWNLOADING)
     }
@@ -171,8 +189,14 @@ class DownloaderManager @Inject constructor(
         if (index != -1) {
             ketch.cancel(_downloads[index].id)
             _downloads.remove(_downloads[index])
+            publish()
         }
         fileRepository.updateFileStatus(fileId, DownloadStatus.CANCELLED)
+    }
+    
+    /** Копия списка, а не сам список: иначе подписчики увидят его мутации без события. */
+    private fun publish() {
+        _activeDownloads.value = _downloads.toList()
     }
     
     private fun Status.toDomain() = when (this) {

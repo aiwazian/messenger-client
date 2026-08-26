@@ -86,7 +86,7 @@ fun MessageDropdownMenu(
                                 contentDescription = null
                             )
                         },
-                        text = { Text(action.text.asString()) },
+                        text = action.text.asString(),
                         onClick = {
                             onDismissRequest()
                             action.onClick?.invoke()
