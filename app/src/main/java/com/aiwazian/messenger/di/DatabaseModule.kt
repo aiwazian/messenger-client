@@ -13,6 +13,7 @@ import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.ChatFolderDao
+import com.aiwazian.messenger.database.dao.ChatMediaDao
 import com.aiwazian.messenger.database.dao.DraftDao
 import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.GroupDao
@@ -79,4 +80,7 @@ object DatabaseModule {
     @Provides
     fun provideNotificationSettingsDao(database: AppDatabase): NotificationSettingsDao =
         database.notificationSettingsDao()
+    
+    @Provides
+    fun provideChatMediaDao(database: AppDatabase): ChatMediaDao = database.chatMediaDao()
 }

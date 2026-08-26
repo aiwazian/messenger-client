@@ -27,9 +27,18 @@ data class ChatMediaItem(
     val mimeType: String,
     val type: AttachmentType,
     val sendTime: Long,
+    /** Автор сообщения: список голосовых отличает свои записи от чужих. */
+    val senderId: Long = 0,
     val status: DownloadStatus = DownloadStatus.IDLE,
     val progress: Int = 0,
-    val localUri: Uri? = null
+    val localUri: Uri? = null,
+    /**
+     * Длина голосового в миллисекундах, если она уже известна.
+     *
+     * Сервер её не отдаёт: она считается из скачанного файла и ложится в
+     * кэш, поэтому при первом показе может быть пустой.
+     */
+    val durationMs: Int? = null
 ) {
     /** Расширение для иконки документа: сервер его отдельно не отдаёт. */
     val extension: String get() = name.substringAfterLast('.', "")
@@ -43,4 +52,17 @@ data class ChatMediaItem(
 data class ChatMediaPage(
     val items: List<ChatMediaItem>,
     val nextCursorId: Int? = null
+)
+
+/**
+ * Сколько вложений в чате всего.
+ *
+ * Фото и видео разделены: они лежат на одной вкладке, но в подписи
+ * перечисляются по отдельности.
+ */
+data class ChatMediaCounts(
+    val photos: Int = 0,
+    val videos: Int = 0,
+    val files: Int = 0,
+    val voices: Int = 0
 )

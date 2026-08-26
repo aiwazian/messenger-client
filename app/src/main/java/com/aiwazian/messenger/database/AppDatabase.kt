@@ -14,6 +14,7 @@ import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.ChatFolderDao
+import com.aiwazian.messenger.database.dao.ChatMediaDao
 import com.aiwazian.messenger.database.dao.DraftDao
 import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.GroupDao
@@ -27,12 +28,15 @@ import com.aiwazian.messenger.database.entity.ChannelEntity
 import com.aiwazian.messenger.database.entity.ChatEntity
 import com.aiwazian.messenger.database.entity.ChatFolderChatEntity
 import com.aiwazian.messenger.database.entity.ChatFolderEntity
+import com.aiwazian.messenger.database.entity.ChatMediaCountsEntity
+import com.aiwazian.messenger.database.entity.ChatMediaEntity
 import com.aiwazian.messenger.database.entity.DraftEntity
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.database.entity.GroupEntity
 import com.aiwazian.messenger.database.entity.MessageEntity
 import com.aiwazian.messenger.database.entity.NotificationSettingsEntity
 import com.aiwazian.messenger.database.entity.UserEntity
+import com.aiwazian.messenger.database.entity.VoiceDurationEntity
 import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
 
 @Database(
@@ -49,9 +53,12 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         DraftEntity::class,
         ChatFolderEntity::class,
         ChatFolderChatEntity::class,
-        NotificationSettingsEntity::class
+        NotificationSettingsEntity::class,
+        ChatMediaEntity::class,
+        ChatMediaCountsEntity::class,
+        VoiceDurationEntity::class
     ],
-    version = 54,
+    version = 55,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 38, to = 39),
@@ -73,6 +80,8 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         AutoMigration(from = 52, to = 53),
         /* 54: чат помнит, выключены ли по нему уведомления. */
         AutoMigration(from = 53, to = 54),
+        /* 55: галерея чата кэшируется локально: вложения, счётчики и длины голосовых. */
+        AutoMigration(from = 54, to = 55),
     ]
 )
 @ColumnTypeConverters(Converters::class)
@@ -100,4 +109,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun chatFolderDao(): ChatFolderDao
     
     abstract fun notificationSettingsDao(): NotificationSettingsDao
+    
+    abstract fun chatMediaDao(): ChatMediaDao
 }
