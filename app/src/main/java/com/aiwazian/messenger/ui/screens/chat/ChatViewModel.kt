@@ -9,7 +9,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
-import androidx.compose.material.icons.outlined.CleaningServices
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.lifecycle.ViewModel
@@ -382,8 +381,7 @@ class ChatViewModel @Inject constructor(
                         topBarActions = createTopBarActions(
                             isOwner = true,
                             isJoined = true,
-                            type = ChatType.PRIVATE,
-                            isMe = true
+                            type = ChatType.PRIVATE
                         )
                     )
                 }
@@ -414,22 +412,19 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Пункты троеточия в шапке чата.
+     *
+     * «Очистить историю» здесь больше нет: в канале и группе она живёт в
+     * «Управлении каналом» и «Управлении группой» рядом с удалением, где видно,
+     * что чистится вся история и сразу для всех участников.
+     */
     private fun createTopBarActions(
         isOwner: Boolean,
         isJoined: Boolean,
-        type: ChatType,
-        isMe: Boolean = false
+        type: ChatType
     ): List<TopBarAction> {
         val actions = mutableListOf<DropdownMenuAction>()
-        if (isOwner || isMe) {
-            actions.add(
-                DropdownMenuAction(
-                    Icons.Outlined.CleaningServices,
-                    UiText.StringResource(R.string.clear_history),
-                    ::showClearHistoryDialog
-                )
-            )
-        }
 
         if (type == ChatType.PRIVATE) {
             actions.add(
@@ -452,9 +447,12 @@ class ChatViewModel @Inject constructor(
             )
         }
 
-        return if (actions.isNotEmpty()) {
-            listOf(TopBarAction(icon = Icons.Rounded.MoreVert, dropdownActions = actions))
-        } else emptyList()
+        /*
+         * Троеточие показываем всегда, даже с пустым списком действий: «Медиа» и
+         * уведомления живут внутри этого же меню, и у владельца канала без него
+         * не осталось бы точки входа ни туда, ни туда.
+         */
+        return listOf(TopBarAction(icon = Icons.Rounded.MoreVert, dropdownActions = actions))
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -1197,18 +1195,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun onDeleteMessagesConfirmed() {
-        viewModelScope.launch {
-            if (chatRepository.deleteChatMessages(
-                    _uiState.value.chatId,
-                    _uiState.value.deleteForRecipient
-                )
-            ) {
-                hideClearHistoryDialog()
-            }
-        }
-    }
-
     fun onDeleteMessageConfirmed() {
         viewModelScope.launch {
             val deleteForRecipient = _uiState.value.deleteForRecipient
@@ -1227,12 +1213,6 @@ class ChatViewModel @Inject constructor(
 
     fun hideDeleteChatDialog() =
         _uiState.update { it.copy(showDeleteChatDialog = false, deleteForRecipient = false) }
-
-    fun showClearHistoryDialog() =
-        _uiState.update { it.copy(showClearHistoryDialog = true, deleteForRecipient = false) }
-
-    fun hideClearHistoryDialog() =
-        _uiState.update { it.copy(showClearHistoryDialog = false, deleteForRecipient = false) }
 
     fun showDeleteMessageDialog() =
         _uiState.update { it.copy(showDeleteMessageDialog = true, deleteForRecipient = false) }

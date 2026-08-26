@@ -55,19 +55,6 @@ fun ChatDialogs(
         )
     }
     
-    if (uiState.showClearHistoryDialog) {
-        val isPrivateChat =
-            ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.chatId != uiState.myId
-        ClearHistoryDialog(
-            onDismissRequest = chatViewModel::hideClearHistoryDialog,
-            onConfirm = chatViewModel::onDeleteMessagesConfirmed,
-            vibrate = chatViewModel::vibrate,
-            clearForRecipient = uiState.deleteForRecipient,
-            onClearForRecipientChanged = chatViewModel::setDeleteForRecipient,
-            isPrivateChat = isPrivateChat
-        )
-    }
-    
     if (uiState.showDeleteMessageDialog) {
         val isPrivateChat =
             ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.chatId != uiState.myId
@@ -138,62 +125,6 @@ private fun DeleteChatDialog(
                 onClickAfterFinish = onConfirm,
                 onClickWhileRunning = vibrate,
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            )
-        })
-}
-
-@Composable
-private fun ClearHistoryDialog(
-    onDismissRequest: () -> Unit,
-    onConfirm: () -> Unit,
-    vibrate: () -> Unit,
-    clearForRecipient: Boolean,
-    onClearForRecipientChanged: (Boolean) -> Unit,
-    isPrivateChat: Boolean
-) {
-    AppDialog(
-        title = stringResource(R.string.clear_history),
-        onDismissRequest = onDismissRequest,
-        content = {
-            Column {
-                Text(
-                    text = stringResource(R.string.clear_history_confirm),
-                    lineHeight = 16.sp
-                )
-                if (isPrivateChat) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.medium)
-                            .clickable { onClearForRecipientChanged(!clearForRecipient) }
-                            .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Checkbox(
-                            checked = clearForRecipient,
-                            onCheckedChange = null,
-                            interactionSource = remember { MutableInteractionSource() })
-                        Text(
-                            text = stringResource(R.string.delete_for_recipient),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
-        },
-        buttons = {
-            TextButton(onClick = onDismissRequest) {
-                Text(stringResource(R.string.cancel))
-            }
-            CountdownTextButton(
-                text = stringResource(R.string.delete),
-                seconds = 5,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                ),
-                onClickAfterFinish = onConfirm,
-                onClickWhileRunning = vibrate
             )
         })
 }

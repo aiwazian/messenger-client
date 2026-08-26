@@ -7,6 +7,7 @@ package com.aiwazian.messenger.ui.screens.group.settings.management
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.usecase.DeleteGroupUseCase
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
@@ -22,6 +23,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GroupManagementViewModel @Inject constructor(
+    private val chatRepository: ChatRepository,
     private val deleteGroupUseCase: DeleteGroupUseCase,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
@@ -44,8 +46,45 @@ class GroupManagementViewModel @Inject constructor(
         _uiState.update { it.copy(showDeleteDialog = false) }
     }
     
+    fun showClearHistoryDialog() {
+        _uiState.update { it.copy(showClearHistoryDialog = true) }
+    }
+    
+    fun hideClearHistoryDialog() {
+        _uiState.update { it.copy(showClearHistoryDialog = false) }
+    }
+    
     fun vibrate() {
         vibrationManager.vibrate(VibrationPattern.Error)
+    }
+    
+    /**
+     * Очистка всей истории группы.
+     *
+     * Сообщения удаляются сразу у всех участников: сервер разрешает это
+     * только владельцу и сам разбрасывает остальным событие об очистке.
+     *
+     * Группа при этом остаётся на месте, поэтому, в отличие от удаления, на
+     * главный экран не уводим — только закрываем диалог.
+     */
+    fun clearHistory() {
+        viewModelScope.launch {
+            val groupId = _uiState.value.groupId
+            
+            if (groupId <= 0) {
+                return@launch
+            }
+            
+            val success = chatRepository.deleteChatMessages(groupId)
+            _uiState.update { it.copy(showClearHistoryDialog = false) }
+            
+            if (success) {
+                _uiEffect.emit(GroupManagementEffect.ShowSnackbar(UiText.StringResource(R.string.history_cleared)))
+            } else {
+                _uiEffect.emit(GroupManagementEffect.ShowSnackbar(UiText.StringResource(R.string.unexpected_error)))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
     }
     
     fun delete() {

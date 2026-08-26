@@ -520,7 +520,9 @@ private fun CaptionRow(
         BasicTextField(
             value = caption,
             onValueChange = onCaptionChange,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .align(Alignment.CenterVertically),
             textStyle = MaterialTheme.typography.bodyLarge.copy(
                 color = MaterialTheme.colorScheme.onSurface,
                 lineHeight = 16.sp
@@ -678,7 +680,7 @@ private fun Context.openAppSettings() {
     startActivity(intent)
 }
 
-private val TOOLBAR_SHAPE = RoundedCornerShape(28.dp)
+private val TOOLBAR_SHAPE = RoundedCornerShape(24.dp)
 private val TOOLBAR_ELEVATION = 3.dp
 private val LABEL_SHAPE = RoundedCornerShape(6.dp)
 private val SELECTED_CORNER_RADIUS = 12.dp

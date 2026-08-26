@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="chat_media">Multimedia</string>
-    <string name="chat_media_tab">Multimedia</string>
-    <string name="chat_files_tab">Archivos</string>
-    <string name="chat_attachments_empty">Todavía no hay adjuntos en este chat</string>
-    <string name="chat_media_load_error">No se pudieron cargar los adjuntos</string>
-</resources>
