@@ -88,11 +88,39 @@ fun GroupManagementScreen(
                 )
                 
                 SectionItem(
+                    headlineText = stringResource(R.string.clear_history),
+                    onClick = viewModel::showClearHistoryDialog
+                )
+                
+                SectionItem(
                     headlineText = stringResource(R.string.delete_group),
                     contentColor = MaterialTheme.colorScheme.error,
                     onClick = viewModel::showDeleteDialog
                 )
             }
+        }
+        
+        if (uiState.showClearHistoryDialog) {
+            AppDialog(
+                title = stringResource(R.string.clear_history),
+                onDismissRequest = viewModel::hideClearHistoryDialog,
+                buttons = {
+                    TextButton(onClick = viewModel::hideClearHistoryDialog) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                    
+                    CountdownTextButton(
+                        text = stringResource(R.string.delete),
+                        seconds = 5,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        onClickWhileRunning = viewModel::vibrate,
+                        onClickAfterFinish = viewModel::clearHistory
+                    )
+                },
+                content = {
+                    Text(stringResource(R.string.clear_history_confirm))
+                }
+            )
         }
         
         if (uiState.showDeleteDialog) {

@@ -6,5 +6,6 @@ package com.aiwazian.messenger.ui.screens.channel.settings.management
 
 data class ChannelManagementUiState(
     val channelId: Long = 0,
-    val showDeleteDialog: Boolean = false
+    val showDeleteDialog: Boolean = false,
+    val showClearHistoryDialog: Boolean = false
 )
