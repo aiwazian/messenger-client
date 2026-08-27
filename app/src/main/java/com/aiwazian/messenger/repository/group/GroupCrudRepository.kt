@@ -5,13 +5,13 @@
 package com.aiwazian.messenger.repository.group
 
 import android.util.Log
-import androidx.core.net.toUri
 import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.domain.AvatarNotFoundException
 import com.aiwazian.messenger.domain.Group
 import com.aiwazian.messenger.enums.GroupType
 import com.aiwazian.messenger.mappers.toDomain
+import com.aiwazian.messenger.mappers.toDomainAvatars
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.mappers.toGroupEntity
 import com.aiwazian.messenger.network.api.GroupApi
@@ -41,16 +41,7 @@ class GroupCrudRepository @Inject constructor(
     fun getByIdOrNull(id: Long): Flow<Group?> =
         groupDao.getWithAvatarsFlow(id).map { groupWithAvatars ->
             groupWithAvatars ?: return@map null
-            val avatars =
-                groupWithAvatars.avatars.sortedBy { it.avatar.sortOrder }.map { avatarWithFile ->
-                    val uri = if (!avatarWithFile.file?.path.isNullOrBlank()) {
-                        avatarWithFile.file.path.toUri()
-                    } else {
-                        null
-                    }
-                    avatarWithFile.avatar.toDomain(uri)
-                }
-            groupWithAvatars.group.toDomain(avatars)
+            groupWithAvatars.group.toDomain(groupWithAvatars.avatars.toDomainAvatars())
         }
     
     suspend fun fetchById(groupId: Long) {

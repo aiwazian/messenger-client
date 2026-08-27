@@ -10,10 +10,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffXfermode
 import android.net.Uri
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -22,26 +18,17 @@ import androidx.core.app.Person
 import androidx.core.content.edit
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
-import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.IconCompat
-import androidx.core.graphics.drawable.toBitmap
-import androidx.core.graphics.scale
-import androidx.core.net.toUri
-import coil.imageLoader
-import coil.memory.MemoryCache
-import coil.request.ImageRequest
-import coil.request.SuccessResult
 import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.repository.NotificationSettingsRepository
 import com.aiwazian.messenger.utils.ActiveChatTracker
+import com.aiwazian.messenger.utils.ChatAvatarIconLoader
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import javax.inject.Inject
@@ -50,7 +37,7 @@ import javax.inject.Singleton
 @Singleton
 class NotificationHelper @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val database: AppDatabase,
+    private val chatAvatarIconLoader: ChatAvatarIconLoader,
     private val notificationSettingsRepository: NotificationSettingsRepository
 ) {
     
@@ -58,7 +45,6 @@ class NotificationHelper @Inject constructor(
     
     companion object {
         private const val MAX_MESSAGES = 5
-        private const val ICON_SIZE_DP = 192
         
         /** История показанных уведомлений по чатам: ключ — chatId. */
         private const val NOTIFICATIONS_PREFS = "NOTIFICATIONS"
@@ -81,33 +67,6 @@ class NotificationHelper @Inject constructor(
                 json.optLong("timestamp", System.currentTimeMillis())
             )
         }
-    }
-    
-    private fun Bitmap.cropToCircle(): Bitmap {
-        val sourceBitmap = if (config == Bitmap.Config.HARDWARE) {
-            copy(Bitmap.Config.ARGB_8888, false)
-        } else {
-            this
-        }
-        
-        val size = minOf(sourceBitmap.width, sourceBitmap.height)
-        val output = createBitmap(size, size)
-        val canvas = Canvas(output)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        
-        canvas.drawARGB(0, 0, 0, 0)
-        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
-        
-        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
-        val left = (size - sourceBitmap.width) / 2f
-        val top = (size - sourceBitmap.height) / 2f
-        canvas.drawBitmap(sourceBitmap, left, top, paint)
-        
-        if (sourceBitmap !== this) {
-            sourceBitmap.recycle()
-        }
-        
-        return output
     }
     
     private fun createPerson(
@@ -133,7 +92,7 @@ class NotificationHelper @Inject constructor(
         
         val intent = Intent(context, MainActivity::class.java).apply {
             action = Intent.ACTION_VIEW
-            putExtra("chatId", chatId)
+            putExtra(MainActivity.EXTRA_CHAT_ID, chatId)
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         
@@ -177,31 +136,14 @@ class NotificationHelper @Inject constructor(
              */
             if (!notificationSettingsRepository.isEnabledFor(chatId)) return@launch
             
-            val chatInfo = when (ChatType.fromId(chatId)) {
-                ChatType.PRIVATE -> database.userDao().getWithAvatars(chatId)?.let {
-                    val name = "${it.user.firstName} ${it.user.lastName.orEmpty()}".trim()
-                    val uri = it.avatars.firstOrNull()?.file?.path?.toUri()
-                    name to uri
-                }
-                
-                ChatType.GROUP -> database.groupDao().getWithAvatars(chatId)?.let {
-                    val uri = it.avatars.firstOrNull()?.file?.path?.toUri()
-                    it.group.name to uri
-                }
-                
-                ChatType.CHANNEL -> database.channelDao().getWithAvatars(chatId)?.let {
-                    val uri = it.avatars.firstOrNull()?.file?.path?.toUri()
-                    it.channel.name to uri
-                }
-                
-                else -> null
-            }
+            val chatAvatar = chatAvatarIconLoader.resolveChatAvatar(chatId)
             
-            val resolvedTitle = chatInfo?.first ?: title
-            val resolvedAvatarUri = chatInfo?.second ?: avatarUri
+            val resolvedTitle = chatAvatar.chatName?.takeIf { it.isNotBlank() } ?: title
             
-            val rawAvatar = loadAvatar(context, resolvedAvatarUri)
-            val circularAvatar = rawAvatar?.cropToCircle()
+            /* Чата ещё нет в базе — тогда в дело идёт аватарка из пуша. */
+            val resolvedAvatarUri = chatAvatar.avatarUri ?: avatarUri
+            
+            val circularAvatar = chatAvatarIconLoader.loadCircleAvatar(resolvedAvatarUri)
             
             createOrUpdateChatShortcut(context, chatId, resolvedTitle, circularAvatar)
             
@@ -229,7 +171,7 @@ class NotificationHelper @Inject constructor(
             
             val intent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                putExtra("chatId", chatId)
+                putExtra(MainActivity.EXTRA_CHAT_ID, chatId)
             }
             val pendingIntent = PendingIntent.getActivity(
                 context,
@@ -320,39 +262,5 @@ class NotificationHelper @Inject constructor(
         ChatType.CHANNEL -> "channels"
         ChatType.GROUP -> "groups"
         ChatType.UNKNOWN -> "other"
-    }
-    
-    private suspend fun loadAvatar(
-        context: Context,
-        uri: Uri?
-    ): Bitmap? = withContext(Dispatchers.IO) {
-        uri ?: return@withContext null
-        
-        var bitmap: Bitmap?
-        
-        val cached = context.imageLoader.memoryCache?.get(MemoryCache.Key(uri.toString()))?.bitmap
-        bitmap = cached
-        
-        if (bitmap == null) {
-            val request = ImageRequest.Builder(context)
-                .data(uri)
-                .size(ICON_SIZE_DP)
-                .build()
-            val result = context.imageLoader.execute(request)
-            if (result is SuccessResult) {
-                bitmap = result.drawable.toBitmap()
-            }
-        }
-        
-        bitmap?.let { bmp ->
-            val softwareBitmap = if (bmp.config == Bitmap.Config.HARDWARE) {
-                bmp.copy(Bitmap.Config.ARGB_8888, false)
-            } else {
-                bmp
-            }
-            
-            val size = (ICON_SIZE_DP * context.resources.displayMetrics.density).toInt()
-            softwareBitmap.scale(size, size)
-        }
     }
 }

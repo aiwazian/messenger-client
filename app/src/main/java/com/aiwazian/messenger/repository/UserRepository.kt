@@ -5,7 +5,6 @@
 package com.aiwazian.messenger.repository
 
 import android.util.Log
-import androidx.core.net.toUri
 import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.UserDao
 import com.aiwazian.messenger.database.entity.AvatarEntity
@@ -14,6 +13,7 @@ import com.aiwazian.messenger.domain.OwnedChannel
 import com.aiwazian.messenger.domain.PendingJoinRequest
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.mappers.toDomain
+import com.aiwazian.messenger.mappers.toDomainAvatars
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.mappers.toUpdateRequest
 import com.aiwazian.messenger.network.api.UserApi
@@ -32,17 +32,7 @@ class UserRepository @Inject constructor(
     private val avatarDao: AvatarDao
 ) {
     fun getMe(): Flow<User> = userDao.getMeWithAvatars().filterNotNull().map { userWithAvatars ->
-        val avatars =
-            userWithAvatars.avatars.sortedBy { it.avatar.sortOrder }.map { avatarWithFile ->
-                val uri = if (!avatarWithFile.file?.path.isNullOrBlank()) {
-                    avatarWithFile.file.path.toUri()
-                } else {
-                    null
-                }
-                avatarWithFile.avatar.toDomain(uri)
-            }
-        
-        userWithAvatars.user.toDomain(avatars)
+        userWithAvatars.user.toDomain(userWithAvatars.avatars.toDomainAvatars())
     }
     
     suspend fun fetchMe() {
@@ -74,16 +64,7 @@ class UserRepository @Inject constructor(
     fun getByIdOrNull(id: Long): Flow<User?> =
         userDao.getWithAvatarsFlow(id).map { userWithAvatars ->
             userWithAvatars ?: return@map null
-            val avatars =
-                userWithAvatars.avatars.sortedBy { it.avatar.sortOrder }.map { avatarWithFile ->
-                    val uri = if (!avatarWithFile.file?.path.isNullOrBlank()) {
-                        avatarWithFile.file.path.toUri()
-                    } else {
-                        null
-                    }
-                    avatarWithFile.avatar.toDomain(uri)
-                }
-            userWithAvatars.user.toDomain(avatars)
+            userWithAvatars.user.toDomain(userWithAvatars.avatars.toDomainAvatars())
         }
     
     suspend fun fetchById(id: Long) {
