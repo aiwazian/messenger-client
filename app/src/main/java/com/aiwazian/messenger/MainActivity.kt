@@ -25,7 +25,6 @@ import com.aiwazian.messenger.ui.components.navigation.AppNavDisplay
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.theme.ApplicationTheme
 import com.aiwazian.messenger.utils.InAppUpdateManager
-import com.aiwazian.messenger.utils.SessionEndResolution
 import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.ThemeManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -48,32 +47,31 @@ class MainActivity : AppCompatActivity() {
     private var inAppUpdateManager: InAppUpdateManager? = null
     private var isUpdateReadyToInstall by mutableStateOf(false)
     
+    /**
+     * Есть ли на устройстве аккаунт с рабочим токеном.
+     *
+     * От этого зависит и стартовый экран, и всё, что требует сервера: без аккаунта
+     * незачем подключаться и открывать чаты. Значение выставляется один раз в
+     * [onCreate] и дальше не меняется — и вход, и выход перезапускают активити.
+     */
+    private var isAuthorized = false
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        SessionManager.setSessionEndCallback { resolution ->
-            when (resolution) {
-                is SessionEndResolution.SwitchedToAccount -> restartWithNextAccount()
-                is SessionEndResolution.NoAccountsLeft -> openAuthScreen()
-            }
+        SessionManager.setSessionEndCallback {
+            /*
+             * Оба исхода — переключение на другой аккаунт и выход из последнего —
+             * обрабатываются одинаково: задача перезапускается, а onCreate сам решает,
+             * что показать.
+             */
+            restartApp()
         }
         
-        val hasSession = runBlocking {
+        isAuthorized = runBlocking {
             SessionManager.loadSession()
             SessionManager.hasAnySession()
         }
-        
-        if (!hasSession) {
-            openAuthScreen()
-            return
-        }
-        
-        /*
-         * Соединение с сервером поднимается здесь, а не на списке чатов: этот экран может
-         * и не открыться — приложение умеет запускаться сразу в чат по ярлыку с рабочего
-         * стола или по тапу на уведомление. Токен к этому моменту уже загружен.
-         */
-        serverSyncService.start()
         
         installSplashScreen().setKeepOnScreenCondition {
             false
@@ -81,12 +79,21 @@ class MainActivity : AppCompatActivity() {
         
         enableEdgeToEdge()
         
-        inAppUpdateManager = InAppUpdateManager(this) {
-            isUpdateReadyToInstall = true
-        }
-        
-        if (savedInstanceState == null) {
-            handleIntent(intent)
+        if (isAuthorized) {
+            /*
+             * Соединение с сервером поднимается здесь, а не на списке чатов: этот экран может
+             * и не открыться — приложение умеет запускаться сразу в чат по ярлыку с рабочего
+             * стола или по тапу на уведомление. Токен к этому моменту уже загружен.
+             */
+            serverSyncService.start()
+            
+            inAppUpdateManager = InAppUpdateManager(this) {
+                isUpdateReadyToInstall = true
+            }
+            
+            if (savedInstanceState == null) {
+                handleIntent(intent)
+            }
         }
         
         setContent {
@@ -99,17 +106,21 @@ class MainActivity : AppCompatActivity() {
                 dynamicColor = isDynamicColorEnable,
                 appPrimaryColor = primaryColor.color
             ) {
-                val startRoutes = mutableListOf<AppRoute>(AppRoute.Main)
-                
-                startRoute?.let {
-                    startRoutes.add(it)
-                    startRoute = null
+                if (isAuthorized) {
+                    val startRoutes = mutableListOf<AppRoute>(AppRoute.Main)
+                    
+                    startRoute?.let {
+                        startRoutes.add(it)
+                        startRoute = null
+                    }
+                    
+                    AppNavDisplay(
+                        *startRoutes.toTypedArray(),
+                        externalRouteFlow = externalRouteFlow
+                    )
+                } else {
+                    AppNavDisplay(AppRoute.Login)
                 }
-                
-                AppNavDisplay(
-                    *startRoutes.toTypedArray(),
-                    externalRouteFlow = externalRouteFlow
-                )
                 
                 if (isUpdateReadyToInstall) {
                     UpdateReadyDialog(
@@ -130,6 +141,14 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun handleIntent(intent: Intent, isNewIntent: Boolean = false) {
+        /*
+         * На экране входа открывать чат некуда, а intent мог прийти от ярлыка или
+         * уведомления, оставшихся от аккаунта, из которого уже вышли.
+         */
+        if (!isAuthorized) {
+            return
+        }
+        
         val chatId = resolveChatId(intent) ?: return
         
         if (isNewIntent) {
@@ -157,19 +176,18 @@ class MainActivity : AppCompatActivity() {
         return chatId?.takeIf { it != UNKNOWN_CHAT_ID }
     }
     
-    private fun restartWithNextAccount() {
-        restartTask(MainActivity::class.java)
-    }
-    
-    private fun openAuthScreen() {
-        restartTask(AuthActivity::class.java)
-    }
-    
-    private fun restartTask(target: Class<*>) {
+    /**
+     * Перезапускает приложение с чистой задачей.
+     *
+     * Отдельной активити авторизации больше нет: вход — это [AppRoute.Login] внутри
+     * MainActivity. Поэтому и смена аккаунта, и полный выход сводятся к перезапуску,
+     * после которого [onCreate] заново выбирает стартовый экран.
+     */
+    private fun restartApp() {
         runOnUiThread {
             val intent = Intent(
                 this,
-                target
+                MainActivity::class.java
             ).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }

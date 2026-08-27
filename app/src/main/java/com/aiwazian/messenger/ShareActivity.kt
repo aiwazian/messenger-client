@@ -12,6 +12,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.aiwazian.messenger.socket.ServerSyncService
 import com.aiwazian.messenger.ui.screens.share.ShareScreen
 import com.aiwazian.messenger.ui.theme.ApplicationTheme
 import com.aiwazian.messenger.utils.SessionManager
@@ -25,6 +26,9 @@ class ShareActivity : AppCompatActivity() {
     
     @Inject
     lateinit var themeManager: ThemeManager
+    
+    @Inject
+    lateinit var serverSyncService: ServerSyncService
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,12 +49,21 @@ class ShareActivity : AppCompatActivity() {
         }
         
         if (!hasSession) {
-            startActivity(Intent(this, AuthActivity::class.java).apply {
+            // Экран входа живёт в MainActivity, отдельной активити авторизации нет.
+            startActivity(Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             })
             finish()
             return
         }
+        
+        /*
+         * Соединение поднимается и здесь: шаринг открывает только это окно, MainActivity
+         * при этом может вообще не запускаться. Без этого вызова приложение остаётся без
+         * сокета и свежего состояния — список чатов для выбора берётся из базы и никогда
+         * не обновляется, а отправленное сообщение нечем синхронизировать.
+         */
+        serverSyncService.start()
         
         enableEdgeToEdge()
         
