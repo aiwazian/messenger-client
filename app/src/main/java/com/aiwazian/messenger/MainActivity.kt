@@ -119,15 +119,31 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun handleIntent(intent: Intent, isNewIntent: Boolean = false) {
-        val chatId = intent.getLongExtra("chatId", -1)
-        if (chatId != -1L) {
-            if (isNewIntent) {
-                externalRouteFlow.tryEmit(AppRoute.Chat(chatId, null))
-            } else {
-                startRoute = AppRoute.Chat(chatId, null)
-            }
-            return
+        val chatId = resolveChatId(intent) ?: return
+        
+        if (isNewIntent) {
+            externalRouteFlow.tryEmit(AppRoute.Chat(chatId, null))
+        } else {
+            startRoute = AppRoute.Chat(chatId, null)
         }
+    }
+    
+    /**
+     * Идентификатор чата из intent: ярлыка с рабочего стола, уведомления или
+     * перезапуска приложения.
+     *
+     * Строковая ветка нужна для совместимости: ярлыки, закреплённые до исправления
+     * [com.aiwazian.messenger.utils.ShortcutManager], хранят chatId строкой, а
+     * getLongExtra на таком extra молча отдаёт default. Из-за этого нажатие на
+     * ярлык открывало приложение на главном экране вместо чата. Так уже
+     * закреплённые ярлыки работают без повторного закрепления.
+     */
+    private fun resolveChatId(intent: Intent): Long? {
+        val chatId = intent.getLongExtra(EXTRA_CHAT_ID, UNKNOWN_CHAT_ID)
+            .takeIf { it != UNKNOWN_CHAT_ID }
+            ?: intent.getStringExtra(EXTRA_CHAT_ID)?.toLongOrNull()
+        
+        return chatId?.takeIf { it != UNKNOWN_CHAT_ID }
     }
     
     private fun restartWithNextAccount() {
@@ -150,6 +166,16 @@ class MainActivity : AppCompatActivity() {
             finish()
         }
     }
+    
+    companion object {
+        /**
+         * Ключ chatId в intent. Значение обязательно кладётся как Long: [resolveChatId]
+         * читает его через getLongExtra.
+         */
+        const val EXTRA_CHAT_ID = "chatId"
+        
+        private const val UNKNOWN_CHAT_ID = -1L
+    }
 }
 
 @Composable
@@ -166,7 +192,7 @@ private fun UpdateReadyDialog(
         buttons = {
             Row {
                 TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.update_later))
+                    Text(stringResource(R.string.update_restart))
                 }
                 TextButton(onClick = onRestart) {
                     Text(stringResource(R.string.update_restart))

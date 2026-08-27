@@ -32,17 +32,6 @@ class ShortcutManager @Inject constructor(
             return
         }
         
-        val intent = Intent(
-            context,
-            MainActivity::class.java
-        ).apply {
-            action = Intent.ACTION_VIEW
-            putExtra(
-                "chatId",
-                chatId.toString()
-            )
-        }
-        
         val shortcut = ShortcutInfo.Builder(
             context,
             chatId.toString()
@@ -55,8 +44,18 @@ class ShortcutManager @Inject constructor(
                     R.mipmap.new_app_icon
                 )
             )
-            .setIntent(intent)
+            .setIntent(createChatIntent(chatId))
             .build()
+        
+        /*
+         * Ярлык этого чата мог быть закреплён прежней версией приложения, и в нём
+         * до сих пор лежит старый intent: система не перезаписывает его при
+         * повторном requestPinShortcut. Без этого обновления такой ярлык остался бы
+         * нерабочим навсегда.
+         *
+         * Для незакреплённого чата вызов ничего не делает.
+         */
+        shortcutManager.updateShortcuts(listOf(shortcut))
         
         val pinnedShortcutCallbackIntent =
             shortcutManager.createShortcutResultIntent(shortcut)
@@ -72,5 +71,32 @@ class ShortcutManager @Inject constructor(
             shortcut,
             successCallback.intentSender
         )
+    }
+    
+    /**
+     * Intent, по которому ярлык открывает сам чат, а не главный экран.
+     *
+     * chatId уходит именно как Long: [MainActivity] читает extra через getLongExtra,
+     * а на значении другого типа тот молча возвращает default, из-за чего переход в
+     * чат терялся и открывался только главный экран.
+     *
+     * Флаги нужны для второго случая — приложение уже запущено. NEW_TASK без
+     * CLEAR_TOP и SINGLE_TOP просто поднимает существующую задачу, onNewIntent при
+     * этом не вызывается, и чат снова не открывается.
+     */
+    private fun createChatIntent(chatId: Long): Intent {
+        return Intent(
+            context,
+            MainActivity::class.java
+        ).apply {
+            action = Intent.ACTION_VIEW
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra(
+                MainActivity.EXTRA_CHAT_ID,
+                chatId
+            )
+        }
     }
 }
