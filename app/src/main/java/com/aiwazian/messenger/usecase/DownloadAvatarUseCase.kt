@@ -13,6 +13,7 @@ import com.aiwazian.messenger.repository.FileRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.DownloaderManager
+import com.aiwazian.messenger.utils.ShortcutManager
 import javax.inject.Inject
 
 class DownloadAvatarUseCase @Inject constructor(
@@ -21,7 +22,8 @@ class DownloadAvatarUseCase @Inject constructor(
     private val channelRepository: ChannelRepository,
     private val downloaderManager: DownloaderManager,
     private val avatarDao: AvatarDao,
-    private val fileRepository: FileRepository
+    private val fileRepository: FileRepository,
+    private val shortcutManager: ShortcutManager
 ) {
     suspend operator fun invoke(
         profileId: Long,
@@ -42,6 +44,13 @@ class DownloadAvatarUseCase @Inject constructor(
                         fileId = fileId,
                         fileName = fileId
                     )
+                }.onSuccess {
+                    /*
+                     * Файл лёг на диск, и это единственное место, куда приходят аватарки
+                     * всех типов чатов. Значит здесь же удобно обновить иконку ярлыка,
+                     * если он закреплён на рабочем столе: аватарку могли поменять.
+                     */
+                    shortcutManager.refreshPinnedChatShortcut(profileId)
                 }
             },
             onFailure = { error ->
