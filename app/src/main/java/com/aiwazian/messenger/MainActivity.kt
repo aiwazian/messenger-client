@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.aiwazian.messenger.socket.ServerSyncService
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.navigation.AppNavDisplay
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -37,6 +38,9 @@ class MainActivity : AppCompatActivity() {
     
     @Inject
     lateinit var themeManager: ThemeManager
+    
+    @Inject
+    lateinit var serverSyncService: ServerSyncService
     
     private var startRoute by mutableStateOf<AppRoute?>(null)
     private val externalRouteFlow = MutableSharedFlow<AppRoute>(extraBufferCapacity = 1)
@@ -63,6 +67,13 @@ class MainActivity : AppCompatActivity() {
             openAuthScreen()
             return
         }
+        
+        /*
+         * Соединение с сервером поднимается здесь, а не на списке чатов: этот экран может
+         * и не открыться — приложение умеет запускаться сразу в чат по ярлыку с рабочего
+         * стола или по тапу на уведомление. Токен к этому моменту уже загружен.
+         */
+        serverSyncService.start()
         
         installSplashScreen().setKeepOnScreenCondition {
             false
