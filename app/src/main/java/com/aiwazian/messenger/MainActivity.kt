@@ -192,7 +192,7 @@ private fun UpdateReadyDialog(
         buttons = {
             Row {
                 TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.update_restart))
+                    Text(stringResource(R.string.update_later))
                 }
                 TextButton(onClick = onRestart) {
                     Text(stringResource(R.string.update_restart))
