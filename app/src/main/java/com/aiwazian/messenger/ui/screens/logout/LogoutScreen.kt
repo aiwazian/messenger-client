@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.aiwazian.messenger.AuthActivity
 import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppDialog
@@ -49,41 +48,20 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
     
     LaunchedEffect(Unit) {
-        viewModel.sideEffect.collectLatest { sideEffect ->
-            when (sideEffect) {
-                is LogoutSideEffect.SwitchToNextAccount -> {
-                    val intent = Intent(
-                        context,
-                        MainActivity::class.java
-                    ).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
-                    context.startActivity(intent)
-                    (context as? Activity)?.finish()
-                }
-                
-                is LogoutSideEffect.NoAccountsLeft -> {
-                    val intent = Intent(
-                        context,
-                        AuthActivity::class.java
-                    ).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
-                    context.startActivity(intent)
-                    (context as? Activity)?.finish()
-                }
-                
-                is LogoutSideEffect.LogoutSuccess -> {
-                    val intent = Intent(
-                        context,
-                        AuthActivity::class.java
-                    ).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
-                    context.startActivity(intent)
-                    (context as? Activity)?.finish()
-                }
+        viewModel.sideEffect.collectLatest {
+            /*
+             * Все исходы выхода ведут в MainActivity: он сам выберет, что показать —
+             * список чатов оставшегося аккаунта или экран входа, если аккаунтов больше
+             * не осталось.
+             */
+            val intent = Intent(
+                context,
+                MainActivity::class.java
+            ).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
+            context.startActivity(intent)
+            (context as? Activity)?.finish()
         }
     }
     

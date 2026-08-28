@@ -5,7 +5,6 @@
 package com.aiwazian.messenger.repository.channel
 
 import android.util.Log
-import androidx.core.net.toUri
 import com.aiwazian.messenger.database.dao.AvatarDao
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.domain.AvatarNotFoundException
@@ -13,6 +12,7 @@ import com.aiwazian.messenger.domain.Channel
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.mappers.toChannelEntity
 import com.aiwazian.messenger.mappers.toDomain
+import com.aiwazian.messenger.mappers.toDomainAvatars
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.network.api.ChannelApi
 import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
@@ -62,16 +62,7 @@ class ChannelCrudRepository @Inject constructor(
     fun getByIdOrNull(channelId: Long): Flow<Channel?> =
         channelDao.getWithAvatarsFlow(channelId).map { channelWithAvatars ->
             channelWithAvatars ?: return@map null
-            val avatars =
-                channelWithAvatars.avatars.sortedBy { it.avatar.sortOrder }.map { avatarWithFile ->
-                    val uri = if (!avatarWithFile.file?.path.isNullOrBlank()) {
-                        avatarWithFile.file.path.toUri()
-                    } else {
-                        null
-                    }
-                    avatarWithFile.avatar.toDomain(uri)
-                }
-            channelWithAvatars.channel.toDomain(avatars)
+            channelWithAvatars.channel.toDomain(channelWithAvatars.avatars.toDomainAvatars())
         }
     
     suspend fun fetchById(channelId: Long) {

@@ -107,14 +107,6 @@
         </service>
 
         <activity
-            android:name=".AuthActivity"
-            android:configChanges="locale|layoutDirection"
-            android:exported="false"
-            android:launchMode="singleTop"
-            android:theme="@style/Theme.MessengerSplashScreen"
-            android:windowSoftInputMode="adjustResize" />
-
-        <activity
             android:name=".ShareActivity"
             android:configChanges="locale|layoutDirection"
             android:excludeFromRecents="true"

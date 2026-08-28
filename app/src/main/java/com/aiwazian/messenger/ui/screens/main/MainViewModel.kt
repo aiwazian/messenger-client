@@ -10,8 +10,6 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.ChatFolder
 import com.aiwazian.messenger.enums.ChatType
-import com.aiwazian.messenger.enums.ConnectionState
-import com.aiwazian.messenger.push.PushRegistrar
 import com.aiwazian.messenger.repository.ChatFolderRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.NotificationSettingsRepository
@@ -19,7 +17,6 @@ import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.utils.AppLockManager
-import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.ThemeManager
 import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,18 +37,20 @@ class MainViewModel @Inject constructor(
     private val themeManager: ThemeManager,
     userRepository: UserRepository,
     webSocketClient: WebSocketClient,
-    private val onlineUsersTracker: OnlineUsersTracker,
-    private val pushRegistrar: PushRegistrar
+    private val onlineUsersTracker: OnlineUsersTracker
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState = _uiState.asStateFlow()
     
+    /**
+     * Само соединение поднимает ServerSyncService: список чатов может и не открыться,
+     * когда приложение запускают сразу в чат. Здесь состояние нужно только для того,
+     * чтобы показать его в шапке.
+     */
     val socketState = webSocketClient.connectionState
     
     init {
-        webSocketClient.connect()
-        
         viewModelScope.launch {
             /*
              * Колокольчик в списке чатов считается на лету из настроек категорий и
@@ -76,20 +75,6 @@ class MainViewModel @Inject constructor(
             }.collectLatest { (chats, folders, folderPages) ->
                 _uiState.update {
                     it.copy(chats = chats, folders = folders, folderPages = folderPages)
-                }
-            }
-        }
-        
-        viewModelScope.launch {
-            webSocketClient.connectionState.collectLatest {
-                if (it == ConnectionState.CONNECTED) {
-                    SessionManager.loadSession()
-                    userRepository.fetchMe()
-                    chatRepository.refreshChats()
-                    chatRepository.refreshOnlineUsers()
-                    chatFolderRepository.refreshFolders()
-                    notificationSettingsRepository.refresh()
-                    notificationSettingsRepository.refreshChatExceptions()
                 }
             }
         }
@@ -123,8 +108,6 @@ class MainViewModel @Inject constructor(
                 _uiState.update { it.copy(onlineUserIds = onlineIds) }
             }
         }
-        
-        pushRegistrar.ensureRegistered()
     }
     
     suspend fun lockApp() {
