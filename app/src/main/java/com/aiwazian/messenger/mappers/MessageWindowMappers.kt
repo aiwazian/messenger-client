@@ -29,5 +29,7 @@ fun MessageSearchHitDto.toDomain() = MessageSearchHit(
 fun MessageSearchResponseDto.toDomain() = MessageSearchPage(
     items = items.map { it.toDomain() },
     nextCursorId = nextCursorId,
-    scannedAll = scannedAll
+    scannedAll = scannedAll,
+    total = total,
+    totalIsExact = totalIsExact
 )

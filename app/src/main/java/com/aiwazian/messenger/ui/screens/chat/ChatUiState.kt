@@ -83,12 +83,12 @@ data class ChatUiState(
     val isBlocked: Boolean = false,
     val isBlockedByThem: Boolean = false,
     val showBlockDialog: Boolean = false,
-    
+
     // region Ответ на сообщение
     /** Активный ответ: панель над полем ввода и replyToId в следующей отправке. */
     val replyToMessage: MessageReplyPreview? = null,
     // endregion
-    
+
     // region Пересылка сообщения
     val forwardingMessage: Message? = null,
     val isForwardSheetVisible: Boolean = false,
@@ -97,7 +97,7 @@ data class ChatUiState(
     val selectedForwardChatIds: Set<Long> = emptySet(),
     val isForwarding: Boolean = false,
     // endregion
-    
+
     // region Окно истории и переходы к сообщениям
     /** Идёт догрузка более старых сообщений (вверх). */
     val isLoadingOlder: Boolean = false,
@@ -119,17 +119,56 @@ data class ChatUiState(
     /** Граница непрочитанного: на неё открывается чат. */
     val firstUnreadMessageId: Long? = null,
     // endregion
-    
+
     // region Поиск сообщений в чате
     val isMessageSearchActive: Boolean = false,
     val messageSearchQuery: String = "",
+    /** Загруженные совпадения, от новых к старым. */
     val messageSearchResults: List<MessageSearchHit> = emptyList(),
     val isSearchingMessages: Boolean = false,
-    val hasMoreSearchResults: Boolean = false
+    val hasMoreSearchResults: Boolean = false,
+    /** Всего совпадений в чате: приходит с сервера вместе с первой страницей. */
+    val messageSearchTotal: Int = 0,
+    /** false, если сервер не досчитал совпадения до конца истории. */
+    val isMessageSearchTotalExact: Boolean = true,
+    /**
+     * Позиция текущего совпадения в [messageSearchResults].
+     *
+     * -1 — пользователь ещё ни к какому результату не переходил.
+     */
+    val messageSearchIndex: Int = -1,
+    /** Результаты показываются списком во весь экран вместо чата. */
+    val isMessageSearchListMode: Boolean = false,
+    /** Отправители найденных сообщений: id → имя и аватарка. */
+    val messageSearchSenders: Map<Long, MessageSearchSender> = emptyMap()
     // endregion
 ) {
-    
+
     /** Правила копирования, пересылки и сохранения медиа для текущего чата. */
     val copyPolicy: ChatCopyPolicy
         get() = ChatCopyPolicy(noCopy)
+
+    /**
+     * Есть ли куда идти по стрелке «вверх».
+     *
+     * Вверх по чату — это к более старому совпадению, а если загруженная
+     * страница закончилась, то ещё и повод догрузить следующую.
+     */
+    val canGoToOlderSearchResult: Boolean
+        get() = messageSearchIndex + 1 < messageSearchResults.size || hasMoreSearchResults
+
+    /** Есть ли куда идти по стрелке «вниз», то есть к более новому совпадению. */
+    val canGoToNewerSearchResult: Boolean
+        get() = messageSearchIndex > 0
 }
+
+/**
+ * Отправитель найденного сообщения.
+ *
+ * В карточке результата поиска нужны имя и аватарка, а в самом совпадении с
+ * сервера лежит только id отправителя.
+ */
+data class MessageSearchSender(
+    val name: String,
+    val avatarUri: Uri? = null
+)

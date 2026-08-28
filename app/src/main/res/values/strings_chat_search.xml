@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_search_show_as_list">As list</string>
+    <string name="chat_search_show_in_chat">In chat</string>
+    <string name="chat_search_hint">Enter a search query</string>
+    <string name="chat_search_in_progress">Searching…</string>
+    <string name="chat_search_no_results">Nothing found</string>
+    <!-- Позиция текущего совпадения: «1 из 142». -->
+    <string name="chat_search_position">%1$d of %2$s</string>
+    <plurals name="chat_search_results_count">
+        <item quantity="one">%1$s result</item>
+        <item quantity="other">%1$s results</item>
+    </plurals>
+</resources>

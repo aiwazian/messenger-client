@@ -26,5 +26,13 @@ data class MessageSearchHit(
 data class MessageSearchPage(
     val items: List<MessageSearchHit>,
     val nextCursorId: Long?,
-    val scannedAll: Boolean
+    val scannedAll: Boolean,
+    /**
+     * Всего совпадений в чате.
+     *
+     * Приходит только с первой страницей: дальше число уже известно клиенту.
+     */
+    val total: Int? = null,
+    /** false, если сервер не досчитал совпадения до конца истории. */
+    val totalIsExact: Boolean = true
 )

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_search_show_as_list">Списком</string>
+    <string name="chat_search_show_in_chat">В чате</string>
+    <string name="chat_search_hint">Введите запрос</string>
+    <string name="chat_search_in_progress">Идёт поиск…</string>
+    <string name="chat_search_no_results">Ничего не найдено</string>
+    <string name="chat_search_position">%1$d из %2$s</string>
+    <plurals name="chat_search_results_count">
+        <item quantity="one">%1$s результат</item>
+        <item quantity="few">%1$s результата</item>
+        <item quantity="many">%1$s результатов</item>
+        <item quantity="other">%1$s результата</item>
+    </plurals>
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_search_show_as_list">In elenco</string>
+    <string name="chat_search_show_in_chat">Nella chat</string>
+    <string name="chat_search_hint">Inserisci una query</string>
+    <string name="chat_search_in_progress">Ricerca…</string>
+    <string name="chat_search_no_results">Nessun risultato</string>
+    <string name="chat_search_position">%1$d di %2$s</string>
+    <plurals name="chat_search_results_count">
+        <item quantity="one">%1$s risultato</item>
+        <item quantity="other">%1$s risultati</item>
+    </plurals>
+</resources>
