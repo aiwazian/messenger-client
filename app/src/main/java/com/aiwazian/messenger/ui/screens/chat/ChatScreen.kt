@@ -93,11 +93,14 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.screens.chat.components.ChatDialogs
 import com.aiwazian.messenger.ui.screens.chat.components.ChatInputSection
+import com.aiwazian.messenger.ui.screens.chat.components.ChatSearchNavigationButtons
+import com.aiwazian.messenger.ui.screens.chat.components.ChatSearchSummaryBar
 import com.aiwazian.messenger.ui.screens.chat.components.ChatTopBar
 import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
+import com.aiwazian.messenger.ui.screens.chat.components.MessageSearchResultsList
 import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.UnreadSeparatorItem
@@ -318,16 +321,21 @@ fun ChatScreen(
     val scope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
+    /*
+     * Поиск — это состояние внутри чата, а не отдельный экран, поэтому кнопка
+     * «назад» сначала гасит его и только вторым нажатием уводит из чата.
+     */
     val onBackClick: () -> Unit = {
-        if (uiState.isRecording) {
-            showCancelRecordingDialog = true
-        } else {
-            navBackStack.removeLastOrNull()
+        when {
+            uiState.isRecording -> showCancelRecordingDialog = true
+            uiState.isMessageSearchActive -> chatViewModel.stopMessageSearch()
+            else -> navBackStack.removeLastOrNull()
         }
     }
     
-    BackHandler(enabled = uiState.isRecording) {
-        showCancelRecordingDialog = true
+    BackHandler(enabled = uiState.isRecording || uiState.isMessageSearchActive) {
+        if (uiState.isRecording) showCancelRecordingDialog = true
+        else chatViewModel.stopMessageSearch()
     }
     
     LaunchedEffect(Unit) {
@@ -424,194 +432,239 @@ fun ChatScreen(
             chatId = uiState.chatId,
             myId = uiState.myId,
             isMuted = isChatMuted,
+            isSearchActive = uiState.isMessageSearchActive,
+            searchQuery = uiState.messageSearchQuery,
+            onSearchQueryChange = chatViewModel::changeMessageSearchQuery,
+            onClearSearchQuery = chatViewModel::clearMessageSearchQuery,
+            /* Длинное нажатие отвечает тактильно, иначе жест кажется несработавшим. */
+            onStartSearch = {
+                chatViewModel.vibrateTactile()
+                chatViewModel.startMessageSearch()
+            },
             onToggleNotifications = notificationsViewModel::toggle,
             onBackClick = onBackClick
         )
     }, bottomBar = {
-        ChatInputSection(
-            uiState = uiState,
-            chatViewModel = chatViewModel,
-            modifier = Modifier.windowInsetsPadding(
-                WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
-            )
+        val bottomBarModifier = Modifier.windowInsetsPadding(
+            WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
         )
-    }, floatingActionButton = {
-        AnimatedVisibility(
-            visible = (!isAtBottom || !uiState.isAtLiveEdge) && !isScrollingUp.value && !uiState.isRecording,
-            enter = scaleIn() + fadeIn() + slideInVertically { it },
-            exit = scaleOut() + fadeOut() + slideOutVertically { it },
-        ) {
-            val interactionSource = remember { MutableInteractionSource() }
-            val isPressed by interactionSource.collectIsPressedAsState()
-            val scale by animateFloatAsState(
-                animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
-                targetValue = if (isPressed) 0.9f else 1f,
-                label = "scroll_bottom_button_scale_animation"
+        
+        /* На время поиска поле ввода уступает место счётчику совпадений. */
+        if (uiState.isMessageSearchActive) {
+            ChatSearchSummaryBar(
+                uiState = uiState,
+                onToggleDisplayMode = chatViewModel::toggleMessageSearchDisplayMode,
+                modifier = bottomBarModifier
             )
-            FloatingActionButton(
-                onClick = { chatViewModel.jumpToLatest() },
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                shape = CircleShape,
-                modifier = Modifier
-                    .size(44.dp)
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                    },
-                interactionSource = interactionSource,
-                elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.KeyboardArrowDown, contentDescription = null
+        } else {
+            ChatInputSection(
+                uiState = uiState,
+                chatViewModel = chatViewModel,
+                modifier = bottomBarModifier
+            )
+        }
+    }, floatingActionButton = {
+        if (uiState.isMessageSearchActive) {
+            /*
+             * В режиме «Списком» стрелки не нужны: совпадения и так все перед глазами,
+             * а переход делается нажатием на карточку.
+             */
+            if (!uiState.isMessageSearchListMode) {
+                ChatSearchNavigationButtons(
+                    canGoOlder = uiState.canGoToOlderSearchResult,
+                    canGoNewer = uiState.canGoToNewerSearchResult,
+                    onOlderClick = chatViewModel::goToOlderSearchResult,
+                    onNewerClick = chatViewModel::goToNewerSearchResult
                 )
+            }
+        } else {
+            AnimatedVisibility(
+                visible = (!isAtBottom || !uiState.isAtLiveEdge) && !isScrollingUp.value && !uiState.isRecording,
+                enter = scaleIn() + fadeIn() + slideInVertically { it },
+                exit = scaleOut() + fadeOut() + slideOutVertically { it },
+            ) {
+                val interactionSource = remember { MutableInteractionSource() }
+                val isPressed by interactionSource.collectIsPressedAsState()
+                val scale by animateFloatAsState(
+                    animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+                    targetValue = if (isPressed) 0.9f else 1f,
+                    label = "scroll_bottom_button_scale_animation"
+                )
+                FloatingActionButton(
+                    onClick = { chatViewModel.jumpToLatest() },
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        },
+                    interactionSource = interactionSource,
+                    elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.KeyboardArrowDown, contentDescription = null
+                    )
+                }
             }
         }
     }) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(
-                        start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
-                        end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
-                    ),
-                verticalArrangement = Arrangement.Bottom
-            ) {
-                /*
-                 * reverseLayout: нулевой элемент рисуется у нижней кромки экрана,
-                 * поэтому футер объявляется первым, а шапка — последней.
-                 */
-                LazyColumn(
-                    state = listState,
-                    reverseLayout = true,
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                    overscrollEffect = rememberOverscrollEffect()
+            if (uiState.isMessageSearchActive && uiState.isMessageSearchListMode) {
+                /* Список совпадений закрывает чат целиком. */
+                MessageSearchResultsList(
+                    uiState = uiState,
+                    contentPadding = innerPadding,
+                    onResultClick = chatViewModel::onSearchResultClicked,
+                    onLoadMore = chatViewModel::loadMoreSearchResults
+                )
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(
+                            start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                            end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
+                        ),
+                    verticalArrangement = Arrangement.Bottom
                 ) {
-                    item(key = "chat_footer") {
-                        Column {
-                            if (uiState.isLoadingNewer) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(8.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularWavyProgressIndicator()
+                    /*
+                     * reverseLayout: нулевой элемент рисуется у нижней кромки экрана,
+                     * поэтому футер обявляется первым, а шапка — последней.
+                     */
+                    LazyColumn(
+                        state = listState,
+                        reverseLayout = true,
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        overscrollEffect = rememberOverscrollEffect()
+                    ) {
+                        item(key = "chat_footer") {
+                            Column {
+                                if (uiState.isLoadingNewer) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularWavyProgressIndicator()
+                                    }
                                 }
+                                Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
                             }
-                            Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
                         }
-                    }
-                    
-                    items(
-                        items = uiState.chatItems, key = { item ->
+                        
+                        items(
+                            items = uiState.chatItems, key = { item ->
+                                when (item) {
+                                    is ChatItem.DateSeparator -> "date_${item.text}"
+                                    is ChatItem.UnreadSeparator -> "unread_separator"
+                                    is ChatItem.SystemMessage -> "sys_${item.sendTime}"
+                                    is ChatItem.MessageItem -> "msg_${item.message.id}"
+                                }
+                            }) { item ->
                             when (item) {
-                                is ChatItem.DateSeparator -> "date_${item.text}"
-                                is ChatItem.UnreadSeparator -> "unread_separator"
-                                is ChatItem.SystemMessage -> "sys_${item.sendTime}"
-                                is ChatItem.MessageItem -> "msg_${item.message.id}"
-                            }
-                        }) { item ->
-                        when (item) {
-                            is ChatItem.DateSeparator -> DateSeparatorItem(
-                                item.text, Modifier.animateItem()
-                            )
-                            
-                            is ChatItem.UnreadSeparator -> UnreadSeparatorItem(
-                                Modifier.animateItem()
-                            )
-                            
-                            is ChatItem.SystemMessage -> SystemMessageBubble(
-                                item.text.asString(), Modifier.animateItem()
-                            )
-                            
-                            is ChatItem.MessageItem -> MessageBubble(
-                                modifier = Modifier.animateItem(),
-                                item = item,
-                                onFileAction = { file, action ->
-                                    if (action == FileAction.CANCEL) {
-                                        fileToCancelId =
-                                            item.message.id
-                                    } else {
-                                        if (action == FileAction.OPEN) {
-                                            tappedMedia = file
+                                is ChatItem.DateSeparator -> DateSeparatorItem(
+                                    item.text, Modifier.animateItem()
+                                )
+                                
+                                is ChatItem.UnreadSeparator -> UnreadSeparatorItem(
+                                    Modifier.animateItem()
+                                )
+                                
+                                is ChatItem.SystemMessage -> SystemMessageBubble(
+                                    item.text.asString(), Modifier.animateItem()
+                                )
+                                
+                                is ChatItem.MessageItem -> MessageBubble(
+                                    modifier = Modifier.animateItem(),
+                                    item = item,
+                                    onFileAction = { file, action ->
+                                        if (action == FileAction.CANCEL) {
+                                            fileToCancelId =
+                                                item.message.id
+                                        } else {
+                                            if (action == FileAction.OPEN) {
+                                                tappedMedia = file
+                                            }
+                                            chatViewModel.onFileAction(
+                                                item.message,
+                                                file,
+                                                action
+                                            )
                                         }
-                                        chatViewModel.onFileAction(
-                                            item.message,
-                                            file,
-                                            action
-                                        )
-                                    }
-                                },
-                                currentPlayingVoiceFileId = uiState.currentPlayingVoiceFileId,
-                                isVoicePlaying = uiState.isVoicePlaying,
-                                voicePositionMs = uiState.voicePositionMs,
-                                voiceDurationMs = uiState.voiceDurationMs,
-                                onVoiceSeek = chatViewModel::onVoiceSeek,
-                                onLinkClicked = chatViewModel::onLinkClicked,
-                                onUsernameClicked = chatViewModel::onUsernameClicked,
-                                onEmailClicked = chatViewModel::onEmailClicked,
-                                /* При запрете копирования пункта «Сохранить в загрузки» не будет. */
-                                onSaveToDownloads = if (copyPolicy.canSaveMedia) {
-                                    {
-                                        chatViewModel.saveAttachmentsToDownloads(
-                                            item.message
-                                        )
-                                    }
-                                } else null,
-                                onReplyPreviewClick = {
-                                    chatViewModel.onReplyPreviewClicked(item.message)
-                                },
-                                onForwardedFromClick = {
-                                    chatViewModel.onForwardedFromClicked(item.message)
-                                },
-                                onSwipeThresholdReached = chatViewModel::vibrateTactile,
-                                onSwipeToReply = {
-                                    chatViewModel.startReply(item.message)
-                                },
-                                readerAvatars = readerAvatars,
-                                onReadersRequested = readersViewModel::onReadersRequested,
-                                /* В канале автор сообщения — сам канал, профиль открывать не из чего. */
-                                onSenderNameClick = if (item.chatType == ChatType.GROUP) {
-                                    {
+                                    },
+                                    currentPlayingVoiceFileId = uiState.currentPlayingVoiceFileId,
+                                    isVoicePlaying = uiState.isVoicePlaying,
+                                    voicePositionMs = uiState.voicePositionMs,
+                                    voiceDurationMs = uiState.voiceDurationMs,
+                                    onVoiceSeek = chatViewModel::onVoiceSeek,
+                                    onLinkClicked = chatViewModel::onLinkClicked,
+                                    onUsernameClicked = chatViewModel::onUsernameClicked,
+                                    onEmailClicked = chatViewModel::onEmailClicked,
+                                    /* При запрете копирования пункта «Сохранить в загрузки» не будет. */
+                                    onSaveToDownloads = if (copyPolicy.canSaveMedia) {
+                                        {
+                                            chatViewModel.saveAttachmentsToDownloads(
+                                                item.message
+                                            )
+                                        }
+                                    } else null,
+                                    onReplyPreviewClick = {
+                                        chatViewModel.onReplyPreviewClicked(item.message)
+                                    },
+                                    onForwardedFromClick = {
+                                        chatViewModel.onForwardedFromClicked(item.message)
+                                    },
+                                    onSwipeThresholdReached = chatViewModel::vibrateTactile,
+                                    onSwipeToReply = {
+                                        chatViewModel.startReply(item.message)
+                                    },
+                                    readerAvatars = readerAvatars,
+                                    onReadersRequested = readersViewModel::onReadersRequested,
+                                    /* В канале автор сообщения — сам канал, профиль открывать не из чего. */
+                                    onSenderNameClick = if (item.chatType == ChatType.GROUP) {
+                                        {
+                                            navBackStack.add(
+                                                AppRoute.Profile(
+                                                    profileId = item.message.senderId,
+                                                    profileName = item.senderName
+                                                )
+                                            )
+                                        }
+                                    } else null,
+                                    onReaderClick = { reader ->
+                                        val readerName = listOf(
+                                            reader.firstName,
+                                            reader.lastName.orEmpty()
+                                        ).filter { it.isNotBlank() }.joinToString(" ")
                                         navBackStack.add(
                                             AppRoute.Profile(
-                                                profileId = item.message.senderId,
-                                                profileName = item.senderName
+                                                profileId = reader.userId,
+                                                profileName = readerName.ifBlank { null },
+                                                avatarUri = readerAvatars[reader.userId]?.toString()
                                             )
                                         )
-                                    }
-                                } else null,
-                                onReaderClick = { reader ->
-                                    val readerName = listOf(
-                                        reader.firstName,
-                                        reader.lastName.orEmpty()
-                                    ).filter { it.isNotBlank() }.joinToString(" ")
-                                    navBackStack.add(
-                                        AppRoute.Profile(
-                                            profileId = reader.userId,
-                                            profileName = readerName.ifBlank { null },
-                                            avatarUri = readerAvatars[reader.userId]?.toString()
-                                        )
-                                    )
-                                })
-                        }
-                    }
-                    
-                    item(key = "chat_header") {
-                        Column {
-                            if (uiState.isLoadingOlder) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(8.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularWavyProgressIndicator()
-                                }
+                                    })
                             }
-                            Spacer(Modifier.height(innerPadding.calculateTopPadding()))
+                        }
+                        
+                        item(key = "chat_header") {
+                            Column {
+                                if (uiState.isLoadingOlder) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularWavyProgressIndicator()
+                                    }
+                                }
+                                Spacer(Modifier.height(innerPadding.calculateTopPadding()))
+                            }
                         }
                     }
                 }
