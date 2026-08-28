@@ -13,7 +13,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +30,8 @@ import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.PermMedia
 import androidx.compose.material.icons.rounded.BookmarkBorder
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -38,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +48,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
@@ -59,6 +64,7 @@ import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatAvatar
+import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -73,6 +79,11 @@ fun ChatTopBar(
     chatId: Long,
     myId: Long,
     isMuted: Boolean = false,
+    isSearchActive: Boolean = false,
+    searchQuery: String = "",
+    onSearchQueryChange: (String) -> Unit = {},
+    onClearSearchQuery: () -> Unit = {},
+    onStartSearch: () -> Unit = {},
     onToggleNotifications: () -> Unit = {},
     onBackClick: () -> Unit
 ) {
@@ -85,107 +96,144 @@ fun ChatTopBar(
         targetValue = if (isPressed) 0.96f else 1f,
         label = "card_scale_animation"
     )
+    val searchFocusRequester = remember { FocusRequester() }
+    
+    /* Поиск открыли — сразу ставим курсор в поле, чтобы не тянуться к нему второй раз. */
+    LaunchedEffect(isSearchActive) {
+        if (isSearchActive) runCatching { searchFocusRequester.requestFocus() }
+    }
     
     TopAppBar(
         title = {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            if (isSearchActive) {
+                /*
+                 * Та же капсула, но во всю доступную ширину: аватарка с именем
+                 * во время поиска только мешают, а места под запрос нужно много.
+                 */
                 Row(
                     modifier = Modifier
-                        .graphicsLayer(scaleX = scale, scaleY = scale)
+                        .fillMaxWidth()
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                        .clickable(
-                            interactionSource = interactionSource, indication = null, onClick = {
-                                navBackStack.add(
-                                    AppRoute.Profile(
-                                        profileId = chatId,
-                                        profileName = title,
-                                        avatarUri = avatarUri?.toString()
-                                    )
-                                )
-                            }), horizontalArrangement = Arrangement.Center
+                        .background(MaterialTheme.colorScheme.surfaceContainer),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        if (isSavedMessages) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.BookmarkBorder,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        } else {
-                            ChatAvatar(id = chatId, chatName = title, avatarUri = avatarUri)
-                        }
-                        
-                        Column(
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = title,
-                                    maxLines = 1,
-                                    fontSize = 18.sp,
-                                    lineHeight = 16.sp,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.sharedElement(key = "chat-name-$chatId")
-                                )
-                                
-                                AnimatedContent(
-                                    targetState = isMuted,
-                                    transitionSpec = {
-                                        expressiveScaleIn togetherWith expressiveScaleOut
-                                    }
-                                ) { muted ->
-                                    if (muted) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.NotificationsOff,
-                                            contentDescription = stringResource(R.string.chat_notifications_disabled),
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
+                    FramelessTextBox(
+                        placeholder = stringResource(R.string.search),
+                        value = searchQuery,
+                        onValueChange = onSearchQueryChange,
+                        modifier = Modifier.focusRequester(searchFocusRequester),
+                        trailingIcon = {
+                            /* Крестик появляется только когда есть что стирать. */
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = onClearSearchQuery) {
+                                    Icon(Icons.Rounded.Close, null)
                                 }
                             }
+                        })
+                }
+            } else {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .graphicsLayer(scaleX = scale, scaleY = scale)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
+                            .combinedClickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                                onLongClick = onStartSearch,
+                                onClick = {
+                                    navBackStack.add(
+                                        AppRoute.Profile(
+                                            profileId = chatId,
+                                            profileName = title,
+                                            avatarUri = avatarUri?.toString()
+                                        )
+                                    )
+                                }), horizontalArrangement = Arrangement.Center
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (isSavedMessages) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.BookmarkBorder,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            } else {
+                                ChatAvatar(id = chatId, chatName = title, avatarUri = avatarUri)
+                            }
                             
-                            AnimatedContent(
-                                targetState = isConnected, transitionSpec = {
-                                    slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
-                                }, label = "connection_animation"
-                            ) { connected ->
-                                if (!connected) {
-                                    AnimatedDotsText(
-                                        text = stringResource(R.string.connecting),
-                                        fontSize = 12.sp,
-                                        lineHeight = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                } else if (subTitle.isNotBlank()) {
+                            Column(
+                                verticalArrangement = Arrangement.Center,
+                                modifier = Modifier.padding(end = 8.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
                                     Text(
-                                        text = subTitle.lowercase(),
-                                        fontSize = 12.sp,
-                                        lineHeight = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.sharedElement(key = "chat-sub-title-$chatId")
+                                        text = title,
+                                        maxLines = 1,
+                                        fontSize = 18.sp,
+                                        lineHeight = 16.sp,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.sharedElement(key = "chat-name-$chatId")
                                     )
+                                    
+                                    AnimatedContent(
+                                        targetState = isMuted,
+                                        transitionSpec = {
+                                            expressiveScaleIn togetherWith expressiveScaleOut
+                                        }
+                                    ) { muted ->
+                                        if (muted) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.NotificationsOff,
+                                                contentDescription = stringResource(R.string.chat_notifications_disabled),
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                
+                                AnimatedContent(
+                                    targetState = isConnected, transitionSpec = {
+                                        slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
+                                    }, label = "connection_animation"
+                                ) { connected ->
+                                    if (!connected) {
+                                        AnimatedDotsText(
+                                            text = stringResource(R.string.connecting),
+                                            fontSize = 12.sp,
+                                            lineHeight = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    } else if (subTitle.isNotBlank()) {
+                                        Text(
+                                            text = subTitle.lowercase(),
+                                            fontSize = 12.sp,
+                                            lineHeight = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.sharedElement(key = "chat-sub-title-$chatId")
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -200,6 +248,9 @@ fun ChatTopBar(
                 Icon(Icons.AutoMirrored.Rounded.ArrowBack, null)
             }
         }, actions = {
+            /* Во время поиска троеточие уступает место полю ввода запроса. */
+            if (isSearchActive) return@TopAppBar
+            
             topBarActions.forEachIndexed { index, action ->
                 var expand by remember { mutableStateOf(false) }
                 IconButton(
@@ -212,12 +263,14 @@ fun ChatTopBar(
                 }
                 AppDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
                     /*
-                     * Медиа и уведомления стоят первыми и только в последнем меню ряда —
-                     * тех самых трёх точках, а не в каждом выпадающем списке шапки.
+                     * Медиа, поиск и уведомления стоят первыми и только в последнем меню
+                     * ряда — тех самых трёх точках, а не в каждом выпадающем списке шапки.
                      *
                      * «Медиа» открывает меню: это самый безобидный пункт и тянутся к нему
-                     * чаще всего. Удаление чата и выход из канала уходят под них: спутать
-                     * их с выключением звука дороже, чем сделать лишнее движение пальцем.
+                     * чаще всего. Сразу за ним «Поиск» — он тоже ничего не меняет и нужен
+                     * в любом чате при любой роли. Удаление чата и выход из канала уходят
+                     * под них: спутать их с выключением звука дороже, чем сделать лишнее
+                     * движение пальцем.
                      */
                     if (index == topBarActions.lastIndex) {
                         AppDropdownMenuItem(leadingIcon = {
@@ -227,6 +280,13 @@ fun ChatTopBar(
                             navBackStack.add(
                                 AppRoute.ChatMedia(chatId = chatId, chatName = title)
                             )
+                        })
+                        
+                        AppDropdownMenuItem(leadingIcon = {
+                            Icon(Icons.Rounded.Search, null)
+                        }, text = stringResource(R.string.search), onClick = {
+                            expand = false
+                            onStartSearch()
                         })
                         
                         AppDropdownMenuItem(

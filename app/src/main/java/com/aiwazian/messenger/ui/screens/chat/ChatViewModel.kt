@@ -448,9 +448,9 @@ class ChatViewModel @Inject constructor(
         }
 
         /*
-         * Троеточие показываем всегда, даже с пустым списком действий: «Медиа» и
-         * уведомления живут внутри этого же меню, и у владельца канала без него
-         * не осталось бы точки входа ни туда, ни туда.
+         * Троеточие показываем всегда, даже с пустым списком действий: «Медиа»,
+         * поиск и уведомления живут внутри этого же меню, и у владельца канала
+         * без него не осталось бы точки входа ни туда, ни туда.
          */
         return listOf(TopBarAction(icon = Icons.Rounded.MoreVert, dropdownActions = actions))
     }
@@ -727,7 +727,10 @@ class ChatViewModel @Inject constructor(
     // endregion
 
     // region Поиск сообщений в чате
-    fun startMessageSearch() = _uiState.update { it.copy(isMessageSearchActive = true) }
+    fun startMessageSearch() = _uiState.update {
+        /* Поиск всегда открывается в режиме «В чате»: список — это уже выбор пользователя. */
+        it.copy(isMessageSearchActive = true, isMessageSearchListMode = false)
+    }
 
     fun stopMessageSearch() {
         searchJob?.cancel()
@@ -735,10 +738,15 @@ class ChatViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 isMessageSearchActive = false,
+                isMessageSearchListMode = false,
                 messageSearchQuery = "",
                 messageSearchResults = emptyList(),
                 isSearchingMessages = false,
-                hasMoreSearchResults = false
+                hasMoreSearchResults = false,
+                messageSearchTotal = 0,
+                isMessageSearchTotalExact = true,
+                messageSearchIndex = -1,
+                messageSearchSenders = emptyMap()
             )
         }
     }
@@ -748,14 +756,7 @@ class ChatViewModel @Inject constructor(
         searchJob?.cancel()
 
         if (query.isBlank()) {
-            searchCursorId = null
-            _uiState.update {
-                it.copy(
-                    messageSearchResults = emptyList(),
-                    hasMoreSearchResults = false,
-                    isSearchingMessages = false
-                )
-            }
+            clearMessageSearchResults()
             return
         }
 
@@ -766,6 +767,44 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Крестик в поле поиска.
+     *
+     * Гасит и запрос, и счётчик результатов снизу, но сам режим поиска оставляет
+     * включённым: закрывает его только кнопка «назад».
+     */
+    fun clearMessageSearchQuery() {
+        searchJob?.cancel()
+        _uiState.update { it.copy(messageSearchQuery = "") }
+        clearMessageSearchResults()
+    }
+
+    private fun clearMessageSearchResults() {
+        searchCursorId = null
+        _uiState.update {
+            it.copy(
+                messageSearchResults = emptyList(),
+                hasMoreSearchResults = false,
+                isSearchingMessages = false,
+                messageSearchTotal = 0,
+                isMessageSearchTotalExact = true,
+                messageSearchIndex = -1
+            )
+        }
+    }
+
+    /** Переключает «Списком» и «В чате». */
+    fun toggleMessageSearchDisplayMode() {
+        val goingToChat = _uiState.value.isMessageSearchListMode
+        _uiState.update { it.copy(isMessageSearchListMode = !goingToChat) }
+
+        /*
+         * Возврат в чат без выбранного результата бесполезен: показываем то же
+         * самое новое совпадение, что и сразу после ввода запроса.
+         */
+        if (goingToChat && _uiState.value.messageSearchIndex < 0) selectSearchResult(0)
+    }
+
     fun loadMoreSearchResults() {
         val query = _uiState.value.messageSearchQuery
         if (query.isBlank() || searchCursorId == null || _uiState.value.isSearchingMessages) return
@@ -773,27 +812,126 @@ class ChatViewModel @Inject constructor(
         searchJob = viewModelScope.launch { runMessageSearch(query, reset = false) }
     }
 
+    /**
+     * Стрелка «вверх»: к более старому совпадению, то есть выше по чату.
+     *
+     * Если загруженная страница закончилась, сначала догружаем следующую и только
+     * потом прыгаем — иначе на границе страницы кнопка молча ничего не делала бы.
+     */
+    fun goToOlderSearchResult() {
+        val state = _uiState.value
+        val target = state.messageSearchIndex + 1
+
+        if (target < state.messageSearchResults.size) {
+            selectSearchResult(target)
+            return
+        }
+
+        if (!state.hasMoreSearchResults || state.isSearchingMessages) return
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            runMessageSearch(state.messageSearchQuery, reset = false)
+            if (target < _uiState.value.messageSearchResults.size) selectSearchResult(target)
+        }
+    }
+
+    /** Стрелка «вниз»: к более новому совпадению, то есть ниже по чату. */
+    fun goToNewerSearchResult() {
+        val target = _uiState.value.messageSearchIndex - 1
+        if (target < 0) return
+        selectSearchResult(target)
+    }
+
+    fun onSearchResultClicked(hit: MessageSearchHit) {
+        val index = _uiState.value.messageSearchResults.indexOfFirst { it.id == hit.id }
+        if (index < 0) {
+            _uiState.update { it.copy(isMessageSearchListMode = false) }
+            jumpToMessage(hit.id)
+            return
+        }
+        selectSearchResult(index)
+    }
+
+    /**
+     * Переход к совпадению по его позиции.
+     *
+     * Список результатов закрывается, а сообщение подсвечивается теми же двумя
+     * секундами, что и при переходе по ответу.
+     */
+    private fun selectSearchResult(index: Int) {
+        val hit = _uiState.value.messageSearchResults.getOrNull(index) ?: return
+        _uiState.update { it.copy(messageSearchIndex = index, isMessageSearchListMode = false) }
+        jumpToMessage(hit.id)
+    }
+
     private suspend fun runMessageSearch(query: String, reset: Boolean) {
         _uiState.update { it.copy(isSearchingMessages = true) }
         chatRepository.searchMessages(
             chatId = _uiState.value.chatId,
             query = query,
-            cursorId = if (reset) null else searchCursorId
+            cursorId = if (reset) null else searchCursorId,
+            limit = SEARCH_PAGE_SIZE
         ).onSuccess { page ->
             searchCursorId = page.nextCursorId
             _uiState.update {
                 it.copy(
                     messageSearchResults = if (reset) page.items else it.messageSearchResults + page.items,
                     hasMoreSearchResults = page.nextCursorId != null,
-                    isSearchingMessages = false
+                    isSearchingMessages = false,
+                    /* Со второй страницей total не приходит: сервер считает его один раз. */
+                    messageSearchTotal = page.total ?: it.messageSearchTotal,
+                    isMessageSearchTotalExact = if (reset) page.totalIsExact
+                    else it.isMessageSearchTotalExact,
+                    messageSearchIndex = if (reset) -1 else it.messageSearchIndex
                 )
+            }
+            loadSearchSenders(page.items)
+
+            /* Сразу показываем самое новое совпадение, как при переходе по ответу. */
+            if (reset && page.items.isNotEmpty()) {
+                if (_uiState.value.isMessageSearchListMode) {
+                    _uiState.update { it.copy(messageSearchIndex = 0) }
+                } else {
+                    selectSearchResult(0)
+                }
             }
         }.onFailure {
             _uiState.update { it.copy(isSearchingMessages = false) }
         }
     }
 
-    fun onSearchResultClicked(hit: MessageSearchHit) = jumpToMessage(hit.id)
+    /**
+     * Подтягивает имена и аватарки отправителей найденных сообщений.
+     *
+     * В канале автор любого поста — сам канал, поэтому карточка результата берёт
+     * имя и аватарку чата, а ходить в userRepository не за чем.
+     */
+    private fun loadSearchSenders(hits: List<MessageSearchHit>) {
+        if (ChatType.fromId(_uiState.value.chatId) == ChatType.CHANNEL) return
+
+        hits.map { it.senderId }
+            .distinct()
+            .filter { !_uiState.value.messageSearchSenders.containsKey(it) }
+            .forEach { senderId ->
+                viewModelScope.launch {
+                    try {
+                        userRepository.getById(senderId).collect { user ->
+                            val sender = MessageSearchSender(
+                                name = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                                avatarUri = user.avatars.firstOrNull()?.uri
+                            )
+                            _uiState.update {
+                                it.copy(
+                                    messageSearchSenders = it.messageSearchSenders + (senderId to sender)
+                                )
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("ChatViewModel", "Error loading search sender", e)
+                    }
+                }
+            }
+    }
     // endregion
 
     private companion object {
@@ -801,6 +939,9 @@ class ChatViewModel @Inject constructor(
         const val AROUND_RADIUS = 25
         const val MAX_WINDOW_MESSAGES = 400
         const val UNREAD_VIEWPORT_FRACTION = 0.08f
+
+        /** Размер страницы результатов поиска: больше 50 сервер за раз не отдаёт. */
+        const val SEARCH_PAGE_SIZE = 50
     }
 
     // region Ответ на сообщение
@@ -1388,193 +1529,4 @@ class ChatViewModel @Inject constructor(
     fun setVideoPlaybackSpeed(speed: Float) =
         viewModelScope.launch { dataStoreManager.saveVideoPlaybackSpeed(speed) }
 
-    fun dismissBannedDialog() = _uiState.update { it.copy(showBannedDialog = false) }
-    fun onMicrophonePermissionDenied() =
-        _uiState.update { it.copy(showMicrophonePermissionSheet = true) }
-
-    fun dismissMicrophonePermissionSheet() =
-        _uiState.update { it.copy(showMicrophonePermissionSheet = false) }
-
-    fun dismissInviteBottomSheet() = _uiState.update {
-        it.copy(
-            showInviteBottomSheet = false,
-            inviteLinkInfo = null,
-            inviteLinkCode = null,
-            isProcessingInvite = false
-        )
-    }
-    // endregion
-
-    // region Invite Links
-    fun onLinkClicked(url: String) {
-        val match = RegexPatterns.INVITE_LINK.find(url)
-        if (match == null) {
-            val normalized = if (url.startsWith("http")) url else "https://$url"
-            viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenUrl(normalized)) }
-            return
-        }
-
-        val code = match.groupValues[2]
-        viewModelScope.launch {
-            _uiState.update { it.copy(isProcessingInvite = true) }
-            inviteLinkRepository.getInviteLinkInfo(code).onSuccess { linkInfo ->
-                _uiState.update { it.copy(isProcessingInvite = false) }
-                when {
-                    _uiState.value.chatId == linkInfo.chatId -> {
-                        _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.you_are_already_in_this_chat)))
-                        vibrationManager.vibrate(VibrationPattern.Error)
-                    }
-
-                    linkInfo.isJoined != null -> _uiEffect.emit(ChatUiEffect.NavigateToChat(linkInfo.chatId))
-                    linkInfo.isBanned != null -> {
-                        _uiState.update { s -> s.copy(showBannedDialog = true) }
-                        vibrationManager.vibrate(VibrationPattern.Error)
-                    }
-
-                    else -> _uiState.update { s ->
-                        s.copy(
-                            inviteLinkInfo = linkInfo,
-                            inviteLinkCode = code,
-                            showInviteBottomSheet = true
-                        )
-                    }
-                }
-            }.onFailure {
-                _uiState.update { it.copy(isProcessingInvite = false) }
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.invalid_link)))
-                vibrationManager.vibrate(VibrationPattern.Error)
-            }
-        }
-    }
-
-    fun onEmailClicked(email: String) {
-        viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenEmail(email)) }
-    }
-
-    fun onUsernameClicked(username: String) {
-        viewModelScope.launch {
-            searchRepository.resolveUsername(username.removePrefix("@")).onSuccess { result ->
-                if (result == null) {
-                    _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.chat_not_found)))
-                    vibrationManager.vibrate(VibrationPattern.Error)
-                } else if (result.isBanned) {
-                    _uiState.update { it.copy(showBannedDialog = true) }
-                    vibrationManager.vibrate(VibrationPattern.Error)
-                } else {
-                    _uiEffect.emit(ChatUiEffect.NavigateToChat(result.chatId))
-                }
-            }
-        }
-    }
-
-    fun onSubscribeViaInviteLink() {
-        val info = _uiState.value.inviteLinkInfo ?: return
-        val code = _uiState.value.inviteLinkCode ?: return
-        viewModelScope.launch {
-            _uiState.update { it.copy(isProcessingInvite = true) }
-            joinViaInviteLinkUseCase(code, info.chatId).onSuccess {
-                dismissInviteBottomSheet()
-                if (info.requireApproval) {
-                    _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Заявка отправлена")))
-                } else {
-                    _uiEffect.emit(ChatUiEffect.NavigateToChat(info.chatId))
-                }
-            }.onFailure {
-                _uiState.update { it.copy(isProcessingInvite = false) }
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_join)))
-                vibrationManager.vibrate(VibrationPattern.Error)
-            }
-        }
-    }
-    // endregion
-
-    // region Voice Recording
-    fun startRecording() {
-        if (_uiState.value.isRecording) return
-        val file = audioRecorderManager.startRecording()
-        if (file != null) {
-            _uiState.update {
-                it.copy(
-                    isRecording = true,
-                    isRecordingLocked = false,
-                    recordingDurationMs = 0L,
-                    recordingAmplitude = 0f
-                )
-            }
-            recordingTimerJob?.cancel()
-            recordingTimerJob = viewModelScope.launch {
-                val startTime = System.currentTimeMillis()
-                while (true) {
-                    delay(100.milliseconds)
-                    val amplitude =
-                        (audioRecorderManager.getMaxAmplitude() / 32767f).coerceIn(0f, 1f)
-                    _uiState.update {
-                        it.copy(
-                            recordingDurationMs = System.currentTimeMillis() - startTime,
-                            recordingAmplitude = amplitude
-                        )
-                    }
-                }
-            }
-            vibrationManager.vibrate(VibrationPattern.TactileResponse)
-        } else {
-            viewModelScope.launch { _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Не удалось начать запись аудио"))) }
-        }
-    }
-
-    fun lockRecording() {
-        if (_uiState.value.isRecording) {
-            _uiState.update { it.copy(isRecordingLocked = true) }
-            vibrationManager.vibrate(VibrationPattern.TactileResponse)
-        }
-    }
-
-    fun stopRecordingAndSend() {
-        if (!_uiState.value.isRecording) return
-        val file = audioRecorderManager.stopRecording()
-        recordingTimerJob?.cancel()
-        _uiState.update {
-            it.copy(
-                isRecording = false,
-                isRecordingLocked = false,
-                recordingDurationMs = 0L
-            )
-        }
-        if (file != null) sendFiles(listOf(Uri.fromFile(file)))
-    }
-
-    fun cancelRecording() {
-        if (!_uiState.value.isRecording) return
-        audioRecorderManager.cancelRecording()
-        recordingTimerJob?.cancel()
-        _uiState.update {
-            it.copy(
-                isRecording = false,
-                isRecordingLocked = false,
-                recordingDurationMs = 0L
-            )
-        }
-        vibrationManager.vibrate(VibrationPattern.TactileResponse)
-    }
-    // endregion
-
-    fun showBlockDialog() {
-        _uiState.update { it.copy(showBlockDialog = true) }
-    }
-
-    fun dismissBlockDialog() {
-        _uiState.update { it.copy(showBlockDialog = false) }
-    }
-
-    fun unblockUser() {
-        viewModelScope.launch {
-            userRepository.unblockUser(_uiState.value.chatId).onSuccess {
-                dismissBlockDialog()
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.user_unblocked)))
-            }.onFailure {
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.unexpected_error)))
-                dismissBlockDialog()
-            }
-        }
-    }
-}
+    fun dismissBannedDial
