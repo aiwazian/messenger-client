@@ -152,7 +152,7 @@ class ChatViewModel @Inject constructor(
     private var autoDownloadPhotos = true
     private var autoDownloadVideos = true
     private var autoDownloadFiles = true
-    
+
     private val copyPolicy: ChatCopyPolicy
         get() = _uiState.value.copyPolicy
 
@@ -449,7 +449,7 @@ class ChatViewModel @Inject constructor(
 
         /*
          * Троеточие показываем всегда, даже с пустым списком действий: «Медиа»,
-         * поиск и уведомления живут внутри этого же меню, и у владельца канала
+         * «Поиск» и уведомления живут внутри этого же меню, и у владельца канала
          * без него не осталось бы точки входа ни туда, ни туда.
          */
         return listOf(TopBarAction(icon = Icons.Rounded.MoreVert, dropdownActions = actions))
@@ -1529,4 +1529,193 @@ class ChatViewModel @Inject constructor(
     fun setVideoPlaybackSpeed(speed: Float) =
         viewModelScope.launch { dataStoreManager.saveVideoPlaybackSpeed(speed) }
 
-    fun dismissBannedDial
+    fun dismissBannedDialog() = _uiState.update { it.copy(showBannedDialog = false) }
+    fun onMicrophonePermissionDenied() =
+        _uiState.update { it.copy(showMicrophonePermissionSheet = true) }
+
+    fun dismissMicrophonePermissionSheet() =
+        _uiState.update { it.copy(showMicrophonePermissionSheet = false) }
+
+    fun dismissInviteBottomSheet() = _uiState.update {
+        it.copy(
+            showInviteBottomSheet = false,
+            inviteLinkInfo = null,
+            inviteLinkCode = null,
+            isProcessingInvite = false
+        )
+    }
+    // endregion
+
+    // region Invite Links
+    fun onLinkClicked(url: String) {
+        val match = RegexPatterns.INVITE_LINK.find(url)
+        if (match == null) {
+            val normalized = if (url.startsWith("http")) url else "https://$url"
+            viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenUrl(normalized)) }
+            return
+        }
+
+        val code = match.groupValues[2]
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessingInvite = true) }
+            inviteLinkRepository.getInviteLinkInfo(code).onSuccess { linkInfo ->
+                _uiState.update { it.copy(isProcessingInvite = false) }
+                when {
+                    _uiState.value.chatId == linkInfo.chatId -> {
+                        _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.you_are_already_in_this_chat)))
+                        vibrationManager.vibrate(VibrationPattern.Error)
+                    }
+
+                    linkInfo.isJoined != null -> _uiEffect.emit(ChatUiEffect.NavigateToChat(linkInfo.chatId))
+                    linkInfo.isBanned != null -> {
+                        _uiState.update { s -> s.copy(showBannedDialog = true) }
+                        vibrationManager.vibrate(VibrationPattern.Error)
+                    }
+
+                    else -> _uiState.update { s ->
+                        s.copy(
+                            inviteLinkInfo = linkInfo,
+                            inviteLinkCode = code,
+                            showInviteBottomSheet = true
+                        )
+                    }
+                }
+            }.onFailure {
+                _uiState.update { it.copy(isProcessingInvite = false) }
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.invalid_link)))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
+    }
+
+    fun onEmailClicked(email: String) {
+        viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenEmail(email)) }
+    }
+
+    fun onUsernameClicked(username: String) {
+        viewModelScope.launch {
+            searchRepository.resolveUsername(username.removePrefix("@")).onSuccess { result ->
+                if (result == null) {
+                    _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.chat_not_found)))
+                    vibrationManager.vibrate(VibrationPattern.Error)
+                } else if (result.isBanned) {
+                    _uiState.update { it.copy(showBannedDialog = true) }
+                    vibrationManager.vibrate(VibrationPattern.Error)
+                } else {
+                    _uiEffect.emit(ChatUiEffect.NavigateToChat(result.chatId))
+                }
+            }
+        }
+    }
+
+    fun onSubscribeViaInviteLink() {
+        val info = _uiState.value.inviteLinkInfo ?: return
+        val code = _uiState.value.inviteLinkCode ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessingInvite = true) }
+            joinViaInviteLinkUseCase(code, info.chatId).onSuccess {
+                dismissInviteBottomSheet()
+                if (info.requireApproval) {
+                    _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Заявка отправлена")))
+                } else {
+                    _uiEffect.emit(ChatUiEffect.NavigateToChat(info.chatId))
+                }
+            }.onFailure {
+                _uiState.update { it.copy(isProcessingInvite = false) }
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_join)))
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
+    }
+    // endregion
+
+    // region Voice Recording
+    fun startRecording() {
+        if (_uiState.value.isRecording) return
+        val file = audioRecorderManager.startRecording()
+        if (file != null) {
+            _uiState.update {
+                it.copy(
+                    isRecording = true,
+                    isRecordingLocked = false,
+                    recordingDurationMs = 0L,
+                    recordingAmplitude = 0f
+                )
+            }
+            recordingTimerJob?.cancel()
+            recordingTimerJob = viewModelScope.launch {
+                val startTime = System.currentTimeMillis()
+                while (true) {
+                    delay(100.milliseconds)
+                    val amplitude =
+                        (audioRecorderManager.getMaxAmplitude() / 32767f).coerceIn(0f, 1f)
+                    _uiState.update {
+                        it.copy(
+                            recordingDurationMs = System.currentTimeMillis() - startTime,
+                            recordingAmplitude = amplitude
+                        )
+                    }
+                }
+            }
+            vibrationManager.vibrate(VibrationPattern.TactileResponse)
+        } else {
+            viewModelScope.launch { _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Не удалось начать запись аудио"))) }
+        }
+    }
+
+    fun lockRecording() {
+        if (_uiState.value.isRecording) {
+            _uiState.update { it.copy(isRecordingLocked = true) }
+            vibrationManager.vibrate(VibrationPattern.TactileResponse)
+        }
+    }
+
+    fun stopRecordingAndSend() {
+        if (!_uiState.value.isRecording) return
+        val file = audioRecorderManager.stopRecording()
+        recordingTimerJob?.cancel()
+        _uiState.update {
+            it.copy(
+                isRecording = false,
+                isRecordingLocked = false,
+                recordingDurationMs = 0L
+            )
+        }
+        if (file != null) sendFiles(listOf(Uri.fromFile(file)))
+    }
+
+    fun cancelRecording() {
+        if (!_uiState.value.isRecording) return
+        audioRecorderManager.cancelRecording()
+        recordingTimerJob?.cancel()
+        _uiState.update {
+            it.copy(
+                isRecording = false,
+                isRecordingLocked = false,
+                recordingDurationMs = 0L
+            )
+        }
+        vibrationManager.vibrate(VibrationPattern.TactileResponse)
+    }
+    // endregion
+
+    fun showBlockDialog() {
+        _uiState.update { it.copy(showBlockDialog = true) }
+    }
+
+    fun dismissBlockDialog() {
+        _uiState.update { it.copy(showBlockDialog = false) }
+    }
+
+    fun unblockUser() {
+        viewModelScope.launch {
+            userRepository.unblockUser(_uiState.value.chatId).onSuccess {
+                dismissBlockDialog()
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.user_unblocked)))
+            }.onFailure {
+                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.unexpected_error)))
+                dismissBlockDialog()
+            }
+        }
+    }
+}
