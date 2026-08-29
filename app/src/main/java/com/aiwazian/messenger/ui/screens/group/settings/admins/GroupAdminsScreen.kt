@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.PersonRemove
@@ -45,7 +44,6 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
@@ -75,11 +73,9 @@ fun GroupAdminsScreen(
     Scaffold(
         topBar = {
             PageTopBar(
-                title = { Text(stringResource(R.string.administrators)) },
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navBackStack::removeLastOrNull
-                )
+                title = {
+                    Text(stringResource(R.string.administrators))
+                },
             )
         },
         snackbarHost = {

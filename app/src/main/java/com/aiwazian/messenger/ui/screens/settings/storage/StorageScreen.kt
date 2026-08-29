@@ -15,13 +15,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.MoreVert
@@ -30,7 +26,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,11 +45,10 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.ui.app.AppDialog
-import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.utils.UiText
@@ -63,11 +57,11 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 @Composable
-fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
-    val uiState by storageViewModel.uiState.collectAsState()
+fun StorageScreen(viewModel: StorageViewModel = hiltViewModel()) {
+    val uiState by viewModel.uiState.collectAsState()
     
     LaunchedEffect(Unit) {
-        storageViewModel.uiEvent.collectLatest { event ->
+        viewModel.uiEvent.collectLatest { event ->
             when (event) {
                 is StorageUiEvent.CacheCleared -> {}
                 is StorageUiEvent.DatabaseCleared -> {}
@@ -76,90 +70,98 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
         }
     }
     
-    Scaffold(
-        topBar = { TopBar(storageViewModel) }) { padding ->
+    AppScaffold(
+        topBar = {
+            PageTopBar(
+                actions = listOf(
+                    TopBarAction(
+                        icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
+                            DropdownMenuAction(
+                                icon = Icons.Rounded.DeleteOutline,
+                                text = UiText.StringResource(R.string.clear_database),
+                                onClick = viewModel::showClearDatabaseDialog,
+                                isDestructive = true
+                            )
+                        )
+                    )
+                )
+            )
+        }) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
+                .fillMaxWidth()
+                .padding(vertical = 50.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 50.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = stringResource(R.string.storage_usage),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.W500
-                )
-                Text(
-                    text = uiState.appSize.formatFileSize(),
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            Text(
+                text = stringResource(R.string.storage_usage),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.W500
+            )
+            Text(
+                text = uiState.appSize.formatFileSize(),
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        SectionContainer(footer = {
+            SectionDescription("Все медиа останутся в облаке, при необходимости Вы сможете загрузить их.")
+        }) {
+            uiState.categories.forEachIndexed { index, category ->
+                StorageCategory(
+                    text = stringResource(category.category.title),
+                    selected = category.isSelected,
+                    color = AppPrimaryColor.entries[index].color,
+                    primaryText = category.totalSize.formatFileSize(),
+                    onClick = {
+                        viewModel.toggleCategory(category.category)
+                    },
                 )
             }
-            SectionContainer(footer = {
-                SectionDescription("Все медиа останутся в облаке, при необходимости Вы сможете загрузить их.")
-            }) {
-                uiState.categories.forEachIndexed { index, category ->
-                    StorageCategory(
-                        text = stringResource(category.category.title),
-                        selected = category.isSelected,
-                        color = AppPrimaryColor.entries[index].color,
-                        primaryText = category.totalSize.formatFileSize(),
-                        onClick = {
-                            storageViewModel.toggleCategory(category.category)
-                        },
-                    )
-                }
-                
-                val selectedSize = uiState.selectedSize
-                val selectedSizeMb = selectedSize / (1024.0 * 1024.0)
-                val selectedSizeMbRounded = BigDecimal(selectedSizeMb).setScale(
-                    2, RoundingMode.HALF_UP
-                ).toDouble()
-                
-                val hasSelection = uiState.selectedCategories.isNotEmpty()
-                
-                Button(
-                    onClick = storageViewModel::showConfirmDialog,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp),
-                    shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.buttonColors(
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
-                    enabled = hasSelection
+            
+            val selectedSize = uiState.selectedSize
+            val selectedSizeMb = selectedSize / (1024.0 * 1024.0)
+            val selectedSizeMbRounded = BigDecimal(selectedSizeMb).setScale(
+                2, RoundingMode.HALF_UP
+            ).toDouble()
+            
+            val hasSelection = uiState.selectedCategories.isNotEmpty()
+            
+            Button(
+                onClick = viewModel::showConfirmDialog,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp),
+                shape = MaterialTheme.shapes.medium,
+                colors = ButtonDefaults.buttonColors(
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                enabled = hasSelection
+            ) {
+                Row(
+                    modifier = Modifier.padding(8.dp),
                 ) {
-                    Row(
-                        modifier = Modifier.padding(8.dp),
-                    ) {
+                    Text(
+                        text = "${stringResource(R.string.clear_cache)} (",
+                        fontSize = 16.sp,
+                        lineHeight = 18.sp
+                    )
+                    AnimatedContent(
+                        targetState = selectedSizeMbRounded, transitionSpec = {
+                            if (targetState > initialState) {
+                                slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
+                            } else {
+                                slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
+                            }
+                        }) { size ->
                         Text(
-                            text = "${stringResource(R.string.clear_cache)} (",
-                            fontSize = 16.sp,
-                            lineHeight = 18.sp
-                        )
-                        AnimatedContent(
-                            targetState = selectedSizeMbRounded, transitionSpec = {
-                                if (targetState > initialState) {
-                                    slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
-                                } else {
-                                    slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
-                                }
-                            }) { size ->
-                            Text(
-                                text = "$size", fontSize = 16.sp, lineHeight = 18.sp
-                            )
-                        }
-                        Text(
-                            text = "MB)", fontSize = 16.sp, lineHeight = 18.sp
+                            text = "$size", fontSize = 16.sp, lineHeight = 18.sp
                         )
                     }
+                    Text(
+                        text = "MB)", fontSize = 16.sp, lineHeight = 18.sp
+                    )
                 }
             }
         }
@@ -168,17 +170,17 @@ fun StorageScreen(storageViewModel: StorageViewModel = hiltViewModel()) {
     if (uiState.showConfirmDialog) {
         ClearCacheConfirmationDialog(
             onConfirm = {
-                storageViewModel.clearSelectedCache()
-            }, onDismiss = storageViewModel::hideConfirmDialog
+                viewModel.clearSelectedCache()
+            }, onDismiss = viewModel::hideConfirmDialog
         )
     }
     
     if (uiState.showClearDatabaseDialog) {
         ClearDatabaseConfirmationDialog(
             onConfirm = {
-                storageViewModel.clearDatabase()
-                storageViewModel.hideClearDatabaseDialog()
-            }, onDismiss = storageViewModel::hideClearDatabaseDialog
+                viewModel.clearDatabase()
+                viewModel.hideClearDatabaseDialog()
+            }, onDismiss = viewModel::hideClearDatabaseDialog
         )
     }
 }
@@ -289,26 +291,4 @@ private fun ClearDatabaseConfirmationDialog(
                 Text(stringResource(R.string.delete))
             }
         })
-}
-
-@Composable
-private fun TopBar(viewModel: StorageViewModel) {
-    val navBackStack = LocalNavBackStack.current
-    
-    PageTopBar(
-        navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navBackStack::removeLastOrNull
-        ), actions = listOf(
-            TopBarAction(
-                icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
-                    DropdownMenuAction(
-                        icon = Icons.Rounded.DeleteOutline,
-                        text = UiText.StringResource(R.string.clear_database),
-                        onClick = viewModel::showClearDatabaseDialog,
-                        isDestructive = true
-                    )
-                )
-            )
-        )
-    )
 }

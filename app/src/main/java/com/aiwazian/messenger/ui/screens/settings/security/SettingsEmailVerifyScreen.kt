@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -29,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
@@ -59,10 +56,6 @@ fun SettingsEmailVerifyScreen(viewModel: EmailVerifyViewModel = hiltViewModel())
         topBar = {
             PageTopBar(
                 title = { Text("Подтверждение почты") },
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navBackStack::removeLastOrNull
-                )
             )
         }) { innerPadding ->
         Column(

@@ -4,13 +4,9 @@
 
 package com.aiwazian.messenger.ui.screens.channel.settings.admins
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.PersonRemove
@@ -19,7 +15,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,7 +25,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -39,13 +33,13 @@ import com.aiwazian.messenger.domain.ChannelAdmin
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
+import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
@@ -72,50 +66,42 @@ fun ChannelAdminsScreen(
         }
     }
     
-    Scaffold(
+    AppScaffold(
         topBar = {
             PageTopBar(
-                title = { Text(stringResource(R.string.administrators)) },
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navBackStack::removeLastOrNull
-                )
+                title = {
+                    Text(stringResource(R.string.administrators))
+                }
             )
         },
         snackbarHost = {
             AppSnackbar(snackbarHostState)
         }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            SectionContainer {
-                SectionItem(
-                    leadingIcon = Icons.Rounded.PersonAdd,
-                    headlineText = stringResource(R.string.add_administrator),
-                    onClick = { navBackStack.add(AppRoute.AddChannelAdmin(channelId)) }
-                )
-            }
-            
-            SectionContainer {
-                if (uiState.admins.isEmpty()) {
-                    SectionItem(headlineText = stringResource(R.string.no_administrators))
-                } else {
-                    LazyColumn {
-                        items(uiState.admins) { admin ->
-                            ChannelAdminItem(
-                                admin = admin,
-                                isCurrentUser = admin.userId == uiState.currentUserId,
-                                onOpenPermissions = {
-                                    navBackStack.add(
-                                        AppRoute.ChannelAdminPermissions(channelId, admin.userId)
-                                    )
-                                },
-                                onDemote = { viewModel.showDemoteDialog(admin.userId) }
-                            )
-                        }
+    ) {
+        SectionContainer {
+            SectionItem(
+                leadingIcon = Icons.Rounded.PersonAdd,
+                headlineText = stringResource(R.string.add_administrator),
+                onClick = { navBackStack.add(AppRoute.AddChannelAdmin(channelId)) }
+            )
+        }
+        
+        SectionContainer {
+            if (uiState.admins.isEmpty()) {
+                SectionItem(headlineText = stringResource(R.string.no_administrators))
+            } else {
+                LazyColumn {
+                    items(uiState.admins) { admin ->
+                        ChannelAdminItem(
+                            admin = admin,
+                            isCurrentUser = admin.userId == uiState.currentUserId,
+                            onOpenPermissions = {
+                                navBackStack.add(
+                                    AppRoute.ChannelAdminPermissions(channelId, admin.userId)
+                                )
+                            },
+                            onDemote = { viewModel.showDemoteDialog(admin.userId) }
+                        )
                     }
                 }
             }

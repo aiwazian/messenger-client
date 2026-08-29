@@ -13,13 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,10 +41,9 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.PendingJoinRequest
 import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.ChatAvatar
-import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.LottieAnimation
 
@@ -56,74 +52,69 @@ fun PendingJoinRequestsScreen(
     viewModel: PendingJoinRequestsViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val navBackStack = LocalNavBackStack.current
     
     var requestToCancel by remember { mutableStateOf<PendingJoinRequest?>(null) }
     
-    Scaffold(
+    AppScaffold(
         topBar = {
             PageTopBar(
-                title = { Text(stringResource(R.string.join_requests)) },
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navBackStack::removeLastOrNull
-                )
+                title = {
+                    Text(stringResource(R.string.join_requests))
+                }
             )
-        }) { paddingValues ->
-        Column(Modifier.padding(paddingValues)) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+        }) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            val composition by rememberLottieComposition(
+                spec = LottieCompositionSpec.Asset(LottieAnimation.OUTBOX)
+            )
+            
+            LottieAnimation(
+                composition = composition,
+                modifier = Modifier.size(100.dp),
+                iterations = LottieConstants.IterateForever,
+                isPlaying = true
+            )
+            
+            Text(
+                text = stringResource(R.string.pending_join_requests_description),
+                fontSize = 14.sp,
+                lineHeight = 14.sp,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        
+        if (state.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
             ) {
-                val composition by rememberLottieComposition(
-                    spec = LottieCompositionSpec.Asset(LottieAnimation.OUTBOX)
-                )
-                
-                LottieAnimation(
-                    composition = composition,
-                    modifier = Modifier.size(100.dp),
-                    iterations = LottieConstants.IterateForever,
-                    isPlaying = true
-                )
-                
+                CircularWavyProgressIndicator()
+            }
+        } else if (state.requests.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
-                    text = stringResource(R.string.pending_join_requests_description),
-                    fontSize = 14.sp,
-                    lineHeight = 14.sp,
+                    text = stringResource(R.string.pending_join_requests_empty),
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    lineHeight = 16.sp
                 )
             }
-            
-            if (state.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
-                ) {
-                    CircularWavyProgressIndicator()
-                }
-            } else if (state.requests.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 20.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(R.string.pending_join_requests_empty),
-                        textAlign = TextAlign.Center,
-                        lineHeight = 16.sp
-                    )
-                }
-            } else {
-                SectionContainer {
-                    LazyColumn {
-                        items(state.requests, key = { it.chatId }) { request ->
-                            PendingJoinRequestCard(
-                                request = request, onCancelClick = { requestToCancel = request })
-                        }
+        } else {
+            SectionContainer {
+                LazyColumn {
+                    items(state.requests, key = { it.chatId }) { request ->
+                        PendingJoinRequestCard(
+                            request = request, onCancelClick = { requestToCancel = request })
                     }
                 }
             }

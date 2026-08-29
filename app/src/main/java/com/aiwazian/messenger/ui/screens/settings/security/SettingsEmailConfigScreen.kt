@@ -7,21 +7,16 @@ package com.aiwazian.messenger.ui.screens.settings.security
 import android.content.ClipData
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,11 +39,11 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.LottieAnimation
 import kotlinx.coroutines.launch
@@ -96,83 +91,71 @@ fun SettingsEmailConfigScreen(viewModel: EmailConfigViewModel = hiltViewModel())
         }
     }
     
-    Scaffold(
+    AppScaffold(
         topBar = {
-            PageTopBar(
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navBackStack::removeLastOrNull
-                )
-            )
-        }) { innerPadding ->
+            PageTopBar()
+        }) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState()),
+                .fillMaxWidth()
+                .padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                val composition by rememberLottieComposition(
-                    spec = LottieCompositionSpec.Asset(LottieAnimation.MAILBOX)
-                )
-                
-                LottieAnimation(
-                    composition = composition,
-                    modifier = Modifier.size(100.dp),
-                    iterations = LottieConstants.IterateForever,
-                    isPlaying = true
-                )
-                
-                Text(
-                    text = "Почта повышает безопасность аккаунта и помогает вернуть доступ, если вы забудете пароль.",
-                    fontSize = 14.sp,
-                    lineHeight = 14.sp,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            val composition by rememberLottieComposition(
+                spec = LottieCompositionSpec.Asset(LottieAnimation.MAILBOX)
+            )
             
-            SectionContainer {
-                email?.let {
-                    SectionItem(headlineText = it, trailingContent = {
-                        val clipboard = LocalClipboard.current
-                        val scope = rememberCoroutineScope()
-                        IconButton(
-                            onClick = {
-                                scope.launch {
-                                    clipboard.setClipEntry(
-                                        ClipEntry(
-                                            ClipData.newPlainText("user-email", email)
-                                        )
+            LottieAnimation(
+                composition = composition,
+                modifier = Modifier.size(100.dp),
+                iterations = LottieConstants.IterateForever,
+                isPlaying = true
+            )
+            
+            Text(
+                text = "Почта повышает безопасность аккаунта и помогает вернуть доступ, если вы забудете пароль.",
+                fontSize = 14.sp,
+                lineHeight = 14.sp,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        
+        SectionContainer {
+            email?.let {
+                SectionItem(headlineText = it, trailingContent = {
+                    val clipboard = LocalClipboard.current
+                    val scope = rememberCoroutineScope()
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                clipboard.setClipEntry(
+                                    ClipEntry(
+                                        ClipData.newPlainText("user-email", email)
                                     )
-                                }
-                            },
-                            colors = IconButtonDefaults.iconButtonColors(
-                                contentColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Icon(Icons.Rounded.ContentCopy, null)
-                        }
-                    })
-                }
-                SectionItem(
-                    headlineText = stringResource(R.string.change_email),
-                    onClick = viewModel::onChangeEmailClick
-                )
+                                )
+                            }
+                        },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(Icons.Rounded.ContentCopy, null)
+                    }
+                })
             }
-            SectionContainer {
-                SectionItem(
-                    headlineText = stringResource(R.string.remove_email),
-                    contentColor = MaterialTheme.colorScheme.error,
-                    onClick = viewModel::onDisableEmailClick
-                )
-            }
+            SectionItem(
+                headlineText = stringResource(R.string.change_email),
+                onClick = viewModel::onChangeEmailClick
+            )
+        }
+        SectionContainer {
+            SectionItem(
+                headlineText = stringResource(R.string.remove_email),
+                contentColor = MaterialTheme.colorScheme.error,
+                onClick = viewModel::onDisableEmailClick
+            )
         }
     }
 }

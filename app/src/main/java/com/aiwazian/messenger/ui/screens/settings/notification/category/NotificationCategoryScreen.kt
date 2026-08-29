@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -43,8 +42,8 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -72,7 +71,7 @@ fun NotificationCategoryScreen(
                     snackbarJob = launch {
                         snackbarHostState.currentSnackbarData?.dismiss()
                         snackbarHostState.showSnackbar(
-                            message = context.getString(effect.messageResId),
+                            message = UiText.StringResource(effect.messageResId).asString(context),
                             duration = SnackbarDuration.Short
                         )
                     }
@@ -84,11 +83,9 @@ fun NotificationCategoryScreen(
     Scaffold(
         topBar = {
             PageTopBar(
-                title = { Text(stringResource(categoryTitleRes(category))) },
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navBackStack::removeLastOrNull
-                )
+                title = {
+                    Text(stringResource(categoryTitleRes(category)))
+                }
             )
         },
         snackbarHost = {
@@ -120,7 +117,11 @@ fun NotificationCategoryScreen(
                                 headlineText = stringResource(R.string.notification_exception_add),
                                 leadingIcon = Icons.Outlined.Add,
                                 onClick = {
-                                    navBackStack.add(AppRoute.SelectNotificationExceptionChat(category))
+                                    navBackStack.add(
+                                        AppRoute.SelectNotificationExceptionChat(
+                                            category
+                                        )
+                                    )
                                 }
                             )
                         }
@@ -139,7 +140,11 @@ fun NotificationCategoryScreen(
                                     ExceptionCard(
                                         item = item,
                                         onClick = {
-                                            navBackStack.add(AppRoute.SettingsNotificationException(item.chatId))
+                                            navBackStack.add(
+                                                AppRoute.SettingsNotificationException(
+                                                    item.chatId
+                                                )
+                                            )
                                         }
                                     )
                                 }
@@ -181,17 +186,13 @@ fun NotificationCategoryScreen(
     }
 }
 
-/**
- * Строка исключения ведёт сразу в его настройки: меню из двух пунктов было лишним
- * шагом до того же экрана, где есть и переключатель, и удаление.
- */
 @Composable
 private fun ExceptionCard(
     item: NotificationExceptionItem,
     onClick: () -> Unit
 ) {
     val chat = item.chat
-    val name = if (chat != null) chat.chatName.asString() else ""
+    val name = chat?.chatName?.asString() ?: ""
     
     val supportingText = if (item.enabled) {
         stringResource(R.string.notification_exception_enabled)

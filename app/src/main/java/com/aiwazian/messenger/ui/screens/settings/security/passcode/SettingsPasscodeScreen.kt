@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -49,7 +47,6 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.section.SectionToggleItem
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsSecurityViewModel
 import com.aiwazian.messenger.utils.LottieAnimation
@@ -88,9 +85,8 @@ fun SettingsPasscodeCreateScreen(
     
     Scaffold(
         topBar = {
-            TopBar()
-        },
-        modifier = Modifier.fillMaxSize(),
+            PageTopBar()
+        }
     ) {
         Column(
             modifier = Modifier
@@ -152,14 +148,8 @@ fun SettingsPasscodeChangeScreen(passcodeViewModel: PasscodeViewModel = hiltView
     
     Scaffold(
         topBar = {
-            PageTopBar(
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navBackStack::removeLastOrNull
-                )
-            )
-        },
-        modifier = Modifier.fillMaxSize()
+            PageTopBar()
+        }
     ) {
         Column(
             modifier = Modifier
@@ -206,17 +196,6 @@ fun SettingsPasscodeChangeScreen(passcodeViewModel: PasscodeViewModel = hiltView
 }
 
 @Composable
-private fun TopBar() {
-    val navBackStack = LocalNavBackStack.current
-    PageTopBar(
-        navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navBackStack::removeLastOrNull
-        )
-    )
-}
-
-@Composable
 private fun SettingsPasscodeLockScreen(
     passcodeViewModel: PasscodeViewModel = hiltViewModel(),
     onBackToCreate: () -> Unit = {}
@@ -250,7 +229,7 @@ private fun SettingsPasscodeLockScreen(
     
     Scaffold(
         topBar = {
-            TopBar()
+            PageTopBar()
         },
     ) { innerPadding ->
         Column(

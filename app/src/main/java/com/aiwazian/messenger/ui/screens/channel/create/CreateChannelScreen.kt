@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
@@ -41,7 +40,6 @@ import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -84,7 +82,11 @@ fun CreateChannelScreen(viewModel: CreateChannelViewModel = hiltViewModel()) {
             AppSnackbar(snackbarHostState)
         },
         topBar = {
-            TopBar()
+            PageTopBar(
+                title = {
+                    Text(text = stringResource(R.string.create_channel))
+                }
+            )
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -129,17 +131,4 @@ fun CreateChannelScreen(viewModel: CreateChannelViewModel = hiltViewModel()) {
             }
         }
     }
-}
-
-@Composable
-private fun TopBar() {
-    val navBackStack = LocalNavBackStack.current
-    
-    PageTopBar(
-        title = { Text(text = stringResource(R.string.create_channel)) },
-        navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            onClick = navBackStack::removeLastOrNull
-        )
-    )
 }

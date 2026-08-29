@@ -4,6 +4,8 @@
 
 package com.aiwazian.messenger.ui.components.topBar
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBar
@@ -15,24 +17,29 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 
 @Composable
 fun PageTopBar(
     modifier: Modifier = Modifier,
     title: @Composable () -> Unit = { },
-    navigationIcon: NavigationIcon,
     actions: List<TopBarAction> = emptyList(),
-    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors()
+    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(
+        containerColor = Color.Transparent
+    )
 ) {
+    val navBackStack = LocalNavBackStack.current
+    
     TopAppBar(
         title = title,
         modifier = modifier,
         navigationIcon = {
-            IconButton(onClick = { navigationIcon.onClick() }) {
+            IconButton(onClick = navBackStack::removeLastOrNull) {
                 Icon(
-                    imageVector = navigationIcon.icon,
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null
                 )
             }

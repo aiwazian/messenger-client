@@ -30,8 +30,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -60,8 +58,6 @@ import com.aiwazian.messenger.domain.ChatMediaItem
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.ui.app.AppPrimaryScrollableTabRow
 import com.aiwazian.messenger.ui.app.AppTab
-import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
@@ -87,7 +83,6 @@ fun ChatMediaScreen(
     chatName: String? = null,
     viewModel: ChatMediaViewModel = hiltViewModel()
 ) {
-    val navBackStack = LocalNavBackStack.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     
@@ -146,10 +141,6 @@ fun ChatMediaScreen(
                             }
                         }
                     },
-                    navigationIcon = NavigationIcon(
-                        icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                        onClick = navBackStack::removeLastOrNull
-                    ),
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
                 

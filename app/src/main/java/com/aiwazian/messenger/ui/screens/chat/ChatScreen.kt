@@ -657,6 +657,8 @@ fun ChatScreen(
                         brush = Brush.verticalGradient(
                             colors = listOf(
                                 MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
                                 Color.Transparent
                             )
                         )
@@ -677,7 +679,8 @@ fun ChatScreen(
                         brush = Brush.verticalGradient(
                             colors = listOf(
                                 Color.Transparent,
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
                             )
                         )
                     )

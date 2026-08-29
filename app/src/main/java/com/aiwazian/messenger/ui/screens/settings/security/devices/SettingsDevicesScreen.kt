@@ -14,11 +14,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.BackHand
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.PhoneAndroid
@@ -28,7 +25,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -59,21 +55,19 @@ import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateTime
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.CountdownTextButton
-import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsDevicesScreen(viewModel: DevicesViewModel = hiltViewModel()) {
-    val navBackStack = LocalNavBackStack.current
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -101,92 +95,80 @@ fun SettingsDevicesScreen(viewModel: DevicesViewModel = hiltViewModel()) {
     val currentSession = uiState.sessions.find { it.isCurrent }
     val otherSessions = uiState.sessions.filter { !it.isCurrent }
     
-    Scaffold(
+    AppScaffold(
         topBar = {
             PageTopBar(
                 title = { Text(stringResource(R.string.devices)) },
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navBackStack::removeLastOrNull
-                )
             )
         },
         snackbarHost = {
             AppSnackbar(snackbarHostState)
-        }) { paddingValues ->
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-        ) {
-            
-            if (currentSession != null) {
-                SectionContainer(header = {
-                    SectionHeader(stringResource(R.string.this_device))
-                }, footer = {
-                    if (otherSessions.isNotEmpty()) {
-                        SectionDescription(text = stringResource(R.string.terminate_all_other_sessions_description))
-                    }
-                }) {
-                    DeviceCard(
-                        session = currentSession,
-                        onClick = { viewModel.openSession(currentSession) }
+        }) {
+        if (currentSession != null) {
+            SectionContainer(header = {
+                SectionHeader(stringResource(R.string.this_device))
+            }, footer = {
+                if (otherSessions.isNotEmpty()) {
+                    SectionDescription(text = stringResource(R.string.terminate_all_other_sessions_description))
+                }
+            }) {
+                DeviceCard(
+                    session = currentSession,
+                    onClick = { viewModel.openSession(currentSession) }
+                )
+                AnimatedVisibility(otherSessions.isNotEmpty()) {
+                    SectionItem(
+                        leadingIcon = Icons.Outlined.BackHand,
+                        headlineText = stringResource(R.string.terminate_all_other_sessions),
+                        contentColor = MaterialTheme.colorScheme.error,
+                        onClick = viewModel::showTerminateAllOtherSessionsDialog
                     )
-                    AnimatedVisibility(otherSessions.isNotEmpty()) {
-                        SectionItem(
-                            leadingIcon = Icons.Outlined.BackHand,
-                            headlineText = stringResource(R.string.terminate_all_other_sessions),
-                            contentColor = MaterialTheme.colorScheme.error,
-                            onClick = viewModel::showTerminateAllOtherSessionsDialog
-                        )
-                    }
-                }
-            }
-            
-            if (otherSessions.isNotEmpty()) {
-                SectionContainer(header = {
-                    SectionHeader(title = stringResource(R.string.active_sessions))
-                }, footer = {
-                    SectionDescription(text = stringResource(R.string.sessions_android_only_message))
-                }) {
-                    otherSessions.forEach { session ->
-                        DeviceCard(
-                            session = session,
-                            onClick = { viewModel.openSession(session) }
-                        )
-                    }
                 }
             }
         }
         
-        if (uiState.showTerminateSessionDialog) {
-            TerminateSessionDialog(
-                title = stringResource(R.string.terminate_session),
-                message = stringResource(R.string.terminate_session_confirm_message),
-                onDismiss = viewModel::hideTerminateSessionDialog,
-                onConfirm = viewModel::terminateSession,
-                vibrate = viewModel::vibrate
-            )
+        if (otherSessions.isNotEmpty()) {
+            SectionContainer(header = {
+                SectionHeader(title = stringResource(R.string.active_sessions))
+            }, footer = {
+                SectionDescription(text = stringResource(R.string.sessions_android_only_message))
+            }) {
+                otherSessions.forEach { session ->
+                    DeviceCard(
+                        session = session,
+                        onClick = { viewModel.openSession(session) }
+                    )
+                }
+            }
         }
-        
-        if (uiState.showTerminateAllOtherSessionsDialog) {
-            TerminateSessionDialog(
-                title = stringResource(R.string.terminate_all_other_sessions),
-                message = stringResource(R.string.terminate_all_other_sessions_confirm_message),
-                onDismiss = viewModel::hideTerminateAllOtherSessionsDialog,
-                onConfirm = viewModel::terminateAllOtherSessions,
-                vibrate = viewModel::vibrate
-            )
-        }
-        
-        if (uiState.showSessionInfoBottomSheet && uiState.openedSession != null) {
-            SessionInfoBottomSheet(
-                session = uiState.openedSession!!,
-                onDismissRequest = viewModel::closeSessionInfo,
-                onTerminateClick = viewModel::showTerminateSessionDialog
-            )
-        }
+    }
+    
+    if (uiState.showTerminateSessionDialog) {
+        TerminateSessionDialog(
+            title = stringResource(R.string.terminate_session),
+            message = stringResource(R.string.terminate_session_confirm_message),
+            onDismiss = viewModel::hideTerminateSessionDialog,
+            onConfirm = viewModel::terminateSession,
+            vibrate = viewModel::vibrate
+        )
+    }
+    
+    if (uiState.showTerminateAllOtherSessionsDialog) {
+        TerminateSessionDialog(
+            title = stringResource(R.string.terminate_all_other_sessions),
+            message = stringResource(R.string.terminate_all_other_sessions_confirm_message),
+            onDismiss = viewModel::hideTerminateAllOtherSessionsDialog,
+            onConfirm = viewModel::terminateAllOtherSessions,
+            vibrate = viewModel::vibrate
+        )
+    }
+    
+    if (uiState.showSessionInfoBottomSheet && uiState.openedSession != null) {
+        SessionInfoBottomSheet(
+            session = uiState.openedSession!!,
+            onDismissRequest = viewModel::closeSessionInfo,
+            onTerminateClick = viewModel::showTerminateSessionDialog
+        )
     }
 }
 

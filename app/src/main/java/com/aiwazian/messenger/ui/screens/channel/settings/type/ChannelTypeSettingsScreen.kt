@@ -17,10 +17,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -41,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
+import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -49,7 +48,6 @@ import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
 import com.aiwazian.messenger.ui.components.section.SectionToggleItem
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import kotlinx.coroutines.Job
@@ -89,14 +87,12 @@ fun ChannelTypeSettingsScreen(
         }
     }
     
-    Scaffold(
+    AppScaffold(
         topBar = {
             PageTopBar(
-                title = { Text(stringResource(R.string.channel_type)) },
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navBackStack::removeLastOrNull
-                ),
+                title = {
+                    Text(stringResource(R.string.channel_type))
+                },
                 actions = if (uiState.canSave) {
                     listOf(
                         TopBarAction(
@@ -111,73 +107,69 @@ fun ChannelTypeSettingsScreen(
             AppSnackbar(snackbarHostState)
         },
         modifier = Modifier.imePadding()
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            SectionContainer {
-                SectionRadioItem(
-                    text = stringResource(R.string.private_channel),
-                    selected = uiState.channelType == ChannelType.PRIVATE,
-                    description = "На частные каналы можно подписаться только по ссылке-приглашению.",
-                    onClick = { viewModel.changeChannelType(ChannelType.PRIVATE) }
-                )
-                SectionRadioItem(
-                    text = stringResource(R.string.public_channel),
-                    selected = uiState.channelType == ChannelType.PUBLIC,
-                    description = "Публичные каналы можно найти через поиск, подписаться на них может любой пользователь.",
-                    onClick = { viewModel.changeChannelType(ChannelType.PUBLIC) }
-                )
-            }
-            
-            AnimatedContent(
-                targetState = uiState.channelType,
-                transitionSpec = {
-                    scaleIn() + fadeIn() togetherWith scaleOut() + fadeOut()
-                },
-                label = "channel_type_animation"
-            ) { type ->
-                if (type == ChannelType.PUBLIC) {
-                    Column {
-                        SectionContainer(header = {
-                            SectionHeader(title = stringResource(R.string.public_link))
-                        }) {
-                            FramelessTextBox(
-                                placeholder = stringResource(R.string.username),
-                                value = uiState.username,
-                                onValueChange = viewModel::onChangeUsername
-                            )
-                        }
-                        
-                        var text by remember { mutableStateOf("") }
-                        uiState.statusText?.asString()?.let { text = it }
-                        AnimatedVisibility(
-                            visible = !uiState.statusText?.asString().isNullOrBlank(),
-                            enter = slideInVertically { -it } + fadeIn(),
-                            exit = slideOutVertically { -it } + fadeOut(),
-                            modifier = Modifier.padding(start = 24.dp)
-                        ) {
-                            Text(
-                                text = text,
-                                fontSize = 12.sp,
-                                lineHeight = 14.sp,
-                                color = if (uiState.isError) MaterialTheme.colorScheme.error else Color.Unspecified
-                            )
-                        }
+    ) {
+        SectionContainer {
+            SectionRadioItem(
+                text = stringResource(R.string.private_channel),
+                selected = uiState.channelType == ChannelType.PRIVATE,
+                description = "На частные каналы можно подписаться только по ссылке-приглашению.",
+                onClick = { viewModel.changeChannelType(ChannelType.PRIVATE) }
+            )
+            SectionRadioItem(
+                text = stringResource(R.string.public_channel),
+                selected = uiState.channelType == ChannelType.PUBLIC,
+                description = "Публичные каналы можно найти через поиск, подписаться на них может любой пользователь.",
+                onClick = { viewModel.changeChannelType(ChannelType.PUBLIC) }
+            )
+        }
+        
+        AnimatedContent(
+            targetState = uiState.channelType,
+            transitionSpec = {
+                scaleIn() + fadeIn() togetherWith scaleOut() + fadeOut()
+            },
+            label = "channel_type_animation"
+        ) { type ->
+            if (type == ChannelType.PUBLIC) {
+                Column {
+                    SectionContainer(header = {
+                        SectionHeader(title = stringResource(R.string.public_link))
+                    }) {
+                        FramelessTextBox(
+                            placeholder = stringResource(R.string.username),
+                            value = uiState.username,
+                            onValueChange = viewModel::onChangeUsername
+                        )
+                    }
+                    
+                    var text by remember { mutableStateOf("") }
+                    uiState.statusText?.asString()?.let { text = it }
+                    AnimatedVisibility(
+                        visible = !uiState.statusText?.asString().isNullOrBlank(),
+                        enter = slideInVertically { -it } + fadeIn(),
+                        exit = slideOutVertically { -it } + fadeOut(),
+                        modifier = Modifier.padding(start = 24.dp)
+                    ) {
+                        Text(
+                            text = text,
+                            fontSize = 12.sp,
+                            lineHeight = 14.sp,
+                            color = if (uiState.isError) MaterialTheme.colorScheme.error else Color.Unspecified
+                        )
                     }
                 }
             }
-            
-            SectionContainer(footer = {
-                SectionDescription(stringResource(R.string.no_copy_channel_description))
-            }) {
-                SectionToggleItem(
-                    text = stringResource(R.string.no_copy),
-                    isChecked = uiState.noCopy,
-                    enabled = uiState.canChangeNoCopy,
-                    onCheckedChange = { viewModel.changeNoCopy(!uiState.noCopy) }
-                )
-            }
+        }
+        
+        SectionContainer(footer = {
+            SectionDescription(stringResource(R.string.no_copy_channel_description))
+        }) {
+            SectionToggleItem(
+                text = stringResource(R.string.no_copy),
+                isChecked = uiState.noCopy,
+                enabled = uiState.canChangeNoCopy,
+                onCheckedChange = { viewModel.changeNoCopy(!uiState.noCopy) }
+            )
         }
     }
 }

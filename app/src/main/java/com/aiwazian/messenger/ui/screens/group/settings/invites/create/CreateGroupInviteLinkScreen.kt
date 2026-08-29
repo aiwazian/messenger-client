@@ -5,18 +5,13 @@
 package com.aiwazian.messenger.ui.screens.group.settings.invites.create
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
@@ -39,6 +34,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
+import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -47,7 +43,6 @@ import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.section.SectionToggleItem
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import kotlinx.coroutines.Job
@@ -121,15 +116,13 @@ fun CreateGroupInviteLinkScreen(
         }
     }
     
-    Scaffold(
+    AppScaffold(
         modifier = Modifier.imePadding(),
         topBar = {
             PageTopBar(
-                title = { Text(stringResource(R.string.new_link)) },
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navBackStack::removeLastOrNull
-                ),
+                title = {
+                    Text(stringResource(R.string.new_link))
+                },
                 actions = listOf(
                     TopBarAction(
                         icon = Icons.Rounded.Check, onClick = viewModel::createLink
@@ -139,47 +132,41 @@ fun CreateGroupInviteLinkScreen(
         },
         snackbarHost = {
             AppSnackbar(snackbarHostState)
-        }) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            SectionContainer(
-                header = { SectionHeader(title = "Ограничения") },
-                footer = { SectionDescription(text = "Вы можете ограничить срок действия ссылки или количество её использований.") }) {
-                
-                if (!uiState.requireApproval) {
-                    FramelessTextBox(
-                        value = uiState.maxUses,
-                        onValueChange = viewModel::onMaxUsesChange,
-                        placeholder = "Количество использований",
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                    )
-                }
-                
-                SectionItem(
-                    headlineText = "Срок действия",
-                    trailingText = uiState.expirationDate?.toInstance()?.toPrettyDateWithYear()
-                        ?: "Бессрочно",
-                    onClick = viewModel::showDatePicker
-                )
-                
-                AnimatedContent(targetState = uiState.expirationDate) { date ->
-                    if (date != null) {
-                        SectionItem(
-                            headlineText = "Сбросить срок действия",
-                            contentColor = MaterialTheme.colorScheme.error,
-                            onClick = { viewModel.onExpirationDateChange(null) })
-                    }
-                }
-                
-                SectionToggleItem(
-                    text = "Заявки на вступление",
-                    isChecked = uiState.requireApproval,
-                    onCheckedChange = { viewModel.onRequireApprovalChange(!uiState.requireApproval) }
+        }) {
+        SectionContainer(
+            header = { SectionHeader(title = "Ограничения") },
+            footer = { SectionDescription(text = "Вы можете ограничить срок действия ссылки или количество её использований.") }) {
+            
+            if (!uiState.requireApproval) {
+                FramelessTextBox(
+                    value = uiState.maxUses,
+                    onValueChange = viewModel::onMaxUsesChange,
+                    placeholder = "Количество использований",
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
             }
+            
+            SectionItem(
+                headlineText = "Срок действия",
+                trailingText = uiState.expirationDate?.toInstance()?.toPrettyDateWithYear()
+                    ?: "Бессрочно",
+                onClick = viewModel::showDatePicker
+            )
+            
+            AnimatedContent(targetState = uiState.expirationDate) { date ->
+                if (date != null) {
+                    SectionItem(
+                        headlineText = "Сбросить срок действия",
+                        contentColor = MaterialTheme.colorScheme.error,
+                        onClick = { viewModel.onExpirationDateChange(null) })
+                }
+            }
+            
+            SectionToggleItem(
+                text = "Заявки на вступление",
+                isChecked = uiState.requireApproval,
+                onCheckedChange = { viewModel.onRequireApprovalChange(!uiState.requireApproval) }
+            )
         }
     }
 }

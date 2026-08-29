@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,7 +40,6 @@ import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
@@ -68,11 +66,9 @@ fun AddMemberScreen(
     
     Scaffold(topBar = {
         PageTopBar(
-            title = { Text(stringResource(R.string.add_member)) },
-            navigationIcon = NavigationIcon(
-                icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                onClick = navBackStack::removeLastOrNull
-            )
+            title = {
+                Text(stringResource(R.string.add_member))
+            },
         )
     }, snackbarHost = {
         AppSnackbar(snackbarHostState)

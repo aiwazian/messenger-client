@@ -5,18 +5,13 @@
 package com.aiwazian.messenger.ui.screens.settings.privacy.blockedUsers
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -39,12 +34,12 @@ import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
+import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -80,70 +75,60 @@ fun BlockedUserListScreen(
         }
     }
     
-    Scaffold(
+    AppScaffold(
         topBar = {
             PageTopBar(
-                title = { Text(stringResource(R.string.blocked_users)) },
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navBackStack::removeLastOrNull
-                )
+                title = {
+                    Text(stringResource(R.string.blocked_users))
+                }
             )
         },
         snackbarHost = {
             AppSnackbar(snackbarHostState)
         }
-    ) { paddingValues ->
+    ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier = Modifier.fillMaxSize()
         ) {
             if (uiState.isLoading) {
                 CircularWavyProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    if (uiState.blockedUsers.isNotEmpty()) {
-                        SectionContainer {
-                            uiState.blockedUsers.forEach { user ->
-                                BlockedUserItem(
-                                    user = user,
-                                    onUnblockClick = { viewModel.showUnblockDialog(user) },
-                                    onProfileClick = {
-                                        val name = buildString {
-                                            append(user.firstName)
-                                            if (!user.lastName.isNullOrBlank()) {
-                                                append(" ")
-                                                append(user.lastName)
-                                            }
+                if (uiState.blockedUsers.isNotEmpty()) {
+                    SectionContainer {
+                        uiState.blockedUsers.forEach { user ->
+                            BlockedUserItem(
+                                user = user,
+                                onUnblockClick = { viewModel.showUnblockDialog(user) },
+                                onProfileClick = {
+                                    val name = buildString {
+                                        append(user.firstName)
+                                        if (!user.lastName.isNullOrBlank()) {
+                                            append(" ")
+                                            append(user.lastName)
                                         }
-                                        val currentAvatarUri =
-                                            user.avatars.maxByOrNull { it.sortOrder }?.uri
-                                        navBackStack.add(
-                                            AppRoute.Profile(
-                                                profileId = user.id,
-                                                profileName = name,
-                                                avatarUri = currentAvatarUri?.toString()
-                                            )
-                                        )
                                     }
-                                )
-                            }
-                        }
-                    } else {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "Нет заблокированных пользователей",
-                                modifier = Modifier.padding(top = 32.dp)
+                                    val currentAvatarUri =
+                                        user.avatars.maxByOrNull { it.sortOrder }?.uri
+                                    navBackStack.add(
+                                        AppRoute.Profile(
+                                            profileId = user.id,
+                                            profileName = name,
+                                            avatarUri = currentAvatarUri?.toString()
+                                        )
+                                    )
+                                }
                             )
                         }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Нет заблокированных пользователей",
+                            modifier = Modifier.padding(top = 32.dp)
+                        )
                     }
                 }
             }

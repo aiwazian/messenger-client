@@ -9,13 +9,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,11 +31,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import kotlinx.coroutines.Job
@@ -77,14 +74,12 @@ fun SettingsUsernameScreen(
     
     val uiState by viewModel.uiState.collectAsState()
     
-    Scaffold(
+    AppScaffold(
         topBar = {
             PageTopBar(
-                title = { Text(stringResource(R.string.username)) },
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navBackStack::removeLastOrNull
-                ),
+                title = {
+                    Text(stringResource(R.string.username))
+                },
                 actions = if (uiState.canSave) {
                     listOf(
                         TopBarAction(
@@ -97,31 +92,29 @@ fun SettingsUsernameScreen(
         },
         snackbarHost = {
             AppSnackbar(snackbarHostState)
-        }) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
-            SectionContainer {
-                FramelessTextBox(
-                    placeholder = stringResource(R.string.username),
-                    value = uiState.username,
-                    onValueChange = viewModel::onChangeUsername,
-                )
-            }
-            
-            var text by remember { mutableStateOf("") }
-            uiState.statusText?.asString()?.let { text = it }
-            AnimatedVisibility(
-                visible = !uiState.statusText?.asString().isNullOrBlank(),
-                enter = slideInVertically { -it } + fadeIn(),
-                exit = slideOutVertically { -it } + fadeOut(),
-                modifier = Modifier.padding(start = 24.dp)
-            ) {
-                Text(
-                    text = text,
-                    fontSize = 12.sp,
-                    lineHeight = 14.sp,
-                    color = if (uiState.isError) MaterialTheme.colorScheme.error else Color.Unspecified
-                )
-            }
+        }) {
+        SectionContainer {
+            FramelessTextBox(
+                placeholder = stringResource(R.string.username),
+                value = uiState.username,
+                onValueChange = viewModel::onChangeUsername,
+            )
+        }
+        
+        var text by remember { mutableStateOf("") }
+        uiState.statusText?.asString()?.let { text = it }
+        AnimatedVisibility(
+            visible = !uiState.statusText?.asString().isNullOrBlank(),
+            enter = slideInVertically { -it } + fadeIn(),
+            exit = slideOutVertically { -it } + fadeOut(),
+            modifier = Modifier.padding(start = 24.dp)
+        ) {
+            Text(
+                text = text,
+                fontSize = 12.sp,
+                lineHeight = 14.sp,
+                color = if (uiState.isError) MaterialTheme.colorScheme.error else Color.Unspecified
+            )
         }
     }
 }

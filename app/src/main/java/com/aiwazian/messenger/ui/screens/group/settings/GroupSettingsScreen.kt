@@ -6,13 +6,9 @@ package com.aiwazian.messenger.ui.screens.group.settings
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.PersonAddAlt1
@@ -20,7 +16,6 @@ import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.PeopleOutline
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +30,7 @@ import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.GroupType
+import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -42,7 +38,6 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.settings.profile.AvatarCropScreen
@@ -78,13 +73,10 @@ fun GroupSettingsScreen(
     
     val uiState by viewModel.uiState.collectAsState()
     
-    Scaffold(
+    AppScaffold(
         topBar = {
             PageTopBar(
-                navigationIcon = NavigationIcon(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    onClick = navBackStack::removeLastOrNull
-                ), actions = if (uiState.canEditProfile && uiState.hasChanges) {
+                actions = if (uiState.canEditProfile && uiState.hasChanges) {
                     listOf(
                         TopBarAction(
                             icon = Icons.Rounded.Check, onClick = viewModel::save
@@ -95,120 +87,114 @@ fun GroupSettingsScreen(
         }, snackbarHost = {
             AppSnackbar(snackbarHostState)
         }, modifier = Modifier.imePadding()
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-        ) {
-            if (uiState.canEditProfile) {
-                Box(modifier = Modifier.padding(start = 10.dp)) {
-                    SectionHeader(title = stringResource(R.string.profile_photos))
-                }
-                
-                SettingsProfileImageCarousel(
-                    avatars = uiState.group.avatars,
-                    onAddPhoto = viewModel::setPendingAvatarUri,
-                    onDeletePhoto = viewModel::deleteAvatar
+    ) {
+        if (uiState.canEditProfile) {
+            Box(modifier = Modifier.padding(start = 10.dp)) {
+                SectionHeader(title = stringResource(R.string.profile_photos))
+            }
+            
+            SettingsProfileImageCarousel(
+                avatars = uiState.group.avatars,
+                onAddPhoto = viewModel::setPendingAvatarUri,
+                onDeletePhoto = viewModel::deleteAvatar
+            )
+            
+            SectionContainer {
+                FramelessTextBox(
+                    value = uiState.group.name,
+                    onValueChange = viewModel::changeName,
+                    placeholder = stringResource(R.string.group_name)
                 )
                 
-                SectionContainer {
-                    FramelessTextBox(
-                        value = uiState.group.name,
-                        onValueChange = viewModel::changeName,
-                        placeholder = stringResource(R.string.group_name)
-                    )
-                    
-                    FramelessTextBox(
-                        value = uiState.group.bio.orEmpty(),
-                        onValueChange = viewModel::changeBio,
-                        placeholder = "${stringResource(R.string.description)} (${stringResource(R.string.optional)})",
-                        singleLine = false
-                    )
-                }
+                FramelessTextBox(
+                    value = uiState.group.bio.orEmpty(),
+                    onValueChange = viewModel::changeBio,
+                    placeholder = "${stringResource(R.string.description)} (${stringResource(R.string.optional)})",
+                    singleLine = false
+                )
             }
-            
-            if (uiState.isOwner || uiState.canManageInviteLinks) {
-                SectionContainer {
-                    if (uiState.isOwner) {
-                        SectionItem(
-                            leadingIcon = Icons.Outlined.Group,
-                            headlineText = stringResource(R.string.group_type),
-                            onClick = {
-                                navBackStack.add(AppRoute.GroupTypeSettings(uiState.group.id))
-                            },
-                            trailingText = if (uiState.group.groupType == GroupType.PUBLIC) {
-                                stringResource(R.string.public_group)
-                            } else {
-                                stringResource(R.string.private_group)
-                            }
-                        )
-                    }
-                    
-                    if (uiState.canManageInviteLinks) {
-                        SectionItem(
-                            leadingIcon = Icons.Rounded.Link,
-                            headlineText = stringResource(R.string.invite_links),
-                            onClick = {
-                                navBackStack.add(AppRoute.GroupInviteLinks(groupId = uiState.group.id))
-                            }
-                        )
-                    }
-                }
-            }
-            
-            if (uiState.isOwner || uiState.canManageAdmins) {
-                SectionContainer {
-                    if (uiState.isOwner) {
-                        SectionItem(
-                            leadingIcon = Icons.Rounded.PeopleOutline,
-                            headlineText = stringResource(R.string.members),
-                            trailingText = uiState.group.members.toString(),
-                            onClick = {
-                                navBackStack.add(AppRoute.GroupMembers(uiState.group.id))
-                            })
-                    }
-                    
-                    if (uiState.canManageAdmins) {
-                        SectionItem(
-                            leadingIcon = Icons.Outlined.AdminPanelSettings,
-                            headlineText = stringResource(R.string.administrators),
-                            trailingText = uiState.adminsCount.toString(),
-                            onClick = {
-                                navBackStack.add(AppRoute.GroupAdmins(groupId = uiState.group.id))
-                            }
-                        )
-                    }
-                    
-                    if (uiState.isOwner) {
-                        SectionItem(
-                            leadingIcon = Icons.Outlined.PersonAddAlt1,
-                            headlineText = stringResource(R.string.join_requests),
-                            trailingText = uiState.joinRequestsCount.toString(),
-                            onClick = {
-                                navBackStack.add(AppRoute.GroupJoinRequests(groupId = uiState.group.id))
-                            }
-                        )
-                        SectionItem(
-                            leadingIcon = Icons.Rounded.Block,
-                            headlineText = stringResource(R.string.removed_user),
-                            trailingText = uiState.group.removedUsers.toString(),
-                            onClick = {
-                                navBackStack.add(AppRoute.GroupBlackList(uiState.group.id))
-                            })
-                    }
-                }
-            }
-            
-            if (uiState.isOwner) {
-                SectionContainer {
+        }
+        
+        if (uiState.isOwner || uiState.canManageInviteLinks) {
+            SectionContainer {
+                if (uiState.isOwner) {
                     SectionItem(
-                        headlineText = stringResource(R.string.group_management),
+                        leadingIcon = Icons.Outlined.Group,
+                        headlineText = stringResource(R.string.group_type),
                         onClick = {
-                            navBackStack.add(AppRoute.GroupManagement(groupId = uiState.group.id))
+                            navBackStack.add(AppRoute.GroupTypeSettings(uiState.group.id))
+                        },
+                        trailingText = if (uiState.group.groupType == GroupType.PUBLIC) {
+                            stringResource(R.string.public_group)
+                        } else {
+                            stringResource(R.string.private_group)
                         }
                     )
                 }
+                
+                if (uiState.canManageInviteLinks) {
+                    SectionItem(
+                        leadingIcon = Icons.Rounded.Link,
+                        headlineText = stringResource(R.string.invite_links),
+                        onClick = {
+                            navBackStack.add(AppRoute.GroupInviteLinks(groupId = uiState.group.id))
+                        }
+                    )
+                }
+            }
+        }
+        
+        if (uiState.isOwner || uiState.canManageAdmins) {
+            SectionContainer {
+                if (uiState.isOwner) {
+                    SectionItem(
+                        leadingIcon = Icons.Rounded.PeopleOutline,
+                        headlineText = stringResource(R.string.members),
+                        trailingText = uiState.group.members.toString(),
+                        onClick = {
+                            navBackStack.add(AppRoute.GroupMembers(uiState.group.id))
+                        })
+                }
+                
+                if (uiState.canManageAdmins) {
+                    SectionItem(
+                        leadingIcon = Icons.Outlined.AdminPanelSettings,
+                        headlineText = stringResource(R.string.administrators),
+                        trailingText = uiState.adminsCount.toString(),
+                        onClick = {
+                            navBackStack.add(AppRoute.GroupAdmins(groupId = uiState.group.id))
+                        }
+                    )
+                }
+                
+                if (uiState.isOwner) {
+                    SectionItem(
+                        leadingIcon = Icons.Outlined.PersonAddAlt1,
+                        headlineText = stringResource(R.string.join_requests),
+                        trailingText = uiState.joinRequestsCount.toString(),
+                        onClick = {
+                            navBackStack.add(AppRoute.GroupJoinRequests(groupId = uiState.group.id))
+                        }
+                    )
+                    SectionItem(
+                        leadingIcon = Icons.Rounded.Block,
+                        headlineText = stringResource(R.string.removed_user),
+                        trailingText = uiState.group.removedUsers.toString(),
+                        onClick = {
+                            navBackStack.add(AppRoute.GroupBlackList(uiState.group.id))
+                        })
+                }
+            }
+        }
+        
+        if (uiState.isOwner) {
+            SectionContainer {
+                SectionItem(
+                    headlineText = stringResource(R.string.group_management),
+                    onClick = {
+                        navBackStack.add(AppRoute.GroupManagement(groupId = uiState.group.id))
+                    }
+                )
             }
         }
     }

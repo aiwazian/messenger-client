@@ -7,21 +7,16 @@ package com.aiwazian.messenger.ui.screens.settings.privacy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -44,6 +39,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.PrivacyLevel
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -51,7 +47,6 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.topBar.NavigationIcon
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.SessionEndResolution
 import com.aiwazian.messenger.utils.SessionManager
@@ -67,7 +62,6 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
     
     val uiState by viewModel.uiState.collectAsState()
     
-    val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
     
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
@@ -92,10 +86,6 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                 }
                 
                 SettingsPrivacySideEffect.NavigateToLogin -> {
-                    /*
-                     * Аккаунт удалён вместе с локальными данными устройства,
-                     * переключаться не на что — нужен экран авторизации.
-                     */
                     SessionManager.getSessionEndCallback()
                         ?.invoke(SessionEndResolution.NoAccountsLeft)
                 }
@@ -103,119 +93,116 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
         }
     }
     
-    Scaffold(topBar = { TopBar() }, snackbarHost = {
+    AppScaffold(topBar = {
+        PageTopBar(
+            title = { Text(stringResource(R.string.confidentiality)) },
+        )
+    }, snackbarHost = {
         AppSnackbar(snackbarHostState)
     }) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(it)
-                .verticalScroll(scrollState)
-        ) {
-            SectionContainer {
-                SectionItem(
-                    headlineText = stringResource(R.string.blocked_users),
-                    trailingText = uiState.blockedUsersCount.toString(),
-                    onClick = {
-                        navBackStack.add(AppRoute.BlockedUserList)
-                    }
-                )
-            }
+        SectionContainer {
+            SectionItem(
+                headlineText = stringResource(R.string.blocked_users),
+                trailingText = uiState.blockedUsersCount.toString(),
+                onClick = {
+                    navBackStack.add(AppRoute.BlockedUserList)
+                }
+            )
+        }
+        
+        SectionContainer(header = {
+            SectionHeader(stringResource(R.string.confidentiality))
+        }) {
+            SectionItem(
+                headlineText = stringResource(R.string.bio),
+                trailingText = if (uiState.privacy.bio == PrivacyLevel.EVERYBODY) {
+                    stringResource(R.string.everybody)
+                } else {
+                    stringResource(R.string.nobody)
+                },
+                onClick = {
+                    navBackStack.add(AppRoute.SettingsBio(uiState.privacy.bio))
+                })
             
-            SectionContainer(header = {
-                SectionHeader(stringResource(R.string.confidentiality))
-            }) {
-                SectionItem(
-                    headlineText = stringResource(R.string.bio),
-                    trailingText = if (uiState.privacy.bio == PrivacyLevel.EVERYBODY) {
-                        stringResource(R.string.everybody)
-                    } else {
-                        stringResource(R.string.nobody)
-                    },
-                    onClick = {
-                        navBackStack.add(AppRoute.SettingsBio(uiState.privacy.bio))
-                    })
-                
-                SectionItem(
-                    headlineText = stringResource(R.string.profile_photos),
-                    trailingText = if (uiState.privacy.profilePhoto == PrivacyLevel.EVERYBODY) {
-                        stringResource(R.string.everybody)
-                    } else {
-                        stringResource(R.string.nobody)
-                    },
-                    onClick = {
-                        navBackStack.add(AppRoute.SettingsPhoto(uiState.privacy.profilePhoto))
-                    })
-                
-                SectionItem(
-                    headlineText = stringResource(R.string.last_seen),
-                    trailingText = if (uiState.privacy.lastSeen == PrivacyLevel.EVERYBODY) {
-                        stringResource(R.string.everybody)
-                    } else {
-                        stringResource(R.string.nobody)
-                    },
-                    onClick = {
-                        navBackStack.add(AppRoute.SettingsLastSeen(uiState.privacy.lastSeen))
-                    })
-                
-                SectionItem(
-                    headlineText = stringResource(R.string.date_of_birth),
-                    trailingText = if (uiState.privacy.dateOfBirth == PrivacyLevel.EVERYBODY) {
-                        stringResource(R.string.everybody)
-                    } else {
-                        stringResource(R.string.nobody)
-                    },
-                    onClick = {
-                        navBackStack.add(AppRoute.SettingsDateOfBirth(uiState.privacy.dateOfBirth))
-                    })
-                
-                SectionItem(
-                    headlineText = stringResource(R.string.invites),
-                    trailingText = if (uiState.privacy.invites == PrivacyLevel.EVERYBODY) {
-                        stringResource(R.string.everybody)
-                    } else {
-                        stringResource(R.string.nobody)
-                    },
-                    onClick = {
-                        navBackStack.add(AppRoute.SettingsInvites(uiState.privacy.invites))
-                    })
-                
-                SectionItem(
-                    headlineText = stringResource(R.string.message_forwarding),
-                    trailingText = if (uiState.privacy.forwardedProfile == PrivacyLevel.EVERYBODY) {
-                        stringResource(R.string.everybody)
-                    } else {
-                        stringResource(R.string.nobody)
-                    },
-                    onClick = {
-                        navBackStack.add(AppRoute.SettingsForwardedProfile(uiState.privacy.forwardedProfile))
-                    })
-            }
+            SectionItem(
+                headlineText = stringResource(R.string.profile_photos),
+                trailingText = if (uiState.privacy.profilePhoto == PrivacyLevel.EVERYBODY) {
+                    stringResource(R.string.everybody)
+                } else {
+                    stringResource(R.string.nobody)
+                },
+                onClick = {
+                    navBackStack.add(AppRoute.SettingsPhoto(uiState.privacy.profilePhoto))
+                })
             
-            SectionContainer(header = {
-                SectionHeader(stringResource(R.string.delete_account))
-            }) {
-                val inactivityText = when (uiState.privacy.deleteAfterDays) {
-                    30 -> UiText.StringResource(R.string.inactive_1_month)
-                    90 -> UiText.StringResource(R.string.inactive_3_months)
-                    180 -> UiText.StringResource(R.string.inactive_6_months)
-                    365 -> UiText.StringResource(R.string.inactive_12_months)
-                    else -> UiText.DynamicString("")
-                }.asString()
-                
-                SectionItem(
-                    headlineText = stringResource(R.string.if_away_for),
-                    trailingText = inactivityText,
-                    onClick = viewModel::showInactivityBottomSheet
-                )
-            }
-            SectionContainer {
-                SectionItem(
-                    headlineText = stringResource(R.string.delete_account),
-                    contentColor = MaterialTheme.colorScheme.error,
-                    onClick = viewModel::onDeleteAccountClick
-                )
-            }
+            SectionItem(
+                headlineText = stringResource(R.string.last_seen),
+                trailingText = if (uiState.privacy.lastSeen == PrivacyLevel.EVERYBODY) {
+                    stringResource(R.string.everybody)
+                } else {
+                    stringResource(R.string.nobody)
+                },
+                onClick = {
+                    navBackStack.add(AppRoute.SettingsLastSeen(uiState.privacy.lastSeen))
+                })
+            
+            SectionItem(
+                headlineText = stringResource(R.string.date_of_birth),
+                trailingText = if (uiState.privacy.dateOfBirth == PrivacyLevel.EVERYBODY) {
+                    stringResource(R.string.everybody)
+                } else {
+                    stringResource(R.string.nobody)
+                },
+                onClick = {
+                    navBackStack.add(AppRoute.SettingsDateOfBirth(uiState.privacy.dateOfBirth))
+                })
+            
+            SectionItem(
+                headlineText = stringResource(R.string.invites),
+                trailingText = if (uiState.privacy.invites == PrivacyLevel.EVERYBODY) {
+                    stringResource(R.string.everybody)
+                } else {
+                    stringResource(R.string.nobody)
+                },
+                onClick = {
+                    navBackStack.add(AppRoute.SettingsInvites(uiState.privacy.invites))
+                })
+            
+            SectionItem(
+                headlineText = stringResource(R.string.message_forwarding),
+                trailingText = if (uiState.privacy.forwardedProfile == PrivacyLevel.EVERYBODY) {
+                    stringResource(R.string.everybody)
+                } else {
+                    stringResource(R.string.nobody)
+                },
+                onClick = {
+                    navBackStack.add(AppRoute.SettingsForwardedProfile(uiState.privacy.forwardedProfile))
+                })
+        }
+        
+        SectionContainer(header = {
+            SectionHeader(stringResource(R.string.delete_account))
+        }) {
+            val inactivityText = when (uiState.privacy.deleteAfterDays) {
+                30 -> UiText.StringResource(R.string.inactive_1_month)
+                90 -> UiText.StringResource(R.string.inactive_3_months)
+                180 -> UiText.StringResource(R.string.inactive_6_months)
+                365 -> UiText.StringResource(R.string.inactive_12_months)
+                else -> UiText.DynamicString("")
+            }.asString()
+            
+            SectionItem(
+                headlineText = stringResource(R.string.if_away_for),
+                trailingText = inactivityText,
+                onClick = viewModel::showInactivityBottomSheet
+            )
+        }
+        SectionContainer {
+            SectionItem(
+                headlineText = stringResource(R.string.delete_account),
+                contentColor = MaterialTheme.colorScheme.error,
+                onClick = viewModel::onDeleteAccountClick
+            )
         }
     }
     
@@ -320,15 +307,4 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                 )
             })
     }
-}
-
-@Composable
-private fun TopBar() {
-    val navBackStack = LocalNavBackStack.current
-    
-    PageTopBar(
-        title = { Text(stringResource(R.string.confidentiality)) }, navigationIcon = NavigationIcon(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack, onClick = navBackStack::removeLastOrNull
-        )
-    )
 }
