@@ -152,7 +152,7 @@ class ChatViewModel @Inject constructor(
     private var autoDownloadPhotos = true
     private var autoDownloadVideos = true
     private var autoDownloadFiles = true
-    
+
     private val copyPolicy: ChatCopyPolicy
         get() = _uiState.value.copyPolicy
 
@@ -448,9 +448,9 @@ class ChatViewModel @Inject constructor(
         }
 
         /*
-         * Троеточие показываем всегда, даже с пустым списком действий: «Медиа» и
-         * уведомления живут внутри этого же меню, и у владельца канала без него
-         * не осталось бы точки входа ни туда, ни туда.
+         * Троеточие показываем всегда, даже с пустым списком действий: «Медиа»,
+         * «Поиск» и уведомления живут внутри этого же меню, и у владельца канала
+         * без него не осталось бы точки входа ни туда, ни туда.
          */
         return listOf(TopBarAction(icon = Icons.Rounded.MoreVert, dropdownActions = actions))
     }
@@ -727,7 +727,10 @@ class ChatViewModel @Inject constructor(
     // endregion
 
     // region Поиск сообщений в чате
-    fun startMessageSearch() = _uiState.update { it.copy(isMessageSearchActive = true) }
+    fun startMessageSearch() = _uiState.update {
+        /* Поиск всегда открывается в режиме «В чате»: список — это уже выбор пользователя. */
+        it.copy(isMessageSearchActive = true, isMessageSearchListMode = false)
+    }
 
     fun stopMessageSearch() {
         searchJob?.cancel()
@@ -735,10 +738,15 @@ class ChatViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 isMessageSearchActive = false,
+                isMessageSearchListMode = false,
                 messageSearchQuery = "",
                 messageSearchResults = emptyList(),
                 isSearchingMessages = false,
-                hasMoreSearchResults = false
+                hasMoreSearchResults = false,
+                messageSearchTotal = 0,
+                isMessageSearchTotalExact = true,
+                messageSearchIndex = -1,
+                messageSearchSenders = emptyMap()
             )
         }
     }
@@ -748,14 +756,7 @@ class ChatViewModel @Inject constructor(
         searchJob?.cancel()
 
         if (query.isBlank()) {
-            searchCursorId = null
-            _uiState.update {
-                it.copy(
-                    messageSearchResults = emptyList(),
-                    hasMoreSearchResults = false,
-                    isSearchingMessages = false
-                )
-            }
+            clearMessageSearchResults()
             return
         }
 
@@ -766,6 +767,44 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Крестик в поле поиска.
+     *
+     * Гасит и запрос, и счётчик результатов снизу, но сам режим поиска оставляет
+     * включённым: закрывает его только кнопка «назад».
+     */
+    fun clearMessageSearchQuery() {
+        searchJob?.cancel()
+        _uiState.update { it.copy(messageSearchQuery = "") }
+        clearMessageSearchResults()
+    }
+
+    private fun clearMessageSearchResults() {
+        searchCursorId = null
+        _uiState.update {
+            it.copy(
+                messageSearchResults = emptyList(),
+                hasMoreSearchResults = false,
+                isSearchingMessages = false,
+                messageSearchTotal = 0,
+                isMessageSearchTotalExact = true,
+                messageSearchIndex = -1
+            )
+        }
+    }
+
+    /** Переключает «Списком» и «В чате». */
+    fun toggleMessageSearchDisplayMode() {
+        val goingToChat = _uiState.value.isMessageSearchListMode
+        _uiState.update { it.copy(isMessageSearchListMode = !goingToChat) }
+
+        /*
+         * Возврат в чат без выбранного результата бесполезен: показываем то же
+         * самое новое совпадение, что и сразу после ввода запроса.
+         */
+        if (goingToChat && _uiState.value.messageSearchIndex < 0) selectSearchResult(0)
+    }
+
     fun loadMoreSearchResults() {
         val query = _uiState.value.messageSearchQuery
         if (query.isBlank() || searchCursorId == null || _uiState.value.isSearchingMessages) return
@@ -773,27 +812,126 @@ class ChatViewModel @Inject constructor(
         searchJob = viewModelScope.launch { runMessageSearch(query, reset = false) }
     }
 
+    /**
+     * Стрелка «вверх»: к более старому совпадению, то есть выше по чату.
+     *
+     * Если загруженная страница закончилась, сначала догружаем следующую и только
+     * потом прыгаем — иначе на границе страницы кнопка молча ничего не делала бы.
+     */
+    fun goToOlderSearchResult() {
+        val state = _uiState.value
+        val target = state.messageSearchIndex + 1
+
+        if (target < state.messageSearchResults.size) {
+            selectSearchResult(target)
+            return
+        }
+
+        if (!state.hasMoreSearchResults || state.isSearchingMessages) return
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            runMessageSearch(state.messageSearchQuery, reset = false)
+            if (target < _uiState.value.messageSearchResults.size) selectSearchResult(target)
+        }
+    }
+
+    /** Стрелка «вниз»: к более новому совпадению, то есть ниже по чату. */
+    fun goToNewerSearchResult() {
+        val target = _uiState.value.messageSearchIndex - 1
+        if (target < 0) return
+        selectSearchResult(target)
+    }
+
+    fun onSearchResultClicked(hit: MessageSearchHit) {
+        val index = _uiState.value.messageSearchResults.indexOfFirst { it.id == hit.id }
+        if (index < 0) {
+            _uiState.update { it.copy(isMessageSearchListMode = false) }
+            jumpToMessage(hit.id)
+            return
+        }
+        selectSearchResult(index)
+    }
+
+    /**
+     * Переход к совпадению по его позиции.
+     *
+     * Список результатов закрывается, а сообщение подсвечивается теми же двумя
+     * секундами, что и при переходе по ответу.
+     */
+    private fun selectSearchResult(index: Int) {
+        val hit = _uiState.value.messageSearchResults.getOrNull(index) ?: return
+        _uiState.update { it.copy(messageSearchIndex = index, isMessageSearchListMode = false) }
+        jumpToMessage(hit.id)
+    }
+
     private suspend fun runMessageSearch(query: String, reset: Boolean) {
         _uiState.update { it.copy(isSearchingMessages = true) }
         chatRepository.searchMessages(
             chatId = _uiState.value.chatId,
             query = query,
-            cursorId = if (reset) null else searchCursorId
+            cursorId = if (reset) null else searchCursorId,
+            limit = SEARCH_PAGE_SIZE
         ).onSuccess { page ->
             searchCursorId = page.nextCursorId
             _uiState.update {
                 it.copy(
                     messageSearchResults = if (reset) page.items else it.messageSearchResults + page.items,
                     hasMoreSearchResults = page.nextCursorId != null,
-                    isSearchingMessages = false
+                    isSearchingMessages = false,
+                    /* Со второй страницей total не приходит: сервер считает его один раз. */
+                    messageSearchTotal = page.total ?: it.messageSearchTotal,
+                    isMessageSearchTotalExact = if (reset) page.totalIsExact
+                    else it.isMessageSearchTotalExact,
+                    messageSearchIndex = if (reset) -1 else it.messageSearchIndex
                 )
+            }
+            loadSearchSenders(page.items)
+
+            /* Сразу показываем самое новое совпадение, как при переходе по ответу. */
+            if (reset && page.items.isNotEmpty()) {
+                if (_uiState.value.isMessageSearchListMode) {
+                    _uiState.update { it.copy(messageSearchIndex = 0) }
+                } else {
+                    selectSearchResult(0)
+                }
             }
         }.onFailure {
             _uiState.update { it.copy(isSearchingMessages = false) }
         }
     }
 
-    fun onSearchResultClicked(hit: MessageSearchHit) = jumpToMessage(hit.id)
+    /**
+     * Подтягивает имена и аватарки отправителей найденных сообщений.
+     *
+     * В канале автор любого поста — сам канал, поэтому карточка результата берёт
+     * имя и аватарку чата, а ходить в userRepository не за чем.
+     */
+    private fun loadSearchSenders(hits: List<MessageSearchHit>) {
+        if (ChatType.fromId(_uiState.value.chatId) == ChatType.CHANNEL) return
+
+        hits.map { it.senderId }
+            .distinct()
+            .filter { !_uiState.value.messageSearchSenders.containsKey(it) }
+            .forEach { senderId ->
+                viewModelScope.launch {
+                    try {
+                        userRepository.getById(senderId).collect { user ->
+                            val sender = MessageSearchSender(
+                                name = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                                avatarUri = user.avatars.firstOrNull()?.uri
+                            )
+                            _uiState.update {
+                                it.copy(
+                                    messageSearchSenders = it.messageSearchSenders + (senderId to sender)
+                                )
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("ChatViewModel", "Error loading search sender", e)
+                    }
+                }
+            }
+    }
     // endregion
 
     private companion object {
@@ -801,6 +939,9 @@ class ChatViewModel @Inject constructor(
         const val AROUND_RADIUS = 25
         const val MAX_WINDOW_MESSAGES = 400
         const val UNREAD_VIEWPORT_FRACTION = 0.08f
+
+        /** Размер страницы результатов поиска: больше 50 сервер за раз не отдаёт. */
+        const val SEARCH_PAGE_SIZE = 50
     }
 
     // region Ответ на сообщение
