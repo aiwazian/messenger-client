@@ -26,12 +26,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
-/**
- * Переходы по результатам поиска.
- *
- * Вверх — к более старому совпадению, вниз — к более новому: направление кнопки
- * совпадает с направлением прокрутки чата, а не с номером результата.
- */
 @Composable
 fun ChatSearchNavigationButtons(
     canGoOlder: Boolean,
@@ -74,7 +68,6 @@ private fun SearchNavigationButton(
     FloatingActionButton(
         onClick = { if (enabled) onClick() },
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        /* Кнопка без результатов в свою сторону остаётся на месте, но гаснет. */
         contentColor = if (enabled) MaterialTheme.colorScheme.onSurface
         else MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_ALPHA),
         shape = CircleShape,
@@ -91,5 +84,4 @@ private fun SearchNavigationButton(
     }
 }
 
-/** Прозрачность содержимого отключённой кнопки по гайдлайнам Material. */
 private const val DISABLED_ALPHA = 0.38f

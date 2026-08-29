@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,12 +29,6 @@ import androidx.compose.ui.unit.dp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 
-/**
- * Нижняя капсула во время поиска.
- *
- * Занимает место поля ввода сообщения: слева счётчик результатов, справа
- * переключатель «Списком» / «В чате».
- */
 @Composable
 fun ChatSearchSummaryBar(
     uiState: ChatUiState,
@@ -69,25 +64,22 @@ fun ChatSearchSummaryBar(
             )
             
             TextButton(onClick = onToggleDisplayMode, shape = CircleShape) {
-                Text(
-                    /* Кнопка предлагает второй режим, а не называет текущий. */
-                    text = stringResource(
-                        if (uiState.isMessageSearchListMode) R.string.chat_search_show_in_chat
-                        else R.string.chat_search_show_as_list
-                    )
-                )
+                AnimatedContent(targetState = uiState.isMessageSearchListMode) { inChat ->
+                    if (inChat) {
+                        Text(
+                            text = stringResource(R.string.chat_search_show_in_chat)
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.chat_search_show_as_list)
+                        )
+                    }
+                }
             }
         }
     }
 }
 
-/**
- * Что показать слева: «10 результатов», «1 из 142» или подсказку.
- *
- * Позиция имеет смысл только в режиме «В чате»: в списке все совпадения видно
- * сразу. Плюс после числа означает, что сервер не досчитал совпадения до конца
- * истории и их может быть больше.
- */
 @Composable
 private fun searchSummaryText(uiState: ChatUiState): String {
     if (uiState.messageSearchQuery.isBlank()) {

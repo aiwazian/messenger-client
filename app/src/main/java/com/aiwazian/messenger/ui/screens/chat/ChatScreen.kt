@@ -8,6 +8,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
@@ -16,6 +17,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -128,7 +130,6 @@ fun ChatScreen(
     LaunchedEffect(Unit) {
         chatViewModel.init(chatId, chatName, avatarUri?.toUri())
         
-        /* Колокольчик и пункт меню знают только свой чат. */
         notificationsViewModel.bind(chatId)
         
         if (scrollToMessageId != null) {
@@ -157,11 +158,6 @@ fun ChatScreen(
     
     val firstVisibleItemIndex = remember { derivedStateOf { listState.firstVisibleItemIndex } }
     
-    /*
-     * Список рисуется с reverseLayout, а ChatViewModel отдаёт уже перевёрнутый
-     * chatItems: индекс 0 — самое новое сообщение, то есть «низ» чата,
-     * а чем больше индекс — тем старее сообщение.
-     */
     val isAtBottom by remember {
         derivedStateOf {
             val firstVisible = listState.layoutInfo.visibleItemsInfo.firstOrNull()
@@ -189,7 +185,6 @@ fun ChatScreen(
             val newAccumulator = scrollAccumulator.floatValue + delta
             scrollAccumulator.floatValue = newAccumulator
             
-            /* В перевёрнутом списке рост индекса — это скролл вверх, к старым сообщениям. */
             when {
                 newAccumulator > scrollThresholdPx -> {
                     isScrollingUp.value = true
@@ -211,7 +206,6 @@ fun ChatScreen(
         derivedStateOf { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 }
     }
     
-    /* Старые сообщения теперь в конце списка. */
     LaunchedEffect(
         lastVisibleItemIndex.value,
         uiState.hasMoreMessages,
@@ -230,7 +224,6 @@ fun ChatScreen(
         }
     }
     
-    /* Новые сообщения — в начале списка. */
     LaunchedEffect(
         firstVisibleItemIndex.value,
         uiState.hasMoreNewerMessages,
@@ -248,10 +241,6 @@ fun ChatScreen(
         val target = uiState.scrollTarget ?: return@LaunchedEffect
         val targetId = target.messageId
         
-        /*
-         * Конец чата в перевёрнутом списке — это нулевой элемент, а не последний:
-         * иначе FloatingActionButton увозила не вниз, а в самое начало истории.
-         */
         if (targetId == null) {
             if (target.animate) listState.animateScrollToItem(BOTTOM_ITEM_INDEX)
             else listState.scrollToItem(BOTTOM_ITEM_INDEX)
@@ -264,7 +253,6 @@ fun ChatScreen(
         }
         if (itemIndex < 0) return@LaunchedEffect
         
-        /* В перевёрнутом списке разделитель непрочитанных идёт после своего сообщения. */
         val anchorIndex =
             if (itemIndex + 1 <= uiState.chatItems.lastIndex &&
                 uiState.chatItems[itemIndex + 1] is ChatItem.UnreadSeparator
@@ -276,7 +264,6 @@ fun ChatScreen(
         if (target.animate) {
             listState.animateScrollToItem(listIndex)
         } else {
-            /* При reverseLayout отступ считается от нижней кромки окна. */
             val offset = -(listState.layoutInfo.viewportSize.height *
                     (1f - target.viewportFraction)).toInt()
             listState.animateScrollToItem(listIndex, offset)
@@ -321,10 +308,6 @@ fun ChatScreen(
     val scope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
-    /*
-     * Поиск — это состояние внутри чата, а не отдельный экран, поэтому кнопка
-     * «назад» сначала гасит его и только вторым нажатием уводит из чата.
-     */
     val onBackClick: () -> Unit = {
         when {
             uiState.isRecording -> showCancelRecordingDialog = true
@@ -405,7 +388,6 @@ fun ChatScreen(
         }
     }
     
-    /* Уведомления выключены или включены — говорим об этом тем же snackbar, что и чат. */
     LaunchedEffect(Unit) {
         notificationsViewModel.snackbar.collect { message ->
             snackbarJob?.cancel()
@@ -436,11 +418,7 @@ fun ChatScreen(
             searchQuery = uiState.messageSearchQuery,
             onSearchQueryChange = chatViewModel::changeMessageSearchQuery,
             onClearSearchQuery = chatViewModel::clearMessageSearchQuery,
-            /* Длинное нажатие отвечает тактильно, иначе жест кажется несработавшим. */
-            onStartSearch = {
-                chatViewModel.vibrateTactile()
-                chatViewModel.startMessageSearch()
-            },
+            onStartSearch = chatViewModel::startMessageSearch,
             onToggleNotifications = notificationsViewModel::toggle,
             onBackClick = onBackClick
         )
@@ -449,34 +427,31 @@ fun ChatScreen(
             WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
         )
         
-        /* На время поиска поле ввода уступает место счётчику совпадений. */
-        if (uiState.isMessageSearchActive) {
-            ChatSearchSummaryBar(
-                uiState = uiState,
-                onToggleDisplayMode = chatViewModel::toggleMessageSearchDisplayMode,
-                modifier = bottomBarModifier
-            )
-        } else {
-            ChatInputSection(
-                uiState = uiState,
-                chatViewModel = chatViewModel,
-                modifier = bottomBarModifier
-            )
-        }
-    }, floatingActionButton = {
-        if (uiState.isMessageSearchActive) {
-            /*
-             * В режиме «Списком» стрелки не нужны: совпадения и так все перед глазами,
-             * а переход делается нажатием на карточку.
-             */
-            if (!uiState.isMessageSearchListMode) {
-                ChatSearchNavigationButtons(
-                    canGoOlder = uiState.canGoToOlderSearchResult,
-                    canGoNewer = uiState.canGoToNewerSearchResult,
-                    onOlderClick = chatViewModel::goToOlderSearchResult,
-                    onNewerClick = chatViewModel::goToNewerSearchResult
+        AnimatedContent(targetState = uiState.isMessageSearchActive, transitionSpec = {
+            fadeIn() togetherWith fadeOut()
+        }) { isSearch ->
+            if (isSearch) {
+                ChatSearchSummaryBar(
+                    uiState = uiState,
+                    onToggleDisplayMode = chatViewModel::toggleMessageSearchDisplayMode,
+                    modifier = bottomBarModifier
+                )
+            } else {
+                ChatInputSection(
+                    uiState = uiState,
+                    chatViewModel = chatViewModel,
+                    modifier = bottomBarModifier
                 )
             }
+        }
+    }, floatingActionButton = {
+        if (uiState.isMessageSearchActive && !uiState.isMessageSearchListMode) {
+            ChatSearchNavigationButtons(
+                canGoOlder = uiState.canGoToOlderSearchResult,
+                canGoNewer = uiState.canGoToNewerSearchResult,
+                onOlderClick = chatViewModel::goToOlderSearchResult,
+                onNewerClick = chatViewModel::goToNewerSearchResult
+            )
         } else {
             AnimatedVisibility(
                 visible = (!isAtBottom || !uiState.isAtLiveEdge) && !isScrollingUp.value && !uiState.isRecording,
@@ -491,7 +466,7 @@ fun ChatScreen(
                     label = "scroll_bottom_button_scale_animation"
                 )
                 FloatingActionButton(
-                    onClick = { chatViewModel.jumpToLatest() },
+                    onClick = chatViewModel::jumpToLatest,
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     contentColor = MaterialTheme.colorScheme.onSurface,
                     shape = CircleShape,
@@ -513,7 +488,6 @@ fun ChatScreen(
     }) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             if (uiState.isMessageSearchActive && uiState.isMessageSearchListMode) {
-                /* Список совпадений закрывает чат целиком. */
                 MessageSearchResultsList(
                     uiState = uiState,
                     contentPadding = innerPadding,
@@ -530,10 +504,6 @@ fun ChatScreen(
                         ),
                     verticalArrangement = Arrangement.Bottom
                 ) {
-                    /*
-                     * reverseLayout: нулевой элемент рисуется у нижней кромки экрана,
-                     * поэтому футер обявляется первым, а шапка — последней.
-                     */
                     LazyColumn(
                         state = listState,
                         reverseLayout = true,

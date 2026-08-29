@@ -98,6 +98,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -448,7 +449,7 @@ private fun InputMessage(
                                     content
                                 }
                             },
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        textStyle = TextStyle.Default.copy(
                             color = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 16.sp
                         ),
@@ -462,15 +463,13 @@ private fun InputMessage(
                         decorator = TextFieldDecorator { innerTextField ->
                             Box(
                                 modifier = Modifier.padding(
-                                    vertical = 12.dp, horizontal = 14.dp
+                                    start = 14.dp, top = 12.dp, bottom = 12.dp
                                 )
                             ) {
                                 if (textFieldState.text.isEmpty() && !uiState.isRecording) {
                                     Text(
                                         text = stringResource(R.string.message),
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            lineHeight = 16.sp
-                                        ),
+                                        lineHeight = 16.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }

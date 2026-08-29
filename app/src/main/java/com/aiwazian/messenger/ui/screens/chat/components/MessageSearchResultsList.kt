@@ -40,13 +40,6 @@ import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 import kotlinx.coroutines.flow.distinctUntilChanged
 
-/**
- * Все совпадения списком во весь экран вместо чата.
- *
- * В отличие от чата список идёт сверху вниз от новых к старым и грузится
- * страницами: в большом чате совпадений может быть десятки тысяч, и тянуть их
- * все сразу нельзя.
- */
 @Composable
 fun MessageSearchResultsList(
     uiState: ChatUiState,
@@ -58,7 +51,6 @@ fun MessageSearchResultsList(
     val listState = rememberLazyListState()
     val isChannel = ChatType.fromId(uiState.chatId) == ChatType.CHANNEL
     
-    /* Следующую страницу просим заранее, чтобы список не спотыкался о свой конец. */
     LaunchedEffect(listState, uiState.hasMoreSearchResults, uiState.isSearchingMessages) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1 }
             .distinctUntilChanged()
@@ -106,7 +98,6 @@ fun MessageSearchResultsList(
             
             MessageSearchResultCard(
                 hit = hit,
-                /* В канале автор поста — сам канал, отдельных отправителей там нет. */
                 senderName = if (isChannel) uiState.chatName.asString()
                 else sender?.name.orEmpty(),
                 avatarUri = if (isChannel) uiState.avatarUri else sender?.avatarUri,
@@ -128,7 +119,6 @@ fun MessageSearchResultsList(
     }
 }
 
-/** Карточка совпадения: аватарка и имя отправителя, дата справа, текст сообщения. */
 @Composable
 private fun MessageSearchResultCard(
     hit: MessageSearchHit,
@@ -172,5 +162,4 @@ private fun MessageSearchResultCard(
         })
 }
 
-/** За сколько карточек до конца списка просить следующую страницу. */
 private const val PREFETCH_THRESHOLD = 10

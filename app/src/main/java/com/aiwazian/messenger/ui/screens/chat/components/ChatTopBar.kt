@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.net.Uri
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -21,9 +22,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.Notifications
@@ -34,7 +38,6 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -49,10 +52,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,7 +69,6 @@ import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
 import com.aiwazian.messenger.ui.components.ChatAvatar
-import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -98,44 +102,68 @@ fun ChatTopBar(
     )
     val searchFocusRequester = remember { FocusRequester() }
     
-    /* Поиск открыли — сразу ставим курсор в поле, чтобы не тянуться к нему второй раз. */
     LaunchedEffect(isSearchActive) {
         if (isSearchActive) runCatching { searchFocusRequester.requestFocus() }
     }
     
     TopAppBar(
         title = {
-            if (isSearchActive) {
-                /*
-                 * Та же капсула, но во всю доступную ширину: аватарка с именем
-                 * во время поиска только мешают, а места под запрос нужно много.
-                 */
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainer),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    FramelessTextBox(
-                        placeholder = stringResource(R.string.search),
-                        value = searchQuery,
-                        onValueChange = onSearchQueryChange,
-                        modifier = Modifier.focusRequester(searchFocusRequester),
-                        trailingIcon = {
-                            /* Крестик появляется только когда есть что стирать. */
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = onClearSearchQuery) {
-                                    Icon(Icons.Rounded.Close, null)
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isSearchActive) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainer),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        BasicTextField(
+                            value = searchQuery,
+                            onValueChange = onSearchQueryChange,
+                            modifier = Modifier.weight(1f),
+                            textStyle = TextStyle.Default.copy(
+                                color = MaterialTheme.colorScheme.onSurface,
+                                lineHeight = 16.sp,
+                                fontSize = 16.sp
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Sentences
+                            ),
+                            singleLine = true,
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            decorationBox = { innerTextField ->
+                                Box(
+                                    modifier = Modifier.padding(
+                                        start = 14.dp, top = 12.dp, bottom = 12.dp
+                                    )
+                                ) {
+                                    if (searchQuery.isEmpty()) {
+                                        Text(
+                                            text = stringResource(R.string.search),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            lineHeight = 16.sp,
+                                            fontSize = 16.sp
+                                        )
+                                    }
+                                    innerTextField()
                                 }
+                            })
+                        
+                        AnimatedVisibility(
+                            visible = searchQuery.isNotEmpty(),
+                            enter = expressiveScaleIn,
+                            exit = expressiveScaleOut
+                        ) {
+                            IconButton(onClick = onClearSearchQuery) {
+                                Icon(Icons.Rounded.Close, null)
                             }
-                        })
-                }
-            } else {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                        }
+                    }
+                } else {
                     Row(
                         modifier = Modifier
                             .graphicsLayer(scaleX = scale, scaleY = scale)
@@ -241,37 +269,40 @@ fun ChatTopBar(
                 }
             }
         }, navigationIcon = {
-            IconButton(
-                onClick = onBackClick,
-                colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+            Box(
+                modifier = Modifier.background(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = CircleShape
+                )
             ) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowBack, null)
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier.padding(1.dp)
+                ) {
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, null)
+                }
             }
         }, actions = {
-            /* Во время поиска троеточие уступает место полю ввода запроса. */
             if (isSearchActive) return@TopAppBar
             
             topBarActions.forEachIndexed { index, action ->
                 var expand by remember { mutableStateOf(false) }
-                IconButton(
-                    onClick = {
-                        expand = true
-                    },
-                    colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                Box(
+                    modifier = Modifier.background(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        shape = CircleShape
+                    )
                 ) {
-                    Icon(action.icon, null)
+                    IconButton(
+                        onClick = {
+                            expand = true
+                        },
+                        modifier = Modifier.padding(1.dp),
+                    ) {
+                        Icon(action.icon, null)
+                    }
                 }
                 AppDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
-                    /*
-                     * Медиа, поиск и уведомления стоят первыми и только в последнем меню
-                     * ряда — тех самых трёх точках, а не в каждом выпадающем списке шапки.
-                     *
-                     * «Медиа» открывает меню: это самый безобидный пункт и тянутся к нему
-                     * чаще всего. Сразу за ним «Поиск» — он тоже ничего не меняет и нужен
-                     * в любом чате при любой роли. Удаление чата и выход из канала уходят
-                     * под них: спутать их с выключением звука дороже, чем сделать лишнее
-                     * движение пальцем.
-                     */
                     if (index == topBarActions.lastIndex) {
                         AppDropdownMenuItem(leadingIcon = {
                             Icon(Icons.Outlined.PermMedia, null)
