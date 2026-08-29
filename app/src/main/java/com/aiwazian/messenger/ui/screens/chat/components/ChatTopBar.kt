@@ -112,155 +112,158 @@ fun ChatTopBar(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                if (isSearchActive) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 48.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainer),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        BasicTextField(
-                            value = searchQuery,
-                            onValueChange = onSearchQueryChange,
-                            modifier = Modifier.weight(1f),
-                            textStyle = TextStyle.Default.copy(
-                                color = MaterialTheme.colorScheme.onSurface,
-                                lineHeight = 16.sp,
-                                fontSize = 16.sp
-                            ),
-                            keyboardOptions = KeyboardOptions(
-                                capitalization = KeyboardCapitalization.Sentences
-                            ),
-                            singleLine = true,
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                            decorationBox = { innerTextField ->
-                                Box(
-                                    modifier = Modifier.padding(
-                                        start = 14.dp, top = 12.dp, bottom = 12.dp
+                Row(
+                    modifier = Modifier
+                        .graphicsLayer(scaleX = scale, scaleY = scale)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .combinedClickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            enabled = !isSearchActive,
+                            onLongClick = onStartSearch,
+                            onClick = {
+                                navBackStack.add(
+                                    AppRoute.Profile(
+                                        profileId = chatId,
+                                        profileName = title,
+                                        avatarUri = avatarUri?.toString()
                                     )
-                                ) {
-                                    if (searchQuery.isEmpty()) {
-                                        Text(
-                                            text = stringResource(R.string.search),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            lineHeight = 16.sp,
-                                            fontSize = 16.sp
-                                        )
-                                    }
-                                    innerTextField()
-                                }
-                            })
-                        
-                        AnimatedVisibility(
-                            visible = searchQuery.isNotEmpty(),
-                            enter = expressiveScaleIn,
-                            exit = expressiveScaleOut
-                        ) {
-                            IconButton(onClick = onClearSearchQuery) {
-                                Icon(Icons.Rounded.Close, null)
-                            }
-                        }
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier
-                            .graphicsLayer(scaleX = scale, scaleY = scale)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainer)
-                            .combinedClickable(
-                                interactionSource = interactionSource,
-                                indication = null,
-                                onLongClick = onStartSearch,
-                                onClick = {
-                                    navBackStack.add(
-                                        AppRoute.Profile(
-                                            profileId = chatId,
-                                            profileName = title,
-                                            avatarUri = avatarUri?.toString()
-                                        )
-                                    )
-                                }), horizontalArrangement = Arrangement.Center
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            if (isSavedMessages) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.primary),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.BookmarkBorder,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                            } else {
-                                ChatAvatar(id = chatId, chatName = title, avatarUri = avatarUri)
-                            }
-                            
-                            Column(
-                                verticalArrangement = Arrangement.Center,
-                                modifier = Modifier.padding(end = 8.dp)
+                                )
+                            }), horizontalArrangement = Arrangement.Center
+                ) {
+                    AnimatedContent(targetState = isSearchActive) { isSearch ->
+                        if (isSearch) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.surfaceContainer),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Text(
-                                        text = title,
-                                        maxLines = 1,
-                                        fontSize = 18.sp,
+                                BasicTextField(
+                                    value = searchQuery,
+                                    onValueChange = onSearchQueryChange,
+                                    modifier = Modifier.weight(1f),
+                                    textStyle = TextStyle.Default.copy(
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         lineHeight = 16.sp,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.sharedElement(key = "chat-name-$chatId")
-                                    )
-                                    
-                                    AnimatedContent(
-                                        targetState = isMuted,
-                                        transitionSpec = {
-                                            expressiveScaleIn togetherWith expressiveScaleOut
-                                        }
-                                    ) { muted ->
-                                        if (muted) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.NotificationsOff,
-                                                contentDescription = stringResource(R.string.chat_notifications_disabled),
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.size(16.dp)
+                                        fontSize = 16.sp
+                                    ),
+                                    keyboardOptions = KeyboardOptions(
+                                        capitalization = KeyboardCapitalization.Sentences
+                                    ),
+                                    singleLine = true,
+                                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                    decorationBox = { innerTextField ->
+                                        Box(
+                                            modifier = Modifier.padding(
+                                                start = 14.dp, top = 12.dp, bottom = 12.dp
                                             )
+                                        ) {
+                                            if (searchQuery.isEmpty()) {
+                                                Text(
+                                                    text = stringResource(R.string.search),
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    lineHeight = 16.sp,
+                                                    fontSize = 16.sp
+                                                )
+                                            }
+                                            innerTextField()
                                         }
+                                    })
+                                
+                                AnimatedVisibility(
+                                    visible = searchQuery.isNotEmpty(),
+                                    enter = expressiveScaleIn,
+                                    exit = expressiveScaleOut
+                                ) {
+                                    IconButton(onClick = onClearSearchQuery) {
+                                        Icon(Icons.Rounded.Close, null)
                                     }
+                                }
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier.padding(4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                if (isSavedMessages) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.primary),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.BookmarkBorder,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                } else {
+                                    ChatAvatar(id = chatId, chatName = title, avatarUri = avatarUri)
                                 }
                                 
-                                AnimatedContent(
-                                    targetState = isConnected, transitionSpec = {
-                                        slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
-                                    }, label = "connection_animation"
-                                ) { connected ->
-                                    if (!connected) {
-                                        AnimatedDotsText(
-                                            text = stringResource(R.string.connecting),
-                                            fontSize = 12.sp,
-                                            lineHeight = 12.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    } else if (subTitle.isNotBlank()) {
+                                Column(
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
                                         Text(
-                                            text = subTitle.lowercase(),
-                                            fontSize = 12.sp,
-                                            lineHeight = 12.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.sharedElement(key = "chat-sub-title-$chatId")
+                                            text = title,
+                                            maxLines = 1,
+                                            fontSize = 18.sp,
+                                            lineHeight = 16.sp,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.sharedElement(key = "chat-name-$chatId")
                                         )
+                                        
+                                        AnimatedContent(
+                                            targetState = isMuted,
+                                            transitionSpec = {
+                                                expressiveScaleIn togetherWith expressiveScaleOut
+                                            }
+                                        ) { muted ->
+                                            if (muted) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.NotificationsOff,
+                                                    contentDescription = stringResource(R.string.chat_notifications_disabled),
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                    
+                                    AnimatedContent(
+                                        targetState = isConnected, transitionSpec = {
+                                            slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
+                                        }, label = "connection_animation"
+                                    ) { connected ->
+                                        if (!connected) {
+                                            AnimatedDotsText(
+                                                text = stringResource(R.string.connecting),
+                                                fontSize = 12.sp,
+                                                lineHeight = 12.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        } else if (subTitle.isNotBlank()) {
+                                            Text(
+                                                text = subTitle.lowercase(),
+                                                fontSize = 12.sp,
+                                                lineHeight = 12.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.sharedElement(key = "chat-sub-title-$chatId")
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -283,65 +286,69 @@ fun ChatTopBar(
                 }
             }
         }, actions = {
-            if (isSearchActive) return@TopAppBar
-            
-            topBarActions.forEachIndexed { index, action ->
-                var expand by remember { mutableStateOf(false) }
-                Box(
-                    modifier = Modifier.background(
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        shape = CircleShape
-                    )
-                ) {
-                    IconButton(
-                        onClick = {
-                            expand = true
-                        },
-                        modifier = Modifier.padding(1.dp),
+            AnimatedContent(
+                targetState = isSearchActive,
+                transitionSpec = { expressiveScaleIn togetherWith expressiveScaleOut }) { isSearchActive ->
+                if (isSearchActive) return@AnimatedContent
+                
+                topBarActions.forEachIndexed { index, action ->
+                    var expand by remember { mutableStateOf(false) }
+                    Box(
+                        modifier = Modifier.background(
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            shape = CircleShape
+                        )
                     ) {
-                        Icon(action.icon, null)
+                        IconButton(
+                            onClick = {
+                                expand = true
+                            },
+                            modifier = Modifier.padding(1.dp),
+                        ) {
+                            Icon(action.icon, null)
+                        }
                     }
-                }
-                AppDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
-                    if (index == topBarActions.lastIndex) {
-                        AppDropdownMenuItem(leadingIcon = {
-                            Icon(Icons.Outlined.PermMedia, null)
-                        }, text = stringResource(R.string.chat_media), onClick = {
-                            expand = false
-                            navBackStack.add(
-                                AppRoute.ChatMedia(chatId = chatId, chatName = title)
-                            )
-                        })
-                        
-                        AppDropdownMenuItem(leadingIcon = {
-                            Icon(Icons.Rounded.Search, null)
-                        }, text = stringResource(R.string.search), onClick = {
-                            expand = false
-                            onStartSearch()
-                        })
-                        
-                        AppDropdownMenuItem(
-                            leadingIcon = {
-                                Icon(
-                                    if (isMuted) Icons.Outlined.Notifications
-                                    else Icons.Outlined.NotificationsOff, null
+                    AppDropdownMenu(expanded = expand, onDismissRequest = { expand = false }) {
+                        if (index == topBarActions.lastIndex) {
+                            AppDropdownMenuItem(leadingIcon = {
+                                Icon(Icons.Outlined.PermMedia, null)
+                            }, text = stringResource(R.string.chat_media), onClick = {
+                                expand = false
+                                navBackStack.add(
+                                    AppRoute.ChatMedia(chatId = chatId, chatName = title)
                                 )
-                            }, text = stringResource(
-                                if (isMuted) R.string.chat_enable_notifications
-                                else R.string.chat_disable_notifications
-                            ), onClick = {
-                                onToggleNotifications()
+                            })
+                            
+                            AppDropdownMenuItem(leadingIcon = {
+                                Icon(Icons.Rounded.Search, null)
+                            }, text = stringResource(R.string.search), onClick = {
+                                expand = false
+                                onStartSearch()
+                            })
+                            
+                            AppDropdownMenuItem(
+                                leadingIcon = {
+                                    Icon(
+                                        if (isMuted) Icons.Outlined.Notifications
+                                        else Icons.Outlined.NotificationsOff, null
+                                    )
+                                }, text = stringResource(
+                                    if (isMuted) R.string.chat_enable_notifications
+                                    else R.string.chat_disable_notifications
+                                ), onClick = {
+                                    onToggleNotifications()
+                                    expand = false
+                                })
+                        }
+                        
+                        action.dropdownActions.forEach { dropdownAction ->
+                            AppDropdownMenuItem(leadingIcon = {
+                                Icon(dropdownAction.icon, null)
+                            }, text = dropdownAction.text.asString(), onClick = {
+                                dropdownAction.onClick?.invoke()
                                 expand = false
                             })
-                    }
-                    
-                    action.dropdownActions.forEach { dropdownAction ->
-                        AppDropdownMenuItem(leadingIcon = {
-                            Icon(dropdownAction.icon, null)
-                        }, text = dropdownAction.text.asString(), onClick = {
-                            dropdownAction.onClick?.invoke()
-                            expand = false
-                        })
+                        }
                     }
                 }
             }
