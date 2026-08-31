@@ -132,7 +132,7 @@ class AttachmentOutbox @Inject constructor(
         
         directories.forEach { directory ->
             // Свежие копии не трогаем: отправка могла начаться уже после того,
-            // как сюда ушảл список.
+            // как сюда ушёл список.
             if (directory.absolutePath !in kept && directory.lastModified() < threshold) {
                 directory.deleteRecursively()
             }
