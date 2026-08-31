@@ -356,6 +356,8 @@ fun FullScreenViewer(
                     brush = Brush.verticalGradient(
                         colors = listOf(
                             MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
                             Color.Transparent
                         )
                     )

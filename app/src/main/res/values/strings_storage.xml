@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Размер подставляется в формате formatFileSize(): «41.3 MB». -->
+    <string name="storage_cache_cleared">%1$s cleared</string>
+    <string name="storage_cache_already_empty">Nothing to clear</string>
+    <string name="storage_cache_clear_failed">Failed to clear the cache</string>
+    <string name="storage_no_categories_selected">Select what to clear</string>
+    <string name="storage_database_cleared">Local database cleared</string>
+    <string name="storage_database_clear_failed">Failed to clear the database</string>
+</resources>

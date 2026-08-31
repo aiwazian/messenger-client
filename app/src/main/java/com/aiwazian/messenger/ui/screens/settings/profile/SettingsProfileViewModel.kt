@@ -19,6 +19,7 @@ import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.UploadManager
+import com.aiwazian.messenger.utils.media.ImageCompressor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -37,6 +38,7 @@ class SettingsProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val channelRepository: ChannelRepository,
     private val uploadManager: UploadManager,
+    private val imageCompressor: ImageCompressor,
     private val downloadAvatarUseCase: DownloadAvatarUseCase
 ) : ViewModel() {
     
@@ -140,13 +142,18 @@ class SettingsProfileViewModel @Inject constructor(
     
     fun uploadAvatar(uri: Uri) {
         viewModelScope.launch {
+            // Аватарка уходит сжатой и без метаданных, и сжать её нужно до выдачи
+            // формы: сервер подписывает её под заявленный размер и тип. Сжать не
+            // удалось — уйдёт исходник: без аватарки хуже, чем с тяжёлой.
+            val avatarUri = imageCompressor.compressAvatar(uri) ?: uri
+            
             userRepository.initUploadAvatar(
-                uri.getFileName(context) ?: "",
-                uri.getFileSize(context) ?: 0,
-                uri.getFileType(context)
+                avatarUri.getFileName(context) ?: "",
+                avatarUri.getFileSize(context) ?: 0,
+                avatarUri.getFileType(context)
             ).onSuccess { uploadInfo ->
                 uploadManager.upload(
-                    fileUri = uri,
+                    fileUri = avatarUri,
                     upload = uploadInfo,
                     fileId = uploadInfo.fileId
                 ).onSuccess {

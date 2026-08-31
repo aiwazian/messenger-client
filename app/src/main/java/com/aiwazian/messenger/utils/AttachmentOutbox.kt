@@ -8,6 +8,9 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.aiwazian.messenger.extensions.getFileName
+import com.aiwazian.messenger.extensions.getFileType
+import com.aiwazian.messenger.utils.media.ImageCompressor
+import com.aiwazian.messenger.utils.media.MediaCompressionConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -32,28 +35,62 @@ import javax.inject.Singleton
  * остаётся исходным: на сервер и в чат оно уходит уже из пути копии, и
  * поднятая после перезапуска отправка не превращает photo.jpg в
  * temp_-17_0_photo.jpg.
+ *
+ * Здесь же сжимаются фотографии: копия всё равно делается, и дешевле сразу
+ * положить в неё готовый к JPEG кадр, чем скопировать исходные десять
+ * мегабайт и сжимать их шагом позже. Побочно из этого выходит главное:
+ * повторы и досылка после перезапуска идут с уже сжатого файла, а не
+ * сжимают его второй раз.
  */
 @Singleton
 class AttachmentOutbox @Inject constructor(
-    @param:ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
+    private val imageCompressor: ImageCompressor
 ) {
     
     /**
      * @param key имя вложения внутри отправки: по нему копия находится после
      * перезапуска.
      * @return ссылку на свою копию либо исходную ссылку, если копировать незачем
-     * или не удалось: голосовые и кэш «Поделиться» уже лежат у нас, а про
-     * удалённый файл честнее доложит сама отправка.
+     * или не удалось: голосовые уже лежат у нас, а про удалённый файл честнее
+     * доложит сама отправка.
      */
     suspend fun keep(uri: Uri, key: String): Uri = withContext(Dispatchers.IO) {
-        if (uri.scheme == SCHEME_FILE) {
+        // Уже наша копия: отправку подняли после перезапуска, и фото в ней
+        // сжато ещё в прошлый раз — второй проход только срезал бы качество.
+        if (directoryOf(uri) != null) {
             return@withContext uri
         }
         
         // Имя берётся, пока ссылка ещё читаема: без него потеряется расширение,
         // а с ним и mime-тип на следующей попытке.
         val name = uri.getFileName(context)?.replace('/', '_') ?: key
-        val directory = File(File(context.filesDir, DIRECTORY_NAME), key)
+        
+        // Фотографии копией служит результат сжатия: у него своё имя, свой
+        // размер и свой формат, а метаданных нет вовсе.
+        if (imageCompressor.isCompressible(uri.getFileType(context))) {
+            val compressed = imageCompressor.compress(
+                source = uri,
+                directory = directoryFor(key),
+                maxDimension = MediaCompressionConfig.PHOTO_MAX_DIMENSION,
+                quality = MediaCompressionConfig.PHOTO_JPEG_QUALITY,
+                name = name
+            )
+            
+            if (compressed != null) {
+                return@withContext compressed.uri
+            }
+            
+            // Сжать не удалось: отправить исходник лучше, чем не отправить
+            // ничего.
+            Log.w(TAG, "Unable to compress $uri, keeping it as is")
+        }
+        
+        if (uri.scheme == SCHEME_FILE) {
+            return@withContext uri
+        }
+        
+        val directory = directoryFor(key)
         directory.mkdirs()
         val target = File(directory, name)
         
@@ -100,6 +137,11 @@ class AttachmentOutbox @Inject constructor(
                 directory.deleteRecursively()
             }
         }
+    }
+    
+    /** Папка для копии одного вложения. */
+    private fun directoryFor(key: String): File {
+        return File(File(context.filesDir, DIRECTORY_NAME), key)
     }
     
     /** Папка копии либо null, если ссылка не наша. */

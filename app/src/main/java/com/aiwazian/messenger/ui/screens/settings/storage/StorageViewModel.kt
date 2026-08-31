@@ -7,10 +7,13 @@ package com.aiwazian.messenger.ui.screens.settings.storage
 import android.app.usage.StorageStatsManager
 import android.content.Context
 import android.os.UserHandle
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.StorageRepository
+import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -38,23 +41,27 @@ class StorageViewModel @Inject constructor(
     private val storageStatsManager = context.getSystemService(StorageStatsManager::class.java)
     
     init {
-        loadStorageInfo()
+        viewModelScope.launch {
+            loadStorageInfo()
+        }
     }
     
-    private fun loadStorageInfo() {
-        viewModelScope.launch {
-            val categories = storageRepository.getStorageStats()
-            val totalCacheSize = categories.sumOf { it.totalSize }
-            
-            _uiState.update {
-                it.copy(
-                    categories = categories,
-                    totalCacheSize = totalCacheSize
-                )
-            }
-            
-            getAppSize(context)
+    private suspend fun loadStorageInfo() {
+        val categories = storageRepository.getStorageStats()
+        val totalCacheSize = categories.sumOf { it.totalSize }
+        
+        _uiState.update {
+            it.copy(
+                categories = categories,
+                totalCacheSize = totalCacheSize,
+                // Выбор сбрасывается вместе с категориями: getStorageStats возвращает
+                // их с isSelected = false, и прежний selectedSize остался бы висеть в
+                // выключенной кнопке — размером, которого на диске уже нет.
+                selectedSize = 0
+            )
         }
+        
+        getAppSize(context)
     }
     
     fun toggleCategory(category: FileCategory) {
@@ -102,30 +109,73 @@ class StorageViewModel @Inject constructor(
     
     fun clearSelectedCache() {
         viewModelScope.launch {
-            val state = _uiState.value
-            val selectedCategories = state.selectedCategories.map { it.category }
+            val selectedCategories = _uiState.value.selectedCategories.map { it.category }
+            
+            // Диалог убираем сразу: удаление сотни файлов занимает время, и всё
+            // это время он висел бы поверх экрана без единого признака работы.
+            hideConfirmDialog()
             
             if (selectedCategories.isEmpty()) {
-                _uiEvent.emit(StorageUiEvent.Error("Нет выбранных категорий"))
+                _uiEvent.emit(
+                    StorageUiEvent.Error(
+                        UiText.StringResource(R.string.storage_no_categories_selected)
+                    )
+                )
                 return@launch
             }
             
-            val filesToDelete = storageRepository.getFilesForCategories(selectedCategories)
+            val result = try {
+                val filesToDelete = storageRepository.getFilesForCategories(selectedCategories)
+                storageRepository.clearFiles(filesToDelete)
+            } catch (e: Exception) {
+                Log.e(TAG, "Unable to clear cache", e)
+                _uiEvent.emit(
+                    StorageUiEvent.Error(
+                        UiText.StringResource(R.string.storage_cache_clear_failed)
+                    )
+                )
+                return@launch
+            }
             
-            storageRepository.clearFiles(filesToDelete)
-            
+            // Цифры на экране обновляем до сообщения: иначе рядом с «41,3 MB
+            // очистилось» ещё стояли бы прежние размеры категорий.
             loadStorageInfo()
             
-            hideConfirmDialog()
-            _uiEvent.emit(StorageUiEvent.CacheCleared)
+            when {
+                // Из непустого списка не удалился ни один файл — это отказ, а не
+                // очистка нуля байт.
+                result.freedBytes <= 0 && result.failedCount > 0 -> _uiEvent.emit(
+                    StorageUiEvent.Error(
+                        UiText.StringResource(R.string.storage_cache_clear_failed)
+                    )
+                )
+                
+                result.freedBytes <= 0 -> _uiEvent.emit(StorageUiEvent.CacheAlreadyEmpty)
+                
+                else -> _uiEvent.emit(StorageUiEvent.CacheCleared(result.freedBytes))
+            }
         }
     }
     
     fun clearDatabase() {
         viewModelScope.launch {
-            storageRepository.clearDatabaseExceptAccount()
+            try {
+                storageRepository.clearDatabaseExceptAccount()
+            } catch (e: Exception) {
+                Log.e(TAG, "Unable to clear database", e)
+                _uiEvent.emit(
+                    StorageUiEvent.Error(
+                        UiText.StringResource(R.string.storage_database_clear_failed)
+                    )
+                )
+                return@launch
+            }
+            
             _uiEvent.emit(StorageUiEvent.DatabaseCleared)
             chatRepository.refreshChats()
+            
+            // Сообщения ушли из базы, а значит изменился размер приложения сверху.
+            loadStorageInfo()
         }
     }
     
@@ -143,5 +193,9 @@ class StorageViewModel @Inject constructor(
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+    
+    private companion object {
+        const val TAG = "StorageViewModel"
     }
 }

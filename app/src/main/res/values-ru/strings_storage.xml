@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="storage_cache_cleared">%1$s очистилось</string>
+    <string name="storage_cache_already_empty">Очищать нечего</string>
+    <string name="storage_cache_clear_failed">Не удалось очистить кэш</string>
+    <string name="storage_no_categories_selected">Выберите, что очистить</string>
+    <string name="storage_database_cleared">Локальная база данных очищена</string>
+    <string name="storage_database_clear_failed">Не удалось очистить базу данных</string>
+</resources>
