@@ -151,6 +151,10 @@ dependencies {
     implementation(libs.androidx.media3.ui.compose.material3)
     implementation(libs.androidx.media3.session)
     
+    // Пересжатие видео перед отправкой
+    implementation(libs.androidx.media3.transformer)
+    implementation(libs.androidx.media3.effect)
+    
     // Preview Composable
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
