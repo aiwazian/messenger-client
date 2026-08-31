@@ -32,36 +32,6 @@ import com.aiwazian.messenger.ui.components.zoomableContent
 import com.aiwazian.messenger.ui.components.zoomableGestures
 import kotlinx.coroutines.launch
 
-/**
- * Одна страница просмотрщика: фото или видео, которые увеличиваются двойным
- * нажатием и щипком.
- *
- * Страница сама сообщает состоянию зума размер содержимого. Без этого широкую
- * фотографию можно было бы утащить в пустые поля сверху и снизу, а высокую —
- * нельзя было бы пролистать до нижнего края: состояние считало бы, что
- * содержимое занимает весь экран.
- *
- * Просмотрщик в чате и предпросмотр в шторке вложений используют одну и ту же
- * страницу, поэтому зум у них ведёт себя одинаково.
- *
- * GIF во весь экран проигрывается сам: декодер отдаёт анимированный рисунок, а
- * Coil запускает его при появлении. Взят ImageDecoderDecoder, а не GifDecoder:
- * он же умеет анимированные WebP и HEIF. В сетке шторки вместо этого стоит
- * кадр из MediaStore, поэтому лента там не шевелится.
- *
- * @param isCurrentPage открыта ли страница сейчас: у соседних зум сбрасывается.
- * @param pagerState листалка, которой отдаются горизонтальные свайпы увеличенного
- * содержимого, доехавшего до своего края.
- * @param onTap нажатие, которое не является частью жеста зума.
- * @param isVideoSeekBarVisible показывать ли полосу воспроизведения: в настройке
- * сжатия её место занимает слайдер качества.
- * @param videoQualityIcon иконка кнопки настройки сжатия: по ней видно, мелкая
- * ступень выбрана или крупная.
- * @param onVideoQualityClick открытие настройки сжатия видео. null — кнопки нет.
- * @param onHeroContentSizeChanged собственные пропорции показанного: по ним переход
- * обрезает кадр при уменьшении в миниатюру. Нулевой размер означает «считай по
- * всему просмотрщику».
- */
 @Composable
 internal fun ZoomableMediaPage(
     uri: Uri,
@@ -91,13 +61,6 @@ internal fun ZoomableMediaPage(
         }
     }
     
-    /*
-     * Увеличенное содержимое выходит за свою рамку, и обрезать по ней значило бы
-     * срезать полкадра в первый же момент закрытия. Про зум сообщается как про
-     * неизвестный размер: переход возвращается к счёту по всему просмотрщику.
-     *
-     * Сообщает только открытая страница: соседние затёрли бы чужой размер.
-     */
     val isZoomed by remember(zoomableState) { derivedStateOf { zoomableState.isZoomed } }
     
     LaunchedEffect(isCurrentPage, contentSize, isZoomed) {
@@ -124,7 +87,7 @@ internal fun ZoomableMediaPage(
                 isUiVisible = isVideoUiVisible,
                 isLooping = isVideoLooping,
                 playbackSpeed = videoPlaybackSpeed,
-                contentModifier = Modifier.zoomableContent(zoomableState),
+                modifier = Modifier.zoomableContent(zoomableState),
                 isSeekBarVisible = isVideoSeekBarVisible,
                 qualityIcon = videoQualityIcon,
                 onQualityClick = onVideoQualityClick,

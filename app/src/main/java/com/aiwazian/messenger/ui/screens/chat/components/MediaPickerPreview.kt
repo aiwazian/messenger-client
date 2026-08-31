@@ -5,9 +5,13 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.view.WindowManager
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,8 +25,9 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.outlined.Hd
-import androidx.compose.material.icons.outlined.Sd
+import androidx.compose.material.icons.rounded.Hd
+import androidx.compose.material.icons.rounded.Sd
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -72,44 +77,6 @@ import com.aiwazian.messenger.utils.media.VideoQuality
 import com.aiwazian.messenger.utils.media.estimateSizeBytes
 import com.aiwazian.messenger.utils.media.frameFor
 
-/**
- * Предпросмотр галереи во весь экран.
- *
- * Это отдельное окно, а не оверлей: шторка вложений живёт в своём окне, и
- * растянуть внутри неё что-то на весь экран нельзя. По той же причине переход
- * из миниатюры считается по экранным границам: штатный shared element рисует
- * оверлей только внутри своего окна и через границу окон не работает.
- *
- * Своё окно по умолчанию укладывается между системными панелями, поэтому его просят
- * этого не делать: иначе картинка обрывалась бы под панелью уведомлений, а не
- * заходила за неё, как в [FullScreenViewer].
- *
- * Вертикальный свайп закрывает предпросмотр так же, как в чате, но только пока
- * медиа в исходном размере: увеличенное забирает свайп себе и только чуть-чуть
- * сдвигается. Пока палец ведёт медиа, фон тает, поэтому окно просят не затемнять
- * то, что под ним: иначе за фоном была бы чернота, а не шторка вложений.
- *
- * Видео проигрывается тем же [VideoPlayerItem], что и в чате, только без
- * скорости и зацикливания: здесь это лишние настройки.
- *
- * Панели сверху и снизу отданы Scaffold: он меряет их сам, и по этим высотам
- * рисуются затемнения из Scrims.kt. Медиа при этом уходит под панели целиком.
- *
- * Нажатие по экрану панели не скрывает, в отличие от [FullScreenViewer]: здесь
- * медиа не смотрят, а выбирают, и кнопка выделения с настройкой сжатия должны
- * быть под рукой всегда. Панели убирает только свайп закрытия и переход из
- * миниатюры, пока он ещё идёт.
- *
- * У видео снизу есть настройка сжатия: на её кнопке Sd или Hd — по иконке видно,
- * мелкая ступень выбрана или крупная. Пока настройка открыта, листалка и свайп
- * вниз отключены: слайдер ступеней ведут пальцем по горизонтали, и любой промах
- * уводил бы на соседнее медиа или вовсе закрывал окно.
- *
- * @param openedVideo размеры открытого видео. Без них ступеней нет: не из чего
- * считать ни доступные разрешения, ни примерный вес.
- * @param videoQuality ранее сохранённая ступень: настройка открывается на ней.
- * @param onCurrentItemChange открытое медиа сменилось, в том числе на первом кадре.
- */
 @Composable
 fun MediaPickerPreview(
     media: List<DeviceMediaItem>,
@@ -131,14 +98,9 @@ fun MediaPickerPreview(
     
     val currentItem = media.getOrNull(pagerState.currentPage)
     
-    /*
-     * Настройка сжатия хранится рядом с окном, а не внутри него: кнопку «назад»
-     * спрашивает само окно, и выйти из настройки надо раньше, чем оно закроется.
-     */
     var isQualityMode by remember { mutableStateOf(false) }
     var draftQuality by remember { mutableStateOf<VideoQuality?>(null) }
     
-    /* Пролистали на другое медиа — настройка закрывается, черновик пуст. */
     LaunchedEffect(currentItem?.uri) {
         isQualityMode = false
         draftQuality = null
@@ -147,17 +109,10 @@ fun MediaPickerPreview(
     
     val stops = openedVideo?.let { VideoQuality.availableFor(it.shortSide) }.orEmpty()
     
-    /*
-     * Ступень по умолчанию — 720p, но не выше исходника: у 480p-видео
-     * предвыбранной окажется сама 480p. У видео мельче 360p ступеней нет вовсе, и
-     * остаётся ступень из настроек: кадр по ней всё равно не растянется, зато есть
-     * чем считать вес для заголовка.
-     */
     val defaultQuality = stops.lastOrNull {
         it.shortSide <= MediaCompressionConfig.VIDEO_DEFAULT_QUALITY.shortSide
     } ?: stops.lastOrNull() ?: MediaCompressionConfig.VIDEO_DEFAULT_QUALITY
     
-    /* Сохранённая ступень могла остаться от видео, которое было крупнее этого. */
     val savedQuality = currentItem?.let(videoQuality)?.takeIf { stops.contains(it) }
     val selectedQuality = draftQuality ?: savedQuality ?: defaultQuality
     
@@ -166,31 +121,24 @@ fun MediaPickerPreview(
         selectedQuality.estimateSizeBytes(it.durationMs, it.sizeBytes)
     }
     
-    /* Мелкая ступень — Sd, 720p и выше — Hd: качество видно, не открывая настройку. */
     val qualityIcon = if (selectedQuality.shortSide >= VideoQuality.P720.shortSide) {
-        Icons.Outlined.Hd
+        Icons.Rounded.Hd
     } else {
-        Icons.Outlined.Sd
+        Icons.Rounded.Sd
     }
     
-    /* Меньше двух ступеней — выбирать не из чего, и кнопки настройки нет. */
     val openQuality: (() -> Unit)? = if (stops.size > 1 && !isQualityMode) {
         { isQualityMode = true }
     } else {
         null
     }
     
-    /*
-     * Переход создаётся до окна: его же спрашивает само окно, когда его закрывают
-     * кнопкой «назад», и ответить надо раньше, чем окно успеет исчезнуть.
-     */
     val hero = rememberMediaHeroState(
         originKey = media.getOrNull(pagerState.currentPage)?.let { pickerMediaKey(it.uri) },
         dragOffsetY = dismissDragState.animatedOffsetY(),
         onDismissed = onDismiss
     )
     
-    /* «Назад» из настройки сжатия возвращает к полосе воспроизведения, не сохраняя. */
     val goBack: () -> Unit = {
         if (isQualityMode) {
             draftQuality = null
@@ -214,21 +162,19 @@ fun MediaPickerPreview(
                 return@remember null
             }
             
-            /* Само окно диалога под вырез экрана не зайдёт. */
             dialogWindow.attributes = dialogWindow.attributes.apply {
                 layoutInDisplayCutoutMode =
                     WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
             }
             
-            /* Затемнение под окном сделало бы фон свайпа чёрным, а не цветом темы. */
             dialogWindow.setDimAmount(0f)
             
             WindowCompat.getInsetsController(dialogWindow, view).apply {
-                systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
         }
         
-        /* Панели здесь не прячутся, так что и строка состояния остаётся на месте. */
         LaunchedEffect(insetsController, isLightSurface) {
             val controller = insetsController ?: return@LaunchedEffect
             
@@ -242,11 +188,6 @@ fun MediaPickerPreview(
             }
         }
         
-        /*
-         * Нажатие панели больше не переключает: их убирает только свайп закрытия
-         * и незаконченный переход из миниатюры — там панели висели бы поверх
-         * едущего медиа.
-         */
         val isChromeVisible = !dismissDragState.isDragging && hero.isSettled
         
         Scaffold(
@@ -264,15 +205,18 @@ fun MediaPickerPreview(
                 ) {
                     TopAppBar(
                         title = {
-                            /*
-                             * Разрешение после сжатия и примерный вес: видно и до того,
-                             * как настройку открыли. У фотографии заголовка нет.
-                             */
                             if (frame != null && estimate != null) {
-                                Text(
-                                    text = "${frame.width} × ${frame.height}, ~${estimate.formatFileSize()}",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
+                                AnimatedContent(
+                                    targetState = frame,
+                                    transitionSpec = {
+                                        slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
+                                    }
+                                ) { frame ->
+                                    Text(
+                                        text = "${frame.width} × ${frame.height}, ~${estimate.formatFileSize()}",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                }
                             }
                         }, navigationIcon = {
                             IconButton(
@@ -296,7 +240,6 @@ fun MediaPickerPreview(
                 }
             },
             bottomBar = {
-                /* Слайдер ступеней встаёт на место полосы воспроизведения. */
                 AnimatedVisibility(
                     visible = isChromeVisible && isQualityMode,
                     modifier = Modifier.fillMaxWidth(),
@@ -317,38 +260,38 @@ fun MediaPickerPreview(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            TextButton(onClick = goBack) {
-                                Text(text = stringResource(R.string.cancel))
+                            TextButton(
+                                onClick = goBack,
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                )
+                            ) {
+                                Text(text = stringResource(R.string.cancel).uppercase())
                             }
                             
                             TextButton(
                                 onClick = {
-                                    val item = currentItem
-                                    
-                                    if (item != null) {
-                                        onVideoQualityChange(item, selectedQuality)
+                                    if (currentItem != null) {
+                                        onVideoQualityChange(currentItem, selectedQuality)
                                     }
                                     
                                     draftQuality = null
                                     isQualityMode = false
                                 }) {
-                                Text(text = stringResource(R.string.done))
+                                Text(text = stringResource(R.string.done).uppercase())
                             }
                         }
                     }
                 }
             },
-            /* Фон рисует переход из миниатюры: свой у Scaffold только перекрыл бы его. */
             containerColor = Color.Transparent,
-            /* Медиа уходит под панели целиком, а свой отступ каждая панель считает сама. */
-            contentWindowInsets = WindowInsets(0, 0, 0, 0)
+            contentWindowInsets = WindowInsets()
         ) { innerPadding ->
             Box(modifier = Modifier.fillMaxSize()) {
                 HorizontalPager(
                     state = pagerState, userScrollEnabled = !isQualityMode, modifier = Modifier
                         .fillMaxSize()
                         .then(
-                            /* В настройке сжатия свайп вниз не закрывает окно. */
                             if (isQualityMode) {
                                 Modifier
                             } else {
@@ -357,48 +300,27 @@ fun MediaPickerPreview(
                                 )
                             }
                         )
-                        .mediaHeroContent(hero)) { page ->
+                        .mediaHeroContent(hero)
+                ) { page ->
                     val item = media[page]
                     val isCurrentPage = pagerState.currentPage == page
                     
-                    ZoomableMediaPage(
-                        uri = item.uri,
-                        isVideo = item.isVideo,
-                        isCurrentPage = isCurrentPage,
-                        pagerState = pagerState,
-                        /* Нажатие по медиа ничего не меняет: панели видны всегда. */
-                        onTap = {},
-                        isVideoUiVisible = isChromeVisible,
-                        isVideoSeekBarVisible = !isQualityMode,
-                        videoQualityIcon = qualityIcon,
-                        /* Размеры прочитаны только у открытого видео, у соседних их нет. */
-                        onVideoQualityClick = if (isCurrentPage) openQuality else null,
-                        onHeroContentSizeChanged = hero::updateContentSize)
-                }
-                
-                /*
-                 * Затемнения гаснут вместе со своими панелями: их высоты Scaffold отдаёт
-                 * рывком, как только панель исчезла, и без этого градиент пропадал бы
-                 * первым. Поэтому условия видимости у них те же, что у панелей.
-                 */
-                AnimatedVisibility(
-                    visible = isChromeVisible,
-                    modifier = Modifier.fillMaxSize(),
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box {
+                        ZoomableMediaPage(
+                            uri = item.uri,
+                            isVideo = item.isVideo,
+                            isCurrentPage = isCurrentPage,
+                            pagerState = pagerState,
+                            onTap = {},
+                            isVideoUiVisible = isChromeVisible,
+                            isVideoSeekBarVisible = !isQualityMode,
+                            videoQualityIcon = qualityIcon,
+                            onVideoQualityClick = if (isCurrentPage) openQuality else null,
+                            onHeroContentSizeChanged = hero::updateContentSize
+                        )
+                        
                         TopBarScrim(height = innerPadding.calculateTopPadding())
-                    }
-                }
-                
-                AnimatedVisibility(
-                    visible = isChromeVisible && isQualityMode,
-                    modifier = Modifier.fillMaxSize(),
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
+                        
                         BottomBarScrim(height = innerPadding.calculateBottomPadding())
                     }
                 }

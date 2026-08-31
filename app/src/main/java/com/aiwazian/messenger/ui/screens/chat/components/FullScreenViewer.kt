@@ -133,18 +133,12 @@ fun FullScreenViewer(
         initialPage = initialPage.coerceIn(0, (media.size - 1).coerceAtLeast(0)),
         pageCount = { media.size })
     
-    /*
-     * Переход привязан к миниатюре той страницы, которую сейчас смотрят, а не к той,
-     * с которой открыли: иначе после листания медиа улетало бы в чужой пузырёк.
-     * Если такой миниатюры на экране нет, переход сам уведёт медиа за край экрана.
-     */
     val hero = rememberMediaHeroState(
         originKey = media.getOrNull(pagerState.currentPage)?.let { chatMediaKey(it.uri) },
         dragOffsetY = dismissDragState.animatedOffsetY(),
         onDismissed = onDismiss
     )
     
-    /* Чат закрывал просмотрщик мгновенно, поэтому кнопку назад берёт на себя переход. */
     BackHandler { hero.dismiss() }
     
     LaunchedEffect(pagerState.currentPage) {
@@ -162,11 +156,6 @@ fun FullScreenViewer(
     
     val isChromeVisible = !dismissDragState.isDragging && isUiVisible && hero.isSettled
     
-    /*
-     * Панель сверху отдана Scaffold: он меряет её сам, и по этой высоте рисуется
-     * затемнение из Scrims.kt. Раньше градиент висел модификатором на самой
-     * панели, и её размер приходилось повторять за ней руками.
-     */
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -236,10 +225,6 @@ fun FullScreenViewer(
                                 AppDropdownMenu(
                                     expanded = showVideoSettings,
                                     onDismissRequest = { showVideoSettings = false }) {
-                                    /*
-                                     * Текущая скорость — справа, а не вторым словом в названии:
-                                     * это состояние пункта, а не его имя.
-                                     */
                                     AppDropdownMenuItem(
                                         text = stringResource(R.string.speed),
                                         onClick = {
@@ -321,9 +306,7 @@ fun FullScreenViewer(
                 )
             }
         },
-        /* Фон рисует переход из миниатюры: свой у Scaffold только перекрыл бы его. */
         containerColor = Color.Transparent,
-        /* Медиа уходит под панель целиком, а её собственный отступ считает сама панель. */
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -368,10 +351,6 @@ fun FullScreenViewer(
                 }
             }
             
-            /*
-             * Затемнение гаснет вместе с панелью: её высоту Scaffold отдаёт рывком, как
-             * только панель исчезла, и без этого градиент пропадал бы первым.
-             */
             AnimatedVisibility(
                 visible = isChromeVisible,
                 modifier = Modifier.fillMaxSize(),

@@ -38,25 +38,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import java.util.Locale
 
-/**
- * Обвязка плеера: воспроизведение по центру и полоса прокрутки снизу.
- *
- * @param isSeekBarVisible показывать ли полосу прокрутки. В настройке сжатия её
- * место занимает слайдер качества, но кнопка воспроизведения остаётся: видео
- * всё ещё можно смотреть, выбирая ступень.
- * @param qualityIcon чем подписана кнопка настройки сжатия: Sd у мелких ступеней,
- * Hd у 720p и выше. Сама ступень плееру не нужна, поэтому сюда приходит уже
- * готовая иконка.
- * @param onQualityClick открытие настройки сжатия. null — кнопки нет: в чате
- * сжимать уже нечего, а у мелкого видео выбирать не из чего.
- */
 @Composable
 fun PlayerUi(
     isPlaying: Boolean,
     currentPosition: Long,
     duration: Long,
     isBuffering: Boolean,
-    isSeeking: Boolean,
     onSeekBarPositionChange: (Long) -> Unit,
     onSeekBarPositionChangeFinished: () -> Unit,
     onPlayPauseClick: () -> Unit,
