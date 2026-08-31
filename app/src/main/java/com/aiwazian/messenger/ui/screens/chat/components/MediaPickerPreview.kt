@@ -8,9 +8,11 @@ import android.view.WindowManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -19,12 +21,15 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.outlined.Hd
+import androidx.compose.material.icons.outlined.Sd
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -36,10 +41,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -47,8 +52,11 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.extensions.formatFileSize
+import com.aiwazian.messenger.ui.components.BottomBarScrim
+import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.animatedBackgroundAlpha
 import com.aiwazian.messenger.ui.components.animatedOffsetY
 import com.aiwazian.messenger.ui.components.dismissDragGestures
@@ -84,8 +92,12 @@ import com.aiwazian.messenger.utils.media.frameFor
  * Видео проигрывается тем же [VideoPlayerItem], что и в чате, только без
  * скорости и зацикливания: здесь это лишние настройки.
  *
- * У видео снизу есть настройка сжатия. Пока она открыта, листалка и свайп вниз
- * отключены: слайдер ступеней ведут пальцем по горизонтали, и любой промах
+ * Панели сверху и снизу отданы Scaffold: он меряет их сам, и по этим высотам
+ * рисуются затемнения из Scrims.kt. Медиа при этом уходит под панели целиком.
+ *
+ * У видео снизу есть настройка сжатия: на её кнопке Sd или Hd — по иконке видно,
+ * мелкая ступень выбрана или крупная. Пока настройка открыта, листалка и свайп
+ * вниз отключены: слайдер ступеней ведут пальцем по горизонтали, и любой промах
  * уводил бы на соседнее медиа или вовсе закрывал окно.
  *
  * @param openedVideo размеры открытого видео. Без них ступеней нет: не из чего
@@ -132,19 +144,28 @@ fun MediaPickerPreview(
     
     /*
      * Ступень по умолчанию — 720p, но не выше исходника: у 480p-видео
-     * предвыбранной окажется сама 480p.
+     * предвыбранной окажется сама 480p. У видео мельче 360p ступеней нет вовсе, и
+     * остаётся ступень из настроек: кадр по ней всё равно не растянется, зато есть
+     * чем считать вес для заголовка.
      */
     val defaultQuality = stops.lastOrNull {
         it.shortSide <= MediaCompressionConfig.VIDEO_DEFAULT_QUALITY.shortSide
-    } ?: stops.lastOrNull()
+    } ?: stops.lastOrNull() ?: MediaCompressionConfig.VIDEO_DEFAULT_QUALITY
     
     /* Сохранённая ступень могла остаться от видео, которое было крупнее этого. */
     val savedQuality = currentItem?.let(videoQuality)?.takeIf { stops.contains(it) }
     val selectedQuality = draftQuality ?: savedQuality ?: defaultQuality
     
-    val frame = openedVideo?.let { selectedQuality?.frameFor(it.width, it.height) }
+    val frame = openedVideo?.let { selectedQuality.frameFor(it.width, it.height) }
     val estimate = openedVideo?.let {
-        selectedQuality?.estimateSizeBytes(it.durationMs, it.sizeBytes)
+        selectedQuality.estimateSizeBytes(it.durationMs, it.sizeBytes)
+    }
+    
+    /* Мелкая ступень — Sd, 720p и выше — Hd: качество видно, не открывая настройку. */
+    val qualityIcon = if (selectedQuality.shortSide >= VideoQuality.P720.shortSide) {
+        Icons.Outlined.Hd
+    } else {
+        Icons.Outlined.Sd
     }
     
     /* Меньше двух ступеней — выбирать не из чего, и кнопки настройки нет. */
@@ -224,135 +245,159 @@ fun MediaPickerPreview(
         
         val isChromeVisible = !dismissDragState.isDragging && isUiVisible && hero.isSettled
         
-        Box(
+        Scaffold(
             modifier = Modifier
                 .fillMaxSize()
                 .mediaHeroBackground(hero, MaterialTheme.colorScheme.surface) { backgroundAlpha }
                 .navigationBarsPadding()
-                .mediaHeroContainer(hero)
-        ) {
-            HorizontalPager(
-                state = pagerState, userScrollEnabled = !isQualityMode, modifier = Modifier
-                    .fillMaxSize()
-                    .then(
-                        /* В настройке сжатия свайп вниз не закрывает окно. */
-                        if (isQualityMode) {
-                            Modifier
-                        } else {
-                            Modifier.dismissDragGestures(
-                                state = dismissDragState,
-                                onTap = { isUiVisible = !isUiVisible },
-                                onDismiss = hero::dismiss
-                            )
-                        }
-                    )
-                    .mediaHeroContent(hero)) { page ->
-                val item = media[page]
-                val isCurrentPage = pagerState.currentPage == page
-                
-                ZoomableMediaPage(
-                    uri = item.uri,
-                    isVideo = item.isVideo,
-                    isCurrentPage = isCurrentPage,
-                    pagerState = pagerState,
-                    onTap = { isUiVisible = !isUiVisible },
-                    isVideoUiVisible = isChromeVisible,
-                    isVideoSeekBarVisible = !isQualityMode,
-                    /* Размеры прочитаны только у открытого видео, у соседних их нет. */
-                    onVideoQualityClick = if (isCurrentPage) openQuality else null,
-                    onShowVideoUiRequest = { isUiVisible = true },
-                    onHeroContentSizeChanged = hero::updateContentSize)
-            }
-            
-            AnimatedVisibility(
-                visible = isChromeVisible,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.TopCenter),
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                TopAppBar(
-                    title = {
-                        /*
-                         * Разрешение после сжатия и примерный вес. Пока настройку не
-                         * открыли, заголовка нет: место занимает само медиа.
-                         */
-                        if (isQualityMode && frame != null && estimate != null) {
-                            Text(
-                                text = "${frame.width} × ${frame.height}, ~${estimate.formatFileSize()}",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                        }
-                    }, navigationIcon = {
-                        IconButton(
-                            onClick = goBack, colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack, null
-                            )
-                        }
-                    }, actions = {
-                        if (currentItem != null) {
-                            IconButton(onClick = { onToggleSelection(currentItem) }) {
-                                MediaSelectionBadge(number = selectionNumber(currentItem))
-                            }
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                    modifier = Modifier.background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-                )
-            }
-            
-            /* Слайдер ступеней встаёт на место полосы воспроизведения. */
-            AnimatedVisibility(
-                visible = isChromeVisible && isQualityMode && selectedQuality != null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter),
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally
+                .mediaHeroContainer(hero),
+            topBar = {
+                AnimatedVisibility(
+                    visible = isChromeVisible,
+                    modifier = Modifier.fillMaxWidth(),
+                    enter = fadeIn(),
+                    exit = fadeOut()
                 ) {
-                    VideoQualitySlider(
-                        stops = stops,
-                        selected = selectedQuality ?: stops.last(),
-                        onSelect = { draftQuality = it })
-                    
-                    IconButton(
-                        onClick = {
-                            val item = currentItem
-                            val quality = selectedQuality
-                            
-                            if (item != null && quality != null) {
-                                onVideoQualityChange(item, quality)
+                    TopAppBar(
+                        title = {
+                            /*
+                             * Разрешение после сжатия и примерный вес: видно и до того,
+                             * как настройку открыли. У фотографии заголовка нет.
+                             */
+                            if (frame != null && estimate != null) {
+                                Text(
+                                    text = "${frame.width} × ${frame.height}, ~${estimate.formatFileSize()}",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }, navigationIcon = {
+                            IconButton(
+                                onClick = goBack, colors = IconButtonDefaults.iconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack, null
+                                )
+                            }
+                        }, actions = {
+                            if (currentItem != null) {
+                                IconButton(onClick = { onToggleSelection(currentItem) }) {
+                                    MediaSelectionBadge(number = selectionNumber(currentItem))
+                                }
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                    )
+                }
+            },
+            bottomBar = {
+                /* Слайдер ступеней встаёт на место полосы воспроизведения. */
+                AnimatedVisibility(
+                    visible = isChromeVisible && isQualityMode,
+                    modifier = Modifier.fillMaxWidth(),
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        VideoQualitySlider(
+                            stops = stops, selected = selectedQuality,
+                            onSelect = { draftQuality = it })
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            TextButton(onClick = goBack) {
+                                Text(text = stringResource(R.string.cancel))
                             }
                             
-                            draftQuality = null
-                            isQualityMode = false
-                        }, colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(
-                                alpha = 0.2f
-                            )
+                            TextButton(
+                                onClick = {
+                                    val item = currentItem
+                                    
+                                    if (item != null) {
+                                        onVideoQualityChange(item, selectedQuality)
+                                    }
+                                    
+                                    draftQuality = null
+                                    isQualityMode = false
+                                }) {
+                                Text(text = stringResource(R.string.done))
+                            }
+                        }
+                    }
+                }
+            },
+            /* Фон рисует переход из миниатюры: свой у Scaffold только перекрыл бы его. */
+            containerColor = Color.Transparent,
+            /* Медиа уходит под панели целиком, а свой отступ каждая панель считает сама. */
+            contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        ) { innerPadding ->
+            Box(modifier = Modifier.fillMaxSize()) {
+                HorizontalPager(
+                    state = pagerState, userScrollEnabled = !isQualityMode, modifier = Modifier
+                        .fillMaxSize()
+                        .then(
+                            /* В настройке сжатия свайп вниз не закрывает окно. */
+                            if (isQualityMode) {
+                                Modifier
+                            } else {
+                                Modifier.dismissDragGestures(
+                                    state = dismissDragState,
+                                    onTap = { isUiVisible = !isUiVisible },
+                                    onDismiss = hero::dismiss
+                                )
+                            }
                         )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Check, contentDescription = null,
-                            tint = Color.White
-                        )
+                        .mediaHeroContent(hero)) { page ->
+                    val item = media[page]
+                    val isCurrentPage = pagerState.currentPage == page
+                    
+                    ZoomableMediaPage(
+                        uri = item.uri,
+                        isVideo = item.isVideo,
+                        isCurrentPage = isCurrentPage,
+                        pagerState = pagerState,
+                        onTap = { isUiVisible = !isUiVisible },
+                        isVideoUiVisible = isChromeVisible,
+                        isVideoSeekBarVisible = !isQualityMode,
+                        videoQualityIcon = qualityIcon,
+                        /* Размеры прочитаны только у открытого видео, у соседних их нет. */
+                        onVideoQualityClick = if (isCurrentPage) openQuality else null,
+                        onShowVideoUiRequest = { isUiVisible = true },
+                        onHeroContentSizeChanged = hero::updateContentSize)
+                }
+                
+                /*
+                 * Затемнения гаснут вместе со своими панелями: их высоты Scaffold отдаёт
+                 * рывком, как только панель исчезла, и без этого градиент пропадал бы
+                 * первым. Поэтому условия видимости у них те же, что у панелей.
+                 */
+                AnimatedVisibility(
+                    visible = isChromeVisible,
+                    modifier = Modifier.fillMaxSize(),
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        TopBarScrim(height = innerPadding.calculateTopPadding())
+                    }
+                }
+                
+                AnimatedVisibility(
+                    visible = isChromeVisible && isQualityMode,
+                    modifier = Modifier.fillMaxSize(),
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        BottomBarScrim(height = innerPadding.calculateBottomPadding())
                     }
                 }
             }
