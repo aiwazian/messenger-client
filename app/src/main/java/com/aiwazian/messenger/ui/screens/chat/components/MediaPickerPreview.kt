@@ -95,6 +95,11 @@ import com.aiwazian.messenger.utils.media.frameFor
  * Панели сверху и снизу отданы Scaffold: он меряет их сам, и по этим высотам
  * рисуются затемнения из Scrims.kt. Медиа при этом уходит под панели целиком.
  *
+ * Нажатие по экрану панели не скрывает, в отличие от [FullScreenViewer]: здесь
+ * медиа не смотрят, а выбирают, и кнопка выделения с настройкой сжатия должны
+ * быть под рукой всегда. Панели убирает только свайп закрытия и переход из
+ * миниатюры, пока он ещё идёт.
+ *
  * У видео снизу есть настройка сжатия: на её кнопке Sd или Hd — по иконке видно,
  * мелкая ступень выбрана или крупная. Пока настройка открыта, листалка и свайп
  * вниз отключены: слайдер ступеней ведут пальцем по горизонтали, и любой промах
@@ -200,8 +205,6 @@ fun MediaPickerPreview(
             usePlatformDefaultWidth = false, decorFitsSystemWindows = false
         )
     ) {
-        var isUiVisible by remember { mutableStateOf(true) }
-        
         val view = LocalView.current
         val dialogWindow = (view.parent as? DialogWindowProvider)?.window
         val isLightSurface = MaterialTheme.colorScheme.surface.luminance() > 0.5f
@@ -225,16 +228,12 @@ fun MediaPickerPreview(
             }
         }
         
-        LaunchedEffect(insetsController, isUiVisible, isLightSurface) {
+        /* Панели здесь не прячутся, так что и строка состояния остаётся на месте. */
+        LaunchedEffect(insetsController, isLightSurface) {
             val controller = insetsController ?: return@LaunchedEffect
             
             controller.isAppearanceLightStatusBars = isLightSurface
-            
-            if (isUiVisible) {
-                controller.show(WindowInsetsCompat.Type.statusBars())
-            } else {
-                controller.hide(WindowInsetsCompat.Type.statusBars())
-            }
+            controller.show(WindowInsetsCompat.Type.statusBars())
         }
         
         DisposableEffect(insetsController) {
@@ -243,7 +242,12 @@ fun MediaPickerPreview(
             }
         }
         
-        val isChromeVisible = !dismissDragState.isDragging && isUiVisible && hero.isSettled
+        /*
+         * Нажатие панели больше не переключает: их убирает только свайп закрытия
+         * и незаконченный переход из миниатюры — там панели висели бы поверх
+         * едущего медиа.
+         */
+        val isChromeVisible = !dismissDragState.isDragging && hero.isSettled
         
         Scaffold(
             modifier = Modifier
@@ -349,9 +353,7 @@ fun MediaPickerPreview(
                                 Modifier
                             } else {
                                 Modifier.dismissDragGestures(
-                                    state = dismissDragState,
-                                    onTap = { isUiVisible = !isUiVisible },
-                                    onDismiss = hero::dismiss
+                                    state = dismissDragState, onDismiss = hero::dismiss
                                 )
                             }
                         )
@@ -364,13 +366,13 @@ fun MediaPickerPreview(
                         isVideo = item.isVideo,
                         isCurrentPage = isCurrentPage,
                         pagerState = pagerState,
-                        onTap = { isUiVisible = !isUiVisible },
+                        /* Нажатие по медиа ничего не меняет: панели видны всегда. */
+                        onTap = {},
                         isVideoUiVisible = isChromeVisible,
                         isVideoSeekBarVisible = !isQualityMode,
                         videoQualityIcon = qualityIcon,
                         /* Размеры прочитаны только у открытого видео, у соседних их нет. */
                         onVideoQualityClick = if (isCurrentPage) openQuality else null,
-                        onShowVideoUiRequest = { isUiVisible = true },
                         onHeroContentSizeChanged = hero::updateContentSize)
                 }
                 
