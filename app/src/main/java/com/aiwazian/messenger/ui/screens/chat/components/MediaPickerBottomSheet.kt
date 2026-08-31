@@ -273,7 +273,13 @@ fun MediaPickerBottomSheet(
             initialIndex = index,
             selectionNumber = { item -> uiState.selected.indexOf(item.uri) + 1 },
             onToggleSelection = { item -> viewModel.toggleSelection(item.uri) },
-            onDismiss = { previewIndex = null })
+            onDismiss = { previewIndex = null },
+            openedVideo = uiState.openedVideo,
+            videoQuality = { item -> uiState.videoQualities[item.uri] },
+            onVideoQualityChange = { item, quality ->
+                viewModel.setVideoQuality(item.uri, quality)
+            },
+            onCurrentItemChange = viewModel::openMedia)
     }
     
     if (isResetDialogVisible) {

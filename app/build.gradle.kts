@@ -21,8 +21,8 @@ android {
         applicationId = "com.aiwazian.messenger"
         minSdk = 30
         targetSdk = 37
-        versionCode = 55
-        versionName = "1.20.0"
+        versionCode = 56
+        versionName = "1.20.1"
     }
     
     buildTypes {
@@ -150,6 +150,10 @@ dependencies {
     implementation(libs.androidx.media3.ui.compose)
     implementation(libs.androidx.media3.ui.compose.material3)
     implementation(libs.androidx.media3.session)
+    
+    // Пересжатие видео перед отправкой
+    implementation(libs.androidx.media3.transformer)
+    implementation(libs.androidx.media3.effect)
     
     // Preview Composable
     debugImplementation(libs.androidx.compose.ui.tooling)

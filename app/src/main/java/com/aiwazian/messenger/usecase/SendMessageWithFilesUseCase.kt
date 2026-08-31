@@ -7,6 +7,7 @@ package com.aiwazian.messenger.usecase
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import android.webkit.MimeTypeMap
 import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.di.ApplicationScope
 import com.aiwazian.messenger.domain.AttachmentUploadException
@@ -31,6 +32,8 @@ import com.aiwazian.messenger.utils.AttachmentOutbox
 import com.aiwazian.messenger.utils.PendingSendStore
 import com.aiwazian.messenger.utils.RetryPolicy
 import com.aiwazian.messenger.utils.UploadManager
+import com.aiwazian.messenger.utils.media.MediaCompressionConfig
+import com.aiwazian.messenger.utils.media.VideoQuality
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -90,10 +93,11 @@ class SendMessageWithFilesUseCase @Inject constructor(
         uris: List<Uri>,
         text: String?,
         tempId: Long = -System.currentTimeMillis(),
-        replyTo: MessageReplyPreview? = null
+        replyTo: MessageReplyPreview? = null,
+        videoQualities: Map<Uri, VideoQuality> = emptyMap()
     ): Result<Message> {
         val sending = appScope.async(start = CoroutineStart.LAZY) {
-            send(chatId, uris, text, tempId, replyTo)
+            send(chatId, uris, text, tempId, replyTo, videoQualities)
         }
         
         running.put(tempId, sending)?.cancel()
@@ -113,37 +117,23 @@ class SendMessageWithFilesUseCase @Inject constructor(
         uris: List<Uri>,
         text: String?,
         tempId: Long,
-        replyTo: MessageReplyPreview?
+        replyTo: MessageReplyPreview?,
+        videoQualities: Map<Uri, VideoQuality>
     ): Result<Message> {
         val myId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
         
-        // Доступ к выбранному файлу живёт не дольше задачи приложения, а повторы
-        // — сколько понадобится, поэтому грузим со своих копий. Фотографии копией
-        // служит результат сжатия — этим занимается сам обменник.
-        val sourceUris = uris.mapIndexed { index, uri ->
-            attachmentOutbox.keep(uri, "temp_${tempId}_$index")
-        }
-        
         /*
-         * Описание вложения снимается с копии, а не с исходника: сжатая
-         * фотография уходит с другим именем, другим размером и другим
-         * расширением. Спроси их у исходника — в запросе на загрузку стояло бы
-         * photo.heic вместо photo.jpg и размер совсем другого файла, а сервер
-         * сверяет размер ещё на выдаче формы.
+         * Описание вложения снимается с исходника, потому что копий ещё нет и
+         * появятся они не сразу: сжатие видео идёт десятками секунд.
+         * Сообщение обязано попасть в чат до этого, иначе после нажатия
+         * «Отправить» экран стоял бы пустым почти минуту. Настоящий вес копии
+         * подтягивается ниже, когда копия готова, а имя для сервера берётся с неё
+         * же прямо перед загрузкой.
          */
-        val attachments = sourceUris.mapIndexed { index, sourceUri ->
-            var fileName = sourceUri.getFileName(context) ?: "file"
-            val fileSize = sourceUri.getFileSize(context) ?: 0
-            val mimeType = sourceUri.getFileType(context)
-            
-            if (!fileName.contains('.')) {
-                val extFromMime =
-                    android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
-                if (extFromMime != null) {
-                    fileName = "$fileName.$extFromMime"
-                }
-            }
+        val attachments = uris.mapIndexed { index, uri ->
+            val fileName = fileNameOf(uri)
+            val mimeType = uri.getFileType(context)
             
             val attachmentType = when {
                 mimeType.startsWith("image/") -> AttachmentType.IMAGE
@@ -156,13 +146,13 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 fileId = "temp_${tempId}_$index",
                 messageId = tempId,
                 name = fileName,
-                size = fileSize,
+                size = uri.getFileSize(context) ?: 0,
                 extension = fileName.substringAfterLast('.', ""),
                 status = DownloadStatus.UPLOADING,
                 progress = 0,
                 // Предпросмотр в чате остаётся на исходнике: он качественнее того,
                 // что уйдёт на сервер, и не исчезает вместе с копией после отправки.
-                localUri = uris[index],
+                localUri = uri,
                 type = attachmentType,
                 sortOrder = index
             )
@@ -184,6 +174,18 @@ class SendMessageWithFilesUseCase @Inject constructor(
         
         chatRepository.saveLocalMessage(tempMessage)
         
+        // Доступ к выбранному файлу живёт не дольше задачи приложения, а повторы
+        // — сколько понадобится, поэтому грузим со своих копий. Фотографиям и
+        // видео копией служит результат сжатия — этим занимается сам обменник.
+        val sourceUris = uris.mapIndexed { index, uri ->
+            attachmentOutbox.keep(
+                uri = uri,
+                key = "temp_${tempId}_$index",
+                videoQuality = videoQualities[uri]
+                    ?: MediaCompressionConfig.VIDEO_DEFAULT_QUALITY
+            )
+        }
+        
         // Запись о начатой отправке появляется после самого сообщения, а не до:
         // смерть процесса между ними оставила бы запись без сообщения, и досылка
         // после перезапуска вернула бы в чат то, чего пользователь там не видел.
@@ -195,11 +197,19 @@ class SendMessageWithFilesUseCase @Inject constructor(
             replyTo = replyTo
         )
         
+        syncSizes(attachments, sourceUris)
+        
         val uploadResults = mutableListOf<AttachmentInputDto>()
         
         attachments.forEachIndexed { index, attachment ->
-            val fileName = attachment.name
             val sourceUri = sourceUris[index]
+            
+            /*
+             * Имя и mime-тип берутся с копии, а не из записи в базе: сжатое видео
+             * уходит как mp4, а фотография как jpg. Спроси их у исходника — в
+             * запросе на загрузку стояло бы video.mkv вместо video.mp4.
+             */
+            val fileName = fileNameOf(sourceUri)
             val mimeType = sourceUri.getFileType(context)
             
             // Идентификатор записи о файле меняется на серверный после каждой
@@ -328,6 +338,45 @@ class SendMessageWithFilesUseCase @Inject constructor(
     }
     
     /**
+     * Имя файла с расширением.
+     *
+     * Расширение достаётся из mime-типа, если в имени его нет: без него чужой
+     * клиент не поймёт, что скачал, а голосовые и вложения из некоторых
+     * провайдеров приходят без расширения вовсе.
+     */
+    private fun fileNameOf(uri: Uri): String {
+        val name = uri.getFileName(context) ?: DEFAULT_FILE_NAME
+        
+        if (name.contains('.')) {
+            return name
+        }
+        
+        val extension = MimeTypeMap.getSingleton()
+            .getExtensionFromMimeType(uri.getFileType(context))
+        
+        return if (extension != null) "$name.$extension" else name
+    }
+    
+    /**
+     * Подтягивает вес записи к весу копии.
+     *
+     * В чате у сжатого видео иначе висел бы вес исходника — всё время, пока
+     * идёт загрузка, и потом число прыгало бы на втрое после ответа сервера.
+     */
+    private suspend fun syncSizes(
+        attachments: List<MessageAttachment>,
+        sourceUris: List<Uri>
+    ) {
+        attachments.forEachIndexed { index, attachment ->
+            val size = sizeOf(sourceUris[index])
+            
+            if (size > 0 && size != attachment.size) {
+                fileRepository.updateFileSize(attachment.fileId, size)
+            }
+        }
+    }
+    
+    /**
      * Отправку отменили: кнопка удаляет локальное сообщение, и это единственный
      * след, который доходит до скоупа приложения.
      *
@@ -371,5 +420,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
     private companion object {
         const val TAG = "SendMessageWithFiles"
         const val SCHEME_FILE = "file"
+        const val DEFAULT_FILE_NAME = "file"
     }
 }

@@ -11,6 +11,8 @@ import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.utils.media.ImageCompressor
 import com.aiwazian.messenger.utils.media.MediaCompressionConfig
+import com.aiwazian.messenger.utils.media.VideoCompressor
+import com.aiwazian.messenger.utils.media.VideoQuality
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -36,27 +38,35 @@ import javax.inject.Singleton
  * поднятая после перезапуска отправка не превращает photo.jpg в
  * temp_-17_0_photo.jpg.
  *
- * Здесь же сжимаются фотографии: копия всё равно делается, и дешевле сразу
- * положить в неё готовый к JPEG кадр, чем скопировать исходные десять
- * мегабайт и сжимать их шагом позже. Побочно из этого выходит главное:
- * повторы и досылка после перезапуска идут с уже сжатого файла, а не
- * сжимают его второй раз.
+ * Здесь же сжимаются фотографии и видео: копия вся равно делается, и дешевле
+ * сразу положить в неё готовый к отправке файл, чем скопировать исходные
+ * десять мегабайт и сжимать их шагом позже. Побочно из этого выходит
+ * главное: повторы и досылка после перезапуска идут с уже сжатого файла, а
+ * не сжимают его второй раз — для видео это стоит уже не доли секунды, а
+ * минуты.
  */
 @Singleton
 class AttachmentOutbox @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val imageCompressor: ImageCompressor
+    private val imageCompressor: ImageCompressor,
+    private val videoCompressor: VideoCompressor
 ) {
     
     /**
      * @param key имя вложения внутри отправки: по нему копия находится после
      * перезапуска.
+     * @param videoQuality ступень сжатия видео. На картинки и файлы не влияет,
+     * выше исходного разрешения не поднимается.
      * @return ссылку на свою копию либо исходную ссылку, если копировать незачем
      * или не удалось: голосовые уже лежат у нас, а про удалённый файл честнее
      * доложит сама отправка.
      */
-    suspend fun keep(uri: Uri, key: String): Uri = withContext(Dispatchers.IO) {
-        // Уже наша копия: отправку подняли после перезапуска, и фото в ней
+    suspend fun keep(
+        uri: Uri,
+        key: String,
+        videoQuality: VideoQuality = MediaCompressionConfig.VIDEO_DEFAULT_QUALITY
+    ): Uri = withContext(Dispatchers.IO) {
+        // Уже наша копия: отправку подняли после перезапуска, и медиа в ней
         // сжато ещё в прошлый раз — второй проход только срезал бы качество.
         if (directoryOf(uri) != null) {
             return@withContext uri
@@ -65,10 +75,11 @@ class AttachmentOutbox @Inject constructor(
         // Имя берётся, пока ссылка ещё читаема: без него потеряется расширение,
         // а с ним и mime-тип на следующей попытке.
         val name = uri.getFileName(context)?.replace('/', '_') ?: key
+        val mimeType = uri.getFileType(context)
         
-        // Фотографии копией служит результат сжатия: у него своё имя, свой
+        // Фотографиям копией служит результат сжатия: у него своё имя, свой
         // размер и свой формат, а метаданных нет вовсе.
-        if (imageCompressor.isCompressible(uri.getFileType(context))) {
+        if (imageCompressor.isCompressible(mimeType)) {
             val compressed = imageCompressor.compress(
                 source = uri,
                 directory = directoryFor(key),
@@ -84,6 +95,27 @@ class AttachmentOutbox @Inject constructor(
             // Сжать не удалось: отправить исходник лучше, чем не отправить
             // ничего.
             Log.w(TAG, "Unable to compress $uri, keeping it as is")
+        }
+        
+        /*
+         * Видео пересобирается в MP4 меньшего разрешения. Ступень приходит с
+         * экрана предпросмотра, а если её там не выбирали — из
+         * MediaCompressionConfig. Выше исходного разрешения она не поднимется:
+         * этим занимается сам компрессор.
+         */
+        if (videoCompressor.isCompressible(mimeType)) {
+            val compressed = videoCompressor.compress(
+                source = uri,
+                directory = directoryFor(key),
+                quality = videoQuality,
+                name = name
+            )
+            
+            if (compressed != null) {
+                return@withContext compressed
+            }
+            
+            Log.w(TAG, "Unable to compress video $uri, keeping it as is")
         }
         
         if (uri.scheme == SCHEME_FILE) {
