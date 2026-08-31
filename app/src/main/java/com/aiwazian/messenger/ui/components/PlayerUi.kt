@@ -7,6 +7,7 @@ package com.aiwazian.messenger.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +37,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import java.util.Locale
 
+/**
+ * Обвязка плеера: воспроизведение по центру и полоса прокрутки снизу.
+ *
+ * @param isSeekBarVisible показывать ли полосу прокрутки. В настройке сжатия её
+ * место занимает слайдер качества, но кнопка воспроизведения остаётся: видео
+ * всё ещё можно смотреть, выбирая ступень.
+ * @param onQualityClick открытие настройки сжатия. null — кнопки нет: в чате
+ * сжимать уже нечего, а у мелкого видео выбирать не из чего.
+ */
 @Composable
 fun PlayerUi(
     isPlaying: Boolean,
@@ -45,7 +56,9 @@ fun PlayerUi(
     onSeekBarPositionChange: (Long) -> Unit,
     onSeekBarPositionChangeFinished: () -> Unit,
     onPlayPauseClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSeekBarVisible: Boolean = true,
+    onQualityClick: (() -> Unit)? = null
 ) {
     Box(
         modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center
@@ -70,53 +83,78 @@ fun PlayerUi(
             }
         }
         
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = formatDuration(currentPosition),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            
-            Slider(
-                value = currentPosition.toFloat(),
-                onValueChange = { onSeekBarPositionChange(it.toLong()) },
-                onValueChangeFinished = onSeekBarPositionChangeFinished,
-                valueRange = 0f..duration.toFloat(),
-                modifier = Modifier.weight(1f),
-                thumb = {
-                    Box(
-                        modifier = Modifier
-                            .size(15.dp)
-                            .shadow(4.dp, CircleShape)
-                            .background(Color.White, CircleShape)
+            if (isSeekBarVisible) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = formatDuration(currentPosition),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                },
-                track = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                    ) {
-                        val fraction =
-                            if (duration > 0) currentPosition.toFloat() / duration else 0f
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(fraction)
-                                .fillMaxHeight()
-                                .background(MaterialTheme.colorScheme.primary)
-                        )
-                    }
-                })
+                    
+                    Slider(
+                        value = currentPosition.toFloat(),
+                        onValueChange = { onSeekBarPositionChange(it.toLong()) },
+                        onValueChangeFinished = onSeekBarPositionChangeFinished,
+                        valueRange = 0f..duration.toFloat(),
+                        modifier = Modifier.weight(1f),
+                        thumb = {
+                            Box(
+                                modifier = Modifier
+                                    .size(15.dp)
+                                    .shadow(4.dp, CircleShape)
+                                    .background(Color.White, CircleShape)
+                            )
+                        },
+                        track = {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                val fraction =
+                                    if (duration > 0) currentPosition.toFloat() / duration else 0f
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth(fraction)
+                                        .fillMaxHeight()
+                                        .background(MaterialTheme.colorScheme.primary)
+                                )
+                            }
+                        })
+                    
+                    Text(
+                        text = formatDuration(duration),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
             
-            Text(text = formatDuration(duration), color = MaterialTheme.colorScheme.onSurface)
+            if (onQualityClick != null) {
+                IconButton(
+                    onClick = onQualityClick, colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(
+                            alpha = 0.2f
+                        )
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Tune, contentDescription = null,
+                        tint = Color.White
+                    )
+                }
+            }
         }
     }
 }

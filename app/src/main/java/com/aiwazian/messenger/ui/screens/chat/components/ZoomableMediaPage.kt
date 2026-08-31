@@ -50,6 +50,9 @@ import kotlinx.coroutines.launch
  * @param pagerState листалка, которой отдаются горизонтальные свайпы увеличенного
  * содержимого, доехавшего до своего края.
  * @param onTap нажатие, которое не является частью жеста зума.
+ * @param isVideoSeekBarVisible показывать ли полосу воспроизведения: в настройке
+ * сжатия её место занимает слайдер качества.
+ * @param onVideoQualityClick открытие настройки сжатия видео. null — кнопки нет.
  * @param onHeroContentSizeChanged собственные пропорции показанного: по ним переход
  * обрезает кадр при уменьшении в миниатюру. Нулевой размер означает «считай по
  * всему просмотрщику».
@@ -65,6 +68,8 @@ internal fun ZoomableMediaPage(
     isVideoUiVisible: Boolean = false,
     isVideoLooping: Boolean = false,
     videoPlaybackSpeed: Float = 1f,
+    isVideoSeekBarVisible: Boolean = true,
+    onVideoQualityClick: (() -> Unit)? = null,
     onVideoPlayingChanged: (Boolean) -> Unit = {},
     onShowVideoUiRequest: () -> Unit = {},
     onHeroContentSizeChanged: (Size) -> Unit = {}
@@ -114,6 +119,8 @@ internal fun ZoomableMediaPage(
                 isLooping = isVideoLooping,
                 playbackSpeed = videoPlaybackSpeed,
                 contentModifier = Modifier.zoomableContent(zoomableState),
+                isSeekBarVisible = isVideoSeekBarVisible,
+                onQualityClick = onVideoQualityClick,
                 onPlayingChanged = onVideoPlayingChanged,
                 onShowUiRequest = onShowVideoUiRequest,
                 onContentSizeChanged = { size ->

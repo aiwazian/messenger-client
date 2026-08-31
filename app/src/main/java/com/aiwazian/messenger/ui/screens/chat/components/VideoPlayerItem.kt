@@ -34,6 +34,10 @@ import kotlinx.coroutines.delay
  *
  * @param contentModifier applied to the video frame only, so a zoom of the frame
  * leaves the playback controls untouched.
+ * @param isSeekBarVisible whether the playback row is shown. The compression
+ * settings of the attachment preview take its place, so they hide it.
+ * @param onQualityClick opens the compression settings. Null hides the button,
+ * which is the case everywhere but the attachment preview.
  * @param onContentSizeChanged called with the size of the video frame once it is
  * known, which is what tells a zoom how much of the screen the video covers.
  */
@@ -45,6 +49,8 @@ fun VideoPlayerItem(
     isLooping: Boolean = false,
     playbackSpeed: Float = 1.0f,
     contentModifier: Modifier = Modifier,
+    isSeekBarVisible: Boolean = true,
+    onQualityClick: (() -> Unit)? = null,
     onPlayingChanged: (Boolean) -> Unit = {},
     onShowUiRequest: () -> Unit = {},
     onContentSizeChanged: (Size) -> Unit = {}
@@ -160,7 +166,9 @@ fun VideoPlayerItem(
                     } else {
                         player.play()
                     }
-                }
+                },
+                isSeekBarVisible = isSeekBarVisible,
+                onQualityClick = onQualityClick
             )
         }
     }
