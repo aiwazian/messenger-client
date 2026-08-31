@@ -11,6 +11,9 @@ import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.repository.DeviceMediaRepository
 import com.aiwazian.messenger.utils.MessageSendQueue
+import com.aiwazian.messenger.utils.media.VideoMetadata
+import com.aiwazian.messenger.utils.media.VideoMetadataReader
+import com.aiwazian.messenger.utils.media.VideoQuality
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,7 +25,14 @@ data class MediaPickerUiState(
     val media: List<DeviceMediaItem> = emptyList(),
     /** Порядок важен: номер в кружке — это позиция в этом списке. */
     val selected: List<Uri> = emptyList(),
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    /**
+     * Ступень сжатия, выбранная для видео. Чего здесь нет, то уйдёт со ступенью
+     * по умолчанию: настройку открывать необязательно.
+     */
+    val videoQualities: Map<Uri, VideoQuality> = emptyMap(),
+    /** Размеры видео, открытого во весь экран: по ним считаются ступени и вес. */
+    val openedVideo: VideoMetadata? = null
 )
 
 /**
@@ -41,11 +51,15 @@ data class MediaPickerUiState(
 @HiltViewModel
 class MediaPickerViewModel @Inject constructor(
     private val deviceMediaRepository: DeviceMediaRepository,
+    private val videoMetadataReader: VideoMetadataReader,
     private val messageSendQueue: MessageSendQueue
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(MediaPickerUiState())
     val uiState = _uiState.asStateFlow()
+    
+    /** Чьи размеры сейчас ждём: пока читали, могли пролистать на другое видео. */
+    private var openedVideoUri: Uri? = null
     
     fun loadMedia() {
         viewModelScope.launch {
@@ -59,7 +73,11 @@ class MediaPickerViewModel @Inject constructor(
     
     /** Шторка каждый раз открывается с чистым выбором. */
     fun reset() {
-        _uiState.update { it.copy(selected = emptyList()) }
+        openedVideoUri = null
+        
+        _uiState.update {
+            it.copy(selected = emptyList(), videoQualities = emptyMap(), openedVideo = null)
+        }
     }
     
     fun toggleSelection(uri: Uri) {
@@ -75,6 +93,37 @@ class MediaPickerViewModel @Inject constructor(
         }
     }
     
+    /**
+     * Медиа открыли во весь экран: у видео заодно читаются его размеры.
+     *
+     * Читать их сразу на всю ленту незачем: настройка сжатия открыта для одного
+     * видео, а каждые размеры — это отдельное открытие файла.
+     */
+    fun openMedia(item: DeviceMediaItem?) {
+        val uri = item?.takeIf { it.isVideo }?.uri
+        
+        openedVideoUri = uri
+        
+        /* Размеры прошлого видео здесь чужие, поэтому подпись пустеет сразу. */
+        _uiState.update { it.copy(openedVideo = null) }
+        
+        if (uri == null) {
+            return
+        }
+        
+        viewModelScope.launch {
+            val metadata = videoMetadataReader.read(uri)
+            
+            if (openedVideoUri == uri) {
+                _uiState.update { it.copy(openedVideo = metadata) }
+            }
+        }
+    }
+    
+    fun setVideoQuality(uri: Uri, quality: VideoQuality) {
+        _uiState.update { it.copy(videoQualities = it.videoQualities + (uri to quality)) }
+    }
+    
     fun send(chatId: Long, replyTo: MessageReplyPreview?, caption: String) {
         val selected = _uiState.value.selected
         
@@ -84,7 +133,7 @@ class MediaPickerViewModel @Inject constructor(
         
         sendUris(chatId = chatId, uris = selected, caption = caption, replyTo = replyTo)
         
-        _uiState.update { it.copy(selected = emptyList()) }
+        _uiState.update { it.copy(selected = emptyList(), videoQualities = emptyMap()) }
     }
     
     /**
@@ -102,7 +151,8 @@ class MediaPickerViewModel @Inject constructor(
             chatId = chatId,
             uris = uris,
             text = caption.trim().ifBlank { null },
-            replyTo = replyTo
+            replyTo = replyTo,
+            videoQualities = _uiState.value.videoQualities
         )
     }
 }

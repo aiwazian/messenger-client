@@ -10,17 +10,21 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -36,6 +40,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
@@ -43,6 +48,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.aiwazian.messenger.domain.DeviceMediaItem
+import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.ui.components.animatedBackgroundAlpha
 import com.aiwazian.messenger.ui.components.animatedOffsetY
 import com.aiwazian.messenger.ui.components.dismissDragGestures
@@ -52,6 +58,11 @@ import com.aiwazian.messenger.ui.components.mediaHeroContent
 import com.aiwazian.messenger.ui.components.pickerMediaKey
 import com.aiwazian.messenger.ui.components.rememberDismissDragState
 import com.aiwazian.messenger.ui.components.rememberMediaHeroState
+import com.aiwazian.messenger.utils.media.MediaCompressionConfig
+import com.aiwazian.messenger.utils.media.VideoMetadata
+import com.aiwazian.messenger.utils.media.VideoQuality
+import com.aiwazian.messenger.utils.media.estimateSizeBytes
+import com.aiwazian.messenger.utils.media.frameFor
 
 /**
  * Предпросмотр галереи во весь экран.
@@ -72,6 +83,15 @@ import com.aiwazian.messenger.ui.components.rememberMediaHeroState
  *
  * Видео проигрывается тем же [VideoPlayerItem], что и в чате, только без
  * скорости и зацикливания: здесь это лишние настройки.
+ *
+ * У видео снизу есть настройка сжатия. Пока она открыта, листалка и свайп вниз
+ * отключены: слайдер ступеней ведут пальцем по горизонтали, и любой промах
+ * уводил бы на соседнее медиа или вовсе закрывал окно.
+ *
+ * @param openedVideo размеры открытого видео. Без них ступеней нет: не из чего
+ * считать ни доступные разрешения, ни примерный вес.
+ * @param videoQuality ранее сохранённая ступень: настройка открывается на ней.
+ * @param onCurrentItemChange открытое медиа сменилось, в том числе на первом кадре.
  */
 @Composable
 fun MediaPickerPreview(
@@ -79,7 +99,11 @@ fun MediaPickerPreview(
     initialIndex: Int,
     selectionNumber: (DeviceMediaItem) -> Int,
     onToggleSelection: (DeviceMediaItem) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    openedVideo: VideoMetadata? = null,
+    videoQuality: (DeviceMediaItem) -> VideoQuality? = { null },
+    onVideoQualityChange: (DeviceMediaItem, VideoQuality) -> Unit = { _, _ -> },
+    onCurrentItemChange: (DeviceMediaItem?) -> Unit = {}
 ) {
     val pagerState = rememberPagerState(
         initialPage = initialIndex.coerceIn(0, (media.size - 1).coerceAtLeast(0)),
@@ -87,6 +111,48 @@ fun MediaPickerPreview(
     
     val dismissDragState = rememberDismissDragState()
     val backgroundAlpha = dismissDragState.animatedBackgroundAlpha()
+    
+    val currentItem = media.getOrNull(pagerState.currentPage)
+    
+    /*
+     * Настройка сжатия хранится рядом с окном, а не внутри него: кнопку «назад»
+     * спрашивает само окно, и выйти из настройки надо раньше, чем оно закроется.
+     */
+    var isQualityMode by remember { mutableStateOf(false) }
+    var draftQuality by remember { mutableStateOf<VideoQuality?>(null) }
+    
+    /* Пролистали на другое медиа — настройка закрывается, черновик пуст. */
+    LaunchedEffect(currentItem?.uri) {
+        isQualityMode = false
+        draftQuality = null
+        onCurrentItemChange(currentItem)
+    }
+    
+    val stops = openedVideo?.let { VideoQuality.availableFor(it.shortSide) }.orEmpty()
+    
+    /*
+     * Ступень по умолчанию — 720p, но не выше исходника: у 480p-видео
+     * предвыбранной окажется сама 480p.
+     */
+    val defaultQuality = stops.lastOrNull {
+        it.shortSide <= MediaCompressionConfig.VIDEO_DEFAULT_QUALITY.shortSide
+    } ?: stops.lastOrNull()
+    
+    /* Сохранённая ступень могла остаться от видео, которое было крупнее этого. */
+    val savedQuality = currentItem?.let(videoQuality)?.takeIf { stops.contains(it) }
+    val selectedQuality = draftQuality ?: savedQuality ?: defaultQuality
+    
+    val frame = openedVideo?.let { selectedQuality?.frameFor(it.width, it.height) }
+    val estimate = openedVideo?.let {
+        selectedQuality?.estimateSizeBytes(it.durationMs, it.sizeBytes)
+    }
+    
+    /* Меньше двух ступеней — выбирать не из чего, и кнопки настройки нет. */
+    val openQuality: (() -> Unit)? = if (stops.size > 1 && !isQualityMode) {
+        { isQualityMode = true }
+    } else {
+        null
+    }
     
     /*
      * Переход создаётся до окна: его же спрашивает само окно, когда его закрывают
@@ -98,8 +164,18 @@ fun MediaPickerPreview(
         onDismissed = onDismiss
     )
     
+    /* «Назад» из настройки сжатия возвращает к полосе воспроизведения, не сохраняя. */
+    val goBack: () -> Unit = {
+        if (isQualityMode) {
+            draftQuality = null
+            isQualityMode = false
+        } else {
+            hero.dismiss()
+        }
+    }
+    
     Dialog(
-        onDismissRequest = hero::dismiss, properties = DialogProperties(
+        onDismissRequest = goBack, properties = DialogProperties(
             usePlatformDefaultWidth = false, decorFitsSystemWindows = false
         )
     ) {
@@ -146,6 +222,8 @@ fun MediaPickerPreview(
             }
         }
         
+        val isChromeVisible = !dismissDragState.isDragging && isUiVisible && hero.isSettled
+        
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -154,41 +232,61 @@ fun MediaPickerPreview(
                 .mediaHeroContainer(hero)
         ) {
             HorizontalPager(
-                state = pagerState, modifier = Modifier
+                state = pagerState, userScrollEnabled = !isQualityMode, modifier = Modifier
                     .fillMaxSize()
-                    .dismissDragGestures(
-                        state = dismissDragState,
-                        onTap = { isUiVisible = !isUiVisible },
-                        onDismiss = hero::dismiss
+                    .then(
+                        /* В настройке сжатия свайп вниз не закрывает окно. */
+                        if (isQualityMode) {
+                            Modifier
+                        } else {
+                            Modifier.dismissDragGestures(
+                                state = dismissDragState,
+                                onTap = { isUiVisible = !isUiVisible },
+                                onDismiss = hero::dismiss
+                            )
+                        }
                     )
                     .mediaHeroContent(hero)) { page ->
                 val item = media[page]
+                val isCurrentPage = pagerState.currentPage == page
                 
                 ZoomableMediaPage(
                     uri = item.uri,
                     isVideo = item.isVideo,
-                    isCurrentPage = pagerState.currentPage == page,
+                    isCurrentPage = isCurrentPage,
                     pagerState = pagerState,
                     onTap = { isUiVisible = !isUiVisible },
-                    isVideoUiVisible = !dismissDragState.isDragging && isUiVisible && hero.isSettled,
+                    isVideoUiVisible = isChromeVisible,
+                    isVideoSeekBarVisible = !isQualityMode,
+                    /* Размеры прочитаны только у открытого видео, у соседних их нет. */
+                    onVideoQualityClick = if (isCurrentPage) openQuality else null,
                     onShowVideoUiRequest = { isUiVisible = true },
                     onHeroContentSizeChanged = hero::updateContentSize)
             }
             
             AnimatedVisibility(
-                visible = !dismissDragState.isDragging && isUiVisible && hero.isSettled,
+                visible = isChromeVisible,
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopCenter),
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                val currentItem = media.getOrNull(pagerState.currentPage)
-                
                 TopAppBar(
-                    title = {}, navigationIcon = {
+                    title = {
+                        /*
+                         * Разрешение после сжатия и примерный вес. Пока настройку не
+                         * открыли, заголовка нет: место занимает само медиа.
+                         */
+                        if (isQualityMode && frame != null && estimate != null) {
+                            Text(
+                                text = "${frame.width} × ${frame.height}, ~${estimate.formatFileSize()}",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    }, navigationIcon = {
                         IconButton(
-                            onClick = hero::dismiss, colors = IconButtonDefaults.iconButtonColors(
+                            onClick = goBack, colors = IconButtonDefaults.iconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainer
                             )
                         ) {
@@ -213,6 +311,50 @@ fun MediaPickerPreview(
                         )
                     )
                 )
+            }
+            
+            /* Слайдер ступеней встаёт на место полосы воспроизведения. */
+            AnimatedVisibility(
+                visible = isChromeVisible && isQualityMode && selectedQuality != null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter),
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    VideoQualitySlider(
+                        stops = stops,
+                        selected = selectedQuality ?: stops.last(),
+                        onSelect = { draftQuality = it })
+                    
+                    IconButton(
+                        onClick = {
+                            val item = currentItem
+                            val quality = selectedQuality
+                            
+                            if (item != null && quality != null) {
+                                onVideoQualityChange(item, quality)
+                            }
+                            
+                            draftQuality = null
+                            isQualityMode = false
+                        }, colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(
+                                alpha = 0.2f
+                            )
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Check, contentDescription = null,
+                            tint = Color.White
+                        )
+                    }
+                }
             }
         }
     }
