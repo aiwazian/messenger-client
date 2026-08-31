@@ -119,15 +119,23 @@ class SendMessageWithFilesUseCase @Inject constructor(
         else userRepository.getMe().first().id
         
         // Доступ к выбранному файлу живёт не дольше задачи приложения, а повторы
-        // — сколько понадобится, поэтому грузим со своих копий.
+        // — сколько понадобится, поэтому грузим со своих копий. Фотографии копией
+        // служит результат сжатия — этим занимается сам обменник.
         val sourceUris = uris.mapIndexed { index, uri ->
             attachmentOutbox.keep(uri, "temp_${tempId}_$index")
         }
         
-        val attachments = uris.mapIndexed { index, uri ->
-            var fileName = uri.getFileName(context) ?: "file"
-            val fileSize = uri.getFileSize(context) ?: 0
-            val mimeType = uri.getFileType(context)
+        /*
+         * Описание вложения снимается с копии, а не с исходника: сжатая
+         * фотография уходит с другим именем, другим размером и другим
+         * расширением. Спроси их у исходника — в запросе на загрузку стояло бы
+         * photo.heic вместо photo.jpg и размер совсем другого файла, а сервер
+         * сверяет размер ещё на выдаче формы.
+         */
+        val attachments = sourceUris.mapIndexed { index, sourceUri ->
+            var fileName = sourceUri.getFileName(context) ?: "file"
+            val fileSize = sourceUri.getFileSize(context) ?: 0
+            val mimeType = sourceUri.getFileType(context)
             
             if (!fileName.contains('.')) {
                 val extFromMime =
@@ -152,7 +160,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 extension = fileName.substringAfterLast('.', ""),
                 status = DownloadStatus.UPLOADING,
                 progress = 0,
-                localUri = uri,
+                // Предпросмотр в чате остаётся на исходнике: он качественнее того,
+                // что уйдёт на сервер, и не исчезает вместе с копией после отправки.
+                localUri = uris[index],
                 type = attachmentType,
                 sortOrder = index
             )
