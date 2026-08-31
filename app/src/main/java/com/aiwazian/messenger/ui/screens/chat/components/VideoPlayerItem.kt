@@ -8,6 +8,8 @@ import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Hd
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -19,6 +21,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackParameters
@@ -36,6 +39,8 @@ import kotlinx.coroutines.delay
  * leaves the playback controls untouched.
  * @param isSeekBarVisible whether the playback row is shown. The compression
  * settings of the attachment preview take its place, so they hide it.
+ * @param qualityIcon the icon of the compression settings button, which tells the
+ * chosen quality apart without opening the settings.
  * @param onQualityClick opens the compression settings. Null hides the button,
  * which is the case everywhere but the attachment preview.
  * @param onContentSizeChanged called with the size of the video frame once it is
@@ -50,6 +55,7 @@ fun VideoPlayerItem(
     playbackSpeed: Float = 1.0f,
     contentModifier: Modifier = Modifier,
     isSeekBarVisible: Boolean = true,
+    qualityIcon: ImageVector = Icons.Outlined.Hd,
     onQualityClick: (() -> Unit)? = null,
     onPlayingChanged: (Boolean) -> Unit = {},
     onShowUiRequest: () -> Unit = {},
@@ -168,6 +174,7 @@ fun VideoPlayerItem(
                     }
                 },
                 isSeekBarVisible = isSeekBarVisible,
+                qualityIcon = qualityIcon,
                 onQualityClick = onQualityClick
             )
         }

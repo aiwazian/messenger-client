@@ -18,9 +18,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Hd
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import java.util.Locale
 
@@ -43,6 +44,9 @@ import java.util.Locale
  * @param isSeekBarVisible показывать ли полосу прокрутки. В настройке сжатия её
  * место занимает слайдер качества, но кнопка воспроизведения остаётся: видео
  * всё ещё можно смотреть, выбирая ступень.
+ * @param qualityIcon чем подписана кнопка настройки сжатия: Sd у мелких ступеней,
+ * Hd у 720p и выше. Сама ступень плееру не нужна, поэтому сюда приходит уже
+ * готовая иконка.
  * @param onQualityClick открытие настройки сжатия. null — кнопки нет: в чате
  * сжимать уже нечего, а у мелкого видео выбирать не из чего.
  */
@@ -58,6 +62,7 @@ fun PlayerUi(
     onPlayPauseClick: () -> Unit,
     modifier: Modifier = Modifier,
     isSeekBarVisible: Boolean = true,
+    qualityIcon: ImageVector = Icons.Outlined.Hd,
     onQualityClick: (() -> Unit)? = null
 ) {
     Box(
@@ -150,7 +155,7 @@ fun PlayerUi(
                     )
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Tune, contentDescription = null,
+                        imageVector = qualityIcon, contentDescription = null,
                         tint = Color.White
                     )
                 }
