@@ -114,13 +114,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -151,8 +149,10 @@ import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppPrimaryScrollableTabRow
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
+import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.ChatCard
+import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.screens.lock.LockScreen
@@ -372,39 +372,9 @@ private fun Content(
                 }
             }
             
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(innerPadding.calculateTopPadding())
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-                    .align(Alignment.TopCenter)
-            )
+            TopBarScrim(height = innerPadding.calculateTopPadding())
             
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(
-                        innerPadding.calculateBottomPadding() + WindowInsets().getBottom(
-                            LocalDensity.current
-                        ).dp
-                    )
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
-                            )
-                        )
-                    )
-                    .align(Alignment.BottomCenter)
-            )
+            BottomBarScrim(height = innerPadding.calculateBottomPadding())
         }
         
         if (uiState.showNotificationBottomSheet) {

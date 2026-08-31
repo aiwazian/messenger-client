@@ -4,9 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.profile
 
-import android.app.Activity
 import androidx.browser.customtabs.CustomTabsIntent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -21,7 +19,6 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -47,7 +44,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -57,11 +53,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -72,7 +66,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
-import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Chat
@@ -84,8 +77,10 @@ import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppSnackbar
+import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.ShareBottomSheet
+import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -185,21 +180,6 @@ fun ProfileScreen(
     }
     
     val scrollState = rememberScrollState()
-    val view = LocalView.current
-    val window = (view.context as Activity).window
-    val insetsController = WindowCompat.getInsetsController(window, view)
-    
-    val hasAvatar = uiState.avatars.any { it != null }
-    
-    DisposableEffect(hasAvatar) {
-        val previousState = insetsController.isAppearanceLightStatusBars
-        if (hasAvatar) {
-            insetsController.isAppearanceLightStatusBars = false
-        }
-        onDispose {
-            insetsController.isAppearanceLightStatusBars = previousState
-        }
-    }
     
     Scaffold(snackbarHost = {
         AppSnackbar(snackbarHostState)
@@ -209,7 +189,6 @@ fun ProfileScreen(
             title = uiState.title.asString(),
             subTitle = uiState.subTitle.asString(),
             actions = uiState.actions,
-            contentColor = if (hasAvatar) Color.White else Color.Unspecified
         )
     }) { innerPadding ->
         Box {
@@ -279,34 +258,9 @@ fun ProfileScreen(
                 }
             }
             
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(innerPadding.calculateTopPadding())
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Black.copy(alpha = 0.8f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
+            TopBarScrim(height = innerPadding.calculateTopPadding() + 10.dp)
             
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth()
-                    .height(innerPadding.calculateBottomPadding())
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                            )
-                        )
-                    )
-            )
+            BottomBarScrim(height = innerPadding.calculateBottomPadding())
         }
     }
     
@@ -763,7 +717,6 @@ private fun TopBar(
     title: String,
     subTitle: String,
     actions: List<TopBarAction>,
-    contentColor: Color = Color.Unspecified
 ) {
     val navBackStack = LocalNavBackStack.current
     
@@ -823,9 +776,9 @@ private fun TopBar(
             }
         }, colors = TopAppBarDefaults.topAppBarColors(
             containerColor = Color.Transparent,
-            navigationIconContentColor = contentColor,
-            actionIconContentColor = contentColor,
-            titleContentColor = contentColor,
+            navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+            actionIconContentColor = MaterialTheme.colorScheme.onSurface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
         )
     )
 }
