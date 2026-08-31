@@ -26,16 +26,19 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,6 +49,7 @@ import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppScaffold
+import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
@@ -60,13 +64,31 @@ import java.math.RoundingMode
 fun StorageScreen(viewModel: StorageViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
     
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collectLatest { event ->
-            when (event) {
-                is StorageUiEvent.CacheCleared -> {}
-                is StorageUiEvent.DatabaseCleared -> {}
-                is StorageUiEvent.Error -> {}
+            val message = when (event) {
+                // Размер показываем тем же formatFileSize, что и счётчики
+                // категорий выше: в одном экране два разных формата размера
+                // читались бы как ошибка.
+                is StorageUiEvent.CacheCleared -> context.getString(
+                    R.string.storage_cache_cleared, event.freedBytes.formatFileSize()
+                )
+                
+                StorageUiEvent.CacheAlreadyEmpty -> context.getString(
+                    R.string.storage_cache_already_empty
+                )
+                
+                StorageUiEvent.DatabaseCleared -> context.getString(
+                    R.string.storage_database_cleared
+                )
+                
+                is StorageUiEvent.Error -> event.message.asString(context)
             }
+            
+            snackbarHostState.showSnackbar(message)
         }
     }
     
@@ -86,6 +108,8 @@ fun StorageScreen(viewModel: StorageViewModel = hiltViewModel()) {
                     )
                 )
             )
+        }, snackbarHost = {
+            AppSnackbar(snackbarHostState)
         }) {
         Column(
             modifier = Modifier

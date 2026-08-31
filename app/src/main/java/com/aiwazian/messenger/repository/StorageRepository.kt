@@ -6,6 +6,7 @@ package com.aiwazian.messenger.repository
 
 import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.enums.DownloadStatus
+import com.aiwazian.messenger.ui.screens.settings.storage.CacheClearResult
 import com.aiwazian.messenger.ui.screens.settings.storage.CategoryStats
 import com.aiwazian.messenger.ui.screens.settings.storage.FileCategory
 import com.aiwazian.messenger.ui.screens.settings.storage.StorageFile
@@ -80,14 +81,39 @@ class StorageRepository @Inject constructor(
             }
         }
     
-    suspend fun clearFiles(files: List<StorageFile>) = withContext(Dispatchers.IO) {
-        files.forEach { storageFile ->
-            val file = File(storageFile.localUri)
-            if (file.exists()) {
-                file.delete()
+    /**
+     * Удаляет файлы с диска и записи о них из базы.
+     *
+     * @return сколько реально освободилось и сколько файлов отказались
+     * удаляться — без этого вызывающая сторона не отличит успешную
+     * очистку от полного отказа.
+     */
+    suspend fun clearFiles(files: List<StorageFile>): CacheClearResult =
+        withContext(Dispatchers.IO) {
+            var freedBytes = 0L
+            var failedCount = 0
+            
+            files.forEach { storageFile ->
+                val file = File(storageFile.localUri)
+                val exists = file.exists()
+                
+                // Размер спрашиваем у файла, а не у записи в базе: размер в базе
+                // — это то, что обещал сервер при загрузке, а на диске может лежать
+                // недокачанный файл.
+                val size = if (exists) file.length() else 0L
+                
+                if (exists && !file.delete()) {
+                    // Файл на месте, и удалить его не дали. Запись оставляем: без неё
+                    // файл остался бы на диске навсегда — его больше не нашла бы ни
+                    // очистка, ни подсчёт размеров.
+                    failedCount++
+                    return@forEach
+                }
+                
+                freedBytes += size
+                fileRepository.deleteFile(fileId = storageFile.id)
             }
             
-            fileRepository.deleteFile(fileId = storageFile.id)
+            CacheClearResult(freedBytes = freedBytes, failedCount = failedCount)
         }
-    }
 }
