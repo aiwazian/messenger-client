@@ -156,6 +156,19 @@ class ChatViewModel @Inject constructor(
     private val copyPolicy: ChatCopyPolicy
         get() = _uiState.value.copyPolicy
 
+    /**
+     * «Избранное» — личный чат с самим собой.
+     *
+     * Там нет собеседника, поэтому срок правки не считается: подменять смысл
+     * задним числом не перед кем, а самая старая заметка остаётся заметкой.
+     * Сервер проверяет то же условие в CanEditMessageGuard и MessagesService.
+     */
+    private val isSavedMessages: Boolean
+        get() {
+            val state = _uiState.value
+            return ChatType.fromId(state.chatId) == ChatType.PRIVATE && state.chatId == state.myId
+        }
+
     init {
         loadSettings()
         observeVoicePlayer()
@@ -203,7 +216,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    // region Initialization & Settings
     private fun loadSettings() {
         viewModelScope.launch {
             autoDownloadMedia = dataStoreManager.getAutoDownloadMedia().firstOrNull() ?: false
@@ -258,9 +270,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    // endregion
 
-    // region Chat Data Loading
     private fun loadChatInfo() {
         val chatId = _uiState.value.chatId
         viewModelScope.launch {
@@ -418,6 +428,10 @@ class ChatViewModel @Inject constructor(
      * «Очистить историю» здесь больше нет: в канале и группе она живёт в
      * «Управлении каналом» и «Управлении группой» рядом с удалением, где видно,
      * что чистится вся история и сразу для всех участников.
+     *
+     * Троеточие возвращается всегда, даже с пустым списком действий: «Медиа»,
+     * «Поиск» и уведомления живут внутри этого же меню, и у владельца канала без
+     * него не осталось бы точки входа ни туда, ни туда.
      */
     private fun createTopBarActions(
         isOwner: Boolean,
@@ -447,11 +461,6 @@ class ChatViewModel @Inject constructor(
             )
         }
 
-        /*
-         * Троеточие показываем всегда, даже с пустым списком действий: «Медиа»,
-         * «Поиск» и уведомления живут внутри этого же меню, и у владельца канала
-         * без него не осталось бы точки входа ни туда, ни туда.
-         */
         return listOf(TopBarAction(icon = Icons.Rounded.MoreVert, dropdownActions = actions))
     }
 
@@ -616,7 +625,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    // region Прокрутка к сообщению и догрузка окна
     fun loadOlderMessages() {
         val pager = messagePager ?: return
         viewModelScope.launch { pager.loadBefore() }
@@ -724,11 +732,9 @@ class ChatViewModel @Inject constructor(
             updateChatItems(lastMessages)
         }
     }
-    // endregion
 
-    // region Поиск сообщений в чате
+    /** Поиск всегда открывается в режиме «В чате»: список — это уже выбор пользователя. */
     fun startMessageSearch() = _uiState.update {
-        /* Поиск всегда открывается в режиме «В чате»: список — это уже выбор пользователя. */
         it.copy(isMessageSearchActive = true, isMessageSearchListMode = false)
     }
 
@@ -793,15 +799,16 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /** Переключает «Списком» и «В чате». */
+    /**
+     * Переключает «Списком» и «В чате».
+     *
+     * Возврат в чат без выбранного результата бесполезен, поэтому показывается то
+     * же самое новое совпадение, что и сразу после ввода запроса.
+     */
     fun toggleMessageSearchDisplayMode() {
         val goingToChat = _uiState.value.isMessageSearchListMode
         _uiState.update { it.copy(isMessageSearchListMode = !goingToChat) }
 
-        /*
-         * Возврат в чат без выбранного результата бесполезен: показываем то же
-         * самое новое совпадение, что и сразу после ввода запроса.
-         */
         if (goingToChat && _uiState.value.messageSearchIndex < 0) selectSearchResult(0)
     }
 
@@ -878,7 +885,6 @@ class ChatViewModel @Inject constructor(
                     messageSearchResults = if (reset) page.items else it.messageSearchResults + page.items,
                     hasMoreSearchResults = page.nextCursorId != null,
                     isSearchingMessages = false,
-                    /* Со второй страницей total не приходит: сервер считает его один раз. */
                     messageSearchTotal = page.total ?: it.messageSearchTotal,
                     isMessageSearchTotalExact = if (reset) page.totalIsExact
                     else it.isMessageSearchTotalExact,
@@ -887,7 +893,6 @@ class ChatViewModel @Inject constructor(
             }
             loadSearchSenders(page.items)
 
-            /* Сразу показываем самое новое совпадение, как при переходе по ответу. */
             if (reset && page.items.isNotEmpty()) {
                 if (_uiState.value.isMessageSearchListMode) {
                     _uiState.update { it.copy(messageSearchIndex = 0) }
@@ -932,7 +937,6 @@ class ChatViewModel @Inject constructor(
                 }
             }
     }
-    // endregion
 
     private companion object {
         const val PAGE_SIZE = 50
@@ -942,9 +946,11 @@ class ChatViewModel @Inject constructor(
 
         /** Размер страницы результатов поиска: больше 50 сервер за раз не отдаёт. */
         const val SEARCH_PAGE_SIZE = 50
+
+        /** Сколько времени есть на правку сообщения везде, кроме «Избранного». */
+        const val EDIT_WINDOW_MS = 24 * 60 * 60 * 1000L
     }
 
-    // region Ответ на сообщение
     fun startReply(message: Message) {
         if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
 
@@ -1015,9 +1021,7 @@ class ChatViewModel @Inject constructor(
         if (originChatId == state.chatId) return true
         return ChatType.fromId(state.chatId) == ChatType.PRIVATE && originChatId == state.myId
     }
-    // endregion
 
-    // region Пересылка сообщения
     fun startForward(message: Message) {
         if (!copyPolicy.canForward) return
         if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
@@ -1112,9 +1116,7 @@ class ChatViewModel @Inject constructor(
             _uiEffect.emit(ChatUiEffect.NavigateToChat(chatId = forwardedFrom.chatId))
         }
     }
-    // endregion
 
-    // region Message Actions
     fun changeText(newText: String) {
         _uiState.update { it.copy(messageText = newText) }
 
@@ -1189,18 +1191,19 @@ class ChatViewModel @Inject constructor(
             }
     }
 
+    /**
+     * Повторная отправка сообщения, которое не ушло.
+     *
+     * Работает только для текста: исходных Uri вложений здесь уже нет, поэтому
+     * сообщение с файлами повторить нечем.
+     */
     fun retrySendMessage(message: Message) {
         viewModelScope.launch {
-            if (message.attachments.isNotEmpty()) {
-                // For files, we might need a more complex retry logic depending on where it failed.
-                // For now, let's just re-trigger the file sending logic.
-                // We'd need the original URIs which we don't have here.
-                // This is a known limitation.
-            } else {
-                message.text?.let { text ->
-                    chatRepository.deleteLocalMessage(message.id)
-                    onSendMessageInternal(text, message.replyTo)
-                }
+            if (message.attachments.isNotEmpty()) return@launch
+
+            message.text?.let { text ->
+                chatRepository.deleteLocalMessage(message.id)
+                onSendMessageInternal(text, message.replyTo)
             }
         }
     }
@@ -1217,7 +1220,7 @@ class ChatViewModel @Inject constructor(
         if (message.forwardedFrom != null) return
 
         val now = System.currentTimeMillis()
-        if (now - message.sendTime > 24 * 60 * 60 * 1000L) {
+        if (!isSavedMessages && now - message.sendTime > EDIT_WINDOW_MS) {
             viewModelScope.launch {
                 _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.edit_time_limit_error)))
             }
@@ -1286,9 +1289,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    // endregion
 
-    // region Join / Leave / Delete
     fun onJoinClicked() {
         viewModelScope.launch {
             val chatId = _uiState.value.chatId
@@ -1346,9 +1347,7 @@ class ChatViewModel @Inject constructor(
             hideDeleteMessageDialog()
         }
     }
-    // endregion
 
-    // region Dialog Management
     fun showDeleteChatDialog() =
         _uiState.update { it.copy(showDeleteChatDialog = true, deleteForRecipient = false) }
 
@@ -1365,9 +1364,7 @@ class ChatViewModel @Inject constructor(
     fun hideLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = false) }
     fun setDeleteForRecipient(delete: Boolean) =
         _uiState.update { it.copy(deleteForRecipient = delete) }
-    // endregion
 
-    // region File & Media Actions
     fun onFileAction(message: Message, file: MessageAttachment, action: FileAction) {
         when (action) {
             FileAction.DOWNLOAD -> downloadFile(message, file)
@@ -1507,9 +1504,7 @@ class ChatViewModel @Inject constructor(
             if (successCount == 0) vibrationManager.vibrate(VibrationPattern.Error)
         }
     }
-    // endregion
 
-    // region Utilities
     fun copyToClipboard(text: String?) {
         if (!copyPolicy.canCopyText) return
         text?.let { clipboardService.copy(it) }
@@ -1544,9 +1539,7 @@ class ChatViewModel @Inject constructor(
             isProcessingInvite = false
         )
     }
-    // endregion
 
-    // region Invite Links
     fun onLinkClicked(url: String) {
         val match = RegexPatterns.INVITE_LINK.find(url)
         if (match == null) {
@@ -1627,9 +1620,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-    // endregion
 
-    // region Voice Recording
     fun startRecording() {
         if (_uiState.value.isRecording) return
         val file = audioRecorderManager.startRecording()
@@ -1697,7 +1688,6 @@ class ChatViewModel @Inject constructor(
         }
         vibrationManager.vibrate(VibrationPattern.TactileResponse)
     }
-    // endregion
 
     fun showBlockDialog() {
         _uiState.update { it.copy(showBlockDialog = true) }
