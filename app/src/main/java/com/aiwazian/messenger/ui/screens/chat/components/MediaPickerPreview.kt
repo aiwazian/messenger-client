@@ -409,6 +409,7 @@ fun MediaPickerPreview(
                             isCurrentPage = isCurrentPage,
                             pagerState = pagerState,
                             onTap = {},
+                            isPageChangeEnabled = !isEditing,
                             isVideoUiVisible = isChromeVisible,
                             isVideoSeekBarVisible = !isEditing,
                             videoQualityIcon = qualityIcon,
