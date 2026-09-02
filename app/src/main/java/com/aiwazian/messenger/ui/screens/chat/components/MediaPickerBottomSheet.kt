@@ -535,10 +535,15 @@ private fun CaptionRow(
                 .align(Alignment.CenterVertically),
             textStyle = MaterialTheme.typography.bodyLarge.copy(
                 color = MaterialTheme.colorScheme.onSurface,
-                lineHeight = 16.sp
+                lineHeight = 16.sp,
+                fontSize = 16.sp
+            ),
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Sentences
             ),
             maxLines = 5,
             minLines = 1,
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             decorationBox = { innerTextField ->
                 Box(
                     modifier = Modifier.padding(
@@ -548,18 +553,14 @@ private fun CaptionRow(
                     if (caption.isEmpty()) {
                         Text(
                             text = stringResource(R.string.media_picker_caption),
-                            style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 16.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 16.sp,
+                            fontSize = 16.sp
                         )
                     }
-                    
                     innerTextField()
                 }
             },
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.Sentences
-            )
         )
         
         IconButton(onClick = onSendClick) {

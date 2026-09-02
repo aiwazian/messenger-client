@@ -451,7 +451,8 @@ private fun InputMessage(
                             },
                         textStyle = TextStyle.Default.copy(
                             color = MaterialTheme.colorScheme.onSurface,
-                            lineHeight = 16.sp
+                            lineHeight = 16.sp,
+                            fontSize = 16.sp
                         ),
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.Sentences
@@ -469,8 +470,9 @@ private fun InputMessage(
                                 if (textFieldState.text.isEmpty() && !uiState.isRecording) {
                                     Text(
                                         text = stringResource(R.string.message),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         lineHeight = 16.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        fontSize = 16.sp
                                     )
                                 }
                                 innerTextField()

@@ -12,6 +12,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Close
@@ -46,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
@@ -133,7 +136,7 @@ fun MessageBubble(
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
     var showReadersDropdown by remember { mutableStateOf(false) }
-    val alignment = if (item.isMine) Arrangement.End else Arrangement.Start
+    val alignment = if (item.isMine) Alignment.CenterEnd else Alignment.CenterStart
     val isSavedMessages =
         item.chatType == ChatType.PRIVATE && item.message.senderId == item.message.chatId
     
@@ -149,23 +152,33 @@ fun MessageBubble(
         onThresholdReached = { onSwipeThresholdReached?.invoke() },
         modifier = modifier.background(backgroundColor)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = alignment,
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .combinedClickable(
                     onClick = { if (showContextMenu) expanded = true },
-                    onLongClick = { },
                     indication = null,
-                    interactionSource = remember { MutableInteractionSource() })
+                    interactionSource = remember { MutableInteractionSource() }),
+            contentAlignment = alignment
         ) {
+            val dynamicMaxWidth = when {
+                maxWidth < 360.dp -> 280.dp
+                
+                maxWidth <= 411.dp -> 310.dp
+                
+                maxWidth < 600.dp -> 360.dp
+                
+                maxWidth < 840.dp -> 440.dp
+                
+                else -> 520.dp
+            }
+            
             val containerColor =
                 if (item.isMine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
             
             Box(
                 modifier = Modifier
-                    .widthIn(min = 90.dp, max = 300.dp)
+                    .widthIn(min = 90.dp, max = dynamicMaxWidth)
                     .padding(horizontal = 8.dp)
                     .clip(MaterialTheme.shapes.large)
                     .background(containerColor)
@@ -247,20 +260,6 @@ fun MessageBubble(
                         it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF
                     }
                     if (mediaAttachments.isNotEmpty()) {
-                        /*
-                         * Форма единственного вложения известна до загрузки картинки:
-                         * размеры кадра приходят вместе с файлом. По ним карточка
-                         * заранее получает нужную высоту — квадрат под квадратной
-                         * картинкой, широкая полоса под горизонтальным видео, — и лента
-                         * не прыгает в момент, когда картинка догрузилась.
-                         *
-                         * У нескольких вложений соотношение не считается: там сетка
-                         * делит общую площадь между плитками, и навязывать всем форму
-                         * одного из них нельзя.
-                         *
-                         * Пустые размеры — штатный случай: у медиа, отправленного до
-                         * этой правки, их нет, и карточка рисуется по-старому.
-                         */
                         val singleMediaRatio = mediaAttachments.singleOrNull()?.let { attachment ->
                             val frameWidth = attachment.width ?: return@let null
                             val frameHeight = attachment.height ?: return@let null
@@ -270,7 +269,7 @@ fun MessageBubble(
                         }
                         
                         ImageGridCustomLayout(
-                            Modifier.heightIn(max = MediaGridMaxHeight),
+                            modifier = Modifier.heightIn(max = MediaGridMaxHeight),
                             singleItemAspectRatio = singleMediaRatio,
                             content = {
                                 mediaAttachments.forEach { attachment ->
@@ -278,12 +277,6 @@ fun MessageBubble(
                                         attachment.status == DownloadStatus.UPLOADING ||
                                         attachment.status == DownloadStatus.DOWNLOADING
                                     ) {
-                                        /*
-                                         * Место под картинку видно до самой картинки:
-                                         * подложка заливается цветом, иначе на месте
-                                         * вложения висел бы один индикатор посреди пузыря,
-                                         * и форма карточки не читалась бы вовсе.
-                                         */
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxSize()
@@ -402,7 +395,6 @@ fun MessageBubble(
                     )
                 }
                 
-                /* Свежие просмотры сверху: порядок с сервера мог быть нарушен событиями в реалтайме. */
                 val readers = remember(item.readInfo) {
                     item.readInfo.orEmpty().sortedByDescending { it.readAt }
                 }
@@ -422,7 +414,6 @@ fun MessageBubble(
                         onDismissRequest = { showReadersDropdown = false },
                         properties = PopupProperties(focusable = true)
                     ) {
-                        /* Возврат в меню сообщения: попапы независимы, поэтому просто меняем флаги. */
                         AppDropdownMenuItem(
                             leadingIcon = {
                                 Icon(
@@ -503,11 +494,6 @@ private fun buildDropdownActions(
 ): List<DropdownMenuAction> {
     val actions = mutableListOf<DropdownMenuAction>()
     
-    /*
-     * Пункт с точным временем правки живёт столько же, сколько запись в Redis, —
-     * трое суток. Дальше сервер отдаёт editedAt пустым и показывать нечего: сам
-     * факт правки остаётся виден по подписи «изменено» в самом сообщении.
-     */
     if (item.message.editedAt != null) {
         actions.add(
             DropdownMenuAction(
@@ -524,11 +510,6 @@ private fun buildDropdownActions(
         val readInfo = item.readInfo
         
         if (item.chatType == ChatType.PRIVATE) {
-            /*
-             * Строка показывается только пока известно точное время прочтения: оно живёт
-             * трое суток в Redis. Дальше пункт исчезает целиком — сам факт прочтения
-             * виден по двум галочкам в самом сообщении, и повторять его словами нечего.
-             */
             val readAt = readInfo?.maxOfOrNull { it.readAt }
             
             if (readAt != null) {
@@ -577,14 +558,6 @@ private fun buildDropdownActions(
     return actions
 }
 
-/**
- * Сетка вложений в пузыре сообщения.
- *
- * @param singleItemAspectRatio ширина, делённая на высоту кадра единственного
- * вложения. Только по нему карточка может получить свою форму ещё до того,
- * как картинка загружена: сама картинка о своих размерах сообщает слишком
- * поздно. Пустое значение или несколько вложений — старое поведение.
- */
 @Composable
 fun ImageGridCustomLayout(
     modifier: Modifier = Modifier,
@@ -593,11 +566,17 @@ fun ImageGridCustomLayout(
     content: @Composable () -> Unit
 ) {
     val gap = with(LocalDensity.current) { spacing.toPx() }
+    val density = LocalDensity.current
+    val currentLarge = MaterialTheme.shapes.large
+    
+    val newCornerDp = with(density) {
+        currentLarge.topStart.toPx(Size.Unspecified, density).toDp() - 2.dp
+    }
     
     Layout(
         content = content, modifier = modifier
             .padding(spacing)
-            .clip(MaterialTheme.shapes.large)
+            .clip(currentLarge.copy(all = CornerSize(newCornerDp)))
     ) { measurables, constraints ->
         val count = measurables.size.coerceAtMost(10)
         if (count == 0) return@Layout layout(0, 0) {}
@@ -605,15 +584,6 @@ fun ImageGridCustomLayout(
         val width = (if (constraints.hasBoundedWidth) constraints.maxWidth
         else MediaGridFallbackWidth.roundToPx()).coerceIn(0, MaxLayoutDimension)
         
-        /*
-         * У единственного вложения высота считается из его же соотношения сторон, а
-         * не берётся максимальной: иначе под квадратной картинкой всё равно
-         * оставался бы прямоугольник во всю доступную высоту, а горизонтальное
-         * видео обрезалось бы по высоте.
-         *
-         * Границы нужны для крайностей: панорама иначе выродилась бы в полоску
-         * высотой в несколько пикселей, а скриншот в полный рост занял бы полэкрана.
-         */
         val rawHeight =
             if (count == 1 && singleItemAspectRatio != null && singleItemAspectRatio > 0f) {
                 val maxHeight = if (constraints.hasBoundedHeight) constraints.maxHeight
@@ -752,11 +722,6 @@ private fun Placeable.PlacementScope.placeGrid(
 private fun VideoThumbnail(videoUri: Uri, onClick: () -> Unit) {
     val context = LocalContext.current
     
-    /*
-     * Миниатюра гаснет целиком, вместе с подписью, пока это же видео открыто во
-     * весь экран: рядом с поднятым кадром его копия читается как подмена, а не
-     * как перенос. Место в сетке при этом остаётся — в него и возвращаемся.
-     */
     Box(
         modifier = Modifier
             .clickable(onClick = onClick)
