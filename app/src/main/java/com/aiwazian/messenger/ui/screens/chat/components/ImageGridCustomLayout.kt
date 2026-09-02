@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.chat.components
 
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -18,7 +19,10 @@ import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.roundToInt
 
 private val MediaGridFallbackWidth = 264.dp
@@ -28,10 +32,24 @@ private val MediaGridMaxHeight = 400.dp
 
 private const val MaxLayoutDimension = 16_777_215
 
+private const val SquareRatioTolerance = 0.05f
+
+private enum class MediaShape { LANDSCAPE, PORTRAIT, SQUARE }
+
+/**
+ * Сетка вложений сообщения.
+ *
+ * @param maxWidth предел ширины всей сетки. Внутри Column(IntrinsicSize.Max) сетка
+ * меряется без верхней границы и без этого предела садится на запасные 264.dp
+ * вместо всей доступной ширины пузыря.
+ * @param itemSizes размеры кадров в пикселях в том же порядке, что и content. По ним
+ * подбирается высота одиночного кадра и раскладка пары. Неизвестный размер — IntSize.Zero.
+ */
 @Composable
 fun ImageGridCustomLayout(
     spacing: Dp = 2.dp,
-    singleItemAspectRatio: Float? = null,
+    maxWidth: Dp = MediaGridFallbackWidth,
+    itemSizes: List<IntSize> = emptyList(),
     content: @Composable () -> Unit
 ) {
     val gap = with(LocalDensity.current) { spacing.toPx() }
@@ -44,6 +62,7 @@ fun ImageGridCustomLayout(
     
     Layout(
         content = content, modifier = Modifier
+            .widthIn(max = maxWidth)
             .heightIn(max = MediaGridMaxHeight)
             .padding(spacing)
             .clip(currentLarge.copy(all = CornerSize(newCornerDp)))
@@ -51,20 +70,40 @@ fun ImageGridCustomLayout(
         val count = measurables.size.coerceAtMost(10)
         if (count == 0) return@Layout layout(0, 0) {}
         
-        val width = (if (constraints.hasBoundedWidth) constraints.maxWidth
-        else MediaGridFallbackWidth.roundToPx()).coerceIn(0, MaxLayoutDimension)
+        val fallbackWidth = (maxWidth - spacing * 2).roundToPx().coerceAtLeast(0)
         
-        val rawHeight =
-            if (count == 1 && singleItemAspectRatio != null && singleItemAspectRatio > 0f) {
-                val maxHeight = if (constraints.hasBoundedHeight) constraints.maxHeight
-                else MediaGridMaxHeight.roundToPx()
-                val minHeight = MediaGridMinHeight.roundToPx().coerceAtMost(maxHeight)
+        val width = (if (constraints.hasBoundedWidth) constraints.maxWidth
+        else fallbackWidth).coerceIn(0, MaxLayoutDimension)
+        
+        val maxHeight = if (constraints.hasBoundedHeight) constraints.maxHeight
+        else MediaGridMaxHeight.roundToPx()
+        val minHeight = MediaGridMinHeight.roundToPx().coerceAtMost(maxHeight)
+        
+        val firstRatio = itemSizes.getOrNull(0)?.aspectRatioOrNull()
+        val secondRatio = itemSizes.getOrNull(1)?.aspectRatioOrNull()
+        
+        val stackPair = count == 2 && shouldStackPairVertically(
+            itemSizes.getOrNull(0) ?: IntSize.Zero, itemSizes.getOrNull(1) ?: IntSize.Zero
+        )
+        
+        val rawHeight = when {
+            count == 1 && firstRatio != null -> {
+                (width / firstRatio).roundToInt().coerceIn(minHeight, maxHeight)
+            }
+            
+            count == 2 && firstRatio != null && secondRatio != null -> {
+                val cellRatio = (firstRatio + secondRatio) / 2f
+                val total = if (stackPair) (width / cellRatio) * 2f + gap
+                else ((width - gap) / 2f) / cellRatio
                 
-                (width / singleItemAspectRatio).roundToInt().coerceIn(minHeight, maxHeight)
-            } else {
+                total.roundToInt().coerceIn(minHeight, maxHeight)
+            }
+            
+            else -> {
                 if (constraints.hasBoundedHeight) constraints.maxHeight
                 else (width * 0.75f).toInt()
             }
+        }
         
         val height = rawHeight.coerceIn(0, MaxLayoutDimension)
         
@@ -76,12 +115,22 @@ fun ImageGridCustomLayout(
                 }
                 
                 2 -> {
-                    val itemW = (width - gap) / 2
-                    val itemConstraints = Constraints.fixed(itemW.toInt(), height)
-                    
-                    measurables.take(2).forEachIndexed { i, m ->
-                        val p = m.measure(itemConstraints)
-                        p.place((i * (itemW + gap)).toInt(), 0)
+                    if (stackPair) {
+                        val itemH = (height - gap) / 2
+                        val itemConstraints = Constraints.fixed(width, itemH.toInt())
+                        
+                        measurables.take(2).forEachIndexed { i, m ->
+                            val p = m.measure(itemConstraints)
+                            p.place(0, (i * (itemH + gap)).toInt())
+                        }
+                    } else {
+                        val itemW = (width - gap) / 2
+                        val itemConstraints = Constraints.fixed(itemW.toInt(), height)
+                        
+                        measurables.take(2).forEachIndexed { i, m ->
+                            val p = m.measure(itemConstraints)
+                            p.place((i * (itemW + gap)).toInt(), 0)
+                        }
                     }
                 }
                 
@@ -159,6 +208,42 @@ fun ImageGridCustomLayout(
             }
         }
     }
+}
+
+private fun IntSize.aspectRatioOrNull(): Float? =
+    if (width > 0 && height > 0) width.toFloat() / height.toFloat() else null
+
+private fun IntSize.mediaShape(): MediaShape? {
+    val ratio = aspectRatioOrNull() ?: return null
+    
+    return when {
+        abs(ratio - 1f) <= SquareRatioTolerance -> MediaShape.SQUARE
+        ratio > 1f -> MediaShape.LANDSCAPE
+        else -> MediaShape.PORTRAIT
+    }
+}
+
+/**
+ * Ставить ли пару вложений друг под другом (true) или рядом (false).
+ *
+ * Горизонтальный кадр шире, чем выше, поэтому пара таких ложится сверху и снизу,
+ * а пара вертикальных — слева и справа: так ячейка повторяет форму самого кадра
+ * и его почти не приходится обрезать. Квадраты идут вниз: два квадрата в ряд дают
+ * полоску в половину ширины пузыря. Если формы разные, спор решает более длинный
+ * кадр: сравниваются длинные стороны обоих в пикселях, и раскладку задаёт ориентация
+ * победителя. Размер хотя бы одного кадра неизвестен — остаётся раскладка в ряд.
+ */
+private fun shouldStackPairVertically(first: IntSize, second: IntSize): Boolean {
+    val firstShape = first.mediaShape() ?: return false
+    val secondShape = second.mediaShape() ?: return false
+    
+    if (firstShape == secondShape) return firstShape != MediaShape.PORTRAIT
+    
+    val longestShape =
+        if (max(first.width, first.height) >= max(second.width, second.height)) firstShape
+        else secondShape
+    
+    return longestShape != MediaShape.PORTRAIT
 }
 
 private fun Placeable.PlacementScope.placeGrid(
