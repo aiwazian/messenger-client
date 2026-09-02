@@ -20,9 +20,11 @@ import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.MessageStatus
 import com.aiwazian.messenger.enums.MessageType
+import com.aiwazian.messenger.extensions.MediaDimensions
 import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
+import com.aiwazian.messenger.extensions.getMediaDimensions
 import com.aiwazian.messenger.network.dto.AttachmentInputDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.repository.ChatRepository
@@ -142,6 +144,13 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 else -> AttachmentType.FILE
             }
             
+            /*
+             * Кадр измеряется тут же, а не после загрузки: карточка вложения должна
+             * сразу получить нужную форму, иначе пузырёк пересчитался бы в момент,
+             * когда сервер ответил и размеры дошли до базы.
+             */
+            val frame = uri.getMediaDimensions(context, mimeType)
+            
             MessageAttachment(
                 fileId = "temp_${tempId}_$index",
                 messageId = tempId,
@@ -154,7 +163,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 // что уйдёт на сервер, и не исчезает вместе с копией после отправки.
                 localUri = uri,
                 type = attachmentType,
-                sortOrder = index
+                sortOrder = index,
+                width = frame?.width,
+                height = frame?.height
             )
         }
         
@@ -197,12 +208,22 @@ class SendMessageWithFilesUseCase @Inject constructor(
             replyTo = replyTo
         )
         
-        syncSizes(attachments, sourceUris)
+        /*
+         * На сервер уходит копия, поэтому и кадр измеряется по ней: у сжатого
+         * видео стороны мельче исходных, и получатель должен увидеть именно те,
+         * что ему придут.
+         */
+        val sourceFrames = sourceUris.map { uri ->
+            uri.getMediaDimensions(context, uri.getFileType(context))
+        }
+        
+        syncLocalFiles(attachments, sourceUris, sourceFrames)
         
         val uploadResults = mutableListOf<AttachmentInputDto>()
         
         attachments.forEachIndexed { index, attachment ->
             val sourceUri = sourceUris[index]
+            val frame = sourceFrames[index]
             
             /*
              * Имя и mime-тип берутся с копии, а не из записи в базе: сжатое видео
@@ -239,7 +260,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
                         name = fileName,
                         size = fileSize,
                         mimeType = mimeType,
-                        category = attachment.type
+                        category = attachment.type,
+                        width = frame?.width,
+                        height = frame?.height
                     )
                 )
                 
@@ -318,6 +341,33 @@ class SendMessageWithFilesUseCase @Inject constructor(
             sourceUris.forEach { uri -> attachmentOutbox.release(uri) }
             
             chatRepository.updateMessageId(tempId, it.id)
+            
+            /*
+             * Статус меняется здесь же, вслед за идентификатором.
+             *
+             * Раньше менялся только идентификатор, а статус так и оставался
+             * SENDING — тем самым, что выставлен до загрузки. Сообщение с фото
+             * или видео всё время считалось отправляемым: в меню висела
+             * «Отменить отправку», уже ничего не отменявшая, и ровно поэтому не
+             * было ни пересылки, ни удаления, ни правки — пункты меню и ответ
+             * свифом требуют SENT. При перезаходе в чат сообщение перечитывалось
+             * с сервера уже отправленным — именно поэтому после перезахода всё
+             * работало.
+             */
+            chatRepository.updateMessageStatus(it.id, MessageStatus.SENT)
+            
+            /*
+             * Файлы тоже перестают быть «загружаемыми».
+             *
+             * Подтверждённое сервером сообщение в базу не пишется, поэтому
+             * статус файла навсегда оставался UPLOADING: на месте картинки висел
+             * индикатор с крестиком вместо самой картинки, а «Сохранить в
+             * Загрузки» не появлялось вовсе.
+             */
+            uploadResults.forEach { uploaded ->
+                fileRepository.updateFileStatus(uploaded.fileId, DownloadStatus.UPLOADED)
+            }
+            
             val localChat = chatRepository.getById(chatId).firstOrNull()
             
             if (localChat == null) {
@@ -358,20 +408,38 @@ class SendMessageWithFilesUseCase @Inject constructor(
     }
     
     /**
-     * Подтягивает вес записи к весу копии.
+     * Подтягивает запись о файле к копии, которая реально уйдёт на сервер: вес
+     * и размеры кадра.
      *
      * В чате у сжатого видео иначе висел бы вес исходника — всё время, пока
      * идёт загрузка, и потом число прыгало бы на втрое после ответа сервера.
+     * С размерами кадра ровно та же история: по ним строится карточка
+     * вложения, и после сжатия её форма обязана совпасть с тем, что увидит
+     * получатель.
+     *
+     * Пустым кадром ничего не затирается: если копию прочитать не удалось,
+     * лучше оставить размеры исходника, чем оставить карточку без формы.
      */
-    private suspend fun syncSizes(
+    private suspend fun syncLocalFiles(
         attachments: List<MessageAttachment>,
-        sourceUris: List<Uri>
+        sourceUris: List<Uri>,
+        frames: List<MediaDimensions?>
     ) {
         attachments.forEachIndexed { index, attachment ->
             val size = sizeOf(sourceUris[index])
             
             if (size > 0 && size != attachment.size) {
                 fileRepository.updateFileSize(attachment.fileId, size)
+            }
+            
+            val frame = frames[index] ?: return@forEachIndexed
+            
+            if (frame.width != attachment.width || frame.height != attachment.height) {
+                fileRepository.updateFileDimensions(
+                    attachment.fileId,
+                    frame.width,
+                    frame.height
+                )
             }
         }
     }
