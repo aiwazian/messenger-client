@@ -35,6 +35,7 @@ import com.aiwazian.messenger.utils.PendingSendStore
 import com.aiwazian.messenger.utils.RetryPolicy
 import com.aiwazian.messenger.utils.UploadManager
 import com.aiwazian.messenger.utils.media.MediaCompressionConfig
+import com.aiwazian.messenger.utils.media.MediaTransform
 import com.aiwazian.messenger.utils.media.VideoQuality
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -96,10 +97,11 @@ class SendMessageWithFilesUseCase @Inject constructor(
         text: String?,
         tempId: Long = -System.currentTimeMillis(),
         replyTo: MessageReplyPreview? = null,
-        videoQualities: Map<Uri, VideoQuality> = emptyMap()
+        videoQualities: Map<Uri, VideoQuality> = emptyMap(),
+        mediaTransforms: Map<Uri, MediaTransform> = emptyMap()
     ): Result<Message> {
         val sending = appScope.async(start = CoroutineStart.LAZY) {
-            send(chatId, uris, text, tempId, replyTo, videoQualities)
+            send(chatId, uris, text, tempId, replyTo, videoQualities, mediaTransforms)
         }
         
         running.put(tempId, sending)?.cancel()
@@ -120,7 +122,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         text: String?,
         tempId: Long,
         replyTo: MessageReplyPreview?,
-        videoQualities: Map<Uri, VideoQuality>
+        videoQualities: Map<Uri, VideoQuality>,
+        mediaTransforms: Map<Uri, MediaTransform>
     ): Result<Message> {
         val myId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
@@ -188,12 +191,16 @@ class SendMessageWithFilesUseCase @Inject constructor(
         // Доступ к выбранному файлу живёт не дольше задачи приложения, а повторы
         // — сколько понадобится, поэтому грузим со своих копий. Фотографиям и
         // видео копией служит результат сжатия — этим занимается сам обменник.
+        //
+        // Правки кадра из предпросмотра запекаются в ту же копию: повтор и
+        // досылка после перезапуска берут её готовой и не поворачивают кадр второй раз.
         val sourceUris = uris.mapIndexed { index, uri ->
             attachmentOutbox.keep(
                 uri = uri,
                 key = "temp_${tempId}_$index",
                 videoQuality = videoQualities[uri]
-                    ?: MediaCompressionConfig.VIDEO_DEFAULT_QUALITY
+                    ?: MediaCompressionConfig.VIDEO_DEFAULT_QUALITY,
+                transform = mediaTransforms[uri] ?: MediaTransform.None
             )
         }
         
@@ -211,13 +218,24 @@ class SendMessageWithFilesUseCase @Inject constructor(
         /*
          * На сервер уходит копия, поэтому и кадр измеряется по ней: у сжатого
          * видео стороны мельче исходных, и получатель должен увидеть именно те,
-         * что ему придут.
+         * что ему придут. Поворот учитывать отдельно не нужно: он уже запечён в
+         * пиксели копии, и стороны читаются уже развёрнутыми.
          */
         val sourceFrames = sourceUris.map { uri ->
             uri.getMediaDimensions(context, uri.getFileType(context))
         }
         
-        syncLocalFiles(attachments, sourceUris, sourceFrames)
+        /*
+         * Локальной записи стороны копии достаются только у неповёрнутых
+         * вложений. Пузырёк рисует исходник, и развёрнутые стороны положили бы
+         * карточку поперёк того, что в ней нарисовано. Повёрнутый кадр приходит в
+         * чат с сервера при следующем чтении переписки — вместе со сторонами.
+         */
+        val localFrames = sourceFrames.mapIndexed { index, frame ->
+            if (mediaTransforms[uris[index]]?.swapsSides == true) null else frame
+        }
+        
+        syncLocalFiles(attachments, sourceUris, localFrames)
         
         val uploadResults = mutableListOf<AttachmentInputDto>()
         
@@ -419,6 +437,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
      *
      * Пустым кадром ничего не затирается: если копию прочитать не удалось,
      * лучше оставить размеры исходника, чем оставить карточку без формы.
+     * Этим же пользуется поворот кадра: у повёрнутого вложения стороны
+     * локально остаются исходными — под тот исходник, что рисует пузырёк.
      */
     private suspend fun syncLocalFiles(
         attachments: List<MessageAttachment>,
