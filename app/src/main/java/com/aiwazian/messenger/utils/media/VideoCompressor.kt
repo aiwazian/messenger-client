@@ -10,10 +10,12 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.annotation.OptIn
+import androidx.media3.common.Effect
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.Presentation
+import androidx.media3.effect.ScaleAndRotateTransformation
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.DefaultEncoderFactory
 import androidx.media3.transformer.EditedMediaItem
@@ -42,6 +44,10 @@ import kotlin.coroutines.resume
  * Заодно упрощается формат: MKV, AVI, HEVC, AV1 — всё уходит одинаковым H.264 в
  * MP4 с AAC. Так меньше вес и меньше поводов серверу и чужим клиентам не понять
  * файл.
+ *
+ * Сюда же уезжают поворот и отражение из предпросмотра: кадр всё равно
+ * проходит через кодек, и отдельный проход ради поворота удвоил бы и время,
+ * и потери качества.
  */
 @OptIn(UnstableApi::class)
 @Singleton
@@ -60,12 +66,16 @@ class VideoCompressor @Inject constructor(
      * Возвращает null, если пересобрать не удалось или файл получился не меньше
      * исходного: в обоих случаях вызывающему выгоднее отправить оригинал, чем
      * копию тяжелее и хуже.
+     *
+     * @param transform куда повернуть и отразить кадр. Заметить размер повёрнутого
+     * видео отдельно не нужно: стороны читаются уже с готовой копии.
      */
     suspend fun compress(
         source: Uri,
         directory: File,
         quality: VideoQuality,
-        name: String? = null
+        name: String? = null,
+        transform: MediaTransform = MediaTransform.None
     ): Uri? {
         val metadata = videoMetadataReader.read(source)
         
@@ -81,8 +91,10 @@ class VideoCompressor @Inject constructor(
         val partial = File(directory, target.name + PARTIAL_SUFFIX)
         partial.delete()
         
+        val effects = videoEffects(presentationFor(metadata, quality), transform)
+        
         val isExported = try {
-            export(source, partial, presentationFor(metadata, quality), quality)
+            export(source, partial, effects, quality)
         } catch (e: CancellationException) {
             partial.delete()
             throw e
@@ -101,10 +113,11 @@ class VideoCompressor @Inject constructor(
         /*
          * Кодек иногда отдаёт файл тяжелее исходного: так бывает на коротком
          * видео, которое и так снято с низким битрейтом. Отправлять такое
-         * вместо оригинала смысла нет.
+         * вместо оригинала смысла нет. Но если кадр правили, оригинал уже не
+         * равноценен копии: откат отправил бы видео неповёрнутым.
          */
         val sourceSize = metadata?.sizeBytes ?: 0L
-        if (sourceSize > 0 && compressedSize >= sourceSize) {
+        if (transform.isIdentity && sourceSize > 0 && compressedSize >= sourceSize) {
             Log.i(TAG, "Compressed $source is not smaller than the source, keeping the source")
             partial.delete()
             return null
@@ -119,11 +132,58 @@ class VideoCompressor @Inject constructor(
     }
     
     /**
+     * Что сделать с кадром по пути в кодек.
+     *
+     * Отражение и поворот идут двумя отдельными эффектами, а не одной
+     * матрицей сразу: порядок важен — сначала отражение, потом поворот, именно
+     * так его описывает [MediaTransform], — а в списке эффектов он виден глазамии
+     * не зависит от того, в каком порядке перемножает свою матрицу media3.
+     *
+     * Масштаб стоит последним: ему важны стороны готового кадра, а не того, что
+     * пришло из файла.
+     */
+    private fun videoEffects(
+        presentation: Presentation?,
+        transform: MediaTransform
+    ): List<Effect> {
+        val effects = mutableListOf<Effect>()
+        
+        if (transform.isMirrored) {
+            effects += ScaleAndRotateTransformation.Builder()
+                .setScale(transform.mirrorScaleX, 1f)
+                .build()
+        }
+        
+        if (transform.rotationDegrees != 0) {
+            effects += ScaleAndRotateTransformation.Builder()
+                .setRotationDegrees(counterClockwiseDegrees(transform.rotationDegrees))
+                .build()
+        }
+        
+        if (presentation != null) {
+            effects += presentation
+        }
+        
+        return effects
+    }
+    
+    /**
+     * media3 принимает градусы против часовой, а [MediaTransform] считает их по
+     * часовой — как слой предпросмотра. Без этого “Готово” уносило бы кадр в
+     * другую сторону, и отправленное видео расходилось бы с предпросмотром.
+     */
+    private fun counterClockwiseDegrees(clockwiseDegrees: Int): Float =
+        (FULL_TURN - clockwiseDegrees).mod(FULL_TURN).toFloat()
+    
+    /**
      * Во что масштабировать кадр.
      *
      * null означает «не масштабировать»: либо стороны неизвестны, либо кадр уже
      * мельче ступени, и растягивать его нельзя. Дорожки при этом всё равно
      * пересобираются, так что метаданные и сложный формат уходят и здесь.
+     *
+     * Поворот счёту не мешает: короткая сторона остаётся короткой, куда бы кадр
+     * ни лёг.
      */
     private fun presentationFor(metadata: VideoMetadata?, quality: VideoQuality): Presentation? {
         val sourceShortSide = metadata?.shortSide ?: return null
@@ -145,7 +205,7 @@ class VideoCompressor @Inject constructor(
     private suspend fun export(
         source: Uri,
         target: File,
-        presentation: Presentation?,
+        videoEffects: List<Effect>,
         quality: VideoQuality
     ): Boolean = withContext(Dispatchers.Main) {
         suspendCancellableCoroutine { continuation ->
@@ -184,8 +244,8 @@ class VideoCompressor @Inject constructor(
             
             val editedMediaItem = EditedMediaItem.Builder(MediaItem.fromUri(source))
                 .apply {
-                    if (presentation != null) {
-                        setEffects(Effects(emptyList(), listOf(presentation)))
+                    if (videoEffects.isNotEmpty()) {
+                        setEffects(Effects(emptyList(), videoEffects))
                     }
                 }
                 .build()
@@ -215,5 +275,6 @@ class VideoCompressor @Inject constructor(
         const val MP4_EXTENSION = "mp4"
         const val PARTIAL_SUFFIX = ".part"
         const val DEFAULT_NAME = "video"
+        const val FULL_TURN = 360
     }
 }
