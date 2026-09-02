@@ -339,7 +339,7 @@ fun MediaPickerPreview(
                                 Text(text = stringResource(R.string.cancel).uppercase())
                             }
                             
-                            AnimatedVisibility(
+                            androidx.compose.animation.AnimatedVisibility(
                                 visible = mode == PreviewMode.Transform && transformState.isChanged,
                                 modifier = Modifier.align(Alignment.Center),
                                 enter = fadeIn(),
