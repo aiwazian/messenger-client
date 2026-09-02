@@ -41,6 +41,9 @@ import kotlin.math.roundToInt
  * снимки легли бы на бок: тег с поворотом уехал бы вместе с остальными
  * метаданными, а прямо такие кадры выглядели только благодаря ему.
  *
+ * Туда же впекаются правки из предпросмотра — поворот и отражение: отдавать
+ * их тегом нельзя по той же причине, по которой снимается EXIF.
+ *
  * Формат один — JPEG: он есть везде, и одно расширение вместо шести избавляет
  * и сервер, и чат от догадок. Прозрачность JPEG не умеет, поэтому альфа
  * заливается фоном из [MediaCompressionConfig.TRANSPARENCY_BACKGROUND_COLOR],
@@ -91,6 +94,8 @@ class ImageCompressor @Inject constructor(
      * @param name имя, от которого берётся основа: расширение всегда меняется
      * на jpg. Если имени нет, берётся из ссылки, а в крайнем случае — подставляется
      * своё.
+     * @param transform поворот и отражение, выбранные в предпросмотре. Кладутся в ту
+     * же матрицу, что и поворот из EXIF, и ничего не стоят сверх самого сжатия.
      * @return готовый файл либо null, если пересобрать не удалось. Null здесь —
      * не поломка отправки: вызывающая сторона уходит с исходником.
      */
@@ -99,7 +104,8 @@ class ImageCompressor @Inject constructor(
         directory: File,
         maxDimension: Int,
         quality: Int,
-        name: String? = null
+        name: String? = null,
+        transform: MediaTransform = MediaTransform.None
     ): CompressedImage? = withContext(Dispatchers.IO) {
         val fileName = jpegName(name ?: source.getFileName(context))
         val target = File(directory, fileName)
@@ -119,7 +125,7 @@ class ImageCompressor @Inject constructor(
             val decoded = decode(source, bounds, maxDimension) ?: return@withContext null
 
             val prepared = try {
-                prepare(decoded, readOrientation(source), maxDimension)
+                prepare(decoded, readOrientation(source), maxDimension, transform)
             } catch (e: Exception) {
                 decoded.recycle()
                 throw e
@@ -164,6 +170,9 @@ class ImageCompressor @Inject constructor(
      *
      * Файл кладётся в кэш: он нужен ровно на время загрузки, и переживать
      * перезапуск ему незачем — аватарку ждут на экране, а не досылают потом.
+     *
+     * Поворот здесь не передаётся: экран обрезки отдаёт уже повёрнутый
+     * битмап — крутить его второй раз было бы неверно.
      *
      * @return ссылку на готовый файл либо null, если пересобрать не удалось
      * или картинку трогать нельзя.
@@ -242,13 +251,28 @@ class ImageCompressor @Inject constructor(
     /**
      * Поворот, уменьшение и заливка фона — одним проходом.
      *
-     * Поворот и отражение из EXIF складываются с масштабом в одну матрицу:
-     * иначе на каждый шаг приходился бы свой промежуточный кадр в памяти.
+     * Поворот и отражение из EXIF, правки из предпросмотра и масштаб
+     * складываются в одну матрицу: иначе на каждый шаг приходился бы свой
+     * промежуточный кадр в памяти.
+     *
+     * Правки ложатся после EXIF: в предпросмотре крутили уже прямой кадр, а
+     * не то, как он лежит в файле.
      */
-    private fun prepare(source: Bitmap, orientation: Int, maxDimension: Int): Bitmap {
+    private fun prepare(
+        source: Bitmap,
+        orientation: Int,
+        maxDimension: Int,
+        transform: MediaTransform
+    ): Bitmap {
         val longest = max(source.width, source.height)
         val scale = if (longest > maxDimension) maxDimension.toFloat() / longest else 1f
         val matrix = orientationMatrix(orientation)
+
+        if (transform.isMirrored) {
+            matrix.postScale(-1f, 1f)
+        }
+
+        matrix.postRotate(transform.rotationDegrees.toFloat())
 
         // Ни поворачивать, ни уменьшать, ни заливать фон не нужно: такому кадру
         // достаточно самой пересборки в JPEG, чтобы метаданные с него слетели.
@@ -259,8 +283,8 @@ class ImageCompressor @Inject constructor(
         matrix.postScale(scale, scale)
 
         // Поворот уводит кадр в отрицательные координаты, а отражение — за
-        // правый край. Куда именно, считает сама матрица: так все восемь
-        // положений EXIF обрабатываются одним кодом.
+        // правый край. Куда именно, считает сама матрица: так и все восемь
+        // положений EXIF, и любая правка из предпросмотра обрабатываются одним кодом.
         val frame = RectF(0f, 0f, source.width.toFloat(), source.height.toFloat())
         matrix.mapRect(frame)
         matrix.postTranslate(-frame.left, -frame.top)
