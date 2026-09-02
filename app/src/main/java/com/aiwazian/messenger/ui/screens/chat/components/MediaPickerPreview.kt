@@ -63,6 +63,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.extensions.formatFileSize
+import com.aiwazian.messenger.ui.animations.expressiveScaleIn
+import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.MediaFlipButton
 import com.aiwazian.messenger.ui.components.MediaOverlayIconButton
@@ -93,7 +95,9 @@ import kotlinx.coroutines.launch
  * кнопки поворота боролись бы за одно и то же место.
  */
 private enum class PreviewMode {
-    Content, Quality, Transform
+    Content,
+    Quality,
+    Transform
 }
 
 @Composable
@@ -324,11 +328,6 @@ fun MediaPickerPreview(
                             PreviewMode.Content -> Unit
                         }
                         
-                        /*
-                         * “Сбросить” стоит ровно по центру панели, а не по середине
-                         * промежутка между соседями: его появление не должно сдвигать
-                         * “Отмена” и “Готово”.
-                         */
                         Box(modifier = Modifier.fillMaxWidth()) {
                             TextButton(
                                 onClick = goBack, modifier = Modifier.align(Alignment.CenterStart),
@@ -342,8 +341,8 @@ fun MediaPickerPreview(
                             androidx.compose.animation.AnimatedVisibility(
                                 visible = mode == PreviewMode.Transform && transformState.isChanged,
                                 modifier = Modifier.align(Alignment.Center),
-                                enter = fadeIn(),
-                                exit = fadeOut()
+                                enter = expressiveScaleIn,
+                                exit = expressiveScaleOut
                             ) {
                                 TextButton(
                                     onClick = {
@@ -352,10 +351,7 @@ fun MediaPickerPreview(
                                         contentColor = MaterialTheme.colorScheme.onSurface
                                     )
                                 ) {
-                                    Text(
-                                        text = stringResource(R.string.media_transform_reset)
-                                            .uppercase()
-                                    )
+                                    Text(text = stringResource(R.string.media_transform_reset).uppercase())
                                 }
                             }
                             

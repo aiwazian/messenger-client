@@ -98,11 +98,6 @@ private fun AvatarCropContent(bitmap: Bitmap, onCropConfirmed: (Bitmap) -> Unit)
     val animOffsetX = remember { Animatable(0f) }
     val animOffsetY = remember { Animatable(0f) }
     
-    /*
-     * Кадр пересобирается после каждого шага: аватарку всё равно предстоит
-     * обрезать по кругу, а обрезать проще по уже повёрнутым пикселям, чем
-     * тащить поворот через расчёт круга.
-     */
     val transformState = rememberMediaTransformState(bakesContent = true)
     
     val scope = rememberCoroutineScope()
@@ -219,11 +214,6 @@ private fun AvatarCropContent(bitmap: Bitmap, onCropConfirmed: (Bitmap) -> Unit)
             }
         ) {
             MediaRotateButton(state = transformState) {
-                /*
-                 * Повёрнутый кадр вписывается в экран по другой стороне, и без
-                 * поправки масштаба круг вырезал бы уже не то место. Считается
-                 * до подмены кадра: здесь ещё виден прежний.
-                 */
                 val oldFitScale = minOf(
                     screenW / displayBitmap.width,
                     screenH / displayBitmap.height
