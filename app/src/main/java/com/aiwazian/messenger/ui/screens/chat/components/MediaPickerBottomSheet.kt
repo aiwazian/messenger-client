@@ -279,6 +279,10 @@ fun MediaPickerBottomSheet(
             onVideoQualityChange = { item, quality ->
                 viewModel.setVideoQuality(item.uri, quality)
             },
+            mediaTransform = { item -> uiState.mediaTransforms[item.uri] },
+            onMediaTransformChange = { item, transform ->
+                viewModel.setMediaTransform(item.uri, transform)
+            },
             onCurrentItemChange = viewModel::openMedia)
     }
     
