@@ -127,11 +127,6 @@ fun MediaPickerPreview(
     var mode by remember { mutableStateOf(PreviewMode.Content) }
     var draftQuality by remember { mutableStateOf<VideoQuality?>(null) }
     
-    /*
-     * Отменённые правки обязаны уйти с кадра целиком, вместе с недоехавшей
-     * анимацией поворота. Проще всего собрать состояние заново, а счётчик — повод
-     * для этого. “Готово” его не трогает: сохранённое и так совпадает с экраном.
-     */
     var transformAttempt by remember { mutableIntStateOf(0) }
     
     LaunchedEffect(currentItem?.uri) {
@@ -165,10 +160,6 @@ fun MediaPickerPreview(
         key = currentItem?.uri to transformAttempt
     )
     
-    /*
-     * GIF уезжает на сервер байт в байт, иначе он перестал бы быть анимацией.
-     * Значит, применить к нему поворот негде, и обещать его кнопкой нечестно.
-     */
     val canTransform = currentItem != null && !currentItem.isGif
     
     val openQuality: (() -> Unit)? = if (stops.size > 1 && mode == PreviewMode.Content) {
@@ -408,6 +399,7 @@ fun MediaPickerPreview(
                             isPageChangeEnabled = !isEditing,
                             isVideoUiVisible = isChromeVisible,
                             isVideoSeekBarVisible = !isEditing,
+                            isTransformable = !item.isGif,
                             videoQualityIcon = qualityIcon,
                             onVideoQualityClick = if (isCurrentPage) openQuality else null,
                             onVideoTransformClick = if (isCurrentPage) openTransform else null,
@@ -421,10 +413,6 @@ fun MediaPickerPreview(
                     }
                 }
                 
-                /*
-                 * У фотографии нет плеера, в который встроена такая же кнопка,
-                 * поэтому её пришлось положить на то же место самому предпросмотру.
-                 */
                 AnimatedVisibility(
                     visible = isChromeVisible && openTransform != null && currentItem?.isVideo == false,
                     modifier = Modifier
