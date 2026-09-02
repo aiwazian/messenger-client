@@ -22,6 +22,19 @@ class FileRepository @Inject constructor(
             if (file.path != null && file.path != existing.path) {
                 updateFilePath(file.id, file.path)
             }
+            
+            /*
+             * Пустыми размерами ничего не затирается: сюда заходят и те, кто о кадре
+             * не знает вовсе — например, завершившееся скачивание. Иначе картинка
+             * теряла бы форму ровно в тот момент, когда её скачали.
+             */
+            if (
+                file.width != null &&
+                file.height != null &&
+                (file.width != existing.width || file.height != existing.height)
+            ) {
+                updateFileDimensions(file.id, file.width, file.height)
+            }
         }
     }
     
@@ -47,6 +60,17 @@ class FileRepository @Inject constructor(
     
     suspend fun updateFileSize(fileId: String, size: Long) {
         fileDao.updateSize(fileId, size)
+    }
+    
+    /**
+     * Записывает размеры кадра у уже существующего файла.
+     *
+     * Нужно при отправке: пузырёк с картинкой появляется в чате сразу, а
+     * кадр измеряется по файлу — это чтение с диска, и держать на нём показ
+     * сообщения нельзя.
+     */
+    suspend fun updateFileDimensions(fileId: String, width: Int?, height: Int?) {
+        fileDao.updateDimensions(fileId, width, height)
     }
     
     suspend fun deleteFile(fileId: String) {

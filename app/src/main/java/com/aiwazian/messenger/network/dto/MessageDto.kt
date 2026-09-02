@@ -29,6 +29,15 @@ data class MessageAttachmentDto(
     @SerialName("status") val status: DownloadStatus = DownloadStatus.UPLOADED,
     @SerialName("type") val type: AttachmentType = AttachmentType.FILE,
     @SerialName("sortOrder") val sortOrder: Int = 0,
+    /**
+     * Размеры кадра в пикселях — только у фото и видео.
+     *
+     * Нужны, чтобы держать под вложение место нужной формы ещё до того,
+     * как файл скачан. Пусты у документов и голосовых, а также у медиа,
+     * отправленного до появления этих полей либо старым клиентом.
+     */
+    @SerialName("width") val width: Int? = null,
+    @SerialName("height") val height: Int? = null,
 )
 
 /**
@@ -105,7 +114,17 @@ data class FileInitRequestDto(
      * на исполняемый файл уже не выйдет: S3 отклонит запрос по Content-Type.
      * Для аватарок категорию проставляет сам сервер, клиенту её слать не нужно.
      */
-    @SerialName("category") val category: AttachmentType = AttachmentType.FILE
+    @SerialName("category") val category: AttachmentType = AttachmentType.FILE,
+    /**
+     * Размеры кадра в пикселях — только для фото и видео.
+     *
+     * Измеряет именно отправитель: сервер файл не раскодирует, а получателю
+     * размеры нужны до скачивания — иначе форму карточки узнать неоткуда.
+     * Пустые значения допустимы: если кадр прочитать не удалось, отправка
+     * всё равно должна состояться.
+     */
+    @SerialName("width") val width: Int? = null,
+    @SerialName("height") val height: Int? = null
 )
 
 /**

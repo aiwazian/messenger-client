@@ -20,7 +20,9 @@ fun AttachmentEntity.toDomain(file: FileEntity) = MessageAttachment(
     progress = 0,
     localUri = file.path?.toUri(),
     type = type,
-    sortOrder = sortOrder
+    sortOrder = sortOrder,
+    width = file.width,
+    height = file.height
 )
 
 fun AttachmentWithFile.toDomain() = attachment.toDomain(file)

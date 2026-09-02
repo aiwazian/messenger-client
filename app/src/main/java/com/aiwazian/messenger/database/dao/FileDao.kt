@@ -27,6 +27,13 @@ interface FileDao {
     @Query("UPDATE file SET size = :size WHERE id = :id")
     suspend fun updateSize(id: String, size: Long)
     
+    /**
+     * Размеры кадра пишутся парой: половина размера бесполезна — карточка
+     * вложения строится из соотношения сторон.
+     */
+    @Query("UPDATE file SET width = :width, height = :height WHERE id = :id")
+    suspend fun updateDimensions(id: String, width: Int?, height: Int?)
+    
     @Query("SELECT * FROM file")
     suspend fun getAllFiles(): List<FileEntity>
     
