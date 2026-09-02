@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
@@ -84,6 +85,9 @@ import com.aiwazian.messenger.utils.UiText
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
+/** Отступ от края ленты до пузыря. Он же съедает ширину у содержимого пузыря. */
+private val BubbleHorizontalPadding = 8.dp
 
 @Composable
 fun MessageBubble(
@@ -149,13 +153,15 @@ fun MessageBubble(
                 else -> 520.dp
             }
             
+            val contentMaxWidth = dynamicMaxWidth - BubbleHorizontalPadding * 2
+            
             val containerColor =
                 if (item.isMine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
             
             Box(
                 modifier = Modifier
                     .widthIn(min = 90.dp, max = dynamicMaxWidth)
-                    .padding(horizontal = 8.dp)
+                    .padding(horizontal = BubbleHorizontalPadding)
                     .clip(MaterialTheme.shapes.large)
                     .background(containerColor)
             ) {
@@ -236,16 +242,17 @@ fun MessageBubble(
                         it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF
                     }
                     if (mediaAttachments.isNotEmpty()) {
-                        val singleMediaRatio = mediaAttachments.singleOrNull()?.let { attachment ->
-                            val frameWidth = attachment.width ?: return@let null
-                            val frameHeight = attachment.height ?: return@let null
+                        val mediaSizes = mediaAttachments.map { attachment ->
+                            val frameWidth = attachment.width ?: 0
+                            val frameHeight = attachment.height ?: 0
                             
-                            if (frameWidth <= 0 || frameHeight <= 0) null
-                            else frameWidth.toFloat() / frameHeight.toFloat()
+                            if (frameWidth > 0 && frameHeight > 0) IntSize(frameWidth, frameHeight)
+                            else IntSize.Zero
                         }
                         
                         ImageGridCustomLayout(
-                            singleItemAspectRatio = singleMediaRatio,
+                            maxWidth = contentMaxWidth,
+                            itemSizes = mediaSizes,
                             content = {
                                 mediaAttachments.forEach { attachment ->
                                     if (attachment.localUri == null ||
@@ -365,7 +372,6 @@ fun MessageBubble(
                         time = item.time,
                         isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
                         status = message.status,
-                        /* Флаг, а не editedAt: время правки живёт трое суток, подпись — всегда. */
                         isEdited = message.isEdited
                     )
                 }
