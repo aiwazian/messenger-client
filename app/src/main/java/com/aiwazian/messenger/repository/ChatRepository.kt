@@ -539,6 +539,26 @@ class ChatRepository @Inject constructor(
                 val existingFile = fileRepository.getById(attachment.fileId)
                 
                 val file = if (existingFile != null) {
+                    /*
+                     * Размеры кадра могли появиться позже самого файла: запись
+                     * создаётся ещё до отправки, а с сервера они приходят вместе с
+                     * сообщением — как у своего, так и у пересланного вложения. Без
+                     * этого дописывания уже известный файл навсегда оставался бы без
+                     * формы, и карточка в чате считалась бы по старому правилу.
+                     */
+                    if (
+                        attachment.width != null &&
+                        attachment.height != null &&
+                        (existingFile.width != attachment.width ||
+                                existingFile.height != attachment.height)
+                    ) {
+                        fileRepository.updateFileDimensions(
+                            existingFile.id,
+                            attachment.width,
+                            attachment.height
+                        )
+                    }
+                    
                     existingFile
                 } else {
                     val newFile = FileEntity(
@@ -546,7 +566,9 @@ class ChatRepository @Inject constructor(
                         name = attachment.name,
                         size = attachment.size,
                         path = attachment.localUri?.toString(),
-                        status = attachment.status
+                        status = attachment.status,
+                        width = attachment.width,
+                        height = attachment.height
                     )
                     fileRepository.upsert(newFile)
                     newFile
@@ -699,7 +721,7 @@ class ChatRepository @Inject constructor(
     suspend fun makeAsRead(chatId: Long, messageId: Long): Boolean =
         markReadUpTo(chatId, messageId)
     
-    /** Прочитан весь чат: кнопка «вниз» и выход из чата с конца истории. */
+    /** Прочитан весь чат: кнопка  «вниз» и выход из чата с конца истории. */
     suspend fun markAllAsRead(chatId: Long): Boolean {
         return try {
             val response = messageApi.markAllRead(chatId, MarkReadRequestDto())
