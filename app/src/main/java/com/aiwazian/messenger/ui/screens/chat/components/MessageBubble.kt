@@ -255,18 +255,18 @@ fun MessageBubble(
                          * не прыгает в момент, когда картинка догрузилась.
                          *
                          * У нескольких вложений соотношение не считается: там сетка
-                         * делит общую площадь между плитками, и одно из вложений
-                         * форму остальным навязывать не должно.
+                         * делит общую площадь между плитками, и навязывать всем форму
+                         * одного из них нельзя.
                          *
-                         * Пустые размеры — штатный случай: у медиа, отправленного
-                         * старым клиентом, их нет, и карточка рисуется по-старому.
+                         * Пустые размеры — штатный случай: у медиа, отправленного до
+                         * этой правки, их нет, и карточка рисуется по-старому.
                          */
                         val singleMediaRatio = mediaAttachments.singleOrNull()?.let { attachment ->
-                            val width = attachment.width ?: return@let null
-                            val height = attachment.height ?: return@let null
+                            val frameWidth = attachment.width ?: return@let null
+                            val frameHeight = attachment.height ?: return@let null
                             
-                            if (width <= 0 || height <= 0) null
-                            else width.toFloat() / height.toFloat()
+                            if (frameWidth <= 0 || frameHeight <= 0) null
+                            else frameWidth.toFloat() / frameHeight.toFloat()
                         }
                         
                         ImageGridCustomLayout(
@@ -281,8 +281,8 @@ fun MessageBubble(
                                         /*
                                          * Место под картинку видно до самой картинки:
                                          * подложка заливается цветом, иначе на месте
-                                         * вложения висел бы один индикатор посреди пузыря
-                                         * и форма карточки не читалась.
+                                         * вложения висел бы один индикатор посреди пузыря,
+                                         * и форма карточки не читалась бы вовсе.
                                          */
                                         Box(
                                             modifier = Modifier
@@ -324,4 +324,513 @@ fun MessageBubble(
                                                 
                                                 DownloadStatus.UPLOADING -> {
                                                     CircularWavyProgressIndicator()
-                                                    Icon(Icons.Rounded.
+                                                    Icon(Icons.Rounded.Close, null)
+                                                }
+                                                
+                                                DownloadStatus.PAUSED -> {
+                                                    Icon(Icons.Rounded.Downloading, null)
+                                                }
+                                                
+                                                else -> {
+                                                    Icon(Icons.Rounded.Download, null)
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        if (attachment.type == AttachmentType.VIDEO) {
+                                            VideoThumbnail(attachment.localUri) {
+                                                onFileAction(attachment, FileAction.OPEN)
+                                            }
+                                        } else {
+                                            ImageThumbnail(
+                                                attachment.localUri,
+                                                attachment.type == AttachmentType.GIF
+                                            ) {
+                                                onFileAction(attachment, FileAction.OPEN)
+                                            }
+                                        }
+                                    }
+                                }
+                            })
+                    }
+                    
+                    message.attachments.forEach { attachment ->
+                        when (attachment.type) {
+                            AttachmentType.VOICE -> {
+                                MessageVoice(
+                                    file = attachment,
+                                    isPlaying = currentPlayingVoiceFileId == attachment.fileId && isVoicePlaying,
+                                    positionMs = if (currentPlayingVoiceFileId == attachment.fileId) voicePositionMs else 0,
+                                    durationMs = if (currentPlayingVoiceFileId == attachment.fileId) voiceDurationMs else 0,
+                                    onAction = { action ->
+                                        onFileAction(attachment, action)
+                                    },
+                                    onSeek = { positionMs ->
+                                        onVoiceSeek(attachment, positionMs)
+                                    }
+                                )
+                            }
+                            
+                            AttachmentType.FILE -> {
+                                MessageFile(
+                                    file = attachment, onAction = { action ->
+                                        onFileAction(attachment, action)
+                                    })
+                            }
+                            
+                            else -> {}
+                        }
+                    }
+                    
+                    if (!message.text.isNullOrBlank()) {
+                        MessageText(
+                            text = message.text,
+                            onLinkClicked = onLinkClicked,
+                            onUsernameClicked = onUsernameClicked,
+                            onEmailClicked = onEmailClicked
+                        )
+                    }
+                }
+                
+                Box(modifier = Modifier.align(Alignment.BottomEnd)) {
+                    MessageFooter(
+                        time = item.time,
+                        isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                        status = message.status,
+                        /* Флаг, а не editedAt: время правки живёт трое суток, подпись — всегда. */
+                        isEdited = message.isEdited
+                    )
+                }
+                
+                /* Свежие просмотры сверху: порядок с сервера мог быть нарушен событиями в реалтайме. */
+                val readers = remember(item.readInfo) {
+                    item.readInfo.orEmpty().sortedByDescending { it.readAt }
+                }
+                
+                MessageDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    actions = buildDropdownActions(item, isSavedMessages, onSaveToDownloads) {
+                        onReadersRequested?.invoke(readers.map { it.userId })
+                        showReadersDropdown = true
+                    }
+                )
+                
+                if (readers.isNotEmpty()) {
+                    AppDropdownMenu(
+                        expanded = showReadersDropdown,
+                        onDismissRequest = { showReadersDropdown = false },
+                        properties = PopupProperties(focusable = true)
+                    ) {
+                        /* Возврат в меню сообщения: попапы независимы, поэтому просто меняем флаги. */
+                        AppDropdownMenuItem(
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                    contentDescription = "Назад"
+                                )
+                            },
+                            text = "",
+                            onClick = {
+                                showReadersDropdown = false
+                                expanded = true
+                            }
+                        )
+                        
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 10.dp))
+                        
+                        readers.forEach { reader ->
+                            val name = listOf(reader.firstName, reader.lastName.orEmpty())
+                                .filter { it.isNotBlank() }
+                                .joinToString(" ")
+                                .ifBlank { reader.userId.toString() }
+                            val readTime = formatStatusTime(reader.readAt, todayVerb = "сегодня")
+                            AppDropdownMenuItem(
+                                leadingIcon = {
+                                    ChatAvatar(
+                                        id = reader.userId,
+                                        chatName = name,
+                                        avatarUri = readerAvatars[reader.userId],
+                                        size = 30.dp
+                                    )
+                                },
+                                text = name,
+                                supportingText = readTime,
+                                onClick = {
+                                    showReadersDropdown = false
+                                    onReaderClick?.invoke(reader)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * «Прочитано в 14:03» сегодня, «вчера в 22:10» и «12 августа в 14:42» дальше.
+ *
+ * Один формат на все статусы сразу: раньше прочтение умело «вчера», а правка в тот же
+ * день писалась датой, и два соседних пункта меню выглядели по-разному.
+ *
+ * Слово-статус остаётся только у сегодняшних отметок: в «Прочитано вчера в 22:10» оно
+ * только удлиняет строку. Что именно произошло, видно по иконке рядом — галочки
+ * у прочтения, календарь у правки.
+ *
+ * @param todayVerb слово перед временем для сегодняшнего дня: «Прочитано», «Изменено»
+ * или «сегодня» в списке читателей.
+ */
+private fun formatStatusTime(timestamp: Long, todayVerb: String): String {
+    val instant = timestamp.toInstance()
+    val date = instant.atZone(ZoneId.systemDefault())
+    val today = LocalDate.now()
+    val time = instant.toPrettyTime()
+    
+    return when (date.toLocalDate()) {
+        today -> "$todayVerb в $time"
+        today.minusDays(1) -> "вчера в $time"
+        else -> date.format(DateTimeFormatter.ofPattern("d MMMM")) + " в " + time
+    }
+}
+
+private fun buildDropdownActions(
+    item: ChatItem.MessageItem,
+    isSavedMessages: Boolean,
+    onSaveToDownloads: (() -> Unit)? = null,
+    onReadCountClick: () -> Unit = {}
+): List<DropdownMenuAction> {
+    val actions = mutableListOf<DropdownMenuAction>()
+    
+    /*
+     * Пункт с точным временем правки живёт столько же, сколько запись в Redis, —
+     * трое суток. Дальше сервер отдаёт editedAt пустым и показывать нечего: сам
+     * факт правки остаётся виден по подписи «изменено» в самом сообщении.
+     */
+    if (item.message.editedAt != null) {
+        actions.add(
+            DropdownMenuAction(
+                icon = Icons.Rounded.EditCalendar,
+                text = UiText.DynamicString(
+                    formatStatusTime(item.message.editedAt, todayVerb = "Изменено")
+                ),
+                onClick = null
+            )
+        )
+    }
+    
+    if (item.isMine && !isSavedMessages) {
+        val readInfo = item.readInfo
+        
+        if (item.chatType == ChatType.PRIVATE) {
+            /*
+             * Строка показывается только пока известно точное время прочтения: оно живёт
+             * трое суток в Redis. Дальше пункт исчезает целиком — сам факт прочтения
+             * виден по двум галочкам в самом сообщении, и повторять его словами нечего.
+             */
+            val readAt = readInfo?.maxOfOrNull { it.readAt }
+            
+            if (readAt != null) {
+                actions.add(
+                    DropdownMenuAction(
+                        icon = Icons.Rounded.DoneAll,
+                        text = UiText.DynamicString(
+                            formatStatusTime(readAt, todayVerb = "Прочитано")
+                        ),
+                        onClick = null
+                    )
+                )
+            }
+        } else if (item.chatType == ChatType.GROUP && !readInfo.isNullOrEmpty()) {
+            val count = readInfo.size
+            val word = when {
+                count % 10 == 1 && count % 100 != 11 -> "просмотр"
+                count % 10 in 2..4 && count % 100 !in 12..14 -> "просмотра"
+                else -> "просмотров"
+            }
+            actions.add(
+                DropdownMenuAction(
+                    icon = Icons.Rounded.DoneAll,
+                    text = UiText.DynamicString("$count $word"),
+                    onClick = onReadCountClick
+                )
+            )
+        }
+    }
+    
+    val hasDownloadedAttachment = item.message.attachments.any { attachment ->
+        attachment.localUri != null &&
+                (attachment.status == DownloadStatus.COMPLETED || attachment.status == DownloadStatus.UPLOADED)
+    }
+    if (hasDownloadedAttachment && onSaveToDownloads != null) {
+        actions.add(
+            DropdownMenuAction(
+                icon = Icons.Rounded.SaveAlt,
+                text = UiText.StringResource(R.string.save_to_downloads),
+                onClick = onSaveToDownloads
+            )
+        )
+    }
+    
+    actions.addAll(item.dropdownActions)
+    return actions
+}
+
+/**
+ * Сетка вложений в пузыре сообщения.
+ *
+ * @param singleItemAspectRatio ширина, делённая на высоту кадра единственного
+ * вложения. Только по нему карточка может получить свою форму ещё до того,
+ * как картинка загружена: сама картинка о своих размерах сообщает слишком
+ * поздно. Пустое значение или несколько вложений — старое поведение.
+ */
+@Composable
+fun ImageGridCustomLayout(
+    modifier: Modifier = Modifier,
+    spacing: Dp = 2.dp,
+    singleItemAspectRatio: Float? = null,
+    content: @Composable () -> Unit
+) {
+    val gap = with(LocalDensity.current) { spacing.toPx() }
+    
+    Layout(
+        content = content, modifier = modifier
+            .padding(spacing)
+            .clip(MaterialTheme.shapes.large)
+    ) { measurables, constraints ->
+        val count = measurables.size.coerceAtMost(10)
+        if (count == 0) return@Layout layout(0, 0) {}
+        
+        val width = (if (constraints.hasBoundedWidth) constraints.maxWidth
+        else MediaGridFallbackWidth.roundToPx()).coerceIn(0, MaxLayoutDimension)
+        
+        /*
+         * У единственного вложения высота считается из его же соотношения сторон, а
+         * не берётся максимальной: иначе под квадратной картинкой всё равно
+         * оставался бы прямоугольник во всю доступную высоту, а горизонтальное
+         * видео обрезалось бы по высоте.
+         *
+         * Границы нужны для крайностей: панорама иначе выродилась бы в полоску
+         * высотой в несколько пикселей, а скриншот в полный рост занял бы полэкрана.
+         */
+        val rawHeight =
+            if (count == 1 && singleItemAspectRatio != null && singleItemAspectRatio > 0f) {
+                val maxHeight = if (constraints.hasBoundedHeight) constraints.maxHeight
+                else MediaGridMaxHeight.roundToPx()
+                val minHeight = MediaGridMinHeight.roundToPx().coerceAtMost(maxHeight)
+                
+                (width / singleItemAspectRatio).roundToInt().coerceIn(minHeight, maxHeight)
+            } else {
+                if (constraints.hasBoundedHeight) constraints.maxHeight
+                else (width * 0.75f).toInt()
+            }
+        
+        val height = rawHeight.coerceIn(0, MaxLayoutDimension)
+        
+        layout(width, height) {
+            when (count) {
+                1 -> {
+                    val p = measurables[0].measure(Constraints.fixed(width, height))
+                    p.place(0, 0)
+                }
+                
+                2 -> {
+                    val itemW = (width - gap) / 2
+                    val itemConstraints = Constraints.fixed(itemW.toInt(), height)
+                    
+                    measurables.take(2).forEachIndexed { i, m ->
+                        val p = m.measure(itemConstraints)
+                        p.place((i * (itemW + gap)).toInt(), 0)
+                    }
+                }
+                
+                3 -> {
+                    val mainW = (width * 0.6f).toInt()
+                    val sideW = (width - mainW - gap).toInt()
+                    val sideH = (height - gap) / 2
+                    
+                    val p1 = measurables[0].measure(Constraints.fixed(mainW, height))
+                    val p2 = measurables[1].measure(Constraints.fixed(sideW, sideH.toInt()))
+                    val p3 = measurables[2].measure(Constraints.fixed(sideW, sideH.toInt()))
+                    
+                    p1.place(0, 0)
+                    p2.place(mainW + gap.toInt(), 0)
+                    p3.place(mainW + gap.toInt(), (sideH + gap).toInt())
+                }
+                
+                4 -> {
+                    val itemW = (width - gap) / 2
+                    val itemH = (height - gap) / 2
+                    val itemConstraints = Constraints.fixed(itemW.toInt(), itemH.toInt())
+                    
+                    measurables.take(4).forEachIndexed { i, m ->
+                        val p = m.measure(itemConstraints)
+                        val x = (i % 2) * (itemW + gap)
+                        val y = (i / 2) * (itemH + gap)
+                        p.place(x.toInt(), y.toInt())
+                    }
+                }
+                
+                5 -> {
+                    val rows = listOf(2, 3)
+                    placeGrid(measurables, rows, width, height, gap)
+                }
+                
+                6 -> {
+                    val rows = listOf(3, 3)
+                    placeGrid(measurables, rows, width, height, gap)
+                }
+                
+                7 -> {
+                    val rows = listOf(4, 3)
+                    placeGrid(measurables, rows, width, height, gap)
+                }
+                
+                8 -> {
+                    val rows = listOf(2, 3, 3)
+                    placeGrid(measurables, rows, width, height, gap)
+                }
+                
+                9 -> {
+                    val rows = listOf(3, 3, 3)
+                    placeGrid(measurables, rows, width, height, gap)
+                }
+                
+                10 -> {
+                    val rows = listOf(3, 4, 3)
+                    placeGrid(measurables, rows, width, height, gap)
+                }
+                
+                else -> {
+                    val columns = 3
+                    val rowsCount = (count + columns - 1) / columns
+                    val itemW = (width - gap * (columns - 1)) / columns
+                    val itemH = (height - gap * (rowsCount - 1)) / rowsCount
+                    val itemConstraints = Constraints.fixed(itemW.toInt(), itemH.toInt())
+                    
+                    measurables.take(count).forEachIndexed { i, m ->
+                        val p = m.measure(itemConstraints)
+                        val x = (i % columns) * (itemW + gap)
+                        val y = (i / columns) * (itemH + gap)
+                        p.place(x.toInt(), y.toInt())
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun Placeable.PlacementScope.placeGrid(
+    measurables: List<Measurable>,
+    rows: List<Int>,
+    totalWidth: Int,
+    totalHeight: Int,
+    gap: Float
+) {
+    var currentIndex = 0
+    val rowCount = rows.size
+    val rowH = (totalHeight - gap * (rowCount - 1)) / rowCount
+    
+    rows.forEachIndexed { rowIndex, itemCount ->
+        val y = (rowIndex * (rowH + gap)).toInt()
+        val rowW = (totalWidth - gap * (itemCount - 1)) / itemCount
+        
+        for (i in 0 until itemCount) {
+            if (currentIndex < measurables.size) {
+                val p =
+                    measurables[currentIndex].measure(Constraints.fixed(rowW.toInt(), rowH.toInt()))
+                val x = (i * (rowW + gap)).toInt()
+                p.place(x, y)
+                currentIndex++
+            }
+        }
+    }
+}
+
+@Composable
+private fun VideoThumbnail(videoUri: Uri, onClick: () -> Unit) {
+    val context = LocalContext.current
+    
+    /*
+     * Миниатюра гаснет целиком, вместе с подписью, пока это же видео открыто во
+     * весь экран: рядом с поднятым кадром его копия читается как подмена, а не
+     * как перенос. Место в сетке при этом остаётся — в него и возвращаемся.
+     */
+    Box(
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .mediaTransitionOrigin(chatMediaKey(videoUri))
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(videoUri)
+                .decoderFactory(VideoFrameDecoder.Factory())
+                .videoFrameMillis(0)
+                .build(),
+            contentDescription = "Thumbnail of the video",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .sharedElement(key = videoUri.toString())
+                .fillMaxSize()
+                .clip(MaterialTheme.shapes.extraSmall)
+        )
+        Box(
+            modifier = Modifier
+                .padding(start = 4.dp, top = 4.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
+        ) {
+            Text(
+                text = formatDuration(videoUri.getDuration(context)),
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(vertical = 2.dp, horizontal = 4.dp),
+                fontSize = 12.sp,
+                lineHeight = 12.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun ImageThumbnail(imageUri: Uri, isGif: Boolean, onClick: () -> Unit) {
+    val context = LocalContext.current
+    
+    /* Гаснет вся миниатюра вместе с пометкой GIF: причины в [VideoThumbnail]. */
+    Box(
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .mediaTransitionOrigin(chatMediaKey(imageUri))
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(imageUri)
+                .decoderFactory(GifDecoder.Factory())
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .sharedElement(key = imageUri.toString())
+                .fillMaxSize()
+                .clip(MaterialTheme.shapes.extraSmall)
+        )
+        if (isGif) {
+            Box(
+                modifier = Modifier
+                    .padding(start = 4.dp, top = 4.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
+            ) {
+                Text(
+                    text = stringResource(R.string.gif).uppercase(),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(vertical = 2.dp, horizontal = 4.dp),
+                    fontSize = 12.sp,
+                    lineHeight = 12.sp
+                )
+            }
+        }
+    }
+}
