@@ -7,14 +7,11 @@ package com.aiwazian.messenger.ui.screens.settings.profile
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Matrix
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,13 +24,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Done
-import androidx.compose.material.icons.rounded.Flip
-import androidx.compose.material.icons.rounded.Rotate90DegreesCcw
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,6 +48,11 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import com.aiwazian.messenger.ui.components.MediaFlipButton
+import com.aiwazian.messenger.ui.components.MediaRotateButton
+import com.aiwazian.messenger.ui.components.rememberMediaTransformState
+import com.aiwazian.messenger.utils.media.mirrored
+import com.aiwazian.messenger.utils.media.rotatedQuarter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -99,17 +98,18 @@ private fun AvatarCropContent(bitmap: Bitmap, onCropConfirmed: (Bitmap) -> Unit)
     val animOffsetX = remember { Animatable(0f) }
     val animOffsetY = remember { Animatable(0f) }
     
-    val animRotation = remember { Animatable(0f) }
-    var isRotating by remember { mutableStateOf(false) }
-    
-    val animFlipX = remember { Animatable(1f) }
-    var isFlipping by remember { mutableStateOf(false) }
+    /*
+     * Кадр пересобирается после каждого шага: аватарку всё равно предстоит
+     * обрезать по кругу, а обрезать проще по уже повёрнутым пикселям, чем
+     * тащить поворот через расчёт круга.
+     */
+    val transformState = rememberMediaTransformState(bakesContent = true)
     
     val scope = rememberCoroutineScope()
     var minScale by remember { mutableFloatStateOf(1f) }
     
     val transformableState = rememberTransformableState { _, zoomChange, panChange, _ ->
-        if (isRotating || isFlipping) return@rememberTransformableState
+        if (transformState.isAnimating) return@rememberTransformableState
         scale = (scale * zoomChange).coerceIn(minScale, 10f)
         scope.launch {
             animOffsetX.snapTo(animOffsetX.value + panChange.x)
@@ -173,11 +173,11 @@ private fun AvatarCropContent(bitmap: Bitmap, onCropConfirmed: (Bitmap) -> Unit)
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    scaleX = scale * animFlipX.value
+                    scaleX = scale * transformState.contentScaleX
                     scaleY = scale
                     translationX = animOffsetX.value
                     translationY = animOffsetY.value
-                    rotationZ = animRotation.value
+                    rotationZ = transformState.contentRotation
                 })
         
         val color = MaterialTheme.colorScheme.surface.copy(alpha = 0.62f)
@@ -218,82 +218,40 @@ private fun AvatarCropContent(bitmap: Bitmap, onCropConfirmed: (Bitmap) -> Unit)
                 }
             }
         ) {
-            IconButton(
-                onClick = {
-                    if (isFlipping || isRotating) return@IconButton
-                    scope.launch {
-                        isRotating = true
-                        
-                        val oldFitScale = minOf(
-                            screenW / displayBitmap.width,
-                            screenH / displayBitmap.height
-                        )
-                        
-                        animRotation.animateTo(
-                            targetValue = -90f,
-                            animationSpec = tween(
-                                durationMillis = 300,
-                                easing = FastOutSlowInEasing
-                            )
-                        )
-                        
-                        displayBitmap = rotateBitmap(displayBitmap)
-                        animRotation.snapTo(0f)
-                        
-                        val newFitScale = minOf(
-                            screenW / displayBitmap.width,
-                            screenH / displayBitmap.height
-                        )
-                        val newMinScale = ((2f * circleRadius) / minOf(
-                            displayBitmap.width * newFitScale,
-                            displayBitmap.height * newFitScale
-                        )).coerceAtLeast(1f)
-                        
-                        scale = (scale * oldFitScale / newFitScale).coerceAtLeast(newMinScale)
-                        
-                        val snapSpec = spring<Float>(
-                            dampingRatio = Spring.DampingRatioNoBouncy,
-                            stiffness = Spring.StiffnessMediumLow
-                        )
-                        launch { animOffsetX.animateTo(0f, animationSpec = snapSpec) }
-                        launch { animOffsetY.animateTo(0f, animationSpec = snapSpec) }
-                        
-                        isRotating = false
-                    }
-                }
-            ) {
-                Icon(Icons.Rounded.Rotate90DegreesCcw, null)
+            MediaRotateButton(state = transformState) {
+                /*
+                 * Повёрнутый кадр вписывается в экран по другой стороне, и без
+                 * поправки масштаба круг вырезал бы уже не то место. Считается
+                 * до подмены кадра: здесь ещё виден прежний.
+                 */
+                val oldFitScale = minOf(
+                    screenW / displayBitmap.width,
+                    screenH / displayBitmap.height
+                )
+                
+                displayBitmap = displayBitmap.rotatedQuarter()
+                
+                val newFitScale = minOf(
+                    screenW / displayBitmap.width,
+                    screenH / displayBitmap.height
+                )
+                val newMinScale = ((2f * circleRadius) / minOf(
+                    displayBitmap.width * newFitScale,
+                    displayBitmap.height * newFitScale
+                )).coerceAtLeast(1f)
+                
+                scale = (scale * oldFitScale / newFitScale).coerceAtLeast(newMinScale)
+                
+                val snapSpec = spring<Float>(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                )
+                scope.launch { animOffsetX.animateTo(0f, animationSpec = snapSpec) }
+                scope.launch { animOffsetY.animateTo(0f, animationSpec = snapSpec) }
             }
-            IconButton(
-                onClick = {
-                    if (isFlipping || isRotating) return@IconButton
-                    scope.launch {
-                        isFlipping = true
-                        
-                        animFlipX.animateTo(
-                            targetValue = 0f,
-                            animationSpec = tween(
-                                durationMillis = 150,
-                                easing = FastOutSlowInEasing
-                            )
-                        )
-                        
-                        displayBitmap = flipBitmap(displayBitmap)
-                        animFlipX.snapTo(0f)
-                        
-                        animFlipX.animateTo(
-                            targetValue = 1f,
-                            animationSpec = tween(
-                                durationMillis = 150,
-                                easing = FastOutSlowInEasing
-                            )
-                        )
-                        
-                        isFlipping = false
-                    }
-                }
-            ) {
-                Icon(Icons.Rounded.Flip, null)
+            
+            MediaFlipButton(state = transformState) {
+                displayBitmap = displayBitmap.mirrored()
             }
         }
     }
@@ -349,14 +307,4 @@ private fun computeSampleSize(srcWidth: Int, srcHeight: Int, maxDimension: Int):
         sample *= 2
     }
     return sample
-}
-
-private fun rotateBitmap(src: Bitmap): Bitmap {
-    val matrix = Matrix().apply { postRotate(-90f) }
-    return Bitmap.createBitmap(src, 0, 0, src.width, src.height, matrix, true)
-}
-
-private fun flipBitmap(src: Bitmap): Bitmap {
-    val matrix = Matrix().apply { postScale(-1f, 1f, src.width / 2f, src.height / 2f) }
-    return Bitmap.createBitmap(src, 0, 0, src.width, src.height, matrix, true)
 }
