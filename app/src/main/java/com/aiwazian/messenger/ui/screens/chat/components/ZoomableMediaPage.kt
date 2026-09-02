@@ -27,11 +27,17 @@ import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
+import com.aiwazian.messenger.ui.components.MediaTransformState
+import com.aiwazian.messenger.ui.components.mediaTransform
 import com.aiwazian.messenger.ui.components.rememberZoomableState
 import com.aiwazian.messenger.ui.components.zoomableContent
 import com.aiwazian.messenger.ui.components.zoomableGestures
 import kotlinx.coroutines.launch
 
+/**
+ * @param transformState поворот и отражение кадра, если их вообще можно
+ * править. В чате они уже в самом файле, и слоить второй поворот нечего.
+ */
 @Composable
 internal fun ZoomableMediaPage(
     uri: Uri,
@@ -46,6 +52,8 @@ internal fun ZoomableMediaPage(
     isVideoSeekBarVisible: Boolean = true,
     videoQualityIcon: ImageVector = Icons.Outlined.Hd,
     onVideoQualityClick: (() -> Unit)? = null,
+    onVideoTransformClick: (() -> Unit)? = null,
+    transformState: MediaTransformState? = null,
     onVideoPlayingChanged: (Boolean) -> Unit = {},
     onShowVideoUiRequest: () -> Unit = {},
     onHeroContentSizeChanged: (Size) -> Unit = {}
@@ -69,6 +77,17 @@ internal fun ZoomableMediaPage(
         }
     }
     
+    /*
+     * Правки идут после зума и потому оказываются внутри него: крутится
+     * сам кадр, а пальцы по-прежнему таскают его по экрану, а не вдоль
+     * повёрнутых осей.
+     */
+    val transformModifier = if (transformState != null) {
+        Modifier.mediaTransform(transformState, contentSize)
+    } else {
+        Modifier
+    }
+    
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -87,10 +106,13 @@ internal fun ZoomableMediaPage(
                 isUiVisible = isVideoUiVisible,
                 isLooping = isVideoLooping,
                 playbackSpeed = videoPlaybackSpeed,
-                modifier = Modifier.zoomableContent(zoomableState),
+                modifier = Modifier
+                    .zoomableContent(zoomableState)
+                    .then(transformModifier),
                 isSeekBarVisible = isVideoSeekBarVisible,
                 qualityIcon = videoQualityIcon,
                 onQualityClick = onVideoQualityClick,
+                onTransformClick = onVideoTransformClick,
                 onPlayingChanged = onVideoPlayingChanged,
                 onShowUiRequest = onShowVideoUiRequest,
                 onContentSizeChanged = { size ->
@@ -112,6 +134,7 @@ internal fun ZoomableMediaPage(
                 modifier = Modifier
                     .fillMaxSize()
                     .zoomableContent(zoomableState)
+                    .then(transformModifier)
             )
         }
     }
