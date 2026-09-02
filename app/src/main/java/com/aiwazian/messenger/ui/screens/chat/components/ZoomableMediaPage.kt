@@ -35,6 +35,9 @@ import com.aiwazian.messenger.ui.components.zoomableGestures
 import kotlinx.coroutines.launch
 
 /**
+ * @param isPageChangeEnabled можно ли уводить страницу перетаскиванием
+ * увеличенного кадра. Прокрутка самого пейджера тут ни при чём: за его край
+ * страницу тянет жест зума, а пейджер получает от него готовый сдвиг.
  * @param transformState поворот и отражение кадра, если их вообще можно
  * править. В чате они уже в самом файле, и слоить второй поворот нечего.
  */
@@ -46,6 +49,7 @@ internal fun ZoomableMediaPage(
     pagerState: PagerState,
     onTap: () -> Unit,
     modifier: Modifier = Modifier,
+    isPageChangeEnabled: Boolean = true,
     isVideoUiVisible: Boolean = false,
     isVideoLooping: Boolean = false,
     videoPlaybackSpeed: Float = 1f,
@@ -94,9 +98,15 @@ internal fun ZoomableMediaPage(
             .zoomableGestures(
                 state = zoomableState,
                 onTap = onTap,
-                onPanBeyondEdge = { pan -> pagerState.dispatchRawDelta(-pan) },
+                onPanBeyondEdge = { pan ->
+                    if (isPageChangeEnabled) {
+                        pagerState.dispatchRawDelta(-pan)
+                    }
+                },
                 onPanBeyondEdgeFinished = {
-                    coroutineScope.launch { pagerState.settleAfterEdgePan() }
+                    if (isPageChangeEnabled) {
+                        coroutineScope.launch { pagerState.settleAfterEdgePan() }
+                    }
                 }), contentAlignment = Alignment.Center
     ) {
         if (isVideo) {
