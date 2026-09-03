@@ -20,9 +20,11 @@ import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.MessageStatus
 import com.aiwazian.messenger.enums.MessageType
+import com.aiwazian.messenger.extensions.MediaDimensions
 import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
+import com.aiwazian.messenger.extensions.getMediaDimensions
 import com.aiwazian.messenger.network.dto.AttachmentInputDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.repository.ChatRepository
@@ -33,6 +35,7 @@ import com.aiwazian.messenger.utils.PendingSendStore
 import com.aiwazian.messenger.utils.RetryPolicy
 import com.aiwazian.messenger.utils.UploadManager
 import com.aiwazian.messenger.utils.media.MediaCompressionConfig
+import com.aiwazian.messenger.utils.media.MediaTransform
 import com.aiwazian.messenger.utils.media.VideoQuality
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -94,10 +97,11 @@ class SendMessageWithFilesUseCase @Inject constructor(
         text: String?,
         tempId: Long = -System.currentTimeMillis(),
         replyTo: MessageReplyPreview? = null,
-        videoQualities: Map<Uri, VideoQuality> = emptyMap()
+        videoQualities: Map<Uri, VideoQuality> = emptyMap(),
+        mediaTransforms: Map<Uri, MediaTransform> = emptyMap()
     ): Result<Message> {
         val sending = appScope.async(start = CoroutineStart.LAZY) {
-            send(chatId, uris, text, tempId, replyTo, videoQualities)
+            send(chatId, uris, text, tempId, replyTo, videoQualities, mediaTransforms)
         }
         
         running.put(tempId, sending)?.cancel()
@@ -118,7 +122,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         text: String?,
         tempId: Long,
         replyTo: MessageReplyPreview?,
-        videoQualities: Map<Uri, VideoQuality>
+        videoQualities: Map<Uri, VideoQuality>,
+        mediaTransforms: Map<Uri, MediaTransform>
     ): Result<Message> {
         val myId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
@@ -142,6 +147,13 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 else -> AttachmentType.FILE
             }
             
+            /*
+             * Кадр измеряется тут же, а не после загрузки: карточка вложения должна
+             * сразу получить нужную форму, иначе пузырёк пересчитался бы в момент,
+             * когда сервер ответил и размеры дошли до базы.
+             */
+            val frame = uri.getMediaDimensions(context, mimeType)
+            
             MessageAttachment(
                 fileId = "temp_${tempId}_$index",
                 messageId = tempId,
@@ -154,7 +166,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 // что уйдёт на сервер, и не исчезает вместе с копией после отправки.
                 localUri = uri,
                 type = attachmentType,
-                sortOrder = index
+                sortOrder = index,
+                width = frame?.width,
+                height = frame?.height
             )
         }
         
@@ -177,12 +191,16 @@ class SendMessageWithFilesUseCase @Inject constructor(
         // Доступ к выбранному файлу живёт не дольше задачи приложения, а повторы
         // — сколько понадобится, поэтому грузим со своих копий. Фотографиям и
         // видео копией служит результат сжатия — этим занимается сам обменник.
+        //
+        // Правки кадра из предпросмотра запекаются в ту же копию: повтор и
+        // досылка после перезапуска берут её готовой и не поворачивают кадр второй раз.
         val sourceUris = uris.mapIndexed { index, uri ->
             attachmentOutbox.keep(
                 uri = uri,
                 key = "temp_${tempId}_$index",
                 videoQuality = videoQualities[uri]
-                    ?: MediaCompressionConfig.VIDEO_DEFAULT_QUALITY
+                    ?: MediaCompressionConfig.VIDEO_DEFAULT_QUALITY,
+                transform = mediaTransforms[uri] ?: MediaTransform.None
             )
         }
         
@@ -197,12 +215,33 @@ class SendMessageWithFilesUseCase @Inject constructor(
             replyTo = replyTo
         )
         
-        syncSizes(attachments, sourceUris)
+        /*
+         * На сервер уходит копия, поэтому и кадр измеряется по ней: у сжатого
+         * видео стороны мельче исходных, и получатель должен увидеть именно те,
+         * что ему придут. Поворот учитывать отдельно не нужно: он уже запечён в
+         * пиксели копии, и стороны читаются уже развёрнутыми.
+         */
+        val sourceFrames = sourceUris.map { uri ->
+            uri.getMediaDimensions(context, uri.getFileType(context))
+        }
+        
+        /*
+         * Локальной записи стороны копии достаются только у неповёрнутых
+         * вложений. Пузырёк рисует исходник, и развёрнутые стороны положили бы
+         * карточку поперёк того, что в ней нарисовано. Повёрнутый кадр приходит в
+         * чат с сервера при следующем чтении переписки — вместе со сторонами.
+         */
+        val localFrames = sourceFrames.mapIndexed { index, frame ->
+            if (mediaTransforms[uris[index]]?.swapsSides == true) null else frame
+        }
+        
+        syncLocalFiles(attachments, sourceUris, localFrames)
         
         val uploadResults = mutableListOf<AttachmentInputDto>()
         
         attachments.forEachIndexed { index, attachment ->
             val sourceUri = sourceUris[index]
+            val frame = sourceFrames[index]
             
             /*
              * Имя и mime-тип берутся с копии, а не из записи в базе: сжатое видео
@@ -239,7 +278,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
                         name = fileName,
                         size = fileSize,
                         mimeType = mimeType,
-                        category = attachment.type
+                        category = attachment.type,
+                        width = frame?.width,
+                        height = frame?.height
                     )
                 )
                 
@@ -318,6 +359,33 @@ class SendMessageWithFilesUseCase @Inject constructor(
             sourceUris.forEach { uri -> attachmentOutbox.release(uri) }
             
             chatRepository.updateMessageId(tempId, it.id)
+            
+            /*
+             * Статус меняется здесь же, вслед за идентификатором.
+             *
+             * Раньше менялся только идентификатор, а статус так и оставался
+             * SENDING — тем самым, что выставлен до загрузки. Сообщение с фото
+             * или видео всё время считалось отправляемым: в меню висела
+             * «Отменить отправку», уже ничего не отменявшая, и ровно поэтому не
+             * было ни пересылки, ни удаления, ни правки — пункты меню и ответ
+             * свифом требуют SENT. При перезаходе в чат сообщение перечитывалось
+             * с сервера уже отправленным — именно поэтому после перезахода всё
+             * работало.
+             */
+            chatRepository.updateMessageStatus(it.id, MessageStatus.SENT)
+            
+            /*
+             * Файлы тоже перестают быть «загружаемыми».
+             *
+             * Подтверждённое сервером сообщение в базу не пишется, поэтому
+             * статус файла навсегда оставался UPLOADING: на месте картинки висел
+             * индикатор с крестиком вместо самой картинки, а «Сохранить в
+             * Загрузки» не появлялось вовсе.
+             */
+            uploadResults.forEach { uploaded ->
+                fileRepository.updateFileStatus(uploaded.fileId, DownloadStatus.UPLOADED)
+            }
+            
             val localChat = chatRepository.getById(chatId).firstOrNull()
             
             if (localChat == null) {
@@ -358,20 +426,40 @@ class SendMessageWithFilesUseCase @Inject constructor(
     }
     
     /**
-     * Подтягивает вес записи к весу копии.
+     * Подтягивает запись о файле к копии, которая реально уйдёт на сервер: вес
+     * и размеры кадра.
      *
      * В чате у сжатого видео иначе висел бы вес исходника — всё время, пока
      * идёт загрузка, и потом число прыгало бы на втрое после ответа сервера.
+     * С размерами кадра ровно та же история: по ним строится карточка
+     * вложения, и после сжатия её форма обязана совпасть с тем, что увидит
+     * получатель.
+     *
+     * Пустым кадром ничего не затирается: если копию прочитать не удалось,
+     * лучше оставить размеры исходника, чем оставить карточку без формы.
+     * Этим же пользуется поворот кадра: у повёрнутого вложения стороны
+     * локально остаются исходными — под тот исходник, что рисует пузырёк.
      */
-    private suspend fun syncSizes(
+    private suspend fun syncLocalFiles(
         attachments: List<MessageAttachment>,
-        sourceUris: List<Uri>
+        sourceUris: List<Uri>,
+        frames: List<MediaDimensions?>
     ) {
         attachments.forEachIndexed { index, attachment ->
             val size = sizeOf(sourceUris[index])
             
             if (size > 0 && size != attachment.size) {
                 fileRepository.updateFileSize(attachment.fileId, size)
+            }
+            
+            val frame = frames[index] ?: return@forEachIndexed
+            
+            if (frame.width != attachment.width || frame.height != attachment.height) {
+                fileRepository.updateFileDimensions(
+                    attachment.fileId,
+                    frame.width,
+                    frame.height
+                )
             }
         }
     }

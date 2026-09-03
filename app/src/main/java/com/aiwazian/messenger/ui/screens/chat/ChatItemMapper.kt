@@ -68,10 +68,6 @@ class ChatItemMapper(
         
         val chatType = ChatType.fromId(chatId)
         
-        /*
-         * При запрете копирования пункты меню не просто исчезают: внизу меню
-         * остаётся пояснение, почему нет «Копировать» и «Переслать».
-         */
         val noCopyNotice = if (copyPolicy.noCopy) {
             when (chatType) {
                 ChatType.CHANNEL -> DropdownMenuAction(
@@ -145,7 +141,6 @@ class ChatItemMapper(
                             if (it == null) onLoadUserName(updatedMessage.senderId)
                         }
                     } else null,
-                    /* Тег есть только в группах и только у назначенных администраторов. */
                     senderTag = if (!isMine && chatType == ChatType.GROUP) {
                         memberTagsCache[updatedMessage.senderId]?.takeIf { it.isNotBlank() }
                     } else null,
@@ -180,6 +175,15 @@ class ChatItemMapper(
             else -> false
         }
     }
+    
+    /**
+     * «Избранное» — личный чат с самим собой, где срок правки не считается.
+     *
+     * Подменять смысл задним числом там не перед кем: собеседника нет, а самая
+     * старая заметка остаётся заметкой. Сервер проверяет то же условие.
+     */
+    private val isSavedMessages: Boolean
+        get() = ChatType.fromId(chatId) == ChatType.PRIVATE && chatId == myId
     
     private fun createDropdownActions(
         message: Message,
@@ -258,15 +262,12 @@ class ChatItemMapper(
         
         val now = System.currentTimeMillis()
         val twentyFourHoursMs = 24 * 60 * 60 * 1000L
+        val isInEditWindow = isSavedMessages || (now - message.sendTime) <= twentyFourHoursMs
         
-        /**
-         * Пересланное сообщение — копия чужого текста, редактировать его нельзя.
-         * Сервер проверяет это же условие в CanEditMessageGuard.
-         */
         val canEdit = isMyMessage &&
                 message.forwardedFrom == null &&
                 !message.text.isNullOrBlank() &&
-                (now - message.sendTime) <= twentyFourHoursMs
+                isInEditWindow
         
         if (canEdit) {
             actions.add(

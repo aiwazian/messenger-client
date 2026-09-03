@@ -10,6 +10,7 @@ import com.aiwazian.messenger.di.ApplicationScope
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.usecase.SendMessageWithFilesUseCase
+import com.aiwazian.messenger.utils.media.MediaTransform
 import com.aiwazian.messenger.utils.media.VideoQuality
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -72,6 +73,8 @@ class MessageSendQueue @Inject constructor(
      *
      * @param videoQualities ступени сжатия видео, выбранные в предпросмотре, по
      * исходным ссылкам. Чего в карте нет, уходит со ступенью по умолчанию.
+     * @param mediaTransforms повороты и отражения, выбранные там же. Нетронутые
+     * кадры в карте не лежат.
      */
     fun enqueueFiles(
         chatId: Long,
@@ -79,7 +82,8 @@ class MessageSendQueue @Inject constructor(
         text: String? = null,
         tempId: Long = nextTempId(),
         replyTo: MessageReplyPreview? = null,
-        videoQualities: Map<Uri, VideoQuality> = emptyMap()
+        videoQualities: Map<Uri, VideoQuality> = emptyMap(),
+        mediaTransforms: Map<Uri, MediaTransform> = emptyMap()
     ): Long {
         enqueue(tempId) {
             sendMessageWithFilesUseCase(
@@ -88,7 +92,8 @@ class MessageSendQueue @Inject constructor(
                 text = text,
                 tempId = tempId,
                 replyTo = replyTo,
-                videoQualities = videoQualities
+                videoQualities = videoQualities,
+                mediaTransforms = mediaTransforms
             )
         }
         

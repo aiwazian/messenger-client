@@ -11,6 +11,7 @@ import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.repository.DeviceMediaRepository
 import com.aiwazian.messenger.utils.MessageSendQueue
+import com.aiwazian.messenger.utils.media.MediaTransform
 import com.aiwazian.messenger.utils.media.VideoMetadata
 import com.aiwazian.messenger.utils.media.VideoMetadataReader
 import com.aiwazian.messenger.utils.media.VideoQuality
@@ -31,6 +32,12 @@ data class MediaPickerUiState(
      * по умолчанию: настройку открывать необязательно.
      */
     val videoQualities: Map<Uri, VideoQuality> = emptyMap(),
+    /**
+     * Повороты и отражения, выбранные в предпросмотре. Нетронутые кадры здесь
+     * не лежат вовсе: пустая правка заставила бы отправку пересобирать файл ради
+     * ничего.
+     */
+    val mediaTransforms: Map<Uri, MediaTransform> = emptyMap(),
     /** Размеры видео, открытого во весь экран: по ним считаются ступени и вес. */
     val openedVideo: VideoMetadata? = null
 )
@@ -76,7 +83,12 @@ class MediaPickerViewModel @Inject constructor(
         openedVideoUri = null
         
         _uiState.update {
-            it.copy(selected = emptyList(), videoQualities = emptyMap(), openedVideo = null)
+            it.copy(
+                selected = emptyList(),
+                videoQualities = emptyMap(),
+                mediaTransforms = emptyMap(),
+                openedVideo = null
+            )
         }
     }
     
@@ -124,6 +136,25 @@ class MediaPickerViewModel @Inject constructor(
         _uiState.update { it.copy(videoQualities = it.videoQualities + (uri to quality)) }
     }
     
+    /**
+     * Кадр повернули либо отразили в предпросмотре.
+     *
+     * Вернувшийся в исходное положение уходит из карты, а не ложится в неё
+     * пустым значением: так отправке не придётся различать “правили и вернули
+     * как было” и “не правили вовсе”.
+     */
+    fun setMediaTransform(uri: Uri, transform: MediaTransform) {
+        _uiState.update { state ->
+            val transforms = if (transform.isIdentity) {
+                state.mediaTransforms - uri
+            } else {
+                state.mediaTransforms + (uri to transform)
+            }
+            
+            state.copy(mediaTransforms = transforms)
+        }
+    }
+    
     fun send(chatId: Long, replyTo: MessageReplyPreview?, caption: String) {
         val selected = _uiState.value.selected
         
@@ -133,7 +164,13 @@ class MediaPickerViewModel @Inject constructor(
         
         sendUris(chatId = chatId, uris = selected, caption = caption, replyTo = replyTo)
         
-        _uiState.update { it.copy(selected = emptyList(), videoQualities = emptyMap()) }
+        _uiState.update {
+            it.copy(
+                selected = emptyList(),
+                videoQualities = emptyMap(),
+                mediaTransforms = emptyMap()
+            )
+        }
     }
     
     /**
@@ -152,7 +189,8 @@ class MediaPickerViewModel @Inject constructor(
             uris = uris,
             text = caption.trim().ifBlank { null },
             replyTo = replyTo,
-            videoQualities = _uiState.value.videoQualities
+            videoQualities = _uiState.value.videoQualities,
+            mediaTransforms = _uiState.value.mediaTransforms
         )
     }
 }

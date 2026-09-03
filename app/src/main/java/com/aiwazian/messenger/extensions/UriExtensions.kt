@@ -5,12 +5,15 @@
 package com.aiwazian.messenger.extensions
 
 import android.content.Context
+import android.graphics.BitmapFactory
+import android.media.ExifInterface
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
 import android.webkit.MimeTypeMap
 import java.io.FileInputStream
+import java.io.InputStream
 
 fun Uri.getFileName(context: Context): String? {
     // ContentResolver не умеет запрашивать file://-ссылки, а именно такие идут от
@@ -225,4 +228,132 @@ fun Uri.getDuration(context: Context): Long {
     } finally {
         retriever.release()
     }
+}
+
+/**
+ * Размеры кадра в пикселях так, как его увидит пользователь.
+ *
+ * Именно увидит, а не «как записано в файле»: и камера, и видеозапись часто
+ * держат кадр в альбомной ориентации и разворачивают его метаданными.
+ * Без учёта поворота вертикальное фото уехало бы как горизонтальное, и в
+ * чате под него держалось бы место не той формы.
+ *
+ * Всё, что не фото и не видео, кадра не имеет — для таких файлов возвращается
+ * null, равно как и для битого файла: измерение никогда не должно срывать
+ * отправку.
+ */
+fun Uri.getMediaDimensions(context: Context, mimeType: String): MediaDimensions? = when {
+    mimeType.startsWith("image/", ignoreCase = true) -> getImageDimensions(context)
+    mimeType.startsWith("video/", ignoreCase = true) -> getVideoDimensions(context)
+    else -> null
+}
+
+/** Ширина и высота кадра в пикселях, уже развёрнутые по ориентации. */
+data class MediaDimensions(
+    val width: Int,
+    val height: Int
+)
+
+/**
+ * Кадр читается без декодирования самой картинки (`inJustDecodeBounds`):
+ * иначе ради двух чисел в память поднимался бы целый битмап.
+ */
+private fun Uri.getImageDimensions(context: Context): MediaDimensions? {
+    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    
+    try {
+        openStream(context)?.use { stream -> BitmapFactory.decodeStream(stream, null, options) }
+    } catch (e: Exception) {
+        Log.e("UriExtensions", "getImageDimensions ${e.message}: ", e)
+        return null
+    }
+    
+    val width = options.outWidth
+    val height = options.outHeight
+    
+    if (width <= 0 || height <= 0) {
+        return null
+    }
+    
+    return if (isImageRotated(context)) {
+        MediaDimensions(width = height, height = width)
+    } else {
+        MediaDimensions(width = width, height = height)
+    }
+}
+
+/**
+ * Кадр развёрнут на прямой угол, то есть ширина и высота из заголовка идут
+ * наоборот.
+ *
+ * Отражения без поворота (FLIP_HORIZONTAL, FLIP_VERTICAL) сторон не меняют,
+ * поэтому считаются неповёрнутыми.
+ */
+private fun Uri.isImageRotated(context: Context): Boolean {
+    val orientation = try {
+        openStream(context)?.use { stream ->
+            ExifInterface(stream).getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL
+            )
+        }
+    } catch (e: Exception) {
+        /* У PNG и WebP EXIF вовсе нет — это не ошибка, а отсутствие поворота. */
+        Log.e("UriExtensions", "isImageRotated ${e.message}: ", e)
+        null
+    }
+    
+    return orientation == ExifInterface.ORIENTATION_ROTATE_90 ||
+            orientation == ExifInterface.ORIENTATION_ROTATE_270 ||
+            orientation == ExifInterface.ORIENTATION_TRANSPOSE ||
+            orientation == ExifInterface.ORIENTATION_TRANSVERSE
+}
+
+private fun Uri.getVideoDimensions(context: Context): MediaDimensions? {
+    val retriever = MediaMetadataRetriever()
+    
+    return try {
+        retriever.setDataSource(context, this)
+        
+        val width = retriever
+            .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+            ?.toIntOrNull()
+        val height = retriever
+            .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+            ?.toIntOrNull()
+        
+        if (width == null || height == null || width <= 0 || height <= 0) {
+            return null
+        }
+        
+        /*
+         * Поворот дорожки: вертикальное видео с телефона почти всегда записано
+         * альбомным и разворачивается при воспроизведении.
+         */
+        val rotation = retriever
+            .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
+            ?.toIntOrNull() ?: 0
+        
+        if (rotation % 180 != 0) {
+            MediaDimensions(width = height, height = width)
+        } else {
+            MediaDimensions(width = width, height = height)
+        }
+    } catch (e: Exception) {
+        Log.e("UriExtensions", "getVideoDimensions ${e.message}: ", e)
+        null
+    } finally {
+        retriever.release()
+    }
+}
+
+/**
+ * Поток для чтения содержимого.
+ *
+ * ContentResolver не умеет file://-ссылки, а именно такие остаются от копий в
+ * кэше отправки — именно их мы и измеряем перед загрузкой.
+ */
+private fun Uri.openStream(context: Context): InputStream? = when (scheme) {
+    "file" -> path?.let { FileInputStream(it) }
+    else -> context.contentResolver.openInputStream(this)
 }

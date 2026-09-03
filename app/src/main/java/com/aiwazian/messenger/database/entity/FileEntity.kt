@@ -14,5 +14,16 @@ data class FileEntity(
     val name: String,
     val size: Long,
     val path: String?,
-    val status: DownloadStatus
+    val status: DownloadStatus,
+    /**
+     * Размеры кадра в пикселях — только у фото и видео.
+     *
+     * Лежат рядом с файлом, а не со вложением: пересланная копия ссылается
+     * на тот же файл, и размеры ей достаются сразу.
+     *
+     * Пусты у всего, что не фото и не видео, и у вложений, скачанных до
+     * этого изменения: серверу неоткуда было их взять.
+     */
+    val width: Int? = null,
+    val height: Int? = null
 )

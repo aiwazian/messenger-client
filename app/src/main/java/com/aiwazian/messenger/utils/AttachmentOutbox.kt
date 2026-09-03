@@ -11,6 +11,7 @@ import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.utils.media.ImageCompressor
 import com.aiwazian.messenger.utils.media.MediaCompressionConfig
+import com.aiwazian.messenger.utils.media.MediaTransform
 import com.aiwazian.messenger.utils.media.VideoCompressor
 import com.aiwazian.messenger.utils.media.VideoQuality
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -38,12 +39,12 @@ import javax.inject.Singleton
  * поднятая после перезапуска отправка не превращает photo.jpg в
  * temp_-17_0_photo.jpg.
  *
- * Здесь же сжимаются фотографии и видео: копия вся равно делается, и дешевле
- * сразу положить в неё готовый к отправке файл, чем скопировать исходные
- * десять мегабайт и сжимать их шагом позже. Побочно из этого выходит
- * главное: повторы и досылка после перезапуска идут с уже сжатого файла, а
- * не сжимают его второй раз — для видео это стоит уже не доли секунды, а
- * минуты.
+ * Здесь же сжимаются фотографии и видео и применяются правки кадра: копия
+ * всё равно делается, и дешевле сразу положить в неё готовый к отправке файл,
+ * чем скопировать исходные десять мегабайт и сжимать их шагом позже.
+ * Побочно из этого выходит главное: повторы и досылка после перезапуска
+ * идут с уже сжатого и уже повёрнутого файла, а не делают ту же работу
+ * второй раз — для видео это стоит уже не доли секунды, а минуты.
  */
 @Singleton
 class AttachmentOutbox @Inject constructor(
@@ -57,6 +58,10 @@ class AttachmentOutbox @Inject constructor(
      * перезапуска.
      * @param videoQuality ступень сжатия видео. На картинки и файлы не влияет,
      * выше исходного разрешения не поднимается.
+     * @param transform поворот и отражение, выбранные в предпросмотре. Запекаются
+     * в копию вместе со сжатием: сервер и чужие устройства ничего о наших
+     * правках не знают. Файлы и GIF уходят байт в байт, и править их нечем —
+     * поэтому предпросмотр и не предлагает им кнопку поворота.
      * @return ссылку на свою копию либо исходную ссылку, если копировать незачем
      * или не удалось: голосовые уже лежат у нас, а про удалённый файл честнее
      * доложит сама отправка.
@@ -64,10 +69,12 @@ class AttachmentOutbox @Inject constructor(
     suspend fun keep(
         uri: Uri,
         key: String,
-        videoQuality: VideoQuality = MediaCompressionConfig.VIDEO_DEFAULT_QUALITY
+        videoQuality: VideoQuality = MediaCompressionConfig.VIDEO_DEFAULT_QUALITY,
+        transform: MediaTransform = MediaTransform.None
     ): Uri = withContext(Dispatchers.IO) {
         // Уже наша копия: отправку подняли после перезапуска, и медиа в ней
-        // сжато ещё в прошлый раз — второй проход только срезал бы качество.
+        // сжато и повёрнуто ещё в прошлый раз — второй проход только срезал бы
+        // качество и довернул ещё одну четверть.
         if (directoryOf(uri) != null) {
             return@withContext uri
         }
@@ -85,7 +92,8 @@ class AttachmentOutbox @Inject constructor(
                 directory = directoryFor(key),
                 maxDimension = MediaCompressionConfig.PHOTO_MAX_DIMENSION,
                 quality = MediaCompressionConfig.PHOTO_JPEG_QUALITY,
-                name = name
+                name = name,
+                transform = transform
             )
             
             if (compressed != null) {
@@ -101,14 +109,16 @@ class AttachmentOutbox @Inject constructor(
          * Видео пересобирается в MP4 меньшего разрешения. Ступень приходит с
          * экрана предпросмотра, а если её там не выбирали — из
          * MediaCompressionConfig. Выше исходного разрешения она не поднимется:
-         * этим занимается сам компрессор.
+         * этим занимается сам компрессор. Поворот едет туда же: отдельный
+         * проход ради поворота удвоил бы и время, и потери качества.
          */
         if (videoCompressor.isCompressible(mimeType)) {
             val compressed = videoCompressor.compress(
                 source = uri,
                 directory = directoryFor(key),
                 quality = videoQuality,
-                name = name
+                name = name,
+                transform = transform
             )
             
             if (compressed != null) {

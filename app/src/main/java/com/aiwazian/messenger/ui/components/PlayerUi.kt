@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Hd
+import androidx.compose.material.icons.rounded.CropRotate
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -50,7 +51,8 @@ fun PlayerUi(
     modifier: Modifier = Modifier,
     isSeekBarVisible: Boolean = true,
     qualityIcon: ImageVector = Icons.Outlined.Hd,
-    onQualityClick: (() -> Unit)? = null
+    onQualityClick: (() -> Unit)? = null,
+    onTransformClick: (() -> Unit)? = null
 ) {
     Box(
         modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center
@@ -133,18 +135,22 @@ fun PlayerUi(
                 }
             }
             
-            if (onQualityClick != null) {
-                IconButton(
-                    onClick = onQualityClick, colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(
-                            alpha = 0.2f
+            /*
+             * Кнопки правок стоят одной группой по центру: поворот слева, качество
+             * справа. Каждая появляется только там, где её есть куда отправить:
+             * в чате готовое видео ни сжать, ни повернуть уже нельзя.
+             */
+            if (onTransformClick != null || onQualityClick != null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (onTransformClick != null) {
+                        MediaOverlayIconButton(
+                            icon = Icons.Rounded.CropRotate, onClick = onTransformClick
                         )
-                    )
-                ) {
-                    Icon(
-                        imageVector = qualityIcon, contentDescription = null,
-                        tint = Color.White
-                    )
+                    }
+                    
+                    if (onQualityClick != null) {
+                        MediaOverlayIconButton(icon = qualityIcon, onClick = onQualityClick)
+                    }
                 }
             }
         }
