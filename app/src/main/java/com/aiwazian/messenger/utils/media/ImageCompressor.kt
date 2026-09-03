@@ -49,6 +49,10 @@ import kotlin.math.roundToInt
  * заливается фоном из [MediaCompressionConfig.TRANSPARENCY_BACKGROUND_COLOR],
  * а не уходит чёрным.
  *
+ * Стикеры — единственное исключение из обоих правил, см. [compressSticker]: они
+ * собираются в WebP и сохраняют прозрачность — без неё стикер ездил бы по
+ * чату белым прямоугольником.
+ *
  * Пределы задаются в [MediaCompressionConfig]. Здесь их нет: и вложения, и
  * аватарки просят свой размер сами.
  *
@@ -107,7 +111,7 @@ class ImageCompressor @Inject constructor(
         name: String? = null,
         transform: MediaTransform = MediaTransform.None
     ): CompressedImage? = withContext(Dispatchers.IO) {
-        val fileName = jpegName(name ?: source.getFileName(context))
+        val fileName = renamed(name ?: source.getFileName(context), JPEG_EXTENSION)
         val target = File(directory, fileName)
 
         // Готовый файл уже лежит: отправку подняли заново после перезапуска, и
@@ -196,6 +200,92 @@ class ImageCompressor @Inject constructor(
             quality = MediaCompressionConfig.AVATAR_JPEG_QUALITY,
             name = source.getFileName(context) ?: DEFAULT_AVATAR_NAME
         )?.uri
+    }
+
+    /**
+     * Стикер: кадр ложится в квадрат [MediaCompressionConfig.STICKER_SIZE] и
+     * уходит в WebP с сохранённой прозрачностью.
+     *
+     * Отличий от [compress] три, и каждое принципиальное. Формат WebP, а не
+     * JPEG: стикер без альфы превратился бы в плитку на фоне чата. Размер
+     * всегда ровно 512 на 512, даже если картинка прямоугольная или мелкая:
+     * один размер у всех стикеров значит, что набор в сетке не расползается.
+     * И файл всегда собирается заново: готовый ответ из кэша здесь был бы
+     * вредом — одну и ту же картинку могли обрезать или повернуть иначе.
+     *
+     * Файл ложится в кэш и живёт до отправки набора: стикеры копятся на
+     * экране редактора и уходят на сервер одним действием, а не по одному
+     * сразу после выбора.
+     *
+     * @param transform поворот и отражение из предпросмотра.
+     * @return готовый файл либо null, если картинку не удалось разобрать.
+     * Здесь null — уже отказ: стикер исходником не уйдёт, сервер принимает
+     * только WebP.
+     */
+    suspend fun compressSticker(
+        source: Uri,
+        transform: MediaTransform = MediaTransform.None
+    ): CompressedImage? = withContext(Dispatchers.IO) {
+        val side = MediaCompressionConfig.STICKER_SIZE
+        val root = File(context.cacheDir, STICKER_DIRECTORY_NAME)
+        dropStale(root)
+
+        // Своя папка на каждый стикер: в набор могут добавить два кадра из
+        // одного снимка, и общее имя файла стёрло бы первый вторым.
+        val directory = File(root, System.nanoTime().toString())
+        val fileName = renamed(source.getFileName(context) ?: DEFAULT_STICKER_NAME, WEBP_EXTENSION)
+        val target = File(directory, fileName)
+
+        try {
+            val bounds = readBounds(source) ?: return@withContext null
+            val decoded = decode(source, bounds, side) ?: return@withContext null
+
+            val prepared = try {
+                square(decoded, readOrientation(source), transform, side)
+            } catch (e: Exception) {
+                decoded.recycle()
+                throw e
+            }
+
+            try {
+                write(
+                    bitmap = prepared,
+                    target = target,
+                    quality = MediaCompressionConfig.STICKER_WEBP_QUALITY,
+                    format = Bitmap.CompressFormat.WEBP_LOSSY
+                )
+            } finally {
+                if (prepared !== decoded) {
+                    prepared.recycle()
+                }
+
+                decoded.recycle()
+            }
+
+            val size = target.length()
+
+            if (size <= 0) {
+                target.delete()
+                return@withContext null
+            }
+
+            Log.i(TAG, "Compressed sticker $fileName into $size bytes")
+
+            CompressedImage(
+                uri = Uri.fromFile(target),
+                name = fileName,
+                size = size,
+                mimeType = MIME_TYPE_WEBP
+            )
+        } catch (e: OutOfMemoryError) {
+            Log.e(TAG, "Not enough memory to compress sticker $source", e)
+            target.delete()
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "Unable to compress sticker $source", e)
+            target.delete()
+            null
+        }
     }
 
     /** Размеры исходника: по ним считается, во сколько раз прореживать декод. */
@@ -310,6 +400,60 @@ class ImageCompressor @Inject constructor(
     }
 
     /**
+     * Кладёт кадр в середину квадрата [side] на [side].
+     *
+     * Квадрат получается всегда, даже если картинка вытянутая или мелкая:
+     * лишнее место остаётся прозрачным. Заливать его нечем и незачем —
+     * стикер должен ложиться на любой фон чата.
+     *
+     * Мелкий кадр не растягивается: картинка 200 на 200 такой и останется
+     * внутри квадрата, иначе её только размыло бы вдвое и утяжелило файл.
+     */
+    private fun square(
+        source: Bitmap,
+        orientation: Int,
+        transform: MediaTransform,
+        side: Int
+    ): Bitmap {
+        val matrix = orientationMatrix(orientation)
+
+        if (transform.isMirrored) {
+            matrix.postScale(-1f, 1f)
+        }
+
+        matrix.postRotate(transform.rotationDegrees.toFloat())
+
+        val bounds = RectF(0f, 0f, source.width.toFloat(), source.height.toFloat())
+        val turned = RectF(bounds)
+        matrix.mapRect(turned)
+
+        val longest = max(turned.width(), turned.height())
+        val scale = if (longest > side) side / longest else 1f
+        matrix.postScale(scale, scale)
+
+        // После поворота и масштаба кадр лежит где угодно, включая
+        // отрицательные координаты, поэтому сначала спрашиваем у матрицы, где
+        // он оказался, и уже потом сдвигаем его в середину.
+        val placed = RectF(bounds)
+        matrix.mapRect(placed)
+
+        matrix.postTranslate(
+            (side - placed.width()) / 2f - placed.left,
+            (side - placed.height()) / 2f - placed.top
+        )
+
+        val result = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
+
+        Canvas(result).drawBitmap(
+            source,
+            matrix,
+            Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+        )
+
+        return result
+    }
+
+    /**
      * Поворот и отражение, записанные камерой в EXIF.
      *
      * Читать их нужно до пересборки: в новом файле тега не будет, и кадр
@@ -368,16 +512,24 @@ class ImageCompressor @Inject constructor(
      * Пишется он рядом и переносится на место одним движением: оборванная
      * запись не должна остаться под правильным именем — её потом приняли бы за
      * удачное сжатие и отправили обрезанной.
+     *
+     * @param format кодек. JPEG для вложений и аватарок, WebP — для стикеров,
+     * которым нужна прозрачность.
      */
-    private fun write(bitmap: Bitmap, target: File, quality: Int) {
+    private fun write(
+        bitmap: Bitmap,
+        target: File,
+        quality: Int,
+        format: Bitmap.CompressFormat = Bitmap.CompressFormat.JPEG
+    ) {
         target.parentFile?.mkdirs()
 
         val partial = File(target.parentFile, "${target.name}$PARTIAL_SUFFIX")
 
         try {
             partial.outputStream().use { output ->
-                if (!bitmap.compress(Bitmap.CompressFormat.JPEG, quality, output)) {
-                    throw IOException("JPEG encoder refused ${target.name}")
+                if (!bitmap.compress(format, quality, output)) {
+                    throw IOException("${format.name} encoder refused ${target.name}")
                 }
             }
 
@@ -406,22 +558,22 @@ class ImageCompressor @Inject constructor(
         }
     }
 
-    /** Основа имени остаётся исходной, расширение всегда становится jpg. */
-    private fun jpegName(name: String?): String {
+    /** Основа имени остаётся исходной, расширение становится [extension]. */
+    private fun renamed(name: String?, extension: String): String {
         val safe = name?.replace('/', '_')?.trim().orEmpty()
         val base = safe.substringBeforeLast('.', safe).ifBlank { DEFAULT_NAME }
 
-        return "$base.$JPEG_EXTENSION"
+        return "$base.$extension"
     }
 
     /**
-     * Выбрасывает аватарки, которые уже никто не грузит.
+     * Выбрасывает аватарки и стикеры, которые уже никто не грузит.
      *
      * Кэш чистит и система, но её очередь может не дойти, а мусор здесь
-     * накапливается с каждой сменой аватарки.
+     * накапливается с каждой сменой аватарки и каждым брошенным набором.
      */
     private fun dropStale(root: File) {
-        val threshold = System.currentTimeMillis() - AVATAR_MAX_AGE_MS
+        val threshold = System.currentTimeMillis() - PENDING_MAX_AGE_MS
 
         root.listFiles()?.forEach { entry ->
             if (entry.lastModified() < threshold) {
@@ -433,6 +585,8 @@ class ImageCompressor @Inject constructor(
     companion object {
         const val MIME_TYPE_JPEG = "image/jpeg"
         const val JPEG_EXTENSION = "jpg"
+        const val MIME_TYPE_WEBP = "image/webp"
+        const val WEBP_EXTENSION = "webp"
 
         private const val TAG = "ImageCompressor"
         private const val IMAGE_MIME_PREFIX = "image/"
@@ -440,9 +594,11 @@ class ImageCompressor @Inject constructor(
         private const val PARTIAL_SUFFIX = ".part"
         private const val DEFAULT_NAME = "image"
         private const val DEFAULT_AVATAR_NAME = "avatar"
+        private const val DEFAULT_STICKER_NAME = "sticker"
         private const val AVATAR_DIRECTORY_NAME = "avatar_uploads"
+        private const val STICKER_DIRECTORY_NAME = "sticker_uploads"
 
-        /** Сколько живёт сжатая аватарка, которую так и не догрузили. */
-        private const val AVATAR_MAX_AGE_MS = 60L * 60 * 1000
+        /** Сколько живёт сжатый кадр, который так и не догрузили. */
+        private const val PENDING_MAX_AGE_MS = 60L * 60 * 1000
     }
 }
