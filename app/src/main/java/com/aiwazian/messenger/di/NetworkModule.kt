@@ -16,6 +16,7 @@ import com.aiwazian.messenger.network.api.NotificationSettingsApi
 import com.aiwazian.messenger.network.api.PrivacyApi
 import com.aiwazian.messenger.network.api.SearchApi
 import com.aiwazian.messenger.network.api.SessionApi
+import com.aiwazian.messenger.network.api.StickerApi
 import com.aiwazian.messenger.network.api.UserApi
 import com.aiwazian.messenger.utils.SessionManager
 import dagger.Module
@@ -93,6 +94,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun providePrivacyApi(): PrivacyApi = RetrofitInstance.privacyApi
+    
+    @Provides
+    @Singleton
+    fun provideStickerApi(): StickerApi = RetrofitInstance.stickerApi
     
     @Provides
     @Singleton
