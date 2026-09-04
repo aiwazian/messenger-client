@@ -94,6 +94,10 @@ import com.aiwazian.messenger.ui.screens.settings.security.devices.SettingsDevic
 import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeChangeScreen
 import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeCreateScreen
 import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeScreen
+import com.aiwazian.messenger.ui.screens.settings.stickers.AddedStickerPacksScreen
+import com.aiwazian.messenger.ui.screens.settings.stickers.CreatedStickerPacksScreen
+import com.aiwazian.messenger.ui.screens.settings.stickers.SettingsStickersScreen
+import com.aiwazian.messenger.ui.screens.settings.stickers.StickerPackEditorScreen
 import com.aiwazian.messenger.ui.screens.settings.storage.StorageScreen
 import kotlinx.coroutines.flow.Flow
 
@@ -197,6 +201,10 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsDataAndStorage> { DataAndStorageScreen() }
                     entry<AppRoute.SettingsStorage> { StorageScreen() }
                     entry<AppRoute.SettingsAutoDownloadMedia> { AutoDownloadMediaScreen() }
+                    entry<AppRoute.SettingsStickers> { SettingsStickersScreen() }
+                    entry<AppRoute.CreatedStickerPacks> { CreatedStickerPacksScreen() }
+                    entry<AppRoute.AddedStickerPacks> { AddedStickerPacksScreen() }
+                    entry<AppRoute.StickerPackEditor> { StickerPackEditorScreen(packId = it.packId) }
                     entry<AppRoute.ChatFolders> { ChatFoldersScreen() }
                     entry<AppRoute.ChatFolderEditor> { ChatFolderEditorScreen(folderId = it.folderId) }
                     entry<AppRoute.SelectFolderChats> {
