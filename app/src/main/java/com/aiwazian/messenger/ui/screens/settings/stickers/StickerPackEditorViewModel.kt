@@ -68,10 +68,9 @@ data class StickerPackEditorUiState(
                 !isAddingSticker
     
     val hasChanges: Boolean
-        get() = !isSaving &&
-                (name.trim() != savedName ||
-                        username != savedUsername ||
-                        stickers.map { it.key } != savedStickerKeys)
+        get() = name.trim() != savedName ||
+                username != savedUsername ||
+                stickers.map { it.key } != savedStickerKeys
 }
 
 sealed interface StickerPackEditorEffect {
@@ -219,7 +218,7 @@ class StickerPackEditorViewModel @Inject constructor(
         }
     }
     
-    fun save() {
+    fun save(exitAfterSave: Boolean = false) {
         val state = _uiState.value
         
         if (!state.canSave) {
@@ -293,8 +292,13 @@ class StickerPackEditorViewModel @Inject constructor(
                     )
                 }
                 
-                _uiEffect.emit(StickerPackEditorEffect.ShowMessage(R.string.sticker_pack_saved))
-                _uiEffect.emit(StickerPackEditorEffect.Saved)
+                if (exitAfterSave) {
+                    _uiEffect.emit(StickerPackEditorEffect.Saved)
+                } else {
+                    _uiEffect.emit(
+                        StickerPackEditorEffect.ShowMessage(R.string.sticker_pack_saved)
+                    )
+                }
             }.onFailure {
                 _uiState.update { current -> current.copy(stickers = slots, isSaving = false) }
                 
