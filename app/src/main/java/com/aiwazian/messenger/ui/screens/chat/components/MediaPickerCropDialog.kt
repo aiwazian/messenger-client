@@ -57,6 +57,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.aiwazian.messenger.ui.components.MediaCropBox
+import com.aiwazian.messenger.ui.components.MediaCropMask
 import com.aiwazian.messenger.ui.components.MediaFlipButton
 import com.aiwazian.messenger.ui.components.MediaOverlayIconButton
 import com.aiwazian.messenger.ui.components.MediaRotateButton
@@ -162,7 +163,6 @@ fun MediaPickerCropDialog(
             } else {
                 MediaCropBox(
                     state = cropState,
-                    maskShape = maskShape,
                     modifier = Modifier
                         .fillMaxSize()
                         .mediaHeroContent(hero),
@@ -170,6 +170,15 @@ fun MediaPickerCropDialog(
                     contentScaleX = transformState.contentScaleX,
                     isGestureEnabled = !transformState.isAnimating
                 )
+            }
+            
+            AnimatedVisibility(
+                visible = isChromeVisible && cropState.bitmap != null,
+                modifier = Modifier.fillMaxSize(),
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                MediaCropMask(maskShape = maskShape, modifier = Modifier.fillMaxSize())
             }
             
             AnimatedVisibility(
@@ -239,40 +248,46 @@ fun MediaPickerCropDialog(
                             MediaOverlayIconButton(
                                 icon = Icons.Rounded.CropRotate,
                                 onClick = { isTransforming = true },
-                                isActive = cropState.isAdjusted)
+                                isActive = cropState.isTransformed)
                         }
                     }
                     
-                    MediaOverlayIconButton(
-                        icon = Icons.AutoMirrored.Rounded.Send,
+                    AnimatedVisibility(
+                        visible = !isTransforming,
                         modifier = Modifier.align(Alignment.CenterEnd),
-                        onClick = {
-                            if (isConfirming || !cropState.isReady) {
-                                return@MediaOverlayIconButton
-                            }
-                            
-                            isConfirming = true
-                            
-                            coroutineScope.launch {
-                                val cropped = if (clipsToMask) {
-                                    cropState.crop(maskShape, density, layoutDirection)
-                                } else {
-                                    cropState.crop()
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        MediaOverlayIconButton(
+                            icon = Icons.AutoMirrored.Rounded.Send,
+                            onClick = {
+                                if (isConfirming || !cropState.isReady) {
+                                    return@MediaOverlayIconButton
                                 }
                                 
-                                val target = if (cropped == null) {
-                                    null
-                                } else {
-                                    withContext(Dispatchers.IO) { writeCrop(context, cropped) }
-                                }
+                                isConfirming = true
                                 
-                                if (target == null) {
-                                    isConfirming = false
-                                } else {
-                                    onConfirm(target)
+                                coroutineScope.launch {
+                                    val cropped = if (clipsToMask) {
+                                        cropState.crop(maskShape, density, layoutDirection)
+                                    } else {
+                                        cropState.crop()
+                                    }
+                                    
+                                    val target = if (cropped == null) {
+                                        null
+                                    } else {
+                                        withContext(Dispatchers.IO) { writeCrop(context, cropped) }
+                                    }
+                                    
+                                    if (target == null) {
+                                        isConfirming = false
+                                    } else {
+                                        onConfirm(target)
+                                    }
                                 }
-                            }
-                        })
+                            })
+                    }
                 }
             }
         }
