@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stickers">Stickers</string>
+    <string name="sticker_packs">Sticker packs</string>
+    <string name="sticker_packs_created">Created</string>
+    <string name="sticker_packs_added">Added</string>
+    <string name="sticker_pack">Sticker pack</string>
+    <string name="sticker_pack_new">New sticker pack</string>
+    <string name="sticker_pack_name">Name</string>
+    <string name="sticker_pack_username">Short name</string>
+    <string name="sticker_pack_username_hint">Latin letters, digits and underscore</string>
+    <string name="sticker_pack_username_too_short">At least %1$d characters</string>
+    <string name="sticker_pack_username_checking">Checking…</string>
+    <string name="sticker_pack_username_available">Short name is available</string>
+    <string name="sticker_pack_username_taken">Short name is already taken</string>
+    <string name="sticker_pack_username_unknown">Couldn\'t check the short name</string>
+    <string name="sticker_add">Add sticker</string>
+    <string name="sticker_add_error">Couldn\'t process the image</string>
+    <string name="sticker_upload_error">Couldn\'t upload the sticker</string>
+    <string name="sticker_pack_saved">Sticker pack saved</string>
+    <string name="sticker_pack_save_error">Couldn\'t save the sticker pack</string>
+    <string name="sticker_pack_load_error">Couldn\'t load the sticker pack</string>
+    <string name="sticker_packs_load_error">Couldn\'t load sticker packs</string>
+    <string name="sticker_packs_empty">No sticker packs yet</string>
+    <string name="sticker_packs_search">Search</string>
+    <string name="sticker_pack_delete_action">Delete</string>
+    <string name="sticker_pack_delete_cancel">Cancel</string>
+    <string name="sticker_pack_delete_message">Deleting is irreversible. You and other users will no longer be able to send stickers from this pack.</string>
+    <string name="sticker_pack_remove_message">The pack will be removed from your list only. Other users will keep it.</string>
+    <string name="sticker_pack_deleted">Sticker pack deleted</string>
+    <string name="sticker_pack_delete_error">Couldn\'t delete the sticker pack</string>
+    <string name="sticker_pack_removed">Sticker pack removed</string>
+    <string name="sticker_pack_remove_error">Couldn\'t remove the sticker pack</string>
+    <plurals name="sticker_count">
+        <item quantity="one">%1$d sticker</item>
+        <item quantity="other">%1$d stickers</item>
+    </plurals>
+</resources>
