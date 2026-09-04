@@ -70,9 +70,6 @@ fun StorageScreen(viewModel: StorageViewModel = hiltViewModel()) {
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collectLatest { event ->
             val message = when (event) {
-                // Размер показываем тем же formatFileSize, что и счётчики
-                // категорий выше: в одном экране два разных формата размера
-                // читались бы как ошибка.
                 is StorageUiEvent.CacheCleared -> context.getString(
                     R.string.storage_cache_cleared, event.freedBytes.formatFileSize()
                 )

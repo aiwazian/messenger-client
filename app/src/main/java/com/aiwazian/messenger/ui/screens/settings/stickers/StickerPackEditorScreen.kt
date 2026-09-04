@@ -8,17 +8,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -48,14 +49,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
+import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.chat.components.PhotoPickerBottomSheet
+import com.aiwazian.messenger.utils.UiText
 
 /**
  * Создание или правка набора стикеров.
@@ -86,7 +89,10 @@ fun StickerPackEditorScreen(
                     /* Предыдущее сообщение уже неактуально — не держим очередь. */
                     snackbarHostState.currentSnackbarData?.dismiss()
                     
-                    snackbarHostState.showSnackbar(context.getString(effect.messageRes))
+                    snackbarHostState.showSnackbar(
+                        UiText.StringResource(effect.messageRes)
+                            .asString(context)
+                    )
                 }
             }
         }
@@ -95,6 +101,7 @@ fun StickerPackEditorScreen(
     val isFabVisible = uiState.canSave || uiState.isSaving
     
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             PageTopBar(title = {
                 Text(
@@ -111,7 +118,7 @@ fun StickerPackEditorScreen(
         snackbarHost = { AppSnackbar(hostState = snackbarHostState) },
         floatingActionButton = {
             if (isFabVisible) {
-                FloatingActionButton(onClick = viewModel::save) {
+                FloatingActionButton(onClick = viewModel::save, shape = CircleShape) {
                     if (uiState.isSaving) {
                         CircularWavyProgressIndicator(modifier = Modifier.size(24.dp))
                     } else {
@@ -126,21 +133,18 @@ fun StickerPackEditorScreen(
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         LazyVerticalGrid(
-            /* На телефоне выйдет три столбца, на планшете больше. */
             columns = GridCells.Adaptive(minSize = CELL_MIN_SIZE),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
             contentPadding = PaddingValues(
-                start = 10.dp,
-                end = 10.dp,
-                bottom = 100.dp
+                bottom = 20.dp
             ),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             item(span = { GridItemSpan(maxLineSpan) }) {
-                Column {
+                SectionContainer {
                     FramelessTextBox(
                         placeholder = stringResource(R.string.sticker_pack_name),
                         value = uiState.name,
@@ -182,7 +186,6 @@ fun StickerPackEditorScreen(
     
     if (isPickerVisible) {
         PhotoPickerBottomSheet(
-            /* Квадрат со скруглением: стикер — квадратная картинка, а не аватарка. */
             maskShape = MaterialTheme.shapes.large,
             onPhotoPicked = viewModel::addSticker,
             onDismissRequest = { isPickerVisible = false })
@@ -233,19 +236,20 @@ private fun StickerSlotCell(slot: StickerSlot, onRemove: () -> Unit) {
         
         is StickerSlot.Remote -> ImageRequest.Builder(context)
             .data(slot.url)
-            /* Ключ кеша — файл, а не адрес: смена домена CDN не сбросит картинки. */
             .memoryCacheKey(slot.fileId)
             .diskCacheKey(slot.fileId)
             .build()
     }
     
-    Box(modifier = Modifier.aspectRatio(1f)) {
+    Box(
+        modifier = Modifier
+            .aspectRatio(1f)
+            .clip(MaterialTheme.shapes.medium)
+    ) {
         AsyncImage(
             model = model,
             contentDescription = null,
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(MaterialTheme.shapes.medium),
+            modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Fit
         )
         

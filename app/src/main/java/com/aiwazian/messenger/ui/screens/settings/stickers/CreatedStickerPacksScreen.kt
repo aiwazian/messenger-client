@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.FloatingActionButton
@@ -30,14 +32,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.StickerCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.utils.UiText
 
 /** Собственные наборы: отсюда же создаётся новый. */
 @Composable
@@ -62,19 +66,26 @@ fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltView
                 is StickerPackListEffect.ShowMessage -> {
                     snackbarHostState.currentSnackbarData?.dismiss()
                     
-                    snackbarHostState.showSnackbar(context.getString(effect.messageRes))
+                    snackbarHostState.showSnackbar(
+                        UiText.StringResource(effect.messageRes)
+                            .asString(context)
+                    )
                 }
             }
         }
     }
     
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             PageTopBar(title = { Text(stringResource(R.string.sticker_packs_created)) })
         },
         snackbarHost = { AppSnackbar(hostState = snackbarHostState) },
         floatingActionButton = {
-            FloatingActionButton(onClick = { navBackStack.add(AppRoute.StickerPackEditor()) }) {
+            FloatingActionButton(
+                onClick = { navBackStack.add(AppRoute.StickerPackEditor()) },
+                shape = CircleShape
+            ) {
                 Icon(
                     imageVector = Icons.Rounded.Add,
                     contentDescription = null
@@ -88,18 +99,18 @@ fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltView
                 .fillMaxSize()
                 .padding(innerPadding),
             contentPadding = PaddingValues(
-                start = 10.dp,
-                end = 10.dp,
-                bottom = 100.dp
+                bottom = 20.dp
             ),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             item(key = SEARCH_KEY) {
-                FramelessTextBox(
-                    placeholder = stringResource(R.string.sticker_packs_search),
-                    value = uiState.query,
-                    onValueChange = viewModel::onQueryChange
-                )
+                SectionContainer {
+                    FramelessTextBox(
+                        placeholder = stringResource(R.string.search),
+                        value = uiState.query,
+                        onValueChange = viewModel::onQueryChange
+                    )
+                }
             }
             
             items(

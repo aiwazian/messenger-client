@@ -15,7 +15,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -24,6 +26,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,7 +38,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -43,7 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
@@ -69,6 +71,7 @@ import javax.inject.Inject
  * для стикера.
  * @param onPhotoPicked отдаёт уже обрезанный кадр в кеше, а не исходный файл галереи.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhotoPickerBottomSheet(
     maskShape: Shape,
@@ -87,10 +90,6 @@ fun PhotoPickerBottomSheet(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
-        /*
-         * На Android 14 можно выдать доступ к части снимков, поэтому хватает любого
-         * выданного разрешения: галерея покажет то, что отметил пользователь.
-         */
         hasPermission = result.values.any { it }
     }
     
@@ -100,13 +99,7 @@ fun PhotoPickerBottomSheet(
         }
     }
     
-    AppBottomSheet(onDismissRequest = onDismissRequest) {
-        Text(
-            text = stringResource(R.string.gallery),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-        )
-        
+    AppBottomSheet(onDismissRequest = onDismissRequest, contentPadding = PaddingValues.Zero) {
         when {
             !hasPermission -> {
                 Column(
@@ -154,7 +147,7 @@ fun PhotoPickerBottomSheet(
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(GRID_COLUMNS),
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxSize()
                         .heightIn(max = GRID_MAX_HEIGHT),
                     horizontalArrangement = Arrangement.spacedBy(CELL_SPACING),
                     verticalArrangement = Arrangement.spacedBy(CELL_SPACING)
@@ -191,7 +184,6 @@ private fun PhotoCell(photo: DeviceMediaItem, onClick: () -> Unit) {
         contentScale = ContentScale.Crop,
         modifier = Modifier
             .aspectRatio(1f)
-            .clip(MaterialTheme.shapes.extraSmall)
             .clickable(onClick = onClick)
     )
 }
@@ -207,12 +199,6 @@ class PhotoPickerViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
     
-    /**
-     * Грузит только фотографии.
-     *
-     * Видео и GIF отбрасываются: анимированные стикеры ещё не сделаны, а аватарка
-     * всегда статичная.
-     */
     fun load() {
         viewModelScope.launch {
             _isLoading.value = true

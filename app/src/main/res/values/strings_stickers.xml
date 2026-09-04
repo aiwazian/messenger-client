@@ -1,4 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     <string name="stickers">Stickers</string>
     <string name="sticker_packs">Sticker packs</string>
@@ -22,7 +25,6 @@
     <string name="sticker_pack_load_error">Couldn\'t load the sticker pack</string>
     <string name="sticker_packs_load_error">Couldn\'t load sticker packs</string>
     <string name="sticker_packs_empty">No sticker packs yet</string>
-    <string name="sticker_packs_search">Search</string>
     <string name="sticker_pack_delete_action">Delete</string>
     <string name="sticker_pack_delete_cancel">Cancel</string>
     <string name="sticker_pack_delete_message">Deleting is irreversible. You and other users will no longer be able to send stickers from this pack.</string>

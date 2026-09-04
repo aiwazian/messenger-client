@@ -1,4 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
     <string name="stickers">Стикеры</string>
     <string name="sticker_packs">Стикерпаки</string>
@@ -22,7 +25,6 @@
     <string name="sticker_pack_load_error">Не удалось загрузить стикерпак</string>
     <string name="sticker_packs_load_error">Не удалось загрузить стикерпаки</string>
     <string name="sticker_packs_empty">Стикерпаков пока нет</string>
-    <string name="sticker_packs_search">Поиск</string>
     <string name="sticker_pack_delete_action">Удалить</string>
     <string name="sticker_pack_delete_cancel">Отмена</string>
     <string name="sticker_pack_delete_message">Удаление необратимо. Вы и другие пользователи больше не смогут отправлять стикеры из набора.</string>
