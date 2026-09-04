@@ -60,11 +60,6 @@ import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.chat.components.PhotoPickerBottomSheet
 import com.aiwazian.messenger.utils.UiText
 
-/**
- * Создание или правка набора стикеров.
- *
- * @param packId `null` для нового набора.
- */
 @Composable
 fun StickerPackEditorScreen(
     packId: Long? = null,
@@ -86,7 +81,6 @@ fun StickerPackEditorScreen(
         viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is StickerPackEditorEffect.ShowMessage -> {
-                    /* Предыдущее сообщение уже неактуально — не держим очередь. */
                     snackbarHostState.currentSnackbarData?.dismiss()
                     
                     snackbarHostState.showSnackbar(
@@ -188,7 +182,8 @@ fun StickerPackEditorScreen(
         PhotoPickerBottomSheet(
             maskShape = MaterialTheme.shapes.large,
             onPhotoPicked = viewModel::addSticker,
-            onDismissRequest = { isPickerVisible = false })
+            onDismissRequest = { isPickerVisible = false },
+            clipsToMask = true)
     }
 }
 
