@@ -88,12 +88,6 @@ import com.aiwazian.messenger.utils.media.estimateSizeBytes
 import com.aiwazian.messenger.utils.media.frameFor
 import kotlinx.coroutines.launch
 
-/**
- * Что правит нижняя панель предпросмотра.
- *
- * Панель одна, поэтому режимы взаимно исключаются: иначе слайдер качества и
- * кнопки поворота боролись бы за одно и то же место.
- */
 private enum class PreviewMode {
     Content,
     Quality,
@@ -159,6 +153,8 @@ fun MediaPickerPreview(
         initial = currentItem?.let(mediaTransform) ?: MediaTransform.None,
         key = currentItem?.uri to transformAttempt
     )
+    
+    val isTransformed = currentItem?.let(mediaTransform)?.isIdentity == false
     
     val canTransform = currentItem != null && !currentItem.isGif
     
@@ -329,7 +325,7 @@ fun MediaPickerPreview(
                                 Text(text = stringResource(R.string.cancel).uppercase())
                             }
                             
-                            androidx.compose.animation.AnimatedVisibility(
+                            AnimatedVisibility(
                                 visible = mode == PreviewMode.Transform && transformState.isChanged,
                                 modifier = Modifier.align(Alignment.Center),
                                 enter = expressiveScaleIn,
@@ -400,6 +396,7 @@ fun MediaPickerPreview(
                             isVideoUiVisible = isChromeVisible,
                             isVideoSeekBarVisible = !isEditing,
                             isTransformable = !item.isGif,
+                            isTransformed = mediaTransform(item)?.isIdentity == false,
                             videoQualityIcon = qualityIcon,
                             onVideoQualityClick = if (isCurrentPage) openQuality else null,
                             onVideoTransformClick = if (isCurrentPage) openTransform else null,
@@ -423,7 +420,8 @@ fun MediaPickerPreview(
                 ) {
                     MediaOverlayIconButton(
                         icon = Icons.Rounded.CropRotate,
-                        onClick = { mode = PreviewMode.Transform })
+                        onClick = { mode = PreviewMode.Transform },
+                        isActive = isTransformed)
                 }
             }
         }
