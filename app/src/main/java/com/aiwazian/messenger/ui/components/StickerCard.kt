@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -38,7 +39,6 @@ import com.aiwazian.messenger.domain.StickerPack
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
-import com.aiwazian.messenger.extensions.clickableWithoutRipple
 
 /**
  * Карточка набора в списке.
@@ -61,7 +61,7 @@ fun StickerCard(
     
     ListItem(
         headlineContent = { Text(pack.name) },
-        modifier = modifier.clickableWithoutRipple(onClick = onClick),
+        modifier = modifier.clickable(onClick = onClick),
         supportingContent = {
             Text(
                 pluralStringResource(
@@ -92,6 +92,7 @@ fun StickerCard(
                     AsyncImage(
                         model = ImageRequest.Builder(context)
                             .data(cover.url)
+                            /* Ключ кеша — файл, а не адрес: смена домена CDN не сбросит картинки. */
                             .memoryCacheKey(cover.fileId)
                             .diskCacheKey(cover.fileId)
                             .build(),
@@ -115,7 +116,7 @@ fun StickerCard(
                     expanded = isMenuExpanded,
                     onDismissRequest = { isMenuExpanded = false }) {
                     AppDropdownMenuItem(
-                        text = stringResource(R.string.delete),
+                        text = stringResource(R.string.sticker_pack_delete_action),
                         onClick = {
                             isMenuExpanded = false
                             isDeleteDialogVisible = true
@@ -138,7 +139,7 @@ fun StickerCard(
             onDismissRequest = { isDeleteDialogVisible = false },
             buttons = {
                 TextButton(onClick = { isDeleteDialogVisible = false }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(R.string.sticker_pack_delete_cancel))
                 }
                 
                 TextButton(onClick = {
@@ -147,7 +148,7 @@ fun StickerCard(
                     onDelete()
                 }) {
                     Text(
-                        text = stringResource(R.string.delete),
+                        text = stringResource(R.string.sticker_pack_delete_action),
                         color = MaterialTheme.colorScheme.error
                     )
                 }
