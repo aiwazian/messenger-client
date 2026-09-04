@@ -23,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -70,8 +71,11 @@ class MediaCropState internal constructor() {
     internal val offsetX = Animatable(0f)
     internal val offsetY = Animatable(0f)
     
-    var isAdjusted by mutableStateOf(false)
-        private set
+    private var rotationTurns by mutableIntStateOf(0)
+    private var isMirrored by mutableStateOf(false)
+    
+    val isTransformed: Boolean
+        get() = rotationTurns % FULL_TURN_STEPS != 0 || isMirrored
     
     private var fitScale = 1f
     
@@ -85,7 +89,8 @@ class MediaCropState internal constructor() {
     internal suspend fun setBitmap(value: Bitmap?) {
         bitmap = value
         scale = 1f
-        isAdjusted = false
+        rotationTurns = 0
+        isMirrored = false
         
         offsetX.snapTo(0f)
         offsetY.snapTo(0f)
@@ -103,7 +108,7 @@ class MediaCropState internal constructor() {
     
     internal suspend fun transform(centroid: Offset, zoom: Float, pan: Offset) {
         val previousScale = scale
-        val nextScale = (previousScale * zoom).coerceIn(minScale, MAX_SCALE)
+        val nextScale = (previousScale * zoom).coerceIn(minScale, maxOf(minScale, MAX_SCALE))
         val scaleDelta = if (previousScale <= 0f) 1f else nextScale / previousScale
         
         val anchor = Offset(
@@ -121,10 +126,6 @@ class MediaCropState internal constructor() {
         
         offsetX.snapTo(moved.x)
         offsetY.snapTo(moved.y)
-        
-        if (scaleDelta != 1f || pan != Offset.Zero) {
-            isAdjusted = true
-        }
     }
     
     internal suspend fun settle() = coroutineScope {
@@ -152,7 +153,7 @@ class MediaCropState internal constructor() {
         val rotated = source.rotatedQuarter()
         
         bitmap = rotated
-        isAdjusted = true
+        rotationTurns += 1
         
         applyLimits(rotated)
         
@@ -168,7 +169,7 @@ class MediaCropState internal constructor() {
     
     fun mirror() {
         bitmap = bitmap?.mirrored()
-        isAdjusted = true
+        isMirrored = !isMirrored
     }
     
     fun crop(): Bitmap? {
@@ -219,11 +220,15 @@ class MediaCropState internal constructor() {
             return
         }
         
+        if (source.width <= 0 || source.height <= 0) {
+            return
+        }
+        
         fitScale = minOf(viewportWidth / source.width, viewportHeight / source.height)
         
-        minScale = (maskSide / minOf(
-            source.width * fitScale, source.height * fitScale
-        )).coerceAtLeast(1f)
+        val shortSide = minOf(source.width * fitScale, source.height * fitScale)
+        
+        minScale = if (shortSide > 0f) maskSide / shortSide else 1f
         
         if (scale < minScale) {
             scale = minScale
@@ -248,7 +253,6 @@ fun rememberMediaCropState(uri: Uri): MediaCropState {
 @Composable
 fun MediaCropBox(
     state: MediaCropState,
-    maskShape: Shape,
     modifier: Modifier = Modifier,
     contentRotation: Float = 0f,
     contentScaleX: Float = 1f,
@@ -268,7 +272,7 @@ fun MediaCropBox(
         val viewportWidth = constraints.maxWidth.toFloat()
         val viewportHeight = constraints.maxHeight.toFloat()
         
-        val side = (minOf(viewportWidth, viewportHeight) - inset * 2f).coerceAtLeast(1f)
+        val side = maskSideFor(viewportWidth, viewportHeight, inset)
         
         SideEffect {
             state.onMeasured(width = viewportWidth, height = viewportHeight, side = side)
@@ -297,28 +301,34 @@ fun MediaCropBox(
                         rotationZ = contentRotation
                     })
         }
+    }
+}
+
+@Composable
+fun MediaCropMask(maskShape: Shape, modifier: Modifier = Modifier) {
+    val scrimColor = MaterialTheme.colorScheme.surface.copy(alpha = SCRIM_ALPHA)
+    val layoutDirection = LocalLayoutDirection.current
+    
+    Canvas(
+        modifier = modifier.graphicsLayer {
+            compositingStrategy = CompositingStrategy.Offscreen
+        }) {
+        val side = maskSideFor(size.width, size.height, MASK_INSET.toPx())
         
-        val scrimColor = MaterialTheme.colorScheme.surface.copy(alpha = SCRIM_ALPHA)
-        val layoutDirection = LocalLayoutDirection.current
+        drawRect(color = scrimColor)
         
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) {
-            drawRect(color = scrimColor)
-            
-            val outline = maskShape.createOutline(
-                size = Size(side, side), layoutDirection = layoutDirection, density = this
-            )
-            
-            translate(left = (size.width - side) / 2f, top = (size.height - side) / 2f) {
-                drawOutline(
-                    outline = outline, color = Color.Transparent, blendMode = BlendMode.Clear
-                )
-            }
+        val outline = maskShape.createOutline(
+            size = Size(side, side), layoutDirection = layoutDirection, density = this
+        )
+        
+        translate(left = (size.width - side) / 2f, top = (size.height - side) / 2f) {
+            drawOutline(outline = outline, color = Color.Transparent, blendMode = BlendMode.Clear)
         }
     }
 }
+
+private fun maskSideFor(width: Float, height: Float, inset: Float): Float =
+    (minOf(width, height) - inset * 2f).coerceAtLeast(1f)
 
 private fun Bitmap.clippedTo(
     shape: Shape, density: Density, layoutDirection: LayoutDirection
@@ -382,3 +392,4 @@ private val MASK_INSET = 16.dp
 private const val MAX_SCALE = 10f
 private const val SCRIM_ALPHA = 0.62f
 private const val MAX_SOURCE_DIMENSION = 2048
+private const val FULL_TURN_STEPS = 4
