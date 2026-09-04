@@ -8,14 +8,12 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,10 +30,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
@@ -64,7 +62,9 @@ import coil.request.ImageRequest
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppSnackbar
+import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.FramelessTextBox
+import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
@@ -144,9 +144,9 @@ fun StickerPackEditorScreen(
         snackbarHost = { AppSnackbar(hostState = snackbarHostState) },
         floatingActionButton = {
             if (isFabVisible) {
-                FloatingActionButton(onClick = { viewModel.save() }, shape = CircleShape) {
+                FloatingActionButton(onClick = viewModel::save, shape = CircleShape) {
                     if (uiState.isSaving) {
-                        CircularWavyProgressIndicator(modifier = Modifier.size(24.dp))
+                        CircularProgressIndicator()
                     } else {
                         Icon(
                             imageVector = Icons.Rounded.Done,
@@ -158,55 +158,57 @@ fun StickerPackEditorScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = CELL_MIN_SIZE),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(
-                bottom = 20.dp
-            ),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                SectionContainer {
-                    FramelessTextBox(
-                        placeholder = stringResource(R.string.sticker_pack_name),
-                        value = uiState.name,
-                        onValueChange = viewModel::onNameChange,
-                        trailingIcon = {
-                            Text(
-                                text = "${uiState.name.length}/${StickerPackEditorViewModel.MAX_NAME_LENGTH}",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp
-                            )
-                        })
-                    
-                    FramelessTextBox(
-                        placeholder = stringResource(R.string.sticker_pack_username),
-                        value = uiState.username,
-                        onValueChange = viewModel::onUsernameChange,
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None)
-                    )
-                    
-                    UsernameHint(status = uiState.usernameStatus)
+        Box {
+            TopBarScrim(height = innerPadding.calculateTopPadding())
+            
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 64.dp),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = innerPadding,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    SectionContainer(footer = {
+                        UsernameHint(status = uiState.usernameStatus)
+                    }) {
+                        FramelessTextBox(
+                            placeholder = stringResource(R.string.sticker_pack_name),
+                            value = uiState.name,
+                            onValueChange = viewModel::onNameChange,
+                            trailingIcon = {
+                                Text(
+                                    text = "${uiState.name.length}/${StickerPackEditorViewModel.MAX_NAME_LENGTH}",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 12.sp
+                                )
+                            })
+                        
+                        FramelessTextBox(
+                            placeholder = stringResource(R.string.sticker_pack_username),
+                            value = uiState.username,
+                            onValueChange = viewModel::onUsernameChange,
+                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None)
+                        )
+                    }
+                }
+                
+                items(
+                    items = uiState.stickers,
+                    key = { it.key }) { slot ->
+                    StickerSlotCell(
+                        slot = slot,
+                        onRemove = { viewModel.removeSticker(slot.key) })
+                }
+                
+                item {
+                    AddStickerCell(
+                        isBusy = uiState.isAddingSticker,
+                        onClick = { isPickerVisible = true })
                 }
             }
             
-            items(
-                items = uiState.stickers,
-                key = { it.key }) { slot ->
-                StickerSlotCell(
-                    slot = slot,
-                    onRemove = { viewModel.removeSticker(slot.key) })
-            }
-            
-            item(key = ADD_CELL_KEY) {
-                AddStickerCell(
-                    isBusy = uiState.isAddingSticker,
-                    onClick = { isPickerVisible = true })
-            }
+            BottomBarScrim(height = innerPadding.calculateBottomPadding())
         }
     }
     
@@ -215,11 +217,13 @@ fun StickerPackEditorScreen(
             maskShape = MaterialTheme.shapes.large,
             onPhotoPicked = viewModel::addSticker,
             onDismissRequest = { isPickerVisible = false },
-            clipsToMask = true)
+            clipsToMask = true
+        )
     }
     
     if (isExitDialogVisible) {
         AppDialog(
+            title = "Несохраненные изменения",
             onDismissRequest = { isExitDialogVisible = false },
             buttons = {
                 TextButton(onClick = {
@@ -307,14 +311,20 @@ private fun StickerSlotCell(slot: StickerSlot, onRemove: () -> Unit) {
             contentScale = ContentScale.Fit
         )
         
-        IconButton(
-            onClick = onRemove,
-            modifier = Modifier.align(Alignment.TopEnd)
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(2.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onRemove)
+                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f))
+                .padding(4.dp)
         ) {
             Icon(
                 imageVector = Icons.Rounded.Close,
                 contentDescription = null,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier
+                    .size(16.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -327,7 +337,7 @@ private fun AddStickerCell(isBusy: Boolean, onClick: () -> Unit) {
     val isPressed by interactionSource.collectIsPressedAsState()
     
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) PRESSED_SCALE else 1f,
+        targetValue = if (isPressed) 0.9f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow
         ),
@@ -346,7 +356,7 @@ private fun AddStickerCell(isBusy: Boolean, onClick: () -> Unit) {
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(
                 interactionSource = interactionSource,
-                indication = LocalIndication.current,
+                indication = null,
                 enabled = !isBusy,
                 onClick = onClick
             ),
@@ -363,7 +373,3 @@ private fun AddStickerCell(isBusy: Boolean, onClick: () -> Unit) {
         }
     }
 }
-
-private val CELL_MIN_SIZE = 104.dp
-private const val ADD_CELL_KEY = "add_sticker"
-private const val PRESSED_SCALE = 0.9f
