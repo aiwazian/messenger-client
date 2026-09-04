@@ -325,7 +325,7 @@ fun MediaPickerPreview(
                                 Text(text = stringResource(R.string.cancel).uppercase())
                             }
                             
-                            AnimatedVisibility(
+                            this@Column.AnimatedVisibility(
                                 visible = mode == PreviewMode.Transform && transformState.isChanged,
                                 modifier = Modifier.align(Alignment.Center),
                                 enter = expressiveScaleIn,
