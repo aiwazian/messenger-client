@@ -53,30 +53,21 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.repository.DeviceMediaRepository
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.components.mediaTransitionOrigin
+import com.aiwazian.messenger.ui.components.pickerMediaKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Выбор ровно одной фотографии с кадрированием под маску.
- *
- * Отдельная шторка, а не режим [MediaPickerBottomSheet]: там вся логика строится
- * вокруг множественного выбора, подписи и отправки в чат. Здесь ничего этого
- * нет: нужен один кадр для стикера или аватарки, поэтому нет ни кружков
- * выбора, ни текстового поля, и тап по ячейке сразу ведёт к кадрированию.
- *
- * @param maskShape форма окна кадрирования: круг для аватарки, скруглённый квадрат
- * для стикера.
- * @param onPhotoPicked отдаёт уже обрезанный кадр в кеше, а не исходный файл галереи.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhotoPickerBottomSheet(
     maskShape: Shape,
     onPhotoPicked: (Uri) -> Unit,
     onDismissRequest: () -> Unit,
+    clipsToMask: Boolean = false,
     viewModel: PhotoPickerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -172,7 +163,8 @@ fun PhotoPickerBottomSheet(
                 onPhotoPicked(cropped)
                 onDismissRequest()
             },
-            onDismiss = { croppingUri = null })
+            onDismiss = { croppingUri = null },
+            clipsToMask = clipsToMask)
     }
 }
 
@@ -185,6 +177,7 @@ private fun PhotoCell(photo: DeviceMediaItem, onClick: () -> Unit) {
         modifier = Modifier
             .aspectRatio(1f)
             .clickable(onClick = onClick)
+            .mediaTransitionOrigin(pickerMediaKey(photo.uri))
     )
 }
 
