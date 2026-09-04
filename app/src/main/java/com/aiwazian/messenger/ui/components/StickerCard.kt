@@ -60,17 +60,7 @@ fun StickerCard(
     var isDeleteDialogVisible by remember { mutableStateOf(false) }
     
     ListItem(
-        headlineContent = { Text(pack.name) },
         modifier = modifier.clickable(onClick = onClick),
-        supportingContent = {
-            Text(
-                pluralStringResource(
-                    R.plurals.sticker_count,
-                    pack.stickerCount,
-                    pack.stickerCount
-                )
-            )
-        },
         leadingContent = {
             val cover = pack.coverSticker
             
@@ -92,7 +82,6 @@ fun StickerCard(
                     AsyncImage(
                         model = ImageRequest.Builder(context)
                             .data(cover.url)
-                            /* Ключ кеша — файл, а не адрес: смена домена CDN не сбросит картинки. */
                             .memoryCacheKey(cover.fileId)
                             .diskCacheKey(cover.fileId)
                             .build(),
@@ -130,7 +119,19 @@ fun StickerCard(
                 }
             }
         },
-        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+        overlineContent = null,
+        supportingContent = {
+            Text(
+                pluralStringResource(
+                    R.plurals.sticker_count,
+                    pack.stickerCount,
+                    pack.stickerCount
+                )
+            )
+        },
+        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        elevation = ListItemDefaults.elevation(ListItemDefaults.Elevation),
+        content = { Text(pack.name) },
     )
     
     if (isDeleteDialogVisible) {

@@ -103,7 +103,7 @@ fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltView
             ),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            item(key = SEARCH_KEY) {
+            item {
                 SectionContainer {
                     FramelessTextBox(
                         placeholder = stringResource(R.string.search),
@@ -128,7 +128,7 @@ fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltView
             }
             
             if (uiState.visiblePacks.isEmpty() && !uiState.isLoading) {
-                item(key = EMPTY_KEY) {
+                item {
                     Text(
                         text = stringResource(R.string.sticker_packs_empty),
                         modifier = Modifier
@@ -142,6 +142,3 @@ fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltView
         }
     }
 }
-
-private const val SEARCH_KEY = "search"
-private const val EMPTY_KEY = "empty"
