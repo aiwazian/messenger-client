@@ -25,6 +25,9 @@
     <string name="sticker_pack_load_error">Не удалось загрузить стикерпак</string>
     <string name="sticker_packs_load_error">Не удалось загрузить стикерпаки</string>
     <string name="sticker_packs_empty">Стикерпаков пока нет</string>
+    <string name="sticker_pack_unsaved_message">Есть несохранённые изменения</string>
+    <string name="sticker_pack_unsaved_discard">Сбросить</string>
+    <string name="sticker_pack_unsaved_apply">Применить</string>
     <string name="sticker_pack_delete_action">Удалить</string>
     <string name="sticker_pack_delete_cancel">Отмена</string>
     <string name="sticker_pack_delete_message">Удаление необратимо. Вы и другие пользователи больше не смогут отправлять стикеры из набора.</string>
