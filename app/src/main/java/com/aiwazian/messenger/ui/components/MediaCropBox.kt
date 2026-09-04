@@ -31,17 +31,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Canvas as GraphicsCanvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.aiwazian.messenger.utils.media.mirrored
 import com.aiwazian.messenger.utils.media.rotatedQuarter
@@ -50,19 +57,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * Кадрирование одной картинки под маску: панорама, масштаб, поворот, отражение.
- *
- * Состояние живёт отдельно от разметки, потому что подтверждение и правка кадра
- * нажимаются в чужой панели: у выбора медиа своя нижняя панель во весь экран, и
- * внутрь области кадрирования она не помещается.
- *
- * Геометрию записывает [MediaCropBox] при измерении — снаружи она неизвестна, а
- * без стороны маски и размеров окна вырезаемый прямоугольник не посчитать.
- */
 class MediaCropState internal constructor() {
     
-    /** Кадр в текущем виде: поворот и отражение применяются к самому битмапу. */
     var bitmap by mutableStateOf<Bitmap?>(null)
         private set
     
@@ -74,20 +70,22 @@ class MediaCropState internal constructor() {
     internal val offsetX = Animatable(0f)
     internal val offsetY = Animatable(0f)
     
-    /** Множитель «вписать кадр в окно»: масштаб пользователя считается от него. */
+    var isAdjusted by mutableStateOf(false)
+        private set
+    
     private var fitScale = 1f
     
     private var maskSide = 0f
     private var viewportWidth = 0f
     private var viewportHeight = 0f
     
-    /** Кадр загружен и окно измерено: до этого вырезать нечего. */
     val isReady: Boolean
         get() = bitmap != null && maskSide > 0f
     
     internal suspend fun setBitmap(value: Bitmap?) {
         bitmap = value
         scale = 1f
+        isAdjusted = false
         
         offsetX.snapTo(0f)
         offsetY.snapTo(0f)
@@ -103,17 +101,32 @@ class MediaCropState internal constructor() {
         bitmap?.let { applyLimits(it) }
     }
     
-    internal suspend fun pan(change: Offset) {
-        offsetX.snapTo(offsetX.value + change.x)
-        offsetY.snapTo(offsetY.value + change.y)
+    internal suspend fun transform(centroid: Offset, zoom: Float, pan: Offset) {
+        val previousScale = scale
+        val nextScale = (previousScale * zoom).coerceIn(minScale, MAX_SCALE)
+        val scaleDelta = if (previousScale <= 0f) 1f else nextScale / previousScale
+        
+        val anchor = Offset(
+            x = centroid.x - viewportWidth / 2f, y = centroid.y - viewportHeight / 2f
+        )
+        
+        val moved = zoomAnchoredOffset(
+            offset = Offset(offsetX.value, offsetY.value),
+            anchor = anchor,
+            pan = pan,
+            scaleDelta = scaleDelta
+        )
+        
+        scale = nextScale
+        
+        offsetX.snapTo(moved.x)
+        offsetY.snapTo(moved.y)
+        
+        if (scaleDelta != 1f || pan != Offset.Zero) {
+            isAdjusted = true
+        }
     }
     
-    /**
-     * Жест закончился — кадр подтягивается назад, пока маска не заполнена.
-     *
-     * Сдвиг ограничивается не во время жеста, а после него: упор в край посреди
-     * перетаскивания читался бы как залипание пальца.
-     */
     internal suspend fun settle() = coroutineScope {
         val source = bitmap ?: return@coroutineScope
         
@@ -132,12 +145,6 @@ class MediaCropState internal constructor() {
         }
     }
     
-    /**
-     * Поворот на четверть: пересобирается сам битмап, а не слой отрисовки.
-     *
-     * Иначе вырезать пришлось бы из повёрнутой системы координат, и та же
-     * математика понадобилась бы дважды — на экране и при сохранении.
-     */
     suspend fun rotate() {
         val source = bitmap ?: return
         val previousFitScale = fitScale
@@ -145,12 +152,10 @@ class MediaCropState internal constructor() {
         val rotated = source.rotatedQuarter()
         
         bitmap = rotated
+        isAdjusted = true
+        
         applyLimits(rotated)
         
-        /*
-         * Масштаб хранится множителем к вписанному размеру, а после поворота
-         * вписывание другое: без пересчёта кадр прыгнул бы в размере.
-         */
         if (previousFitScale > 0f && fitScale > 0f) {
             scale = (scale * previousFitScale / fitScale).coerceAtLeast(minScale)
         }
@@ -163,14 +168,9 @@ class MediaCropState internal constructor() {
     
     fun mirror() {
         bitmap = bitmap?.mirrored()
+        isAdjusted = true
     }
     
-    /**
-     * Квадрат под маской в пикселях исходного кадра.
-     *
-     * Возвращается именно квадрат, даже когда маска круглая: прозрачные углы
-     * рисует уже отправка, а промежуточный кадр остаётся обычной картинкой.
-     */
     fun crop(): Bitmap? {
         val source = bitmap ?: return null
         val totalScale = fitScale * scale
@@ -194,12 +194,26 @@ class MediaCropState internal constructor() {
         return Bitmap.createBitmap(source, safeLeft, safeTop, safeSide, safeSide)
     }
     
-    /**
-     * Нижний предел масштаба — тот, при котором маска ещё заполнена целиком.
-     *
-     * Пустоту под маской не даём выбрать вовсе: у аватарки она стала бы дырой в
-     * кружке, а у стикера — незаметной на превью прозрачной полосой.
-     */
+    fun crop(shape: Shape, density: Density, layoutDirection: LayoutDirection): Bitmap? {
+        val square = crop() ?: return null
+        
+        if (maskSide <= 0f) {
+            return square
+        }
+        
+        val shapeDensity = Density(
+            density = density.density * square.width / maskSide, fontScale = density.fontScale
+        )
+        
+        val clipped = square.clippedTo(shape, shapeDensity, layoutDirection)
+        
+        if (clipped !== square) {
+            square.recycle()
+        }
+        
+        return clipped
+    }
+    
     private fun applyLimits(source: Bitmap) {
         if (viewportWidth <= 0f || viewportHeight <= 0f || maskSide <= 0f) {
             return
@@ -231,19 +245,6 @@ fun rememberMediaCropState(uri: Uri): MediaCropState {
     return state
 }
 
-/**
- * Кадр под затемнением с вырезом заданной формы.
- *
- * Форма приходит снаружи: у аватарки вырез круглый, у стикера — квадрат со
- * скруглением темы. Кроме формы эти два случая ничем не отличаются, поэтому
- * второго экрана кадрирования нет.
- *
- * @param contentRotation поворот, который отыгрывает панель правки, пока новый
- * битмап ещё не подставлен.
- * @param contentScaleX отражение по горизонтали из той же панели.
- * @param isGestureEnabled на время анимации правки жесты выключаются: масштаб,
- * посчитанный от кадра в движении, разъезжается с итоговым.
- */
 @Composable
 fun MediaCropBox(
     state: MediaCropState,
@@ -255,12 +256,10 @@ fun MediaCropBox(
 ) {
     val coroutineScope = rememberCoroutineScope()
     
-    val transformableState = rememberTransformableState { _, zoomChange, panChange, _ ->
+    val transformableState = rememberTransformableState { centroid, zoomChange, panChange, _ ->
         if (!isGestureEnabled) return@rememberTransformableState
         
-        state.scale = (state.scale * zoomChange).coerceIn(state.minScale, MAX_SCALE)
-        
-        coroutineScope.launch { state.pan(panChange) }
+        coroutineScope.launch { state.transform(centroid, zoomChange, panChange) }
     }
     
     BoxWithConstraints(modifier = modifier.transformable(state = transformableState)) {
@@ -302,11 +301,6 @@ fun MediaCropBox(
         val scrimColor = MaterialTheme.colorScheme.surface.copy(alpha = SCRIM_ALPHA)
         val layoutDirection = LocalLayoutDirection.current
         
-        /*
-         * Затемнение и вырез — один слой: BlendMode.Clear стирает уже
-         * нарисованное, поэтому вырез обязан попасть в тот же offscreen-слой,
-         * иначе он выест и кадр под затемнением.
-         */
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -326,10 +320,26 @@ fun MediaCropBox(
     }
 }
 
-/**
- * Кадр читается уменьшенным: кадрирование правит рамку, а не пиксели, и полный
- * снимок современной камеры занял бы в памяти десятки мегабайт впустую.
- */
+private fun Bitmap.clippedTo(
+    shape: Shape, density: Density, layoutDirection: LayoutDirection
+): Bitmap {
+    if (width <= 0 || height <= 0) {
+        return this
+    }
+    
+    val size = Size(width.toFloat(), height.toFloat())
+    val outline = shape.createOutline(size, layoutDirection, density)
+    val target = ImageBitmap(width, height, ImageBitmapConfig.Argb8888)
+    val source = asImageBitmap()
+    
+    CanvasDrawScope().draw(density, layoutDirection, GraphicsCanvas(target), size) {
+        drawOutline(outline = outline, color = Color.Black)
+        drawImage(image = source, blendMode = BlendMode.SrcIn)
+    }
+    
+    return target.asAndroidBitmap()
+}
+
 private fun loadSampledBitmap(context: Context, uri: Uri): Bitmap? {
     return try {
         val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
