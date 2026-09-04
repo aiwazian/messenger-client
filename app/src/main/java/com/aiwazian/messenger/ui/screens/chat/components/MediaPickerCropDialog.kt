@@ -10,10 +10,10 @@ import android.net.Uri
 import android.util.Log
 import android.view.WindowManager
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,6 +46,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -58,7 +60,12 @@ import com.aiwazian.messenger.ui.components.MediaCropBox
 import com.aiwazian.messenger.ui.components.MediaFlipButton
 import com.aiwazian.messenger.ui.components.MediaOverlayIconButton
 import com.aiwazian.messenger.ui.components.MediaRotateButton
+import com.aiwazian.messenger.ui.components.mediaHeroBackground
+import com.aiwazian.messenger.ui.components.mediaHeroContainer
+import com.aiwazian.messenger.ui.components.mediaHeroContent
+import com.aiwazian.messenger.ui.components.pickerMediaKey
 import com.aiwazian.messenger.ui.components.rememberMediaCropState
+import com.aiwazian.messenger.ui.components.rememberMediaHeroState
 import com.aiwazian.messenger.ui.components.rememberMediaTransformState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -66,25 +73,17 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
-/**
- * Выбранная фотография во весь экран: подогнать под маску и отправить.
- *
- * Заменяет предпросмотр с лентой там, где берётся ровно одна картинка — стикер
- * или аватарка. Листать здесь нечего: вторая фотография не влезет в выбор, а
- * держать под каждую страницу свой раскодированный битмап было бы дорого.
- *
- * Обрезанный кадр уезжает файлом в кеше, а не битмапом: сжатие и загрузка
- * работают с Uri, а битмап в полный рост пришлось бы тащить через все слои
- * до отправки.
- */
 @Composable
 fun MediaPickerCropDialog(
     uri: Uri,
     maskShape: Shape,
     onConfirm: (Uri) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    clipsToMask: Boolean = false
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
     val coroutineScope = rememberCoroutineScope()
     
     val cropState = rememberMediaCropState(uri)
@@ -93,14 +92,20 @@ fun MediaPickerCropDialog(
     var isTransforming by remember { mutableStateOf(false) }
     var isConfirming by remember { mutableStateOf(false) }
     
+    val hero = rememberMediaHeroState(
+        originKey = pickerMediaKey(uri), dragOffsetY = 0f, onDismissed = onDismiss
+    )
+    
+    val goBack = {
+        if (isTransforming) {
+            isTransforming = false
+        } else {
+            hero.dismiss()
+        }
+    }
+    
     Dialog(
-        onDismissRequest = {
-            if (isTransforming) {
-                isTransforming = false
-            } else {
-                onDismiss()
-            }
-        }, properties = DialogProperties(
+        onDismissRequest = goBack, properties = DialogProperties(
             usePlatformDefaultWidth = false, decorFitsSystemWindows = false
         )
     ) {
@@ -139,10 +144,14 @@ fun MediaPickerCropDialog(
             }
         }
         
+        val isChromeVisible = hero.isSettled
+        
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
+                .mediaHeroBackground(hero, MaterialTheme.colorScheme.surface) { 1f }
+                .navigationBarsPadding()
+                .mediaHeroContainer(hero)
         ) {
             if (cropState.bitmap == null) {
                 Box(
@@ -156,116 +165,120 @@ fun MediaPickerCropDialog(
                     maskShape = maskShape,
                     modifier = Modifier
                         .fillMaxSize()
-                        .navigationBarsPadding(),
+                        .mediaHeroContent(hero),
                     contentRotation = transformState.contentRotation,
                     contentScaleX = transformState.contentScaleX,
                     isGestureEnabled = !transformState.isAnimating
                 )
             }
             
-            IconButton(
-                onClick = {
-                    if (isTransforming) {
-                        isTransforming = false
-                    } else {
-                        onDismiss()
-                    }
-                },
+            AnimatedVisibility(
+                visible = isChromeVisible,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .statusBarsPadding()
                     .padding(4.dp),
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                )
+                enter = fadeIn(),
+                exit = fadeOut()
             ) {
-                Icon(imageVector = Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null)
+                IconButton(
+                    onClick = goBack, colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = null
+                    )
+                }
             }
             
-            Box(
+            AnimatedVisibility(
+                visible = isChromeVisible,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(16.dp)
+                    .fillMaxWidth(),
+                enter = fadeIn(),
+                exit = fadeOut()
             ) {
-                /*
-                 * Поворот и отражение прячутся за одной кнопкой: в кадрировании
-                 * главное действие — жесты по картинке, и постоянная панель занимала
-                 * бы место ради редкой правки.
-                 */
-                AnimatedContent(
-                    targetState = isTransforming,
-                    transitionSpec = { fadeIn() togetherWith fadeOut() },
-                    modifier = Modifier.align(Alignment.Center),
-                    label = "media_crop_tools"
-                ) { transforming ->
-                    if (transforming) {
-                        HorizontalFloatingToolbar(
-                            expanded = true, floatingActionButton = {
-                                FloatingActionButton(
-                                    onClick = { isTransforming = false },
-                                    shape = CircleShape,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                ) {
-                                    Icon(imageVector = Icons.Rounded.Done, contentDescription = null)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    AnimatedContent(
+                        targetState = isTransforming,
+                        transitionSpec = { fadeIn() togetherWith fadeOut() },
+                        modifier = Modifier.align(Alignment.Center),
+                        label = "media_crop_tools"
+                    ) { transforming ->
+                        if (transforming) {
+                            HorizontalFloatingToolbar(
+                                expanded = true, floatingActionButton = {
+                                    FloatingActionButton(
+                                        onClick = { isTransforming = false },
+                                        shape = CircleShape,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                                        containerColor = MaterialTheme.colorScheme.primary
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Done,
+                                            contentDescription = null
+                                        )
+                                    }
+                                }) {
+                                MediaRotateButton(state = transformState) {
+                                    coroutineScope.launch { cropState.rotate() }
                                 }
-                            }) {
-                            MediaRotateButton(state = transformState) {
-                                coroutineScope.launch { cropState.rotate() }
+                                
+                                MediaFlipButton(state = transformState) {
+                                    cropState.mirror()
+                                }
                             }
-                            
-                            MediaFlipButton(state = transformState) {
-                                cropState.mirror()
-                            }
+                        } else {
+                            MediaOverlayIconButton(
+                                icon = Icons.Rounded.CropRotate,
+                                onClick = { isTransforming = true },
+                                isActive = cropState.isAdjusted)
                         }
-                    } else {
-                        MediaOverlayIconButton(
-                            icon = Icons.Rounded.CropRotate,
-                            onClick = { isTransforming = true })
                     }
+                    
+                    MediaOverlayIconButton(
+                        icon = Icons.AutoMirrored.Rounded.Send,
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        onClick = {
+                            if (isConfirming || !cropState.isReady) {
+                                return@MediaOverlayIconButton
+                            }
+                            
+                            isConfirming = true
+                            
+                            coroutineScope.launch {
+                                val cropped = if (clipsToMask) {
+                                    cropState.crop(maskShape, density, layoutDirection)
+                                } else {
+                                    cropState.crop()
+                                }
+                                
+                                val target = if (cropped == null) {
+                                    null
+                                } else {
+                                    withContext(Dispatchers.IO) { writeCrop(context, cropped) }
+                                }
+                                
+                                if (target == null) {
+                                    isConfirming = false
+                                } else {
+                                    onConfirm(target)
+                                }
+                            }
+                        })
                 }
-                
-                MediaOverlayIconButton(
-                    icon = Icons.AutoMirrored.Rounded.Send,
-                    modifier = Modifier.align(Alignment.CenterEnd),
-                    onClick = {
-                        /* Двойное нажатие отдало бы два файла из одного кадра. */
-                        if (isConfirming || !cropState.isReady) {
-                            return@MediaOverlayIconButton
-                        }
-                        
-                        isConfirming = true
-                        
-                        coroutineScope.launch {
-                            val cropped = cropState.crop()
-                            
-                            val target = if (cropped == null) {
-                                null
-                            } else {
-                                withContext(Dispatchers.IO) { writeCrop(context, cropped) }
-                            }
-                            
-                            if (target == null) {
-                                isConfirming = false
-                            } else {
-                                onConfirm(target)
-                            }
-                        }
-                    })
             }
         }
     }
 }
 
-/**
- * Обрезанный кадр ложится в кеш без потерь.
- *
- * PNG выбран потому, что это промежуточный файл: итоговый формат выбирает
- * сжатие уже при отправке — WebP для стикера, JPEG для аватарки — и второе
- * сжатие поверх первого дало бы видимые артефакты.
- */
 private fun writeCrop(context: Context, bitmap: Bitmap): Uri? {
     return try {
         val directory = File(context.cacheDir, CROP_DIRECTORY_NAME)
@@ -287,12 +300,6 @@ private fun writeCrop(context: Context, bitmap: Bitmap): Uri? {
     }
 }
 
-/**
- * Старые кадры убираются перед записью нового.
- *
- * Удалять сразу после отправки нельзя: файл ещё читает сжатие, а у стикеров —
- * и отложенная загрузка по нажатию на сохранение набора.
- */
 private fun dropStale(directory: File) {
     val deadline = System.currentTimeMillis() - CROP_MAX_AGE_MS
     
