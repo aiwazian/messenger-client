@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** Стикер в редакторе: либо уже в наборе, либо только что добавленный с устройства. */
 sealed interface StickerSlot {
     
     val key: String
@@ -32,18 +31,11 @@ sealed interface StickerSlot {
         override val key: String get() = fileId
     }
     
-    /**
-     * Картинка лежит в кеше и в хранилище её ещё нет.
-     *
-     * [fileId] появляется после удачной загрузки: если сохранение набора упало
-     * после неё, повторное нажатие не гоняет ту же картинку заново.
-     */
     data class Local(val sticker: EncodedSticker, val fileId: String? = null) : StickerSlot {
         override val key: String get() = sticker.uri.toString()
     }
 }
 
-/** Состояние проверки короткого имени. */
 enum class UsernameStatus {
     Empty,
     TooShort,
@@ -61,36 +53,33 @@ data class StickerPackEditorUiState(
     val usernameStatus: UsernameStatus = UsernameStatus.Empty,
     val isLoading: Boolean = false,
     val isAddingSticker: Boolean = false,
-    val isSaving: Boolean = false
+    val isSaving: Boolean = false,
+    val savedName: String = "",
+    val savedUsername: String = "",
+    val savedStickerKeys: List<String> = emptyList()
 ) {
-    /** Название из одних пробелов не считается заполненным. */
     val isNameValid: Boolean get() = name.trim().isNotEmpty()
     
-    /**
-     * Кнопка сохранения появляется только когда сохранять уже есть что.
-     *
-     * Пустой набор сервер всё равно отклонит: он занял бы имя и попал в список,
-     * ничего не показывая.
-     */
     val canSave: Boolean
         get() = isNameValid &&
                 usernameStatus == UsernameStatus.Available &&
                 stickers.isNotEmpty() &&
                 !isSaving &&
                 !isAddingSticker
+    
+    val hasChanges: Boolean
+        get() = !isSaving &&
+                (name.trim() != savedName ||
+                        username != savedUsername ||
+                        stickers.map { it.key } != savedStickerKeys)
 }
 
 sealed interface StickerPackEditorEffect {
     data class ShowMessage(@param:StringRes val messageRes: Int) : StickerPackEditorEffect
+    
+    data object Saved : StickerPackEditorEffect
 }
 
-/**
- * Создание и изменение набора.
- *
- * Стикеры копятся на экране и уезжают в сеть только по кнопке сохранения:
- * пользователь может бросить экран на полпути, и недособранный набор не должен
- * ни появляться в списке, ни занимать имя.
- */
 @HiltViewModel
 class StickerPackEditorViewModel @Inject constructor(
     private val stickerRepository: StickerRepository,
@@ -121,16 +110,21 @@ class StickerPackEditorViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             
             stickerRepository.getPack(packId).onSuccess { pack ->
+                val slots = pack.stickers.map { sticker ->
+                    StickerSlot.Remote(fileId = sticker.fileId, url = sticker.url)
+                }
+                
                 _uiState.update { state ->
                     state.copy(
                         packId = pack.id,
                         name = pack.name,
                         username = pack.username,
                         usernameStatus = UsernameStatus.Available,
-                        stickers = pack.stickers.map { sticker ->
-                            StickerSlot.Remote(fileId = sticker.fileId, url = sticker.url)
-                        },
-                        isLoading = false
+                        stickers = slots,
+                        isLoading = false,
+                        savedName = pack.name.trim(),
+                        savedUsername = pack.username,
+                        savedStickerKeys = slots.map { it.key }
                     )
                 }
             }.onFailure {
@@ -147,12 +141,6 @@ class StickerPackEditorViewModel @Inject constructor(
         _uiState.update { it.copy(name = value.take(MAX_NAME_LENGTH)) }
     }
     
-    /**
-     * Имя чистится прямо при вводе.
-     *
-     * Сервер ждёт латиницу в нижнем регистре, и проще не дать ввести лишнее, чем
-     * потом объяснять ошибку валидации.
-     */
     fun onUsernameChange(value: String) {
         val cleaned = value.filter { it.isDigit() || it in 'a'..'z' || it in 'A'..'Z' || it == '_' }
             .lowercase()
@@ -173,7 +161,6 @@ class StickerPackEditorViewModel @Inject constructor(
         }
         
         usernameJob = viewModelScope.launch {
-            /* Пауза перед запросом: иначе каждая буква уходит на сервер отдельно. */
             delay(USERNAME_CHECK_DELAY_MS)
             
             stickerRepository.isUsernameAvailable(cleaned, _uiState.value.packId)
@@ -203,7 +190,6 @@ class StickerPackEditorViewModel @Inject constructor(
         }
     }
     
-    /** Кадр уже обрезан экраном кадрирования, здесь остаётся только собрать WebP. */
     fun addSticker(uri: Uri) {
         viewModelScope.launch {
             _uiState.update { it.copy(isAddingSticker = true) }
@@ -233,12 +219,6 @@ class StickerPackEditorViewModel @Inject constructor(
         }
     }
     
-    /**
-     * Отправляет набор на сервер.
-     *
-     * Сначала в хранилище уезжают картинки, потом одним запросом уходит сам набор:
-     * сервер принимает только уже доехавшие файлы.
-     */
     fun save() {
         val state = _uiState.value
         
@@ -295,20 +275,26 @@ class StickerPackEditorViewModel @Inject constructor(
             }
             
             result.onSuccess { pack ->
+                val saved = pack.stickers.map { sticker ->
+                    StickerSlot.Remote(fileId = sticker.fileId, url = sticker.url)
+                }
+                
                 _uiState.update { current ->
                     current.copy(
                         packId = pack.id,
                         name = pack.name,
                         username = pack.username,
                         usernameStatus = UsernameStatus.Available,
-                        stickers = pack.stickers.map { sticker ->
-                            StickerSlot.Remote(fileId = sticker.fileId, url = sticker.url)
-                        },
-                        isSaving = false
+                        stickers = saved,
+                        isSaving = false,
+                        savedName = pack.name.trim(),
+                        savedUsername = pack.username,
+                        savedStickerKeys = saved.map { it.key }
                     )
                 }
                 
                 _uiEffect.emit(StickerPackEditorEffect.ShowMessage(R.string.sticker_pack_saved))
+                _uiEffect.emit(StickerPackEditorEffect.Saved)
             }.onFailure {
                 _uiState.update { current -> current.copy(stickers = slots, isSaving = false) }
                 
