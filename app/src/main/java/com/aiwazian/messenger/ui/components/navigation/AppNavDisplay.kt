@@ -204,7 +204,13 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsStickers> { SettingsStickersScreen() }
                     entry<AppRoute.CreatedStickerPacks> { CreatedStickerPacksScreen() }
                     entry<AppRoute.AddedStickerPacks> { AddedStickerPacksScreen() }
-                    entry<AppRoute.StickerPackEditor> { StickerPackEditorScreen(packId = it.packId) }
+                    entry<AppRoute.StickerPackEditor> {
+                        StickerPackEditorScreen(
+                            packId = it.packId,
+                            packName = it.packName,
+                            packUsername = it.packUsername
+                        )
+                    }
                     entry<AppRoute.ChatFolders> { ChatFoldersScreen() }
                     entry<AppRoute.ChatFolderEditor> { ChatFolderEditorScreen(folderId = it.folderId) }
                     entry<AppRoute.SelectFolderChats> {
