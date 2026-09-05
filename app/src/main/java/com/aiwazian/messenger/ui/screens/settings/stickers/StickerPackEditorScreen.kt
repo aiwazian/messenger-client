@@ -105,8 +105,6 @@ import kotlinx.coroutines.launch
 
 private val STICKER_CELL_MIN_SIZE = 64.dp
 private val STICKER_FOCUS_TOP_PADDING = 50.dp
-private val DELETE_ICON_SIZE = 18.dp
-private val DELETE_ICON_SPACING = 8.dp
 private const val FOCUS_SCALE = 2.5f
 private const val SCRIM_ALPHA = 0.6f
 private const val EMOJI_FIELD_WIDTH_FRACTION = 0.8f
@@ -389,7 +387,7 @@ fun StickerPackEditorScreen(
     
     if (isPickerVisible) {
         PhotoPickerBottomSheet(
-            maskShape = MaterialTheme.shapes.large,
+            maskShape = MaterialTheme.shapes.extraLarge,
             onPhotoPicked = viewModel::addSticker,
             onDismissRequest = { isPickerVisible = false },
             clipsToMask = true
@@ -499,7 +497,6 @@ private fun StickerSlotCell(
                 scaleY = scale
                 alpha = if (isHidden) 0f else 1f
             }
-            .clip(MaterialTheme.shapes.medium)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -678,16 +675,16 @@ private fun StickerFocusOverlay(
                 modifier = Modifier.graphicsLayer { alpha = progress.value },
                 shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.textButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     contentColor = MaterialTheme.colorScheme.error
                 )
             ) {
                 Icon(
                     imageVector = Icons.Rounded.DeleteOutline,
                     contentDescription = null,
-                    modifier = Modifier.size(DELETE_ICON_SIZE)
                 )
                 
-                Spacer(modifier = Modifier.width(DELETE_ICON_SPACING))
+                Spacer(modifier = Modifier.width(8.dp))
                 
                 Text(stringResource(R.string.sticker_delete))
             }
@@ -716,7 +713,7 @@ private fun AddStickerCell(isBusy: Boolean, onClick: () -> Unit) {
                 scaleX = scale
                 scaleY = scale
             }
-            .clip(MaterialTheme.shapes.medium)
+            .clip(CircleShape)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(
                 interactionSource = interactionSource,
