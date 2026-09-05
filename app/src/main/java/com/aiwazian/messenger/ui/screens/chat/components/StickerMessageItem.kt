@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -34,7 +35,7 @@ fun StickerMessageItem(
     sticker: Sticker?,
     time: String,
     isMine: Boolean,
-    isRead: Boolean,
+    isRead: Boolean?,
     status: MessageStatus,
     actions: List<DropdownMenuAction>,
     onStickerClick: () -> Unit,
@@ -97,7 +98,7 @@ fun StickerMessageItem(
 }
 
 @Composable
-private fun androidx.compose.foundation.layout.RowScope.EmptyMenuArea(onClick: () -> Unit) {
+private fun RowScope.EmptyMenuArea(onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     
     Box(
