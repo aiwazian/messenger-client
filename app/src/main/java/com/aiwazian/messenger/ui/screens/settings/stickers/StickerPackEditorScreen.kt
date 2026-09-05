@@ -47,6 +47,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,6 +73,8 @@ import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.chat.components.PhotoPickerBottomSheet
 import com.aiwazian.messenger.utils.UiText
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 @Composable
 fun StickerPackEditorScreen(
@@ -86,6 +89,8 @@ fun StickerPackEditorScreen(
     val uiState by viewModel.uiState.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     var isPickerVisible by remember { mutableStateOf(false) }
     var isExitDialogVisible by remember { mutableStateOf(false) }
@@ -113,16 +118,18 @@ fun StickerPackEditorScreen(
         viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is StickerPackEditorEffect.ShowMessage -> {
-                    snackbarHostState.currentSnackbarData?.dismiss()
+                    snackbarJob?.cancel()
                     
                     undoKey = effect.undoKey
                     
-                    snackbarHostState.showSnackbar(
-                        UiText.StringResource(effect.messageRes)
-                            .asString(context)
-                    )
-                    
-                    undoKey = null
+                    snackbarJob = scope.launch {
+                        snackbarHostState.showSnackbar(
+                            UiText.StringResource(effect.messageRes)
+                                .asString(context)
+                        )
+                        
+                        undoKey = null
+                    }
                 }
                 
                 StickerPackEditorEffect.Saved -> goBack()
