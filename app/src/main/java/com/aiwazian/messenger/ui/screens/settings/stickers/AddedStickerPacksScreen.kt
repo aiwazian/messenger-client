@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.plus
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -87,16 +88,12 @@ fun AddedStickerPacksScreen(viewModel: AddedStickerPacksViewModel = hiltViewMode
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(
-                bottom = 20.dp
-            ),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = innerPadding.plus(PaddingValues(horizontal = 10.dp)),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             item(key = SEARCH_ITEM_KEY) {
-                SectionContainer {
+                SectionContainer(contentPadding = PaddingValues.Zero) {
                     FramelessTextBox(
                         placeholder = stringResource(R.string.search),
                         value = uiState.query,

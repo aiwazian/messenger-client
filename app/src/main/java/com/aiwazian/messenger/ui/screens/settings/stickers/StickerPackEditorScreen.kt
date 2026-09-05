@@ -14,11 +14,13 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.plus
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -164,14 +166,16 @@ fun StickerPackEditorScreen(
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 64.dp),
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = innerPadding,
+                contentPadding = innerPadding.plus(PaddingValues(horizontal = 10.dp)),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    SectionContainer(footer = {
-                        UsernameHint(status = uiState.usernameStatus)
-                    }) {
+                    SectionContainer(
+                        contentPadding = PaddingValues.Zero,
+                        footer = {
+                            UsernameHint(status = uiState.usernameStatus)
+                        }) {
                         FramelessTextBox(
                             placeholder = stringResource(R.string.sticker_pack_name),
                             value = uiState.name,
