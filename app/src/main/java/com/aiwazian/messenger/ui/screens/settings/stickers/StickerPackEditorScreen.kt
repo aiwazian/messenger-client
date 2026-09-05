@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,16 +29,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.plus
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.TextFieldBuffer
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.FloatingActionButton
@@ -53,10 +59,10 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -76,18 +82,14 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
-import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppDialog
-import com.aiwazian.messenger.ui.app.AppDropdownMenu
-import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.FramelessTextBox
@@ -103,7 +105,9 @@ import kotlinx.coroutines.launch
 
 private val STICKER_CELL_MIN_SIZE = 64.dp
 private val STICKER_FOCUS_TOP_PADDING = 50.dp
-private const val FOCUS_SCALE = 2f
+private val DELETE_ICON_SIZE = 18.dp
+private val DELETE_ICON_SPACING = 8.dp
+private const val FOCUS_SCALE = 2.5f
 private const val SCRIM_ALPHA = 0.6f
 private const val EMOJI_FIELD_WIDTH_FRACTION = 0.8f
 private const val PRESSED_CELL_SCALE = 0.9f
@@ -113,6 +117,24 @@ private val FOCUS_OPEN_SPEC: AnimationSpec<Float> =
 
 private val FOCUS_CLOSE_SPEC: AnimationSpec<Float> =
     tween(durationMillis = 220, easing = FastOutSlowInEasing)
+
+private object EmojiOnlyTransformation : InputTransformation {
+    
+    override fun TextFieldBuffer.transformInput() {
+        val value = asCharSequence()
+            .toString()
+        
+        val emojis = EmojiInput.format(EmojiInput.parse(value))
+        
+        if (emojis == value) {
+            return
+        }
+        
+        replace(0, length, emojis)
+        
+        selection = TextRange(length)
+    }
+}
 
 @Stable
 private class StickerFocusCloseState {
@@ -512,13 +534,8 @@ private fun StickerFocusOverlay(
     
     var stickerCenter by remember { mutableStateOf(Offset.Zero) }
     
-    val emojiText = EmojiInput.format(slot.emojis)
-    
-    var emojiValue by remember(slot.key) {
-        mutableStateOf(
-            value = TextFieldValue(text = emojiText, selection = TextRange(emojiText.length)),
-            policy = neverEqualPolicy()
-        )
+    val emojiState = remember(slot.key) {
+        TextFieldState(initialText = EmojiInput.format(slot.emojis))
     }
     
     val scrimColor = MaterialTheme.colorScheme.scrim
@@ -559,12 +576,9 @@ private fun StickerFocusOverlay(
         focusRequester.requestFocus()
     }
     
-    LaunchedEffect(emojiText) {
-        if (emojiValue.text != emojiText) {
-            emojiValue = TextFieldValue(
-                text = emojiText,
-                selection = TextRange(emojiText.length)
-            )
+    LaunchedEffect(emojiState) {
+        snapshotFlow { emojiState.text.toString() }.collect { value ->
+            onEmojisChange(value)
         }
     }
     
@@ -597,18 +611,9 @@ private fun StickerFocusOverlay(
             ) {
                 FramelessTextBox(
                     placeholder = stringResource(R.string.sticker_emojis),
-                    value = emojiValue,
-                    onValueChange = { value ->
-                        val text = EmojiInput.format(EmojiInput.parse(value.text))
-                        
-                        emojiValue = TextFieldValue(
-                            text = text,
-                            selection = TextRange(text.length)
-                        )
-                        
-                        onEmojisChange(text)
-                    },
+                    state = emojiState,
                     modifier = Modifier.focusRequester(focusRequester),
+                    inputTransformation = EmojiOnlyTransformation,
                     textStyle = MaterialTheme.typography.titleLarge,
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.None,
@@ -666,28 +671,25 @@ private fun StickerFocusOverlay(
                         },
                     contentScale = ContentScale.Fit
                 )
+            }
+            
+            TextButton(
+                onClick = onRemove,
+                modifier = Modifier.graphicsLayer { alpha = progress.value },
+                shape = MaterialTheme.shapes.medium,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.DeleteOutline,
+                    contentDescription = null,
+                    modifier = Modifier.size(DELETE_ICON_SIZE)
+                )
                 
-                AppDropdownMenu(
-                    expanded = !isClosing,
-                    onDismissRequest = onDismiss,
-                    properties = PopupProperties(
-                        focusable = false,
-                        dismissOnBackPress = false,
-                        dismissOnClickOutside = false
-                    )
-                ) {
-                    AppDropdownMenuItem(
-                        text = stringResource(R.string.sticker_delete),
-                        onClick = onRemove,
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.DeleteOutline,
-                                contentDescription = null
-                            )
-                        },
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                }
+                Spacer(modifier = Modifier.width(DELETE_ICON_SPACING))
+                
+                Text(stringResource(R.string.sticker_delete))
             }
         }
     }
