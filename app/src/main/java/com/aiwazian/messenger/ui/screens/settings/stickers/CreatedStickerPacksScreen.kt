@@ -44,7 +44,6 @@ import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.UiText
 
-/** Собственные наборы: отсюда же создаётся новый. */
 @Composable
 fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltViewModel()) {
     val context = LocalContext.current
@@ -56,7 +55,6 @@ fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltView
     
     val deleteMessage = stringResource(R.string.sticker_pack_delete_message)
     
-    /* Перечитываем и при возврате с редактора: состав мог измениться. */
     LaunchedEffect(Unit) {
         viewModel.refresh()
     }
@@ -117,7 +115,13 @@ fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltView
                     pack = pack,
                     deleteMessage = deleteMessage,
                     onClick = {
-                        navBackStack.add(AppRoute.StickerPackEditor(packId = pack.id))
+                        navBackStack.add(
+                            AppRoute.StickerPackEditor(
+                                packId = pack.id,
+                                packName = pack.name,
+                                packUsername = pack.username
+                            )
+                        )
                     },
                     onDelete = { viewModel.delete(pack.id) },
                     modifier = Modifier.clip(MaterialTheme.shapes.large)

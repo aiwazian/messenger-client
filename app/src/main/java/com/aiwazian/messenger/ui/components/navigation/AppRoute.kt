@@ -138,9 +138,12 @@ sealed interface AppRoute : NavKey {
     @Serializable
     data object AddedStickerPacks : AppRoute
     
-    /** @param packId `null` для нового набора. */
     @Serializable
-    data class StickerPackEditor(val packId: Long? = null) : AppRoute
+    data class StickerPackEditor(
+        val packId: Long? = null,
+        val packName: String? = null,
+        val packUsername: String? = null
+    ) : AppRoute
     
     @Serializable
     data object ChatFolders : AppRoute
