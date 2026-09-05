@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.chat
 
 import android.content.Intent
@@ -102,6 +98,7 @@ import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.MessageSearchResultsList
 import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
+import com.aiwazian.messenger.ui.screens.chat.components.StickerPackBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.UnreadSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
@@ -146,6 +143,8 @@ fun ChatScreen(
     val uiState by chatViewModel.uiState.collectAsState()
     val readersViewModel: MessageReadersViewModel = hiltViewModel()
     val readerAvatars by readersViewModel.avatars.collectAsState()
+    val stickersViewModel: ChatStickersViewModel = hiltViewModel()
+    val stickersState by stickersViewModel.uiState.collectAsState()
     val isChatMuted by notificationsViewModel.isMuted.collectAsState()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -328,7 +327,6 @@ fun ChatScreen(
                     navBackStack.add(AppRoute.Main)
                 }
                 
-                /* Низ чата в перевёрнутом списке всегда нулевой элемент. */
                 is ChatUiEffect.ScrollToBottom -> {
                     listState.animateScrollToItem(BOTTOM_ITEM_INDEX)
                 }
@@ -572,7 +570,6 @@ fun ChatScreen(
                                     onLinkClicked = chatViewModel::onLinkClicked,
                                     onUsernameClicked = chatViewModel::onUsernameClicked,
                                     onEmailClicked = chatViewModel::onEmailClicked,
-                                    /* При запрете копирования пункта «Сохранить в загрузки» не будет. */
                                     onSaveToDownloads = if (copyPolicy.canSaveMedia) {
                                         {
                                             chatViewModel.saveAttachmentsToDownloads(
@@ -592,7 +589,6 @@ fun ChatScreen(
                                     },
                                     readerAvatars = readerAvatars,
                                     onReadersRequested = readersViewModel::onReadersRequested,
-                                    /* В канале автор сообщения — сам канал, профиль открывать не из чего. */
                                     onSenderNameClick = if (item.chatType == ChatType.GROUP) {
                                         {
                                             navBackStack.add(
@@ -768,6 +764,19 @@ fun ChatScreen(
         )
     }
     
+    stickersState.openedPack?.let { pack ->
+        StickerPackBottomSheet(
+            pack = pack,
+            onDismiss = stickersViewModel::closePack,
+            onSendSticker = { sticker ->
+                stickersViewModel.closePack()
+                stickersViewModel.sendSticker(uiState.chatId, sticker.id)
+            },
+            onInstall = stickersViewModel::installOpenedPack,
+            onUninstall = stickersViewModel::uninstallOpenedPack
+        )
+    }
+    
     if (uiState.showFullScreenViewer) {
         val downloadedMedia = remember(uiState.chatItems) {
             uiState.chatItems
@@ -802,18 +811,11 @@ fun ChatScreen(
             .indexOfFirst { it.fileId == tapped?.fileId }
             .coerceAtLeast(0)
         
-        /*
-         * Своего BackHandler здесь нет нарочно: он регистрировался после просмотрщика,
-         * поэтому выигрывал кнопку назад и закрывал всё мгновенно, без анимации
-         * возврата в миниатюру. Теперь кнопку обрабатывает сам [FullScreenViewer] и
-         * зовёт onDismiss уже после того, как медиа уехало на место.
-         */
         FullScreenViewer(
             media = viewerMedia,
             initialPage = viewerInitialPage,
             isVideoLooping = uiState.isVideoLooping,
             videoPlaybackSpeed = uiState.videoPlaybackSpeed,
-            /* При запрете копирования кнопки «Сохранить в галерею» нет. */
             canDownloadMedia = uiState.canDownloadMedia && copyPolicy.canSaveMedia,
             onVideoLoopingChange = chatViewModel::setVideoLooping,
             onVideoPlaybackSpeedChange = chatViewModel::setVideoPlaybackSpeed,
@@ -832,12 +834,6 @@ fun ChatScreen(
     }
 }
 
-/** За сколько элементов до границы окна начинать догрузку. */
 private const val PREFETCH_THRESHOLD = 10
 
-/**
- * Индекс «низа» чата.
- *
- * При reverseLayout самое новое сообщение — это начало списка.
- */
 private const val BOTTOM_ITEM_INDEX = 0
