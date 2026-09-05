@@ -28,7 +28,8 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun AppSnackbar(
     hostState: SnackbarHostState,
-    leadingIcon: ImageVector? = null
+    leadingIcon: ImageVector? = null,
+    trailingIcon: (@Composable () -> Unit)? = null
 ) {
     SnackbarHost(hostState = hostState) { data ->
         SwipeToDismissBox(
@@ -53,12 +54,18 @@ fun AppSnackbar(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                
                 Text(
                     text = data.visuals.message,
+                    modifier = Modifier.weight(1f),
                     fontSize = 14.sp,
                     lineHeight = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+                
+                if (trailingIcon != null) {
+                    trailingIcon()
+                }
             }
         }
     }

@@ -20,6 +20,8 @@
     <string name="sticker_add">Добавить стикер</string>
     <string name="sticker_add_error">Не удалось обработать картинку</string>
     <string name="sticker_upload_error">Не удалось загрузить стикер</string>
+    <string name="sticker_removed">Стикер удалён</string>
+    <string name="sticker_removed_undo">Отмена</string>
     <string name="sticker_pack_saved">Стикерпак сохранён</string>
     <string name="sticker_pack_save_error">Не удалось сохранить стикерпак</string>
     <string name="sticker_pack_load_error">Не удалось загрузить стикерпак</string>

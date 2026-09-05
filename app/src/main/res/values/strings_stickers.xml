@@ -20,6 +20,8 @@
     <string name="sticker_add">Add sticker</string>
     <string name="sticker_add_error">Couldn\'t process the image</string>
     <string name="sticker_upload_error">Couldn\'t upload the sticker</string>
+    <string name="sticker_removed">Sticker deleted</string>
+    <string name="sticker_removed_undo">Undo</string>
     <string name="sticker_pack_saved">Sticker pack saved</string>
     <string name="sticker_pack_save_error">Couldn\'t save the sticker pack</string>
     <string name="sticker_pack_load_error">Couldn\'t load the sticker pack</string>
