@@ -310,7 +310,7 @@ class StickerPackEditorViewModel @Inject constructor(
     }
     
     companion object {
-        const val MAX_NAME_LENGTH = 15
+        const val MAX_NAME_LENGTH = 20
         const val MIN_USERNAME_LENGTH = 3
         const val MAX_USERNAME_LENGTH = 32
         
