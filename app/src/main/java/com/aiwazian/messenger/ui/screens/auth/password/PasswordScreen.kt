@@ -158,8 +158,6 @@ fun PasswordScreen(
                     
                     FloatingActionButton(
                         onClick = viewModel::signIn,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        containerColor = MaterialTheme.colorScheme.primary,
                         shape = CircleShape
                     ) {
                         if (uiState.isLoading) {

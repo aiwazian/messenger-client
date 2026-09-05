@@ -90,7 +90,6 @@ fun ResetPasswordScreen(
                 onClick = viewModel::resetPassword,
                 shape = CircleShape,
                 modifier = Modifier.imePadding(),
-                containerColor = MaterialTheme.colorScheme.primary
             ) {
                 AnimatedContent(targetState = uiState.isLoading) { loading ->
                     if (loading) {

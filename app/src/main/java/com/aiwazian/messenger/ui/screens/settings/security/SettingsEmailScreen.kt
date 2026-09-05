@@ -75,7 +75,6 @@ fun SettingsEmailScreen(viewModel: EmailViewModel = hiltViewModel()) {
                 onClick = viewModel::onSendEmail,
                 shape = CircleShape,
                 modifier = Modifier.imePadding(),
-                containerColor = MaterialTheme.colorScheme.primary
             ) {
                 AnimatedContent(targetState = isLoading) { loading ->
                     if (loading) {

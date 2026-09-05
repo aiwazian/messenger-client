@@ -87,8 +87,6 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = viewModel::checkLogin,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
                 if (uiState.isLoading) {

@@ -72,7 +72,6 @@ fun SettingsCloudPasswordScreen(viewModel: CloudPasswordViewModel = hiltViewMode
                 onClick = viewModel::onChangePassword,
                 shape = CircleShape,
                 modifier = Modifier.imePadding(),
-                containerColor = MaterialTheme.colorScheme.primary
             ) {
                 AnimatedContent(targetState = isLoading) { loading ->
                     if (loading) {

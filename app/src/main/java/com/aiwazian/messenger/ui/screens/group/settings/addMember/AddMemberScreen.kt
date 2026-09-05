@@ -79,8 +79,6 @@ fun AddMemberScreen(
             exit = fadeOut() + scaleOut()
         ) {
             FloatingActionButton(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = CircleShape,
                 onClick = {
                     viewModel.addSelectedUsers {

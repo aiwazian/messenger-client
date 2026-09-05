@@ -304,7 +304,7 @@ private fun Content(
             FloatingActionButton(
                 shape = CircleShape, onClick = {
                     navBackStack.add(AppRoute.NewMessage)
-                }, containerColor = MaterialTheme.colorScheme.primary
+                }
             ) {
                 Icon(imageVector = Icons.Rounded.Create, contentDescription = null)
             }

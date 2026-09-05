@@ -206,8 +206,6 @@ private fun AvatarCropContent(bitmap: Bitmap, onCropConfirmed: (Bitmap) -> Unit)
                         onCropConfirmed(cropped)
                     },
                     shape = CircleShape,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    containerColor = MaterialTheme.colorScheme.primary
                 ) {
                     Icon(Icons.Rounded.Done, null)
                 }

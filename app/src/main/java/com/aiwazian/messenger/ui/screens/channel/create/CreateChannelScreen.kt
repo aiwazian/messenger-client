@@ -92,7 +92,6 @@ fun CreateChannelScreen(viewModel: CreateChannelViewModel = hiltViewModel()) {
             FloatingActionButton(
                 modifier = Modifier.imePadding(),
                 onClick = viewModel::createChannel,
-                containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
                 AnimatedContent(targetState = uiState.isLoading) { isLoading ->

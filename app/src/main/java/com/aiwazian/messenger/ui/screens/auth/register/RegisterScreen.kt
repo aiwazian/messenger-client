@@ -119,8 +119,6 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
         floatingActionButton = {
             FloatingActionButton(
                 onClick = viewModel::signUp,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                containerColor = MaterialTheme.colorScheme.primary,
                 shape = CircleShape
             ) {
                 if (uiState.isLoading) {

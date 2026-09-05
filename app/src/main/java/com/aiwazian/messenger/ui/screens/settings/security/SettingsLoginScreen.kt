@@ -74,7 +74,6 @@ fun SettingsLoginScreen(viewModel: SettingsLoginViewModel = hiltViewModel()) {
                 onClick = viewModel::onChangeLogin,
                 shape = CircleShape,
                 modifier = Modifier.imePadding(),
-                containerColor = MaterialTheme.colorScheme.primary
             ) {
                 AnimatedContent(targetState = isLoading) { loading ->
                     if (loading) {

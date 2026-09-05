@@ -86,7 +86,6 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
         FloatingActionButton(
             modifier = Modifier.imePadding(),
             onClick = viewModel::createGroup,
-            containerColor = MaterialTheme.colorScheme.primary,
             shape = CircleShape
         ) {
             AnimatedContent(targetState = uiState.isLoading) { isLoading ->

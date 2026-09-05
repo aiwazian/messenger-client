@@ -5,11 +5,12 @@
 package com.aiwazian.messenger.ui.app
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -41,11 +42,11 @@ fun AppSnackbar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(shape = MaterialTheme.shapes.large)
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .padding(10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    .background(MaterialTheme.colorScheme.surfaceContainer),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Spacer(modifier = Modifier.width(10.dp))
+                
                 if (leadingIcon != null) {
                     Icon(
                         imageVector = leadingIcon,
@@ -57,7 +58,9 @@ fun AppSnackbar(
                 
                 Text(
                     text = data.visuals.message,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(10.dp),
                     fontSize = 14.sp,
                     lineHeight = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface
@@ -65,6 +68,7 @@ fun AppSnackbar(
                 
                 if (trailingIcon != null) {
                     trailingIcon()
+                    Spacer(modifier = Modifier.width(4.dp))
                 }
             }
         }

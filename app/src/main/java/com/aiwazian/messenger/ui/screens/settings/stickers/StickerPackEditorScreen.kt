@@ -161,11 +161,14 @@ fun StickerPackEditorScreen(
                 null
             } else {
                 {
-                    TextButton(onClick = {
-                        viewModel.undoRemove(pendingUndoKey)
-                        
-                        snackbarHostState.currentSnackbarData?.dismiss()
-                    }) {
+                    TextButton(
+                        onClick = {
+                            viewModel.undoRemove(pendingUndoKey)
+                            
+                            snackbarHostState.currentSnackbarData?.dismiss()
+                        },
+                        shape = MaterialTheme.shapes.medium
+                    ) {
                         Text(stringResource(R.string.sticker_removed_undo))
                     }
                 }
@@ -180,7 +183,11 @@ fun StickerPackEditorScreen(
             if (isFabVisible) {
                 FloatingActionButton(onClick = viewModel::save, shape = CircleShape) {
                     if (uiState.isSaving) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
                     } else {
                         Icon(
                             imageVector = Icons.Rounded.Done,

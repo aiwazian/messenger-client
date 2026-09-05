@@ -227,8 +227,6 @@ fun MediaPickerCropDialog(
                                     FloatingActionButton(
                                         onClick = { isTransforming = false },
                                         shape = CircleShape,
-                                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                                        containerColor = MaterialTheme.colorScheme.primary
                                     ) {
                                         Icon(
                                             imageVector = Icons.Rounded.Done,
