@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.content.pm.PackageManager
@@ -64,6 +60,7 @@ import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material.icons.rounded.EmojiEmotions
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Mic
@@ -75,6 +72,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -115,6 +113,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
+import com.aiwazian.messenger.ui.screens.chat.ChatStickersViewModel
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
@@ -262,14 +261,11 @@ private fun InputMessage(
     
     val focusRequester = remember { FocusRequester() }
     
-    /* Отправка вложений общая со шторкой: там же лежит и подпись к ним. */
     val mediaPickerViewModel: MediaPickerViewModel = hiltViewModel()
     
-    /*
-     * Текст сообщения живёт во ViewModel, а набор и курсор — в TextFieldState.
-     * Поле само хранит и правит свой текст, поэтому onValueChange здесь больше
-     * нет: правки уезжают во ViewModel потоком, а курсор поле ведёт само.
-     */
+    val stickersViewModel: ChatStickersViewModel = hiltViewModel()
+    val stickersState by stickersViewModel.uiState.collectAsState()
+    
     val textFieldState = rememberTextFieldState(initialText = uiState.messageText)
     
     LaunchedEffect(textFieldState, chatViewModel) {
@@ -278,18 +274,12 @@ private fun InputMessage(
         }
     }
     
-    /*
-     * Внутрь забираем только текст, пришедший не от пользователя: черновик,
-     * правка сообщения, очистка после отправки. Своё же значение обратно не
-     * кладём — курсор иначе прыгал бы в конец при наборе в середине строки.
-     */
     LaunchedEffect(uiState.messageText) {
         if (uiState.messageText != textFieldState.text.toString()) {
             textFieldState.setTextAndPlaceCursorAtEnd(uiState.messageText)
         }
     }
     
-    // Правка сообщения: поле ввода само получает фокус, курсор — в конце текста.
     LaunchedEffect(uiState.editingMessageId) {
         if (uiState.editingMessageId == null) return@LaunchedEffect
         
@@ -297,11 +287,6 @@ private fun InputMessage(
         focusRequester.requestFocus()
     }
     
-    /*
-     * Файлы из системного выбора уходят той же очередью, что и галерея, и
-     * забирают с собой черновик: раньше текст оставался в поле ввода и уходил
-     * отдельным сообщением после файлов.
-     */
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments(), onResult = { uris: List<Uri> ->
             if (uris.isNotEmpty()) {
@@ -418,6 +403,24 @@ private fun InputMessage(
             }
         }
         Row(verticalAlignment = Alignment.Bottom) {
+            AnimatedVisibility(
+                visible = !uiState.isRecording,
+                enter = expressiveScaleIn,
+                exit = expressiveScaleOut
+            ) {
+                IconButton(onClick = stickersViewModel::togglePanel) {
+                    Icon(
+                        imageVector = Icons.Rounded.EmojiEmotions,
+                        contentDescription = null,
+                        tint = if (stickersState.isPanelVisible) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
+            }
+            
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
                 Box(
                     modifier = Modifier.heightIn(min = 48.dp),
@@ -464,7 +467,7 @@ private fun InputMessage(
                         decorator = TextFieldDecorator { innerTextField ->
                             Box(
                                 modifier = Modifier.padding(
-                                    start = 14.dp, top = 12.dp, bottom = 12.dp
+                                    top = 12.dp, bottom = 12.dp
                                 )
                             ) {
                                 if (textFieldState.text.isEmpty() && !uiState.isRecording) {
@@ -681,6 +684,14 @@ private fun InputMessage(
                     }
                 }
             }
+        }
+        
+        AnimatedVisibility(visible = stickersState.isPanelVisible && !uiState.isRecording) {
+            StickerInputPanel(
+                packs = stickersState.addedPacks,
+                onStickerClick = { sticker ->
+                    stickersViewModel.sendSticker(uiState.chatId, sticker.id)
+                })
         }
     }
     
