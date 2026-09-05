@@ -74,7 +74,10 @@ data class StickerPackEditorUiState(
 }
 
 sealed interface StickerPackEditorEffect {
-    data class ShowMessage(@param:StringRes val messageRes: Int) : StickerPackEditorEffect
+    data class ShowMessage(
+        @param:StringRes val messageRes: Int,
+        val undoKey: String? = null
+    ) : StickerPackEditorEffect
     
     data object Saved : StickerPackEditorEffect
 }
@@ -93,13 +96,38 @@ class StickerPackEditorViewModel @Inject constructor(
     
     private var usernameJob: Job? = null
     private var isLoaded = false
+    private var removedSlot: Pair<Int, StickerSlot>? = null
     
-    fun load(packId: Long?) {
+    fun load(packId: Long?, name: String? = null, username: String? = null) {
         if (isLoaded) {
             return
         }
         
         isLoaded = true
+        
+        val knownName = name?.take(MAX_NAME_LENGTH)
+            .orEmpty()
+        
+        val knownUsername = username?.lowercase()
+            ?.take(MAX_USERNAME_LENGTH)
+            .orEmpty()
+        
+        if (packId != null || knownName.isNotEmpty() || knownUsername.isNotEmpty()) {
+            _uiState.update { state ->
+                state.copy(
+                    packId = packId,
+                    name = knownName,
+                    username = knownUsername,
+                    usernameStatus = if (knownUsername.length >= MIN_USERNAME_LENGTH) {
+                        UsernameStatus.Available
+                    } else {
+                        state.usernameStatus
+                    },
+                    savedName = knownName.trim(),
+                    savedUsername = knownUsername
+                )
+            }
+        }
         
         if (packId == null) {
             return
@@ -213,8 +241,47 @@ class StickerPackEditorViewModel @Inject constructor(
     }
     
     fun removeSticker(key: String) {
+        val index = _uiState.value.stickers.indexOfFirst { it.key == key }
+        
+        if (index < 0) {
+            return
+        }
+        
+        removedSlot = index to _uiState.value.stickers[index]
+        
         _uiState.update { state ->
             state.copy(stickers = state.stickers.filterNot { it.key == key })
+        }
+        
+        viewModelScope.launch {
+            _uiEffect.emit(
+                StickerPackEditorEffect.ShowMessage(
+                    messageRes = R.string.sticker_removed,
+                    undoKey = key
+                )
+            )
+        }
+    }
+    
+    fun undoRemove(key: String) {
+        val removed = removedSlot ?: return
+        
+        if (removed.second.key != key) {
+            return
+        }
+        
+        removedSlot = null
+        
+        _uiState.update { state ->
+            if (state.stickers.any { it.key == key }) {
+                state
+            } else {
+                val restored = state.stickers.toMutableList()
+                
+                restored.add(removed.first.coerceIn(0, restored.size), removed.second)
+                
+                state.copy(stickers = restored)
+            }
         }
     }
     
@@ -277,6 +344,8 @@ class StickerPackEditorViewModel @Inject constructor(
                 val saved = pack.stickers.map { sticker ->
                     StickerSlot.Remote(fileId = sticker.fileId, url = sticker.url)
                 }
+                
+                removedSlot = null
                 
                 _uiState.update { current ->
                     current.copy(
