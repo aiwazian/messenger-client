@@ -76,6 +76,8 @@ import com.aiwazian.messenger.utils.UiText
 @Composable
 fun StickerPackEditorScreen(
     packId: Long? = null,
+    packName: String? = null,
+    packUsername: String? = null,
     viewModel: StickerPackEditorViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -87,6 +89,7 @@ fun StickerPackEditorScreen(
     
     var isPickerVisible by remember { mutableStateOf(false) }
     var isExitDialogVisible by remember { mutableStateOf(false) }
+    var undoKey by remember { mutableStateOf<String?>(null) }
     
     val goBack: () -> Unit = { navBackStack.removeLastOrNull() }
     
@@ -99,7 +102,11 @@ fun StickerPackEditorScreen(
     }
     
     LaunchedEffect(Unit) {
-        viewModel.load(packId)
+        viewModel.load(
+            packId = packId,
+            name = packName,
+            username = packUsername
+        )
     }
     
     LaunchedEffect(Unit) {
@@ -108,10 +115,14 @@ fun StickerPackEditorScreen(
                 is StickerPackEditorEffect.ShowMessage -> {
                     snackbarHostState.currentSnackbarData?.dismiss()
                     
+                    undoKey = effect.undoKey
+                    
                     snackbarHostState.showSnackbar(
                         UiText.StringResource(effect.messageRes)
                             .asString(context)
                     )
+                    
+                    undoKey = null
                 }
                 
                 StickerPackEditorEffect.Saved -> goBack()
@@ -143,7 +154,28 @@ fun StickerPackEditorScreen(
                 onBackClick = onBackClick
             )
         },
-        snackbarHost = { AppSnackbar(hostState = snackbarHostState) },
+        snackbarHost = {
+            val pendingUndoKey = undoKey
+            
+            val undoAction: (@Composable () -> Unit)? = if (pendingUndoKey == null) {
+                null
+            } else {
+                {
+                    TextButton(onClick = {
+                        viewModel.undoRemove(pendingUndoKey)
+                        
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                    }) {
+                        Text(stringResource(R.string.sticker_removed_undo))
+                    }
+                }
+            }
+            
+            AppSnackbar(
+                hostState = snackbarHostState,
+                trailingIcon = undoAction
+            )
+        },
         floatingActionButton = {
             if (isFabVisible) {
                 FloatingActionButton(onClick = viewModel::save, shape = CircleShape) {
