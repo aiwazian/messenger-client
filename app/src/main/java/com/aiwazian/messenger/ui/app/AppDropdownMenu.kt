@@ -28,7 +28,7 @@ fun AppDropdownMenu(
         MenuAnchorPosition.Below
     ),
     shape: Shape = MaterialTheme.shapes.medium,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
     content: @Composable (ColumnScope.() -> Unit)
 ) {
     DropdownMenuPopup(
@@ -40,9 +40,8 @@ fun AppDropdownMenu(
         Column(
             modifier = Modifier
                 .clip(shape)
-                .background(containerColor)
-        ) {
-            content()
-        }
+                .background(containerColor),
+            content = content
+        )
     }
 }

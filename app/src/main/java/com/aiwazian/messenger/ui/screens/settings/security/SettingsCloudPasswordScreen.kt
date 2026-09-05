@@ -76,7 +76,6 @@ fun SettingsCloudPasswordScreen(viewModel: CloudPasswordViewModel = hiltViewMode
                 AnimatedContent(targetState = isLoading) { loading ->
                     if (loading) {
                         CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.onPrimary,
                             strokeWidth = 2.dp,
                             modifier = Modifier.size(20.dp)
                         )

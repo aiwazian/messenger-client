@@ -94,7 +94,6 @@ fun ResetPasswordScreen(
                 AnimatedContent(targetState = uiState.isLoading) { loading ->
                     if (loading) {
                         CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.onPrimary,
                             strokeWidth = 2.dp,
                             modifier = Modifier.size(20.dp)
                         )

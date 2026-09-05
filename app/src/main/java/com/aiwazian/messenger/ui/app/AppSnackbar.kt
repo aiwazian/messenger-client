@@ -45,9 +45,8 @@ fun AppSnackbar(
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Spacer(modifier = Modifier.width(10.dp))
-                
                 if (leadingIcon != null) {
+                    Spacer(modifier = Modifier.width(10.dp))
                     Icon(
                         imageVector = leadingIcon,
                         contentDescription = null,

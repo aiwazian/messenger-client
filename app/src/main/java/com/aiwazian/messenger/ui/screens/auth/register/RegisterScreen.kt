@@ -124,14 +124,12 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
                         strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(20.dp)
                     )
                 } else {
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }

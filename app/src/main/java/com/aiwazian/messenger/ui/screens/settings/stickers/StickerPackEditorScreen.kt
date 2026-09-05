@@ -185,7 +185,6 @@ fun StickerPackEditorScreen(
                     if (uiState.isSaving) {
                         CircularProgressIndicator(
                             strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(20.dp)
                         )
                     } else {
