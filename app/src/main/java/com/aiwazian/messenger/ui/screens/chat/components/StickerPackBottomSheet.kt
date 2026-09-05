@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import androidx.compose.animation.core.Animatable
@@ -24,6 +28,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -64,6 +69,7 @@ private const val FOCUS_SIZE_FRACTION = 0.62f
 private val FOCUS_OPEN_SPEC = tween<Float>(260, easing = FastOutSlowInEasing)
 private val FOCUS_CLOSE_SPEC = tween<Float>(220, easing = FastOutSlowInEasing)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StickerPackBottomSheet(
     pack: StickerPack,
