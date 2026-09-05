@@ -26,7 +26,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -43,6 +46,8 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.UiText
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 @Composable
 fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltViewModel()) {
@@ -52,6 +57,8 @@ fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltView
     val uiState by viewModel.uiState.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     val deleteMessage = stringResource(R.string.sticker_pack_delete_message)
     
@@ -63,12 +70,13 @@ fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltView
         viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is StickerPackListEffect.ShowMessage -> {
-                    snackbarHostState.currentSnackbarData?.dismiss()
-                    
-                    snackbarHostState.showSnackbar(
-                        UiText.StringResource(effect.messageRes)
-                            .asString(context)
-                    )
+                    snackbarJob?.cancel()
+                    snackbarJob = scope.launch {
+                        snackbarHostState.showSnackbar(
+                            UiText.StringResource(effect.messageRes)
+                                .asString(context)
+                        )
+                    }
                 }
             }
         }

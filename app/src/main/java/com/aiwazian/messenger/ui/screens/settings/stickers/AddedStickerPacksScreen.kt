@@ -27,7 +27,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -46,8 +49,9 @@ import com.aiwazian.messenger.ui.components.StickerCard
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.UiText
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
-/** Добавленные наборы: редактирования нет, только просмотр и удаление у себя. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddedStickerPacksScreen(viewModel: AddedStickerPacksViewModel = hiltViewModel()) {
@@ -57,6 +61,8 @@ fun AddedStickerPacksScreen(viewModel: AddedStickerPacksViewModel = hiltViewMode
     val openedPack by viewModel.openedPack.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     val removeMessage = stringResource(R.string.sticker_pack_remove_message)
     
@@ -68,12 +74,13 @@ fun AddedStickerPacksScreen(viewModel: AddedStickerPacksViewModel = hiltViewMode
         viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is StickerPackListEffect.ShowMessage -> {
-                    snackbarHostState.currentSnackbarData?.dismiss()
-                    
-                    snackbarHostState.showSnackbar(
-                        UiText.StringResource(effect.messageRes)
-                            .asString(context)
-                    )
+                    snackbarJob?.cancel()
+                    snackbarJob = scope.launch {
+                        snackbarHostState.showSnackbar(
+                            UiText.StringResource(effect.messageRes)
+                                .asString(context)
+                        )
+                    }
                 }
             }
         }
