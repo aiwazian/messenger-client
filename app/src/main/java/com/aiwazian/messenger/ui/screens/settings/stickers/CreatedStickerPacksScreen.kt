@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.settings.stickers
 
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +36,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
+import com.aiwazian.messenger.ui.components.ShareBottomSheet
 import com.aiwazian.messenger.ui.components.StickerCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -132,7 +129,8 @@ fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltView
                         )
                     },
                     onDelete = { viewModel.delete(pack.id) },
-                    modifier = Modifier.clip(MaterialTheme.shapes.large)
+                    modifier = Modifier.clip(MaterialTheme.shapes.large),
+                    onShare = { viewModel.share(pack) }
                 )
             }
             
@@ -149,5 +147,14 @@ fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltView
                 }
             }
         }
+    }
+    
+    if (uiState.sharingPack != null) {
+        ShareBottomSheet(
+            items = uiState.shareTargets,
+            onItemClick = viewModel::toggleShareTarget,
+            onSendClick = viewModel::sendShare,
+            onDismiss = viewModel::dismissShare
+        )
     }
 }

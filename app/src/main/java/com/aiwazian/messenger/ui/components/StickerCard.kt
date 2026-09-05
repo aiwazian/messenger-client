@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.components
 
 import androidx.compose.foundation.background
@@ -12,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Photo
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -40,19 +37,14 @@ import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 
-/**
- * Карточка набора в списке.
- *
- * @param deleteMessage текст подтверждения: у своих наборов удаление затрагивает всех,
- * у добавленных — только самого пользователя.
- */
 @Composable
 fun StickerCard(
     pack: StickerPack,
     deleteMessage: String,
     onClick: () -> Unit,
     onDelete: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onShare: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     
@@ -104,6 +96,21 @@ fun StickerCard(
                 AppDropdownMenu(
                     expanded = isMenuExpanded,
                     onDismissRequest = { isMenuExpanded = false }) {
+                    if (onShare != null) {
+                        AppDropdownMenuItem(
+                            text = stringResource(R.string.sticker_pack_share),
+                            onClick = {
+                                isMenuExpanded = false
+                                onShare()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Rounded.Share,
+                                    contentDescription = null
+                                )
+                            })
+                    }
+                    
                     AppDropdownMenuItem(
                         text = stringResource(R.string.sticker_pack_delete_action),
                         onClick = {

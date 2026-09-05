@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.settings.stickers
 
 import androidx.annotation.StringRes
@@ -10,6 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.StickerPack
 import com.aiwazian.messenger.repository.StickerRepository
+import com.aiwazian.messenger.ui.components.ShareItem
+import com.aiwazian.messenger.usecase.GetShareTargetsUseCase
+import com.aiwazian.messenger.usecase.SendMessageUseCase
+import com.aiwazian.messenger.utils.StickerLink
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,9 +22,11 @@ import javax.inject.Inject
 data class StickerPackListUiState(
     val packs: List<StickerPack> = emptyList(),
     val query: String = "",
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val sharingPack: StickerPack? = null,
+    val shareTargets: List<ShareItem> = emptyList(),
+    val selectedShareChatIds: Set<Long> = emptySet()
 ) {
-    /** Поиск идёт по уже загруженному списку: наборов мало, сеть тут не нужна. */
     val visiblePacks: List<StickerPack>
         get() {
             val trimmed = query.trim()
@@ -44,10 +46,11 @@ sealed interface StickerPackListEffect {
     data class ShowMessage(@param:StringRes val messageRes: Int) : StickerPackListEffect
 }
 
-/** Собственные наборы пользователя. */
 @HiltViewModel
 class CreatedStickerPacksViewModel @Inject constructor(
-    private val stickerRepository: StickerRepository
+    private val stickerRepository: StickerRepository,
+    private val getShareTargetsUseCase: GetShareTargetsUseCase,
+    private val sendMessageUseCase: SendMessageUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(StickerPackListUiState())
@@ -56,12 +59,6 @@ class CreatedStickerPacksViewModel @Inject constructor(
     private val _uiEffect = MutableSharedFlow<StickerPackListEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
     
-    /**
-     * Перечитывает список.
-     *
-     * Вызывается и при возврате с редактора: только что созданный набор должен
-     * сразу появиться в списке.
-     */
     fun refresh() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
@@ -80,7 +77,69 @@ class CreatedStickerPacksViewModel @Inject constructor(
         _uiState.update { it.copy(query = value) }
     }
     
-    /** Удаляет набор у всех: возврата нет, поэтому вызов только после подтверждения. */
+    fun share(pack: StickerPack) {
+        viewModelScope.launch {
+            val targets = getShareTargetsUseCase()
+            
+            _uiState.update {
+                it.copy(
+                    sharingPack = pack,
+                    shareTargets = targets,
+                    selectedShareChatIds = emptySet()
+                )
+            }
+        }
+    }
+    
+    fun toggleShareTarget(chatId: Long) {
+        viewModelScope.launch {
+            val selected = _uiState.value.selectedShareChatIds.toMutableSet()
+            
+            if (!selected.add(chatId)) {
+                selected.remove(chatId)
+            }
+            
+            val targets = getShareTargetsUseCase(selected)
+            
+            _uiState.update {
+                it.copy(
+                    selectedShareChatIds = selected,
+                    shareTargets = targets
+                )
+            }
+        }
+    }
+    
+    fun sendShare() {
+        val state = _uiState.value
+        val pack = state.sharingPack ?: return
+        val targets = state.selectedShareChatIds
+        
+        if (targets.isEmpty()) {
+            return
+        }
+        
+        dismissShare()
+        
+        viewModelScope.launch {
+            val link = StickerLink.build(pack.username)
+            
+            targets.forEach { chatId ->
+                sendMessageUseCase(chatId = chatId, message = link)
+            }
+        }
+    }
+    
+    fun dismissShare() {
+        _uiState.update {
+            it.copy(
+                sharingPack = null,
+                shareTargets = emptyList(),
+                selectedShareChatIds = emptySet()
+            )
+        }
+    }
+    
     fun delete(packId: Long) {
         viewModelScope.launch {
             stickerRepository.deletePack(packId).onSuccess {
