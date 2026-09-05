@@ -20,7 +20,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -39,6 +42,8 @@ import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileImageCarousel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 @Composable
 fun ChannelSettingsScreen(
@@ -54,6 +59,8 @@ fun ChannelSettingsScreen(
     val uiState by viewModel.uiState.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
@@ -61,7 +68,10 @@ fun ChannelSettingsScreen(
                 ChannelSettingsEffect.NavigateToBack -> navBackStack.removeLastOrNull()
                 
                 is ChannelSettingsEffect.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(effect.message.asString(context))
+                    snackbarJob?.cancel()
+                    snackbarJob = scope.launch {
+                        snackbarHostState.showSnackbar(effect.message.asString(context))
+                    }
                 }
             }
         }
@@ -87,7 +97,6 @@ fun ChannelSettingsScreen(
                 SectionHeader(title = stringResource(R.string.profile_photos))
             }
             
-            /* Кадрирование под круг живёт внутри шторки выбора фото. */
             SettingsProfileImageCarousel(
                 avatars = uiState.channel.avatars,
                 onAddPhoto = viewModel::uploadAvatar,
