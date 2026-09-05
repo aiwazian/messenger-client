@@ -4,4 +4,6 @@
     <string name="sticker_pack_add_stickers">Add stickers</string>
     <string name="sticker_pack_remove_stickers">Remove stickers</string>
     <string name="send_sticker">Send sticker</string>
+    <string name="sticker_pack_installed">Pack %1$s added to your stickers</string>
+    <string name="sticker_pack_uninstalled">Pack %1$s removed from your stickers</string>
 </resources>

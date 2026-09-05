@@ -4,4 +4,6 @@
     <string name="sticker_pack_add_stickers">Добавить стикеры</string>
     <string name="sticker_pack_remove_stickers">Удалить стикеры</string>
     <string name="send_sticker">Отправить стикер</string>
+    <string name="sticker_pack_installed">Набор %1$s добавлен в ваши стикеры</string>
+    <string name="sticker_pack_uninstalled">Набор %1$s удален из ваших стикеров</string>
 </resources>

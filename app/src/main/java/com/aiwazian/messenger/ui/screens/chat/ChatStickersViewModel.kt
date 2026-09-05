@@ -13,11 +13,17 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class StickerPackNotice(
+    val packName: String,
+    val isInstalled: Boolean
+)
+
 data class ChatStickersUiState(
     val addedPacks: List<StickerPack> = emptyList(),
     val isPanelVisible: Boolean = false,
     val openedPack: StickerPack? = null,
-    val packsById: Map<Long, StickerPack> = emptyMap()
+    val packsById: Map<Long, StickerPack> = emptyMap(),
+    val notice: StickerPackNotice? = null
 ) {
     fun sticker(packId: Long, stickerId: Long): Sticker? =
         packsById[packId]?.stickers?.firstOrNull { it.id == stickerId }
@@ -45,6 +51,10 @@ class ChatStickersViewModel @Inject constructor(
     }
     
     fun hidePanel() {
+        if (!_uiState.value.isPanelVisible) {
+            return
+        }
+        
         _uiState.update { it.copy(isPanelVisible = false) }
     }
     
@@ -105,6 +115,13 @@ class ChatStickersViewModel @Inject constructor(
             stickerRepository.installPack(pack.id).onSuccess {
                 updateInstalled(pack.id, true)
                 loadAddedPacks()
+                
+                _uiState.update {
+                    it.copy(
+                        openedPack = null,
+                        notice = StickerPackNotice(packName = pack.name, isInstalled = true)
+                    )
+                }
             }
         }
     }
@@ -116,8 +133,19 @@ class ChatStickersViewModel @Inject constructor(
             stickerRepository.uninstallPack(pack.id).onSuccess {
                 updateInstalled(pack.id, false)
                 loadAddedPacks()
+                
+                _uiState.update {
+                    it.copy(
+                        openedPack = null,
+                        notice = StickerPackNotice(packName = pack.name, isInstalled = false)
+                    )
+                }
             }
         }
+    }
+    
+    fun consumeNotice() {
+        _uiState.update { it.copy(notice = null) }
     }
     
     fun sendSticker(chatId: Long, stickerId: Long) {

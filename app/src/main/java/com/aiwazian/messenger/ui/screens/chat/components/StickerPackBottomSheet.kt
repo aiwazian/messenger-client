@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import androidx.compose.animation.core.Animatable
@@ -48,12 +44,14 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.aiwazian.messenger.R
@@ -207,9 +205,20 @@ private fun StickerFocusOverlay(
         }
     }
     
-    Popup(
-        properties = PopupProperties(focusable = true),
-        onDismissRequest = { isClosing = true }) {
+    Dialog(
+        onDismissRequest = { isClosing = true },
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
+    ) {
+        val view = LocalView.current
+        val dialogWindow = (view.parent as? DialogWindowProvider)?.window
+        
+        LaunchedEffect(dialogWindow) {
+            dialogWindow?.setDimAmount(0f)
+        }
+        
         val value = progress.value
         val interactionSource = remember { MutableInteractionSource() }
         
