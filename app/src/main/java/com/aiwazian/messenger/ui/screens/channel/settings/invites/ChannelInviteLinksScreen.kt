@@ -29,6 +29,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -48,6 +49,8 @@ import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +59,8 @@ fun ChannelInviteLinksScreen(
     viewModel: ChannelInviteLinksViewModel = hiltViewModel()
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var snackbarJob by remember { mutableStateOf<Job?>(null) }
     val uiState by viewModel.uiState.collectAsState()
     
     LaunchedEffect(channelId) {
@@ -64,7 +69,10 @@ fun ChannelInviteLinksScreen(
     
     LaunchedEffect(Unit) {
         viewModel.snackbarMessage.collect { message ->
-            snackbarHostState.showSnackbar(message)
+            snackbarJob?.cancel()
+            snackbarJob = scope.launch {
+                snackbarHostState.showSnackbar(message)
+            }
         }
     }
     
