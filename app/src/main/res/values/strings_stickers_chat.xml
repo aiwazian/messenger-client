@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share">Share</string>
+    <string name="sticker_pack_add_stickers">Add stickers</string>
+    <string name="sticker_pack_remove_stickers">Remove stickers</string>
+    <string name="send_sticker">Send sticker</string>
+    <string name="stickers">Stickers</string>
+</resources>

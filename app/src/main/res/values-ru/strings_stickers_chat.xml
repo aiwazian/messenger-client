@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share">Поделиться</string>
+    <string name="sticker_pack_add_stickers">Добавить стикеры</string>
+    <string name="sticker_pack_remove_stickers">Удалить стикеры</string>
+    <string name="send_sticker">Отправить стикер</string>
+    <string name="stickers">Стикеры</string>
+</resources>

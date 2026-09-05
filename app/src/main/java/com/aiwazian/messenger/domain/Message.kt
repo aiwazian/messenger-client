@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.domain
 
 import com.aiwazian.messenger.enums.AttachmentType
@@ -17,12 +13,6 @@ data class MessageReadInfo(
     val readAt: Long
 )
 
-/**
- * Превью сообщения, на которое ответили.
- *
- * Оригинал может быть далеко за пределами окна истории или вообще в другом чате,
- * поэтому текст и подписи приходят вместе с ответом.
- */
 data class MessageReplyPreview(
     val messageId: Long,
     val chatId: Long? = null,
@@ -32,15 +22,20 @@ data class MessageReplyPreview(
     val text: String? = null,
     val attachmentTypes: List<AttachmentType> = emptyList()
 ) {
-    /** Заголовок ответа: название канала или группы, в личном чате — имя автора. */
     val title: String? get() = chatName ?: senderName
 }
 
-/** Источник пересылки: всегда владелец контента, а не посредник. */
 data class ForwardedFrom(
     val chatId: Long,
     val name: String,
     val access: ForwardSourceAccess
+)
+
+data class MessageSticker(
+    val id: Long,
+    val packId: Long,
+    val fileId: String,
+    val emojis: List<String> = emptyList()
 )
 
 data class Message(
@@ -49,7 +44,6 @@ data class Message(
     val chatId: Long,
     val text: String?,
     val sendTime: Long,
-    /** Когда именно правили. Известно только трое суток после правки. */
     val editedAt: Long? = null,
     val isRead: Boolean,
     val status: MessageStatus = MessageStatus.SENT,
@@ -59,12 +53,6 @@ data class Message(
     val readInfo: List<MessageReadInfo>? = null,
     val replyTo: MessageReplyPreview? = null,
     val forwardedFrom: ForwardedFrom? = null,
-    /**
-     * Сообщение правили хотя бы раз.
-     *
-     * Отдельный флаг нужен, потому что editedAt пропадает через трое суток, а
-     * подпись «изменено» у сообщения должна оставаться навсегда. Поле добавлено
-     * в конец, чтобы не ломать позиционные вызовы конструктора.
-     */
-    val isEdited: Boolean = false
+    val isEdited: Boolean = false,
+    val sticker: MessageSticker? = null
 )

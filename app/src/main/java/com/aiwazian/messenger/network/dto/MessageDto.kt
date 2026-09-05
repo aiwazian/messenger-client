@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.network.dto
 
 import com.aiwazian.messenger.enums.AttachmentType
@@ -29,21 +25,18 @@ data class MessageAttachmentDto(
     @SerialName("status") val status: DownloadStatus = DownloadStatus.UPLOADED,
     @SerialName("type") val type: AttachmentType = AttachmentType.FILE,
     @SerialName("sortOrder") val sortOrder: Int = 0,
-    /**
-     * Размеры кадра в пикселях — только у фото и видео.
-     *
-     * Нужны, чтобы держать под вложение место нужной формы ещё до того,
-     * как файл скачан. Пусты у документов и голосовых, а также у медиа,
-     * отправленного до появления этих полей либо старым клиентом.
-     */
     @SerialName("width") val width: Int? = null,
     @SerialName("height") val height: Int? = null,
 )
 
-/**
- * Превью цитируемого сообщения. Приходит вместе с сообщением, чтобы не делать
- * отдельный запрос за оригиналом при отрисовке ответа.
- */
+@Serializable
+data class MessageStickerDto(
+    @SerialName("id") val id: String,
+    @SerialName("packId") val packId: String,
+    @SerialName("fileId") val fileId: String,
+    @SerialName("emojis") val emojis: List<String> = emptyList()
+)
+
 @Serializable
 data class MessageReplyPreviewDto(
     @SerialName("id") val id: Long,
@@ -51,11 +44,8 @@ data class MessageReplyPreviewDto(
     @SerialName("chatId") val chatId: Long? = null,
     @SerialName("text") val text: String? = null,
     @SerialName("messageType") val messageType: MessageType = MessageType.TEXT,
-    /** Имя автора — заголовок ответа в личном чате. */
     @SerialName("senderName") val senderName: String? = null,
-    /** Название группы/канала — заголовок ответа в группе или канале. */
     @SerialName("chatName") val chatName: String? = null,
-    /** Нужны, чтобы вместо пустого текста показать «Фото», «Видео», «Голосовое сообщение». */
     @SerialName("attachmentTypes") val attachmentTypes: List<AttachmentType> = emptyList()
 )
 
@@ -66,25 +56,17 @@ data class MessageDto(
     @SerialName("chatId") val chatId: Long,
     @SerialName("text") val text: String? = null,
     @SerialName("sendTime") val sendTime: Long,
-    /** Точное время правки. Сервер держит его в Redis, поэтому приходит только трое суток. */
     @SerialName("editedAt") val editedAt: Long? = null,
-    /**
-     * Сообщение правили хотя бы раз.
-     *
-     * Поле приходит только у изменённых сообщений: гонять false в каждой строке
-     * истории смысла нет. Пустое поле у старого сервера означает, что о правке
-     * можно судить только по editedAt.
-     */
     @SerialName("isEdited") val isEdited: Boolean? = null,
     @SerialName("isRead") val isRead: Boolean? = null,
     @SerialName("messageType") val messageType: MessageType = MessageType.TEXT,
     @SerialName("systemEventType") val systemEventType: SystemMessageEventType? = null,
     @SerialName("attachments") val attachments: List<MessageAttachmentDto> = emptyList(),
+    @SerialName("sticker") val sticker: MessageStickerDto? = null,
     @SerialName("readInfo") val readInfo: List<MessageReadInfoDto>? = null,
     @SerialName("replyToId") val replyToId: Long? = null,
     @SerialName("replyToChatId") val replyToChatId: Long? = null,
     @SerialName("replyTo") val replyTo: MessageReplyPreviewDto? = null,
-    /** Автор контента, а не последний пересылавший. */
     @SerialName("forwardedFromChatId") val forwardedFromChatId: Long? = null,
     @SerialName("forwardedFromName") val forwardedFromName: String? = null,
     @SerialName("forwardedFromAccess") val forwardedFromAccess: ForwardSourceAccess? = null
@@ -93,7 +75,12 @@ data class MessageDto(
 @Serializable
 data class TextMessageRequestDto(
     @SerialName("text") val text: String,
-    /** id сообщения, на которое отвечаем. Сервер ждёт строку из-за BigInt. */
+    @SerialName("replyToId") val replyToId: String? = null
+)
+
+@Serializable
+data class StickerMessageRequestDto(
+    @SerialName("stickerId") val stickerId: String,
     @SerialName("replyToId") val replyToId: String? = null
 )
 
@@ -107,38 +94,16 @@ data class FileInitRequestDto(
     @SerialName("name") val name: String,
     @SerialName("size") val size: Long,
     @SerialName("mimeType") val mimeType: String,
-    /**
-     * Что именно мы собираемся отправить.
-     *
-     * Сервер зашивает категорию в политику загрузки, поэтому подменить картинку
-     * на исполняемый файл уже не выйдет: S3 отклонит запрос по Content-Type.
-     * Для аватарок категорию проставляет сам сервер, клиенту её слать не нужно.
-     */
     @SerialName("category") val category: AttachmentType = AttachmentType.FILE,
-    /**
-     * Размеры кадра в пикселях — только для фото и видео.
-     *
-     * Измеряет именно отправитель: сервер файл не раскодирует, а получателю
-     * размеры нужны до скачивания — иначе форму карточки узнать неоткуда.
-     * Пустые значения допустимы: если кадр прочитать не удалось, отправка
-     * всё равно должна состояться.
-     */
     @SerialName("width") val width: Int? = null,
     @SerialName("height") val height: Int? = null
 )
 
-/**
- * Форма загрузки, подписанная сервером (S3 presigned POST).
- *
- * [fields] нужно положить в multipart-запрос до части с файлом — в этом порядке
- * S3 проверяет политику. Поле файла всегда называется "file".
- */
 @Serializable
 data class FileInitResponseDto(
     @SerialName("url") val url: String,
     @SerialName("fields") val fields: Map<String, String> = emptyMap(),
     @SerialName("fileId") val fileId: String,
-    /** Максимально допустимый размер, чтобы не гнать заведомо отклоняемый файл. */
     @SerialName("maxSizeBytes") val maxSizeBytes: Long = 0
 )
 
@@ -155,7 +120,6 @@ data class FileConfirmRequestDto(
     @SerialName("replyToId") val replyToId: String? = null
 )
 
-/** Пересылка одного сообщения в несколько чатов за один запрос. */
 @Serializable
 data class ForwardMessageRequestDto(
     @SerialName("targetChatIds") val targetChatIds: List<String>
