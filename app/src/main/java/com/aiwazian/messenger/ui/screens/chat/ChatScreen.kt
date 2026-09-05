@@ -396,6 +396,28 @@ fun ChatScreen(
         }
     }
     
+    LaunchedEffect(stickersState.notice) {
+        val notice = stickersState.notice ?: return@LaunchedEffect
+        
+        val message = context.getString(
+            if (notice.isInstalled) {
+                R.string.sticker_pack_installed
+            } else {
+                R.string.sticker_pack_uninstalled
+            }, notice.packName
+        )
+        
+        stickersViewModel.consumeNotice()
+        
+        snackbarJob?.cancel()
+        snackbarJob = scope.launch {
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
+    
     Scaffold(snackbarHost = {
         if (!uiState.showFullScreenViewer) {
             AppSnackbar(snackbarHostState)
