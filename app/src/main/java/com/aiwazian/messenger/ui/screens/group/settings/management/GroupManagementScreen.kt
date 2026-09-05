@@ -13,7 +13,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -27,6 +30,8 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 @Composable
 fun GroupManagementScreen(
@@ -42,6 +47,8 @@ fun GroupManagementScreen(
     
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
@@ -52,7 +59,10 @@ fun GroupManagementScreen(
                 }
                 
                 is GroupManagementEffect.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(effect.message.asString(context))
+                    snackbarJob?.cancel()
+                    snackbarJob = scope.launch {
+                        snackbarHostState.showSnackbar(effect.message.asString(context))
+                    }
                 }
             }
         }
