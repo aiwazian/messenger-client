@@ -9,7 +9,9 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.StickerDraft
 import com.aiwazian.messenger.repository.StickerRepository
+import com.aiwazian.messenger.utils.EmojiInput
 import com.aiwazian.messenger.utils.media.EncodedSticker
 import com.aiwazian.messenger.utils.media.StickerEncoder
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,14 +29,35 @@ sealed interface StickerSlot {
     
     val key: String
     
-    data class Remote(val fileId: String, val url: String) : StickerSlot {
+    val emojis: List<String>
+    
+    fun withEmojis(emojis: List<String>): StickerSlot
+    
+    data class Remote(
+        val fileId: String,
+        val url: String,
+        override val emojis: List<String> = emptyList()
+    ) : StickerSlot {
         override val key: String get() = fileId
+        
+        override fun withEmojis(emojis: List<String>): StickerSlot = copy(emojis = emojis)
     }
     
-    data class Local(val sticker: EncodedSticker, val fileId: String? = null) : StickerSlot {
+    data class Local(
+        val sticker: EncodedSticker,
+        override val emojis: List<String> = emptyList(),
+        val fileId: String? = null
+    ) : StickerSlot {
         override val key: String get() = sticker.uri.toString()
+        
+        override fun withEmojis(emojis: List<String>): StickerSlot = copy(emojis = emojis)
     }
 }
+
+data class StickerSnapshot(
+    val key: String,
+    val emojis: List<String>
+)
 
 enum class UsernameStatus {
     Empty,
@@ -50,27 +73,32 @@ data class StickerPackEditorUiState(
     val name: String = "",
     val username: String = "",
     val stickers: List<StickerSlot> = emptyList(),
+    val focusedStickerKey: String? = null,
     val usernameStatus: UsernameStatus = UsernameStatus.Empty,
     val isLoading: Boolean = false,
     val isAddingSticker: Boolean = false,
     val isSaving: Boolean = false,
     val savedName: String = "",
     val savedUsername: String = "",
-    val savedStickerKeys: List<String> = emptyList()
+    val savedStickers: List<StickerSnapshot> = emptyList()
 ) {
     val isNameValid: Boolean get() = name.trim().isNotEmpty()
+    
+    val focusedSticker: StickerSlot?
+        get() = stickers.firstOrNull { it.key == focusedStickerKey }
     
     val canSave: Boolean
         get() = isNameValid &&
                 usernameStatus == UsernameStatus.Available &&
                 stickers.isNotEmpty() &&
+                stickers.all { it.emojis.isNotEmpty() } &&
                 !isSaving &&
                 !isAddingSticker
     
     val hasChanges: Boolean
         get() = name.trim() != savedName ||
                 username != savedUsername ||
-                stickers.map { it.key } != savedStickerKeys
+                stickers.map { StickerSnapshot(it.key, it.emojis) } != savedStickers
 }
 
 sealed interface StickerPackEditorEffect {
@@ -138,7 +166,11 @@ class StickerPackEditorViewModel @Inject constructor(
             
             stickerRepository.getPack(packId).onSuccess { pack ->
                 val slots = pack.stickers.map { sticker ->
-                    StickerSlot.Remote(fileId = sticker.fileId, url = sticker.url)
+                    StickerSlot.Remote(
+                        fileId = sticker.fileId,
+                        url = sticker.url,
+                        emojis = sticker.emojis
+                    )
                 }
                 
                 _uiState.update { state ->
@@ -151,7 +183,7 @@ class StickerPackEditorViewModel @Inject constructor(
                         isLoading = false,
                         savedName = pack.name.trim(),
                         savedUsername = pack.username,
-                        savedStickerKeys = slots.map { it.key }
+                        savedStickers = slots.map { StickerSnapshot(it.key, it.emojis) }
                     )
                 }
             }.onFailure {
@@ -231,12 +263,48 @@ class StickerPackEditorViewModel @Inject constructor(
                 return@launch
             }
             
+            val slot = StickerSlot.Local(
+                sticker = encoded,
+                emojis = listOf(EmojiInput.DEFAULT_EMOJI)
+            )
+            
             _uiState.update { state ->
                 state.copy(
-                    stickers = state.stickers + StickerSlot.Local(encoded),
+                    stickers = state.stickers + slot,
+                    focusedStickerKey = slot.key,
                     isAddingSticker = false
                 )
             }
+        }
+    }
+    
+    fun focusSticker(key: String) {
+        _uiState.update { state ->
+            if (state.stickers.none { it.key == key }) {
+                state
+            } else {
+                state.copy(focusedStickerKey = key)
+            }
+        }
+    }
+    
+    fun clearFocus() {
+        _uiState.update { it.copy(focusedStickerKey = null) }
+    }
+    
+    fun onStickerEmojisChange(key: String, value: String) {
+        val emojis = EmojiInput.parse(value)
+        
+        _uiState.update { state ->
+            state.copy(
+                stickers = state.stickers.map { slot ->
+                    if (slot.key == key) {
+                        slot.withEmojis(emojis)
+                    } else {
+                        slot
+                    }
+                }
+            )
         }
     }
     
@@ -250,7 +318,14 @@ class StickerPackEditorViewModel @Inject constructor(
         removedSlot = index to _uiState.value.stickers[index]
         
         _uiState.update { state ->
-            state.copy(stickers = state.stickers.filterNot { it.key == key })
+            state.copy(
+                stickers = state.stickers.filterNot { it.key == key },
+                focusedStickerKey = if (state.focusedStickerKey == key) {
+                    null
+                } else {
+                    state.focusedStickerKey
+                }
+            )
         }
         
         viewModelScope.launch {
@@ -296,17 +371,19 @@ class StickerPackEditorViewModel @Inject constructor(
             _uiState.update { it.copy(isSaving = true) }
             
             val slots = state.stickers.toMutableList()
-            val fileIds = mutableListOf<String>()
+            val drafts = mutableListOf<StickerDraft>()
             
             slots.forEachIndexed { index, slot ->
                 when (slot) {
-                    is StickerSlot.Remote -> fileIds.add(slot.fileId)
+                    is StickerSlot.Remote -> drafts.add(
+                        StickerDraft(fileId = slot.fileId, emojis = slot.emojis)
+                    )
                     
                     is StickerSlot.Local -> {
                         val known = slot.fileId
                         
                         if (known != null) {
-                            fileIds.add(known)
+                            drafts.add(StickerDraft(fileId = known, emojis = slot.emojis))
                         } else {
                             val uploaded =
                                 stickerRepository.uploadSticker(slot.sticker).getOrNull()
@@ -325,7 +402,7 @@ class StickerPackEditorViewModel @Inject constructor(
                             
                             slots[index] = slot.copy(fileId = uploaded)
                             
-                            fileIds.add(uploaded)
+                            drafts.add(StickerDraft(fileId = uploaded, emojis = slot.emojis))
                         }
                     }
                 }
@@ -335,14 +412,18 @@ class StickerPackEditorViewModel @Inject constructor(
             val name = state.name.trim()
             
             val result = if (packId == null) {
-                stickerRepository.createPack(name, state.username, fileIds)
+                stickerRepository.createPack(name, state.username, drafts)
             } else {
-                stickerRepository.updatePack(packId, name, state.username, fileIds)
+                stickerRepository.updatePack(packId, name, state.username, drafts)
             }
             
             result.onSuccess { pack ->
                 val saved = pack.stickers.map { sticker ->
-                    StickerSlot.Remote(fileId = sticker.fileId, url = sticker.url)
+                    StickerSlot.Remote(
+                        fileId = sticker.fileId,
+                        url = sticker.url,
+                        emojis = sticker.emojis
+                    )
                 }
                 
                 removedSlot = null
@@ -354,10 +435,11 @@ class StickerPackEditorViewModel @Inject constructor(
                         username = pack.username,
                         usernameStatus = UsernameStatus.Available,
                         stickers = saved,
+                        focusedStickerKey = null,
                         isSaving = false,
                         savedName = pack.name.trim(),
                         savedUsername = pack.username,
-                        savedStickerKeys = saved.map { it.key }
+                        savedStickers = saved.map { StickerSnapshot(it.key, it.emojis) }
                     )
                 }
                 

@@ -6,6 +6,7 @@ package com.aiwazian.messenger.repository
 
 import android.util.Log
 import com.aiwazian.messenger.di.FileClient
+import com.aiwazian.messenger.domain.StickerDraft
 import com.aiwazian.messenger.domain.StickerPack
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.network.api.StickerApi
@@ -26,12 +27,6 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Наборы стикеров и загрузка самих картинок.
- *
- * Картинки идут в хранилище напрямую по подписанной форме, мимо нашего
- * сервера: сервер только выдаёт форму и потом принимает подтверждение.
- */
 @Singleton
 class StickerRepository @Inject constructor(
     private val stickerApi: StickerApi,
@@ -63,12 +58,6 @@ class StickerRepository @Inject constructor(
             }.map { it.toDomain() }
         }
     
-    /**
-     * Свободно ли имя.
-     *
-     * @param packId текущий набор при редактировании: иначе собственное имя набора
-     * выглядело бы занятым.
-     */
     suspend fun isUsernameAvailable(username: String, packId: Long? = null): Result<Boolean> =
         withContext(Dispatchers.IO) {
             request("username @$username") {
@@ -79,29 +68,25 @@ class StickerRepository @Inject constructor(
     suspend fun createPack(
         name: String,
         username: String,
-        fileIds: List<String>
+        stickers: List<StickerDraft>
     ): Result<StickerPack> = withContext(Dispatchers.IO) {
         request("pack creation") {
             stickerApi.createPack(
                 CreateStickerPackRequestDto(
                     name = name,
                     username = username,
-                    stickers = fileIds.map { StickerInputDto(fileId = it) })
+                    stickers = stickers.map {
+                        StickerInputDto(fileId = it.fileId, emojis = it.emojis)
+                    })
             )
         }.map { it.toDomain() }
     }
     
-    /**
-     * Изменяет набор.
-     *
-     * Состав передаётся целиком: повторное сохранение после обрыва связи не
-     * продублирует стикеры и не собьёт порядок.
-     */
     suspend fun updatePack(
         packId: Long,
         name: String? = null,
         username: String? = null,
-        fileIds: List<String>? = null
+        stickers: List<StickerDraft>? = null
     ): Result<StickerPack> = withContext(Dispatchers.IO) {
         request("pack $packId update") {
             stickerApi.updatePack(
@@ -109,12 +94,13 @@ class StickerRepository @Inject constructor(
                 UpdateStickerPackRequestDto(
                     name = name,
                     username = username,
-                    stickers = fileIds?.map { StickerInputDto(fileId = it) })
+                    stickers = stickers?.map {
+                        StickerInputDto(fileId = it.fileId, emojis = it.emojis)
+                    })
             )
         }.map { it.toDomain() }
     }
     
-    /** Удаляет набор у всех: доступно только создателю. */
     suspend fun deletePack(packId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         requestUnit("pack $packId removal") {
             stickerApi.deletePack(packId.toString())
@@ -127,20 +113,12 @@ class StickerRepository @Inject constructor(
         }
     }
     
-    /** Убирает набор только у себя. */
     suspend fun uninstallPack(packId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         requestUnit("pack $packId uninstall") {
             stickerApi.uninstallPack(packId.toString())
         }
     }
     
-    /**
-     * Кладёт картинку в хранилище и возвращает идентификатор файла.
-     *
-     * Три шага: подписанная форма от сервера, отправка файла в хранилище,
-     * подтверждение. Без последнего шага сервер считает файл недоехавшим и
-     * не даст добавить его в набор.
-     */
     suspend fun uploadSticker(sticker: EncodedSticker): Result<String> =
         withContext(Dispatchers.IO) {
             try {
@@ -174,14 +152,12 @@ class StickerRepository @Inject constructor(
                     )
                 }
                 
-                /* Слишком большой файл хранилище всё равно отклонит — не тратим трафик. */
                 if (form.maxSizeBytes > 0 && sticker.size > form.maxSizeBytes) {
                     return@withContext Result.failure(Exception("Sticker is too large"))
                 }
                 
                 val builder = MultipartBody.Builder().setType(MultipartBody.FORM)
                 
-                /* Поля политики идут до части с файлом: в таком порядке их читает S3. */
                 form.fields.forEach { (key, value) ->
                     builder.addFormDataPart(key, value)
                 }
@@ -260,7 +236,6 @@ class StickerRepository @Inject constructor(
     private companion object {
         const val TAG = "StickerRepository"
         
-        /** Имя части с файлом зашито в подписанную политику и меняться не может. */
         const val FILE_FIELD_NAME = "file"
     }
 }

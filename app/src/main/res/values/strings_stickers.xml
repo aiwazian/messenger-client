@@ -18,6 +18,8 @@
     <string name="sticker_pack_username_taken">Short name is already taken</string>
     <string name="sticker_pack_username_unknown">Couldn\'t check the short name</string>
     <string name="sticker_add">Add sticker</string>
+    <string name="sticker_delete">Delete</string>
+    <string name="sticker_emojis">Emoji</string>
     <string name="sticker_add_error">Couldn\'t process the image</string>
     <string name="sticker_upload_error">Couldn\'t upload the sticker</string>
     <string name="sticker_removed">Sticker deleted</string>
