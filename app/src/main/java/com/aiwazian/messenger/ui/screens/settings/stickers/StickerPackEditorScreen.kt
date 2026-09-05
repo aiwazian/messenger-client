@@ -6,9 +6,12 @@ package com.aiwazian.messenger.ui.screens.settings.stickers
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -24,6 +27,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.plus
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -32,6 +36,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -44,9 +49,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -65,9 +72,11 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
@@ -93,9 +102,44 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 private val STICKER_CELL_MIN_SIZE = 64.dp
+private val STICKER_FOCUS_TOP_PADDING = 50.dp
 private const val FOCUS_SCALE = 2f
 private const val SCRIM_ALPHA = 0.6f
 private const val EMOJI_FIELD_WIDTH_FRACTION = 0.8f
+private const val PRESSED_CELL_SCALE = 0.9f
+
+private val FOCUS_OPEN_SPEC: AnimationSpec<Float> =
+    tween(durationMillis = 260, easing = FastOutSlowInEasing)
+
+private val FOCUS_CLOSE_SPEC: AnimationSpec<Float> =
+    tween(durationMillis = 220, easing = FastOutSlowInEasing)
+
+@Stable
+private class StickerFocusCloseState {
+    
+    var closingKey by mutableStateOf<String?>(null)
+        private set
+    
+    private var pendingAction: (() -> Unit)? = null
+    
+    fun request(key: String, action: () -> Unit) {
+        if (closingKey == key) {
+            return
+        }
+        
+        pendingAction = action
+        closingKey = key
+    }
+    
+    fun onClosed() {
+        val action = pendingAction
+        
+        pendingAction = null
+        closingKey = null
+        
+        action?.invoke()
+    }
+}
 
 @Composable
 fun StickerPackEditorScreen(
@@ -118,12 +162,21 @@ fun StickerPackEditorScreen(
     var undoKey by remember { mutableStateOf<String?>(null) }
     
     val stickerBounds = remember { mutableMapOf<String, Rect>() }
+    val focusClose = remember { StickerFocusCloseState() }
     
     val goBack: () -> Unit = { navBackStack.removeLastOrNull() }
     
+    val closeFocusedSticker: () -> Unit = {
+        val focusedKey = uiState.focusedStickerKey
+        
+        if (focusedKey != null) {
+            focusClose.request(focusedKey, viewModel::clearFocus)
+        }
+    }
+    
     val onBackClick: () -> Unit = {
         when {
-            uiState.focusedStickerKey != null -> viewModel.clearFocus()
+            uiState.focusedStickerKey != null -> closeFocusedSticker()
             uiState.hasChanges -> isExitDialogVisible = true
             else -> goBack()
         }
@@ -162,7 +215,7 @@ fun StickerPackEditorScreen(
     
     BackHandler(enabled = uiState.focusedStickerKey != null || uiState.hasChanges) {
         if (uiState.focusedStickerKey != null) {
-            viewModel.clearFocus()
+            closeFocusedSticker()
         } else {
             isExitDialogVisible = true
         }
@@ -170,137 +223,145 @@ fun StickerPackEditorScreen(
     
     val isFabVisible = uiState.canSave || uiState.isSaving
     
-    Scaffold(
-        modifier = Modifier.imePadding(),
-        topBar = {
-            PageTopBar(
-                title = {
-                    Text(
-                        stringResource(
-                            if (uiState.packId == null) {
-                                R.string.sticker_pack_new
-                            } else {
-                                R.string.sticker_pack
-                            }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier.imePadding(),
+            topBar = {
+                PageTopBar(
+                    title = {
+                        Text(
+                            stringResource(
+                                if (uiState.packId == null) {
+                                    R.string.sticker_pack_new
+                                } else {
+                                    R.string.sticker_pack
+                                }
+                            )
                         )
-                    )
-                },
-                onBackClick = onBackClick
-            )
-        },
-        snackbarHost = {
-            val pendingUndoKey = undoKey
-            
-            val undoAction: (@Composable () -> Unit)? = if (pendingUndoKey == null) {
-                null
-            } else {
-                {
-                    TextButton(
-                        onClick = {
-                            viewModel.undoRemove(pendingUndoKey)
-                            
-                            snackbarHostState.currentSnackbarData?.dismiss()
-                        },
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Text(stringResource(R.string.sticker_removed_undo))
-                    }
-                }
-            }
-            
-            AppSnackbar(
-                hostState = snackbarHostState,
-                trailingIcon = undoAction
-            )
-        },
-        floatingActionButton = {
-            if (isFabVisible) {
-                FloatingActionButton(onClick = viewModel::save, shape = CircleShape) {
-                    if (uiState.isSaving) {
-                        CircularProgressIndicator(
-                            strokeWidth = 2.dp,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Rounded.Done,
-                            contentDescription = null
-                        )
-                    }
-                }
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
-        Box {
-            TopBarScrim(height = innerPadding.calculateTopPadding())
-            
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = STICKER_CELL_MIN_SIZE),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = innerPadding.plus(PaddingValues(horizontal = 10.dp)),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    SectionContainer(
-                        contentPadding = PaddingValues.Zero,
-                        footer = {
-                            UsernameHint(status = uiState.usernameStatus)
-                        }) {
-                        FramelessTextBox(
-                            placeholder = stringResource(R.string.sticker_pack_name),
-                            value = uiState.name,
-                            onValueChange = viewModel::onNameChange,
-                            trailingIcon = {
-                                Text(
-                                    text = "${uiState.name.length}/${StickerPackEditorViewModel.MAX_NAME_LENGTH}",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 12.sp
-                                )
-                            })
-                        
-                        FramelessTextBox(
-                            placeholder = stringResource(R.string.sticker_pack_username),
-                            value = uiState.username,
-                            onValueChange = viewModel::onUsernameChange,
-                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None)
-                        )
-                    }
-                }
-                
-                items(
-                    items = uiState.stickers,
-                    key = { it.key }) { slot ->
-                    StickerSlotCell(
-                        slot = slot,
-                        isHidden = uiState.focusedStickerKey == slot.key,
-                        onBoundsChange = { bounds -> stickerBounds[slot.key] = bounds },
-                        onClick = { viewModel.focusSticker(slot.key) })
-                }
-                
-                item {
-                    AddStickerCell(
-                        isBusy = uiState.isAddingSticker,
-                        onClick = { isPickerVisible = true })
-                }
-            }
-            
-            BottomBarScrim(height = innerPadding.calculateBottomPadding())
-            
-            val focusedSticker = uiState.focusedSticker
-            
-            if (focusedSticker != null) {
-                StickerFocusOverlay(
-                    slot = focusedSticker,
-                    origin = stickerBounds[focusedSticker.key],
-                    onEmojisChange = { value ->
-                        viewModel.onStickerEmojisChange(focusedSticker.key, value)
                     },
-                    onRemove = { viewModel.removeSticker(focusedSticker.key) },
-                    onDismiss = viewModel::clearFocus
+                    onBackClick = onBackClick
                 )
+            },
+            snackbarHost = {
+                val pendingUndoKey = undoKey
+                
+                val undoAction: (@Composable () -> Unit)? = if (pendingUndoKey == null) {
+                    null
+                } else {
+                    {
+                        TextButton(
+                            onClick = {
+                                viewModel.undoRemove(pendingUndoKey)
+                                
+                                snackbarHostState.currentSnackbarData?.dismiss()
+                            },
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Text(stringResource(R.string.sticker_removed_undo))
+                        }
+                    }
+                }
+                
+                AppSnackbar(
+                    hostState = snackbarHostState,
+                    trailingIcon = undoAction
+                )
+            },
+            floatingActionButton = {
+                if (isFabVisible) {
+                    FloatingActionButton(onClick = viewModel::save, shape = CircleShape) {
+                        if (uiState.isSaving) {
+                            CircularProgressIndicator(
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Rounded.Done,
+                                contentDescription = null
+                            )
+                        }
+                    }
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.background
+        ) { innerPadding ->
+            Box {
+                TopBarScrim(height = innerPadding.calculateTopPadding())
+                
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = STICKER_CELL_MIN_SIZE),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = innerPadding.plus(PaddingValues(horizontal = 10.dp)),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        SectionContainer(
+                            contentPadding = PaddingValues.Zero,
+                            footer = {
+                                UsernameHint(status = uiState.usernameStatus)
+                            }) {
+                            FramelessTextBox(
+                                placeholder = stringResource(R.string.sticker_pack_name),
+                                value = uiState.name,
+                                onValueChange = viewModel::onNameChange,
+                                trailingIcon = {
+                                    Text(
+                                        text = "${uiState.name.length}/${StickerPackEditorViewModel.MAX_NAME_LENGTH}",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 12.sp
+                                    )
+                                })
+                            
+                            FramelessTextBox(
+                                placeholder = stringResource(R.string.sticker_pack_username),
+                                value = uiState.username,
+                                onValueChange = viewModel::onUsernameChange,
+                                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None)
+                            )
+                        }
+                    }
+                    
+                    items(
+                        items = uiState.stickers,
+                        key = { it.key }) { slot ->
+                        StickerSlotCell(
+                            slot = slot,
+                            isHidden = uiState.focusedStickerKey == slot.key,
+                            onBoundsChange = { bounds -> stickerBounds[slot.key] = bounds },
+                            onClick = { viewModel.focusSticker(slot.key) })
+                    }
+                    
+                    item {
+                        AddStickerCell(
+                            isBusy = uiState.isAddingSticker,
+                            onClick = { isPickerVisible = true })
+                    }
+                }
+                
+                BottomBarScrim(height = innerPadding.calculateBottomPadding())
             }
+        }
+        
+        val focusedSticker = uiState.focusedSticker
+        
+        if (focusedSticker != null) {
+            StickerFocusOverlay(
+                slot = focusedSticker,
+                origin = stickerBounds[focusedSticker.key],
+                isClosing = focusClose.closingKey == focusedSticker.key,
+                onEmojisChange = { value ->
+                    viewModel.onStickerEmojisChange(focusedSticker.key, value)
+                },
+                onRemove = {
+                    focusClose.request(focusedSticker.key) {
+                        viewModel.removeSticker(focusedSticker.key)
+                    }
+                },
+                onDismiss = closeFocusedSticker,
+                onClosed = focusClose::onClosed
+            )
         }
     }
     
@@ -386,6 +447,17 @@ private fun StickerSlotCell(
 ) {
     val context = LocalContext.current
     
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) PRESSED_CELL_SCALE else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "sticker_slot_scale"
+    )
+    
     val model = when (slot) {
         is StickerSlot.Local -> ImageRequest.Builder(context).data(slot.sticker.uri).build()
         
@@ -400,9 +472,17 @@ private fun StickerSlotCell(
         modifier = Modifier
             .aspectRatio(1f)
             .onGloballyPositioned { coordinates -> onBoundsChange(coordinates.boundsInRoot()) }
-            .graphicsLayer { alpha = if (isHidden) 0f else 1f }
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                alpha = if (isHidden) 0f else 1f
+            }
             .clip(MaterialTheme.shapes.medium)
-            .clickable(onClick = onClick)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
     ) {
         AsyncImage(
             model = model,
@@ -417,9 +497,11 @@ private fun StickerSlotCell(
 private fun StickerFocusOverlay(
     slot: StickerSlot,
     origin: Rect?,
+    isClosing: Boolean,
     onEmojisChange: (String) -> Unit,
     onRemove: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onClosed: () -> Unit
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -429,6 +511,15 @@ private fun StickerFocusOverlay(
     val progress = remember { Animatable(0f) }
     
     var stickerCenter by remember { mutableStateOf(Offset.Zero) }
+    
+    val emojiText = EmojiInput.format(slot.emojis)
+    
+    var emojiValue by remember(slot.key) {
+        mutableStateOf(
+            value = TextFieldValue(text = emojiText, selection = TextRange(emojiText.length)),
+            policy = neverEqualPolicy()
+        )
+    }
     
     val scrimColor = MaterialTheme.colorScheme.scrim
     
@@ -451,17 +542,30 @@ private fun StickerFocusOverlay(
     LaunchedEffect(slot.key) {
         progress.snapTo(0f)
         
-        progress.animateTo(
-            targetValue = 1f,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
-        )
+        progress.animateTo(targetValue = 1f, animationSpec = FOCUS_OPEN_SPEC)
+    }
+    
+    LaunchedEffect(isClosing) {
+        if (!isClosing) {
+            return@LaunchedEffect
+        }
+        
+        progress.animateTo(targetValue = 0f, animationSpec = FOCUS_CLOSE_SPEC)
+        
+        onClosed()
     }
     
     LaunchedEffect(slot.key) {
         focusRequester.requestFocus()
+    }
+    
+    LaunchedEffect(emojiText) {
+        if (emojiValue.text != emojiText) {
+            emojiValue = TextFieldValue(
+                text = emojiText,
+                selection = TextRange(emojiText.length)
+            )
+        }
     }
     
     Box(
@@ -475,9 +579,12 @@ private fun StickerFocusOverlay(
                 indication = null,
                 onClick = onDismiss
             ),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.TopCenter
     ) {
         Column(
+            modifier = Modifier
+                .statusBarsPadding()
+                .padding(top = STICKER_FOCUS_TOP_PADDING),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -490,8 +597,17 @@ private fun StickerFocusOverlay(
             ) {
                 FramelessTextBox(
                     placeholder = stringResource(R.string.sticker_emojis),
-                    value = EmojiInput.format(slot.emojis),
-                    onValueChange = onEmojisChange,
+                    value = emojiValue,
+                    onValueChange = { value ->
+                        val text = EmojiInput.format(EmojiInput.parse(value.text))
+                        
+                        emojiValue = TextFieldValue(
+                            text = text,
+                            selection = TextRange(text.length)
+                        )
+                        
+                        onEmojisChange(text)
+                    },
                     modifier = Modifier.focusRequester(focusRequester),
                     textStyle = MaterialTheme.typography.titleLarge,
                     keyboardOptions = KeyboardOptions(
@@ -552,7 +668,7 @@ private fun StickerFocusOverlay(
                 )
                 
                 AppDropdownMenu(
-                    expanded = true,
+                    expanded = !isClosing,
                     onDismissRequest = onDismiss,
                     properties = PopupProperties(
                         focusable = false,
@@ -562,7 +678,14 @@ private fun StickerFocusOverlay(
                 ) {
                     AppDropdownMenuItem(
                         text = stringResource(R.string.sticker_delete),
-                        onClick = onRemove
+                        onClick = onRemove,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.DeleteOutline,
+                                contentDescription = null
+                            )
+                        },
+                        contentColor = MaterialTheme.colorScheme.error
                     )
                 }
             }
@@ -576,7 +699,7 @@ private fun AddStickerCell(isBusy: Boolean, onClick: () -> Unit) {
     val isPressed by interactionSource.collectIsPressedAsState()
     
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.9f else 1f,
+        targetValue = if (isPressed) PRESSED_CELL_SCALE else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow
         ),
