@@ -2,6 +2,7 @@ package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -38,9 +39,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -86,11 +90,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
@@ -103,6 +110,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -119,6 +127,10 @@ import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import com.aiwazian.messenger.utils.DialogController
 import kotlin.math.abs
+
+private val DEFAULT_STICKER_PANEL_HEIGHT = 280.dp
+private val MIN_STICKER_PANEL_HEIGHT = 120.dp
+private var lastKeyboardHeight: Dp = 0.dp
 
 @Composable
 fun ChatInputSection(
@@ -260,11 +272,39 @@ private fun InputMessage(
     var micTranslationY by remember { mutableFloatStateOf(0f) }
     
     val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    val density = LocalDensity.current
     
     val mediaPickerViewModel: MediaPickerViewModel = hiltViewModel()
     
     val stickersViewModel: ChatStickersViewModel = hiltViewModel()
     val stickersState by stickersViewModel.uiState.collectAsState()
+    
+    val imeInsets = WindowInsets.ime
+    val navigationBarsInsets = WindowInsets.navigationBars
+    
+    val imeHeight = with(density) {
+        (imeInsets.getBottom(this) - navigationBarsInsets.getBottom(this)).coerceAtLeast(0).toDp()
+    }
+    
+    var keyboardHeight by remember { mutableStateOf(lastKeyboardHeight) }
+    
+    LaunchedEffect(imeHeight) {
+        if (imeHeight > keyboardHeight) {
+            keyboardHeight = imeHeight
+            lastKeyboardHeight = imeHeight
+        }
+    }
+    
+    val stickerPanelHeight = if (keyboardHeight >= MIN_STICKER_PANEL_HEIGHT) {
+        keyboardHeight
+    } else {
+        DEFAULT_STICKER_PANEL_HEIGHT
+    }
+    
+    BackHandler(enabled = stickersState.isPanelVisible) {
+        stickersViewModel.hidePanel()
+    }
     
     val textFieldState = rememberTextFieldState(initialText = uiState.messageText)
     
@@ -408,7 +448,13 @@ private fun InputMessage(
                 enter = expressiveScaleIn,
                 exit = expressiveScaleOut
             ) {
-                IconButton(onClick = stickersViewModel::togglePanel) {
+                IconButton(onClick = {
+                    if (!stickersState.isPanelVisible) {
+                        focusManager.clearFocus()
+                    }
+                    
+                    stickersViewModel.togglePanel()
+                }) {
                     Icon(
                         imageVector = Icons.Rounded.EmojiEmotions,
                         contentDescription = null,
@@ -437,6 +483,11 @@ private fun InputMessage(
                             .fillMaxWidth()
                             .alpha(textFieldAlpha)
                             .focusRequester(focusRequester)
+                            .onFocusChanged { focusState ->
+                                if (focusState.isFocused) {
+                                    stickersViewModel.hidePanel()
+                                }
+                            }
                             .contentReceiver { content ->
                                 if (content.hasMediaType(MediaType.Image)) {
                                     content.consume { item ->
@@ -689,6 +740,7 @@ private fun InputMessage(
         AnimatedVisibility(visible = stickersState.isPanelVisible && !uiState.isRecording) {
             StickerInputPanel(
                 packs = stickersState.addedPacks,
+                height = stickerPanelHeight,
                 onStickerClick = { sticker ->
                     stickersViewModel.sendSticker(uiState.chatId, sticker.id)
                 })
