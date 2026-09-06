@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.content.pm.PackageManager
@@ -133,6 +129,7 @@ import kotlin.math.abs
 
 private val DEFAULT_STICKER_PANEL_HEIGHT = 280.dp
 private val MIN_STICKER_PANEL_HEIGHT = 120.dp
+private val STICKER_PANEL_HEIGHT_JUMP_THRESHOLD = 48.dp
 
 @Composable
 fun ChatInputSection(
@@ -154,7 +151,7 @@ fun ChatInputSection(
         (uiState.keyboardHeight.dp - navigationBarsBottom.toDp()).coerceAtLeast(0.dp)
     }
     
-    val stickerPanelHeight = if (keyboardHeight >= MIN_STICKER_PANEL_HEIGHT) {
+    val measuredPanelHeight = if (keyboardHeight >= MIN_STICKER_PANEL_HEIGHT) {
         keyboardHeight - 8.dp
     } else {
         DEFAULT_STICKER_PANEL_HEIGHT
@@ -162,6 +159,17 @@ fun ChatInputSection(
     
     val isStickerPanelOpen =
         isKeyboardVisible || (stickersState.isPanelVisible && !uiState.isRecording)
+    
+    var stickerPanelHeight by remember { mutableStateOf(measuredPanelHeight) }
+    
+    LaunchedEffect(isStickerPanelOpen, measuredPanelHeight) {
+        val isJump = abs((measuredPanelHeight - stickerPanelHeight).value) >
+                STICKER_PANEL_HEIGHT_JUMP_THRESHOLD.value
+        
+        if (!isStickerPanelOpen || isJump) {
+            stickerPanelHeight = measuredPanelHeight
+        }
+    }
     
     LaunchedEffect(isKeyboardVisible) {
         if (!isKeyboardVisible) {
