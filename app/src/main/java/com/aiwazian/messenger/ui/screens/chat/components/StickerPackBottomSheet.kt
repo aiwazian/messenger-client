@@ -9,9 +9,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,8 +25,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,7 +54,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -58,6 +66,8 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.domain.StickerPack
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 
 private const val SHEET_GRID_COLUMNS = 5
 private val SHEET_GRID_MAX_HEIGHT = 380.dp
@@ -74,20 +84,69 @@ fun StickerPackBottomSheet(
     onDismiss: () -> Unit,
     onSendSticker: (Sticker) -> Unit,
     onInstall: () -> Unit,
-    onUninstall: () -> Unit
+    onUninstall: () -> Unit,
+    onShare: () -> Unit,
+    onCopyLink: () -> Unit
 ) {
     var focusedSticker by remember { mutableStateOf<Sticker?>(null) }
     var focusedBounds by remember { mutableStateOf(Rect.Zero) }
+    var isMenuExpanded by remember { mutableStateOf(false) }
     
     AppBottomSheet(onDismissRequest = onDismiss) {
-        Text(
-            text = pack.name,
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 12.dp, end = 12.dp, bottom = 8.dp),
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center
-        )
+                .padding(start = 12.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = pack.name,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            
+            Box {
+                IconButton(onClick = { isMenuExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Rounded.MoreVert,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                AppDropdownMenu(
+                    expanded = isMenuExpanded,
+                    onDismissRequest = { isMenuExpanded = false }) {
+                    AppDropdownMenuItem(
+                        text = stringResource(R.string.share),
+                        onClick = {
+                            isMenuExpanded = false
+                            onShare()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.Share,
+                                contentDescription = null
+                            )
+                        })
+                    
+                    AppDropdownMenuItem(
+                        text = stringResource(R.string.copy_link),
+                        onClick = {
+                            isMenuExpanded = false
+                            onCopyLink()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Rounded.ContentCopy,
+                                contentDescription = null
+                            )
+                        })
+                }
+            }
+        }
         
         LazyVerticalGrid(
             columns = GridCells.Fixed(SHEET_GRID_COLUMNS),
