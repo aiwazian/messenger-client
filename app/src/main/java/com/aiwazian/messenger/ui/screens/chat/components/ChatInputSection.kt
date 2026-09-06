@@ -11,6 +11,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -44,8 +45,10 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -130,6 +133,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 private val DEFAULT_STICKER_PANEL_HEIGHT = 280.dp
 private val MIN_STICKER_PANEL_HEIGHT = 120.dp
+private const val STICKER_PANEL_ANIMATION_MS = 250
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -151,14 +155,20 @@ fun ChatInputSection(
     
     val keyboardHeight = uiState.keyboardHeight.dp
     
-    val stickerPanelHeight = if (keyboardHeight >= MIN_STICKER_PANEL_HEIGHT) {
-        keyboardHeight
+    val panelTargetHeight = if (keyboardHeight >= MIN_STICKER_PANEL_HEIGHT) {
+        (keyboardHeight - navigationBarsHeight).coerceAtLeast(0.dp)
     } else {
-        DEFAULT_STICKER_PANEL_HEIGHT + navigationBarsHeight
+        DEFAULT_STICKER_PANEL_HEIGHT
     }
     
-    val isStickerPanelOpen =
-        isKeyboardVisible || (stickersState.isPanelVisible && !uiState.isRecording)
+    val isStickerPanelVisible =
+        stickersState.isPanelVisible && !isKeyboardVisible && !uiState.isRecording
+    
+    val stickerPanelHeight by animateDpAsState(
+        targetValue = if (isStickerPanelVisible) panelTargetHeight else 0.dp,
+        animationSpec = tween(durationMillis = STICKER_PANEL_ANIMATION_MS, easing = FastOutSlowInEasing),
+        label = "sticker_panel_height_animation"
+    )
     
     LaunchedEffect(isKeyboardVisible) {
         if (!isKeyboardVisible) {
@@ -173,7 +183,12 @@ fun ChatInputSection(
         stickersViewModel.hidePanel()
     }
     
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .imePadding()
+            .navigationBarsPadding()
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -295,31 +310,25 @@ fun ChatInputSection(
             }
         }
         
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(if (isStickerPanelOpen) stickerPanelHeight else navigationBarsHeight)
-        ) {
-            if (isStickerPanelOpen) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(stickerPanelHeight)
-                        .padding(horizontal = 8.dp)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {}
-                ) {
-                    StickerInputPanel(
-                        packs = stickersState.addedPacks,
-                        height = (stickerPanelHeight - navigationBarsHeight).coerceAtLeast(0.dp),
-                        onStickerClick = { sticker ->
-                            stickersViewModel.sendSticker(uiState.chatId, sticker.id)
-                        })
-                }
+        if (stickerPanelHeight > 0.dp) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(stickerPanelHeight)
+                    .padding(horizontal = 8.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {}
+            ) {
+                StickerInputPanel(
+                    packs = stickersState.addedPacks,
+                    height = panelTargetHeight,
+                    onStickerClick = { sticker ->
+                        stickersViewModel.sendSticker(uiState.chatId, sticker.id)
+                    })
             }
         }
     }
