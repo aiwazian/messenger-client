@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import androidx.compose.animation.core.animateFloatAsState
@@ -47,20 +43,29 @@ import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ForwardSourceAccess
+import com.aiwazian.messenger.enums.MessageType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
-/**
- * Текст превью цитаты: если текста нет, показываем тип вложения:
- * «Фото», «Видео», «Голосовое сообщение», «Файл».
- */
 @Composable
 fun replyPreviewText(preview: MessageReplyPreview): String {
     val text = preview.text
+    val type = preview.attachmentTypes.firstOrNull()
+    val isSticker = preview.messageType == MessageType.STICKER ||
+            (text.isNullOrBlank() && type == null && preview.senderId != null)
+    
+    if (isSticker) {
+        val label = stringResource(R.string.sticker_message)
+        val emoji = preview.stickerEmoji
+        
+        return if (emoji.isNullOrBlank()) label else "$emoji $label"
+    }
+    
     if (!text.isNullOrBlank()) return text
     
-    val type = preview.attachmentTypes.firstOrNull() ?: return ""
+    if (type == null) return ""
+    
     return stringResource(
         when (type) {
             AttachmentType.IMAGE -> R.string.attachment_photo
@@ -135,12 +140,6 @@ fun ReplyQuote(
     }
 }
 
-/**
- * Заголовок «Переслано от» с названием источника.
- *
- * OPEN — клик ведёт в чат, RESTRICTED — тултип про закрытый источник,
- * UNAVAILABLE — клик ничего не делает.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForwardedFromHeader(

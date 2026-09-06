@@ -46,7 +46,8 @@ data class MessageReplyPreviewDto(
     @SerialName("messageType") val messageType: MessageType = MessageType.TEXT,
     @SerialName("senderName") val senderName: String? = null,
     @SerialName("chatName") val chatName: String? = null,
-    @SerialName("attachmentTypes") val attachmentTypes: List<AttachmentType> = emptyList()
+    @SerialName("attachmentTypes") val attachmentTypes: List<AttachmentType> = emptyList(),
+    @SerialName("stickerEmoji") val stickerEmoji: String? = null
 )
 
 @Serializable

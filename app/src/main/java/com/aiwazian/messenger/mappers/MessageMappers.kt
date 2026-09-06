@@ -9,6 +9,7 @@ import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.domain.MessageSticker
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ForwardSourceAccess
+import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.network.dto.MessageAttachmentDto
 import com.aiwazian.messenger.network.dto.MessageDto
 import com.aiwazian.messenger.network.dto.MessageReplyPreviewDto
@@ -55,7 +56,9 @@ fun MessageReplyPreviewDto.toDomain() = MessageReplyPreview(
     senderName = senderName,
     chatName = chatName,
     text = text,
-    attachmentTypes = attachmentTypes
+    attachmentTypes = attachmentTypes,
+    messageType = messageType,
+    stickerEmoji = stickerEmoji
 )
 
 fun com.aiwazian.messenger.network.dto.MessageReadInfoDto.toDomain() = MessageReadInfo(
@@ -101,7 +104,9 @@ fun MessageEntity.toDomain(attachments: List<MessageAttachment> = emptyList()) =
             senderName = replyToSenderName,
             chatName = replyToChatName,
             text = replyToText,
-            attachmentTypes = replyToAttachmentTypes.toAttachmentTypes()
+            attachmentTypes = replyToAttachmentTypes.toAttachmentTypes(),
+            messageType = replyToMessageType ?: MessageType.TEXT,
+            stickerEmoji = replyToStickerEmoji
         )
     },
     forwardedFrom = forwardedFromChatId?.let { sourceChatId ->
@@ -142,6 +147,8 @@ fun Message.toEntity() = MessageEntity(
     replyToAttachmentTypes = replyTo?.attachmentTypes
         ?.takeIf { it.isNotEmpty() }
         ?.joinToString(",") { it.name },
+    replyToMessageType = replyTo?.messageType,
+    replyToStickerEmoji = replyTo?.stickerEmoji,
     forwardedFromChatId = forwardedFrom?.chatId,
     forwardedFromName = forwardedFrom?.name,
     forwardedFromAccess = forwardedFrom?.access?.name,

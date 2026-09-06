@@ -6,4 +6,5 @@
     <string name="send_sticker">Отправить стикер</string>
     <string name="sticker_pack_installed">Набор %1$s добавлен в ваши стикеры</string>
     <string name="sticker_pack_uninstalled">Набор %1$s удален из ваших стикеров</string>
+    <string name="sticker_message">Стикер</string>
 </resources>

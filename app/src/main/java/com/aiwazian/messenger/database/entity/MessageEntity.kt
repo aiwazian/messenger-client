@@ -30,6 +30,8 @@ data class MessageEntity(
     val replyToChatName: String? = null,
     val replyToText: String? = null,
     val replyToAttachmentTypes: String? = null,
+    val replyToMessageType: MessageType? = null,
+    val replyToStickerEmoji: String? = null,
     val forwardedFromChatId: Long? = null,
     val forwardedFromName: String? = null,
     val forwardedFromAccess: String? = null,
