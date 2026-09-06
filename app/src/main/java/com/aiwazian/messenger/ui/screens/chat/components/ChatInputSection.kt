@@ -41,6 +41,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
@@ -90,7 +91,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
@@ -139,117 +139,183 @@ fun ChatInputSection(
 ) {
     val density = LocalDensity.current
     
+    val stickersViewModel: ChatStickersViewModel = hiltViewModel()
+    val stickersState by stickersViewModel.uiState.collectAsState()
+    
     val imeBottom = WindowInsets.ime.getBottom(density)
     val navigationBarsBottom = WindowInsets.navigationBars.getBottom(density)
     
-    val targetBottomPadding = with(density) {
+    val isKeyboardVisible = imeBottom > 0
+    
+    val keyboardHeight = with(density) {
         (uiState.keyboardHeight.dp - navigationBarsBottom.toDp()).coerceAtLeast(0.dp)
     }
     
-    Box(
+    val stickerPanelHeight = if (keyboardHeight >= MIN_STICKER_PANEL_HEIGHT) {
+        keyboardHeight
+    } else {
+        DEFAULT_STICKER_PANEL_HEIGHT
+    }
+    
+    val isStickerPanelOpen =
+        isKeyboardVisible || (stickersState.isPanelVisible && !uiState.isRecording)
+    
+    LaunchedEffect(isKeyboardVisible) {
+        if (!isKeyboardVisible) {
+            return@LaunchedEffect
+        }
+        
+        stickersViewModel.preloadPacks()
+        stickersViewModel.hidePanel()
+    }
+    
+    BackHandler(enabled = stickersState.isPanelVisible) {
+        stickersViewModel.hidePanel()
+    }
+    
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(bottom = if (imeBottom > 0) targetBottomPadding else 0.dp)
-            .padding(8.dp)
     ) {
-        when (ChatType.fromId(uiState.chatId)) {
-            ChatType.CHANNEL -> {
-                AnimatedContent(
-                    targetState = when {
-                        uiState.isOwner -> "input"
-                        !uiState.isJoined -> "join"
-                        else -> "none"
-                    }, modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center
-                ) { state ->
-                    when (state) {
-                        "input" -> InputMessage(uiState = uiState, chatViewModel = chatViewModel)
-                        "join" -> JoinButton(onClick = chatViewModel::onJoinClicked)
-                        "none" -> Unit
-                    }
-                }
-            }
-            
-            ChatType.GROUP -> {
-                AnimatedContent(
-                    targetState = uiState.isOwner || uiState.isJoined, transitionSpec = {
-                        slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
-                    }, modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center
-                ) { showInputField ->
-                    if (showInputField) {
-                        InputMessage(uiState = uiState, chatViewModel = chatViewModel)
-                    } else {
-                        JoinButton(onClick = chatViewModel::onJoinClicked)
-                    }
-                }
-            }
-            
-            ChatType.PRIVATE -> {
-                AnimatedContent(
-                    targetState = when {
-                        uiState.isBlockedByThem -> "blocked"
-                        uiState.isBlocked -> "unblock"
-                        else -> "input"
-                    },
-                    transitionSpec = {
-                        slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
-                ) { state ->
-                    when (state) {
-                        "blocked" -> {
-                            Text(
-                                text = "Отправка сообщений ограничена",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
+            when (ChatType.fromId(uiState.chatId)) {
+                ChatType.CHANNEL -> {
+                    AnimatedContent(
+                        targetState = when {
+                            uiState.isOwner -> "input"
+                            !uiState.isJoined -> "join"
+                            else -> "none"
+                        }, modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center
+                    ) { state ->
+                        when (state) {
+                            "input" -> InputMessage(
+                                uiState = uiState,
+                                chatViewModel = chatViewModel,
+                                isStickerPanelVisible = stickersState.isPanelVisible,
+                                onShowStickerPanel = stickersViewModel::showPanel
                             )
+                            
+                            "join" -> JoinButton(onClick = chatViewModel::onJoinClicked)
+                            "none" -> Unit
                         }
-                        
-                        "unblock" -> {
-                            Text(
-                                text = buildAnnotatedString {
-                                    append(stringResource(R.string.user_blocked))
-                                    append(". ")
-                                    withLink(
-                                        LinkAnnotation.Clickable(
-                                            tag = "unblock", styles = TextLinkStyles(
-                                                style = SpanStyle(
-                                                    color = MaterialTheme.colorScheme.primary,
-                                                    textDecoration = TextDecoration.None
-                                                ), pressedStyle = SpanStyle(
-                                                    background = MaterialTheme.colorScheme.primary.copy(
-                                                        alpha = 0.4f
+                    }
+                }
+                
+                ChatType.GROUP -> {
+                    AnimatedContent(
+                        targetState = uiState.isOwner || uiState.isJoined, transitionSpec = {
+                            slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
+                        }, modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center
+                    ) { showInputField ->
+                        if (showInputField) {
+                            InputMessage(
+                                uiState = uiState,
+                                chatViewModel = chatViewModel,
+                                isStickerPanelVisible = stickersState.isPanelVisible,
+                                onShowStickerPanel = stickersViewModel::showPanel
+                            )
+                        } else {
+                            JoinButton(onClick = chatViewModel::onJoinClicked)
+                        }
+                    }
+                }
+                
+                ChatType.PRIVATE -> {
+                    AnimatedContent(
+                        targetState = when {
+                            uiState.isBlockedByThem -> "blocked"
+                            uiState.isBlocked -> "unblock"
+                            else -> "input"
+                        },
+                        transitionSpec = {
+                            slideInVertically { it } + fadeIn() togetherWith slideOutVertically { -it } + fadeOut()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) { state ->
+                        when (state) {
+                            "blocked" -> {
+                                Text(
+                                    text = "Отправка сообщений ограничена",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                            
+                            "unblock" -> {
+                                Text(
+                                    text = buildAnnotatedString {
+                                        append(stringResource(R.string.user_blocked))
+                                        append(". ")
+                                        withLink(
+                                            LinkAnnotation.Clickable(
+                                                tag = "unblock", styles = TextLinkStyles(
+                                                    style = SpanStyle(
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        textDecoration = TextDecoration.None
+                                                    ), pressedStyle = SpanStyle(
+                                                        background = MaterialTheme.colorScheme.primary.copy(
+                                                            alpha = 0.4f
+                                                        )
                                                     )
-                                                )
-                                            ), linkInteractionListener = {
-                                                chatViewModel.showBlockDialog()
-                                            })
-                                    ) {
-                                        append(stringResource(R.string.unblock))
-                                    }
-                                    append("?")
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                lineHeight = 16.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                        
-                        "input" -> {
-                            InputMessage(uiState = uiState, chatViewModel = chatViewModel)
+                                                ), linkInteractionListener = {
+                                                    chatViewModel.showBlockDialog()
+                                                })
+                                        ) {
+                                            append(stringResource(R.string.unblock))
+                                        }
+                                        append("?")
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    lineHeight = 16.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                            
+                            "input" -> {
+                                InputMessage(
+                                    uiState = uiState,
+                                    chatViewModel = chatViewModel,
+                                    isStickerPanelVisible = stickersState.isPanelVisible,
+                                    onShowStickerPanel = stickersViewModel::showPanel
+                                )
+                            }
                         }
                     }
                 }
+                
+                else -> {}
             }
-            
-            else -> {}
+        }
+        
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(if (isStickerPanelOpen) stickerPanelHeight else 0.dp)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() }, indication = null
+                ) {}
+        ) {
+            if (isStickerPanelOpen) {
+                StickerInputPanel(
+                    packs = stickersState.addedPacks,
+                    height = stickerPanelHeight,
+                    onStickerClick = { sticker ->
+                        stickersViewModel.sendSticker(uiState.chatId, sticker.id)
+                    })
+            }
         }
     }
 }
@@ -273,7 +339,10 @@ private fun JoinButton(onClick: () -> Unit) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun InputMessage(
-    uiState: ChatUiState, chatViewModel: ChatViewModel
+    uiState: ChatUiState,
+    chatViewModel: ChatViewModel,
+    isStickerPanelVisible: Boolean,
+    onShowStickerPanel: () -> Unit
 ) {
     var attachmentModal by remember { mutableStateOf(DialogController()) }
     var micTranslationX by remember { mutableFloatStateOf(0f) }
@@ -281,28 +350,8 @@ private fun InputMessage(
     
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-    val density = LocalDensity.current
     
     val mediaPickerViewModel: MediaPickerViewModel = hiltViewModel()
-    
-    val stickersViewModel: ChatStickersViewModel = hiltViewModel()
-    val stickersState by stickersViewModel.uiState.collectAsState()
-    
-    val navigationBarsBottom = WindowInsets.navigationBars.getBottom(density)
-    
-    val keyboardHeight = with(density) {
-        (uiState.keyboardHeight.dp - navigationBarsBottom.toDp()).coerceAtLeast(0.dp)
-    }
-    
-    val stickerPanelHeight = if (keyboardHeight >= MIN_STICKER_PANEL_HEIGHT) {
-        keyboardHeight
-    } else {
-        DEFAULT_STICKER_PANEL_HEIGHT
-    }
-    
-    BackHandler(enabled = stickersState.isPanelVisible) {
-        stickersViewModel.hidePanel()
-    }
     
     val textFieldState = rememberTextFieldState(initialText = uiState.messageText)
     
@@ -447,16 +496,15 @@ private fun InputMessage(
                 exit = expressiveScaleOut
             ) {
                 IconButton(onClick = {
-                    if (stickersState.isPanelVisible) {
-                        stickersViewModel.hidePanel()
+                    if (isStickerPanelVisible) {
                         focusRequester.requestFocus()
                     } else {
+                        onShowStickerPanel()
                         focusManager.clearFocus()
-                        stickersViewModel.togglePanel()
                     }
                 }) {
                     AnimatedContent(
-                        targetState = stickersState.isPanelVisible,
+                        targetState = isStickerPanelVisible,
                         transitionSpec = { expressiveScaleIn togetherWith expressiveScaleOut }) { isPanelVisible ->
                         Icon(
                             imageVector = if (isPanelVisible) {
@@ -491,11 +539,6 @@ private fun InputMessage(
                             .fillMaxWidth()
                             .alpha(textFieldAlpha)
                             .focusRequester(focusRequester)
-                            .onFocusChanged { focusState ->
-                                if (focusState.isFocused) {
-                                    stickersViewModel.hidePanel()
-                                }
-                            }
                             .contentReceiver { content ->
                                 if (content.hasMediaType(MediaType.Image)) {
                                     content.consume { item ->
@@ -743,15 +786,6 @@ private fun InputMessage(
                     }
                 }
             }
-        }
-        
-        AnimatedVisibility(visible = stickersState.isPanelVisible && !uiState.isRecording) {
-            StickerInputPanel(
-                packs = stickersState.addedPacks,
-                height = stickerPanelHeight,
-                onStickerClick = { sticker ->
-                    stickersViewModel.sendSticker(uiState.chatId, sticker.id)
-                })
         }
     }
     
