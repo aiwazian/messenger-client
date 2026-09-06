@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.components
 
 import android.net.Uri
@@ -90,7 +86,6 @@ fun ChatCard(
                     modifier = Modifier.weight(weight = 1f, fill = false)
                 )
                 
-                /* Колокольчик прижат к названию, а не к краю строки: он часть имени чата. */
                 if (chat.isMuted) {
                     MutedIcon()
                 }
@@ -107,7 +102,22 @@ fun ChatCard(
                     append(chat.draftText.trim())
                 }
             } else if (chat.lastMessage != null) {
-                if (chat.lastMessage.attachments.isNotEmpty()) {
+                val sticker = chat.lastMessage.sticker
+                
+                if (sticker != null) {
+                    val emoji = sticker.emojis.firstOrNull()
+                    val stickerLabel = stringResource(R.string.sticker_message)
+                    
+                    text = buildAnnotatedString {
+                        if (!emoji.isNullOrBlank()) {
+                            append("$emoji ")
+                        }
+                        
+                        withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            append(stickerLabel)
+                        }
+                    }
+                } else if (chat.lastMessage.attachments.isNotEmpty()) {
                     text = buildAnnotatedString {
                         withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                             append(
@@ -282,7 +292,6 @@ private fun PinIcon() {
     )
 }
 
-/** Чат в исключениях с выключенными уведомлениями — перечёркнутый колокольчик. */
 @Composable
 private fun MutedIcon() {
     Icon(
@@ -295,9 +304,6 @@ private fun MutedIcon() {
     )
 }
 
-/**
- * Чат, помеченный непрочитанным вручную, показывает пустой бейдж без числа.
- */
 @Composable
 private fun UnreadMessageCount(count: Int) {
     if (count > 0) {

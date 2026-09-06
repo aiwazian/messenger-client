@@ -1,14 +1,12 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.repository
 
 import android.util.Log
+import com.aiwazian.messenger.database.dao.StickerDao
 import com.aiwazian.messenger.di.FileClient
 import com.aiwazian.messenger.domain.StickerDraft
 import com.aiwazian.messenger.domain.StickerPack
 import com.aiwazian.messenger.mappers.toDomain
+import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.network.api.StickerApi
 import com.aiwazian.messenger.network.dto.CreateStickerPackRequestDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
@@ -30,32 +28,67 @@ import javax.inject.Singleton
 @Singleton
 class StickerRepository @Inject constructor(
     private val stickerApi: StickerApi,
+    private val stickerDao: StickerDao,
     @param:FileClient private val fileClient: OkHttpClient
 ) {
     
     suspend fun getCreatedPacks(): Result<List<StickerPack>> = withContext(Dispatchers.IO) {
-        request("created packs") {
+        val result = request("created packs") {
             stickerApi.getCreatedPacks()
         }.map { packs -> packs.map { it.toDomain() } }
+        
+        val packs = result.getOrNull() ?: return@withContext cachedOwnedPacks().takeIf {
+            it.isNotEmpty()
+        }?.let { Result.success(it) } ?: result
+        
+        packs.forEach { pack -> cachePack(pack) }
+        
+        result
     }
     
     suspend fun getAddedPacks(): Result<List<StickerPack>> = withContext(Dispatchers.IO) {
-        request("added packs") {
+        val result = request("added packs") {
             stickerApi.getAddedPacks()
         }.map { packs -> packs.map { it.toDomain() } }
+        
+        val packs = result.getOrNull() ?: return@withContext cachedInstalledPacks().takeIf {
+            it.isNotEmpty()
+        }?.let { Result.success(it) } ?: result
+        
+        stickerDao.clearInstalled()
+        
+        packs.forEachIndexed { index, pack -> cachePack(pack, index) }
+        
+        result
     }
     
     suspend fun getPack(packId: Long): Result<StickerPack> = withContext(Dispatchers.IO) {
-        request("pack $packId") {
+        val result = request("pack $packId") {
             stickerApi.getPack(packId.toString())
         }.map { it.toDomain() }
+        
+        val pack = result.getOrNull() ?: return@withContext cachedPack(packId)?.let {
+            Result.success(it)
+        } ?: result
+        
+        cachePack(pack)
+        
+        result
     }
     
     suspend fun getPackByUsername(username: String): Result<StickerPack> =
         withContext(Dispatchers.IO) {
-            request("pack @$username") {
+            val result = request("pack @$username") {
                 stickerApi.getPackByUsername(username)
             }.map { it.toDomain() }
+            
+            val pack = result.getOrNull() ?: return@withContext cachedPackByUsername(username)?.let {
+                Result.success(it)
+            } ?: result
+            
+            cachePack(pack)
+            
+            result
         }
     
     suspend fun isUsernameAvailable(username: String, packId: Long? = null): Result<Boolean> =
@@ -70,7 +103,7 @@ class StickerRepository @Inject constructor(
         username: String,
         stickers: List<StickerDraft>
     ): Result<StickerPack> = withContext(Dispatchers.IO) {
-        request("pack creation") {
+        val result = request("pack creation") {
             stickerApi.createPack(
                 CreateStickerPackRequestDto(
                     name = name,
@@ -80,6 +113,10 @@ class StickerRepository @Inject constructor(
                     })
             )
         }.map { it.toDomain() }
+        
+        result.getOrNull()?.let { pack -> cachePack(pack) }
+        
+        result
     }
     
     suspend fun updatePack(
@@ -88,7 +125,7 @@ class StickerRepository @Inject constructor(
         username: String? = null,
         stickers: List<StickerDraft>? = null
     ): Result<StickerPack> = withContext(Dispatchers.IO) {
-        request("pack $packId update") {
+        val result = request("pack $packId update") {
             stickerApi.updatePack(
                 packId.toString(),
                 UpdateStickerPackRequestDto(
@@ -99,24 +136,47 @@ class StickerRepository @Inject constructor(
                     })
             )
         }.map { it.toDomain() }
+        
+        result.getOrNull()?.let { pack -> cachePack(pack) }
+        
+        result
     }
     
     suspend fun deletePack(packId: Long): Result<Unit> = withContext(Dispatchers.IO) {
-        requestUnit("pack $packId removal") {
+        val result = requestUnit("pack $packId removal") {
             stickerApi.deletePack(packId.toString())
         }
+        
+        if (result.isSuccess) {
+            stickerDao.deleteStickers(packId)
+            stickerDao.deletePack(packId)
+        }
+        
+        result
     }
     
     suspend fun installPack(packId: Long): Result<Unit> = withContext(Dispatchers.IO) {
-        requestUnit("pack $packId install") {
+        val result = requestUnit("pack $packId install") {
             stickerApi.installPack(packId.toString())
         }
+        
+        if (result.isSuccess) {
+            stickerDao.setInstalled(packId, true)
+        }
+        
+        result
     }
     
     suspend fun uninstallPack(packId: Long): Result<Unit> = withContext(Dispatchers.IO) {
-        requestUnit("pack $packId uninstall") {
+        val result = requestUnit("pack $packId uninstall") {
             stickerApi.uninstallPack(packId.toString())
         }
+        
+        if (result.isSuccess) {
+            stickerDao.setInstalled(packId, false)
+        }
+        
+        result
     }
     
     suspend fun uploadSticker(sticker: EncodedSticker): Result<String> =
@@ -193,6 +253,39 @@ class StickerRepository @Inject constructor(
                 Result.failure(e)
             }
         }
+    
+    private suspend fun cachePack(pack: StickerPack, sortOrder: Int? = null) {
+        val order = sortOrder ?: stickerDao.getPack(pack.id)?.sortOrder ?: 0
+        
+        stickerDao.upsertPacks(listOf(pack.toEntity(order)))
+        
+        if (pack.stickers.isEmpty()) {
+            return
+        }
+        
+        stickerDao.deleteStickers(pack.id)
+        stickerDao.upsertStickers(pack.stickers.map { it.toEntity(pack.id) })
+    }
+    
+    private suspend fun cachedPack(packId: Long): StickerPack? =
+        stickerDao.getPack(packId)?.let { entity -> entity.toDomain(cachedStickers(entity.id)) }
+    
+    private suspend fun cachedPackByUsername(username: String): StickerPack? =
+        stickerDao.getPackByUsername(username.trim().lowercase())
+            ?.let { entity -> entity.toDomain(cachedStickers(entity.id)) }
+    
+    private suspend fun cachedInstalledPacks(): List<StickerPack> =
+        stickerDao.getInstalledPacks().map { entity ->
+            entity.toDomain(cachedStickers(entity.id))
+        }
+    
+    private suspend fun cachedOwnedPacks(): List<StickerPack> =
+        stickerDao.getOwnedPacks().map { entity ->
+            entity.toDomain(cachedStickers(entity.id))
+        }
+    
+    private suspend fun cachedStickers(packId: Long) =
+        stickerDao.getStickers(packId).map { it.toDomain() }
     
     private suspend fun <T> request(
         what: String,
