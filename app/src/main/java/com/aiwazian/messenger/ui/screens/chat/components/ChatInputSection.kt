@@ -65,6 +65,7 @@ import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.EmojiEmotions
+import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Mic
@@ -127,6 +128,7 @@ import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import com.aiwazian.messenger.utils.DialogController
 import kotlin.math.abs
+import kotlinx.coroutines.withTimeoutOrNull
 
 private val DEFAULT_STICKER_PANEL_HEIGHT = 280.dp
 private val MIN_STICKER_PANEL_HEIGHT = 120.dp
@@ -449,21 +451,31 @@ private fun InputMessage(
                 exit = expressiveScaleOut
             ) {
                 IconButton(onClick = {
-                    if (!stickersState.isPanelVisible) {
+                    if (stickersState.isPanelVisible) {
+                        stickersViewModel.hidePanel()
+                        focusRequester.requestFocus()
+                    } else {
                         focusManager.clearFocus()
+                        stickersViewModel.togglePanel()
                     }
-                    
-                    stickersViewModel.togglePanel()
                 }) {
-                    Icon(
-                        imageVector = Icons.Rounded.EmojiEmotions,
-                        contentDescription = null,
-                        tint = if (stickersState.isPanelVisible) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
+                    AnimatedContent(
+                        targetState = stickersState.isPanelVisible,
+                        transitionSpec = { expressiveScaleIn togetherWith expressiveScaleOut }) { isPanelVisible ->
+                        Icon(
+                            imageVector = if (isPanelVisible) {
+                                Icons.Rounded.Keyboard
+                            } else {
+                                Icons.Rounded.EmojiEmotions
+                            },
+                            contentDescription = null,
+                            tint = if (isPanelVisible) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
                 }
             }
             
