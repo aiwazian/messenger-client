@@ -43,7 +43,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -111,7 +110,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -132,7 +130,6 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 private val DEFAULT_STICKER_PANEL_HEIGHT = 280.dp
 private val MIN_STICKER_PANEL_HEIGHT = 120.dp
-private var lastKeyboardHeight: Dp = 0.dp
 
 @Composable
 fun ChatInputSection(
@@ -140,11 +137,20 @@ fun ChatInputSection(
     chatViewModel: ChatViewModel,
     modifier: Modifier = Modifier
 ) {
+    val density = LocalDensity.current
+    
+    val imeBottom = WindowInsets.ime.getBottom(density)
+    val navigationBarsBottom = WindowInsets.navigationBars.getBottom(density)
+    
+    val targetBottomPadding = with(density) {
+        (uiState.keyboardHeight.dp - navigationBarsBottom.toDp()).coerceAtLeast(0.dp)
+    }
+    
     Box(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .imePadding()
+            .padding(bottom = if (imeBottom > 0) targetBottomPadding else 0.dp)
             .padding(8.dp)
     ) {
         when (ChatType.fromId(uiState.chatId)) {
@@ -282,20 +288,10 @@ private fun InputMessage(
     val stickersViewModel: ChatStickersViewModel = hiltViewModel()
     val stickersState by stickersViewModel.uiState.collectAsState()
     
-    val imeInsets = WindowInsets.ime
-    val navigationBarsInsets = WindowInsets.navigationBars
+    val navigationBarsBottom = WindowInsets.navigationBars.getBottom(density)
     
-    val imeHeight = with(density) {
-        (imeInsets.getBottom(this) - navigationBarsInsets.getBottom(this)).coerceAtLeast(0).toDp()
-    }
-    
-    var keyboardHeight by remember { mutableStateOf(lastKeyboardHeight) }
-    
-    LaunchedEffect(imeHeight) {
-        if (imeHeight > keyboardHeight) {
-            keyboardHeight = imeHeight
-            lastKeyboardHeight = imeHeight
-        }
+    val keyboardHeight = with(density) {
+        (uiState.keyboardHeight.dp - navigationBarsBottom.toDp()).coerceAtLeast(0.dp)
     }
     
     val stickerPanelHeight = if (keyboardHeight >= MIN_STICKER_PANEL_HEIGHT) {
