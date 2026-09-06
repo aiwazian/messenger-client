@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.content.pm.PackageManager
@@ -60,12 +64,12 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.outlined.EmojiEmotions
+import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Done
-import androidx.compose.material.icons.rounded.EmojiEmotions
-import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Mic
@@ -126,7 +130,6 @@ import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import com.aiwazian.messenger.utils.DialogController
 import kotlin.math.abs
-import kotlinx.coroutines.withTimeoutOrNull
 
 private val DEFAULT_STICKER_PANEL_HEIGHT = 280.dp
 private val MIN_STICKER_PANEL_HEIGHT = 120.dp
@@ -152,7 +155,7 @@ fun ChatInputSection(
     }
     
     val stickerPanelHeight = if (keyboardHeight >= MIN_STICKER_PANEL_HEIGHT) {
-        keyboardHeight
+        keyboardHeight - 8.dp
     } else {
         DEFAULT_STICKER_PANEL_HEIGHT
     }
@@ -176,12 +179,11 @@ fun ChatInputSection(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .padding(8.dp)
             .navigationBarsPadding()
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
             when (ChatType.fromId(uiState.chatId)) {
                 ChatType.CHANNEL -> {
@@ -299,10 +301,15 @@ fun ChatInputSection(
             }
         }
         
+        if (isStickerPanelOpen) {
+            Spacer(Modifier.height(8.dp))
+        }
+        
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(if (isStickerPanelOpen) stickerPanelHeight else 0.dp)
+                .clip(RoundedCornerShape(24.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainer)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() }, indication = null
@@ -505,19 +512,20 @@ private fun InputMessage(
                 }) {
                     AnimatedContent(
                         targetState = isStickerPanelVisible,
-                        transitionSpec = { expressiveScaleIn togetherWith expressiveScaleOut }) { isPanelVisible ->
+                        transitionSpec = {
+                            if (targetState > initialState) {
+                                slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
+                            } else {
+                                slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
+                            }
+                        }) { isPanelVisible ->
                         Icon(
                             imageVector = if (isPanelVisible) {
-                                Icons.Rounded.Keyboard
+                                Icons.Outlined.Keyboard
                             } else {
-                                Icons.Rounded.EmojiEmotions
+                                Icons.Outlined.EmojiEmotions
                             },
-                            contentDescription = null,
-                            tint = if (isPanelVisible) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
+                            contentDescription = null
                         )
                     }
                 }

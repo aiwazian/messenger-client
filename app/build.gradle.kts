@@ -15,7 +15,9 @@ plugins {
 
 android {
     namespace = "com.aiwazian.messenger"
-    compileSdk = 37
+    compileSdk {
+        version = release(37)
+    }
     
     defaultConfig {
         applicationId = "com.aiwazian.messenger"
