@@ -106,11 +106,11 @@ import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
 import com.aiwazian.messenger.utils.ActiveChatTracker
 import com.aiwazian.messenger.utils.StickerLink
 import com.aiwazian.messenger.utils.UiText
-import kotlin.math.abs
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -157,21 +157,13 @@ fun ChatScreen(
     val imeInsets = WindowInsets.ime
     
     LaunchedEffect(imeInsets, density) {
-        snapshotFlow { imeInsets.getBottom(density) }
+        val imeBottomPx = snapshotFlow { imeInsets.getBottom(density) }
             .debounce(KEYBOARD_MEASURE_DELAY_MS)
-            .distinctUntilChanged()
-            .collect { imeBottomPx ->
-                if (imeBottomPx <= 0) return@collect
-                
-                val imeBottomDp = with(density) { imeBottomPx.toDp() }
-                val storedHeight = chatViewModel.uiState.value.keyboardHeight
-                
-                if (abs(imeBottomDp.value - storedHeight) < KEYBOARD_HEIGHT_TOLERANCE_DP) {
-                    return@collect
-                }
-                
-                chatViewModel.onKeyboardHeightChanged(imeBottomDp.value)
-            }
+            .first { it > 0 }
+        
+        val imeBottomDp = with(density) { imeBottomPx.toDp() }
+        
+        chatViewModel.onKeyboardHeightChanged(imeBottomDp.value)
     }
     
     val copyPolicy = uiState.copyPolicy
@@ -893,5 +885,3 @@ private const val PREFETCH_THRESHOLD = 10
 private const val BOTTOM_ITEM_INDEX = 0
 
 private const val KEYBOARD_MEASURE_DELAY_MS = 300L
-
-private const val KEYBOARD_HEIGHT_TOLERANCE_DP = 8f
