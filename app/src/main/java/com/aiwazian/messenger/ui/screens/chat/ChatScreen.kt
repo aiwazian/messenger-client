@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -103,9 +104,11 @@ import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.UnreadSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
 import com.aiwazian.messenger.utils.ActiveChatTracker
+import com.aiwazian.messenger.utils.StickerLink
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -148,6 +151,21 @@ fun ChatScreen(
     val isChatMuted by notificationsViewModel.isMuted.collectAsState()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    val density = LocalDensity.current
+    val imeInsets = WindowInsets.ime
+    
+    LaunchedEffect(imeInsets, density) {
+        snapshotFlow { imeInsets.getBottom(density) }
+            .debounce(KEYBOARD_MEASURE_DELAY_MS)
+            .distinctUntilChanged()
+            .collect { imeBottomPx ->
+                if (imeBottomPx <= 0) return@collect
+                
+                val imeBottomDp = with(density) { imeBottomPx.toDp() }
+                chatViewModel.onKeyboardHeightChanged(imeBottomDp.value)
+            }
+    }
     
     val copyPolicy = uiState.copyPolicy
     
@@ -795,8 +813,15 @@ fun ChatScreen(
                 stickersViewModel.sendSticker(uiState.chatId, sticker.id)
             },
             onInstall = stickersViewModel::installOpenedPack,
-            onUninstall = stickersViewModel::uninstallOpenedPack
-        )
+            onUninstall = stickersViewModel::uninstallOpenedPack,
+            onShare = {
+                stickersViewModel.closePack()
+                chatViewModel.startShareLink(StickerLink.build(pack.username))
+            },
+            onCopyLink = {
+                stickersViewModel.closePack()
+                chatViewModel.copyLink(StickerLink.build(pack.username))
+            })
     }
     
     if (uiState.showFullScreenViewer) {
@@ -859,3 +884,5 @@ fun ChatScreen(
 private const val PREFETCH_THRESHOLD = 10
 
 private const val BOTTOM_ITEM_INDEX = 0
+
+private const val KEYBOARD_MEASURE_DELAY_MS = 300L
