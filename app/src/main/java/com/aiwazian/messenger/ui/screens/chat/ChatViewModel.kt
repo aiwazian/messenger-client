@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.chat
 
 import android.content.Context
@@ -156,13 +152,6 @@ class ChatViewModel @Inject constructor(
     private val copyPolicy: ChatCopyPolicy
         get() = _uiState.value.copyPolicy
 
-    /**
-     * «Избранное» — личный чат с самим собой.
-     *
-     * Там нет собеседника, поэтому срок правки не считается: подменять смысл
-     * задним числом не перед кем, а самая старая заметка остаётся заметкой.
-     * Сервер проверяет то же условие в CanEditMessageGuard и MessagesService.
-     */
     private val isSavedMessages: Boolean
         get() {
             val state = _uiState.value
@@ -231,6 +220,23 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             dataStoreManager.getVideoPlaybackSpeed().collect { speed ->
                 _uiState.update { it.copy(videoPlaybackSpeed = speed) }
+            }
+        }
+        viewModelScope.launch {
+            dataStoreManager.getKeyboardHeight().collect { height ->
+                _uiState.update { it.copy(keyboardHeight = height) }
+            }
+        }
+    }
+
+    fun onKeyboardHeightChanged(height: Float) {
+        if (height <= 0f) return
+
+        viewModelScope.launch {
+            val savedHeight = dataStoreManager.getKeyboardHeight().first()
+
+            if (savedHeight != height) {
+                dataStoreManager.saveKeyboardHeight(height)
             }
         }
     }
@@ -422,17 +428,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Пункты троеточия в шапке чата.
-     *
-     * «Очистить историю» здесь больше нет: в канале и группе она живёт в
-     * «Управлении каналом» и «Управлении группой» рядом с удалением, где видно,
-     * что чистится вся история и сразу для всех участников.
-     *
-     * Троеточие возвращается всегда, даже с пустым списком действий: «Медиа»,
-     * «Поиск» и уведомления живут внутри этого же меню, и у владельца канала без
-     * него не осталось бы точки входа ни туда, ни туда.
-     */
     private fun createTopBarActions(
         isOwner: Boolean,
         isJoined: Boolean,
@@ -733,7 +728,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /** Поиск всегда открывается в режиме «В чате»: список — это уже выбор пользователя. */
     fun startMessageSearch() = _uiState.update {
         it.copy(isMessageSearchActive = true, isMessageSearchListMode = false)
     }
@@ -773,12 +767,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Крестик в поле поиска.
-     *
-     * Гасит и запрос, и счётчик результатов снизу, но сам режим поиска оставляет
-     * включённым: закрывает его только кнопка «назад».
-     */
     fun clearMessageSearchQuery() {
         searchJob?.cancel()
         _uiState.update { it.copy(messageSearchQuery = "") }
@@ -799,12 +787,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Переключает «Списком» и «В чате».
-     *
-     * Возврат в чат без выбранного результата бесполезен, поэтому показывается то
-     * же самое новое совпадение, что и сразу после ввода запроса.
-     */
     fun toggleMessageSearchDisplayMode() {
         val goingToChat = _uiState.value.isMessageSearchListMode
         _uiState.update { it.copy(isMessageSearchListMode = !goingToChat) }
@@ -819,12 +801,6 @@ class ChatViewModel @Inject constructor(
         searchJob = viewModelScope.launch { runMessageSearch(query, reset = false) }
     }
 
-    /**
-     * Стрелка «вверх»: к более старому совпадению, то есть выше по чату.
-     *
-     * Если загруженная страница закончилась, сначала догружаем следующую и только
-     * потом прыгаем — иначе на границе страницы кнопка молча ничего не делала бы.
-     */
     fun goToOlderSearchResult() {
         val state = _uiState.value
         val target = state.messageSearchIndex + 1
@@ -842,7 +818,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /** Стрелка «вниз»: к более новому совпадению, то есть ниже по чату. */
     fun goToNewerSearchResult() {
         val target = _uiState.value.messageSearchIndex - 1
         if (target < 0) return
@@ -859,12 +834,6 @@ class ChatViewModel @Inject constructor(
         selectSearchResult(index)
     }
 
-    /**
-     * Переход к совпадению по его позиции.
-     *
-     * Список результатов закрывается, а сообщение подсвечивается теми же двумя
-     * секундами, что и при переходе по ответу.
-     */
     private fun selectSearchResult(index: Int) {
         val hit = _uiState.value.messageSearchResults.getOrNull(index) ?: return
         _uiState.update { it.copy(messageSearchIndex = index, isMessageSearchListMode = false) }
@@ -905,12 +874,6 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Подтягивает имена и аватарки отправителей найденных сообщений.
-     *
-     * В канале автор любого поста — сам канал, поэтому карточка результата берёт
-     * имя и аватарку чата, а ходить в userRepository не за чем.
-     */
     private fun loadSearchSenders(hits: List<MessageSearchHit>) {
         if (ChatType.fromId(_uiState.value.chatId) == ChatType.CHANNEL) return
 
@@ -944,10 +907,8 @@ class ChatViewModel @Inject constructor(
         const val MAX_WINDOW_MESSAGES = 400
         const val UNREAD_VIEWPORT_FRACTION = 0.08f
 
-        /** Размер страницы результатов поиска: больше 50 сервер за раз не отдаёт. */
         const val SEARCH_PAGE_SIZE = 50
 
-        /** Сколько времени есть на правку сообщения везде, кроме «Избранного». */
         const val EDIT_WINDOW_MS = 24 * 60 * 60 * 1000L
     }
 
@@ -973,7 +934,9 @@ class ChatViewModel @Inject constructor(
             chatName = if (chatType == ChatType.PRIVATE) null
             else state.chatName.asString(context),
             text = message.text,
-            attachmentTypes = message.attachments.map { it.type }
+            attachmentTypes = message.attachments.map { it.type },
+            messageType = message.messageType,
+            stickerEmoji = message.sticker?.emojis?.firstOrNull()
         )
 
         if (chatType != ChatType.PRIVATE) loadUserName(message.senderId)
@@ -1027,22 +990,11 @@ class ChatViewModel @Inject constructor(
         if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
 
         viewModelScope.launch {
-            val myId = _uiState.value.myId
-            val chats = chatRepository.getAllChats().firstOrNull().orEmpty()
-
-            val candidates = chats.filter { chat ->
-                when (ChatType.fromId(chat.id)) {
-                    ChatType.CHANNEL ->
-                        channelRepository.getByIdOrNull(chat.id)
-                            .firstOrNull()?.ownerId == myId
-
-                    ChatType.UNKNOWN -> false
-                    else -> true
-                }
-            }
+            val candidates = loadShareCandidates()
 
             _uiState.update {
                 it.copy(
+                    sharingLink = null,
                     forwardingMessage = message,
                     forwardCandidates = candidates,
                     selectedForwardChatIds = emptySet(),
@@ -1052,6 +1004,47 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
+
+    fun startShareLink(link: String) {
+        if (link.isBlank()) return
+
+        viewModelScope.launch {
+            val candidates = loadShareCandidates()
+
+            _uiState.update {
+                it.copy(
+                    sharingLink = link,
+                    forwardingMessage = null,
+                    forwardCandidates = candidates,
+                    selectedForwardChatIds = emptySet(),
+                    isForwarding = false,
+                    isForwardSheetVisible = true
+                )
+            }
+        }
+    }
+
+    fun copyLink(link: String) {
+        if (link.isBlank()) return
+
+        clipboardService.copy(link)
+
+        viewModelScope.launch {
+            _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.copied)))
+        }
+    }
+
+    private suspend fun loadShareCandidates() =
+        chatRepository.getAllChats().firstOrNull().orEmpty().filter { chat ->
+            when (ChatType.fromId(chat.id)) {
+                ChatType.CHANNEL ->
+                    channelRepository.getByIdOrNull(chat.id)
+                        .firstOrNull()?.ownerId == _uiState.value.myId
+
+                ChatType.UNKNOWN -> false
+                else -> true
+            }
+        }
 
     fun toggleForwardTarget(chatId: Long) {
         _uiState.update { state ->
@@ -1070,12 +1063,20 @@ class ChatViewModel @Inject constructor(
                 forwardingMessage = null,
                 forwardCandidates = emptyList(),
                 selectedForwardChatIds = emptySet(),
-                isForwarding = false
+                isForwarding = false,
+                sharingLink = null
             )
         }
     }
 
     fun confirmForward() {
+        val link = _uiState.value.sharingLink
+
+        if (link != null) {
+            confirmShareLink(link)
+            return
+        }
+
         if (!copyPolicy.canForward) return
         val state = _uiState.value
         val message = state.forwardingMessage ?: return
@@ -1104,6 +1105,37 @@ class ChatViewModel @Inject constructor(
                     )
                     vibrationManager.vibrate(VibrationPattern.Error)
                 }
+        }
+    }
+
+    private fun confirmShareLink(link: String) {
+        val state = _uiState.value
+        val targets = state.selectedForwardChatIds.toList()
+        if (targets.isEmpty() || state.isForwarding) return
+
+        _uiState.update { it.copy(isForwarding = true) }
+
+        viewModelScope.launch {
+            targets.forEachIndexed { index, targetChatId ->
+                launch {
+                    sendMessageUseCase(
+                        chatId = targetChatId,
+                        message = link,
+                        tempId = -System.currentTimeMillis() - index
+                    )
+                }
+            }
+
+            dismissForwardSheet()
+
+            if (targets.contains(state.chatId)) {
+                if (!_uiState.value.isAtLiveEdge) jumpToLatestInternal()
+                requestScrollTo(messageId = null, highlight = false, animate = true)
+            }
+
+            _uiEffect.emit(
+                ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.share_sent))
+            )
         }
     }
 
@@ -1191,12 +1223,6 @@ class ChatViewModel @Inject constructor(
             }
     }
 
-    /**
-     * Повторная отправка сообщения, которое не ушло.
-     *
-     * Работает только для текста: исходных Uri вложений здесь уже нет, поэтому
-     * сообщение с файлами повторить нечем.
-     */
     fun retrySendMessage(message: Message) {
         viewModelScope.launch {
             if (message.attachments.isNotEmpty()) return@launch
