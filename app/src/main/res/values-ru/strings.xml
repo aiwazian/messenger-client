@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
 
     <string name="search">Поиск</string>
@@ -92,6 +88,7 @@
     <string name="turn_off">Отключить</string>
     <string name="turn_passcode_off">Выключить код-пароль</string>
     <string name="copy">Копировать</string>
+    <string name="copy_link">Копировать ссылку</string>
     <string name="new_folder">Новая папка</string>
     <string name="change_passcode">Сменить код-пароль</string>
     <string name="fingerprint_unlock">Разблокировка отпечатком пальца</string>
@@ -434,12 +431,4 @@
         <item quantity="many">%1$d исключений</item>
         <item quantity="other">%1$d исключения</item>
     </plurals>
-    <string name="media_picker_file">Файл</string>
-    <string name="media_picker_caption">Добавить подпись…</string>
-    <string name="media_picker_permission">Разрешите доступ к фото и видео</string>
-    <string name="media_picker_permission_action">Разрешить</string>
-    <string name="media_picker_empty">Нет фото и видео</string>
-    <string name="media_picker_reset_title">Сбросить выбор</string>
-    <string name="media_picker_reset_message">Закрыть меню вложений?</string>
-    <string name="media_picker_reset_action">Сбросить</string>
-</resources>
+    <string name="media_picker_file">Фа
