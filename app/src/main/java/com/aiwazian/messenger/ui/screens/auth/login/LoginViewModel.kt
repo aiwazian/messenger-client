@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.auth.login
 
 import androidx.lifecycle.ViewModel
@@ -9,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.isNetworkError
 import com.aiwazian.messenger.repository.AuthRepository
+import com.aiwazian.messenger.utils.DataStoreManager
 import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
@@ -18,6 +15,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -25,6 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val dataStoreManager: DataStoreManager,
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -36,6 +35,18 @@ class LoginViewModel @Inject constructor(
     fun changeLogin(newLogin: String) {
         val login = newLogin.filter { it.toString().matches(RegexPatterns.LOGIN) }
         _uiState.update { it.copy(login = login, errorText = null) }
+    }
+    
+    fun saveKeyboardHeight(height: Float) {
+        if (height <= 0f) return
+        
+        viewModelScope.launch {
+            val savedHeight = dataStoreManager.getKeyboardHeight().first()
+            
+            if (savedHeight != height) {
+                dataStoreManager.saveKeyboardHeight(height)
+            }
+        }
     }
     
     fun checkLogin() {
