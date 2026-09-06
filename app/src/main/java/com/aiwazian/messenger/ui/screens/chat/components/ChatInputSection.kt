@@ -37,15 +37,15 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -126,11 +126,12 @@ import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import com.aiwazian.messenger.utils.DialogController
 import kotlin.math.abs
+import kotlinx.coroutines.withTimeoutOrNull
 
 private val DEFAULT_STICKER_PANEL_HEIGHT = 280.dp
 private val MIN_STICKER_PANEL_HEIGHT = 120.dp
-private val STICKER_PANEL_HEIGHT_JUMP_THRESHOLD = 48.dp
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ChatInputSection(
     uiState: ChatUiState,
@@ -142,34 +143,22 @@ fun ChatInputSection(
     val stickersViewModel: ChatStickersViewModel = hiltViewModel()
     val stickersState by stickersViewModel.uiState.collectAsState()
     
-    val imeBottom = WindowInsets.ime.getBottom(density)
-    val navigationBarsBottom = WindowInsets.navigationBars.getBottom(density)
+    val isKeyboardVisible = WindowInsets.isImeVisible
     
-    val isKeyboardVisible = imeBottom > 0
-    
-    val keyboardHeight = with(density) {
-        (uiState.keyboardHeight.dp - navigationBarsBottom.toDp()).coerceAtLeast(0.dp)
+    val navigationBarsHeight = with(density) {
+        WindowInsets.navigationBars.getBottom(density).toDp()
     }
     
-    val measuredPanelHeight = if (keyboardHeight >= MIN_STICKER_PANEL_HEIGHT) {
-        keyboardHeight - 8.dp
+    val keyboardHeight = uiState.keyboardHeight.dp
+    
+    val stickerPanelHeight = if (keyboardHeight >= MIN_STICKER_PANEL_HEIGHT) {
+        keyboardHeight
     } else {
-        DEFAULT_STICKER_PANEL_HEIGHT
+        DEFAULT_STICKER_PANEL_HEIGHT + navigationBarsHeight
     }
     
     val isStickerPanelOpen =
         isKeyboardVisible || (stickersState.isPanelVisible && !uiState.isRecording)
-    
-    var stickerPanelHeight by remember { mutableStateOf(measuredPanelHeight) }
-    
-    LaunchedEffect(isStickerPanelOpen, measuredPanelHeight) {
-        val isJump = abs((measuredPanelHeight - stickerPanelHeight).value) >
-                STICKER_PANEL_HEIGHT_JUMP_THRESHOLD.value
-        
-        if (!isStickerPanelOpen || isJump) {
-            stickerPanelHeight = measuredPanelHeight
-        }
-    }
     
     LaunchedEffect(isKeyboardVisible) {
         if (!isKeyboardVisible) {
@@ -184,14 +173,11 @@ fun ChatInputSection(
         stickersViewModel.hidePanel()
     }
     
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .navigationBarsPadding()
-    ) {
+    Column(modifier = modifier.fillMaxWidth()) {
         Box(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
         ) {
             when (ChatType.fromId(uiState.chatId)) {
                 ChatType.CHANNEL -> {
@@ -309,27 +295,31 @@ fun ChatInputSection(
             }
         }
         
-        if (isStickerPanelOpen) {
-            Spacer(Modifier.height(8.dp))
-        }
-        
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(if (isStickerPanelOpen) stickerPanelHeight else 0.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainer)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() }, indication = null
-                ) {}
+                .height(if (isStickerPanelOpen) stickerPanelHeight else navigationBarsHeight)
         ) {
             if (isStickerPanelOpen) {
-                StickerInputPanel(
-                    packs = stickersState.addedPacks,
-                    height = stickerPanelHeight,
-                    onStickerClick = { sticker ->
-                        stickersViewModel.sendSticker(uiState.chatId, sticker.id)
-                    })
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(stickerPanelHeight)
+                        .padding(horizontal = 8.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {}
+                ) {
+                    StickerInputPanel(
+                        packs = stickersState.addedPacks,
+                        height = (stickerPanelHeight - navigationBarsHeight).coerceAtLeast(0.dp),
+                        onStickerClick = { sticker ->
+                            stickersViewModel.sendSticker(uiState.chatId, sticker.id)
+                        })
+                }
             }
         }
     }
