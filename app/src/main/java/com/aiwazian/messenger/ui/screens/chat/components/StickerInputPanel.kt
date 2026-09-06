@@ -26,7 +26,7 @@ import coil.request.ImageRequest
 import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.domain.StickerPack
 
-private val PANEL_CELL_MIN_SIZE = 72.dp
+private const val PANEL_GRID_COLUMNS = 5
 
 @Composable
 fun StickerInputPanel(
@@ -38,7 +38,7 @@ fun StickerInputPanel(
     val context = LocalContext.current
     
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = PANEL_CELL_MIN_SIZE),
+        columns = GridCells.Fixed(PANEL_GRID_COLUMNS),
         modifier = modifier
             .fillMaxWidth()
             .height(height),

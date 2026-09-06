@@ -59,7 +59,7 @@ import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.domain.StickerPack
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 
-private val STICKER_CELL_MIN_SIZE = 72.dp
+private const val SHEET_GRID_COLUMNS = 5
 private val SHEET_GRID_MAX_HEIGHT = 380.dp
 private const val PRESSED_CELL_SCALE = 0.9f
 private const val SCRIM_ALPHA = 0.6f
@@ -90,7 +90,7 @@ fun StickerPackBottomSheet(
         )
         
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = STICKER_CELL_MIN_SIZE),
+            columns = GridCells.Fixed(SHEET_GRID_COLUMNS),
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = SHEET_GRID_MAX_HEIGHT),
@@ -103,6 +103,7 @@ fun StickerPackBottomSheet(
                 key = { it.id }) { sticker ->
                 StickerGridCell(
                     sticker = sticker,
+                    isHidden = focusedSticker?.id == sticker.id,
                     onClick = { bounds ->
                         focusedBounds = bounds
                         focusedSticker = sticker
@@ -149,6 +150,7 @@ fun StickerPackBottomSheet(
 @Composable
 private fun StickerGridCell(
     sticker: Sticker,
+    isHidden: Boolean,
     onClick: (Rect) -> Unit
 ) {
     val context = LocalContext.current
@@ -172,6 +174,7 @@ private fun StickerGridCell(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
+                alpha = if (isHidden) 0f else 1f
             }
             .clickable(
                 interactionSource = interactionSource,
