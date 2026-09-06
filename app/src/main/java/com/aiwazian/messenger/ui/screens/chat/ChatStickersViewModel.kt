@@ -40,14 +40,28 @@ class ChatStickersViewModel @Inject constructor(
     
     private val requestedPacks = mutableSetOf<Long>()
     
+    private var isAddedPacksRequested = false
+    
     fun togglePanel() {
-        val isVisible = _uiState.value.isPanelVisible
+        if (_uiState.value.isPanelVisible) {
+            hidePanel()
+        } else {
+            showPanel()
+        }
+    }
+    
+    fun showPanel() {
+        loadAddedPacks()
         
-        if (!isVisible) {
-            loadAddedPacks()
+        _uiState.update { it.copy(isPanelVisible = true) }
+    }
+    
+    fun preloadPacks() {
+        if (isAddedPacksRequested) {
+            return
         }
         
-        _uiState.update { it.copy(isPanelVisible = !isVisible) }
+        loadAddedPacks()
     }
     
     fun hidePanel() {
@@ -167,6 +181,8 @@ class ChatStickersViewModel @Inject constructor(
     }
     
     private fun loadAddedPacks() {
+        isAddedPacksRequested = true
+        
         viewModelScope.launch {
             stickerRepository.getAddedPacks().onSuccess { packs ->
                 val detailed = packs.map { pack ->
@@ -183,6 +199,8 @@ class ChatStickersViewModel @Inject constructor(
                         packsById = state.packsById + detailed.associateBy { it.id }
                     )
                 }
+            }.onFailure {
+                isAddedPacksRequested = false
             }
         }
     }
