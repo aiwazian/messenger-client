@@ -8,6 +8,7 @@
 
     <style name="Theme.MessengerSplashScreen" parent="Theme.Messenger">
         <item name="android:windowSplashScreenBackground">@color/splashScreenBackground</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/logo_monochrome</item>
         <item name="android:windowSplashScreenBrandingImage">@drawable/aiwazian</item>
         <item name="postSplashScreenTheme">@style/Theme.Messenger</item>
     </style>

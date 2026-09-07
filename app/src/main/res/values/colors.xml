@@ -5,4 +5,5 @@
 <resources>
     <color name="splashScreenBrand">#000</color>
     <color name="splashScreenBackground">#fff</color>
+    <color name="splashScreenIcon">#000</color>
 </resources>

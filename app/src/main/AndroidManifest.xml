@@ -27,13 +27,12 @@
         android:maxSdkVersion="32"
         tools:ignore="ScopedStorage" />
 
-    <!--
-      ~ Своя сетка галереи в шторке вложений читает MediaStore напрямую,
-      ~ поэтому нужен доступ к фото и видео. VISUAL_USER_SELECTED — это
-      ~ вариант «Выбрать фото» на Android 14 и новее.
-      -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_IMAGES"
+        tools:ignore="PhotoAndVideoPolicy" />
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_VIDEO"
+        tools:ignore="PhotoAndVideoPolicy" />
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
 
     <uses-permission
@@ -46,11 +45,11 @@
         android:allowBackup="false"
         android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="false"
-        android:icon="@mipmap/new_app_icon"
+        android:icon="@mipmap/logo"
         android:label="@string/app_name"
         android:localeConfig="@xml/locales_config"
         android:networkSecurityConfig="@xml/network_security_config"
-        android:roundIcon="@mipmap/new_app_icon"
+        android:roundIcon="@mipmap/logo"
         android:supportsRtl="true"
         android:theme="@style/Theme.MessengerSplashScreen"
         tools:ignore="DataExtractionRules"
@@ -79,11 +78,6 @@
             android:name="com.yandex.mobile.ads.AUTOMATIC_SDK_INITIALIZATION"
             android:value="false" />
 
-        <!--
-          ~ Включает адресацию пушей по Firebase Installation ID. Без этого флага SDK
-          ~ остаётся на устаревших registration token и onNewToken, а onRegistered
-          ~ и register() не вызываются.
-          -->
         <meta-data
             android:name="firebase_messaging_installation_id_enabled"
             android:value="true" />
@@ -123,9 +117,6 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
 
-            <!--
-              ~ Один файл любого типа: фото, видео, документ, архив.
-              -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
 
@@ -134,10 +125,6 @@
                 <data android:mimeType="*/*" />
             </intent-filter>
 
-            <!--
-              ~ Выделенные в галерее несколько файлов приходят отдельным
-              ~ действием, и без этого фильтра приложения в списке не видно.
-              -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
 

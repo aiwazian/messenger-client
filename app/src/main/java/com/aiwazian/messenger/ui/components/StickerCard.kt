@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.ui.components
 
 import androidx.compose.foundation.background
@@ -137,7 +141,6 @@ fun StickerCard(
             )
         },
         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        elevation = ListItemDefaults.elevation(ListItemDefaults.Elevation),
         content = { Text(pack.name) },
     )
     

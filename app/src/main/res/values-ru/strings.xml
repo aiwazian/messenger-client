@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
 
     <string name="search">Поиск</string>
@@ -439,4 +443,73 @@
     <string name="media_picker_reset_title">Сбросить выбор</string>
     <string name="media_picker_reset_message">Закрыть меню вложений?</string>
     <string name="media_picker_reset_action">Сбросить</string>
+    <string name="chat_search_show_as_list">Списком</string>
+    <string name="chat_search_show_in_chat">В чате</string>
+    <string name="chat_search_hint">Введите запрос</string>
+    <string name="chat_search_in_progress">Идёт поиск…</string>
+    <string name="chat_search_no_results">Ничего не найдено</string>
+    <string name="chat_search_position">%1$d из %2$s</string>
+    <plurals name="chat_search_results_count">
+        <item quantity="one">%1$s результат</item>
+        <item quantity="few">%1$s результата</item>
+        <item quantity="many">%1$s результатов</item>
+        <item quantity="other">%1$s результата</item>
+    </plurals>
+    <string name="stickers">Стикеры</string>
+    <string name="sticker_packs">Стикерпаки</string>
+    <string name="sticker_packs_created">Созданные</string>
+    <string name="sticker_packs_added">Добавленные</string>
+    <string name="sticker_pack">Стикерпак</string>
+    <string name="sticker_pack_new">Новый стикерпак</string>
+    <string name="sticker_pack_name">Название</string>
+    <string name="sticker_pack_username">Короткое имя</string>
+    <string name="sticker_pack_username_hint">Латиница, цифры и подчёркивание</string>
+    <string name="sticker_pack_username_too_short">Минимум %1$d символа</string>
+    <string name="sticker_pack_username_checking">Проверяем…</string>
+    <string name="sticker_pack_username_available">Имя свободно</string>
+    <string name="sticker_pack_username_taken">Имя уже занято</string>
+    <string name="sticker_pack_username_unknown">Не удалось проверить имя</string>
+    <string name="sticker_add">Добавить стикер</string>
+    <string name="sticker_delete">Удалить</string>
+    <string name="sticker_emojis">Эмодзи</string>
+    <string name="sticker_add_error">Не удалось обработать картинку</string>
+    <string name="sticker_upload_error">Не удалось загрузить стикер</string>
+    <string name="sticker_removed">Стикер удалён</string>
+    <string name="sticker_removed_undo">Отмена</string>
+    <string name="sticker_pack_saved">Стикерпак сохранён</string>
+    <string name="sticker_pack_save_error">Не удалось сохранить стикерпак</string>
+    <string name="sticker_pack_load_error">Не удалось загрузить стикерпак</string>
+    <string name="sticker_packs_load_error">Не удалось загрузить стикерпаки</string>
+    <string name="sticker_packs_empty">Стикерпаков пока нет</string>
+    <string name="sticker_pack_unsaved_message">Есть несохранённые изменения</string>
+    <string name="sticker_pack_unsaved_discard">Сбросить</string>
+    <string name="sticker_pack_unsaved_apply">Применить</string>
+    <string name="sticker_pack_delete_action">Удалить</string>
+    <string name="sticker_pack_delete_cancel">Отмена</string>
+    <string name="sticker_pack_delete_message">Удаление необратимо. Вы и другие пользователи больше не смогут отправлять стикеры из набора.</string>
+    <string name="sticker_pack_remove_message">Набор пропадёт только у вас. У остальных он останется.</string>
+    <string name="sticker_pack_deleted">Стикерпак удалён</string>
+    <string name="sticker_pack_delete_error">Не удалось удалить стикерпак</string>
+    <string name="sticker_pack_removed">Стикерпак убран</string>
+    <string name="sticker_pack_remove_error">Не удалось убрать стикерпак</string>
+    <plurals name="sticker_count">
+        <item quantity="one">%1$d стикер</item>
+        <item quantity="few">%1$d стикера</item>
+        <item quantity="many">%1$d стикеров</item>
+        <item quantity="other">%1$d стикера</item>
+    </plurals>
+    <string name="sticker_pack_share">Поделиться</string>
+    <string name="sticker_pack_add_stickers">Добавить стикеры</string>
+    <string name="sticker_pack_remove_stickers">Удалить стикеры</string>
+    <string name="send_sticker">Отправить стикер</string>
+    <string name="sticker_pack_installed">Набор %1$s добавлен в ваши стикеры</string>
+    <string name="sticker_pack_uninstalled">Набор %1$s удален из ваших стикеров</string>
+    <string name="sticker_message">Стикер</string>
+    <string name="storage_cache_cleared">%1$s очистилось</string>
+    <string name="storage_cache_already_empty">Очищать нечего</string>
+    <string name="storage_cache_clear_failed">Не удалось очистить кэш</string>
+    <string name="storage_no_categories_selected">Выберите, что очистить</string>
+    <string name="storage_database_cleared">Локальная база данных очищена</string>
+    <string name="storage_database_clear_failed">Не удалось очистить базу данных</string>
+    <string name="done">Готово</string>
 </resources>

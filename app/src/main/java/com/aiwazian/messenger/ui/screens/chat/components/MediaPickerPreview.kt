@@ -338,7 +338,7 @@ fun MediaPickerPreview(
                                         contentColor = MaterialTheme.colorScheme.onSurface
                                     )
                                 ) {
-                                    Text(text = stringResource(R.string.media_transform_reset).uppercase())
+                                    Text(text = stringResource(R.string.reset).uppercase())
                                 }
                             }
                             
