@@ -156,15 +156,9 @@ fun ChatInputSection(
     
     val stickerPanelHeight = remember { Animatable(0.dp, Dp.VectorConverter) }
     
-    var maxKeyboardHeight by remember { mutableStateOf(0.dp) }
+    var maxKeyboardHeight by remember { mutableStateOf(DEFAULT_STICKER_PANEL_HEIGHT) }
     var isKeyboardVisible by remember { mutableStateOf(false) }
     var isStickersVisible by remember { mutableStateOf(false) }
-    
-    val stickerPanelTargetHeight = when {
-        maxKeyboardHeight > 0.dp -> maxKeyboardHeight
-        uiState.keyboardHeight > 0f -> uiState.keyboardHeight.dp
-        else -> DEFAULT_STICKER_PANEL_HEIGHT
-    }
     
     val bottomSlotHeight = stickerPanelHeight.value.coerceAtLeast(navigationBarsHeight)
     
@@ -173,7 +167,7 @@ fun ChatInputSection(
             maxKeyboardHeight = imeHeightDp
         }
         
-        isKeyboardVisible = imeHeightDp > 0.dp && imeHeightDp == maxKeyboardHeight
+        isKeyboardVisible = imeHeightDp == maxKeyboardHeight
         
         if (isKeyboardVisible) {
             stickerPanelHeight.snapTo(imeHeightDp)
@@ -205,7 +199,7 @@ fun ChatInputSection(
         isStickersVisible = true
         
         scope.launch {
-            stickerPanelHeight.animateTo(stickerPanelTargetHeight)
+            stickerPanelHeight.animateTo(maxKeyboardHeight)
         }
     }
     
