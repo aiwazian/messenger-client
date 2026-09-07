@@ -8,10 +8,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -38,17 +39,14 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -85,6 +83,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -100,8 +99,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -113,6 +112,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -129,13 +129,11 @@ import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import com.aiwazian.messenger.utils.DialogController
 import kotlin.math.abs
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 private val DEFAULT_STICKER_PANEL_HEIGHT = 280.dp
-private val MIN_STICKER_PANEL_HEIGHT = 120.dp
-private const val STICKER_PANEL_ANIMATION_MS = 250
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ChatInputSection(
     uiState: ChatUiState,
@@ -143,52 +141,75 @@ fun ChatInputSection(
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val scope = rememberCoroutineScope()
     
     val stickersViewModel: ChatStickersViewModel = hiltViewModel()
     val stickersState by stickersViewModel.uiState.collectAsState()
     
-    val isKeyboardVisible = WindowInsets.isImeVisible
+    val imeBottomPx = WindowInsets.ime.getBottom(density)
+    val imeHeightDp = with(density) { imeBottomPx.toDp() }
     
     val navigationBarsHeight = with(density) {
         WindowInsets.navigationBars.getBottom(density).toDp()
     }
     
-    val keyboardHeight = uiState.keyboardHeight.dp
+    val stickerPanelHeight = remember { Animatable(0.dp, Dp.VectorConverter) }
     
-    val panelTargetHeight = if (keyboardHeight >= MIN_STICKER_PANEL_HEIGHT) {
-        (keyboardHeight - navigationBarsHeight).coerceAtLeast(0.dp)
-    } else {
-        DEFAULT_STICKER_PANEL_HEIGHT
+    var maxKeyboardHeight by remember { mutableStateOf(0.dp) }
+    var isKeyboardVisible by remember { mutableStateOf(false) }
+    var isStickersVisible by remember { mutableStateOf(false) }
+    
+    val stickerPanelTargetHeight = when {
+        maxKeyboardHeight > 0.dp -> maxKeyboardHeight
+        uiState.keyboardHeight > 0f -> uiState.keyboardHeight.dp
+        else -> DEFAULT_STICKER_PANEL_HEIGHT
     }
     
-    val isStickerPanelVisible =
-        stickersState.isPanelVisible && !isKeyboardVisible && !uiState.isRecording
+    val bottomSlotHeight = stickerPanelHeight.value.coerceAtLeast(navigationBarsHeight)
     
-    val stickerPanelHeight by animateDpAsState(
-        targetValue = if (isStickerPanelVisible) panelTargetHeight else 0.dp,
-        animationSpec = tween(durationMillis = STICKER_PANEL_ANIMATION_MS, easing = FastOutSlowInEasing),
-        label = "sticker_panel_height_animation"
-    )
-    
-    LaunchedEffect(isKeyboardVisible) {
-        if (!isKeyboardVisible) {
-            return@LaunchedEffect
+    LaunchedEffect(imeHeightDp) {
+        if (imeHeightDp > maxKeyboardHeight) {
+            maxKeyboardHeight = imeHeightDp
         }
         
-        stickersViewModel.preloadPacks()
-        stickersViewModel.hidePanel()
+        isKeyboardVisible = imeHeightDp > 0.dp && imeHeightDp == maxKeyboardHeight
+        
+        if (isKeyboardVisible) {
+            stickerPanelHeight.snapTo(imeHeightDp)
+        } else if (!isStickersVisible) {
+            stickerPanelHeight.snapTo(imeHeightDp)
+        }
     }
     
-    BackHandler(enabled = stickersState.isPanelVisible) {
-        stickersViewModel.hidePanel()
+    LaunchedEffect(isKeyboardVisible, isStickersVisible) {
+        if (isKeyboardVisible || isStickersVisible) {
+            stickersViewModel.preloadPacks()
+        }
     }
     
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .imePadding()
-            .navigationBarsPadding()
-    ) {
+    BackHandler(enabled = isKeyboardVisible) {
+        isStickersVisible = false
+        keyboardController?.hide()
+    }
+    
+    BackHandler(enabled = !isKeyboardVisible && isStickersVisible) {
+        scope.launch {
+            stickerPanelHeight.animateTo(0.dp)
+            isStickersVisible = false
+        }
+    }
+    
+    val showStickerPanel: () -> Unit = {
+        keyboardController?.hide()
+        isStickersVisible = true
+        
+        scope.launch {
+            stickerPanelHeight.animateTo(stickerPanelTargetHeight)
+        }
+    }
+    
+    Column(modifier = modifier.fillMaxWidth()) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -207,8 +228,9 @@ fun ChatInputSection(
                             "input" -> InputMessage(
                                 uiState = uiState,
                                 chatViewModel = chatViewModel,
-                                isStickerPanelVisible = stickersState.isPanelVisible,
-                                onShowStickerPanel = stickersViewModel::showPanel
+                                isStickerPanelVisible = isStickersVisible,
+                                isKeyboardVisible = isKeyboardVisible,
+                                onShowStickerPanel = showStickerPanel
                             )
                             
                             "join" -> JoinButton(onClick = chatViewModel::onJoinClicked)
@@ -227,8 +249,9 @@ fun ChatInputSection(
                             InputMessage(
                                 uiState = uiState,
                                 chatViewModel = chatViewModel,
-                                isStickerPanelVisible = stickersState.isPanelVisible,
-                                onShowStickerPanel = stickersViewModel::showPanel
+                                isStickerPanelVisible = isStickersVisible,
+                                isKeyboardVisible = isKeyboardVisible,
+                                onShowStickerPanel = showStickerPanel
                             )
                         } else {
                             JoinButton(onClick = chatViewModel::onJoinClicked)
@@ -298,8 +321,9 @@ fun ChatInputSection(
                                 InputMessage(
                                     uiState = uiState,
                                     chatViewModel = chatViewModel,
-                                    isStickerPanelVisible = stickersState.isPanelVisible,
-                                    onShowStickerPanel = stickersViewModel::showPanel
+                                    isStickerPanelVisible = isStickersVisible,
+                                    isKeyboardVisible = isKeyboardVisible,
+                                    onShowStickerPanel = showStickerPanel
                                 )
                             }
                         }
@@ -310,25 +334,31 @@ fun ChatInputSection(
             }
         }
         
-        if (stickerPanelHeight > 0.dp) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(stickerPanelHeight)
-                    .padding(horizontal = 8.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {}
-            ) {
-                StickerInputPanel(
-                    packs = stickersState.addedPacks,
-                    height = panelTargetHeight,
-                    onStickerClick = { sticker ->
-                        stickersViewModel.sendSticker(uiState.chatId, sticker.id)
-                    })
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(bottomSlotHeight)
+        ) {
+            if (isStickersVisible) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(bottomSlotHeight)
+                        .padding(horizontal = 8.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {}
+                ) {
+                    StickerInputPanel(
+                        packs = stickersState.addedPacks,
+                        height = (bottomSlotHeight - navigationBarsHeight).coerceAtLeast(0.dp),
+                        onStickerClick = { sticker ->
+                            stickersViewModel.sendSticker(uiState.chatId, sticker.id)
+                        })
+                }
             }
         }
     }
@@ -356,6 +386,7 @@ private fun InputMessage(
     uiState: ChatUiState,
     chatViewModel: ChatViewModel,
     isStickerPanelVisible: Boolean,
+    isKeyboardVisible: Boolean,
     onShowStickerPanel: () -> Unit
 ) {
     var attachmentModal by remember { mutableStateOf(DialogController()) }
@@ -363,7 +394,7 @@ private fun InputMessage(
     var micTranslationY by remember { mutableFloatStateOf(0f) }
     
     val focusRequester = remember { FocusRequester() }
-    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     
     val mediaPickerViewModel: MediaPickerViewModel = hiltViewModel()
     
@@ -510,15 +541,15 @@ private fun InputMessage(
                 exit = expressiveScaleOut
             ) {
                 IconButton(onClick = {
-                    if (isStickerPanelVisible) {
-                        focusRequester.requestFocus()
-                    } else {
+                    if (isKeyboardVisible || !isStickerPanelVisible) {
                         onShowStickerPanel()
-                        focusManager.clearFocus()
+                    } else {
+                        focusRequester.requestFocus()
+                        keyboardController?.show()
                     }
                 }) {
                     AnimatedContent(
-                        targetState = isStickerPanelVisible,
+                        targetState = isStickerPanelVisible && !isKeyboardVisible,
                         transitionSpec = {
                             if (targetState > initialState) {
                                 slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
