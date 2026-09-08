@@ -1,3 +1,7 @@
+<!--
+  ~ Copyright (c) 2026. Aiwazian.
+  -->
+
 <resources>
 
     <string name="search">Поиск</string>
@@ -258,7 +262,7 @@
     <string name="hide_channel">Скрыть канал</string>
     <string name="edit">Изменить</string>
     <string name="edited_at">Отредактировано в</string>
-    <string name="read_at">Прочтите на</string>
+    <string name="read_at">Прочитано в</string>
     <string name="edit_message">Редактирование</string>
     <string name="edited">Изменено</string>
     <string name="chat">Чат</string>
@@ -300,7 +304,7 @@
     <string name="password_reset_request_failed">Не удалось отправить код сброса пароля.</string>
     <string name="remove_email">Удалить электронную почту</string>
     <string name="change_email">Изменить адрес электронной почты</string>
-    <string name="remove">Удалять</string>
+    <string name="remove">Удалить</string>
     <string name="reply">Ответить</string>
     <string name="reply_to">Ответ %1$s</string>
     <string name="forward">Переслать</string>
@@ -347,8 +351,8 @@
     <string name="member_tag_description">Тег отображается рядом с именем отправителя в групповых сообщениях.</string>
     <string name="manage_admins">Управление администраторами</string>
     <string name="manage_admins_description">Можно добавлять и удалять администраторов, а также изменять их разрешения.</string>
-    <string name="requests_to_channel_join">Здесь отображаются запросы на присоединение к вашему каналу.</string>
-    <string name="requests_to_group_join">Здесь отображаются запросы на вступление в вашу группу.</string>
+    <string name="requests_to_channel_join">Здесь отображаются заявки на присоединение к вашему каналу.</string>
+    <string name="requests_to_group_join">Здесь отображаются заявки на вступление в вашу группу.</string>
     <string name="edit_folder">Редактировать папку</string>
     <string name="edit_folders">Редактировать папки</string>
     <string name="appearance_preview_incoming_text">Завтра в 10:00 созвон по релизу, ссылку пришлю утром.</string>
