@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.chat
 
 import android.content.Context
@@ -35,24 +31,14 @@ class ChatItemMapper(
     private val myId: Long,
     private val chatId: Long,
     private val isOwner: Boolean,
-    /** Состою ли в группе/канале: без этого нельзя ни писать, ни отвечать. */
     private val isJoined: Boolean,
     private val userNamesCache: Map<Long, String>,
-    /**
-     * Теги участников группы: id → тег.
-     *
-     * Загружаются одним запросом при открытии группы, в каналах всегда пусты.
-     */
     private val memberTagsCache: Map<Long, String> = emptyMap(),
     private val groupReadInfo: Map<Long, List<MessageReadInfo>>,
     private val highlightedMessageId: Long? = null,
     private val unreadAnchorMessageId: Long? = null,
-    /**
-     * Правила защиты контента: при запрете копирования в меню сообщения нет ни
-     * «Копировать», ни «Переслать» — даже у владельца.
-     */
     private val copyPolicy: ChatCopyPolicy = ChatCopyPolicy.Unrestricted,
-    private val onCopyText: (String) -> Unit,
+    private val onCopyText: (Message) -> Unit,
     private val onEditMessage: (Message) -> Unit,
     private val onDeleteMessage: (Message) -> Unit,
     private val onRetrySendMessage: (Message) -> Unit,
@@ -67,26 +53,6 @@ class ChatItemMapper(
         var lastSenderId: Long? = null
         
         val chatType = ChatType.fromId(chatId)
-        
-        val noCopyNotice = if (copyPolicy.noCopy) {
-            when (chatType) {
-                ChatType.CHANNEL -> DropdownMenuAction(
-                    icon = Icons.Rounded.Block,
-                    text = UiText.StringResource(R.string.no_copy_channel_notice),
-                    onClick = null,
-                    isNotice = true
-                )
-                
-                ChatType.GROUP -> DropdownMenuAction(
-                    icon = Icons.Rounded.Block,
-                    text = UiText.StringResource(R.string.no_copy_group_notice),
-                    onClick = null,
-                    isNotice = true
-                )
-                
-                else -> null
-            }
-        } else null
         
         messages.forEach { message ->
             val messageDate =
@@ -126,8 +92,8 @@ class ChatItemMapper(
             val isSingleEmoji = isSingleEmoji(message.text ?: "")
             val isFirstInGroup = message.senderId != lastSenderId
             
-            val actions =
-                createDropdownActions(message, isMine, chatType) + listOfNotNull(noCopyNotice)
+            val actions = createDropdownActions(message, isMine, chatType) +
+                    listOfNotNull(createNoCopyNotice(chatType, isMine))
             val updatedMessage = processAttachments(message)
             
             chatItems.add(
@@ -159,12 +125,24 @@ class ChatItemMapper(
         return chatItems
     }
     
-    /**
-     * Ответить можно только там, где вообще разрешено писать: в канале —
-     * только владельцу, в группе — только участнику, в личном чате — всегда.
-     *
-     * Тем же условием включается свайп влево в MessageBubble.
-     */
+    private fun createNoCopyNotice(chatType: ChatType, isMine: Boolean): DropdownMenuAction? {
+        if (!copyPolicy.hasNotice(isMine)) return null
+        
+        val textResId = when (chatType) {
+            ChatType.CHANNEL -> R.string.no_copy_channel_notice
+            ChatType.GROUP -> R.string.no_copy_group_notice
+            ChatType.PRIVATE -> R.string.no_copy_private_notice
+            else -> return null
+        }
+        
+        return DropdownMenuAction(
+            icon = Icons.Rounded.Block,
+            text = UiText.StringResource(textResId),
+            onClick = null,
+            isNotice = true
+        )
+    }
+    
     private fun canReply(message: Message, chatType: ChatType): Boolean {
         if (message.messageType == MessageType.SYSTEM) return false
         if (message.id <= 0 || message.status != MessageStatus.SENT) return false
@@ -176,12 +154,6 @@ class ChatItemMapper(
         }
     }
     
-    /**
-     * «Избранное» — личный чат с самим собой, где срок правки не считается.
-     *
-     * Подменять смысл задним числом там не перед кем: собеседника нет, а самая
-     * старая заметка остаётся заметкой. Сервер проверяет то же условие.
-     */
     private val isSavedMessages: Boolean
         get() = ChatType.fromId(chatId) == ChatType.PRIVATE && chatId == myId
     
@@ -192,12 +164,12 @@ class ChatItemMapper(
     ): List<DropdownMenuAction> {
         val actions = mutableListOf<DropdownMenuAction>()
         
-        if (copyPolicy.canCopyText && !message.text.isNullOrBlank()) {
+        if (copyPolicy.canCopyText(isMine) && !message.text.isNullOrBlank()) {
             actions.add(
                 DropdownMenuAction(
                     Icons.Rounded.ContentCopy,
                     UiText.StringResource(R.string.copy),
-                    onClick = { onCopyText(message.text) })
+                    onClick = { onCopyText(message) })
             )
         }
         
@@ -251,7 +223,7 @@ class ChatItemMapper(
             )
         }
         
-        if (isSent && copyPolicy.canForward) {
+        if (isSent && copyPolicy.canForward(isMine)) {
             actions.add(
                 DropdownMenuAction(
                     Icons.AutoMirrored.Outlined.Forward,
