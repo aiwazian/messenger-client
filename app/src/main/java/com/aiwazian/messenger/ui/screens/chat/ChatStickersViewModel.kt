@@ -2,10 +2,12 @@ package com.aiwazian.messenger.ui.screens.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.domain.StickerPack
 import com.aiwazian.messenger.repository.StickerRepository
 import com.aiwazian.messenger.usecase.SendStickerUseCase
+import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,8 +16,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class StickerPackNotice(
-    val packName: String,
-    val isInstalled: Boolean
+    val message: UiText
 )
 
 data class ChatStickersUiState(
@@ -133,7 +134,9 @@ class ChatStickersViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         openedPack = null,
-                        notice = StickerPackNotice(packName = pack.name, isInstalled = true)
+                        notice = StickerPackNotice(
+                            UiText.StringResource(R.string.sticker_pack_installed, pack.name)
+                        )
                     )
                 }
             }
@@ -151,7 +154,9 @@ class ChatStickersViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         openedPack = null,
-                        notice = StickerPackNotice(packName = pack.name, isInstalled = false)
+                        notice = StickerPackNotice(
+                            UiText.StringResource(R.string.sticker_pack_uninstalled, pack.name)
+                        )
                     )
                 }
             }
