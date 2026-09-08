@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.profile
 
 import android.content.Context
@@ -116,14 +112,6 @@ class ProfileViewModel @Inject constructor(
         
         loadMyPermissions(profileId)
         
-        /*
-         * loadProfile() выбирает ветку сравнением profileId с myId, поэтому
-         * запускать его раньше, чем известен свой идентификатор, нельзя. Из-за
-         * этого свой же профиль уходил в ветку «чужой пользователь», где статус
-         * берётся из списка онлайна, а сам пользователь в этот список никогда не
-         * попадает: сервер не рассылает человеку событие о его собственном
-         * статусе. В итоге на своём профиле всегда было «в сети недавно».
-         */
         viewModelScope.launch {
             userRepository.getMe().firstOrNull()?.let { user ->
                 _uiState.update { it.copy(myId = user.id) }
@@ -134,9 +122,6 @@ class ProfileViewModel @Inject constructor(
         }
     }
     
-    /**
-     * Загружает мои права в чате, чтобы решить, показывать ли кнопку перехода в настройки.
-     */
     private fun loadMyPermissions(profileId: Long) {
         viewModelScope.launch {
             val result = when (ChatType.fromId(profileId)) {
@@ -156,17 +141,6 @@ class ProfileViewModel @Inject constructor(
         }
     }
     
-    /**
-     * Подпись под своим именем.
-     *
-     * Свой статус не приходит по вебсокету и не попадает в список онлайна, зато
-     * он и не нужен: приложение открыто, значит пользователь в сети. Показываем
-     * ровно то, что видят собеседники, поэтому при приватности «Никто» вместо
-     * «в сети» остаётся «в сети недавно».
-     *
-     * Если настройку получить не удалось, считаем статус видимым: на сервере это
-     * тоже значение по умолчанию.
-     */
     private suspend fun resolveMyPresenceSubtitle(): UiText {
         val lastSeenPrivacy = privacyRepository.getPrivacySettings().getOrNull()?.lastSeen
         
@@ -184,17 +158,10 @@ class ProfileViewModel @Inject constructor(
         )
     }
     
-    /**
-     * Начиная с Android 13 система сама показывает плашку о копировании, поэтому
-     * свой снекбар не нужен: иначе об одном действии сообщают дважды.
-     */
     fun copyToClipboard(text: String) {
         clipboardService.copy(text)
     }
     
-    /**
-     * «Поделиться» из меню у username: в выбранные чаты уйдёт текст «@username».
-     */
     fun onShareUsername(username: String) {
         val text = if (username.startsWith("@")) username else "@$username"
         
@@ -230,10 +197,6 @@ class ProfileViewModel @Inject constructor(
         }
     }
     
-    /**
-     * Отправка идёт через [MessageSendQueue]: шторка закрывается сразу, а сообщение
-     * доедет, даже если пользователь тут же уйдёт с экрана.
-     */
     fun sendShare() {
         val state = _uiState.value
         val text = state.shareText
@@ -309,8 +272,7 @@ class ProfileViewModel @Inject constructor(
                         ) { user, onlineUsers ->
                             user to onlineUsers.contains(user.id)
                         }.collectLatest { (user, isOnline) ->
-                            val subTitle =
-                                LastSeenHelper.getSubtitle(context, isOnline, user.lastSeen)
+                            val subTitle = LastSeenHelper.getSubtitle(isOnline, user.lastSeen)
                             val profile = Profile.User(
                                 username = user.username,
                                 bio = user.bio,
@@ -823,7 +785,7 @@ class ProfileViewModel @Inject constructor(
                     )
                 )
             } else {
-                _uiEffect.tryEmit(ProfileUiEffect.ShowSnackbar(UiText.DynamicString("Ошибка")))
+                _uiEffect.tryEmit(ProfileUiEffect.ShowSnackbar(UiText.StringResource(R.string.error)))
             }
             dismissBlockDialog()
         }
