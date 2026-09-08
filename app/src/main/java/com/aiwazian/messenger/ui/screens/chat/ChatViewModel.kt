@@ -421,9 +421,11 @@ class ChatViewModel @Inject constructor(
                             type = ChatType.PRIVATE
                         ),
                         isBlocked = user.isBlocked,
-                        isBlockedByThem = user.isBlockedByThem
+                        isBlockedByThem = user.isBlockedByThem,
+                        peerNoCopy = !user.canForwardAndCopy
                     )
                 }
+                if (lastMessages.isNotEmpty()) updateChatItems(lastMessages)
             }
         }
     }
@@ -986,7 +988,7 @@ class ChatViewModel @Inject constructor(
     }
 
     fun startForward(message: Message) {
-        if (!copyPolicy.canForward) return
+        if (!copyPolicy.canForward(message.senderId == _uiState.value.myId)) return
         if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
 
         viewModelScope.launch {
@@ -1077,9 +1079,9 @@ class ChatViewModel @Inject constructor(
             return
         }
 
-        if (!copyPolicy.canForward) return
         val state = _uiState.value
         val message = state.forwardingMessage ?: return
+        if (!copyPolicy.canForward(message.senderId == state.myId)) return
         val targets = state.selectedForwardChatIds.toList()
         if (targets.isEmpty() || state.isForwarding) return
 
@@ -1531,9 +1533,9 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun copyToClipboard(text: String?) {
-        if (!copyPolicy.canCopyText) return
-        text?.let { clipboardService.copy(it) }
+    fun copyToClipboard(message: Message) {
+        if (!copyPolicy.canCopyText(message.senderId == _uiState.value.myId)) return
+        message.text?.let { clipboardService.copy(it) }
     }
 
     fun vibrate() = vibrationManager.vibrate(VibrationPattern.Error)

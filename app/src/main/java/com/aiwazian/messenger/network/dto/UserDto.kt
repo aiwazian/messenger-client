@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.network.dto
 
 import com.aiwazian.messenger.enums.PrivacyLevel
@@ -21,7 +17,8 @@ data class UserResponseDto(
     @SerialName("profileChannelId") val profileChannelId: String? = null,
     @SerialName("email") val email: String? = null,
     @SerialName("isBlocked") val isBlocked: Boolean = false,
-    @SerialName("isBlockedByThem") val isBlockedByThem: Boolean = false
+    @SerialName("isBlockedByThem") val isBlockedByThem: Boolean = false,
+    @SerialName("canForwardAndCopy") val canForwardAndCopy: Boolean = true
 )
 
 @Serializable
@@ -57,8 +54,8 @@ data class PrivacySettingsResponseDto(
     @SerialName("dateOfBirth") val dateOfBirth: PrivacyLevel = PrivacyLevel.EVERYBODY,
     @SerialName("invites") val invites: PrivacyLevel = PrivacyLevel.EVERYBODY,
     @SerialName("profilePhoto") val profilePhoto: PrivacyLevel = PrivacyLevel.EVERYBODY,
-    /** Кто может открыть профиль по заголовку «Переслано от». */
     @SerialName("forwardedProfile") val forwardedProfile: PrivacyLevel = PrivacyLevel.EVERYBODY,
+    @SerialName("forwardAndCopy") val forwardAndCopy: PrivacyLevel = PrivacyLevel.EVERYBODY,
     @SerialName("deleteAfterDays") val deleteAfterDays: Int = 365
 )
 
@@ -71,6 +68,7 @@ data class UpdatePrivacySettingsRequestDto(
     @SerialName("invites") val invites: PrivacyLevel? = null,
     @SerialName("profilePhoto") val profilePhoto: PrivacyLevel? = null,
     @SerialName("forwardedProfile") val forwardedProfile: PrivacyLevel? = null,
+    @SerialName("forwardAndCopy") val forwardAndCopy: PrivacyLevel? = null,
     @SerialName("deleteAfterDays") val deleteAfterDays: Int? = null
 )
 

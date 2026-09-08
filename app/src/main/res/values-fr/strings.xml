@@ -1,9 +1,5 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
-    
+
     <string name="search">Recherche</string>
     <string name="message">Message</string>
     <string name="settings">Paramètres</string>
@@ -38,6 +34,7 @@
     <string name="bio">Biographie</string>
     <string name="username">Nom d’utilisateur</string>
     <string name="share">Partager</string>
+    <string name="copy_link">Copier le lien</string>
     <string name="cloud_password">Mot de passe cloud</string>
     <string name="on">On</string>
     <string name="off">Off</string>
@@ -45,7 +42,7 @@
     <string name="nobody">Personne</string>
     <string name="messages">Messages</string>
     <string name="last_seen">Dernière apparition</string>
-    <string name="who_can_see_my_last_seen"><![CDATA[Qui peut voir ma dernière fois vue \?]]></string>
+    <string name="who_can_see_my_last_seen"><![CDATA[Qui peut voir ma dernière fois vue \?]]></string>
     <string name="online">En ligne</string>
     <string name="last_seen_recently">En ligne récemment</string>
     <string name="last_seen_at">vu pour la dernière fois à %s</string>
@@ -73,6 +70,7 @@
     <string name="unpin">Détacher</string>
     <string name="mark_as_read">Marquer comme lu</string>
     <string name="mark_as_unread">Marquer comme non lu</string>
+    <string name="mark_all_as_read">Tout marquer comme lu</string>
     <string name="folder_name">Nom du dossier</string>
     <string name="included_chats">Discussions incluses</string>
     <string name="add_chats">Ajouter des discussions</string>
@@ -154,8 +152,8 @@
     <string name="delete_account_confirm_message">Êtes-vous sûr de vouloir supprimer votre compte?</string>
     <string name="delete_account_message">Tout ce qui concerne votre compte sera définitivement supprimé.</string>
     <string name="sessions_android_only_message">L\'application officielle n\'est disponible que pour les appareils Android.</string>
-    <string name="terminate_session_confirm_message"><![CDATA[Êtes-vous sûr de vouloir mettre fin à cette session \?]]></string>
-    <string name="terminate_all_other_sessions_confirm_message"><![CDATA[Êtes-vous sûr de vouloir mettre fin à toutes les autres sessions \?]]></string>
+    <string name="terminate_session_confirm_message"><![CDATA[Êtes-vous sûr de vouloir mettre fin à cette session \?]]></string>
+    <string name="terminate_all_other_sessions_confirm_message"><![CDATA[Êtes-vous sûr de vouloir mettre fin à toutes les autres sessions \?]]></string>
     <string name="waiting_for_network">En attente du réseau</string>
     <string name="your_name">Votre nom</string>
     <string name="kick">Coup</string>
@@ -262,20 +260,20 @@
     <string name="edit_message">Modifier le message</string>
     <string name="edited">Édité</string>
     <string name="chat">Chat</string>
-    <string name="delete_chat_confirm"><![CDATA[Supprimer le chat sans possibilité de récupération \?]]></string>
+    <string name="delete_chat_confirm"><![CDATA[Supprimer le chat sans possibilité de récupération \?]]></string>
     <string name="clear_history_confirm">Supprimer tous les messages du chat, sans possibilité de récupération \?</string>
     <string name="swipe_to_cancel">Glissez pour annuler</string>
     <string name="provide_mic_permission">Fournir un accès au microphone pour enregistrer des messages vocaux</string>
     <string name="cancel_sending">Annuler l\'envoi</string>
     <string name="retry">Réessayer</string>
-    <string name="cancel_upload_confirm"><![CDATA[Êtes-vous sûr de vouloir annuler le téléchargement du fichier \?]]></string>
+    <string name="cancel_upload_confirm"><![CDATA[Êtes-vous sûr de vouloir annuler le téléchargement du fichier \?]]></string>
     <string name="cancel_voice_recording">Annuler l\'enregistrement vocal</string>
-    <string name="cancel_voice_recording_confirm"><![CDATA[Êtes-vous sûr de vouloir arrêter l\'enregistrement et supprimer le message enregistré \?]]></string>
+    <string name="cancel_voice_recording_confirm"><![CDATA[Êtes-vous sûr de vouloir arrêter l\'enregistrement et supprimer le message enregistré \?]]></string>
     <string name="continue_recording">Continuer</string>
     <string name="reset">Réinitialiser</string>
     <string name="no_access">Pas d\'accès</string>
     <string name="banned_message">Vous avez été banni par l\'administrateur de ce chat</string>
-    <string name="edit_time_limit_error"><![CDATA[Impossible de modifier les messages datant de plus de 24 heures]]></string>
+    <string name="edit_time_limit_error"><![CDATA[Impossible de modifier les messages datant de plus de 24 heures]]></string>
     <string name="too_many_requests">Trop de demandes. Veuillez réessayer plus tard.</string>
     <string name="blocked_users">Utilisateurs bloqués</string>
     <string name="join_requests">Demandes de participation</string>
@@ -284,7 +282,7 @@
     <string name="pending_join_requests_empty">Il n’y a aucune demande d’adhésion en attente.</string>
     <string name="draft">Brouillon</string>
     <string name="clear_drafts">Effacer les brouillons</string>
-    <string name="clear_drafts_confirm_message"><![CDATA[Êtes-vous sûr de vouloir supprimer tous les brouillons de toutes les discussions \?]]></string>
+    <string name="clear_drafts_confirm_message"><![CDATA[Êtes-vous sûr de vouloir supprimer tous les brouillons de toutes les discussions \?]]></string>
     <string name="drafts_cleared">Tous les brouillons effacés</string>
     <string name="login_hint">Utilisez un identifiant existant ou créez un nouveau</string>
     <string name="password_hint">Entrez le mot de passe de votre compte</string>
@@ -311,7 +309,8 @@
     <string name="forwarded_from_private_group">Transféré depuis un groupe privé</string>
     <string name="forwarded_from_hidden_account">Transféré depuis un compte caché</string>
     <string name="message_forwarding">Transfert de messages</string>
-    <string name="who_can_open_my_profile_from_forwarded_messages"><![CDATA[Qui peut ouvrir mon profil à partir des messages transférés \?]]></string>
+    <string name="who_can_open_my_profile_from_forwarded_messages"><![CDATA[Qui peut ouvrir mon profil à partir des messages transférés \?]]></string>
+    <string name="who_can_forward_and_copy_messages_from_chat_with_me">Qui peut transférer et copier les messages de la discussion avec moi</string>
     <string name="unknown_chat">Discussion inconnue</string>
     <string name="attachment_photo">Photo</string>
     <string name="attachment_video">Vidéo</string>
@@ -325,13 +324,14 @@
     <string name="no_copy_group_description">Les membres ne pourront pas copier de texte, transférer des messages ou enregistrer des médias du groupe.</string>
     <string name="no_copy_channel_notice">La copie et le transfert ne sont pas autorisés à partir de ce canal.</string>
     <string name="no_copy_group_notice">La copie et le transfert ne sont pas autorisés à partir de ce groupe.</string>
+    <string name="no_copy_private_notice">La copie et le transfert depuis la discussion sont interdits</string>
     <string name="administrators">Administrateurs</string>
     <string name="add_administrator">Ajouter un administrateur</string>
     <string name="admin_permissions">Autorisations</string>
     <string name="edit_permissions">Modifier les autorisations</string>
     <string name="view_permissions">Afficher les autorisations</string>
     <string name="dismiss_admin">Rejeter</string>
-    <string name="dismiss_admin_confirm_message"><![CDATA[Êtes-vous sûr de vouloir supprimer cet utilisateur des administrateurs \?]]></string>
+    <string name="dismiss_admin_confirm_message"><![CDATA[Êtes-vous sûr de vouloir supprimer cet utilisateur des administrateurs \?]]></string>
     <string name="no_administrators">Aucun administrateur</string>
     <string name="admin_removed">Administrateur licencié</string>
     <string name="failed_to_load_administrators">Échec du chargement des administrateurs</string>
@@ -348,6 +348,7 @@
     <string name="requests_to_channel_join">Les demandes pour rejoindre votre chaîne sont affichées ici.</string>
     <string name="requests_to_group_join">les demandes pour rejoindre votre groupe sont affichées ici.</string>
     <string name="edit_folder">Modifier le dossier</string>
+    <string name="edit_folders">Modifier les dossiers</string>
     <string name="appearance_preview_incoming_text">Le release call a lieu demain à 10h00, j\'enverrai le lien dans la matinée.</string>
     <string name="appearance_preview_reply_text">J\'ai compris, j\'y serai. Merci!</string>
     <string name="delete_folder_confirm_message">Cela n’affectera pas les discussions qu’il contient.</string>
@@ -355,10 +356,10 @@
     <string name="group_management">Gérer le groupe</string>
     <string name="transfer_ownership">Transférer la propriété</string>
     <string name="select_new_owner">Sélectionnez un nouveau propriétaire</string>
-    <string name="transfer_ownership_confirm_message"><![CDATA[Êtes-vous sûr de vouloir transférer la propriété à cet utilisateur \? Vous perdrez vos droits de propriétaire.]]></string>
+    <string name="transfer_ownership_confirm_message"><![CDATA[Êtes-vous sûr de vouloir transférer la propriété à cet utilisateur \? Vous perdrez vos droits de propriétaire.]]></string>
     <string name="transfer_ownership_failed">Échec du transfert de propriété</string>
-    <string name="delete_channel_confirm_message"><![CDATA[Êtes-vous sûr de vouloir supprimer cette chaîne \?]]></string>
-    <string name="delete_group_confirm_message"><![CDATA[Êtes-vous sûr de vouloir supprimer ce groupe pour vous-même et tous les membres \?]]></string>
+    <string name="delete_channel_confirm_message"><![CDATA[Êtes-vous sûr de vouloir supprimer cette chaîne \?]]></string>
+    <string name="delete_group_confirm_message"><![CDATA[Êtes-vous sûr de vouloir supprimer ce groupe pour vous-même et tous les membres \?]]></string>
     <string name="share_sent">Envoyé</string>
     <string name="share_send_failed">Échec de l\'envoi</string>
     <string name="update_downloaded_title">Mise à jour prête</string>
@@ -371,12 +372,35 @@
     <string name="chat_media">Médias</string>
     <string name="chat_media_tab">Médias</string>
     <string name="chat_files_tab">Fichiers</string>
+    <string name="chat_voices_tab">Vocaux</string>
     <string name="chat_attachments_empty">Pas encore de pièces jointes dans cette discussion</string>
     <string name="chat_media_load_error">Impossible de charger les pièces jointes</string>
+
+    <string name="chat_voice_sent_at">à %1$s</string>
+    <string name="chat_voice_sent_on">%1$s à %2$s</string>
+
+    <plurals name="chat_media_photos_count">
+        <item quantity="one">%1$d photo</item>
+        <item quantity="other">%1$d photos</item>
+    </plurals>
+    <plurals name="chat_media_videos_count">
+        <item quantity="one">%1$d vidéo</item>
+        <item quantity="other">%1$d vidéos</item>
+    </plurals>
+    <plurals name="chat_media_files_count">
+        <item quantity="one">%1$d fichier</item>
+        <item quantity="other">%1$d fichiers</item>
+    </plurals>
+    <plurals name="chat_media_voices_count">
+        <item quantity="one">%1$d message vocal</item>
+        <item quantity="other">%1$d messages vocaux</item>
+    </plurals>
     <string name="chat_disable_notifications">Désactiver les notifications</string>
     <string name="chat_enable_notifications">Activer les notifications</string>
     <string name="chat_notifications_disabled">Notifications désactivées</string>
     <string name="chat_notifications_enabled">Notifications activées</string>
+    <string name="notification_exception_disabled">Sans notifications</string>
+    <string name="notification_exception_enabled">Avec notifications</string>
     <string name="notification_exception_configure">Configurer</string>
     <string name="notification_exception_add">Ajouter une exception</string>
     <string name="notification_exception_receive">Recevoir les notifications</string>
@@ -385,6 +409,18 @@
     <string name="notification_reset_description">Réinitialiser tous les paramètres de notification particuliers des discussions</string>
     <string name="notification_reset_confirm">Voulez-vous vraiment réinitialiser les paramètres de notification ? Toutes les exceptions seront supprimées et les notifications seront activées partout.</string>
     <string name="notification_reset_action">Réinitialiser</string>
+    <string name="delete_exception">Supprimer l\'exception</string>
+    <string name="exception_deleted">Exception supprimée</string>
+    <string name="delete_all_exceptions">Supprimer toutes les exceptions</string>
+    <string name="delete_all_exceptions_confirm">Voulez-vous vraiment supprimer toutes les exceptions ? Ces discussions suivront les paramètres de leur catégorie.</string>
+    <string name="all_exceptions_deleted">Toutes les exceptions ont été supprimées</string>
+    <string name="notification_exceptions_empty">Aucune exception</string>
+    <string name="failed_to_delete_exception">Échec de la suppression de l\'exception</string>
+    <string name="failed_to_delete_exceptions">Échec de la suppression des exceptions</string>
+    <plurals name="notification_exceptions_count">
+        <item quantity="one">%1$d exception</item>
+        <item quantity="other">%1$d exceptions</item>
+    </plurals>
     <string name="media_picker_file">Fichier</string>
     <string name="media_picker_caption">Ajouter une légende…</string>
     <string name="media_picker_permission">Autorisez l\'accès aux photos et vidéos</string>
@@ -403,4 +439,59 @@
         <item quantity="one">%1$s résultat</item>
         <item quantity="other">%1$s résultats</item>
     </plurals>
+    <string name="stickers">Stickers</string>
+    <string name="sticker_packs">Packs de stickers</string>
+    <string name="sticker_packs_created">Créés</string>
+    <string name="sticker_packs_added">Ajoutés</string>
+    <string name="sticker_pack">Pack de stickers</string>
+    <string name="sticker_pack_new">Nouveau pack de stickers</string>
+    <string name="sticker_pack_name">Nom</string>
+    <string name="sticker_pack_username">Nom court</string>
+    <string name="sticker_pack_username_hint">Lettres latines, chiffres et tiret bas</string>
+    <string name="sticker_pack_username_too_short">Au moins %1$d caractères</string>
+    <string name="sticker_pack_username_checking">Vérification…</string>
+    <string name="sticker_pack_username_available">Le nom court est disponible</string>
+    <string name="sticker_pack_username_taken">Le nom court est déjà pris</string>
+    <string name="sticker_pack_username_unknown">Impossible de vérifier le nom court</string>
+    <string name="sticker_add">Ajouter un sticker</string>
+    <string name="sticker_delete">Supprimer</string>
+    <string name="sticker_emojis">Emoji</string>
+    <string name="sticker_add_error">Impossible de traiter l\'image</string>
+    <string name="sticker_upload_error">Impossible d\'envoyer le sticker</string>
+    <string name="sticker_removed">Sticker supprimé</string>
+    <string name="sticker_removed_undo">Annuler</string>
+    <string name="sticker_pack_saved">Pack de stickers enregistré</string>
+    <string name="sticker_pack_save_error">Impossible d\'enregistrer le pack de stickers</string>
+    <string name="sticker_pack_load_error">Impossible de charger le pack de stickers</string>
+    <string name="sticker_packs_load_error">Impossible de charger les packs de stickers</string>
+    <string name="sticker_packs_empty">Pas encore de packs de stickers</string>
+    <string name="sticker_pack_unsaved_message">Vous avez des modifications non enregistrées</string>
+    <string name="sticker_pack_unsaved_discard">Abandonner</string>
+    <string name="sticker_pack_unsaved_apply">Appliquer</string>
+    <string name="sticker_pack_delete_action">Supprimer</string>
+    <string name="sticker_pack_delete_cancel">Annuler</string>
+    <string name="sticker_pack_delete_message">La suppression est irréversible. Vous et les autres utilisateurs ne pourrez plus envoyer de stickers de ce pack.</string>
+    <string name="sticker_pack_remove_message">Le pack sera retiré de votre liste uniquement. Les autres utilisateurs le conserveront.</string>
+    <string name="sticker_pack_deleted">Pack de stickers supprimé</string>
+    <string name="sticker_pack_delete_error">Impossible de supprimer le pack de stickers</string>
+    <string name="sticker_pack_removed">Pack de stickers retiré</string>
+    <string name="sticker_pack_remove_error">Impossible de retirer le pack de stickers</string>
+    <plurals name="sticker_count">
+        <item quantity="one">%1$d sticker</item>
+        <item quantity="other">%1$d stickers</item>
+    </plurals>
+    <string name="sticker_pack_share">Partager</string>
+    <string name="sticker_pack_add_stickers">Ajouter des stickers</string>
+    <string name="sticker_pack_remove_stickers">Retirer des stickers</string>
+    <string name="send_sticker">Envoyer un sticker</string>
+    <string name="sticker_pack_installed">Le pack %1$s a été ajouté à vos stickers</string>
+    <string name="sticker_pack_uninstalled">Le pack %1$s a été retiré de vos stickers</string>
+    <string name="sticker_message">Sticker</string>
+    <string name="storage_cache_cleared">%1$s libérés</string>
+    <string name="storage_cache_already_empty">Rien à effacer</string>
+    <string name="storage_cache_clear_failed">Échec de l\'effacement du cache</string>
+    <string name="storage_no_categories_selected">Choisissez ce qu\'il faut effacer</string>
+    <string name="storage_database_cleared">Base de données locale effacée</string>
+    <string name="storage_database_clear_failed">Échec de l\'effacement de la base de données</string>
+    <string name="done">Terminé</string>
 </resources>

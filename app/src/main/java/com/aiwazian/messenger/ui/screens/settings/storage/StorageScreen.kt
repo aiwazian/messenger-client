@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.settings.storage
 
 import androidx.compose.animation.AnimatedContent
@@ -76,21 +72,7 @@ fun StorageScreen(viewModel: StorageViewModel = hiltViewModel()) {
     
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collectLatest { event ->
-            val message = when (event) {
-                is StorageUiEvent.CacheCleared -> context.getString(
-                    R.string.storage_cache_cleared, event.freedBytes.formatFileSize()
-                )
-                
-                StorageUiEvent.CacheAlreadyEmpty -> context.getString(
-                    R.string.storage_cache_already_empty
-                )
-                
-                StorageUiEvent.DatabaseCleared -> context.getString(
-                    R.string.storage_database_cleared
-                )
-                
-                is StorageUiEvent.Error -> event.message.asString(context)
-            }
+            val message = event.message.asString(context)
             
             snackbarJob?.cancel()
             snackbarJob = scope.launch {
