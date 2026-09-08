@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.socket
 
 import android.content.Context
@@ -15,6 +11,7 @@ import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.ReadReceiptApplier
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.ActiveChatTracker
+import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -60,10 +57,10 @@ class RealtimeEventSyncService @Inject constructor(
                 
                 if (ActiveChatTracker.activeChatId.value != chatId) {
                     val chat = chatRepository.getById(chatId).firstOrNull()
-                    val title =
-                        chat?.chatName?.asString(context)
-                            ?: context.getString(R.string.new_message)
-                    val body = message.text ?: context.getString(R.string.message)
+                    val title = chat?.chatName?.asString(context)
+                        ?: UiText.StringResource(R.string.new_message).asString(context)
+                    val body = message.text
+                        ?: UiText.StringResource(R.string.message).asString(context)
                     notificationHelper.showMessageNotification(
                         chatId,
                         title,
@@ -111,11 +108,6 @@ class RealtimeEventSyncService @Inject constructor(
         
         webSocketClient.subscribeToEvent(WebSocketEvent.ChatRead) { payload ->
             serviceScope.launch {
-                /*
-                 * Время прочтения проставляется до разветвления по типу чата: в группе событие
-                 * уходит экрану чата и дальше сюда не возвращается, а «Прочитано в 17:10»
-                 * нужно в обоих случаях.
-                 */
                 readReceiptApplier.apply(payload)
                 
                 if (ChatType.fromId(payload.chatId) == ChatType.GROUP) {
@@ -184,24 +176,12 @@ class RealtimeEventSyncService @Inject constructor(
             onlineUsersTracker.setOffline(payload.userId)
         }
         
-        /*
-         * Открытый чат гасит свои уведомления сам: пользователь уже читает эти
-         * сообщения. Слушаем активный чат, а не конкретный экран, поэтому это
-         * работает при любом способе открытия — из списка, из поиска, по тапу на
-         * само уведомление — и убирает те уведомления, что успели прилететь пушем
-         * до того, как чат открылся.
-         */
         serviceScope.launch {
             ActiveChatTracker.activeChatId.filterNotNull().collect { chatId ->
                 notificationHelper.clearChatNotifications(chatId)
             }
         }
         
-        /*
-         * Пока сокет лежал, события о статусах проходили мимо, и список онлайна
-         * оставался таким, каким был на момент обрыва. После каждого подключения
-         * он берётся с сервера заново.
-         */
         serviceScope.launch {
             webSocketClient.connectionState.collect { state ->
                 if (state != ConnectionState.CONNECTED) return@collect
