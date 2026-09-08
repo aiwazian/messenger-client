@@ -1,9 +1,5 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
-    
+
     <string name="search">Buscar</string>
     <string name="message">Mensaje</string>
     <string name="settings">Ajustes</string>
@@ -38,6 +34,7 @@
     <string name="bio">Biografía</string>
     <string name="username">Nombre de usuario</string>
     <string name="share">Compartir</string>
+    <string name="copy_link">Copiar enlace</string>
     <string name="cloud_password">Contraseña de la nube</string>
     <string name="on">En</string>
     <string name="off">Apagado</string>
@@ -73,6 +70,7 @@
     <string name="unpin">Desprender</string>
     <string name="mark_as_read">Marcar como leído</string>
     <string name="mark_as_unread">Marcar como no leído</string>
+    <string name="mark_all_as_read">Marcar todo como leído</string>
     <string name="folder_name">Nombre de la carpeta</string>
     <string name="included_chats">Chats incluidos</string>
     <string name="add_chats">Agregar chats</string>
@@ -312,6 +310,7 @@
     <string name="forwarded_from_hidden_account">Reenviado desde una cuenta oculta</string>
     <string name="message_forwarding">Reenvío de mensajes</string>
     <string name="who_can_open_my_profile_from_forwarded_messages">¿Quién puede abrir mi perfil a partir de mensajes reenviados\?</string>
+    <string name="who_can_forward_and_copy_messages_from_chat_with_me">Quién puede reenviar y copiar mensajes del chat conmigo</string>
     <string name="unknown_chat">chat desconocido</string>
     <string name="attachment_photo">Foto</string>
     <string name="attachment_video">Video</string>
@@ -325,6 +324,7 @@
     <string name="no_copy_group_description">Los miembros no podrán copiar texto, reenviar mensajes ni guardar medios del grupo.</string>
     <string name="no_copy_channel_notice">No se permite copiar ni reenviar desde este canal.</string>
     <string name="no_copy_group_notice">No se permite copiar ni reenviar desde este grupo.</string>
+    <string name="no_copy_private_notice">Está prohibido copiar y reenviar desde el chat</string>
     <string name="administrators">Administradores</string>
     <string name="add_administrator">Agregar administrador</string>
     <string name="admin_permissions">Permisos</string>
@@ -348,6 +348,7 @@
     <string name="requests_to_channel_join">Las solicitudes para unirse a su canal se muestran aquí.</string>
     <string name="requests_to_group_join">Las solicitudes para unirse a su grupo se muestran aquí.</string>
     <string name="edit_folder">Editar carpeta</string>
+    <string name="edit_folders">Editar carpetas</string>
     <string name="appearance_preview_incoming_text">La llamada de liberación es mañana a las 10:00, enviaré el enlace por la mañana.</string>
     <string name="appearance_preview_reply_text">Entendido, estaré allí. ¡Gracias!</string>
     <string name="delete_folder_confirm_message">Esto no afectará los chats dentro del mismo.</string>
@@ -371,12 +372,35 @@
     <string name="chat_media">Multimedia</string>
     <string name="chat_media_tab">Multimedia</string>
     <string name="chat_files_tab">Archivos</string>
+    <string name="chat_voices_tab">Voz</string>
     <string name="chat_attachments_empty">Todavía no hay adjuntos en este chat</string>
     <string name="chat_media_load_error">No se pudieron cargar los adjuntos</string>
+
+    <string name="chat_voice_sent_at">a las %1$s</string>
+    <string name="chat_voice_sent_on">%1$s a las %2$s</string>
+
+    <plurals name="chat_media_photos_count">
+        <item quantity="one">%1$d foto</item>
+        <item quantity="other">%1$d fotos</item>
+    </plurals>
+    <plurals name="chat_media_videos_count">
+        <item quantity="one">%1$d vídeo</item>
+        <item quantity="other">%1$d vídeos</item>
+    </plurals>
+    <plurals name="chat_media_files_count">
+        <item quantity="one">%1$d archivo</item>
+        <item quantity="other">%1$d archivos</item>
+    </plurals>
+    <plurals name="chat_media_voices_count">
+        <item quantity="one">%1$d mensaje de voz</item>
+        <item quantity="other">%1$d mensajes de voz</item>
+    </plurals>
     <string name="chat_disable_notifications">Desactivar notificaciones</string>
     <string name="chat_enable_notifications">Activar notificaciones</string>
     <string name="chat_notifications_disabled">Notificaciones desactivadas</string>
     <string name="chat_notifications_enabled">Notificaciones activadas</string>
+    <string name="notification_exception_disabled">Sin notificaciones</string>
+    <string name="notification_exception_enabled">Con notificaciones</string>
     <string name="notification_exception_configure">Configurar</string>
     <string name="notification_exception_add">Añadir excepción</string>
     <string name="notification_exception_receive">Recibir notificaciones</string>
@@ -385,6 +409,18 @@
     <string name="notification_reset_description">Restablecer todos los ajustes especiales de notificaciones de chats concretos</string>
     <string name="notification_reset_confirm">¿Seguro que quieres restablecer los ajustes de notificaciones? Se eliminarán todas las excepciones y las notificaciones se activarán en todas partes.</string>
     <string name="notification_reset_action">Restablecer</string>
+    <string name="delete_exception">Eliminar excepción</string>
+    <string name="exception_deleted">Excepción eliminada</string>
+    <string name="delete_all_exceptions">Eliminar todas las excepciones</string>
+    <string name="delete_all_exceptions_confirm">¿Seguro que quieres eliminar todas las excepciones? Estos chats seguirán los ajustes de su categoría.</string>
+    <string name="all_exceptions_deleted">Todas las excepciones eliminadas</string>
+    <string name="notification_exceptions_empty">Sin excepciones</string>
+    <string name="failed_to_delete_exception">No se pudo eliminar la excepción</string>
+    <string name="failed_to_delete_exceptions">No se pudieron eliminar las excepciones</string>
+    <plurals name="notification_exceptions_count">
+        <item quantity="one">%1$d excepción</item>
+        <item quantity="other">%1$d excepciones</item>
+    </plurals>
     <string name="media_picker_file">Archivo</string>
     <string name="media_picker_caption">Añadir un pie de foto…</string>
     <string name="media_picker_permission">Permite el acceso a fotos y vídeos</string>
@@ -403,4 +439,59 @@
         <item quantity="one">%1$s resultado</item>
         <item quantity="other">%1$s resultados</item>
     </plurals>
+    <string name="stickers">Stickers</string>
+    <string name="sticker_packs">Paquetes de stickers</string>
+    <string name="sticker_packs_created">Creados</string>
+    <string name="sticker_packs_added">Añadidos</string>
+    <string name="sticker_pack">Paquete de stickers</string>
+    <string name="sticker_pack_new">Nuevo paquete de stickers</string>
+    <string name="sticker_pack_name">Nombre</string>
+    <string name="sticker_pack_username">Nombre corto</string>
+    <string name="sticker_pack_username_hint">Letras latinas, dígitos y guion bajo</string>
+    <string name="sticker_pack_username_too_short">Al menos %1$d caracteres</string>
+    <string name="sticker_pack_username_checking">Comprobando…</string>
+    <string name="sticker_pack_username_available">El nombre corto está disponible</string>
+    <string name="sticker_pack_username_taken">El nombre corto ya está en uso</string>
+    <string name="sticker_pack_username_unknown">No se pudo comprobar el nombre corto</string>
+    <string name="sticker_add">Añadir sticker</string>
+    <string name="sticker_delete">Eliminar</string>
+    <string name="sticker_emojis">Emoji</string>
+    <string name="sticker_add_error">No se pudo procesar la imagen</string>
+    <string name="sticker_upload_error">No se pudo subir el sticker</string>
+    <string name="sticker_removed">Sticker eliminado</string>
+    <string name="sticker_removed_undo">Deshacer</string>
+    <string name="sticker_pack_saved">Paquete de stickers guardado</string>
+    <string name="sticker_pack_save_error">No se pudo guardar el paquete de stickers</string>
+    <string name="sticker_pack_load_error">No se pudo cargar el paquete de stickers</string>
+    <string name="sticker_packs_load_error">No se pudieron cargar los paquetes de stickers</string>
+    <string name="sticker_packs_empty">Todavía no hay paquetes de stickers</string>
+    <string name="sticker_pack_unsaved_message">Tienes cambios sin guardar</string>
+    <string name="sticker_pack_unsaved_discard">Descartar</string>
+    <string name="sticker_pack_unsaved_apply">Aplicar</string>
+    <string name="sticker_pack_delete_action">Eliminar</string>
+    <string name="sticker_pack_delete_cancel">Cancelar</string>
+    <string name="sticker_pack_delete_message">La eliminación es irreversible. Ni tú ni otros usuarios podréis enviar stickers de este paquete.</string>
+    <string name="sticker_pack_remove_message">El paquete solo se quitará de tu lista. Los demás usuarios lo conservarán.</string>
+    <string name="sticker_pack_deleted">Paquete de stickers eliminado</string>
+    <string name="sticker_pack_delete_error">No se pudo eliminar el paquete de stickers</string>
+    <string name="sticker_pack_removed">Paquete de stickers quitado</string>
+    <string name="sticker_pack_remove_error">No se pudo quitar el paquete de stickers</string>
+    <plurals name="sticker_count">
+        <item quantity="one">%1$d sticker</item>
+        <item quantity="other">%1$d stickers</item>
+    </plurals>
+    <string name="sticker_pack_share">Compartir</string>
+    <string name="sticker_pack_add_stickers">Añadir stickers</string>
+    <string name="sticker_pack_remove_stickers">Quitar stickers</string>
+    <string name="send_sticker">Enviar sticker</string>
+    <string name="sticker_pack_installed">El paquete %1$s se añadió a tus stickers</string>
+    <string name="sticker_pack_uninstalled">El paquete %1$s se quitó de tus stickers</string>
+    <string name="sticker_message">Sticker</string>
+    <string name="storage_cache_cleared">%1$s liberados</string>
+    <string name="storage_cache_already_empty">No hay nada que borrar</string>
+    <string name="storage_cache_clear_failed">No se pudo borrar la caché</string>
+    <string name="storage_no_categories_selected">Elige qué borrar</string>
+    <string name="storage_database_cleared">Base de datos local borrada</string>
+    <string name="storage_database_clear_failed">No se pudo borrar la base de datos</string>
+    <string name="done">Hecho</string>
 </resources>
