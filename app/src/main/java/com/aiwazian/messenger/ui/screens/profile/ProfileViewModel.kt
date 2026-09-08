@@ -272,7 +272,8 @@ class ProfileViewModel @Inject constructor(
                         ) { user, onlineUsers ->
                             user to onlineUsers.contains(user.id)
                         }.collectLatest { (user, isOnline) ->
-                            val subTitle = LastSeenHelper.getSubtitle(isOnline, user.lastSeen)
+                            val subTitle =
+                                LastSeenHelper.getSubtitle(context, isOnline, user.lastSeen)
                             val profile = Profile.User(
                                 username = user.username,
                                 bio = user.bio,
@@ -785,7 +786,7 @@ class ProfileViewModel @Inject constructor(
                     )
                 )
             } else {
-                _uiEffect.tryEmit(ProfileUiEffect.ShowSnackbar(UiText.StringResource(R.string.error)))
+                _uiEffect.tryEmit(ProfileUiEffect.ShowSnackbar(UiText.DynamicString("Ошибка")))
             }
             dismissBlockDialog()
         }
