@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="who_can_forward_and_copy_messages_from_chat_with_me">Who can forward and copy messages from the chat with me</string>
-    <string name="no_copy_private_notice">Copying and forwarding from the chat are prohibited</string>
-</resources>
