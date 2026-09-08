@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.utils
 
 import android.content.ContentValues
@@ -29,11 +25,6 @@ class FileHandler @Inject constructor(
     private val apkInstaller: ApkInstaller
 ) {
     
-    /**
-     * Opens a file stored on the device.
-     *
-     * @param path absolute file system path, "file://" URI or "content://" URI.
-     */
     fun openFile(path: String) {
         try {
             val uri = path.toUri()
@@ -70,7 +61,7 @@ class FileHandler @Inject constructor(
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, file.name)
             put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-            val appName = context.getString(R.string.app_name)
+            val appName = UiText.StringResource(R.string.app_name).asString(context)
             val dir = if (mimeType.startsWith("video/")) {
                 Environment.DIRECTORY_MOVIES
             } else {
@@ -103,10 +94,6 @@ class FileHandler @Inject constructor(
         }
     }
 
-    /**
-     * The system installer shows the confirmation, the progress and the result of
-     * an installation and asks for the install permission when it is missing.
-     */
     private fun installApkFile(file: File) {
         if (!apkInstaller.install(file)) {
             showToast("Cannot install this file")
@@ -143,19 +130,17 @@ class FileHandler @Inject constructor(
             intent.setDataAndType(uri, MIME_TYPE_ANY)
         }
         
-        val chooserIntent =
-            Intent.createChooser(intent, context.getString(R.string.app_name)).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
+        val chooserIntent = Intent.createChooser(
+            intent,
+            UiText.StringResource(R.string.app_name).asString(context)
+        ).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
         
         context.startActivity(chooserIntent)
     }
     
-    /**
-     * Uploaded files are persisted as absolute paths and downloaded ones as
-     * "file://" URIs, so both forms must resolve to the same file.
-     */
     private fun resolveLocalFile(pathOrUri: String): File? {
         if (pathOrUri.isBlank()) return null
         if (pathOrUri.startsWith('/')) return File(pathOrUri)

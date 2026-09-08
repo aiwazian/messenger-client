@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.utils
 
 import androidx.biometric.BiometricManager
@@ -45,8 +41,8 @@ class BiometricHelper(private val activity: FragmentActivity) {
         val biometricPrompt = BiometricPrompt(activity, executor, callback)
         
         val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle(activity.getString(R.string.app_name))
-            .setNegativeButtonText(activity.getString(R.string.cancel))
+            .setTitle(UiText.StringResource(R.string.app_name).asString(activity))
+            .setNegativeButtonText(UiText.StringResource(R.string.cancel).asString(activity))
             .build()
         
         biometricPrompt.authenticate(promptInfo)
