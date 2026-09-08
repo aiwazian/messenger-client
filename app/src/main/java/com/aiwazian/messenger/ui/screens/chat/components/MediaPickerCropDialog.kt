@@ -184,27 +184,6 @@ fun MediaPickerCropDialog(
             AnimatedVisibility(
                 visible = isChromeVisible,
                 modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .statusBarsPadding()
-                    .padding(4.dp),
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                IconButton(
-                    onClick = goBack, colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = null
-                    )
-                }
-            }
-            
-            AnimatedVisibility(
-                visible = isChromeVisible,
-                modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth(),
                 enter = fadeIn(),
@@ -246,7 +225,8 @@ fun MediaPickerCropDialog(
                             MediaOverlayIconButton(
                                 icon = Icons.Rounded.CropRotate,
                                 onClick = { isTransforming = true },
-                                isActive = cropState.isTransformed)
+                                isActive = cropState.isTransformed
+                            )
                         }
                     }
                     
@@ -286,6 +266,28 @@ fun MediaPickerCropDialog(
                                 }
                             })
                     }
+                }
+            }
+            
+            AnimatedVisibility(
+                visible = isChromeVisible,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .statusBarsPadding()
+                    .padding(4.dp),
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                IconButton(
+                    onClick = goBack, colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = null
+                    )
                 }
             }
         }

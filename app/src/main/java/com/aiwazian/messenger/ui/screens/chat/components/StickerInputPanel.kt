@@ -1,12 +1,18 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -80,6 +86,10 @@ fun StickerInputPanel(
                         ) { onStickerClick(sticker) },
                     contentScale = ContentScale.Fit
                 )
+            }
+            
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Spacer(modifier = Modifier.navigationBarsPadding())
             }
         }
     }

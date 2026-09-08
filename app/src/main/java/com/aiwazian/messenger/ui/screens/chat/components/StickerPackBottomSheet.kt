@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import androidx.compose.animation.core.Animatable
@@ -176,6 +180,11 @@ fun StickerPackBottomSheet(
                 .fillMaxWidth()
                 .padding(top = 8.dp),
             colors = ButtonDefaults.textButtonColors(
+                contentColor = if (pack.isInstalled) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
                 containerColor = MaterialTheme.colorScheme.surfaceContainer
             )
         ) {
@@ -184,11 +193,6 @@ fun StickerPackBottomSheet(
                     stringResource(R.string.sticker_pack_remove_stickers)
                 } else {
                     stringResource(R.string.sticker_pack_add_stickers)
-                },
-                color = if (pack.isInstalled) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.primary
                 }
             )
         }
@@ -294,7 +298,8 @@ private fun StickerFocusOverlay(
                 ) { isClosing = true },
             contentAlignment = Alignment.Center
         ) {
-            val targetSize = (if (maxWidth < maxHeight) maxWidth else maxHeight) * FOCUS_SIZE_FRACTION
+            val targetSize =
+                (if (maxWidth < maxHeight) maxWidth else maxHeight) * FOCUS_SIZE_FRACTION
             val targetSizePx = with(density) { targetSize.toPx() }
             val centerX = with(density) { maxWidth.toPx() } / 2f
             val centerY = with(density) { maxHeight.toPx() } / 2f
@@ -304,8 +309,10 @@ private fun StickerFocusOverlay(
                 PRESSED_CELL_SCALE
             }
             val scale = startScale + (1f - startScale) * value
-            val translationX = if (origin.width > 0f) (origin.center.x - centerX) * (1f - value) else 0f
-            val translationY = if (origin.width > 0f) (origin.center.y - centerY) * (1f - value) else 0f
+            val translationX =
+                if (origin.width > 0f) (origin.center.x - centerX) * (1f - value) else 0f
+            val translationY =
+                if (origin.width > 0f) (origin.center.y - centerY) * (1f - value) else 0f
             
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -343,11 +350,14 @@ private fun StickerFocusOverlay(
                 
                 TextButton(
                     onClick = onSend,
-                    modifier = Modifier.graphicsLayer { alpha = value }) {
-                    Text(
-                        text = stringResource(R.string.send_sticker),
-                        color = Color.White
+                    modifier = Modifier.graphicsLayer { alpha = value },
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
                     )
+                ) {
+                    Text(text = stringResource(R.string.send_sticker))
                 }
             }
         }

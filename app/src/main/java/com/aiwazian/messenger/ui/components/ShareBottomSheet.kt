@@ -9,10 +9,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -173,18 +169,14 @@ fun ShareBottomSheet(
                 }
             }
             
-            androidx.compose.animation.AnimatedVisibility(
-                visible = hasSelected,
-                modifier = Modifier.align(Alignment.BottomCenter),
-                enter = slideInVertically { it / 2 } + fadeIn(),
-                exit = slideOutVertically { it / 2 } + fadeOut()
-            ) {
+            if (hasSelected) {
                 TextButton(
                     onClick = onSendClick,
                     modifier = Modifier
                         .fillMaxWidth()
                         .navigationBarsPadding()
                         .imePadding()
+                        .align(Alignment.BottomCenter)
                         .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) },
                     colors = ButtonDefaults.textButtonColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer

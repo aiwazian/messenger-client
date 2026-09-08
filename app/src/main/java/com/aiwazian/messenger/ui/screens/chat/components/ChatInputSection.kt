@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.content.pm.PackageManager
@@ -42,11 +46,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -70,6 +76,7 @@ import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -114,6 +121,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -123,14 +131,16 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
+import com.aiwazian.messenger.ui.components.BottomBarScrim
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.screens.chat.ChatStickersViewModel
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import com.aiwazian.messenger.utils.DialogController
-import kotlin.math.abs
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.math.abs
 
 private val DEFAULT_STICKER_PANEL_HEIGHT = 280.dp
 
@@ -147,20 +157,19 @@ fun ChatInputSection(
     val stickersViewModel: ChatStickersViewModel = hiltViewModel()
     val stickersState by stickersViewModel.uiState.collectAsState()
     
-    val imeBottomPx = WindowInsets.ime.getBottom(density)
-    val imeHeightDp = with(density) { imeBottomPx.toDp() }
-    
-    val navigationBarsHeight = with(density) {
+    val bottomPadding = with(density) {
         WindowInsets.navigationBars.getBottom(density).toDp()
     }
+    val imeBottomPx = WindowInsets.ime.getBottom(density)
+    val imeHeightDp = with(density) {
+        imeBottomPx.toDp() - bottomPadding
+    }
     
-    val stickerPanelHeight = remember { Animatable(0.dp, Dp.VectorConverter) }
+    val stickerPanelHeight = remember { Animatable(bottomPadding, Dp.VectorConverter) }
     
     var maxKeyboardHeight by remember { mutableStateOf(DEFAULT_STICKER_PANEL_HEIGHT) }
     var isKeyboardVisible by remember { mutableStateOf(false) }
     var isStickersVisible by remember { mutableStateOf(false) }
-    
-    val bottomSlotHeight = stickerPanelHeight.value.coerceAtLeast(navigationBarsHeight)
     
     LaunchedEffect(imeHeightDp) {
         if (imeHeightDp > maxKeyboardHeight) {
@@ -170,9 +179,10 @@ fun ChatInputSection(
         isKeyboardVisible = imeHeightDp == maxKeyboardHeight
         
         if (isKeyboardVisible) {
-            stickerPanelHeight.snapTo(imeHeightDp)
+            stickerPanelHeight.snapTo(imeHeightDp + bottomPadding)
+            isStickersVisible = false
         } else if (!isStickersVisible) {
-            stickerPanelHeight.snapTo(imeHeightDp)
+            stickerPanelHeight.snapTo(imeHeightDp + bottomPadding)
         }
     }
     
@@ -189,7 +199,7 @@ fun ChatInputSection(
     
     BackHandler(enabled = !isKeyboardVisible && isStickersVisible) {
         scope.launch {
-            stickerPanelHeight.animateTo(0.dp)
+            stickerPanelHeight.animateTo(bottomPadding)
             isStickersVisible = false
         }
     }
@@ -199,15 +209,19 @@ fun ChatInputSection(
         isStickersVisible = true
         
         scope.launch {
-            stickerPanelHeight.animateTo(maxKeyboardHeight)
+            stickerPanelHeight.animateTo(maxKeyboardHeight + bottomPadding)
         }
     }
     
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 8.dp, top = 8.dp, end = 8.dp)
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp)
+                .padding(bottom = 8.dp)
         ) {
             when (ChatType.fromId(uiState.chatId)) {
                 ChatType.CHANNEL -> {
@@ -331,15 +345,13 @@ fun ChatInputSection(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(bottomSlotHeight)
+                .height(stickerPanelHeight.value.coerceAtLeast(bottomPadding))
         ) {
             if (isStickersVisible) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(bottomSlotHeight)
-                        .padding(horizontal = 8.dp)
-                        .clip(RoundedCornerShape(24.dp))
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainer)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
@@ -348,10 +360,22 @@ fun ChatInputSection(
                 ) {
                     StickerInputPanel(
                         packs = stickersState.addedPacks,
-                        height = (bottomSlotHeight - navigationBarsHeight).coerceAtLeast(0.dp),
+                        height = stickerPanelHeight.value,
                         onStickerClick = { sticker ->
                             stickersViewModel.sendSticker(uiState.chatId, sticker.id)
                         })
+                    val navBackStack = LocalNavBackStack.current
+                    IconButton(
+                        onClick = {
+                            navBackStack.add(AppRoute.SettingsStickers)
+                        },
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .navigationBarsPadding()
+                    ) {
+                        Icon(Icons.Rounded.Settings, null)
+                    }
+                    BottomBarScrim(height = bottomPadding)
                 }
             }
         }
@@ -529,36 +553,56 @@ private fun InputMessage(
             }
         }
         Row(verticalAlignment = Alignment.Bottom) {
-            AnimatedVisibility(
-                visible = !uiState.isRecording,
-                enter = expressiveScaleIn,
-                exit = expressiveScaleOut
-            ) {
-                IconButton(onClick = {
-                    if (isKeyboardVisible || !isStickerPanelVisible) {
-                        onShowStickerPanel()
-                    } else {
-                        focusRequester.requestFocus()
-                        keyboardController?.show()
-                    }
-                }) {
-                    AnimatedContent(
-                        targetState = isStickerPanelVisible && !isKeyboardVisible,
-                        transitionSpec = {
-                            if (targetState > initialState) {
-                                slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
-                            } else {
-                                slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
-                            }
-                        }) { isPanelVisible ->
-                        Icon(
-                            imageVector = if (isPanelVisible) {
-                                Icons.Outlined.Keyboard
-                            } else {
-                                Icons.Outlined.EmojiEmotions
-                            },
-                            contentDescription = null
+            AnimatedContent(
+                targetState = uiState.isRecording,
+                transitionSpec = {
+                    expressiveScaleIn togetherWith expressiveScaleOut
+                },
+                contentAlignment = Alignment.Center
+            ) { isRecording ->
+                if (isRecording) {
+                    val infiniteTransition =
+                        rememberInfiniteTransition(label = "recording_dot_transition")
+                    val dotAlpha by infiniteTransition.animateFloat(
+                        initialValue = 0f, targetValue = 1f, animationSpec = infiniteRepeatable(
+                            animation = tween(800), repeatMode = RepeatMode.Reverse
+                        ), label = "recording_dot_alpha"
+                    )
+                    IconButton(onClick = {}, enabled = false) {
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.error.copy(alpha = dotAlpha))
                         )
+                    }
+                } else {
+                    IconButton(onClick = {
+                        if (isKeyboardVisible || !isStickerPanelVisible) {
+                            onShowStickerPanel()
+                        } else {
+                            focusRequester.requestFocus()
+                            keyboardController?.show()
+                        }
+                    }) {
+                        AnimatedContent(
+                            targetState = isStickerPanelVisible && !isKeyboardVisible,
+                            transitionSpec = {
+                                if (targetState > initialState) {
+                                    slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
+                                } else {
+                                    slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
+                                }
+                            }) { isPanelVisible ->
+                            Icon(
+                                imageVector = if (isPanelVisible) {
+                                    Icons.Outlined.Keyboard
+                                } else {
+                                    Icons.Outlined.EmojiEmotions
+                                },
+                                contentDescription = null
+                            )
+                        }
                     }
                 }
             }
@@ -849,13 +893,6 @@ private fun InputMessage(
 private fun VoiceRecordingStatus(
     uiState: ChatUiState, micTranslationX: Float, onCancelRecording: () -> Unit
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "recording_dot_transition")
-    val dotAlpha by infiniteTransition.animateFloat(
-        initialValue = 0f, targetValue = 1f, animationSpec = infiniteRepeatable(
-            animation = tween(800), repeatMode = RepeatMode.Reverse
-        ), label = "recording_dot_alpha"
-    )
-    
     androidx.compose.animation.AnimatedVisibility(
         visible = uiState.isRecording,
         enter = fadeIn(),
@@ -875,16 +912,7 @@ private fun VoiceRecordingStatus(
                 uiState.recordingDurationMs / 1000 % 60
             )
             
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.error.copy(alpha = dotAlpha))
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(durationText, style = MaterialTheme.typography.bodyLarge)
-            }
+            Text(durationText, style = MaterialTheme.typography.bodyLarge)
             
             Row(
                 modifier = Modifier.weight(1f),
