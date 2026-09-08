@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.net.Uri
@@ -39,6 +35,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +54,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.decode.GifDecoder
 import coil.decode.VideoFrameDecoder
@@ -68,6 +67,7 @@ import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
+import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.extensions.getDuration
 import com.aiwazian.messenger.extensions.sharedElement
@@ -81,12 +81,13 @@ import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.ui.components.mediaTransitionOrigin
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
+import com.aiwazian.messenger.ui.screens.chat.ChatStickersViewModel
+import com.aiwazian.messenger.utils.StickerLink
 import com.aiwazian.messenger.utils.UiText
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-/** Отступ от края ленты до пузыря. Он же съедает ширину у содержимого пузыря. */
 private val BubbleHorizontalPadding = 8.dp
 
 @Composable
@@ -120,11 +121,54 @@ fun MessageBubble(
     val isSavedMessages =
         item.chatType == ChatType.PRIVATE && item.message.senderId == item.message.chatId
     
+    val stickersViewModel: ChatStickersViewModel = hiltViewModel()
+    val stickersState by stickersViewModel.uiState.collectAsState()
+    
     val backgroundColor by animateColorAsState(
         targetValue = if (item.isHighlighted) MaterialTheme.colorScheme.primary.copy(
             alpha = 0.1f
         ) else Color.Transparent
     )
+    
+    if (message.messageType == MessageType.STICKER) {
+        val messageSticker = message.sticker
+        
+        LaunchedEffect(messageSticker?.packId) {
+            messageSticker?.let { stickersViewModel.requestPack(it.packId) }
+        }
+        
+        val sticker = messageSticker?.let { stickersState.sticker(it.packId, it.id) }
+        
+        SwipeToReplyBox(
+            enabled = item.canReply && onSwipeToReply != null,
+            onReply = { onSwipeToReply?.invoke() },
+            onThresholdReached = { onSwipeThresholdReached?.invoke() },
+            modifier = modifier.background(backgroundColor)
+        ) {
+            StickerMessageItem(
+                sticker = sticker,
+                time = item.time,
+                isMine = item.isMine,
+                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                status = message.status,
+                actions = item.dropdownActions,
+                onStickerClick = {
+                    messageSticker?.let { stickersViewModel.openPack(it.packId) }
+                })
+        }
+        
+        return
+    }
+    
+    val handleLinkClicked: (String) -> Unit = { url ->
+        val packUsername = StickerLink.parseUsername(url)
+        
+        if (packUsername != null) {
+            stickersViewModel.openPackByUsername(packUsername)
+        } else {
+            onLinkClicked?.invoke(url)
+        }
+    }
     
     SwipeToReplyBox(
         enabled = item.canReply && onSwipeToReply != null,
@@ -360,7 +404,7 @@ fun MessageBubble(
                     if (!message.text.isNullOrBlank()) {
                         MessageText(
                             text = message.text,
-                            onLinkClicked = onLinkClicked,
+                            onLinkClicked = handleLinkClicked,
                             onUsernameClicked = onUsernameClicked,
                             onEmailClicked = onEmailClicked
                         )
@@ -441,12 +485,6 @@ fun MessageBubble(
     }
 }
 
-/**
- * «Прочитано в 14:03» сегодня, «вчера в 22:10» и «12 августа в 14:42» дальше.
- *
- * @param todayVerb слово перед временем для сегодняшнего дня: «Прочитано», «Изменено»
- * или «сегодня» в списке читателей.
- */
 private fun formatStatusTime(timestamp: Long, todayVerb: String): String {
     val instant = timestamp.toInstance()
     val date = instant.atZone(ZoneId.systemDefault())

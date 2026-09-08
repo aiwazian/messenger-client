@@ -8,6 +8,7 @@ import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.outlined.ColorLens
+import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.FolderOpen
@@ -73,6 +74,13 @@ fun SettingsScreen() {
                 headlineText = stringResource(R.string.appearance),
                 onClick = {
                     navBackStack.add(AppRoute.SettingsChat)
+                })
+            
+            SectionItem(
+                leadingIcon = Icons.Outlined.EmojiEmotions,
+                headlineText = stringResource(R.string.stickers),
+                onClick = {
+                    navBackStack.add(AppRoute.SettingsStickers)
                 })
             
             SectionItem(

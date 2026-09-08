@@ -43,6 +43,9 @@ fun ApplicationTheme(
             WindowCompat.setDecorFitsSystemWindows(window, false)
             window.isNavigationBarContrastEnforced = false
             
+            window.navigationBarColor = android.graphics.Color.TRANSPARENT
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            
             val insetsController = WindowCompat.getInsetsController(window, view)
             insetsController.isAppearanceLightStatusBars = !isDark
             insetsController.isAppearanceLightNavigationBars = !isDark

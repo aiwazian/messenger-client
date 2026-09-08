@@ -16,6 +16,7 @@ import com.aiwazian.messenger.network.api.NotificationSettingsApi
 import com.aiwazian.messenger.network.api.PrivacyApi
 import com.aiwazian.messenger.network.api.SearchApi
 import com.aiwazian.messenger.network.api.SessionApi
+import com.aiwazian.messenger.network.api.StickerApi
 import com.aiwazian.messenger.network.api.UserApi
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
@@ -68,6 +69,7 @@ object RetrofitInstance {
     val searchApi: SearchApi by lazy { retrofit.create(SearchApi::class.java) }
     val sessionApi: SessionApi by lazy { retrofit.create(SessionApi::class.java) }
     val privacyApi: PrivacyApi by lazy { retrofit.create(PrivacyApi::class.java) }
+    val stickerApi: StickerApi by lazy { retrofit.create(StickerApi::class.java) }
     val notificationSettingsApi: NotificationSettingsApi by lazy {
         retrofit.create(NotificationSettingsApi::class.java)
     }

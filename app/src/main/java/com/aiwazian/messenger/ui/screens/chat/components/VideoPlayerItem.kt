@@ -35,14 +35,6 @@ import com.aiwazian.messenger.ui.components.PlayerUi
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
-/**
- * @param isTransformable будет ли кадр поворачиваться и отражаться средствами
- * Compose. По умолчанию видео живёт на SurfaceView, а его отдаёт системному
- * композитору: поворот из graphicsLayer до самого кадра не доходит, и вместо
- * поворота кадр растягивается в новые границы. TextureView рисуется внутри
- * иерархии, поэтому поворот применяется к видео так же, как к фотографии, но
- * стоит дороже — включается только там, где правки действительно доступны.
- */
 @Composable
 fun VideoPlayerItem(
     uri: Uri,
@@ -53,6 +45,7 @@ fun VideoPlayerItem(
     playbackSpeed: Float = 1.0f,
     isSeekBarVisible: Boolean = true,
     isTransformable: Boolean = false,
+    isTransformed: Boolean = false,
     qualityIcon: ImageVector = Icons.Outlined.Hd,
     onQualityClick: (() -> Unit)? = null,
     onTransformClick: (() -> Unit)? = null,
@@ -174,6 +167,7 @@ fun VideoPlayerItem(
                 },
                 isSeekBarVisible = isSeekBarVisible,
                 qualityIcon = qualityIcon,
+                isTransformed = isTransformed,
                 onQualityClick = onQualityClick,
                 onTransformClick = onTransformClick
             )

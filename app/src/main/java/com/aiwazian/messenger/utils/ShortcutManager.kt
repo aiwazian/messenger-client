@@ -89,7 +89,7 @@ class ShortcutManager @Inject constructor(
         return if (bitmap != null) {
             Icon.createWithBitmap(bitmap)
         } else {
-            Icon.createWithResource(context, R.mipmap.new_app_icon)
+            Icon.createWithResource(context, R.mipmap.logo)
         }
     }
     

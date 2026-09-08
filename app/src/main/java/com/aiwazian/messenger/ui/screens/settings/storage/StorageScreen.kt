@@ -33,7 +33,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,7 +59,9 @@ import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.utils.UiText
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -66,13 +71,12 @@ fun StorageScreen(viewModel: StorageViewModel = hiltViewModel()) {
     
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collectLatest { event ->
             val message = when (event) {
-                // Размер показываем тем же formatFileSize, что и счётчики
-                // категорий выше: в одном экране два разных формата размера
-                // читались бы как ошибка.
                 is StorageUiEvent.CacheCleared -> context.getString(
                     R.string.storage_cache_cleared, event.freedBytes.formatFileSize()
                 )
@@ -88,7 +92,10 @@ fun StorageScreen(viewModel: StorageViewModel = hiltViewModel()) {
                 is StorageUiEvent.Error -> event.message.asString(context)
             }
             
-            snackbarHostState.showSnackbar(message)
+            snackbarJob?.cancel()
+            snackbarJob = scope.launch {
+                snackbarHostState.showSnackbar(message)
+            }
         }
     }
     

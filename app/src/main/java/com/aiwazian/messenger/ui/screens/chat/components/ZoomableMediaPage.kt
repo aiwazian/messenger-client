@@ -34,18 +34,6 @@ import com.aiwazian.messenger.ui.components.zoomableContent
 import com.aiwazian.messenger.ui.components.zoomableGestures
 import kotlinx.coroutines.launch
 
-/**
- * @param isPageChangeEnabled можно ли уводить страницу перетаскиванием
- * увеличенного кадра. Прокрутка самого пейджера тут ни при чём: за его край
- * страницу тянет жест зума, а пейджер получает от него готовый сдвиг.
- * @param isTransformable доступны ли правки кадра на этой странице. Видео из-за
- * этого рисуется через TextureView: на SurfaceView кадр уходит системному
- * композитору, поворот из graphicsLayer до него не доходит, и вместо поворота
- * видео растягивается в новые границы. Значение задаётся на всю жизнь страницы:
- * смена типа поверхности пересоздаёт плеер и гасит кадр.
- * @param transformState поворот и отражение кадра, если их вообще можно
- * править. В чате они уже в самом файле, и слоить второй поворот нечего.
- */
 @Composable
 internal fun ZoomableMediaPage(
     uri: Uri,
@@ -60,6 +48,7 @@ internal fun ZoomableMediaPage(
     videoPlaybackSpeed: Float = 1f,
     isVideoSeekBarVisible: Boolean = true,
     isTransformable: Boolean = false,
+    isTransformed: Boolean = false,
     videoQualityIcon: ImageVector = Icons.Outlined.Hd,
     onVideoQualityClick: (() -> Unit)? = null,
     onVideoTransformClick: (() -> Unit)? = null,
@@ -122,6 +111,7 @@ internal fun ZoomableMediaPage(
                     .then(transformModifier),
                 isSeekBarVisible = isVideoSeekBarVisible,
                 isTransformable = isTransformable,
+                isTransformed = isTransformed,
                 qualityIcon = videoQualityIcon,
                 onQualityClick = onVideoQualityClick,
                 onTransformClick = onVideoTransformClick,

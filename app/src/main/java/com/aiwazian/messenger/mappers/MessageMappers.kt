@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.mappers
 
 import com.aiwazian.messenger.database.entity.MessageEntity
@@ -10,11 +6,14 @@ import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.domain.MessageReplyPreview
+import com.aiwazian.messenger.domain.MessageSticker
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ForwardSourceAccess
+import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.network.dto.MessageAttachmentDto
 import com.aiwazian.messenger.network.dto.MessageDto
 import com.aiwazian.messenger.network.dto.MessageReplyPreviewDto
+import com.aiwazian.messenger.network.dto.MessageStickerDto
 
 fun MessageDto.toDomain(): Message = Message(
     id = id,
@@ -23,7 +22,6 @@ fun MessageDto.toDomain(): Message = Message(
     text = text,
     sendTime = sendTime,
     editedAt = editedAt,
-    /* Старый сервер флага не присылает — там о правке говорит только время. */
     isEdited = isEdited ?: (editedAt != null),
     isRead = isRead ?: false,
     status = com.aiwazian.messenger.enums.MessageStatus.SENT,
@@ -40,7 +38,15 @@ fun MessageDto.toDomain(): Message = Message(
             name = forwardedFromName.orEmpty(),
             access = forwardedFromAccess ?: ForwardSourceAccess.UNAVAILABLE
         )
-    }
+    },
+    sticker = sticker?.toDomain()
+)
+
+fun MessageStickerDto.toDomain() = MessageSticker(
+    id = id.toLongOrNull() ?: 0L,
+    packId = packId.toLongOrNull() ?: 0L,
+    fileId = fileId,
+    emojis = emojis
 )
 
 fun MessageReplyPreviewDto.toDomain() = MessageReplyPreview(
@@ -50,7 +56,9 @@ fun MessageReplyPreviewDto.toDomain() = MessageReplyPreview(
     senderName = senderName,
     chatName = chatName,
     text = text,
-    attachmentTypes = attachmentTypes
+    attachmentTypes = attachmentTypes,
+    messageType = messageType,
+    stickerEmoji = stickerEmoji
 )
 
 fun com.aiwazian.messenger.network.dto.MessageReadInfoDto.toDomain() = MessageReadInfo(
@@ -96,7 +104,9 @@ fun MessageEntity.toDomain(attachments: List<MessageAttachment> = emptyList()) =
             senderName = replyToSenderName,
             chatName = replyToChatName,
             text = replyToText,
-            attachmentTypes = replyToAttachmentTypes.toAttachmentTypes()
+            attachmentTypes = replyToAttachmentTypes.toAttachmentTypes(),
+            messageType = replyToMessageType ?: MessageType.TEXT,
+            stickerEmoji = replyToStickerEmoji
         )
     },
     forwardedFrom = forwardedFromChatId?.let { sourceChatId ->
@@ -104,6 +114,14 @@ fun MessageEntity.toDomain(attachments: List<MessageAttachment> = emptyList()) =
             chatId = sourceChatId,
             name = forwardedFromName.orEmpty(),
             access = forwardedFromAccess.toForwardSourceAccess()
+        )
+    },
+    sticker = stickerId?.let { id ->
+        MessageSticker(
+            id = id,
+            packId = stickerPackId ?: 0L,
+            fileId = stickerFileId.orEmpty(),
+            emojis = stickerEmojis?.split(",")?.filter { it.isNotBlank() }.orEmpty()
         )
     }
 )
@@ -129,9 +147,17 @@ fun Message.toEntity() = MessageEntity(
     replyToAttachmentTypes = replyTo?.attachmentTypes
         ?.takeIf { it.isNotEmpty() }
         ?.joinToString(",") { it.name },
+    replyToMessageType = replyTo?.messageType,
+    replyToStickerEmoji = replyTo?.stickerEmoji,
     forwardedFromChatId = forwardedFrom?.chatId,
     forwardedFromName = forwardedFrom?.name,
-    forwardedFromAccess = forwardedFrom?.access?.name
+    forwardedFromAccess = forwardedFrom?.access?.name,
+    stickerId = sticker?.id,
+    stickerPackId = sticker?.packId,
+    stickerFileId = sticker?.fileId,
+    stickerEmojis = sticker?.emojis
+        ?.takeIf { it.isNotEmpty() }
+        ?.joinToString(",")
 )
 
 private fun String?.toAttachmentTypes(): List<AttachmentType> = this

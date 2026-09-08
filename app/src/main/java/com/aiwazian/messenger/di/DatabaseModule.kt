@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.di
 
 import android.content.Context
@@ -19,6 +15,7 @@ import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.database.dao.NotificationSettingsDao
+import com.aiwazian.messenger.database.dao.StickerDao
 import com.aiwazian.messenger.database.dao.UserDao
 import dagger.Module
 import dagger.Provides
@@ -83,4 +80,7 @@ object DatabaseModule {
     
     @Provides
     fun provideChatMediaDao(database: AppDatabase): ChatMediaDao = database.chatMediaDao()
+    
+    @Provides
+    fun provideStickerDao(database: AppDatabase): StickerDao = database.stickerDao()
 }

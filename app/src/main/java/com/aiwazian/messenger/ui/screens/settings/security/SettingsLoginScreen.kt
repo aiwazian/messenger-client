@@ -74,12 +74,10 @@ fun SettingsLoginScreen(viewModel: SettingsLoginViewModel = hiltViewModel()) {
                 onClick = viewModel::onChangeLogin,
                 shape = CircleShape,
                 modifier = Modifier.imePadding(),
-                containerColor = MaterialTheme.colorScheme.primary
             ) {
                 AnimatedContent(targetState = isLoading) { loading ->
                     if (loading) {
                         CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.onPrimary,
                             strokeWidth = 2.dp,
                             modifier = Modifier.size(20.dp)
                         )

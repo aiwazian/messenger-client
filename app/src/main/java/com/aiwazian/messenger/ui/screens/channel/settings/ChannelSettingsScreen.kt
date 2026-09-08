@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.channel.settings
 
-import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -21,12 +20,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChannelType
@@ -40,10 +41,9 @@ import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
-import com.aiwazian.messenger.ui.screens.settings.profile.AvatarCropScreen
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileImageCarousel
-import java.io.File
-import java.io.FileOutputStream
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 @Composable
 fun ChannelSettingsScreen(
@@ -59,6 +59,8 @@ fun ChannelSettingsScreen(
     val uiState by viewModel.uiState.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
@@ -66,7 +68,10 @@ fun ChannelSettingsScreen(
                 ChannelSettingsEffect.NavigateToBack -> navBackStack.removeLastOrNull()
                 
                 is ChannelSettingsEffect.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(effect.message.asString(context))
+                    snackbarJob?.cancel()
+                    snackbarJob = scope.launch {
+                        snackbarHostState.showSnackbar(effect.message.asString(context))
+                    }
                 }
             }
         }
@@ -94,7 +99,7 @@ fun ChannelSettingsScreen(
             
             SettingsProfileImageCarousel(
                 avatars = uiState.channel.avatars,
-                onAddPhoto = viewModel::setPendingAvatarUri,
+                onAddPhoto = viewModel::uploadAvatar,
                 onDeletePhoto = viewModel::deleteAvatar
             )
             
@@ -194,24 +199,5 @@ fun ChannelSettingsScreen(
                 )
             }
         }
-    }
-    
-    if (uiState.pendingAvatarUri != null) {
-        val context = LocalContext.current
-        AvatarCropScreen(
-            imageUri = uiState.pendingAvatarUri!!, onCropConfirmed = { bitmap ->
-                val file = File(context.cacheDir, "avatar_${System.currentTimeMillis()}.png")
-                FileOutputStream(file).use { out ->
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-                }
-                
-                val contentUri = FileProvider.getUriForFile(
-                    context, "${context.packageName}.fileprovider", file
-                )
-                
-                viewModel.uploadAvatar(contentUri)
-                viewModel.clearPendingAvatarUri()
-            }, onDismiss = viewModel::clearPendingAvatarUri
-        )
     }
 }

@@ -38,7 +38,11 @@ fun AppBottomSheet(
         Column(
             modifier = Modifier
                 .padding(contentPadding)
-                .navigationBarsPadding(),
+                .then(
+                    if (contentPadding != PaddingValues.Zero) {
+                        Modifier.navigationBarsPadding()
+                    } else Modifier
+                ),
             content = content
         )
     }

@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.database
 
 import androidx.room3.AutoMigration
@@ -20,6 +16,7 @@ import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.database.dao.NotificationSettingsDao
+import com.aiwazian.messenger.database.dao.StickerDao
 import com.aiwazian.messenger.database.dao.UserDao
 import com.aiwazian.messenger.database.entity.AccountEntity
 import com.aiwazian.messenger.database.entity.AttachmentEntity
@@ -35,6 +32,8 @@ import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.database.entity.GroupEntity
 import com.aiwazian.messenger.database.entity.MessageEntity
 import com.aiwazian.messenger.database.entity.NotificationSettingsEntity
+import com.aiwazian.messenger.database.entity.StickerEntity
+import com.aiwazian.messenger.database.entity.StickerPackEntity
 import com.aiwazian.messenger.database.entity.UserEntity
 import com.aiwazian.messenger.database.entity.VoiceDurationEntity
 import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
@@ -56,9 +55,11 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         NotificationSettingsEntity::class,
         ChatMediaEntity::class,
         ChatMediaCountsEntity::class,
-        VoiceDurationEntity::class
+        VoiceDurationEntity::class,
+        StickerPackEntity::class,
+        StickerEntity::class
     ],
-    version = 56,
+    version = 58,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 38, to = 39),
@@ -72,23 +73,14 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         AutoMigration(from = 47, to = 48),
         AutoMigration(from = 48, to = 49),
         AutoMigration(from = 49, to = 50, spec = RenameFcmTokenToInstallationId::class),
-        /* 51: у сообщений появился владелец — аккаунт, для которого они закэшированы. */
         AutoMigration(from = 50, to = 51),
-        /* 52: факт правки отделён от времени правки: оно живёт только трое суток. */
         AutoMigration(from = 51, to = 52),
-        /* 53: настройки уведомлений по категориям чатов. */
         AutoMigration(from = 52, to = 53),
-        /* 54: чат помнит, выключены ли по нему уведомления. */
         AutoMigration(from = 53, to = 54),
-        /* 55: галерея чата кэшируется локально: вложения, счётчики и длины голосовых. */
         AutoMigration(from = 54, to = 55),
-        /*
-         * 56: у файла появились размеры кадра — по ним чат держит под фото и
-         * видео место нужной формы до загрузки картинки. Колонки пустые:
-         * у уже скачанных вложений размеры брать неоткуда, и они просто
-         * рисуются по прежнему правилу.
-         */
         AutoMigration(from = 55, to = 56),
+        AutoMigration(from = 56, to = 57),
+        AutoMigration(from = 57, to = 58),
     ]
 )
 @ColumnTypeConverters(Converters::class)
@@ -118,4 +110,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun notificationSettingsDao(): NotificationSettingsDao
     
     abstract fun chatMediaDao(): ChatMediaDao
+    
+    abstract fun stickerDao(): StickerDao
 }

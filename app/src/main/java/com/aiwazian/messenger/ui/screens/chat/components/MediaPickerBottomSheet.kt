@@ -165,7 +165,7 @@ fun MediaPickerBottomSheet(
             }
         },
         modifier = Modifier.imePadding(),
-        contentPadding = PaddingValues(0.dp)
+        contentPadding = PaddingValues.Zero
     ) {
         Box(Modifier.fillMaxSize()) {
             when {
@@ -207,13 +207,14 @@ fun MediaPickerBottomSheet(
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        item(span = { GridItemSpan(GRID_COLUMNS) }) {
+                        item(span = { GridItemSpan(maxLineSpan) }) {
                             Spacer(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .statusBarsPadding()
                             )
                         }
+                        
                         itemsIndexed(
                             items = uiState.media,
                             key = { _, item -> item.id }) { index, item ->
@@ -223,7 +224,8 @@ fun MediaPickerBottomSheet(
                                 onClick = { previewIndex = index },
                                 onToggleSelection = { viewModel.toggleSelection(item.uri) })
                         }
-                        item(span = { GridItemSpan(GRID_COLUMNS) }) {
+                        
+                        item(span = { GridItemSpan(maxLineSpan) }) {
                             Spacer(
                                 modifier = Modifier
                                     .fillMaxWidth()

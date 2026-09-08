@@ -51,6 +51,7 @@ fun PlayerUi(
     modifier: Modifier = Modifier,
     isSeekBarVisible: Boolean = true,
     qualityIcon: ImageVector = Icons.Outlined.Hd,
+    isTransformed: Boolean = false,
     onQualityClick: (() -> Unit)? = null,
     onTransformClick: (() -> Unit)? = null
 ) {
@@ -135,16 +136,13 @@ fun PlayerUi(
                 }
             }
             
-            /*
-             * Кнопки правок стоят одной группой по центру: поворот слева, качество
-             * справа. Каждая появляется только там, где её есть куда отправить:
-             * в чате готовое видео ни сжать, ни повернуть уже нельзя.
-             */
             if (onTransformClick != null || onQualityClick != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (onTransformClick != null) {
                         MediaOverlayIconButton(
-                            icon = Icons.Rounded.CropRotate, onClick = onTransformClick
+                            icon = Icons.Rounded.CropRotate,
+                            onClick = onTransformClick,
+                            isActive = isTransformed
                         )
                     }
                     

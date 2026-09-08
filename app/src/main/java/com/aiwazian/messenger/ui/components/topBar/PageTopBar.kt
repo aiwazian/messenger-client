@@ -27,6 +27,7 @@ fun PageTopBar(
     modifier: Modifier = Modifier,
     title: @Composable () -> Unit = { },
     actions: List<TopBarAction> = emptyList(),
+    onBackClick: (() -> Unit)? = null,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(
         containerColor = Color.Transparent
     )
@@ -37,7 +38,13 @@ fun PageTopBar(
         title = title,
         modifier = modifier,
         navigationIcon = {
-            IconButton(onClick = navBackStack::removeLastOrNull) {
+            IconButton(onClick = {
+                if (onBackClick != null) {
+                    onBackClick()
+                } else {
+                    navBackStack.removeLastOrNull()
+                }
+            }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = null

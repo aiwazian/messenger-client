@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.utils
 
 import android.content.Context
@@ -36,6 +32,7 @@ private object Keys {
     val AUTO_DOWNLOAD_VIDEOS = booleanPreferencesKey("auto_download_videos")
     val AUTO_DOWNLOAD_FILES = booleanPreferencesKey("auto_download_files")
     val FINGERPRINT_ENABLED = booleanPreferencesKey("fingerprint_enabled")
+    val KEYBOARD_HEIGHT = floatPreferencesKey("keyboard_height")
 }
 
 @Singleton
@@ -89,6 +86,8 @@ class DataStoreManager @Inject constructor(
     suspend fun saveFingerprintEnabled(enabled: Boolean) =
         setValue(Keys.FINGERPRINT_ENABLED, enabled)
     
+    suspend fun saveKeyboardHeight(height: Float) = setValue(Keys.KEYBOARD_HEIGHT, height)
+    
     fun getPasscode() = getValue(Keys.PASSCODE, "")
     
     fun getIsLockApp() = getValue(Keys.IS_LOCK_APP, false)
@@ -117,7 +116,13 @@ class DataStoreManager @Inject constructor(
     
     fun getFingerprintEnabled() = getValue(Keys.FINGERPRINT_ENABLED, false)
     
+    fun getKeyboardHeight() = getValue(Keys.KEYBOARD_HEIGHT, DEFAULT_KEYBOARD_HEIGHT)
+    
     suspend fun clear() {
         context.dataStore.edit { it.clear() }
+    }
+    
+    companion object {
+        const val DEFAULT_KEYBOARD_HEIGHT = 250f
     }
 }

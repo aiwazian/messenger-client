@@ -6,9 +6,12 @@ package com.aiwazian.messenger.ui.components.section
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -16,16 +19,17 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun SectionContainer(
+    contentPadding: PaddingValues = PaddingValues(
+        start = 10.dp,
+        end = 10.dp,
+        bottom = 10.dp
+    ),
     header: (@Composable () -> Unit)? = null,
     footer: (@Composable () -> Unit)? = null,
-    content: @Composable () -> Unit
+    content: @Composable (ColumnScope.() -> Unit)
 ) {
     Column(
-        modifier = Modifier.padding(
-            start = 10.dp,
-            end = 10.dp,
-            bottom = 10.dp
-        ),
+        modifier = Modifier.padding(contentPadding),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         header?.invoke()
@@ -33,9 +37,11 @@ fun SectionContainer(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large,
-            ) {
-                content()
-            }
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                ),
+                content = content
+            )
             footer?.invoke()
         }
     }

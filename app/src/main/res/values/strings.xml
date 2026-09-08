@@ -38,6 +38,7 @@
     <string name="bio">Bio</string>
     <string name="username">Username</string>
     <string name="share">Share</string>
+    <string name="copy_link">Copy link</string>
     <string name="cloud_password">Cloud Password</string>
     <string name="on">On</string>
     <string name="off">Off</string>
@@ -383,9 +384,7 @@
     <string name="chat_attachments_empty">No attachments in this chat yet</string>
     <string name="chat_media_load_error">Couldn\'t load attachments</string>
 
-    <!-- Время отправки голосового, если оно отправлено сегодня. -->
     <string name="chat_voice_sent_at">at %1$s</string>
-    <!-- Дата и время отправки голосового за вчера и раньше. -->
     <string name="chat_voice_sent_on">%1$s at %2$s</string>
 
     <plurals name="chat_media_photos_count">
@@ -438,4 +437,70 @@
     <string name="media_picker_reset_title">Reset selection</string>
     <string name="media_picker_reset_message">Close the attachment menu?</string>
     <string name="media_picker_reset_action">Reset</string>
+    <string name="chat_search_show_as_list">As list</string>
+    <string name="chat_search_show_in_chat">In chat</string>
+    <string name="chat_search_hint">Enter a search query</string>
+    <string name="chat_search_in_progress">Searching…</string>
+    <string name="chat_search_no_results">Nothing found</string>
+    <!-- Позиция текущего совпадения: «1 из 142». -->
+    <string name="chat_search_position">%1$d of %2$s</string>
+    <plurals name="chat_search_results_count">
+        <item quantity="one">%1$s result</item>
+        <item quantity="other">%1$s results</item>
+    </plurals>
+    <string name="stickers">Stickers</string>
+    <string name="sticker_packs">Sticker packs</string>
+    <string name="sticker_packs_created">Created</string>
+    <string name="sticker_packs_added">Added</string>
+    <string name="sticker_pack">Sticker pack</string>
+    <string name="sticker_pack_new">New sticker pack</string>
+    <string name="sticker_pack_name">Name</string>
+    <string name="sticker_pack_username">Short name</string>
+    <string name="sticker_pack_username_hint">Latin letters, digits and underscore</string>
+    <string name="sticker_pack_username_too_short">At least %1$d characters</string>
+    <string name="sticker_pack_username_checking">Checking…</string>
+    <string name="sticker_pack_username_available">Short name is available</string>
+    <string name="sticker_pack_username_taken">Short name is already taken</string>
+    <string name="sticker_pack_username_unknown">Couldn\'t check the short name</string>
+    <string name="sticker_add">Add sticker</string>
+    <string name="sticker_delete">Delete</string>
+    <string name="sticker_emojis">Emoji</string>
+    <string name="sticker_add_error">Couldn\'t process the image</string>
+    <string name="sticker_upload_error">Couldn\'t upload the sticker</string>
+    <string name="sticker_removed">Sticker deleted</string>
+    <string name="sticker_removed_undo">Undo</string>
+    <string name="sticker_pack_saved">Sticker pack saved</string>
+    <string name="sticker_pack_save_error">Couldn\'t save the sticker pack</string>
+    <string name="sticker_pack_load_error">Couldn\'t load the sticker pack</string>
+    <string name="sticker_packs_load_error">Couldn\'t load sticker packs</string>
+    <string name="sticker_packs_empty">No sticker packs yet</string>
+    <string name="sticker_pack_unsaved_message">You have unsaved changes</string>
+    <string name="sticker_pack_unsaved_discard">Discard</string>
+    <string name="sticker_pack_unsaved_apply">Apply</string>
+    <string name="sticker_pack_delete_action">Delete</string>
+    <string name="sticker_pack_delete_cancel">Cancel</string>
+    <string name="sticker_pack_delete_message">Deleting is irreversible. You and other users will no longer be able to send stickers from this pack.</string>
+    <string name="sticker_pack_remove_message">The pack will be removed from your list only. Other users will keep it.</string>
+    <string name="sticker_pack_deleted">Sticker pack deleted</string>
+    <string name="sticker_pack_delete_error">Couldn\'t delete the sticker pack</string>
+    <string name="sticker_pack_removed">Sticker pack removed</string>
+    <string name="sticker_pack_remove_error">Couldn\'t remove the sticker pack</string>
+    <plurals name="sticker_count">
+        <item quantity="one">%1$d sticker</item>
+        <item quantity="other">%1$d stickers</item>
+    </plurals>
+    <string name="sticker_pack_share">Share</string>
+    <string name="sticker_pack_add_stickers">Add stickers</string>
+    <string name="sticker_pack_remove_stickers">Remove stickers</string>
+    <string name="send_sticker">Send sticker</string>
+    <string name="sticker_pack_installed">Pack %1$s added to your stickers</string>
+    <string name="sticker_pack_uninstalled">Pack %1$s removed from your stickers</string>
+    <string name="sticker_message">Sticker</string>
+    <string name="storage_cache_cleared">%1$s cleared</string>
+    <string name="storage_cache_already_empty">Nothing to clear</string>
+    <string name="storage_cache_clear_failed">Failed to clear the cache</string>
+    <string name="storage_no_categories_selected">Select what to clear</string>
+    <string name="storage_database_cleared">Local database cleared</string>
+    <string name="storage_database_clear_failed">Failed to clear the database</string>
+    <string name="done">Done</string>
 </resources>

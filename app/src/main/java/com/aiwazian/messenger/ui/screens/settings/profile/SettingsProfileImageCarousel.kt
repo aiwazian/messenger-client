@@ -5,9 +5,6 @@
 package com.aiwazian.messenger.ui.screens.settings.profile
 
 import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
@@ -27,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddAPhoto
 import androidx.compose.material.icons.rounded.DeleteOutline
@@ -59,7 +57,12 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Avatar
+import com.aiwazian.messenger.ui.screens.chat.components.PhotoPickerBottomSheet
 
+/**
+ * @param onAddPhoto получает уже обрезанный под круг кадр в кеше, а не исходный
+ * файл галереи: кадрирование живёт внутри шторки выбора.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsProfileImageCarousel(
@@ -69,13 +72,7 @@ fun SettingsProfileImageCarousel(
 ) {
     val carouselState = rememberCarouselState { avatars.size + 1 }
     
-    val imagePicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        if (uri != null) {
-            onAddPhoto(uri)
-        }
-    }
+    var showPhotoPicker by remember { mutableStateOf(false) }
     
     HorizontalCenteredHeroCarousel(
         state = carouselState,
@@ -187,13 +184,7 @@ fun SettingsProfileImageCarousel(
                         label = "add_photo_button_scale_animation"
                     )
                     Button(
-                        onClick = {
-                            imagePicker.launch(
-                                PickVisualMediaRequest(
-                                    ActivityResultContracts.PickVisualMedia.ImageOnly
-                                )
-                            )
-                        },
+                        onClick = { showPhotoPicker = true },
                         interactionSource = interactionSource,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
@@ -212,5 +203,12 @@ fun SettingsProfileImageCarousel(
                 }
             }
         }
+    }
+    
+    if (showPhotoPicker) {
+        PhotoPickerBottomSheet(
+            maskShape = CircleShape,
+            onPhotoPicked = onAddPhoto,
+            onDismissRequest = { showPhotoPicker = false })
     }
 }

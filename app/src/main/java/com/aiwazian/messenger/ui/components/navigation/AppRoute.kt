@@ -130,6 +130,22 @@ sealed interface AppRoute : NavKey {
     data object SettingsAutoDownloadMedia : AppRoute
     
     @Serializable
+    data object SettingsStickers : AppRoute
+    
+    @Serializable
+    data object CreatedStickerPacks : AppRoute
+    
+    @Serializable
+    data object AddedStickerPacks : AppRoute
+    
+    @Serializable
+    data class StickerPackEditor(
+        val packId: Long? = null,
+        val packName: String? = null,
+        val packUsername: String? = null
+    ) : AppRoute
+    
+    @Serializable
     data object ChatFolders : AppRoute
     
     @Serializable
