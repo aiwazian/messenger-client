@@ -1,24 +1,15 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.settings.storage
 
 import com.aiwazian.messenger.utils.UiText
 
 sealed interface StorageUiEvent {
-    /**
-     * Кэш очищен.
-     *
-     * @param freedBytes сколько реально освободилось на диске, а не сколько
-     * числилось за выбранными категориями. Всегда больше нуля.
-     */
-    data class CacheCleared(val freedBytes: Long) : StorageUiEvent
+    val message: UiText
     
-    /** Удалять было нечего: выбранные категории оказались пусты. */
-    data object CacheAlreadyEmpty : StorageUiEvent
+    data class CacheCleared(override val message: UiText) : StorageUiEvent
     
-    data object DatabaseCleared : StorageUiEvent
+    data class CacheAlreadyEmpty(override val message: UiText) : StorageUiEvent
     
-    data class Error(val message: UiText) : StorageUiEvent
+    data class DatabaseCleared(override val message: UiText) : StorageUiEvent
+    
+    data class Error(override val message: UiText) : StorageUiEvent
 }

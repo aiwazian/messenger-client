@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.settings.storage
 
 import android.app.usage.StorageStatsManager
@@ -11,6 +7,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.StorageRepository
 import com.aiwazian.messenger.utils.UiText
@@ -54,9 +51,6 @@ class StorageViewModel @Inject constructor(
             it.copy(
                 categories = categories,
                 totalCacheSize = totalCacheSize,
-                // Выбор сбрасывается вместе с категориями: getStorageStats возвращает
-                // их с isSelected = false, и прежний selectedSize остался бы висеть в
-                // выключенной кнопке — размером, которого на диске уже нет.
                 selectedSize = 0
             )
         }
@@ -111,8 +105,6 @@ class StorageViewModel @Inject constructor(
         viewModelScope.launch {
             val selectedCategories = _uiState.value.selectedCategories.map { it.category }
             
-            // Диалог убираем сразу: удаление сотни файлов занимает время, и всё
-            // это время он висел бы поверх экрана без единого признака работы.
             hideConfirmDialog()
             
             if (selectedCategories.isEmpty()) {
@@ -137,22 +129,29 @@ class StorageViewModel @Inject constructor(
                 return@launch
             }
             
-            // Цифры на экране обновляем до сообщения: иначе рядом с «41,3 MB
-            // очистилось» ещё стояли бы прежние размеры категорий.
             loadStorageInfo()
             
             when {
-                // Из непустого списка не удалился ни один файл — это отказ, а не
-                // очистка нуля байт.
                 result.freedBytes <= 0 && result.failedCount > 0 -> _uiEvent.emit(
                     StorageUiEvent.Error(
                         UiText.StringResource(R.string.storage_cache_clear_failed)
                     )
                 )
                 
-                result.freedBytes <= 0 -> _uiEvent.emit(StorageUiEvent.CacheAlreadyEmpty)
+                result.freedBytes <= 0 -> _uiEvent.emit(
+                    StorageUiEvent.CacheAlreadyEmpty(
+                        UiText.StringResource(R.string.storage_cache_already_empty)
+                    )
+                )
                 
-                else -> _uiEvent.emit(StorageUiEvent.CacheCleared(result.freedBytes))
+                else -> _uiEvent.emit(
+                    StorageUiEvent.CacheCleared(
+                        UiText.StringResource(
+                            R.string.storage_cache_cleared,
+                            result.freedBytes.formatFileSize()
+                        )
+                    )
+                )
             }
         }
     }
@@ -171,10 +170,13 @@ class StorageViewModel @Inject constructor(
                 return@launch
             }
             
-            _uiEvent.emit(StorageUiEvent.DatabaseCleared)
+            _uiEvent.emit(
+                StorageUiEvent.DatabaseCleared(
+                    UiText.StringResource(R.string.storage_database_cleared)
+                )
+            )
             chatRepository.refreshChats()
             
-            // Сообщения ушли из базы, а значит изменился размер приложения сверху.
             loadStorageInfo()
         }
     }
