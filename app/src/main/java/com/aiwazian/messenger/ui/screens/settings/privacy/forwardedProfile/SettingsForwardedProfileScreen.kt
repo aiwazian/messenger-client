@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.settings.privacy.forwardedProfile
 
 import androidx.compose.material.icons.Icons
@@ -31,6 +27,7 @@ fun SettingsForwardedProfileScreen(
     val navBackStack = LocalNavBackStack.current
     
     val currentValue by settingsForwardedProfileViewModel.currentLevel.collectAsState()
+    val currentForwardAndCopyValue by settingsForwardedProfileViewModel.currentForwardAndCopyLevel.collectAsState()
     val showSaveButton by settingsForwardedProfileViewModel.showSaveButton.collectAsState()
     
     LaunchedEffect(Unit) {
@@ -82,6 +79,23 @@ fun SettingsForwardedProfileScreen(
                 selected = currentValue == PrivacyLevel.NOBODY,
                 onClick = {
                     settingsForwardedProfileViewModel.selectValue(PrivacyLevel.NOBODY)
+                })
+        }
+        
+        SectionContainer(header = {
+            SectionHeader(stringResource(R.string.who_can_forward_and_copy_messages_from_chat_with_me))
+        }) {
+            SectionRadioItem(
+                text = stringResource(R.string.everybody),
+                selected = currentForwardAndCopyValue == PrivacyLevel.EVERYBODY,
+                onClick = {
+                    settingsForwardedProfileViewModel.selectForwardAndCopyValue(PrivacyLevel.EVERYBODY)
+                })
+            SectionRadioItem(
+                text = stringResource(R.string.nobody),
+                selected = currentForwardAndCopyValue == PrivacyLevel.NOBODY,
+                onClick = {
+                    settingsForwardedProfileViewModel.selectForwardAndCopyValue(PrivacyLevel.NOBODY)
                 })
         }
     }

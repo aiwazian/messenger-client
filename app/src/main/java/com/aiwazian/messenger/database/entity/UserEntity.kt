@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.database.entity
 
 import androidx.room3.ColumnInfo
@@ -19,5 +15,6 @@ data class UserEntity(
     val lastSeen: Long? = null,
     val profileChannelId: Long? = null,
     @ColumnInfo(defaultValue = "false") val isBlocked: Boolean = false,
-    @ColumnInfo(defaultValue = "false") val isBlockedByThem: Boolean = false
+    @ColumnInfo(defaultValue = "false") val isBlockedByThem: Boolean = false,
+    @ColumnInfo(defaultValue = "true") val canForwardAndCopy: Boolean = true
 )

@@ -59,7 +59,7 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         StickerPackEntity::class,
         StickerEntity::class
     ],
-    version = 58,
+    version = 59,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 38, to = 39),
@@ -81,6 +81,7 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         AutoMigration(from = 55, to = 56),
         AutoMigration(from = 56, to = 57),
         AutoMigration(from = 57, to = 58),
+        AutoMigration(from = 58, to = 59),
     ]
 )
 @ColumnTypeConverters(Converters::class)

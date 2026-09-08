@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="who_can_forward_and_copy_messages_from_chat_with_me">Quién puede reenviar y copiar mensajes del chat conmigo</string>
+    <string name="no_copy_private_notice">Está prohibido copiar y reenviar desde el chat</string>
+</resources>

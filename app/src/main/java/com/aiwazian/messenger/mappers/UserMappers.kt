@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.mappers
 
 import android.net.Uri
@@ -30,7 +26,8 @@ fun UserResponseDto.toDomain(): User = User(
     avatars = emptyList(),
     profileChannelId = profileChannelId?.toLongOrNull(),
     isBlocked = isBlocked,
-    isBlockedByThem = isBlockedByThem
+    isBlockedByThem = isBlockedByThem,
+    canForwardAndCopy = canForwardAndCopy
 )
 
 fun UserResponseDto.toEntity(): UserEntity = UserEntity(
@@ -43,7 +40,8 @@ fun UserResponseDto.toEntity(): UserEntity = UserEntity(
     lastSeen = lastSeen,
     profileChannelId = profileChannelId?.toLongOrNull(),
     isBlocked = isBlocked,
-    isBlockedByThem = isBlockedByThem
+    isBlockedByThem = isBlockedByThem,
+    canForwardAndCopy = canForwardAndCopy
 )
 
 fun User.toUpdateRequest(): UpdateUserRequestDto = UpdateUserRequestDto(
@@ -62,6 +60,7 @@ fun PrivacySettingsResponseDto.toDomain() = PrivacySettings(
     invites = invites,
     profilePhoto = profilePhoto,
     forwardedProfile = forwardedProfile,
+    forwardAndCopy = forwardAndCopy,
     deleteAfterDays = deleteAfterDays
 )
 
@@ -76,7 +75,8 @@ fun UserEntity.toDomain(avatars: List<Avatar> = emptyList()): User = User(
     avatars = avatars,
     profileChannelId = profileChannelId,
     isBlocked = isBlocked,
-    isBlockedByThem = isBlockedByThem
+    isBlockedByThem = isBlockedByThem,
+    canForwardAndCopy = canForwardAndCopy
 )
 
 fun User.toEntity(): UserEntity = UserEntity(
@@ -89,7 +89,8 @@ fun User.toEntity(): UserEntity = UserEntity(
     lastSeen = lastSeen,
     profileChannelId = profileChannelId,
     isBlocked = isBlocked,
-    isBlockedByThem = isBlockedByThem
+    isBlockedByThem = isBlockedByThem,
+    canForwardAndCopy = canForwardAndCopy
 )
 
 fun AvatarEntity.toDomain(uri: Uri?) = Avatar(
@@ -110,17 +111,6 @@ fun AvatarDto.toEntity(userId: Long) = AvatarEntity(
     sortOrder = sortOrder
 )
 
-/**
- * Аватарки профиля от активной к самой старой.
- *
- * Сервер нумерует фотографии по порядку добавления: у новой sortOrder на единицу больше,
- * чем у предыдущей. Значит активная аватарка — это та, у которой sortOrder самый большой,
- * и стоять она должна первой: интерфейс везде показывает `avatars.firstOrNull()`, да и
- * карусель профиля открывается с первой фотографии.
- *
- * Порядок задаётся здесь на все чаты сразу, чтобы он снова не разъехался между
- * пользователями, группами и каналами.
- */
 fun List<AvatarWithFile>.toDomainAvatars(): List<Avatar> =
     sortedByDescending { avatarWithFile -> avatarWithFile.avatar.sortOrder }
         .map { avatarWithFile ->

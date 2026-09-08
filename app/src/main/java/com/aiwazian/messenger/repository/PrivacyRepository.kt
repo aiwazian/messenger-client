@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.repository
 
 import com.aiwazian.messenger.domain.PrivacySettings
@@ -103,12 +99,6 @@ class PrivacyRepository @Inject constructor(
         }
     }
     
-    /**
-     * Кто может перейти в мой профиль по заголовку «Переслано от».
-     *
-     * Сервер считает право на момент чтения истории, поэтому старые пересылки
-     * закрываются сразу после смены настройки, без перезаписи сообщений.
-     */
     suspend fun updateForwardedProfilePrivacy(forwardedProfile: PrivacyLevel): Result<Unit> {
         return try {
             val request = UpdatePrivacySettingsRequestDto(forwardedProfile = forwardedProfile)
@@ -117,6 +107,40 @@ class PrivacyRepository @Inject constructor(
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Failed to update forwarded profile privacy: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun updateForwardAndCopyPrivacy(forwardAndCopy: PrivacyLevel): Result<Unit> {
+        return try {
+            val request = UpdatePrivacySettingsRequestDto(forwardAndCopy = forwardAndCopy)
+            val response = privacyApi.updatePrivacySettings(request)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to update forward and copy privacy: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun updateForwardingPrivacy(
+        forwardedProfile: PrivacyLevel,
+        forwardAndCopy: PrivacyLevel
+    ): Result<Unit> {
+        return try {
+            val request = UpdatePrivacySettingsRequestDto(
+                forwardedProfile = forwardedProfile,
+                forwardAndCopy = forwardAndCopy
+            )
+            val response = privacyApi.updatePrivacySettings(request)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to update forwarding privacy: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

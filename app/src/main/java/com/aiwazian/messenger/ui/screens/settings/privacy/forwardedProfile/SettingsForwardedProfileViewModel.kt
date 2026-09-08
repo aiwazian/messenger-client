@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.settings.privacy.forwardedProfile
 
 import android.util.Log
@@ -20,12 +16,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Кто может перейти в мой профиль по заголовку «Переслано от».
- *
- * Поведение повторяет остальные экраны конфиденциальности: выбор показывает кнопку
- * сохранения, сохранение шлёт PATCH и закрывает экран.
- */
 @HiltViewModel
 class SettingsForwardedProfileViewModel @Inject constructor(
     private val vibrationManager: VibrationManager,
@@ -36,6 +26,11 @@ class SettingsForwardedProfileViewModel @Inject constructor(
     
     private val _currentLevel = MutableStateFlow(PrivacyLevel.EVERYBODY)
     val currentLevel = _currentLevel.asStateFlow()
+    
+    private val _initialForwardAndCopyLevel = MutableStateFlow(PrivacyLevel.EVERYBODY)
+    
+    private val _currentForwardAndCopyLevel = MutableStateFlow(PrivacyLevel.EVERYBODY)
+    val currentForwardAndCopyLevel = _currentForwardAndCopyLevel.asStateFlow()
     
     private val _showSaveButton = MutableStateFlow(false)
     val showSaveButton = _showSaveButton.asStateFlow()
@@ -51,22 +46,26 @@ class SettingsForwardedProfileViewModel @Inject constructor(
         _initialLevel.update { initialValue }
         _currentLevel.update { initialValue }
         hideSaveButton()
+        loadForwardAndCopyLevel()
     }
     
     fun selectValue(value: PrivacyLevel) {
         _currentLevel.update { value }
-        
-        if (_currentLevel.value == _initialLevel.value) {
-            hideSaveButton()
-        } else {
-            showSaveButton()
-        }
+        updateSaveButtonVisibility()
+    }
+    
+    fun selectForwardAndCopyValue(value: PrivacyLevel) {
+        _currentForwardAndCopyLevel.update { value }
+        updateSaveButtonVisibility()
     }
     
     fun onSaveClick() {
         viewModelScope.launch {
             try {
-                privacyRepository.updateForwardedProfilePrivacy(_currentLevel.value).onSuccess {
+                privacyRepository.updateForwardingPrivacy(
+                    forwardedProfile = _currentLevel.value,
+                    forwardAndCopy = _currentForwardAndCopyLevel.value
+                ).onSuccess {
                     _effect.emit(SettingsForwardedProfileEffect.Back)
                 }.onFailure {
                     vibrate(VibrationPattern.Error)
@@ -74,7 +73,7 @@ class SettingsForwardedProfileViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e(
                     "SettingsForwardedProfileViewModel",
-                    "Ошибка при отправке настроек конфиденциальности для пересылки сообщений",
+                    "Failed to update message forwarding privacy settings",
                     e
                 )
                 vibrate(VibrationPattern.Error)
@@ -82,8 +81,20 @@ class SettingsForwardedProfileViewModel @Inject constructor(
         }
     }
     
-    private fun showSaveButton() {
-        _showSaveButton.update { true }
+    private fun loadForwardAndCopyLevel() {
+        viewModelScope.launch {
+            privacyRepository.getPrivacySettings().onSuccess { settings ->
+                if (_showSaveButton.value) return@onSuccess
+                _initialForwardAndCopyLevel.update { settings.forwardAndCopy }
+                _currentForwardAndCopyLevel.update { settings.forwardAndCopy }
+            }
+        }
+    }
+    
+    private fun updateSaveButtonVisibility() {
+        val hasChanges = _currentLevel.value != _initialLevel.value ||
+                _currentForwardAndCopyLevel.value != _initialForwardAndCopyLevel.value
+        _showSaveButton.update { hasChanges }
     }
     
     private fun hideSaveButton() {

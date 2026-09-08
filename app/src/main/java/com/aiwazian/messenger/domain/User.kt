@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.domain
 
 import android.net.Uri
@@ -18,7 +14,8 @@ data class User(
     val isOnline: Boolean = false,
     val profileChannelId: Long? = null,
     val isBlocked: Boolean = false,
-    val isBlockedByThem: Boolean = false
+    val isBlockedByThem: Boolean = false,
+    val canForwardAndCopy: Boolean = true
 )
 
 data class Avatar(

@@ -52,6 +52,7 @@ data class ChatUiState(
     val videoPlaybackSpeed: Float = 1.0f,
     val canDownloadMedia: Boolean = true,
     val noCopy: Boolean = false,
+    val peerNoCopy: Boolean = false,
     val isRecording: Boolean = false,
     val isRecordingLocked: Boolean = false,
     val recordingDurationMs: Long = 0L,
@@ -103,7 +104,7 @@ data class ChatUiState(
 ) {
 
     val copyPolicy: ChatCopyPolicy
-        get() = ChatCopyPolicy(noCopy)
+        get() = ChatCopyPolicy(noCopy = noCopy, peerNoCopy = peerNoCopy)
 
     val canGoToOlderSearchResult: Boolean
         get() = messageSearchIndex + 1 < messageSearchResults.size || hasMoreSearchResults
