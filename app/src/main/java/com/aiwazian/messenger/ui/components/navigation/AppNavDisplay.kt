@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.components.navigation
 
 import androidx.compose.animation.SharedTransitionLayout
@@ -94,10 +90,10 @@ import com.aiwazian.messenger.ui.screens.settings.security.devices.SettingsDevic
 import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeChangeScreen
 import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeCreateScreen
 import com.aiwazian.messenger.ui.screens.settings.security.passcode.SettingsPasscodeScreen
-import com.aiwazian.messenger.ui.screens.settings.stickers.AddedStickerPacksScreen
-import com.aiwazian.messenger.ui.screens.settings.stickers.CreatedStickerPacksScreen
 import com.aiwazian.messenger.ui.screens.settings.stickers.SettingsStickersScreen
-import com.aiwazian.messenger.ui.screens.settings.stickers.StickerPackEditorScreen
+import com.aiwazian.messenger.ui.screens.settings.stickers.added.AddedStickerPacksScreen
+import com.aiwazian.messenger.ui.screens.settings.stickers.created.CreatedStickerPacksScreen
+import com.aiwazian.messenger.ui.screens.settings.stickers.created.StickerPackEditorScreen
 import com.aiwazian.messenger.ui.screens.settings.storage.StorageScreen
 import kotlinx.coroutines.flow.Flow
 
