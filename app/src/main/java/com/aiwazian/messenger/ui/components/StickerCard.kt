@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.components
 
 import androidx.compose.foundation.background
@@ -58,7 +54,8 @@ fun StickerCard(
     ListItem(
         modifier = modifier.clickable(onClick = onClick),
         leadingContent = {
-            val cover = pack.coverSticker
+            val coverUrl = pack.coverImageUrl
+            val coverCacheKey = pack.coverCacheKey
             
             Box(
                 modifier = Modifier
@@ -67,7 +64,7 @@ fun StickerCard(
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh),
                 contentAlignment = Alignment.Center
             ) {
-                if (cover == null) {
+                if (coverUrl == null) {
                     Icon(
                         imageVector = Icons.Rounded.Photo,
                         contentDescription = null,
@@ -77,9 +74,9 @@ fun StickerCard(
                 } else {
                     AsyncImage(
                         model = ImageRequest.Builder(context)
-                            .data(cover.url)
-                            .memoryCacheKey(cover.fileId)
-                            .diskCacheKey(cover.fileId)
+                            .data(coverUrl)
+                            .memoryCacheKey(coverCacheKey)
+                            .diskCacheKey(coverCacheKey)
                             .build(),
                         contentDescription = null,
                         modifier = Modifier.size(40.dp),

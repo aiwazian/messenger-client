@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.network.dto
 
 import kotlinx.serialization.SerialName
@@ -22,6 +18,8 @@ data class StickerPackDto(
     @SerialName("name") val name: String,
     @SerialName("username") val username: String,
     @SerialName("ownerId") val ownerId: String,
+    @SerialName("coverFileId") val coverFileId: String? = null,
+    @SerialName("coverUrl") val coverUrl: String? = null,
     @SerialName("stickerCount") val stickerCount: Int = 0,
     @SerialName("isOwned") val isOwned: Boolean = false,
     @SerialName("isInstalled") val isInstalled: Boolean = false,
@@ -36,8 +34,10 @@ data class StickerInputDto(
 
 @Serializable
 data class CreateStickerPackRequestDto(
+    @SerialName("id") val id: String? = null,
     @SerialName("name") val name: String,
     @SerialName("username") val username: String,
+    @SerialName("coverFileId") val coverFileId: String? = null,
     @SerialName("stickers") val stickers: List<StickerInputDto>
 )
 
@@ -45,7 +45,23 @@ data class CreateStickerPackRequestDto(
 data class UpdateStickerPackRequestDto(
     @SerialName("name") val name: String? = null,
     @SerialName("username") val username: String? = null,
+    @SerialName("coverFileId") val coverFileId: String? = null,
     @SerialName("stickers") val stickers: List<StickerInputDto>? = null
+)
+
+@Serializable
+data class StickerPackIdDto(
+    @SerialName("packId") val packId: String = ""
+)
+
+@Serializable
+data class StickerUploadInitRequestDto(
+    @SerialName("name") val name: String,
+    @SerialName("size") val size: Long,
+    @SerialName("mimeType") val mimeType: String,
+    @SerialName("packId") val packId: String,
+    @SerialName("width") val width: Int? = null,
+    @SerialName("height") val height: Int? = null
 )
 
 @Serializable

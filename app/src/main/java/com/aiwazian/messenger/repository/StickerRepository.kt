@@ -9,8 +9,8 @@ import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.mappers.toEntity
 import com.aiwazian.messenger.network.api.StickerApi
 import com.aiwazian.messenger.network.dto.CreateStickerPackRequestDto
-import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.StickerInputDto
+import com.aiwazian.messenger.network.dto.StickerUploadInitRequestDto
 import com.aiwazian.messenger.network.dto.UpdateStickerPackRequestDto
 import com.aiwazian.messenger.utils.media.EncodedSticker
 import com.aiwazian.messenger.utils.media.MediaCompressionConfig
@@ -46,21 +46,22 @@ class StickerRepository @Inject constructor(
         result
     }
     
-    suspend fun getAddedPacks(): Result<List<StickerPack>> = withContext(Dispatchers.IO) {
-        val result = request("added packs") {
-            stickerApi.getAddedPacks()
-        }.map { packs -> packs.map { it.toDomain() } }
-        
-        val packs = result.getOrNull() ?: return@withContext cachedInstalledPacks().takeIf {
-            it.isNotEmpty()
-        }?.let { Result.success(it) } ?: result
-        
-        stickerDao.clearInstalled()
-        
-        packs.forEachIndexed { index, pack -> cachePack(pack, index) }
-        
-        result
-    }
+    suspend fun getAddedPacks(includeStickers: Boolean = false): Result<List<StickerPack>> =
+        withContext(Dispatchers.IO) {
+            val result = request("added packs") {
+                stickerApi.getAddedPacks(if (includeStickers) true else null)
+            }.map { packs -> packs.map { it.toDomain() } }
+            
+            val packs = result.getOrNull() ?: return@withContext cachedInstalledPacks().takeIf {
+                it.isNotEmpty()
+            }?.let { Result.success(it) } ?: result
+            
+            stickerDao.clearInstalled()
+            
+            packs.forEachIndexed { index, pack -> cachePack(pack, index) }
+            
+            result
+        }
     
     suspend fun getPack(packId: Long): Result<StickerPack> = withContext(Dispatchers.IO) {
         val result = request("pack $packId") {
@@ -98,16 +99,28 @@ class StickerRepository @Inject constructor(
             }.map { it.available }
         }
     
+    suspend fun reservePackId(): Result<Long> = withContext(Dispatchers.IO) {
+        request("pack id") {
+            stickerApi.reservePackId()
+        }.mapCatching { dto ->
+            dto.packId.toLongOrNull() ?: throw Exception("Server returned an invalid pack id")
+        }
+    }
+    
     suspend fun createPack(
+        packId: Long,
         name: String,
         username: String,
-        stickers: List<StickerDraft>
+        stickers: List<StickerDraft>,
+        coverFileId: String? = null
     ): Result<StickerPack> = withContext(Dispatchers.IO) {
         val result = request("pack creation") {
             stickerApi.createPack(
                 CreateStickerPackRequestDto(
+                    id = packId.toString(),
                     name = name,
                     username = username,
+                    coverFileId = coverFileId,
                     stickers = stickers.map {
                         StickerInputDto(fileId = it.fileId, emojis = it.emojis)
                     })
@@ -123,7 +136,8 @@ class StickerRepository @Inject constructor(
         packId: Long,
         name: String? = null,
         username: String? = null,
-        stickers: List<StickerDraft>? = null
+        stickers: List<StickerDraft>? = null,
+        coverFileId: String? = null
     ): Result<StickerPack> = withContext(Dispatchers.IO) {
         val result = request("pack $packId update") {
             stickerApi.updatePack(
@@ -131,6 +145,7 @@ class StickerRepository @Inject constructor(
                 UpdateStickerPackRequestDto(
                     name = name,
                     username = username,
+                    coverFileId = coverFileId,
                     stickers = stickers?.map {
                         StickerInputDto(fileId = it.fileId, emojis = it.emojis)
                     })
@@ -179,7 +194,7 @@ class StickerRepository @Inject constructor(
         result
     }
     
-    suspend fun uploadSticker(sticker: EncodedSticker): Result<String> =
+    suspend fun uploadSticker(sticker: EncodedSticker, packId: Long): Result<String> =
         withContext(Dispatchers.IO) {
             try {
                 val path = sticker.uri.path
@@ -195,10 +210,11 @@ class StickerRepository @Inject constructor(
                 }
                 
                 val initResponse = stickerApi.initStickerUpload(
-                    FileInitRequestDto(
+                    StickerUploadInitRequestDto(
                         name = sticker.name,
                         size = sticker.size,
                         mimeType = sticker.mimeType,
+                        packId = packId.toString(),
                         width = MediaCompressionConfig.STICKER_SIZE,
                         height = MediaCompressionConfig.STICKER_SIZE
                     )
