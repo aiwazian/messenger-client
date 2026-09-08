@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
     <string name="app_name" translatable="false">Messenger</string>
     <string name="search">Search</string>
@@ -320,6 +316,7 @@
     <string name="forwarded_from_hidden_account">Forwarded from a hidden account</string>
     <string name="message_forwarding">Message Forwarding</string>
     <string name="who_can_open_my_profile_from_forwarded_messages">Who can open my profile from forwarded messages?</string>
+    <string name="who_can_forward_and_copy_messages_from_chat_with_me">Who can forward and copy messages from the chat with me</string>
     <string name="unknown_chat">Unknown chat</string>
     <string name="attachment_photo">Photo</string>
     <string name="attachment_video">Video</string>
@@ -333,6 +330,7 @@
     <string name="no_copy_group_description">Members, won\'t be able to copy text, forward messages, or save media from the group.</string>
     <string name="no_copy_channel_notice">Copying and forwarding is not allowed from this channel.</string>
     <string name="no_copy_group_notice">Copying and forwarding is not allowed from this group.</string>
+    <string name="no_copy_private_notice">Copying and forwarding from the chat are prohibited</string>
     <string name="administrators">Administrators</string>
     <string name="add_administrator">Add Administrator</string>
     <string name="admin_permissions">Permissions</string>
@@ -442,7 +440,6 @@
     <string name="chat_search_hint">Enter a search query</string>
     <string name="chat_search_in_progress">Searching…</string>
     <string name="chat_search_no_results">Nothing found</string>
-    <!-- Позиция текущего совпадения: «1 из 142». -->
     <string name="chat_search_position">%1$d of %2$s</string>
     <plurals name="chat_search_results_count">
         <item quantity="one">%1$s result</item>
