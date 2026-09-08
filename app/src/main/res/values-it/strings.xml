@@ -1,9 +1,5 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
-    
+
     <string name="search">Ricerca</string>
     <string name="message">Messaggio</string>
     <string name="settings">Impostazioni</string>
@@ -38,6 +34,7 @@
     <string name="bio">Biografia</string>
     <string name="username">Nome utente</string>
     <string name="share">Condividi</string>
+    <string name="copy_link">Copia link</string>
     <string name="cloud_password">Cloud Password</string>
     <string name="on">On</string>
     <string name="off">Spento</string>
@@ -73,6 +70,7 @@
     <string name="unpin">Sblocca</string>
     <string name="mark_as_read">Segna come letto</string>
     <string name="mark_as_unread">Segna come non letto</string>
+    <string name="mark_all_as_read">Segna tutto come letto</string>
     <string name="folder_name">Nome della cartella</string>
     <string name="included_chats">Chat incluse</string>
     <string name="add_chats">Aggiungi chat</string>
@@ -312,6 +310,7 @@
     <string name="forwarded_from_hidden_account">Inoltrato da un account nascosto</string>
     <string name="message_forwarding">Inoltro dei messaggi</string>
     <string name="who_can_open_my_profile_from_forwarded_messages">Chi può aprire il mio profilo dai messaggi inoltrati\?</string>
+    <string name="who_can_forward_and_copy_messages_from_chat_with_me">Chi può inoltrare e copiare i messaggi dalla chat con me</string>
     <string name="unknown_chat">Chat sconosciuta</string>
     <string name="attachment_photo">Foto</string>
     <string name="attachment_video">Video</string>
@@ -325,6 +324,7 @@
     <string name="no_copy_group_description">I membri non potranno copiare testo, inoltrare messaggi o salvare contenuti multimediali dal gruppo.</string>
     <string name="no_copy_channel_notice">Non è consentito copiare e inoltrare da questo canale.</string>
     <string name="no_copy_group_notice">Non è consentito copiare e inoltrare da questo gruppo.</string>
+    <string name="no_copy_private_notice">La copia e la condivisione dalla chat sono vietate</string>
     <string name="administrators">Amministratori</string>
     <string name="add_administrator">Aggiungi amministratore</string>
     <string name="admin_permissions">Autorizzazioni</string>
@@ -348,6 +348,7 @@
     <string name="requests_to_channel_join">Le richieste di iscrizione al tuo canale vengono visualizzate qui.</string>
     <string name="requests_to_group_join">le richieste di adesione al tuo gruppo vengono visualizzate qui.</string>
     <string name="edit_folder">Modifica cartella</string>
+    <string name="edit_folders">Modifica cartelle</string>
     <string name="appearance_preview_incoming_text">La release call è domani alle 10:00, in mattinata manderò il link.</string>
     <string name="appearance_preview_reply_text">Capito, ci sarò. Grazie!</string>
     <string name="delete_folder_confirm_message">Ciò non influenzerà le chat al suo interno.</string>
@@ -371,12 +372,35 @@
     <string name="chat_media">Media</string>
     <string name="chat_media_tab">Media</string>
     <string name="chat_files_tab">File</string>
+    <string name="chat_voices_tab">Vocali</string>
     <string name="chat_attachments_empty">Ancora nessun allegato in questa chat</string>
     <string name="chat_media_load_error">Impossibile caricare gli allegati</string>
+
+    <string name="chat_voice_sent_at">alle %1$s</string>
+    <string name="chat_voice_sent_on">%1$s alle %2$s</string>
+
+    <plurals name="chat_media_photos_count">
+        <item quantity="one">%1$d foto</item>
+        <item quantity="other">%1$d foto</item>
+    </plurals>
+    <plurals name="chat_media_videos_count">
+        <item quantity="one">%1$d video</item>
+        <item quantity="other">%1$d video</item>
+    </plurals>
+    <plurals name="chat_media_files_count">
+        <item quantity="one">%1$d file</item>
+        <item quantity="other">%1$d file</item>
+    </plurals>
+    <plurals name="chat_media_voices_count">
+        <item quantity="one">%1$d messaggio vocale</item>
+        <item quantity="other">%1$d messaggi vocali</item>
+    </plurals>
     <string name="chat_disable_notifications">Disattiva le notifiche</string>
     <string name="chat_enable_notifications">Attiva le notifiche</string>
     <string name="chat_notifications_disabled">Notifiche disattivate</string>
     <string name="chat_notifications_enabled">Notifiche attivate</string>
+    <string name="notification_exception_disabled">Senza notifiche</string>
+    <string name="notification_exception_enabled">Con notifiche</string>
     <string name="notification_exception_configure">Configura</string>
     <string name="notification_exception_add">Aggiungi eccezione</string>
     <string name="notification_exception_receive">Ricevi notifiche</string>
@@ -385,6 +409,18 @@
     <string name="notification_reset_description">Reimposta tutte le impostazioni speciali delle notifiche per le singole chat</string>
     <string name="notification_reset_confirm">Vuoi davvero reimpostare le impostazioni delle notifiche? Tutte le eccezioni saranno eliminate e le notifiche saranno attive ovunque.</string>
     <string name="notification_reset_action">Reimposta</string>
+    <string name="delete_exception">Elimina eccezione</string>
+    <string name="exception_deleted">Eccezione eliminata</string>
+    <string name="delete_all_exceptions">Elimina tutte le eccezioni</string>
+    <string name="delete_all_exceptions_confirm">Vuoi davvero eliminare tutte le eccezioni? Queste chat seguiranno le impostazioni della loro categoria.</string>
+    <string name="all_exceptions_deleted">Tutte le eccezioni sono state eliminate</string>
+    <string name="notification_exceptions_empty">Nessuna eccezione</string>
+    <string name="failed_to_delete_exception">Impossibile eliminare l\'eccezione</string>
+    <string name="failed_to_delete_exceptions">Impossibile eliminare le eccezioni</string>
+    <plurals name="notification_exceptions_count">
+        <item quantity="one">%1$d eccezione</item>
+        <item quantity="other">%1$d eccezioni</item>
+    </plurals>
     <string name="media_picker_file">File</string>
     <string name="media_picker_caption">Aggiungi una didascalia…</string>
     <string name="media_picker_permission">Consenti l\'accesso a foto e video</string>
@@ -403,4 +439,59 @@
         <item quantity="one">%1$s risultato</item>
         <item quantity="other">%1$s risultati</item>
     </plurals>
+    <string name="stickers">Sticker</string>
+    <string name="sticker_packs">Pacchetti di sticker</string>
+    <string name="sticker_packs_created">Creati</string>
+    <string name="sticker_packs_added">Aggiunti</string>
+    <string name="sticker_pack">Pacchetto di sticker</string>
+    <string name="sticker_pack_new">Nuovo pacchetto di sticker</string>
+    <string name="sticker_pack_name">Nome</string>
+    <string name="sticker_pack_username">Nome breve</string>
+    <string name="sticker_pack_username_hint">Lettere latine, cifre e trattino basso</string>
+    <string name="sticker_pack_username_too_short">Almeno %1$d caratteri</string>
+    <string name="sticker_pack_username_checking">Verifica…</string>
+    <string name="sticker_pack_username_available">Il nome breve è disponibile</string>
+    <string name="sticker_pack_username_taken">Il nome breve è già in uso</string>
+    <string name="sticker_pack_username_unknown">Impossibile verificare il nome breve</string>
+    <string name="sticker_add">Aggiungi sticker</string>
+    <string name="sticker_delete">Elimina</string>
+    <string name="sticker_emojis">Emoji</string>
+    <string name="sticker_add_error">Impossibile elaborare l\'immagine</string>
+    <string name="sticker_upload_error">Impossibile caricare lo sticker</string>
+    <string name="sticker_removed">Sticker eliminato</string>
+    <string name="sticker_removed_undo">Annulla</string>
+    <string name="sticker_pack_saved">Pacchetto di sticker salvato</string>
+    <string name="sticker_pack_save_error">Impossibile salvare il pacchetto di sticker</string>
+    <string name="sticker_pack_load_error">Impossibile caricare il pacchetto di sticker</string>
+    <string name="sticker_packs_load_error">Impossibile caricare i pacchetti di sticker</string>
+    <string name="sticker_packs_empty">Ancora nessun pacchetto di sticker</string>
+    <string name="sticker_pack_unsaved_message">Hai modifiche non salvate</string>
+    <string name="sticker_pack_unsaved_discard">Scarta</string>
+    <string name="sticker_pack_unsaved_apply">Applica</string>
+    <string name="sticker_pack_delete_action">Elimina</string>
+    <string name="sticker_pack_delete_cancel">Annulla</string>
+    <string name="sticker_pack_delete_message">L\'eliminazione è irreversibile. Tu e gli altri utenti non potrete più inviare sticker di questo pacchetto.</string>
+    <string name="sticker_pack_remove_message">Il pacchetto sarà rimosso solo dal tuo elenco. Gli altri utenti lo manterranno.</string>
+    <string name="sticker_pack_deleted">Pacchetto di sticker eliminato</string>
+    <string name="sticker_pack_delete_error">Impossibile eliminare il pacchetto di sticker</string>
+    <string name="sticker_pack_removed">Pacchetto di sticker rimosso</string>
+    <string name="sticker_pack_remove_error">Impossibile rimuovere il pacchetto di sticker</string>
+    <plurals name="sticker_count">
+        <item quantity="one">%1$d sticker</item>
+        <item quantity="other">%1$d sticker</item>
+    </plurals>
+    <string name="sticker_pack_share">Condividi</string>
+    <string name="sticker_pack_add_stickers">Aggiungi sticker</string>
+    <string name="sticker_pack_remove_stickers">Rimuovi sticker</string>
+    <string name="send_sticker">Invia sticker</string>
+    <string name="sticker_pack_installed">Il pacchetto %1$s è stato aggiunto ai tuoi sticker</string>
+    <string name="sticker_pack_uninstalled">Il pacchetto %1$s è stato rimosso dai tuoi sticker</string>
+    <string name="sticker_message">Sticker</string>
+    <string name="storage_cache_cleared">%1$s liberati</string>
+    <string name="storage_cache_already_empty">Niente da cancellare</string>
+    <string name="storage_cache_clear_failed">Impossibile svuotare la cache</string>
+    <string name="storage_no_categories_selected">Scegli cosa cancellare</string>
+    <string name="storage_database_cleared">Database locale cancellato</string>
+    <string name="storage_database_clear_failed">Impossibile cancellare il database</string>
+    <string name="done">Fatto</string>
 </resources>
