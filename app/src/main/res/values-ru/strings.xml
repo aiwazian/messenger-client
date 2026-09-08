@@ -1,7 +1,3 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <resources>
 
     <string name="search">Поиск</string>
@@ -316,6 +312,7 @@
     <string name="forwarded_from_hidden_account">Автор сообщения скрыл свой профиль</string>
     <string name="message_forwarding">Пересылка сообщений</string>
     <string name="who_can_open_my_profile_from_forwarded_messages">Кто может ссылаться на мой профиль при пересылке сообщений?</string>
+    <string name="who_can_forward_and_copy_messages_from_chat_with_me">Кто может пересылать и копировать сообщения из чата со мной</string>
     <string name="unknown_chat">Неизвестный чат</string>
     <string name="attachment_photo">Фото</string>
     <string name="attachment_video">Видео</string>
@@ -329,6 +326,7 @@
     <string name="no_copy_group_description">Участники, включая владельца, не смогут копировать текст, пересылать сообщения и сохранять медиа из группы.</string>
     <string name="no_copy_channel_notice">Копирование и пересылка из канала запрещены.</string>
     <string name="no_copy_group_notice">Копирование и пересылка из группы запрещены.</string>
+    <string name="no_copy_private_notice">Копирование и пересылка из чата запрещены</string>
     <string name="administrators">Администраторы</string>
     <string name="add_administrator">Добавить администратора</string>
     <string name="admin_permissions">Разрешения</string>
