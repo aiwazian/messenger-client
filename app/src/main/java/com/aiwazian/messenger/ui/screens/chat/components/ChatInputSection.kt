@@ -360,7 +360,6 @@ fun ChatInputSection(
                 ) {
                     StickerInputPanel(
                         packs = stickersState.addedPacks,
-                        height = stickerPanelHeight.value,
                         onStickerClick = { sticker ->
                             stickersViewModel.sendSticker(uiState.chatId, sticker.id)
                         })

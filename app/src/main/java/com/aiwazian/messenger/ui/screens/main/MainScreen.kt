@@ -1121,7 +1121,7 @@ private fun DrawerContent(
             }
         }
         
-        Box(Modifier.weight(1f))
+        Spacer(Modifier.weight(1f))
         
         val scope = rememberCoroutineScope()
         var loadTrigger by remember { mutableLongStateOf(0L) }
