@@ -137,7 +137,8 @@ class StickerRepository @Inject constructor(
         name: String? = null,
         username: String? = null,
         stickers: List<StickerDraft>? = null,
-        coverFileId: String? = null
+        coverFileId: String? = null,
+        removeCover: Boolean = false
     ): Result<StickerPack> = withContext(Dispatchers.IO) {
         val result = request("pack $packId update") {
             stickerApi.updatePack(
@@ -146,6 +147,7 @@ class StickerRepository @Inject constructor(
                     name = name,
                     username = username,
                     coverFileId = coverFileId,
+                    removeCover = if (removeCover) true else null,
                     stickers = stickers?.map {
                         StickerInputDto(fileId = it.fileId, emojis = it.emojis)
                     })

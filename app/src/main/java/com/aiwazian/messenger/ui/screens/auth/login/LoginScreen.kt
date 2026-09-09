@@ -3,10 +3,8 @@ package com.aiwazian.messenger.ui.screens.auth.login
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -32,13 +30,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -50,13 +46,9 @@ import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.screens.auth.components.InputTextField
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
-@OptIn(FlowPreview::class)
 @Composable
 fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
     val context = LocalContext.current
@@ -68,21 +60,6 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
     val scope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
     val focusRequester = remember { FocusRequester() }
-    
-    val density = LocalDensity.current
-    val imeInsets = WindowInsets.ime
-    
-    LaunchedEffect(imeInsets, density) {
-        snapshotFlow { imeInsets.getBottom(density) }
-            .debounce(KEYBOARD_MEASURE_DELAY_MS)
-            .distinctUntilChanged()
-            .collect { imeBottomPx ->
-                if (imeBottomPx <= 0) return@collect
-                
-                val imeBottomDp = with(density) { imeBottomPx.toDp() }
-                viewModel.saveKeyboardHeight(imeBottomDp.value)
-            }
-    }
     
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
@@ -214,5 +191,3 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
         }
     }
 }
-
-private const val KEYBOARD_MEASURE_DELAY_MS = 300L

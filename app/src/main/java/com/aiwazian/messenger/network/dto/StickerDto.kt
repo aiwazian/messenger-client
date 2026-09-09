@@ -46,6 +46,7 @@ data class UpdateStickerPackRequestDto(
     @SerialName("name") val name: String? = null,
     @SerialName("username") val username: String? = null,
     @SerialName("coverFileId") val coverFileId: String? = null,
+    @SerialName("removeCover") val removeCover: Boolean? = null,
     @SerialName("stickers") val stickers: List<StickerInputDto>? = null
 )
 

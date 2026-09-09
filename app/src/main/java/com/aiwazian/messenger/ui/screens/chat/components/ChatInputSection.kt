@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.content.pm.PackageManager
@@ -139,11 +135,13 @@ import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import com.aiwazian.messenger.utils.DialogController
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
-private val DEFAULT_STICKER_PANEL_HEIGHT = 280.dp
-
+@OptIn(FlowPreview::class)
 @Composable
 fun ChatInputSection(
     uiState: ChatUiState,
@@ -160,29 +158,49 @@ fun ChatInputSection(
     val bottomPadding = with(density) {
         WindowInsets.navigationBars.getBottom(density).toDp()
     }
-    val imeBottomPx = WindowInsets.ime.getBottom(density)
+    val imeInsets = WindowInsets.ime
     val imeHeightDp = with(density) {
-        imeBottomPx.toDp() - bottomPadding
+        imeInsets.getBottom(density).toDp()
     }
     
     val stickerPanelHeight = remember { Animatable(bottomPadding, Dp.VectorConverter) }
     
-    var maxKeyboardHeight by remember { mutableStateOf(DEFAULT_STICKER_PANEL_HEIGHT) }
+    var measuredKeyboardHeight by remember { mutableStateOf(0.dp) }
     var isKeyboardVisible by remember { mutableStateOf(false) }
     var isStickersVisible by remember { mutableStateOf(false) }
     
-    LaunchedEffect(imeHeightDp) {
-        if (imeHeightDp > maxKeyboardHeight) {
-            maxKeyboardHeight = imeHeightDp
+    val keyboardHeight = if (measuredKeyboardHeight > 0.dp) {
+        measuredKeyboardHeight
+    } else {
+        uiState.keyboardHeight.dp
+    }
+    
+    LaunchedEffect(imeInsets, density) {
+        snapshotFlow { imeInsets.getBottom(density) }
+            .debounce(KEYBOARD_MEASURE_DELAY_MS)
+            .distinctUntilChanged()
+            .collect { imeBottomPx ->
+                if (imeBottomPx <= 0) return@collect
+                
+                val height = with(density) { imeBottomPx.toDp() }
+                
+                measuredKeyboardHeight = height
+                chatViewModel.onKeyboardHeightChanged(height.value)
+            }
+    }
+    
+    LaunchedEffect(imeHeightDp, keyboardHeight) {
+        if (imeHeightDp > keyboardHeight) {
+            measuredKeyboardHeight = imeHeightDp
         }
         
-        isKeyboardVisible = imeHeightDp == maxKeyboardHeight
+        isKeyboardVisible = imeHeightDp > 0.dp && imeHeightDp >= keyboardHeight
         
         if (isKeyboardVisible) {
-            stickerPanelHeight.snapTo(imeHeightDp + bottomPadding)
+            stickerPanelHeight.snapTo(imeHeightDp)
             isStickersVisible = false
         } else if (!isStickersVisible) {
-            stickerPanelHeight.snapTo(imeHeightDp + bottomPadding)
+            stickerPanelHeight.snapTo(imeHeightDp.coerceAtLeast(bottomPadding))
         }
     }
     
@@ -209,7 +227,7 @@ fun ChatInputSection(
         isStickersVisible = true
         
         scope.launch {
-            stickerPanelHeight.animateTo(maxKeyboardHeight + bottomPadding)
+            stickerPanelHeight.animateTo(keyboardHeight.coerceAtLeast(bottomPadding))
         }
     }
     
@@ -360,7 +378,6 @@ fun ChatInputSection(
                 ) {
                     StickerInputPanel(
                         packs = stickersState.addedPacks,
-                        height = stickerPanelHeight.value,
                         onStickerClick = { sticker ->
                             stickersViewModel.sendSticker(uiState.chatId, sticker.id)
                         })
@@ -1030,3 +1047,5 @@ private fun VoiceRecordingAmplitudeEffect(amplitude: Float) {
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)))
 }
+
+private const val KEYBOARD_MEASURE_DELAY_MS = 300L

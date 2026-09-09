@@ -362,6 +362,10 @@ class StickerPackEditorViewModel @Inject constructor(
         }
     }
     
+    fun removeCover() {
+        _uiState.update { state -> state.copy(cover = null) }
+    }
+    
     fun focusSticker(key: String) {
         _uiState.update { state ->
             if (state.stickers.none { it.key == key }) {
@@ -558,7 +562,8 @@ class StickerPackEditorViewModel @Inject constructor(
                     name = name,
                     username = state.username,
                     stickers = drafts,
-                    coverFileId = coverFileId
+                    coverFileId = coverFileId,
+                    removeCover = coverFileId == null
                 )
             }
             
