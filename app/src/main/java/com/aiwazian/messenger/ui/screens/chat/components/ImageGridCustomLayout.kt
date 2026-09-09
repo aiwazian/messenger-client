@@ -34,7 +34,11 @@ private const val MaxLayoutDimension = 16_777_215
 
 private const val SquareRatioTolerance = 0.05f
 
-private enum class MediaShape { LANDSCAPE, PORTRAIT, SQUARE }
+private enum class MediaShape {
+    LANDSCAPE,
+    PORTRAIT,
+    SQUARE
+}
 
 /**
  * Сетка вложений сообщения.
@@ -86,12 +90,12 @@ fun ImageGridCustomLayout(
             itemSizes.getOrNull(0) ?: IntSize.Zero, itemSizes.getOrNull(1) ?: IntSize.Zero
         )
         
-        val rawHeight = when {
-            count == 1 && firstRatio != null -> {
+        val rawHeight = when (count) {
+            1 if firstRatio != null -> {
                 (width / firstRatio).roundToInt().coerceIn(minHeight, maxHeight)
             }
             
-            count == 2 && firstRatio != null && secondRatio != null -> {
+            2 if firstRatio != null && secondRatio != null -> {
                 val cellRatio = (firstRatio + secondRatio) / 2f
                 val total = if (stackPair) (width / cellRatio) * 2f + gap
                 else ((width - gap) / 2f) / cellRatio

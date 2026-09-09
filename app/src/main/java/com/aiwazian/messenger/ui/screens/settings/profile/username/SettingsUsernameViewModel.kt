@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class SettingsUsernameViewModel @Inject constructor(
@@ -85,7 +86,7 @@ class SettingsUsernameViewModel @Inject constructor(
         
         checkJob?.cancel()
         checkJob = viewModelScope.launch {
-            delay(500)
+            delay(500.milliseconds)
             searchRepository.checkUsernameAvailable(filteredUsername).onSuccess { available ->
                 if (available) {
                     _uiState.update {

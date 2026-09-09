@@ -86,9 +86,6 @@ class SendMessageUseCase @Inject constructor(
         localId: Long,
         replyTo: MessageReplyPreview?
     ): Result<Message> {
-        // Первая попытка идёт всегда: локальное сообщение создаёт сама отправка,
-        // и до неё в базе его ещё нет. Дальше пустота на его месте означает
-        // отмену — сообщение убрали из чата.
         var attempted = false
         
         val result = RetryPolicy.retryForever(
@@ -96,7 +93,7 @@ class SendMessageUseCase @Inject constructor(
             isPermanent = { it is SendCancelledException }
         ) {
             if (attempted && isCancelled(localId)) {
-                return@retryForever Result.failure<Message>(SendCancelledException(localId))
+                return@retryForever Result.failure(SendCancelledException(localId))
             }
             
             attempted = true
@@ -104,9 +101,6 @@ class SendMessageUseCase @Inject constructor(
             val attempt = chatRepository.sendMessage(chatId, message, localId, replyTo)
             
             if (attempt.isFailure) {
-                // Репозиторий пометил сообщение ошибочным, но попытки ещё не
-                // закончились: в чате оно обязано оставаться «отправляется», иначе
-                // восклицательный знак мигал бы на каждой неудачной попытке.
                 chatRepository.updateMessageStatus(localId, MessageStatus.SENDING)
             }
             

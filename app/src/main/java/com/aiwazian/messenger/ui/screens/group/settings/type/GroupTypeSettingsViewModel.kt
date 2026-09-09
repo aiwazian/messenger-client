@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class GroupTypeSettingsViewModel @Inject constructor(
@@ -139,7 +140,7 @@ class GroupTypeSettingsViewModel @Inject constructor(
         
         checkLinkJob?.cancel()
         checkLinkJob = viewModelScope.launch {
-            delay(500)
+            delay(500.milliseconds)
             searchRepository.checkUsernameAvailable(filteredUsername).onSuccess { available ->
                 if (available) {
                     _uiState.update {

@@ -1,6 +1,5 @@
 package com.aiwazian.messenger.utils
 
-import android.content.Context
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.extensions.toPrettyTime
 import java.time.Instant
@@ -10,7 +9,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 object LastSeenHelper {
-    fun getSubtitle(context: Context, isOnline: Boolean, lastSeen: Long?): UiText {
+    fun getSubtitle(isOnline: Boolean, lastSeen: Long?): UiText {
         if (isOnline) {
             return UiText.StringResource(R.string.online)
         }

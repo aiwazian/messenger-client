@@ -13,12 +13,12 @@ data class ChatCopyPolicy(
 
     val canTakeScreenshot: Boolean
         get() = !isRestricted
-
-    fun canCopyText(isMine: Boolean): Boolean = !isRestricted
-
-    fun canForward(isMine: Boolean): Boolean = !isRestricted
-
-    fun hasNotice(isMine: Boolean): Boolean = isRestricted
+    
+    fun canCopyText(): Boolean = !isRestricted
+    
+    fun canForward(): Boolean = !isRestricted
+    
+    fun hasNotice(): Boolean = isRestricted
 
     companion object {
         val Unrestricted = ChatCopyPolicy()

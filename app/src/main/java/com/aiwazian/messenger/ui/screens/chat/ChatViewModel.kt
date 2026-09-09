@@ -632,8 +632,6 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch { pager.loadAfter() }
     }
 
-    fun loadMoreMessages() = loadOlderMessages()
-
     fun jumpToMessage(messageId: Long, returnToMessageId: Long? = null) {
         val pager = messagePager ?: return
         viewModelScope.launch {
@@ -669,12 +667,6 @@ class ChatViewModel @Inject constructor(
             if (messagePager == null) return@launch
             jumpToMessage(messageId)
         }
-    }
-
-    fun jumpBack() {
-        val messageId = returnStack.removeLastOrNull() ?: return
-        _uiState.update { it.copy(canJumpBack = returnStack.isNotEmpty()) }
-        jumpToMessage(messageId)
     }
 
     fun jumpToLatest() {

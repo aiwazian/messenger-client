@@ -878,4 +878,4 @@ private const val PREFETCH_THRESHOLD = 10
 
 private const val BOTTOM_ITEM_INDEX = 0
 
-private const val KEYBOARD_MEASURE_DELAY_MS = 300L
+private const val KEYBOARD_MEASURE_DELAY_MS = 300

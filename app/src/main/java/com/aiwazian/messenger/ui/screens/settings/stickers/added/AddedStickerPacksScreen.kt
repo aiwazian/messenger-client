@@ -61,8 +61,6 @@ fun AddedStickerPacksScreen(viewModel: AddedStickerPacksViewModel = hiltViewMode
     val scope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
-    val removeMessage = stringResource(R.string.sticker_pack_remove_message)
-    
     LaunchedEffect(Unit) {
         viewModel.refresh()
     }
@@ -111,7 +109,7 @@ fun AddedStickerPacksScreen(viewModel: AddedStickerPacksViewModel = hiltViewMode
                 key = { it.id }) { pack ->
                 StickerCard(
                     pack = pack,
-                    deleteMessage = removeMessage,
+                    deleteMessage = stringResource(R.string.sticker_pack_remove_message),
                     onClick = { viewModel.open(pack.id) },
                     onDelete = { viewModel.remove(pack.id) },
                     modifier = Modifier.clip(MaterialTheme.shapes.large)

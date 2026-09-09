@@ -13,7 +13,6 @@
     <string name="profile">Profil</string>
     <string name="saved_messages">Messages sauvegardés</string>
     <string name="new_message">Nouveau message</string>
-    <string name="information">Infos</string>
     <string name="dark_theme">Thème sombre</string>
     <string name="security">Sécurité</string>
     <string name="delete_account">Supprimer le compte</string>
@@ -25,7 +24,6 @@
     <string name="create_channel">Nouvelle chaîne</string>
     <string name="data_and_storage">Données et stockage</string>
     <string name="chat_folders">Dossiers de discussion</string>
-    <string name="faq">Messenger FAQ</string>
     <string name="color_theme">Thème des couleurs</string>
     <string name="write_about_me">Ajoute quelques mots sur toi</string>
     <string name="protect_your_account">Protégez votre compte</string>
@@ -40,12 +38,10 @@
     <string name="off">Off</string>
     <string name="everybody">Tout le monde</string>
     <string name="nobody">Personne</string>
-    <string name="messages">Messages</string>
     <string name="last_seen">Dernière apparition</string>
     <string name="who_can_see_my_last_seen"><![CDATA[Qui peut voir ma dernière fois vue \?]]></string>
     <string name="online">En ligne</string>
     <string name="last_seen_recently">En ligne récemment</string>
-    <string name="last_seen_at">vu pour la dernière fois à %s</string>
     <string name="this_device">Cet appareil</string>
     <string name="members">Membres</string>
     <string name="first_name">Prénom</string>
@@ -54,17 +50,12 @@
     <string name="alternative_options">Options alternatives</string>
     <string name="clear_cache">Effacer le cache</string>
     <string name="add_account">Ajouter un compte</string>
-    <string name="accounts">Comptes</string>
-    <string name="archive">Discussions archivées</string>
-    <string name="archive_settings">Paramètres des archives</string>
-    <string name="how_does_it_work">Comment cela fonctionne-t-il \?</string>
     <string name="date_of_birth">Date de naissance</string>
     <string name="connecting">Connexion</string>
     <string name="invites">Invitations</string>
     <string name="dynamic_color">Couleur dynamique</string>
     <string name="create_new_folder">Créer un nouveau dossier</string>
     <string name="all_chats">Tous les Chats</string>
-    <string name="save">Sauvegarder</string>
     <string name="remove_folder">Supprimer le dossier</string>
     <string name="pin">Épingle</string>
     <string name="unpin">Détacher</string>
@@ -74,7 +65,6 @@
     <string name="folder_name">Nom du dossier</string>
     <string name="included_chats">Discussions incluses</string>
     <string name="add_chats">Ajouter des discussions</string>
-    <string name="cloud_password_description">Vous pouvez définir un mot de passe qui sera nécessaire lorsque vous vous connectez sur un nouvel appareil.</string>
     <string name="enter_password">Saisissez le mot de passe</string>
     <string name="passcode_lock_description">Lorsqu’un code d’accès est défini, une icône de cadenas apparaît au-dessus de votre liste de chat. Appuyez dessus pour verrouiller votre application.</string>
     <string name="cancel">Annuler</string>
@@ -85,7 +75,6 @@
     <string name="delete">Supprimer</string>
     <string name="chat_folders_description">Créez des dossiers pour différents groupes de discussions et basculez rapidement entre eux.</string>
     <string name="terminate_all_other_sessions_description">Déconnecte tous les appareils sauf celui-ci.</string>
-    <string name="connect_device">Connecter l’appareil</string>
     <string name="turn_off">Éteindre</string>
     <string name="turn_passcode_off">Désactiver le code d’accès</string>
     <string name="copy">Bien reçu</string>
@@ -93,22 +82,12 @@
     <string name="change_passcode">Changer le code d’accès</string>
     <string name="fingerprint_unlock">Déverrouillage par empreinte digitale</string>
     <string name="ok">OK</string>
-    <string name="chat_archived">Chat archivé</string>
     <string name="delete_message">Message de suppression</string>
-    <string name="also_delete_for">Supprimez aussi pour</string>
     <string name="delete_message_description">Êtes-vous sûr de vouloir supprimer ce message \?</string>
     <string name="delete_for_recipient">Supprimer pour le destinataire</string>
     <string name="block_user">Bloquer l’utilisateur</string>
-    <string name="start_secret_chat">Lancer un chat secret</string>
     <string name="add_to_home_screen">Ajouter à l’écran d’accueil</string>
     <string name="block_user_confirm_message">Es-tu sûr de vouloir bloquer \?</string>
-    <string name="secret_chat">Chat secret</string>
-    <string name="secret_chat_confirm_message">Tu es sûr de vouloir lancer une discussion secrète \?</string>
-    <string name="start">Début</string>
-    <string name="change_profile_color">Changer la couleur du profil</string>
-    <string name="change_username">Changer le nom d’utilisateur</string>
-    <string name="mute">Muet</string>
-    <string name="unmute">Réactivez le son</string>
     <string name="join">Rejoignez</string>
     <string name="leave_channel">Quitter le canal</string>
     <string name="leave_channel_confirm_message">Tu es sûr de vouloir partir</string>
@@ -120,7 +99,6 @@
     <string name="delete_channel">Supprimer le canal</string>
     <string name="clear_history">Histoire claire</string>
     <string name="public_link">Lien public</string>
-    <string name="invite_link">Lien d’invitation</string>
     <string name="private_channel">Canal privé</string>
     <string name="public_channel">Public Channel</string>
     <string name="channel_name">Nom de la chaîne</string>
@@ -134,8 +112,6 @@
     <string name="delete_group">Supprimer le groupe</string>
     <string name="save_to_downloads">Enregistrer en téléchargement</string>
     <string name="copied">Copié</string>
-    <string name="internal_storage">Stockage interne</string>
-    <string name="file_system_search">Recherche par système de fichiers</string>
     <string name="system_default">Par défaut système</string>
     <string name="disabled">Handicapé</string>
     <string name="enabled">Activé</string>
@@ -144,12 +120,10 @@
     <string name="documents">Documents</string>
     <string name="other">Autres</string>
     <string name="files">Dossiers</string>
-    <string name="chats">Chats</string>
     <string name="audio">Audio</string>
     <string name="storage_usage">Utilisation du stockage</string>
     <string name="group_name">Nom du groupe</string>
     <string name="logout_confirm_message">Êtes-vous sûr de vouloir vous déconnecter?</string>
-    <string name="delete_account_confirm_message">Êtes-vous sûr de vouloir supprimer votre compte?</string>
     <string name="delete_account_message">Tout ce qui concerne votre compte sera définitivement supprimé.</string>
     <string name="sessions_android_only_message">L\'application officielle n\'est disponible que pour les appareils Android.</string>
     <string name="terminate_session_confirm_message"><![CDATA[Êtes-vous sûr de vouloir mettre fin à cette session \?]]></string>
@@ -170,11 +144,9 @@
     <string name="public_group">Groupe public</string>
     <string name="private_group">Groupe privé</string>
     <string name="clear_database">Effacer la base de données</string>
-    <string name="music">Musique</string>
     <string name="channel_created">Chaîne créée</string>
     <string name="group_created">Groupe créé</string>
     <string name="history_cleared">Historique effacé</string>
-    <string name="error_empty_group_name">Entrez un nom de groupe</string>
     <string name="error_empty_channel_name">Entrez un nom de chaîne</string>
     <string name="failed_to_delete_channel">Échec de la suppression de la chaîne</string>
     <string name="failed_to_delete_group">Échec de la suppression du groupe</string>
@@ -197,7 +169,6 @@
         <item quantity="other">%1$d membres</item>
     </plurals>
     <string name="gallery">Galerie</string>
-    <string name="to_send_images_without_compression">Pour envoyer des images sans compression</string>
     <string name="photo">Photo</string>
     <string name="file">Déposer</string>
     <string name="video">Vidéo</string>
@@ -255,8 +226,6 @@
     <string name="personal_channel">Chaîne personnelle</string>
     <string name="hide_channel">Masquer la chaîne</string>
     <string name="edit">Modifier</string>
-    <string name="edited_at">Edité à</string>
-    <string name="read_at">Lire à</string>
     <string name="edit_message">Modifier le message</string>
     <string name="edited">Édité</string>
     <string name="chat">Chat</string>
@@ -378,22 +347,25 @@
 
     <string name="chat_voice_sent_at">à %1$s</string>
     <string name="chat_voice_sent_on">%1$s à %2$s</string>
-
     <plurals name="chat_media_photos_count">
         <item quantity="one">%1$d photo</item>
         <item quantity="other">%1$d photos</item>
+        <item quantity="many">%1$d photos</item>
     </plurals>
     <plurals name="chat_media_videos_count">
         <item quantity="one">%1$d vidéo</item>
         <item quantity="other">%1$d vidéos</item>
+        <item quantity="many">%1$d vidéos</item>
     </plurals>
     <plurals name="chat_media_files_count">
         <item quantity="one">%1$d fichier</item>
         <item quantity="other">%1$d fichiers</item>
+        <item quantity="many">%1$d fichiers</item>
     </plurals>
     <plurals name="chat_media_voices_count">
         <item quantity="one">%1$d message vocal</item>
         <item quantity="other">%1$d messages vocaux</item>
+        <item quantity="many">%1$d messages vocaux</item>
     </plurals>
     <string name="chat_disable_notifications">Désactiver les notifications</string>
     <string name="chat_enable_notifications">Activer les notifications</string>
@@ -401,7 +373,6 @@
     <string name="chat_notifications_enabled">Notifications activées</string>
     <string name="notification_exception_disabled">Sans notifications</string>
     <string name="notification_exception_enabled">Avec notifications</string>
-    <string name="notification_exception_configure">Configurer</string>
     <string name="notification_exception_add">Ajouter une exception</string>
     <string name="notification_exception_receive">Recevoir les notifications</string>
     <string name="notification_exception_update_failed">Impossible de modifier les notifications</string>
@@ -410,7 +381,6 @@
     <string name="notification_reset_confirm">Voulez-vous vraiment réinitialiser les paramètres de notification ? Toutes les exceptions seront supprimées et les notifications seront activées partout.</string>
     <string name="notification_reset_action">Réinitialiser</string>
     <string name="delete_exception">Supprimer l\'exception</string>
-    <string name="exception_deleted">Exception supprimée</string>
     <string name="delete_all_exceptions">Supprimer toutes les exceptions</string>
     <string name="delete_all_exceptions_confirm">Voulez-vous vraiment supprimer toutes les exceptions ? Ces discussions suivront les paramètres de leur catégorie.</string>
     <string name="all_exceptions_deleted">Toutes les exceptions ont été supprimées</string>
@@ -420,6 +390,7 @@
     <plurals name="notification_exceptions_count">
         <item quantity="one">%1$d exception</item>
         <item quantity="other">%1$d exceptions</item>
+        <item quantity="many">%1$d exceptions</item>
     </plurals>
     <string name="media_picker_file">Fichier</string>
     <string name="media_picker_caption">Ajouter une légende…</string>
@@ -438,6 +409,7 @@
     <plurals name="chat_search_results_count">
         <item quantity="one">%1$s résultat</item>
         <item quantity="other">%1$s résultats</item>
+        <item quantity="many">%1$s résultats</item>
     </plurals>
     <string name="stickers">Stickers</string>
     <string name="sticker_packs">Packs de stickers</string>
@@ -479,6 +451,7 @@
     <plurals name="sticker_count">
         <item quantity="one">%1$d sticker</item>
         <item quantity="other">%1$d stickers</item>
+        <item quantity="many">%1$d stickers</item>
     </plurals>
     <string name="sticker_pack_share">Partager</string>
     <string name="sticker_pack_add_stickers">Ajouter des stickers</string>

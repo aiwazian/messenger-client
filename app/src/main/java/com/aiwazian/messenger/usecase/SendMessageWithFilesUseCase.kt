@@ -50,33 +50,6 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Отправка сообщения с вложениями: файлы, фото, видео и голосовые.
- *
- * Сама отправка идёт в скоупе приложения, поэтому уход из чата, поворот экрана
- * и сворачивание приложения её не прерывают: вызывающая сторона лишь ждёт
- * результат, и её отмена обрывает ожидание, а не загрузку. Остановить отправку
- * по-настоящему можно через [cancel]. Смерть процесса переживает запись в
- * [PendingSendStore] — после перезапуска отправка поднимается с тех же копий.
- *
- * Попыток столько, сколько понадобится. Одна попытка — это свежая ссылка на
- * загрузку плюс сама загрузка: форму подписывает сервер на ограниченное время,
- * поэтому после долгого обрыва сети повторять нужно с начала, а не с той же
- * формой. Пока попытки продолжаются, сообщение обязано оставаться
- * «отправляется», иначе восклицательный знак мигал бы в чате на каждой
- * неудаче.
- *
- * Отмена приходит сюда не вызовом, а исчезновением сообщения: «Отменить
- * отправку» живёт в модели экрана, удаляет локальное сообщение и про этот цикл
- * ничего не знает. Поэтому перед каждой попыткой сообщение проверяется в базе,
- * и если его больше нет — цикл останавливается и убирает копии вместе с
- * записью о начатой отправке. Без этой проверки запросы уходили бы вечно, а
- * запись поднимала бы отменённую отправку после каждого запуска.
- *
- * Статус ERROR остаётся ровно для отказов, которые повтор не изменит, — они
- * приходят как [AttachmentUploadException]: файл удалили, перенесли либо
- * отобрали к нему доступ, файл пуст (повреждён), файл не проходит по размеру.
- */
 @Singleton
 class SendMessageWithFilesUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
@@ -111,7 +84,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
         return sending.await()
     }
     
-    /** Останавливает отправку, которая продолжается в скоупе приложения. */
     fun cancel(tempId: Long) {
         running.remove(tempId)?.cancel()
     }
@@ -128,14 +100,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
         val myId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
         
-        /*
-         * Описание вложения снимается с исходника, потому что копий ещё нет и
-         * появятся они не сразу: сжатие видео идёт десятками секунд.
-         * Сообщение обязано попасть в чат до этого, иначе после нажатия
-         * «Отправить» экран стоял бы пустым почти минуту. Настоящий вес копии
-         * подтягивается ниже, когда копия готова, а имя для сервера берётся с неё
-         * же прямо перед загрузкой.
-         */
         val attachments = uris.mapIndexed { index, uri ->
             val fileName = fileNameOf(uri)
             val mimeType = uri.getFileType(context)
@@ -147,11 +111,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 else -> AttachmentType.FILE
             }
             
-            /*
-             * Кадр измеряется тут же, а не после загрузки: карточка вложения должна
-             * сразу получить нужную форму, иначе пузырёк пересчитался бы в момент,
-             * когда сервер ответил и размеры дошли до базы.
-             */
             val frame = uri.getMediaDimensions(context, mimeType)
             
             MessageAttachment(
@@ -162,8 +121,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 extension = fileName.substringAfterLast('.', ""),
                 status = DownloadStatus.UPLOADING,
                 progress = 0,
-                // Предпросмотр в чате остаётся на исходнике: он качественнее того,
-                // что уйдёт на сервер, и не исчезает вместе с копией после отправки.
                 localUri = uri,
                 type = attachmentType,
                 sortOrder = index,
@@ -188,12 +145,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
         
         chatRepository.saveLocalMessage(tempMessage)
         
-        // Доступ к выбранному файлу живёт не дольше задачи приложения, а повторы
-        // — сколько понадобится, поэтому грузим со своих копий. Фотографиям и
-        // видео копией служит результат сжатия — этим занимается сам обменник.
-        //
-        // Правки кадра из предпросмотра запекаются в ту же копию: повтор и
-        // досылка после перезапуска берут её готовой и не поворачивают кадр второй раз.
         val sourceUris = uris.mapIndexed { index, uri ->
             attachmentOutbox.keep(
                 uri = uri,
@@ -204,9 +155,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
             )
         }
         
-        // Запись о начатой отправке появляется после самого сообщения, а не до:
-        // смерть процесса между ними оставила бы запись без сообщения, и досылка
-        // после перезапуска вернула бы в чат то, чего пользователь там не видел.
         pendingSendStore.remember(
             tempId = tempId,
             chatId = chatId,
@@ -215,22 +163,10 @@ class SendMessageWithFilesUseCase @Inject constructor(
             replyTo = replyTo
         )
         
-        /*
-         * На сервер уходит копия, поэтому и кадр измеряется по ней: у сжатого
-         * видео стороны мельче исходных, и получатель должен увидеть именно те,
-         * что ему придут. Поворот учитывать отдельно не нужно: он уже запечён в
-         * пиксели копии, и стороны читаются уже развёрнутыми.
-         */
         val sourceFrames = sourceUris.map { uri ->
             uri.getMediaDimensions(context, uri.getFileType(context))
         }
         
-        /*
-         * Локальной записи стороны копии достаются только у неповёрнутых
-         * вложений. Пузырёк рисует исходник, и развёрнутые стороны положили бы
-         * карточку поперёк того, что в ней нарисовано. Повёрнутый кадр приходит в
-         * чат с сервера при следующем чтении переписки — вместе со сторонами.
-         */
         val localFrames = sourceFrames.mapIndexed { index, frame ->
             if (mediaTransforms[uris[index]]?.swapsSides == true) null else frame
         }
@@ -243,16 +179,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
             val sourceUri = sourceUris[index]
             val frame = sourceFrames[index]
             
-            /*
-             * Имя и mime-тип берутся с копии, а не из записи в базе: сжатое видео
-             * уходит как mp4, а фотография как jpg. Спроси их у исходника — в
-             * запросе на загрузку стояло бы video.mkv вместо video.mp4.
-             */
             val fileName = fileNameOf(sourceUri)
             val mimeType = sourceUri.getFileType(context)
             
-            // Идентификатор записи о файле меняется на серверный после каждой
-            // выданной формы, и переименовывать дальше нужно уже его.
             var localFileId = attachment.fileId
             
             val uploadedFileId = RetryPolicy.retryForever(
@@ -260,15 +189,13 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 isPermanent = { it is AttachmentUploadException || it is SendCancelledException }
             ) {
                 if (isCancelled(tempId)) {
-                    return@retryForever Result.failure<String>(SendCancelledException(tempId))
+                    return@retryForever Result.failure(SendCancelledException(tempId))
                 }
                 
-                // Размер спрашиваем заново на каждой попытке: у повреждённого
-                // файла он нулевой, и сервер отказывает ещё на выдаче формы.
                 val fileSize = sizeOf(sourceUri)
                 
                 if (fileSize <= 0) {
-                    return@retryForever Result.failure<String>(
+                    return@retryForever Result.failure(
                         AttachmentUploadException.Empty(sourceUri.toString())
                     )
                 }
@@ -286,7 +213,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 
                 if (initResponse == null) {
                     keepSending(tempId)
-                    return@retryForever Result.failure<String>(
+                    return@retryForever Result.failure(
                         IOException("Unable to init upload for $fileName")
                     )
                 }
@@ -307,8 +234,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 
                 uploadResult.map { initResponse.fileId }
             }.getOrElse { error ->
-                // Сюда попадаем только на безнадёжном отказе: обрывы сети и
-                // просроченные формы отправка переживает сама.
                 giveUp(tempId, sourceUris)
                 
                 if (error is SendCancelledException) {
@@ -335,7 +260,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
             isPermanent = { it is AttachmentUploadException || it is SendCancelledException }
         ) {
             if (isCancelled(tempId)) {
-                return@retryForever Result.failure<Message>(SendCancelledException(tempId))
+                return@retryForever Result.failure(SendCancelledException(tempId))
             }
             
             val attempt = chatRepository.confirmFileUpload(
@@ -353,35 +278,13 @@ class SendMessageWithFilesUseCase @Inject constructor(
         }
         
         result.onSuccess {
-            // Первым делом: смерть процесса именно здесь отправила бы сообщение
-            // второй раз после перезапуска.
             pendingSendStore.forget(tempId)
             sourceUris.forEach { uri -> attachmentOutbox.release(uri) }
             
             chatRepository.updateMessageId(tempId, it.id)
             
-            /*
-             * Статус меняется здесь же, вслед за идентификатором.
-             *
-             * Раньше менялся только идентификатор, а статус так и оставался
-             * SENDING — тем самым, что выставлен до загрузки. Сообщение с фото
-             * или видео всё время считалось отправляемым: в меню висела
-             * «Отменить отправку», уже ничего не отменявшая, и ровно поэтому не
-             * было ни пересылки, ни удаления, ни правки — пункты меню и ответ
-             * свифом требуют SENT. При перезаходе в чат сообщение перечитывалось
-             * с сервера уже отправленным — именно поэтому после перезахода всё
-             * работало.
-             */
             chatRepository.updateMessageStatus(it.id, MessageStatus.SENT)
             
-            /*
-             * Файлы тоже перестают быть «загружаемыми».
-             *
-             * Подтверждённое сервером сообщение в базу не пишется, поэтому
-             * статус файла навсегда оставался UPLOADING: на месте картинки висел
-             * индикатор с крестиком вместо самой картинки, а «Сохранить в
-             * Загрузки» не появлялось вовсе.
-             */
             uploadResults.forEach { uploaded ->
                 fileRepository.updateFileStatus(uploaded.fileId, DownloadStatus.UPLOADED)
             }
@@ -405,13 +308,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
         return result
     }
     
-    /**
-     * Имя файла с расширением.
-     *
-     * Расширение достаётся из mime-типа, если в имени его нет: без него чужой
-     * клиент не поймёт, что скачал, а голосовые и вложения из некоторых
-     * провайдеров приходят без расширения вовсе.
-     */
     private fun fileNameOf(uri: Uri): String {
         val name = uri.getFileName(context) ?: DEFAULT_FILE_NAME
         
@@ -425,21 +321,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
         return if (extension != null) "$name.$extension" else name
     }
     
-    /**
-     * Подтягивает запись о файле к копии, которая реально уйдёт на сервер: вес
-     * и размеры кадра.
-     *
-     * В чате у сжатого видео иначе висел бы вес исходника — всё время, пока
-     * идёт загрузка, и потом число прыгало бы на втрое после ответа сервера.
-     * С размерами кадра ровно та же история: по ним строится карточка
-     * вложения, и после сжатия её форма обязана совпасть с тем, что увидит
-     * получатель.
-     *
-     * Пустым кадром ничего не затирается: если копию прочитать не удалось,
-     * лучше оставить размеры исходника, чем оставить карточку без формы.
-     * Этим же пользуется поворот кадра: у повёрнутого вложения стороны
-     * локально остаются исходными — под тот исходник, что рисует пузырёк.
-     */
     private suspend fun syncLocalFiles(
         attachments: List<MessageAttachment>,
         sourceUris: List<Uri>,
@@ -464,13 +345,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
         }
     }
     
-    /**
-     * Отправку отменили: кнопка удаляет локальное сообщение, и это единственный
-     * след, который доходит до скоупа приложения.
-     *
-     * Сбой чтения базы считаем за «сообщение на месте»: оборвать из-за него
-     * живую отправку хуже, чем сделать лишнюю попытку.
-     */
     private suspend fun isCancelled(tempId: Long): Boolean = try {
         messageDao.getMessageById(tempId) == null
     } catch (e: Exception) {
@@ -478,10 +352,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
         false
     }
     
-    /**
-     * Размер файла на диске. У своей копии он читается напрямую: спрашивать
-     * размер file://-ссылки у ContentResolver незачем.
-     */
     private fun sizeOf(uri: Uri): Long {
         if (uri.scheme == SCHEME_FILE) {
             return uri.path?.let { File(it).length() } ?: 0
@@ -490,16 +360,10 @@ class SendMessageWithFilesUseCase @Inject constructor(
         return uri.getFileSize(context) ?: 0
     }
     
-    /**
-     * Неудачная попытка не должна проступать в чат: пока повторы продолжаются,
-     * сообщение остаётся «отправляется», даже если репозиторий успел пометить
-     * его ошибкой.
-     */
     private suspend fun keepSending(tempId: Long) {
         chatRepository.updateMessageStatus(tempId, MessageStatus.SENDING)
     }
     
-    /** Отправка окончена безнадёжно: ни копии, ни запись о ней больше не нужны. */
     private suspend fun giveUp(tempId: Long, sourceUris: List<Uri>) {
         pendingSendStore.forget(tempId)
         sourceUris.forEach { uri -> attachmentOutbox.release(uri) }

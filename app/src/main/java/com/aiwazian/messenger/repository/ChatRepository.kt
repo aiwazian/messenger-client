@@ -204,100 +204,6 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    fun getMessagesFlow(
-        senderId: Long,
-        chatId: Long,
-        limit: Int,
-        offset: Int
-    ): Flow<List<Message>> {
-        return when (ChatType.fromId(chatId)) {
-            ChatType.CHANNEL -> messageDao.getMessagesWithAttachments(chatId, chatId, limit, offset)
-                .map { list ->
-                    list.map { messageWithAttachments ->
-                        val attachments = messageWithAttachments.attachments.map { attWithFile ->
-                            attWithFile.toDomain()
-                        }
-                        messageWithAttachments.message.toDomain(attachments)
-                    }
-                }
-            
-            ChatType.GROUP -> messageDao.getMessagesWithAttachments(chatId, limit, offset)
-                .map { list ->
-                    list.map { messageWithAttachments ->
-                        val attachments = messageWithAttachments.attachments.map { attWithFile ->
-                            attWithFile.toDomain()
-                        }
-                        messageWithAttachments.message.toDomain(attachments)
-                    }
-                }
-            
-            ChatType.PRIVATE -> messageDao.getMessagesWithAttachments(
-                senderId, chatId, limit, offset
-            )
-                .map { list ->
-                    list.map { messageWithAttachments ->
-                        val attachments = messageWithAttachments.attachments.map { attWithFile ->
-                            attWithFile.toDomain()
-                        }
-                        messageWithAttachments.message.toDomain(attachments)
-                    }
-                }
-            
-            else -> emptyFlow()
-        }
-    }
-    
-    suspend fun getMessages(
-        chatId: Long,
-        limit: Int? = null,
-        offset: Int? = null
-    ): Result<List<Message>> {
-        return try {
-            val response = messageApi.getMessages(chatId, limit, offset)
-            if (response.isSuccessful) {
-                val dtos = response.body().orEmpty()
-                val messages = dtos.map { messageDto ->
-                    messageDto.toDomain()
-                }
-                
-                if (messages.isNotEmpty()) {
-                    val maxTime = messages.maxOf { it.sendTime }
-                    val minTime = messages.minOf { it.sendTime }
-                    val receivedIds = messages.map { it.id }
-                    val userId = userRepository.getMe().first().id
-                    messageDao.deleteMessagesInRangeExcluding(
-                        userId,
-                        chatId,
-                        minTime,
-                        maxTime,
-                        receivedIds
-                    )
-                }
-                
-                saveMessagesToDb(messages)
-                readInfoCache.update(messages)
-                Result.success(messages)
-            } else {
-                Log.e(
-                    "ChatRepository",
-                    "Failed to get messages for chat $chatId: ${response.message()}"
-                )
-                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
-            }
-        } catch (e: Exception) {
-            Log.e("ChatRepository", "Error getting messages for chat $chatId", e)
-            Result.failure(e)
-        }
-    }
-    
-    /**
-     * Содержимое текущего окна истории из Room.
-     * Единственный источник данных для списка сообщений в чате.
-     *
-     * Список просмотров подмешивается из MessageReadInfoCache: в Room его нет и быть
-     * не должно, поэтому без этого шага «N просмотров» и время прочтения терялись бы
-     * ровно в тот момент, когда ответ сервера уходит в локальный кэш сообщений.
-     */
     fun getMessagesWindowFlow(
         userId: Long,
         chatId: Long,
@@ -499,7 +405,7 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    suspend fun markMessageAsRead(chatId: Long, messageId: Long) {
+    suspend fun markMessageAsRead(messageId: Long) {
         val messageWithAttachments = messageDao.getMessageById(messageId)
         if (messageWithAttachments != null) {
             val msg = messageWithAttachments.message
@@ -698,7 +604,7 @@ class ChatRepository @Inject constructor(
      * при быстром скролле иначе летит десятки запросов в секунду.
      */
     suspend fun markReadUpTo(chatId: Long, messageId: Long): Boolean {
-        markLocalReadUpTo(chatId, messageId)
+        markLocalReadUpTo(messageId)
         
         return try {
             val response = messageApi.markRead(chatId, messageId)
@@ -717,11 +623,6 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    /** Компатибильность со старыми вызовами. */
-    suspend fun makeAsRead(chatId: Long, messageId: Long): Boolean =
-        markReadUpTo(chatId, messageId)
-    
-    /** Прочитан весь чат: кнопка  «вниз» и выход из чата с конца истории. */
     suspend fun markAllAsRead(chatId: Long): Boolean {
         return try {
             val response = messageApi.markAllRead(chatId, MarkReadRequestDto())
@@ -740,13 +641,7 @@ class ChatRepository @Inject constructor(
             false
         }
     }
-    
-    /**
-     * Массовое «Пометить прочитанным» из списка чатов.
-     *
-     * Список чатов фильтруется вызывающей стороной: на сервер уходят только
-     * реально непрочитанные чаты.
-     */
+
     suspend fun markChatsRead(chatIds: List<Long>): Boolean {
         if (chatIds.isEmpty()) return true
         return try {
@@ -814,12 +709,7 @@ class ChatRepository @Inject constructor(
         chatDao.incrementUnread(myId, chatId, messageId)
     }
     
-    suspend fun clearUnread(chatId: Long) {
-        val myId = userRepository.getMe().firstOrNull()?.id ?: return
-        chatDao.clearUnread(myId, chatId)
-    }
-    
-    private suspend fun markLocalReadUpTo(chatId: Long, messageId: Long) {
+    private suspend fun markLocalReadUpTo(messageId: Long) {
         val myId = userRepository.getMe().firstOrNull()?.id ?: return
         val message = messageDao.getMessageById(messageId)?.message ?: return
         messageDao.markIncomingReadUpTo(
@@ -921,30 +811,6 @@ class ChatRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error clearing chat history", e)
             false
-        }
-    }
-    
-    suspend fun archive(chatId: Long) {
-        try {
-            val response = chatApi.archiveChat(chatId)
-            if (!response.isSuccessful) {
-                Log.e("ChatRepository", "Failed to archive chat $chatId: ${response.message()}")
-            }
-        } catch (e: Exception) {
-            Log.e("ChatRepository", "Error archiving chat $chatId", e)
-        }
-    }
-    
-    suspend fun unarchive(chatId: Long) {
-        try {
-            val response = chatApi.unarchiveChat(chatId)
-            if (!response.isSuccessful) {
-                Log.e(
-                    "ChatRepository", "Failed to unarchive chat $chatId: ${response.message()}"
-                )
-            }
-        } catch (e: Exception) {
-            Log.e("ChatRepository", "Error unarchiving chat $chatId", e)
         }
     }
     

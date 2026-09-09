@@ -19,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlin.math.abs
 
@@ -32,22 +31,15 @@ const val DISMISS_BACKGROUND_MAX_ALPHA = 1f
 /** Прозрачность фона у порога закрытия: ниже она уже не опускается. */
 const val DISMISS_BACKGROUND_MIN_ALPHA = 0.2f
 
-/**
- * Состояние вертикального свайпа, который закрывает просмотрщик.
- *
- * @param thresholdPx расстояние, после которого отпущенный палец закрывает содержимое.
- */
 @Stable
 class DismissDragState(val thresholdPx: Float = DISMISS_DRAG_THRESHOLD) {
     
-    /** На сколько содержимое ушло за пальцем. */
     var offsetY by mutableFloatStateOf(0f)
         private set
     
     var isDragging by mutableStateOf(false)
         private set
     
-    /** Насколько свайп близок к закрытию: от нуля до единицы. */
     val progress: Float
         get() = (abs(offsetY) / thresholdPx).coerceIn(0f, 1f)
     
@@ -71,17 +63,6 @@ fun rememberDismissDragState(thresholdPx: Float = DISMISS_DRAG_THRESHOLD): Dismi
     return remember(thresholdPx) { DismissDragState(thresholdPx) }
 }
 
-/**
- * Тащит содержимое за пальцем по вертикали и закрывает его, если палец отпустили
- * дальше порога.
- *
- * Жесты, которые уже кем-то забраны, пропускаются. Именно так увеличенное
- * содержимое остаётся открытым: его собственный зум забирает вертикальный свайп
- * себе, а листалка забирает горизонтальный.
- *
- * @param onTap нажатие, которое не перешло в свайп и никем не занято.
- * @param onDismiss палец отпустили дальше порога.
- */
 @Composable
 fun Modifier.dismissDragGestures(
     state: DismissDragState, onTap: () -> Unit = {}, onDismiss: () -> Unit
@@ -161,15 +142,6 @@ fun Modifier.dismissDragGestures(
     }
 }
 
-/**
- * Смещение, с которым сейчас надо рисовать содержимое: сразу за пальцем во
- * время свайпа и плавно обратно, когда свайпа не хватило.
- *
- * Просмотрщикам, которые закрываются переходом в миниатюру, смещение нужно
- * числом: оно входит в расчёт границ, из которых стартует уменьшение. Отдельный
- * слой отрисовки такой переход только сломал бы, сдвинув уже уменьшенное
- * содержимое ещё раз.
- */
 @Composable
 fun DismissDragState.animatedOffsetY(): Float {
     val animatedOffsetY by animateFloatAsState(
@@ -182,22 +154,6 @@ fun DismissDragState.animatedOffsetY(): Float {
     return animatedOffsetY
 }
 
-/**
- * Смещает содержимое туда, куда его увёл свайп, и плавно возвращает на место, когда
- * свайпа не хватило.
- */
-@Composable
-fun Modifier.dismissDragOffset(state: DismissDragState): Modifier {
-    val animatedOffsetY = state.animatedOffsetY()
-    
-    return this.graphicsLayer { translationY = animatedOffsetY }
-}
-
-/**
- * Прозрачность фона, который тает по мере свайпа: [maxAlpha] в покое и [minAlpha]
- * у самого порога закрытия. Совсем прозрачным фон не становится, иначе за ним
- * будет видно чёрное затемнение окна, а не цвет темы.
- */
 @Composable
 fun DismissDragState.animatedBackgroundAlpha(
     maxAlpha: Float = DISMISS_BACKGROUND_MAX_ALPHA,

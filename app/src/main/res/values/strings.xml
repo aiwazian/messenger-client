@@ -13,7 +13,6 @@
     <string name="profile">Profile</string>
     <string name="saved_messages">Saved Messages</string>
     <string name="new_message">New Message</string>
-    <string name="information">Info</string>
     <string name="dark_theme">Dark Theme</string>
     <string name="security">Security</string>
     <string name="delete_account">Delete Account</string>
@@ -25,7 +24,6 @@
     <string name="create_channel">New Channel</string>
     <string name="data_and_storage">Data and Storage</string>
     <string name="chat_folders">Chat Folders</string>
-    <string name="faq">Messenger FAQ</string>
     <string name="color_theme">Color Theme</string>
     <string name="write_about_me">Add a few words about yourself</string>
     <string name="protect_your_account">Protect your account</string>
@@ -40,12 +38,10 @@
     <string name="off">Off</string>
     <string name="everybody">Everybody</string>
     <string name="nobody">Nobody</string>
-    <string name="messages">Messages</string>
     <string name="last_seen">Last Seen</string>
     <string name="who_can_see_my_last_seen">Who can see my last seen time?</string>
     <string name="online">Online</string>
     <string name="last_seen_recently">Online recently</string>
-    <string name="last_seen_at">last seen at %s</string>
     <string name="this_device">This device</string>
     <string name="members">Members</string>
     <string name="first_name">First name</string>
@@ -54,17 +50,12 @@
     <string name="alternative_options">Alternative options</string>
     <string name="clear_cache">Clear Cache</string>
     <string name="add_account">Add Account</string>
-    <string name="accounts">Accounts</string>
-    <string name="archive">Archived Chats</string>
-    <string name="archive_settings">Archive Settings</string>
-    <string name="how_does_it_work">How does it work?</string>
     <string name="date_of_birth">Date of Birth</string>
     <string name="connecting">Connecting</string>
     <string name="invites">Invites</string>
     <string name="dynamic_color">Dynamic color</string>
     <string name="create_new_folder">Create New Folder</string>
     <string name="all_chats">All Chats</string>
-    <string name="save">Save</string>
     <string name="remove_folder">Remove Folder</string>
     <string name="pin">Pin</string>
     <string name="unpin">Unpin</string>
@@ -74,7 +65,6 @@
     <string name="folder_name">Folder name</string>
     <string name="included_chats">Included Chats</string>
     <string name="add_chats">Add Chats</string>
-    <string name="cloud_password_description">You can set a password that will be required when you log in on a new device.</string>
     <string name="enter_password">Enter password</string>
     <string name="passcode_lock_description">When a passcode is set, a lock icon appears above your chat list. Tap it to lock your app.</string>
     <string name="cancel">Cancel</string>
@@ -85,7 +75,6 @@
     <string name="delete">Delete</string>
     <string name="chat_folders_description">Create folders for different groups of chats and quickly switch between them.</string>
     <string name="terminate_all_other_sessions_description">Logs out all devices except for this one.</string>
-    <string name="connect_device">Connect Device</string>
     <string name="turn_off">Turn Off</string>
     <string name="turn_passcode_off">Turn Passcode Off</string>
     <string name="copy">Copy</string>
@@ -93,22 +82,12 @@
     <string name="change_passcode">Change Passcode</string>
     <string name="fingerprint_unlock">Fingerprint Unlock</string>
     <string name="ok">OK</string>
-    <string name="chat_archived">Chat archived</string>
     <string name="delete_message">Delete message</string>
-    <string name="also_delete_for">Also delete for</string>
     <string name="delete_message_description">Are you sure you want to delete this message?</string>
     <string name="delete_for_recipient">Delete for recipient</string>
     <string name="block_user">Block user</string>
-    <string name="start_secret_chat">Start Secret Chat</string>
     <string name="add_to_home_screen">Add to Home Screen</string>
     <string name="block_user_confirm_message">Are you sure you want to block</string>
-    <string name="secret_chat">Secret chat</string>
-    <string name="secret_chat_confirm_message">Are you sure you want to start a secret chat?</string>
-    <string name="start">Start</string>
-    <string name="change_profile_color">Change profile color</string>
-    <string name="change_username">Change Username</string>
-    <string name="mute">Mute</string>
-    <string name="unmute">Unmute</string>
     <string name="join">Join</string>
     <string name="leave_channel">Leave Channel</string>
     <string name="leave_channel_confirm_message">Are you sure you want to leave</string>
@@ -120,7 +99,6 @@
     <string name="delete_channel">Delete Channel</string>
     <string name="clear_history">Clear History</string>
     <string name="public_link">Public Link</string>
-    <string name="invite_link">Invite Link</string>
     <string name="private_channel">Private Channel</string>
     <string name="public_channel">Public Channel</string>
     <string name="channel_name">Channel name</string>
@@ -134,8 +112,6 @@
     <string name="delete_group">Delete Group</string>
     <string name="save_to_downloads">Save to Downloads</string>
     <string name="copied">Copied</string>
-    <string name="internal_storage">Internal Storage</string>
-    <string name="file_system_search">File system search</string>
     <string name="system_default">System Default</string>
     <string name="disabled">Disabled</string>
     <string name="enabled">Enabled</string>
@@ -144,12 +120,10 @@
     <string name="documents">Documents</string>
     <string name="other">Other</string>
     <string name="files">Files</string>
-    <string name="chats">Chats</string>
     <string name="audio">Audio</string>
     <string name="storage_usage">Storage Usage</string>
     <string name="group_name">Group name</string>
     <string name="logout_confirm_message">Are you sure you want to log out?</string>
-    <string name="delete_account_confirm_message">Are you sure you want to delete your account?</string>
     <string name="delete_account_message">Everything related to your account will be permanently deleted.</string>
     <string name="sessions_android_only_message">The official app is only available for Android devices.</string>
     <string name="terminate_session_confirm_message">Are you sure you want to terminate this session?</string>
@@ -170,11 +144,9 @@
     <string name="public_group">Public Group</string>
     <string name="private_group">Private Group</string>
     <string name="clear_database">Clear Database</string>
-    <string name="music">Music</string>
     <string name="channel_created">Channel Created</string>
     <string name="group_created">Group Created</string>
     <string name="history_cleared">History Cleared</string>
-    <string name="error_empty_group_name">Enter a group name</string>
     <string name="error_empty_channel_name">Enter a channel name</string>
     <string name="failed_to_delete_channel">Failed to delete channel</string>
     <string name="failed_to_delete_group">Failed to delete group</string>
@@ -203,7 +175,6 @@
         <item quantity="other">%1$d members</item>
     </plurals>
     <string name="gallery">Gallery</string>
-    <string name="to_send_images_without_compression">To send images without compression</string>
     <string name="photo">Photo</string>
     <string name="file">File</string>
     <string name="video">Video</string>
@@ -261,8 +232,6 @@
     <string name="personal_channel">Personal channel</string>
     <string name="hide_channel">Hide channel</string>
     <string name="edit">Edit</string>
-    <string name="edited_at">Edited at</string>
-    <string name="read_at">Read at</string>
     <string name="edit_message">Edit Message</string>
     <string name="edited">Edited</string>
     <string name="chat">Chat</string>
@@ -407,7 +376,6 @@
     <string name="chat_notifications_enabled">Notifications enabled</string>
     <string name="notification_exception_disabled">Notifications off</string>
     <string name="notification_exception_enabled">Notifications on</string>
-    <string name="notification_exception_configure">Configure</string>
     <string name="notification_exception_add">Add exception</string>
     <string name="notification_exception_receive">Receive notifications</string>
     <string name="notification_exception_update_failed">Failed to update notifications</string>
@@ -416,7 +384,6 @@
     <string name="notification_reset_confirm">Are you sure you want to reset notification settings? All exceptions will be deleted and notifications will be enabled everywhere.</string>
     <string name="notification_reset_action">Reset</string>
     <string name="delete_exception">Delete exception</string>
-    <string name="exception_deleted">Exception deleted</string>
     <string name="delete_all_exceptions">Delete all exceptions</string>
     <string name="delete_all_exceptions_confirm">Are you sure you want to delete all exceptions? These chats will follow their category settings.</string>
     <string name="all_exceptions_deleted">All exceptions deleted</string>

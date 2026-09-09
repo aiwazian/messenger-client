@@ -36,8 +36,6 @@ class ShareActivity : AppCompatActivity() {
         val sharedText = extractSharedText(intent)
         val sharedFiles = extractSharedFiles(intent)
         
-        // Система может прислать текст, файлы или то и другое сразу — закрываемся
-        // только если отправлять вообще нечего.
         if (sharedText.isNullOrBlank() && sharedFiles.isEmpty()) {
             finish()
             return
@@ -49,7 +47,6 @@ class ShareActivity : AppCompatActivity() {
         }
         
         if (!hasSession) {
-            // Экран входа живёт в MainActivity, отдельной активити авторизации нет.
             startActivity(Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             })
@@ -57,12 +54,6 @@ class ShareActivity : AppCompatActivity() {
             return
         }
         
-        /*
-         * Соединение поднимается и здесь: шаринг открывает только это окно, MainActivity
-         * при этом может вообще не запускаться. Без этого вызова приложение остаётся без
-         * сокета и свежего состояния — список чатов для выбора берётся из базы и никогда
-         * не обновляется, а отправленное сообщение нечем синхронизировать.
-         */
         serverSyncService.start()
         
         enableEdgeToEdge()
@@ -94,16 +85,9 @@ class ShareActivity : AppCompatActivity() {
         return intent.getStringExtra(Intent.EXTRA_TEXT)
     }
     
-    /**
-     * ACTION_SEND приносит одну ссылку, ACTION_SEND_MULTIPLE — список.
-     *
-     * Типизированные версии getParcelableExtra появились только в API 33, а
-     * IntentCompat — в свежих версиях androidx.core, поэтому здесь осознанно
-     * используются deprecated-перегрузки: они работают на всех версиях.
-     */
     @Suppress("DEPRECATION")
     private fun extractSharedFiles(intent: Intent): List<Uri> = when (intent.action) {
-        Intent.ACTION_SEND -> listOfNotNull(intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM))
+        Intent.ACTION_SEND -> listOfNotNull(intent.getParcelableExtra(Intent.EXTRA_STREAM))
         
         Intent.ACTION_SEND_MULTIPLE ->
             intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM).orEmpty()

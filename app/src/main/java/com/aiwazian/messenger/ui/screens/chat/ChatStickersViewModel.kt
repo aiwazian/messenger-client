@@ -43,14 +43,6 @@ class ChatStickersViewModel @Inject constructor(
     
     private var isAddedPacksRequested = false
     
-    fun togglePanel() {
-        if (_uiState.value.isPanelVisible) {
-            hidePanel()
-        } else {
-            showPanel()
-        }
-    }
-    
     fun showPanel() {
         loadAddedPacks()
         

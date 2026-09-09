@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun CountdownTextButton(
@@ -41,7 +42,7 @@ fun CountdownTextButton(
     
     LaunchedEffect(Unit) {
         while (seconds > 0) {
-            delay(1000)
+            delay(1.seconds)
             waitSeconds--
         }
     }

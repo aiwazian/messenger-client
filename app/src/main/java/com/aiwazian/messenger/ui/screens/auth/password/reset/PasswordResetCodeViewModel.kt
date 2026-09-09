@@ -48,7 +48,7 @@ class PasswordResetCodeViewModel @Inject constructor(
         }
     }
     
-    fun onCodeInputStatusShown(status: CodeInputStatus) {
+    fun onCodeInputStatusShown() {
         _uiState.update { it.copy(codeStatus = CodeInputStatus.Default) }
     }
     

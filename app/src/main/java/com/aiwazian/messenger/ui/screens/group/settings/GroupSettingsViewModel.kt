@@ -107,14 +107,6 @@ class GroupSettingsViewModel @Inject constructor(
         }
     }
     
-    fun setPendingAvatarUri(uri: Uri?) {
-        _uiState.update { it.copy(pendingAvatarUri = uri) }
-    }
-    
-    fun clearPendingAvatarUri() {
-        _uiState.update { it.copy(pendingAvatarUri = null) }
-    }
-    
     fun deleteAvatar(fileId: String) {
         viewModelScope.launch {
             groupRepository.deleteAvatar(_uiState.value.group.id, fileId).onFailure {
@@ -127,9 +119,6 @@ class GroupSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val groupId = _uiState.value.group.id
             
-            // Аватарка уходит сжатой и без метаданных, и сжать её нужно до выдачи
-            // формы: сервер подписывает её под заявленный размер и тип. Сжать не
-            // удалось — уйдёт исходник: без аватарки хуже, чем с тяжёлой.
             val avatarUri = imageCompressor.compressAvatar(uri) ?: uri
             
             groupRepository.initUploadAvatar(

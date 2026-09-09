@@ -37,12 +37,8 @@ class Application : Application() {
         
         SessionManager.init(authRepository)
         
-        // Прошлый запуск могли убить посреди отправки файлов: сообщение и
-        // вложения доедут сами, без ручного повтора.
         pendingSendResumer.resume()
         
-        // Текст оборванной отправки лежит в самом сообщении, поэтому такие
-        // сообщения дошлются при открытии своего чата.
         failedSendRetrier.start()
         
         FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(!BuildConfig.DEBUG)

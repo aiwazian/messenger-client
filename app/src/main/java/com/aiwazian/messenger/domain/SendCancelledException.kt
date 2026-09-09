@@ -18,5 +18,4 @@ import java.io.IOException
  * Наследник IOException, а не CancellationException: отмена корутины прервала
  * бы и саму уборку.
  */
-class SendCancelledException(val tempId: Long) :
-    IOException("Send #$tempId was cancelled")
+class SendCancelledException(tempId: Long) : IOException("Send #$tempId was cancelled")

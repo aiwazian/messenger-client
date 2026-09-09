@@ -24,14 +24,6 @@ class PushService : FirebaseMessagingService() {
     @Inject
     lateinit var accountDao: AccountDao
     
-    /**
-     * Замена onNewToken: вместо registration token теперь приходит Firebase
-     * Installation ID, и именно по нему адресуется уведомление.
-     *
-     * Колбек вызывается после register(), при смене FID (переустановка, очистка данных,
-     * восстановление на другом устройстве) и при плановой синхронизации SDK.
-     * Сохранением занимается PushRegistrar: сервис к ответу сервера может быть уже убит.
-     */
     override fun onRegistered(installationId: String) {
         super.onRegistered(installationId)
         
@@ -52,12 +44,6 @@ class PushService : FirebaseMessagingService() {
             return
         }
         
-        /*
-         * Время отправки берётся с сервера, а не из момента доставки: пуш мог
-         * пролежать в очереди FCM час, и без этого старое сообщение выглядело бы
-         * только что написанным. Старый сервер поля не пришлёт — тогда прежнее
-         * поведение.
-         */
         val sendTime = data["sendTime"]?.toLongOrNull() ?: System.currentTimeMillis()
         
         notificationHelper.showMessageNotification(
@@ -68,16 +54,7 @@ class PushService : FirebaseMessagingService() {
         )
     }
     
-    /**
-     * Уведомление показывается только активному аккаунту. Сервер держит FID только
-     * у активной сессии, но если переключение произошло без сети или пуш уже был
-     * в полёте, чужое уведомление всё равно может доехать — здесь оно отбрасывается.
-     *
-     * onMessageReceived работает на фоновом потоке FCM, а решение нужно принять до
-     * выхода из метода, поэтому один короткий запрос к базе ждём на месте.
-     */
     private fun isForCurrentAccount(recipientId: Long?): Boolean {
-        // Нет получателя — значит сервер старее этого клиента: показываем как раньше.
         recipientId ?: return true
         
         val currentUserId = runBlocking { accountDao.getCurrentAccount()?.userId }

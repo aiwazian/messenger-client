@@ -38,30 +38,7 @@ class UploadManager @Inject constructor(
     private val fileRepository: FileRepository
 ) {
     private val activeUploads = mutableMapOf<String, okhttp3.Call>()
-    
-    /**
-     * Загружает файл по форме, подписанной сервером (S3 presigned POST).
-     *
-     * Раньше здесь был PUT по одной ссылке, и S3 принимал что угодно: и файл
-     * произвольного размера, и любой Content-Type. Теперь ограничения зашиты в
-     * политику формы, поэтому лишние поля [FileInitResponseDto.fields] обязаны
-     * уйти в запрос без изменений и строго до части с файлом.
-     *
-     * @param maxAttempts сколько раз пробовать. Загрузки, чей прогресс ждёт
-     * пользователь на экране (аватарки), обязаны когда-то завершиться, поэтому
-     * по умолчанию их три. Вложения сообщений передают [UNLIMITED_ATTEMPTS]:
-     * обрыв сети или 5xx только откладывает следующую попытку, а задержка
-     * растёт до [RetryPolicy.MAX_DELAY].
-     *
-     * Отказ 4xx возвращается сразу, но приговором не является: подпись формы
-     * живёт ограниченное время, и повторять с той же формой действительно
-     * бессмысленно, а вот с новой попытка обычно проходит. Запросить её —
-     * дело вызывающей стороны.
-     *
-     * Окончательно неудачными заканчиваются только отказы из
-     * [AttachmentUploadException]: файла больше нет либо он не проходит по
-     * размеру.
-     */
+
     suspend fun upload(
         fileUri: Uri,
         upload: FileInitResponseDto,
@@ -70,9 +47,7 @@ class UploadManager @Inject constructor(
     ): Result<String> = withContext(Dispatchers.IO) {
         val fileSize = fileUri.getFileSize(context) ?: 0
         
-        // Проверка ради понятной ошибки: иначе после долгой загрузки придёт
-        // голый 403 от S3 без объяснений.
-        if (upload.maxSizeBytes > 0 && fileSize > upload.maxSizeBytes) {
+        if (upload.maxSizeBytes in 1..<fileSize) {
             return@withContext Result.failure(
                 AttachmentUploadException.TooLarge(fileSize, upload.maxSizeBytes)
             )
@@ -83,8 +58,6 @@ class UploadManager @Inject constructor(
         var lastError: IOException? = null
         
         while (attempt <= maxAttempts) {
-            // Источник проверяется перед каждой попыткой: пока отправка ждала
-            // сеть, файл могли удалить или перенести — тогда повторять нечего.
             val missingSource = findMissingSource(fileUri)
             
             if (missingSource != null) {
@@ -110,7 +83,6 @@ class UploadManager @Inject constructor(
                     multipartBuilder.addFormDataPart(key, value)
                 }
                 
-                // Файл строго последней частью — так требует политика S3.
                 multipartBuilder.addFormDataPart("file", fileName, requestBody)
                 
                 val request = Request.Builder().url(upload.url).post(multipartBuilder.build())
@@ -137,8 +109,6 @@ class UploadManager @Inject constructor(
                 
                 activeUploads.remove(fileId)
                 
-                // 4xx — форма больше не годится: истекла подпись либо файл не
-                // прошёл её политику. С этой формой повторять нечего, нужна новая.
                 if (response.code in 400..499) {
                     return@withContext Result.failure(
                         IOException("Upload rejected by storage with code ${response.code}")
@@ -153,8 +123,6 @@ class UploadManager @Inject constructor(
                     AttachmentUploadException.SourceMissing(fileUri.toString(), e)
                 )
             } catch (e: SecurityException) {
-                // Доступ к чужой content://-ссылке могли отозвать: файл стал
-                // недостижим ровно так же, как удалённый.
                 activeUploads.remove(fileId)
                 return@withContext Result.failure(
                     AttachmentUploadException.SourceMissing(fileUri.toString(), e)
@@ -180,13 +148,6 @@ class UploadManager @Inject constructor(
         activeUploads.remove(fileId)
     }
     
-    /**
-     * Открывает источник на пробу.
-     *
-     * @return отказ, если файла больше нет: удалили, перенесли либо отобрали
-     * доступ. Прочие ошибки чтения — обычная неудачная попытка, и о них здесь
-     * ничего не сообщается.
-     */
     private fun findMissingSource(fileUri: Uri): AttachmentUploadException.SourceMissing? {
         return try {
             val stream = context.contentResolver.openInputStream(fileUri)

@@ -13,7 +13,6 @@
     <string name="profile">Perfil</string>
     <string name="saved_messages">Mensajes guardados</string>
     <string name="new_message">Nuevo mensaje</string>
-    <string name="information">Información</string>
     <string name="dark_theme">Tema oscuro</string>
     <string name="security">Seguridad</string>
     <string name="delete_account">Eliminar cuenta</string>
@@ -25,7 +24,6 @@
     <string name="create_channel">Nuevo canal</string>
     <string name="data_and_storage">Datos y almacenamiento</string>
     <string name="chat_folders">Carpetas de chat</string>
-    <string name="faq">Preguntas frecuentes sobre mensajería</string>
     <string name="color_theme">Tema de color</string>
     <string name="write_about_me">Añade algunas palabras sobre ti</string>
     <string name="protect_your_account">Protege tu cuenta</string>
@@ -40,12 +38,10 @@
     <string name="off">Apagado</string>
     <string name="everybody">Todos</string>
     <string name="nobody">Nadie</string>
-    <string name="messages">Mensajes</string>
     <string name="last_seen">Visto por última vez</string>
     <string name="who_can_see_my_last_seen">¿Quién puede ver la última vez que lo vi\?</string>
     <string name="online">En línea</string>
     <string name="last_seen_recently">En línea recientemente</string>
-    <string name="last_seen_at">visto por última vez en %s</string>
     <string name="this_device">este dispositivo</string>
     <string name="members">Miembros</string>
     <string name="first_name">Nombre de pila</string>
@@ -54,17 +50,12 @@
     <string name="alternative_options">Opciones alternativas</string>
     <string name="clear_cache">Borrar caché</string>
     <string name="add_account">Agregar cuenta</string>
-    <string name="accounts">Cuentas</string>
-    <string name="archive">Chats archivados</string>
-    <string name="archive_settings">Configuración de archivo</string>
-    <string name="how_does_it_work">¿Cómo funciona\?</string>
     <string name="date_of_birth">Fecha de nacimiento</string>
     <string name="connecting">Conectando</string>
     <string name="invites">invita</string>
     <string name="dynamic_color">color dinámico</string>
     <string name="create_new_folder">Crear nueva carpeta</string>
     <string name="all_chats">Todos los chats</string>
-    <string name="save">Ahorrar</string>
     <string name="remove_folder">Quitar carpeta</string>
     <string name="pin">Alfiler</string>
     <string name="unpin">Desprender</string>
@@ -74,7 +65,6 @@
     <string name="folder_name">Nombre de la carpeta</string>
     <string name="included_chats">Chats incluidos</string>
     <string name="add_chats">Agregar chats</string>
-    <string name="cloud_password_description">Puede establecer una contraseña que se le solicitará cuando inicie sesión en un nuevo dispositivo.</string>
     <string name="enter_password">Introduce la contraseña</string>
     <string name="passcode_lock_description">Cuando se establece una contraseña, aparece un ícono de candado encima de su lista de chat. Tócalo para bloquear tu aplicación.</string>
     <string name="cancel">Cancelar</string>
@@ -85,7 +75,6 @@
     <string name="delete">Borrar</string>
     <string name="chat_folders_description">Crea carpetas para diferentes grupos de chats y cambia rápidamente entre ellos.</string>
     <string name="terminate_all_other_sessions_description">Cierra la sesión de todos los dispositivos excepto este.</string>
-    <string name="connect_device">Conectar dispositivo</string>
     <string name="turn_off">Apagar</string>
     <string name="turn_passcode_off">Desactivar el código de acceso</string>
     <string name="copy">Copiar</string>
@@ -93,22 +82,12 @@
     <string name="change_passcode">Cambiar contraseña</string>
     <string name="fingerprint_unlock">Desbloqueo de huellas dactilares</string>
     <string name="ok">DE ACUERDO</string>
-    <string name="chat_archived">Chat archivado</string>
     <string name="delete_message">Eliminar mensaje</string>
-    <string name="also_delete_for">Eliminar también para</string>
     <string name="delete_message_description">¿Estás seguro de que deseas eliminar este mensaje\?</string>
     <string name="delete_for_recipient">Eliminar para destinatario</string>
     <string name="block_user">Bloquear usuario</string>
-    <string name="start_secret_chat">Iniciar chat secreto</string>
     <string name="add_to_home_screen">Agregar a la pantalla de inicio</string>
     <string name="block_user_confirm_message">¿Estás seguro de que quieres bloquear\?</string>
-    <string name="secret_chat">charla secreta</string>
-    <string name="secret_chat_confirm_message">¿Estás seguro de que quieres iniciar un chat secreto\?</string>
-    <string name="start">Comenzar</string>
-    <string name="change_profile_color">Cambiar color de perfil</string>
-    <string name="change_username">Cambiar nombre de usuario</string>
-    <string name="mute">Silenciar</string>
-    <string name="unmute">disgusto</string>
     <string name="join">Unirse</string>
     <string name="leave_channel">Salir del canal</string>
     <string name="leave_channel_confirm_message">¿Estás seguro de que quieres irte\?</string>
@@ -120,7 +99,6 @@
     <string name="delete_channel">Eliminar canal</string>
     <string name="clear_history">Borrar historial</string>
     <string name="public_link">Enlace público</string>
-    <string name="invite_link">Enlace de invitación</string>
     <string name="private_channel">Canal Privado</string>
     <string name="public_channel">Canal público</string>
     <string name="channel_name">Nombre del canal</string>
@@ -134,8 +112,6 @@
     <string name="delete_group">Eliminar grupo</string>
     <string name="save_to_downloads">Guardar en Descargas</string>
     <string name="copied">Copiado</string>
-    <string name="internal_storage">Almacenamiento interno</string>
-    <string name="file_system_search">Búsqueda del sistema de archivos</string>
     <string name="system_default">Valor predeterminado del sistema</string>
     <string name="disabled">Desactivado</string>
     <string name="enabled">Activado</string>
@@ -144,12 +120,10 @@
     <string name="documents">Documentos</string>
     <string name="other">Otro</string>
     <string name="files">Archivos</string>
-    <string name="chats">Charlas</string>
     <string name="audio">Audio</string>
     <string name="storage_usage">Uso de almacenamiento</string>
     <string name="group_name">Nombre del grupo</string>
     <string name="logout_confirm_message">¿Está seguro de que desea cerrar sesión\?</string>
-    <string name="delete_account_confirm_message">¿Estás seguro de que quieres eliminar tu cuenta\?</string>
     <string name="delete_account_message">Todo lo relacionado con tu cuenta se eliminará permanentemente.</string>
     <string name="sessions_android_only_message">La aplicación oficial sólo está disponible para dispositivos Android.</string>
     <string name="terminate_session_confirm_message">¿Está seguro de que desea finalizar esta sesión\?</string>
@@ -170,11 +144,9 @@
     <string name="public_group">Grupo público</string>
     <string name="private_group">Grupo Privado</string>
     <string name="clear_database">Borrar base de datos</string>
-    <string name="music">Música</string>
     <string name="channel_created">Canal creado</string>
     <string name="group_created">Grupo creado</string>
     <string name="history_cleared">Historial borrado</string>
-    <string name="error_empty_group_name">Introduzca un nombre de grupo</string>
     <string name="error_empty_channel_name">Introduce un nombre de canal</string>
     <string name="failed_to_delete_channel">No se pudo eliminar el canal</string>
     <string name="failed_to_delete_group">No se pudo eliminar el grupo</string>
@@ -197,7 +169,6 @@
         <item quantity="other">%1$d miembros</item>
     </plurals>
     <string name="gallery">Galería</string>
-    <string name="to_send_images_without_compression">Para enviar imágenes sin compresión</string>
     <string name="photo">Foto</string>
     <string name="file">Archivo</string>
     <string name="video">Video</string>
@@ -255,8 +226,6 @@
     <string name="personal_channel">canal personal</string>
     <string name="hide_channel">Ocultar canal</string>
     <string name="edit">Editar</string>
-    <string name="edited_at">Editado en</string>
-    <string name="read_at">Leer en</string>
     <string name="edit_message">Editar mensaje</string>
     <string name="edited">Editado</string>
     <string name="chat">Charlar</string>
@@ -375,25 +344,27 @@
     <string name="chat_voices_tab">Voz</string>
     <string name="chat_attachments_empty">Todavía no hay adjuntos en este chat</string>
     <string name="chat_media_load_error">No se pudieron cargar los adjuntos</string>
-
     <string name="chat_voice_sent_at">a las %1$s</string>
     <string name="chat_voice_sent_on">%1$s a las %2$s</string>
-
     <plurals name="chat_media_photos_count">
         <item quantity="one">%1$d foto</item>
         <item quantity="other">%1$d fotos</item>
+        <item quantity="many">%1$d fotos</item>
     </plurals>
     <plurals name="chat_media_videos_count">
         <item quantity="one">%1$d vídeo</item>
         <item quantity="other">%1$d vídeos</item>
+        <item quantity="many">%1$d vídeos</item>
     </plurals>
     <plurals name="chat_media_files_count">
         <item quantity="one">%1$d archivo</item>
         <item quantity="other">%1$d archivos</item>
+        <item quantity="many">%1$d archivos</item>
     </plurals>
     <plurals name="chat_media_voices_count">
         <item quantity="one">%1$d mensaje de voz</item>
         <item quantity="other">%1$d mensajes de voz</item>
+        <item quantity="many">%1$d mensajes de voz</item>
     </plurals>
     <string name="chat_disable_notifications">Desactivar notificaciones</string>
     <string name="chat_enable_notifications">Activar notificaciones</string>
@@ -401,7 +372,6 @@
     <string name="chat_notifications_enabled">Notificaciones activadas</string>
     <string name="notification_exception_disabled">Sin notificaciones</string>
     <string name="notification_exception_enabled">Con notificaciones</string>
-    <string name="notification_exception_configure">Configurar</string>
     <string name="notification_exception_add">Añadir excepción</string>
     <string name="notification_exception_receive">Recibir notificaciones</string>
     <string name="notification_exception_update_failed">No se pudieron cambiar las notificaciones</string>
@@ -410,7 +380,6 @@
     <string name="notification_reset_confirm">¿Seguro que quieres restablecer los ajustes de notificaciones? Se eliminarán todas las excepciones y las notificaciones se activarán en todas partes.</string>
     <string name="notification_reset_action">Restablecer</string>
     <string name="delete_exception">Eliminar excepción</string>
-    <string name="exception_deleted">Excepción eliminada</string>
     <string name="delete_all_exceptions">Eliminar todas las excepciones</string>
     <string name="delete_all_exceptions_confirm">¿Seguro que quieres eliminar todas las excepciones? Estos chats seguirán los ajustes de su categoría.</string>
     <string name="all_exceptions_deleted">Todas las excepciones eliminadas</string>
@@ -420,6 +389,7 @@
     <plurals name="notification_exceptions_count">
         <item quantity="one">%1$d excepción</item>
         <item quantity="other">%1$d excepciones</item>
+        <item quantity="many">%1$d excepciones</item>
     </plurals>
     <string name="media_picker_file">Archivo</string>
     <string name="media_picker_caption">Añadir un pie de foto…</string>

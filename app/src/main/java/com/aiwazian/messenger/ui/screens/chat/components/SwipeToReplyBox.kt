@@ -39,65 +39,28 @@ import com.aiwazian.messenger.ui.screens.chat.components.SwipeToReplyDefaults.Tr
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-/**
- * Единственное место настройки свайпа «ответить».
- *
- * Измените [MaxOffset] или [TriggerOffset] — и поведение поменяется везде,
- * где используется [SwipeToReplyBox].
- */
 object SwipeToReplyDefaults {
-    /** На сколько максимум сообщение уезжает влево. */
     val MaxOffset: Dp = 60.dp
     
-    /** С какого сдвига срабатывает вибрация и ответ после отпускания пальца. */
     val TriggerOffset: Dp = 40.dp
     
-    /**
-     * На сколько нужно вернуться ниже порога, чтобы вибрация взвелась заново.
-     * Защищает от дрожания пальца ровно на границе порога.
-     */
     val RearmHysteresis: Dp = 4.dp
     
-    /** Насколько иконка «ответить» выезжает справа налево по ходу свайпа. */
     val IconTravel: Dp = 24.dp
     
-    /** Отступ иконки от правого края. */
     val IconPadding: Dp = 16.dp
     
-    /** Размер иконки. */
     val IconSize: Dp = 20.dp
 }
 
-/**
- * Оборачивает контент свайпом влево для ответа на сообщение.
- *
- * Жест устроен так:
- * 1. Ждём именно горизонтальный touch slop. Если человек ведёт палец вертикально,
- *    жест отменяется и события целиком достаются списку чата.
- * 2. Как только свайп начался, каждое событие потребляется целиком — вместе
- *    с вертикальной составляющей. Иначе LazyColumn продолжает видеть
- *    вертикальные микросдвиги пальца, копит из них скорость и дёргает
- *    чат на одно сообщение прямо во время свайпа.
- * 3. Позиция хранится в обычном float-state и применяется через graphicsLayer,
- *    поэтому на каждый кадр не запускаются корутины и не пересчитывается
- *    лейаут элемента списка.
- *
- * Отличия от `SwipeToDismissBox`: тот тянет контент на всю ширину до якоря
- * удаления и не умеет ни ограничивать сдвиг фиксированным [MaxOffset],
- * ни давать тактильную отдачу в момент пересечения порога.
- *
- * @param enabled если false — жест не ставится и иконка не рисуется.
- * @param onReply палец отпущен за порогом.
- * @param onThresholdReached каждое пересечение порога снизу вверх внутри одного жеста.
- */
 @Composable
 fun SwipeToReplyBox(
     enabled: Boolean,
     onReply: () -> Unit,
     onThresholdReached: () -> Unit,
     modifier: Modifier = Modifier,
-    maxOffset: Dp = SwipeToReplyDefaults.MaxOffset,
-    triggerOffset: Dp = SwipeToReplyDefaults.TriggerOffset,
+    maxOffset: Dp = MaxOffset,
+    triggerOffset: Dp = TriggerOffset,
     content: @Composable BoxScope.() -> Unit
 ) {
     val density = LocalDensity.current

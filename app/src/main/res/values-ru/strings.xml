@@ -17,7 +17,6 @@
     <string name="profile">Профиль</string>
     <string name="saved_messages">Избранное</string>
     <string name="new_message">Новое сообщение</string>
-    <string name="information">Информация</string>
     <string name="dark_theme">Тёмная тема</string>
     <string name="security">Безопасность</string>
     <string name="delete_account">Удалить аккаунт</string>
@@ -29,7 +28,6 @@
     <string name="create_channel">Создать канал</string>
     <string name="data_and_storage">Данные и память</string>
     <string name="chat_folders">Папки с чатами</string>
-    <string name="faq">Вопросы о приложении</string>
     <string name="color_theme">Цветовая тема</string>
     <string name="write_about_me">Напишите немного о себе</string>
     <string name="protect_your_account">Защитите свой аккаунт</string>
@@ -43,12 +41,10 @@
     <string name="off">Выкл.</string>
     <string name="everybody">Все</string>
     <string name="nobody">Никто</string>
-    <string name="messages">Сообщения</string>
     <string name="last_seen">Время захода</string>
     <string name="who_can_see_my_last_seen">Кто видит время моего последнего захода?</string>
     <string name="online">В сети</string>
     <string name="last_seen_recently">В сети недавно</string>
-    <string name="last_seen_at">был(а) в %s</string>
     <string name="this_device">Это устройство</string>
     <string name="members">Участники</string>
     <string name="first_name">Имя</string>
@@ -57,17 +53,12 @@
     <string name="alternative_options">Другие возможности</string>
     <string name="clear_cache">Очистить кэш</string>
     <string name="add_account">Добавить аккаунт</string>
-    <string name="accounts">Аккаунты</string>
-    <string name="archive">Архив</string>
-    <string name="archive_settings">Настройки архива</string>
-    <string name="how_does_it_work">Как это работает?</string>
     <string name="date_of_birth">Дата рождения</string>
     <string name="connecting">Соединение</string>
     <string name="invites">Приглашения</string>
     <string name="dynamic_color">Динамические цвета</string>
     <string name="create_new_folder">Создать новую папку</string>
     <string name="all_chats">Все чаты</string>
-    <string name="save">Сохранить</string>
     <string name="remove_folder">Удалить папку</string>
     <string name="pin">Закрепить</string>
     <string name="unpin">Открепить</string>
@@ -77,7 +68,6 @@
     <string name="folder_name">Название папки</string>
     <string name="included_chats">Выбранные чаты</string>
     <string name="add_chats">Добавить чаты</string>
-    <string name="cloud_password_description">Вы можете установить пароль, который будет запрашиваться при входе с нового устройства.</string>
     <string name="enter_password">Введите пароль</string>
     <string name="passcode_lock_description">После установки кода-пароля над списком чатов появится значок замка для блокировки и разблокировки приложения.</string>
     <string name="cancel">Отмена</string>
@@ -88,7 +78,6 @@
     <string name="delete">Удалить</string>
     <string name="chat_folders_description">Вы можете создать папки с чатами и переключаться между ними.</string>
     <string name="terminate_all_other_sessions_description">Выйти на всех устройствах, кроме этого.</string>
-    <string name="connect_device">Подключить устройство</string>
     <string name="turn_off">Отключить</string>
     <string name="turn_passcode_off">Выключить код-пароль</string>
     <string name="copy">Копировать</string>
@@ -97,22 +86,12 @@
     <string name="change_passcode">Сменить код-пароль</string>
     <string name="fingerprint_unlock">Разблокировка отпечатком пальца</string>
     <string name="ok">Ок</string>
-    <string name="chat_archived">Чат в архиве</string>
     <string name="delete_message">Удалить сообщение</string>
-    <string name="also_delete_for">Также удалить для</string>
     <string name="delete_message_description">Вы точно хотите удалить это сообщение?</string>
     <string name="delete_for_recipient">Удалить для получателя</string>
     <string name="block_user">Заблокировать</string>
-    <string name="start_secret_chat">Начать секретный чат</string>
     <string name="add_to_home_screen">Создать ярлык</string>
     <string name="block_user_confirm_message">Вы точно хотите заблокировать</string>
-    <string name="secret_chat">Секретный чат</string>
-    <string name="secret_chat_confirm_message">Хотите начать секретный чат?</string>
-    <string name="start">Начать</string>
-    <string name="change_profile_color">Изменить цвет профиля</string>
-    <string name="change_username">Изменить имя</string>
-    <string name="mute">Убрать звук</string>
-    <string name="unmute">Вкл. звук</string>
     <string name="join">Присоединиться</string>
     <string name="leave_channel">Покинуть канал</string>
     <string name="leave_channel_confirm_message">Вы точно хотите покинуть</string>
@@ -124,7 +103,6 @@
     <string name="delete_channel">Удалить канал</string>
     <string name="clear_history">Очистить историю</string>
     <string name="public_link">Публичная ссылка</string>
-    <string name="invite_link">Ссылка-приглашение</string>
     <string name="private_channel">Частный канал</string>
     <string name="public_channel">Публичный канал</string>
     <string name="channel_name">Название канала</string>
@@ -138,8 +116,6 @@
     <string name="delete_group">Удалить группу</string>
     <string name="save_to_downloads">Сохранить в загрузки</string>
     <string name="copied">Скопировано</string>
-    <string name="internal_storage">Внутреннее хранилище</string>
-    <string name="file_system_search">Поиск в файловой системе</string>
     <string name="system_default">Как в системе</string>
     <string name="disabled">Выключено</string>
     <string name="enabled">Включено</string>
@@ -148,12 +124,10 @@
     <string name="documents">Документы</string>
     <string name="other">Другое</string>
     <string name="files">Файлы</string>
-    <string name="chats">Чаты</string>
     <string name="audio">Аудио</string>
     <string name="storage_usage">Использование хранилища</string>
     <string name="group_name">Название группы</string>
     <string name="logout_confirm_message">Вы точно хотите выйти?</string>
-    <string name="delete_account_confirm_message">Вы уверены, что хотите удалить свою учетную запись\?</string>
     <string name="delete_account_message">Все, что связано с вашей учетной записью, будет удалено без возможности восстановления.</string>
     <string name="sessions_android_only_message">Официальное приложение доступно только для устройств Android.</string>
     <string name="terminate_session_confirm_message">Вы уверены, что хотите завершить этот сеанс\?</string>
@@ -174,11 +148,9 @@
     <string name="public_group">Публичная группа</string>
     <string name="private_group">Частная группа</string>
     <string name="clear_database">Очистить базу данных</string>
-    <string name="music">Музыка</string>
     <string name="channel_created">Канал создан</string>
     <string name="group_created">Группа создана</string>
     <string name="history_cleared">История очищена</string>
-    <string name="error_empty_group_name">Введите название группы</string>
     <string name="error_empty_channel_name">Введите название канала</string>
     <string name="failed_to_delete_channel">Не удалось удалить канал</string>
     <string name="failed_to_delete_group">Не удалось удалить группу</string>
@@ -203,7 +175,6 @@
         <item quantity="other">%1$d участников</item>
     </plurals>
     <string name="gallery">Галерея</string>
-    <string name="to_send_images_without_compression">Отправка изображений без сжатия</string>
     <string name="photo">Фото</string>
     <string name="file">Файл</string>
     <string name="video">Видео</string>
@@ -261,8 +232,6 @@
     <string name="personal_channel">Личный канал</string>
     <string name="hide_channel">Скрыть канал</string>
     <string name="edit">Изменить</string>
-    <string name="edited_at">Отредактировано в</string>
-    <string name="read_at">Прочитано в</string>
     <string name="edit_message">Редактирование</string>
     <string name="edited">Изменено</string>
     <string name="chat">Чат</string>
@@ -415,7 +384,6 @@
     <string name="chat_notifications_enabled">Уведомления включены</string>
     <string name="notification_exception_disabled">Без уведомлений</string>
     <string name="notification_exception_enabled">С уведомлениями</string>
-    <string name="notification_exception_configure">Настроить</string>
     <string name="notification_exception_add">Добавить исключение</string>
     <string name="notification_exception_receive">Получать уведомления</string>
     <string name="notification_exception_update_failed">Не удалось изменить уведомления</string>
@@ -424,7 +392,6 @@
     <string name="notification_reset_confirm">Вы уверены, что хотите сбросить настройки уведомлений? Все исключения будут удалены, а уведомления включены везде.</string>
     <string name="notification_reset_action">Сбросить</string>
     <string name="delete_exception">Удалить исключение</string>
-    <string name="exception_deleted">Исключение удалено</string>
     <string name="delete_all_exceptions">Удалить все исключения</string>
     <string name="delete_all_exceptions_confirm">Вы уверены, что хотите удалить все исключения? Эти чаты снова будут следовать настройкам своих категорий.</string>
     <string name="all_exceptions_deleted">Все исключения удалены</string>

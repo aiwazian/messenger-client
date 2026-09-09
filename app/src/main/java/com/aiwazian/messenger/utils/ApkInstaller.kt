@@ -30,12 +30,6 @@ class ApkInstaller @Inject constructor(
     @param:ApplicationContext private val context: Context
 ) {
     
-    /**
-     * Opens the system installer for [file].
-     *
-     * @return false when the file is stored outside of the application storage
-     * or no installer is available on the device.
-     */
     @Suppress("DEPRECATION")
     fun install(file: File): Boolean {
         if (!isInsideApplicationStorage(file)) {

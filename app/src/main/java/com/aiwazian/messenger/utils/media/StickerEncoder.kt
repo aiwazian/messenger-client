@@ -12,6 +12,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.net.Uri
 import android.util.Log
+import androidx.core.graphics.createBitmap
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -139,7 +140,7 @@ class StickerEncoder @Inject constructor(
         val width = source.width * scale
         val height = source.height * scale
         
-        val result = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
+        val result = createBitmap(side, side)
         
         val destination = RectF(
             (side - width) / 2f,

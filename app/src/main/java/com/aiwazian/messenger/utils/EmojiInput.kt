@@ -46,7 +46,7 @@ object EmojiInput {
             
             index += Character.charCount(codePoint)
             
-            if (codePoint < SKIN_TONE_FIRST || codePoint > SKIN_TONE_LAST) {
+            if (codePoint !in SKIN_TONE_FIRST..SKIN_TONE_LAST) {
                 appendCodePoint(codePoint)
             }
         }
