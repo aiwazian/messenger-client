@@ -457,7 +457,7 @@ fun StickerPackEditorScreen(
     if (activePhotoTarget != null) {
         PhotoPickerBottomSheet(
             maskShape = if (activePhotoTarget == StickerPickTarget.Cover) {
-                CircleShape
+                MaterialTheme.shapes.large
             } else {
                 MaterialTheme.shapes.extraLarge
             },
@@ -484,7 +484,14 @@ fun StickerPackEditorScreen(
                 
                 stickerPickerTarget = null
             },
-            onDismissRequest = { stickerPickerTarget = null })
+            onDismissRequest = { stickerPickerTarget = null },
+            addedFileIds = if (activeStickerTarget == StickerPickTarget.Sticker) {
+                uiState.stickers.mapNotNull { slot ->
+                    (slot as? StickerSlot.Remote)?.fileId
+                }.toSet()
+            } else {
+                emptySet()
+            })
     }
     
     if (isExitDialogVisible) {
@@ -554,7 +561,7 @@ private fun CoverPicker(
     Box(
         modifier = Modifier
             .size(COVER_SIZE)
-            .clip(CircleShape)
+            .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(enabled = !isBusy, onClick = onClick),
         contentAlignment = Alignment.Center
