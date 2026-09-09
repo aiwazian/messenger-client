@@ -101,7 +101,7 @@ class RealtimeEventSyncService @Inject constructor(
         
         webSocketClient.subscribeToEvent(WebSocketEvent.ReadMessage) { payload ->
             serviceScope.launch {
-                chatRepository.markMessageAsRead(payload.chatId, payload.messageId)
+                chatRepository.markMessageAsRead(payload.messageId)
                 readReceiptApplier.apply(payload)
             }
         }
@@ -120,7 +120,7 @@ class RealtimeEventSyncService @Inject constructor(
                         payload.chatId, payload.senderId, payload.sendTime
                     )
                 } else {
-                    chatRepository.markMessageAsRead(payload.chatId, payload.messageId)
+                    chatRepository.markMessageAsRead(payload.messageId)
                 }
             }
         }

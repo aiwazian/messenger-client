@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,16 +29,6 @@ import androidx.compose.ui.unit.dp
 import com.aiwazian.messenger.utils.media.VideoQuality
 import kotlin.math.roundToInt
 
-/**
- * Ступени сжатия видео: дискретный слайдер с подписью над каждым делением.
- *
- * Ступеней всегда столько, сколько помещается в исходное разрешение: для
- * 1280 на 720 их три, для 854 на 480 — две. Меньше двух выбирать не из чего,
- * поэтому такой слайдер не рисуется вовсе.
- *
- * Свой трек, а не штатный: слайдер лежит поверх видео, и на светлом кадре
- * тематический бегунок терялся бы — так же, как у полосы воспроизведения.
- */
 @Composable
 internal fun VideoQualitySlider(
     stops: List<VideoQuality>,
@@ -69,18 +60,22 @@ internal fun VideoQualitySlider(
             }
         }
         
-        Slider(
+        val sliderState = rememberSliderState(
             value = selectedIndex.toFloat(),
+            steps = stops.size - 2,
+            trackRange = 0f..lastIndex.toFloat()
+        )
+        
+        Slider(
+            state = sliderState,
             onValueChange = { value ->
                 val index = value.roundToInt().coerceIn(stops.indices)
                 
                 if (index != selectedIndex) {
                     onSelect(stops[index])
+                    sliderState.value = value
                 }
             },
-            valueRange = 0f..lastIndex.toFloat(),
-            // Ступеней четыре — промежуточных делений два: крайние в steps не входят.
-            steps = stops.size - 2,
             modifier = Modifier.fillMaxWidth(),
             thumb = {
                 Box(

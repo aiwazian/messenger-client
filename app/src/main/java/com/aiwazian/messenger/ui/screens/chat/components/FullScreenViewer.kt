@@ -43,6 +43,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -261,7 +262,8 @@ fun FullScreenViewer(
                                             MaterialTheme.colorScheme.primary
                                         } else {
                                             MaterialTheme.colorScheme.onSurface
-                                        })
+                                        }
+                                    )
                                 }
                             }
                             
@@ -322,7 +324,8 @@ fun FullScreenViewer(
                         onTap = { isUiVisible = !isUiVisible },
                         onDismiss = hero::dismiss
                     )
-                    .mediaHeroContent(hero)) { page ->
+                    .mediaHeroContent(hero)
+            ) { page ->
                 val item = media.getOrNull(page)
                 val isCurrentPage = pagerState.currentPage == page
                 
@@ -347,7 +350,8 @@ fun FullScreenViewer(
                             isUiVisible = true
                             lastInteractionTime = System.currentTimeMillis()
                         },
-                        onHeroContentSizeChanged = hero::updateContentSize)
+                        onHeroContentSizeChanged = hero::updateContentSize
+                    )
                 }
             }
             
@@ -413,14 +417,22 @@ private fun SpeedBottomSheet(
                 }) {
                     Icon(Icons.Rounded.Remove, contentDescription = "Decrease speed")
                 }
-                Slider(
-                    value = currentSpeed, onValueChange = {
-                        val roundedSpeed = (it * 10f).roundToInt() / 10f
-                        onSpeedChange(roundedSpeed)
-                    },
-                    valueRange = MIN_PLAYBACK_SPEED..MAX_PLAYBACK_SPEED,
-                    modifier = Modifier.weight(1f)
+                
+                val sliderState = rememberSliderState(
+                    value = currentSpeed,
+                    trackRange = MIN_PLAYBACK_SPEED..MAX_PLAYBACK_SPEED
                 )
+                
+                LaunchedEffect(currentSpeed) {
+                    sliderState.value = currentSpeed
+                }
+                
+                Slider(
+                    state = sliderState,
+                    modifier = Modifier.weight(1f),
+                    onValueChange = {
+                        onSpeedChange((it * 10f).roundToInt() / 10f)
+                    })
                 IconButton(onClick = {
                     val newSpeed = ((currentSpeed + 0.1f) * 10f).roundToInt() / 10f
                     onSpeedChange(newSpeed.coerceAtMost(MAX_PLAYBACK_SPEED))

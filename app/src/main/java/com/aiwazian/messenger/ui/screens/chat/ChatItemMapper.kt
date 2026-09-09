@@ -93,7 +93,7 @@ class ChatItemMapper(
             val isFirstInGroup = message.senderId != lastSenderId
             
             val actions = createDropdownActions(message, isMine, chatType) +
-                    listOfNotNull(createNoCopyNotice(chatType, isMine))
+                    listOfNotNull(createNoCopyNotice(chatType))
             val updatedMessage = processAttachments(message)
             
             chatItems.add(
@@ -125,8 +125,8 @@ class ChatItemMapper(
         return chatItems
     }
     
-    private fun createNoCopyNotice(chatType: ChatType, isMine: Boolean): DropdownMenuAction? {
-        if (!copyPolicy.hasNotice(isMine)) return null
+    private fun createNoCopyNotice(chatType: ChatType): DropdownMenuAction? {
+        if (!copyPolicy.hasNotice()) return null
         
         val textResId = when (chatType) {
             ChatType.CHANNEL -> R.string.no_copy_channel_notice
@@ -164,7 +164,7 @@ class ChatItemMapper(
     ): List<DropdownMenuAction> {
         val actions = mutableListOf<DropdownMenuAction>()
         
-        if (copyPolicy.canCopyText(isMine) && !message.text.isNullOrBlank()) {
+        if (copyPolicy.canCopyText() && !message.text.isNullOrBlank()) {
             actions.add(
                 DropdownMenuAction(
                     Icons.Rounded.ContentCopy,
@@ -223,7 +223,7 @@ class ChatItemMapper(
             )
         }
         
-        if (isSent && copyPolicy.canForward(isMine)) {
+        if (isSent && copyPolicy.canForward()) {
             actions.add(
                 DropdownMenuAction(
                     Icons.AutoMirrored.Outlined.Forward,

@@ -409,7 +409,7 @@ class ChatViewModel @Inject constructor(
             ) { user, onlineUsers ->
                 user to onlineUsers.contains(user.id)
             }.collectLatest { (user, isOnline) ->
-                val subTitle = LastSeenHelper.getSubtitle(context, isOnline, user.lastSeen)
+                val subTitle = LastSeenHelper.getSubtitle(isOnline, user.lastSeen)
                 _uiState.update {
                     it.copy(
                         chatName = UiText.DynamicString("${user.firstName} ${user.lastName.orEmpty()}".trim()),
@@ -980,7 +980,7 @@ class ChatViewModel @Inject constructor(
     }
 
     fun startForward(message: Message) {
-        if (!copyPolicy.canForward(message.senderId == _uiState.value.myId)) return
+        if (!copyPolicy.canForward()) return
         if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
 
         viewModelScope.launch {
@@ -1073,7 +1073,7 @@ class ChatViewModel @Inject constructor(
 
         val state = _uiState.value
         val message = state.forwardingMessage ?: return
-        if (!copyPolicy.canForward(message.senderId == state.myId)) return
+        if (!copyPolicy.canForward()) return
         val targets = state.selectedForwardChatIds.toList()
         if (targets.isEmpty() || state.isForwarding) return
 
@@ -1526,7 +1526,7 @@ class ChatViewModel @Inject constructor(
     }
 
     fun copyToClipboard(message: Message) {
-        if (!copyPolicy.canCopyText(message.senderId == _uiState.value.myId)) return
+        if (!copyPolicy.canCopyText()) return
         message.text?.let { clipboardService.copy(it) }
     }
 

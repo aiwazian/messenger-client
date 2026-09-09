@@ -14,7 +14,7 @@ import android.graphics.RectF
 import android.net.Uri
 import android.util.Log
 import androidx.core.graphics.createBitmap
-import androidx.media.ExifInterface
+import androidx.exifinterface.media.ExifInterface
 import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileType
 import dagger.hilt.android.qualifiers.ApplicationContext

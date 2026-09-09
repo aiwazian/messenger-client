@@ -112,7 +112,7 @@ fun PasswordResetCodeScreen(
                     value = uiState.code,
                     status = uiState.codeStatus,
                     length = 6,
-                    onStatusShown = viewModel::onCodeInputStatusShown
+                    onStatusShown = { viewModel.onCodeInputStatusShown() }
                 )
             }
             

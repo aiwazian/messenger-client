@@ -273,7 +273,7 @@ class ProfileViewModel @Inject constructor(
                             user to onlineUsers.contains(user.id)
                         }.collectLatest { (user, isOnline) ->
                             val subTitle =
-                                LastSeenHelper.getSubtitle(context, isOnline, user.lastSeen)
+                                LastSeenHelper.getSubtitle(isOnline, user.lastSeen)
                             val profile = Profile.User(
                                 username = user.username,
                                 bio = user.bio,

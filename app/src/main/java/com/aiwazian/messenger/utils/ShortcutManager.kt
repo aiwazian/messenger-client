@@ -25,12 +25,7 @@ class ShortcutManager @Inject constructor(
     private val chatAvatarIconLoader: ChatAvatarIconLoader
 ) {
     private val shortcutManager = context.getSystemService(ShortcutManager::class.java)
-    
-    /*
-     * Аватарку надо прочитать из Room и раскодировать в bitmap, поэтому ярлык собирается
-     * в фоне. Scope свой, а не экранный: запрос на закрепление живёт дольше того экрана,
-     * с которого его позвали.
-     */
+
     private val scope = CoroutineScope(Dispatchers.IO)
     
     fun createChatShortcut(chatId: Long, chatName: String) {
@@ -41,7 +36,6 @@ class ShortcutManager @Inject constructor(
         scope.launch {
             val shortcut = buildShortcut(chatId, chatName, loadChatIcon(chatId))
             
-            /* Починит intent у ярлыка, который уже закреплён со старой версией приложения. */
             shortcutManager.updateShortcuts(listOf(shortcut))
             
             val pinnedShortcutCallbackIntent = shortcutManager.createShortcutResultIntent(shortcut)
@@ -52,13 +46,6 @@ class ShortcutManager @Inject constructor(
         }
     }
     
-    /**
-     * Подтянуть на закреплённый ярлык свежую аватарку и имя чата.
-     *
-     * Незакреплённые id [android.content.pm.ShortcutManager.updateShortcuts] игнорирует
-     * молча, но декодировать картинку впустую незачем, поэтому сначала проверяем список
-     * закреплённых. Пока новой аватарки нет, иконку не трогаем: старая лучше логотипа.
-     */
     fun refreshPinnedChatShortcut(chatId: Long) {
         scope.launch {
             val shortcutId = chatId.toString()
@@ -78,10 +65,6 @@ class ShortcutManager @Inject constructor(
         }
     }
     
-    /**
-     * Иконка ярлыка — круглая активная аватарка чата, как в уведомлениях.
-     * Логотип приложения остаётся запасным вариантом: у чата может не быть аватарки.
-     */
     private suspend fun loadChatIcon(chatId: Long): Icon {
         val avatarUri = chatAvatarIconLoader.resolveChatAvatar(chatId).avatarUri
         val bitmap = chatAvatarIconLoader.loadCircleAvatar(avatarUri)
@@ -89,7 +72,7 @@ class ShortcutManager @Inject constructor(
         return if (bitmap != null) {
             Icon.createWithBitmap(bitmap)
         } else {
-            Icon.createWithResource(context, R.mipmap.logo)
+            Icon.createWithResource(context, R.mipmap.logo_foreground)
         }
     }
     

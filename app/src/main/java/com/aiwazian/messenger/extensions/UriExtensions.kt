@@ -11,7 +11,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
 import android.webkit.MimeTypeMap
-import androidx.media.ExifInterface
+import androidx.exifinterface.media.ExifInterface
 import java.io.FileInputStream
 import java.io.InputStream
 

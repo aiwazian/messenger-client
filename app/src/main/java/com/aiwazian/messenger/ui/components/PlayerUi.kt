@@ -29,7 +29,9 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -96,11 +98,21 @@ fun PlayerUi(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     
-                    Slider(
+                    val sliderState = rememberSliderState(
                         value = currentPosition.toFloat(),
-                        onValueChange = { onSeekBarPositionChange(it.toLong()) },
+                        trackRange = 0f..duration.toFloat()
+                    )
+                    
+                    LaunchedEffect(currentPosition) {
+                        sliderState.value = currentPosition.toFloat()
+                    }
+                    
+                    Slider(
+                        state = sliderState,
+                        onValueChange = {
+                            onSeekBarPositionChange(it.toLong())
+                        },
                         onValueChangeFinished = onSeekBarPositionChangeFinished,
-                        valueRange = 0f..duration.toFloat(),
                         modifier = Modifier.weight(1f),
                         thumb = {
                             Box(
@@ -119,7 +131,7 @@ fun PlayerUi(
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
                             ) {
                                 val fraction =
-                                    if (duration > 0) currentPosition.toFloat() / duration else 0f
+                                    if (duration > 0) sliderState.value / duration.toFloat() else 0f
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth(fraction)
