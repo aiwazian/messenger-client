@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.content.Context
@@ -14,25 +10,27 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.CropRotate
-import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -49,6 +47,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -56,8 +55,12 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.animations.expressiveScaleIn
+import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.components.MediaCropBox
 import com.aiwazian.messenger.ui.components.MediaCropMask
+import com.aiwazian.messenger.ui.components.MediaCropOrientation
 import com.aiwazian.messenger.ui.components.MediaFlipButton
 import com.aiwazian.messenger.ui.components.MediaOverlayIconButton
 import com.aiwazian.messenger.ui.components.MediaRotateButton
@@ -92,14 +95,56 @@ fun MediaPickerCropDialog(
     
     var isTransforming by remember { mutableStateOf(false) }
     var isConfirming by remember { mutableStateOf(false) }
+    var transformOrigin by remember { mutableStateOf(MediaCropOrientation.None) }
     
     val hero = rememberMediaHeroState(
         originKey = pickerMediaKey(uri), dragOffsetY = 0f, onDismissed = onDismiss
     )
     
-    val goBack = {
+    val openTransform: () -> Unit = {
+        transformOrigin = cropState.orientation
+        isTransforming = true
+    }
+    
+    val resetTransform: () -> Unit = {
+        coroutineScope.launch { cropState.restore() }
+    }
+    
+    val cancelTransform: () -> Unit = {
+        isTransforming = false
+        
+        coroutineScope.launch { cropState.restore(transformOrigin) }
+    }
+    
+    val confirmCrop: () -> Unit = {
+        if (!isConfirming && cropState.isReady) {
+            isConfirming = true
+            
+            coroutineScope.launch {
+                val cropped = if (clipsToMask) {
+                    cropState.crop(maskShape, density, layoutDirection)
+                } else {
+                    cropState.crop()
+                }
+                
+                val target = if (cropped == null) {
+                    null
+                } else {
+                    withContext(Dispatchers.IO) { writeCrop(context, cropped) }
+                }
+                
+                if (target == null) {
+                    isConfirming = false
+                } else {
+                    onConfirm(target)
+                }
+            }
+        }
+    }
+    
+    val goBack: () -> Unit = {
         if (isTransforming) {
-            isTransforming = false
+            cancelTransform()
         } else {
             hero.dismiss()
         }
@@ -189,82 +234,84 @@ fun MediaPickerCropDialog(
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    AnimatedContent(
-                        targetState = isTransforming,
-                        transitionSpec = { fadeIn() togetherWith fadeOut() },
-                        modifier = Modifier.align(Alignment.Center),
-                        label = "media_crop_tools"
-                    ) { transforming ->
-                        if (transforming) {
-                            HorizontalFloatingToolbar(
-                                expanded = true, floatingActionButton = {
-                                    FloatingActionButton(
-                                        onClick = { isTransforming = false },
-                                        shape = CircleShape,
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Done,
-                                            contentDescription = null
-                                        )
-                                    }
-                                }) {
-                                MediaRotateButton(state = transformState) {
-                                    coroutineScope.launch { cropState.rotate() }
-                                }
-                                
+                AnimatedContent(
+                    targetState = isTransforming,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    label = "media_crop_tools"
+                ) { transforming ->
+                    if (transforming) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
                                 MediaFlipButton(state = transformState) {
                                     cropState.mirror()
                                 }
+                                
+                                MediaRotateButton(state = transformState) {
+                                    coroutineScope.launch { cropState.rotate() }
+                                }
                             }
-                        } else {
+                            
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                TextButton(
+                                    onClick = cancelTransform,
+                                    modifier = Modifier.align(Alignment.CenterStart),
+                                    colors = ButtonDefaults.textButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.onSurface
+                                    )
+                                ) {
+                                    Text(text = stringResource(R.string.cancel).uppercase())
+                                }
+                                
+                                this@Column.AnimatedVisibility(
+                                    visible = cropState.isTransformed,
+                                    modifier = Modifier.align(Alignment.Center),
+                                    enter = expressiveScaleIn,
+                                    exit = expressiveScaleOut
+                                ) {
+                                    TextButton(
+                                        onClick = resetTransform, colors = ButtonDefaults.textButtonColors(
+                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    ) {
+                                        Text(text = stringResource(R.string.reset).uppercase())
+                                    }
+                                }
+                                
+                                TextButton(
+                                    onClick = { isTransforming = false },
+                                    modifier = Modifier.align(Alignment.CenterEnd)
+                                ) {
+                                    Text(text = stringResource(R.string.done).uppercase())
+                                }
+                            }
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
                             MediaOverlayIconButton(
                                 icon = Icons.Rounded.CropRotate,
-                                onClick = { isTransforming = true },
+                                onClick = openTransform,
+                                modifier = Modifier.align(Alignment.Center),
                                 isActive = cropState.isTransformed
                             )
+                            
+                            MediaOverlayIconButton(
+                                icon = Icons.AutoMirrored.Rounded.Send,
+                                onClick = confirmCrop,
+                                modifier = Modifier.align(Alignment.CenterEnd)
+                            )
                         }
-                    }
-                    
-                    AnimatedVisibility(
-                        visible = !isTransforming,
-                        modifier = Modifier.align(Alignment.CenterEnd),
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
-                        MediaOverlayIconButton(
-                            icon = Icons.AutoMirrored.Rounded.Send,
-                            onClick = {
-                                if (isConfirming || !cropState.isReady) {
-                                    return@MediaOverlayIconButton
-                                }
-                                
-                                isConfirming = true
-                                
-                                coroutineScope.launch {
-                                    val cropped = if (clipsToMask) {
-                                        cropState.crop(maskShape, density, layoutDirection)
-                                    } else {
-                                        cropState.crop()
-                                    }
-                                    
-                                    val target = if (cropped == null) {
-                                        null
-                                    } else {
-                                        withContext(Dispatchers.IO) { writeCrop(context, cropped) }
-                                    }
-                                    
-                                    if (target == null) {
-                                        isConfirming = false
-                                    } else {
-                                        onConfirm(target)
-                                    }
-                                }
-                            })
                     }
                 }
             }

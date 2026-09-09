@@ -1,14 +1,11 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
-package com.aiwazian.messenger.ui.screens.settings.stickers
+package com.aiwazian.messenger.ui.screens.settings.stickers.created
 
 import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.domain.StickerDraft
 import com.aiwazian.messenger.repository.StickerRepository
 import com.aiwazian.messenger.utils.EmojiInput
@@ -54,6 +51,25 @@ sealed interface StickerSlot {
     }
 }
 
+sealed interface StickerPackCover {
+    
+    val key: String
+    
+    data class Remote(
+        val fileId: String,
+        val url: String
+    ) : StickerPackCover {
+        override val key: String get() = fileId
+    }
+    
+    data class Local(
+        val sticker: EncodedSticker,
+        val fileId: String? = null
+    ) : StickerPackCover {
+        override val key: String get() = sticker.uri.toString()
+    }
+}
+
 data class StickerSnapshot(
     val key: String,
     val emojis: List<String>
@@ -73,13 +89,16 @@ data class StickerPackEditorUiState(
     val name: String = "",
     val username: String = "",
     val stickers: List<StickerSlot> = emptyList(),
+    val cover: StickerPackCover? = null,
     val focusedStickerKey: String? = null,
     val usernameStatus: UsernameStatus = UsernameStatus.Empty,
     val isLoading: Boolean = false,
     val isAddingSticker: Boolean = false,
+    val isChangingCover: Boolean = false,
     val isSaving: Boolean = false,
     val savedName: String = "",
     val savedUsername: String = "",
+    val savedCoverKey: String? = null,
     val savedStickers: List<StickerSnapshot> = emptyList()
 ) {
     val isNameValid: Boolean get() = name.trim().isNotEmpty()
@@ -93,11 +112,13 @@ data class StickerPackEditorUiState(
                 stickers.isNotEmpty() &&
                 stickers.all { it.emojis.isNotEmpty() } &&
                 !isSaving &&
-                !isAddingSticker
+                !isAddingSticker &&
+                !isChangingCover
     
     val hasChanges: Boolean
         get() = name.trim() != savedName ||
                 username != savedUsername ||
+                cover?.key != savedCoverKey ||
                 stickers.map { StickerSnapshot(it.key, it.emojis) } != savedStickers
 }
 
@@ -173,6 +194,15 @@ class StickerPackEditorViewModel @Inject constructor(
                     )
                 }
                 
+                val coverFileId = pack.coverFileId
+                val coverUrl = pack.coverUrl
+                
+                val cover = if (coverFileId != null && coverUrl != null) {
+                    StickerPackCover.Remote(fileId = coverFileId, url = coverUrl)
+                } else {
+                    null
+                }
+                
                 _uiState.update { state ->
                     state.copy(
                         packId = pack.id,
@@ -180,9 +210,11 @@ class StickerPackEditorViewModel @Inject constructor(
                         username = pack.username,
                         usernameStatus = UsernameStatus.Available,
                         stickers = slots,
+                        cover = cover,
                         isLoading = false,
                         savedName = pack.name.trim(),
                         savedUsername = pack.username,
+                        savedCoverKey = cover?.key,
                         savedStickers = slots.map { StickerSnapshot(it.key, it.emojis) }
                     )
                 }
@@ -278,6 +310,58 @@ class StickerPackEditorViewModel @Inject constructor(
         }
     }
     
+    fun addStickerFromExisting(sticker: Sticker) {
+        val state = _uiState.value
+        
+        if (state.stickers.any { it is StickerSlot.Remote && it.fileId == sticker.fileId }) {
+            return
+        }
+        
+        val slot = StickerSlot.Remote(
+            fileId = sticker.fileId,
+            url = sticker.url,
+            emojis = sticker.emojis.ifEmpty { listOf(EmojiInput.DEFAULT_EMOJI) }
+        )
+        
+        _uiState.update { current ->
+            current.copy(stickers = current.stickers + slot)
+        }
+    }
+    
+    fun setCoverFromFile(uri: Uri) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isChangingCover = true) }
+            
+            val encoded = stickerEncoder.encode(uri)
+            
+            if (encoded == null) {
+                _uiState.update { it.copy(isChangingCover = false) }
+                
+                _uiEffect.emit(StickerPackEditorEffect.ShowMessage(R.string.sticker_add_error))
+                
+                return@launch
+            }
+            
+            _uiState.update { state ->
+                state.copy(
+                    cover = StickerPackCover.Local(sticker = encoded),
+                    isChangingCover = false
+                )
+            }
+        }
+    }
+    
+    fun setCoverFromSticker(sticker: Sticker) {
+        _uiState.update { state ->
+            state.copy(
+                cover = StickerPackCover.Remote(
+                    fileId = sticker.fileId,
+                    url = sticker.url
+                )
+            )
+        }
+    }
+    
     fun focusSticker(key: String) {
         _uiState.update { state ->
             if (state.stickers.none { it.key == key }) {
@@ -370,6 +454,21 @@ class StickerPackEditorViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             
+            val existingPackId = state.packId
+            
+            val packId = existingPackId ?: stickerRepository.reservePackId()
+                .getOrNull()
+            
+            if (packId == null) {
+                _uiState.update { current -> current.copy(isSaving = false) }
+                
+                _uiEffect.emit(
+                    StickerPackEditorEffect.ShowMessage(R.string.sticker_pack_save_error)
+                )
+                
+                return@launch
+            }
+            
             val slots = state.stickers.toMutableList()
             val drafts = mutableListOf<StickerDraft>()
             
@@ -385,8 +484,8 @@ class StickerPackEditorViewModel @Inject constructor(
                         if (known != null) {
                             drafts.add(StickerDraft(fileId = known, emojis = slot.emojis))
                         } else {
-                            val uploaded =
-                                stickerRepository.uploadSticker(slot.sticker).getOrNull()
+                            val uploaded = stickerRepository.uploadSticker(slot.sticker, packId)
+                                .getOrNull()
                             
                             if (uploaded == null) {
                                 _uiState.update { current ->
@@ -408,13 +507,59 @@ class StickerPackEditorViewModel @Inject constructor(
                 }
             }
             
-            val packId = state.packId
+            var cover = state.cover
+            
+            when (val current = cover) {
+                is StickerPackCover.Local -> {
+                    val known = current.fileId
+                    
+                    if (known == null) {
+                        val uploaded = stickerRepository.uploadSticker(current.sticker, packId)
+                            .getOrNull()
+                        
+                        if (uploaded == null) {
+                            _uiState.update { state ->
+                                state.copy(stickers = slots, isSaving = false)
+                            }
+                            
+                            _uiEffect.emit(
+                                StickerPackEditorEffect.ShowMessage(R.string.sticker_upload_error)
+                            )
+                            
+                            return@launch
+                        }
+                        
+                        cover = current.copy(fileId = uploaded)
+                    }
+                }
+                
+                else -> Unit
+            }
+            
+            val coverFileId = when (val ready = cover) {
+                is StickerPackCover.Remote -> ready.fileId
+                is StickerPackCover.Local -> ready.fileId
+                null -> null
+            }
+            
             val name = state.name.trim()
             
-            val result = if (packId == null) {
-                stickerRepository.createPack(name, state.username, drafts)
+            val result = if (existingPackId == null) {
+                stickerRepository.createPack(
+                    packId = packId,
+                    name = name,
+                    username = state.username,
+                    stickers = drafts,
+                    coverFileId = coverFileId
+                )
             } else {
-                stickerRepository.updatePack(packId, name, state.username, drafts)
+                stickerRepository.updatePack(
+                    packId = packId,
+                    name = name,
+                    username = state.username,
+                    stickers = drafts,
+                    coverFileId = coverFileId
+                )
             }
             
             result.onSuccess { pack ->
@@ -426,6 +571,15 @@ class StickerPackEditorViewModel @Inject constructor(
                     )
                 }
                 
+                val savedCoverFileId = pack.coverFileId
+                val savedCoverUrl = pack.coverUrl
+                
+                val savedCover = if (savedCoverFileId != null && savedCoverUrl != null) {
+                    StickerPackCover.Remote(fileId = savedCoverFileId, url = savedCoverUrl)
+                } else {
+                    null
+                }
+                
                 removedSlot = null
                 
                 _uiState.update { current ->
@@ -435,10 +589,12 @@ class StickerPackEditorViewModel @Inject constructor(
                         username = pack.username,
                         usernameStatus = UsernameStatus.Available,
                         stickers = saved,
+                        cover = savedCover,
                         focusedStickerKey = null,
                         isSaving = false,
                         savedName = pack.name.trim(),
                         savedUsername = pack.username,
+                        savedCoverKey = savedCover?.key,
                         savedStickers = saved.map { StickerSnapshot(it.key, it.emojis) }
                     )
                 }
@@ -451,7 +607,13 @@ class StickerPackEditorViewModel @Inject constructor(
                     )
                 }
             }.onFailure {
-                _uiState.update { current -> current.copy(stickers = slots, isSaving = false) }
+                _uiState.update { current ->
+                    current.copy(
+                        stickers = slots,
+                        cover = cover,
+                        isSaving = false
+                    )
+                }
                 
                 _uiEffect.emit(
                     StickerPackEditorEffect.ShowMessage(R.string.sticker_pack_save_error)

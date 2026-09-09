@@ -1,12 +1,12 @@
-package com.aiwazian.messenger.ui.screens.settings.stickers
+package com.aiwazian.messenger.ui.screens.settings.stickers.created
 
-import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.StickerPack
 import com.aiwazian.messenger.repository.StickerRepository
-import com.aiwazian.messenger.ui.components.ShareItem
+import com.aiwazian.messenger.ui.screens.settings.stickers.StickerPackListEffect
+import com.aiwazian.messenger.ui.screens.settings.stickers.StickerPackListUiState
 import com.aiwazian.messenger.usecase.GetShareTargetsUseCase
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.utils.StickerLink
@@ -18,33 +18,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-data class StickerPackListUiState(
-    val packs: List<StickerPack> = emptyList(),
-    val query: String = "",
-    val isLoading: Boolean = false,
-    val sharingPack: StickerPack? = null,
-    val shareTargets: List<ShareItem> = emptyList(),
-    val selectedShareChatIds: Set<Long> = emptySet()
-) {
-    val visiblePacks: List<StickerPack>
-        get() {
-            val trimmed = query.trim()
-            
-            if (trimmed.isEmpty()) {
-                return packs
-            }
-            
-            return packs.filter { pack ->
-                pack.name.contains(trimmed, ignoreCase = true) ||
-                        pack.username.contains(trimmed, ignoreCase = true)
-            }
-        }
-}
-
-sealed interface StickerPackListEffect {
-    data class ShowMessage(@param:StringRes val messageRes: Int) : StickerPackListEffect
-}
 
 @HiltViewModel
 class CreatedStickerPacksViewModel @Inject constructor(

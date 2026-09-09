@@ -1,14 +1,12 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
-package com.aiwazian.messenger.ui.screens.settings.stickers
+package com.aiwazian.messenger.ui.screens.settings.stickers.added
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.StickerPack
 import com.aiwazian.messenger.repository.StickerRepository
+import com.aiwazian.messenger.ui.screens.settings.stickers.StickerPackListEffect
+import com.aiwazian.messenger.ui.screens.settings.stickers.StickerPackListUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +16,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** Чужие наборы, добавленные себе. */
 @HiltViewModel
 class AddedStickerPacksViewModel @Inject constructor(
     private val stickerRepository: StickerRepository
@@ -30,12 +27,6 @@ class AddedStickerPacksViewModel @Inject constructor(
     private val _uiEffect = MutableSharedFlow<StickerPackListEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
     
-    /**
-     * Набор, раскрытый в шторке.
-     *
-     * Состав грузится отдельным запросом: в списке сервер отдаёт только
-     * количество стикеров.
-     */
     private val _openedPack = MutableStateFlow<StickerPack?>(null)
     val openedPack = _openedPack.asStateFlow()
     
@@ -71,7 +62,6 @@ class AddedStickerPacksViewModel @Inject constructor(
         _openedPack.value = null
     }
     
-    /** Убирает набор только у себя: чужой набор удалять нельзя. */
     fun remove(packId: Long) {
         viewModelScope.launch {
             stickerRepository.uninstallPack(packId).onSuccess {

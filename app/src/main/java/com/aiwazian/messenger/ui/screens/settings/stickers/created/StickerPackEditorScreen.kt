@@ -1,8 +1,4 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
-package com.aiwazian.messenger.ui.screens.settings.stickers
+package com.aiwazian.messenger.ui.screens.settings.stickers.created
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
@@ -43,6 +39,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -90,6 +87,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.FramelessTextBox
@@ -98,6 +97,7 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.chat.components.PhotoPickerBottomSheet
+import com.aiwazian.messenger.ui.screens.settings.stickers.StickerPickerBottomSheet
 import com.aiwazian.messenger.utils.EmojiInput
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.Job
@@ -105,16 +105,25 @@ import kotlinx.coroutines.launch
 
 private val STICKER_CELL_MIN_SIZE = 64.dp
 private val STICKER_FOCUS_TOP_PADDING = 50.dp
+private val COVER_SIZE = 96.dp
 private const val FOCUS_SCALE = 2.5f
 private const val SCRIM_ALPHA = 0.6f
 private const val EMOJI_FIELD_WIDTH_FRACTION = 0.8f
 private const val PRESSED_CELL_SCALE = 0.9f
+private const val COVER_BUTTON_LABEL = "Выбрать обложку"
+private const val PICK_STICKER_LABEL = "Выбрать стикер"
+private const val PICK_FILE_LABEL = "Выбрать файл"
 
 private val FOCUS_OPEN_SPEC: AnimationSpec<Float> =
     tween(durationMillis = 260, easing = FastOutSlowInEasing)
 
 private val FOCUS_CLOSE_SPEC: AnimationSpec<Float> =
     tween(durationMillis = 220, easing = FastOutSlowInEasing)
+
+private enum class StickerPickTarget {
+    Cover,
+    Sticker
+}
 
 private object EmojiOnlyTransformation : InputTransformation {
     
@@ -177,7 +186,10 @@ fun StickerPackEditorScreen(
     val scope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
-    var isPickerVisible by remember { mutableStateOf(false) }
+    var photoPickerTarget by remember { mutableStateOf<StickerPickTarget?>(null) }
+    var stickerPickerTarget by remember { mutableStateOf<StickerPickTarget?>(null) }
+    var isCoverMenuExpanded by remember { mutableStateOf(false) }
+    var isAddMenuExpanded by remember { mutableStateOf(false) }
     var isExitDialogVisible by remember { mutableStateOf(false) }
     var undoKey by remember { mutableStateOf<String?>(null) }
     
@@ -317,29 +329,62 @@ fun StickerPackEditorScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        SectionContainer(
-                            contentPadding = PaddingValues.Zero,
-                            footer = {
-                                UsernameHint(status = uiState.usernameStatus)
-                            }) {
-                            FramelessTextBox(
-                                placeholder = stringResource(R.string.sticker_pack_name),
-                                value = uiState.name,
-                                onValueChange = viewModel::onNameChange,
-                                trailingIcon = {
-                                    Text(
-                                        text = "${uiState.name.length}/${StickerPackEditorViewModel.MAX_NAME_LENGTH}",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = 12.sp
-                                    )
-                                })
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                CoverPicker(
+                                    cover = uiState.cover,
+                                    isBusy = uiState.isChangingCover,
+                                    onClick = { isCoverMenuExpanded = true })
+                                
+                                AppDropdownMenu(
+                                    expanded = isCoverMenuExpanded,
+                                    onDismissRequest = { isCoverMenuExpanded = false }) {
+                                    AppDropdownMenuItem(
+                                        text = PICK_STICKER_LABEL,
+                                        onClick = {
+                                            isCoverMenuExpanded = false
+                                            
+                                            stickerPickerTarget = StickerPickTarget.Cover
+                                        })
+                                    
+                                    AppDropdownMenuItem(
+                                        text = PICK_FILE_LABEL,
+                                        onClick = {
+                                            isCoverMenuExpanded = false
+                                            
+                                            photoPickerTarget = StickerPickTarget.Cover
+                                        })
+                                }
+                            }
                             
-                            FramelessTextBox(
-                                placeholder = stringResource(R.string.sticker_pack_username),
-                                value = uiState.username,
-                                onValueChange = viewModel::onUsernameChange,
-                                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None)
-                            )
+                            SectionContainer(
+                                contentPadding = PaddingValues.Zero,
+                                footer = {
+                                    UsernameHint(status = uiState.usernameStatus)
+                                }) {
+                                FramelessTextBox(
+                                    placeholder = stringResource(R.string.sticker_pack_name),
+                                    value = uiState.name,
+                                    onValueChange = viewModel::onNameChange,
+                                    trailingIcon = {
+                                        Text(
+                                            text = "${uiState.name.length}/${StickerPackEditorViewModel.MAX_NAME_LENGTH}",
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontSize = 12.sp
+                                        )
+                                    })
+                                
+                                FramelessTextBox(
+                                    placeholder = stringResource(R.string.sticker_pack_username),
+                                    value = uiState.username,
+                                    onValueChange = viewModel::onUsernameChange,
+                                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None)
+                                )
+                            }
                         }
                     }
                     
@@ -354,9 +399,31 @@ fun StickerPackEditorScreen(
                     }
                     
                     item {
-                        AddStickerCell(
-                            isBusy = uiState.isAddingSticker,
-                            onClick = { isPickerVisible = true })
+                        Box {
+                            AddStickerCell(
+                                isBusy = uiState.isAddingSticker,
+                                onClick = { isAddMenuExpanded = true })
+                            
+                            AppDropdownMenu(
+                                expanded = isAddMenuExpanded,
+                                onDismissRequest = { isAddMenuExpanded = false }) {
+                                AppDropdownMenuItem(
+                                    text = PICK_STICKER_LABEL,
+                                    onClick = {
+                                        isAddMenuExpanded = false
+                                        
+                                        stickerPickerTarget = StickerPickTarget.Sticker
+                                    })
+                                
+                                AppDropdownMenuItem(
+                                    text = PICK_FILE_LABEL,
+                                    onClick = {
+                                        isAddMenuExpanded = false
+                                        
+                                        photoPickerTarget = StickerPickTarget.Sticker
+                                    })
+                            }
+                        }
                     }
                 }
                 
@@ -385,13 +452,46 @@ fun StickerPackEditorScreen(
         }
     }
     
-    if (isPickerVisible) {
+    val activePhotoTarget = photoPickerTarget
+    
+    if (activePhotoTarget != null) {
         PhotoPickerBottomSheet(
-            maskShape = MaterialTheme.shapes.extraLarge,
-            onPhotoPicked = viewModel::addSticker,
-            onDismissRequest = { isPickerVisible = false },
+            maskShape = if (activePhotoTarget == StickerPickTarget.Cover) {
+                MaterialTheme.shapes.large
+            } else {
+                MaterialTheme.shapes.extraLarge
+            },
+            onPhotoPicked = { uri ->
+                when (activePhotoTarget) {
+                    StickerPickTarget.Cover -> viewModel.setCoverFromFile(uri)
+                    StickerPickTarget.Sticker -> viewModel.addSticker(uri)
+                }
+            },
+            onDismissRequest = { photoPickerTarget = null },
             clipsToMask = true
         )
+    }
+    
+    val activeStickerTarget = stickerPickerTarget
+    
+    if (activeStickerTarget != null) {
+        StickerPickerBottomSheet(
+            onStickerSelected = { sticker ->
+                when (activeStickerTarget) {
+                    StickerPickTarget.Cover -> viewModel.setCoverFromSticker(sticker)
+                    StickerPickTarget.Sticker -> viewModel.addStickerFromExisting(sticker)
+                }
+                
+                stickerPickerTarget = null
+            },
+            onDismissRequest = { stickerPickerTarget = null },
+            addedFileIds = if (activeStickerTarget == StickerPickTarget.Sticker) {
+                uiState.stickers.mapNotNull { slot ->
+                    (slot as? StickerSlot.Remote)?.fileId
+                }.toSet()
+            } else {
+                emptySet()
+            })
     }
     
     if (isExitDialogVisible) {
@@ -419,6 +519,62 @@ fun StickerPackEditorScreen(
                 }
             }) {
             Text(stringResource(R.string.sticker_pack_unsaved_message))
+        }
+    }
+}
+
+@Composable
+private fun CoverPicker(
+    cover: StickerPackCover?,
+    isBusy: Boolean,
+    onClick: () -> Unit
+) {
+    val context = LocalContext.current
+    
+    if (cover == null) {
+        Button(onClick = onClick, enabled = !isBusy) {
+            if (isBusy) {
+                CircularProgressIndicator(
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(18.dp)
+                )
+            } else {
+                Text(COVER_BUTTON_LABEL)
+            }
+        }
+        
+        return
+    }
+    
+    val model = when (cover) {
+        is StickerPackCover.Local -> ImageRequest.Builder(context)
+            .data(cover.sticker.uri)
+            .build()
+        
+        is StickerPackCover.Remote -> ImageRequest.Builder(context)
+            .data(cover.url)
+            .memoryCacheKey(cover.fileId)
+            .diskCacheKey(cover.fileId)
+            .build()
+    }
+    
+    Box(
+        modifier = Modifier
+            .size(COVER_SIZE)
+            .clip(MaterialTheme.shapes.large)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .clickable(enabled = !isBusy, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        if (isBusy) {
+            CircularWavyProgressIndicator(modifier = Modifier.size(28.dp))
+        } else {
+            AsyncImage(
+                model = model,
+                contentDescription = COVER_BUTTON_LABEL,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
         }
     }
 }

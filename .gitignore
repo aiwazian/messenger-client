@@ -16,6 +16,9 @@ Thumbs.db
 # Firebase
 app/google-services.json
 
+# Lottie
+assets/
+
 # Keystore files
 *.jks
 *.keystore

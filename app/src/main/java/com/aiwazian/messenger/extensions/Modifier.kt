@@ -9,8 +9,10 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.aiwazian.messenger.ui.components.navigation.LocalSharedTransitionScope
 
@@ -77,4 +79,9 @@ fun Modifier.sharedBounds(
             placeholderSize = placeHolderSize
         )
     }
+}
+
+
+fun Modifier.parallax(scrollState: ScrollState, rate: Int = 2): Modifier = this.graphicsLayer {
+    translationY = if (rate > 0) scrollState.value.toFloat() / rate else scrollState.value.toFloat()
 }

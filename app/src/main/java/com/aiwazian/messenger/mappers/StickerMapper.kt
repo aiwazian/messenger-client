@@ -25,7 +25,9 @@ fun StickerPackDto.toDomain(): StickerPack = StickerPack(
     stickerCount = stickerCount,
     isOwned = isOwned,
     isInstalled = isInstalled,
-    stickers = stickers.map { it.toDomain() }
+    stickers = stickers.map { it.toDomain() },
+    coverFileId = coverFileId,
+    coverUrl = coverUrl
 )
 
 fun StickerEntity.toDomain(): Sticker = Sticker(
