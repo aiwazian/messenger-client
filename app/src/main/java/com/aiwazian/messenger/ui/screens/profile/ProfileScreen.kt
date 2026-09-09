@@ -70,6 +70,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.extensions.parallax
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
@@ -99,7 +100,7 @@ fun ProfileScreen(
     avatarUri: String? = null,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(Unit) {
+    LaunchedEffect(profileId) {
         viewModel.init(profileId, profileName, avatarUri?.toUri())
     }
     
@@ -197,10 +198,15 @@ fun ProfileScreen(
                     .fillMaxSize()
                     .verticalScroll(scrollState)
             ) {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.TopCenter
+                ) {
                     if (uiState.avatars.isNotEmpty()) {
                         ProfileImageCarousel(
-                            modifier = Modifier.padding(bottom = 10.dp),
+                            modifier = Modifier
+                                .padding(bottom = 10.dp)
+                                .parallax(scrollState, rate = 4),
                             avatars = uiState.avatars,
                             profileId = uiState.id
                         )
@@ -334,17 +340,6 @@ fun ProfileScreen(
     }
 }
 
-/**
- * Строка профиля с выпадающим меню.
- *
- * [AppDropdownMenu] не принимает modifier и строится относительно родителя,
- * поэтому строка завёрнута в свой Box: иначе меню прижималось бы к верху всего
- * блока, а не к нажатой строке. Провайдер позиции дополнительно прижимает меню
- * к правому краю строки.
- *
- * Ссылки и упоминания внутри текста обрабатываются своими обработчиками и
- * до меню не доходят, так что тап по ссылке по-прежнему открывает ссылку.
- */
 @Composable
 private fun SectionItemWithMenu(
     headlineText: String,
@@ -702,7 +697,10 @@ private fun FlexBoxScope.ProfileAction(
             basis(0.dp)
         },
         shapes = ButtonDefaults.shapes(pressedShape = MaterialTheme.shapes.large),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = contentColor)
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = contentColor,
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        )
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(icon, null, modifier = Modifier.size(20.dp))

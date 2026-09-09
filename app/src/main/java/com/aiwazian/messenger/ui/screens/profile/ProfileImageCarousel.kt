@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.profile
 
 import android.net.Uri
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.aiwazian.messenger.extensions.sharedBounds
@@ -29,45 +29,42 @@ fun ProfileImageCarousel(
     avatars: List<Uri?>
 ) {
     val carouselState = rememberCarouselState { avatars.size }
-    val containerWidth = LocalWindowInfo.current.containerDpSize.width
     
-    val itemWidth = if (containerWidth < 500.dp) {
-        containerWidth
-    } else {
-        300.dp
-    }
-    
-    HorizontalUncontainedCarousel(
-        state = carouselState,
-        itemWidth = itemWidth,
-        modifier = modifier,
-        flingBehavior = if (containerWidth < 500.dp) {
-            CarouselDefaults.singleAdvanceFlingBehavior(carouselState)
-        } else {
-            CarouselDefaults.multiBrowseFlingBehavior(carouselState)
-        }
-    ) { index ->
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f),
-            contentAlignment = Alignment.Center
-        ) {
-            val uri = avatars[index]
-            if (uri == null) {
-                CircularWavyProgressIndicator()
+    BoxWithConstraints {
+        val itemWidth = if (maxWidth < 500.dp) maxWidth else 300.dp
+        
+        HorizontalUncontainedCarousel(
+            state = carouselState,
+            itemWidth = itemWidth,
+            modifier = modifier,
+            flingBehavior = if (maxWidth < 500.dp) {
+                CarouselDefaults.singleAdvanceFlingBehavior(carouselState)
             } else {
-                val modifier = if (index == 0) {
-                    Modifier.sharedBounds(key = "chat-avatar-$profileId")
+                CarouselDefaults.multiBrowseFlingBehavior(carouselState)
+            }
+        ) { index ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                val uri = avatars[index]
+                if (uri == null) {
+                    CircularWavyProgressIndicator()
                 } else {
-                    Modifier
+                    val modifier = if (index == 0) {
+                        Modifier.sharedBounds(key = "chat-avatar-$profileId")
+                    } else {
+                        Modifier
+                    }
+                    AsyncImage(
+                        model = uri,
+                        contentDescription = null,
+                        modifier = modifier.then(Modifier.fillMaxSize()),
+                        contentScale = ContentScale.Crop,
+                    )
                 }
-                AsyncImage(
-                    model = uri,
-                    contentDescription = null,
-                    modifier = modifier.then(Modifier.fillMaxSize()),
-                    contentScale = ContentScale.Crop,
-                )
             }
         }
     }

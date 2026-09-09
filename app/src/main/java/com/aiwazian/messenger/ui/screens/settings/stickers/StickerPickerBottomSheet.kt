@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2026. Aiwazian.
+ */
+
 package com.aiwazian.messenger.ui.screens.settings.stickers
 
 import androidx.compose.foundation.clickable
@@ -12,6 +16,7 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,6 +49,7 @@ import javax.inject.Inject
 private val PICKER_CELL_MIN_SIZE = 72.dp
 private val PICKER_GRID_MAX_HEIGHT = 420.dp
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StickerPickerBottomSheet(
     onStickerSelected: (Sticker) -> Unit,
