@@ -196,11 +196,17 @@ class StickerPickerViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             
+            val created = stickerRepository.getCreatedPacks()
+                .getOrNull()
+                .orEmpty()
+            
             val added = stickerRepository.getAddedPacks(includeStickers = true)
                 .getOrNull()
                 .orEmpty()
             
-            val detailed = added.map { pack -> async { withStickers(pack) } }
+            val merged = (created + added).distinctBy { it.id }
+            
+            val detailed = merged.map { pack -> async { withStickers(pack) } }
                 .awaitAll()
             
             _packs.value = detailed.filter { it.stickers.isNotEmpty() }

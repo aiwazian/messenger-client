@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2026. Aiwazian.
- */
-
 package com.aiwazian.messenger.ui.components
 
 import android.content.Context
@@ -58,6 +54,15 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+data class MediaCropOrientation(
+    val turns: Int = 0,
+    val isMirrored: Boolean = false
+) {
+    companion object {
+        val None = MediaCropOrientation()
+    }
+}
+
 class MediaCropState internal constructor() {
     
     var bitmap by mutableStateOf<Bitmap?>(null)
@@ -71,11 +76,16 @@ class MediaCropState internal constructor() {
     internal val offsetX = Animatable(0f)
     internal val offsetY = Animatable(0f)
     
+    private var original: Bitmap? = null
+    
     private var rotationTurns by mutableIntStateOf(0)
     private var isMirrored by mutableStateOf(false)
     
+    val orientation: MediaCropOrientation
+        get() = MediaCropOrientation(turns = rotationTurns, isMirrored = isMirrored)
+    
     val isTransformed: Boolean
-        get() = rotationTurns % FULL_TURN_STEPS != 0 || isMirrored
+        get() = rotationTurns != 0 || isMirrored
     
     private var fitScale = 1f
     
@@ -87,6 +97,7 @@ class MediaCropState internal constructor() {
         get() = bitmap != null && maskSide > 0f
     
     internal suspend fun setBitmap(value: Bitmap?) {
+        original = value
         bitmap = value
         scale = 1f
         rotationTurns = 0
@@ -153,7 +164,7 @@ class MediaCropState internal constructor() {
         val rotated = source.rotatedQuarter()
         
         bitmap = rotated
-        rotationTurns += 1
+        rotationTurns = (rotationTurns + 1) % FULL_TURN_STEPS
         
         applyLimits(rotated)
         
@@ -169,7 +180,34 @@ class MediaCropState internal constructor() {
     
     fun mirror() {
         bitmap = bitmap?.mirrored()
+        rotationTurns = (FULL_TURN_STEPS - rotationTurns) % FULL_TURN_STEPS
         isMirrored = !isMirrored
+    }
+    
+    suspend fun restore(target: MediaCropOrientation = MediaCropOrientation.None) {
+        val source = original ?: return
+        
+        if (orientation == target) {
+            return
+        }
+        
+        var restored = if (target.isMirrored) source.mirrored() else source
+        
+        repeat(target.turns % FULL_TURN_STEPS) {
+            restored = restored.rotatedQuarter()
+        }
+        
+        bitmap = restored
+        rotationTurns = target.turns % FULL_TURN_STEPS
+        isMirrored = target.isMirrored
+        scale = 1f
+        
+        applyLimits(restored)
+        
+        coroutineScope {
+            launch { offsetX.animateTo(0f, SNAP_SPEC) }
+            launch { offsetY.animateTo(0f, SNAP_SPEC) }
+        }
     }
     
     fun crop(): Bitmap? {
