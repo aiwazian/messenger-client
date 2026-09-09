@@ -113,6 +113,7 @@ private const val PRESSED_CELL_SCALE = 0.9f
 private const val COVER_BUTTON_LABEL = "Выбрать обложку"
 private const val PICK_STICKER_LABEL = "Выбрать стикер"
 private const val PICK_FILE_LABEL = "Выбрать файл"
+private const val REMOVE_COVER_LABEL = "Удалить обложку"
 
 private val FOCUS_OPEN_SPEC: AnimationSpec<Float> =
     tween(durationMillis = 260, easing = FastOutSlowInEasing)
@@ -358,6 +359,16 @@ fun StickerPackEditorScreen(
                                             
                                             photoPickerTarget = StickerPickTarget.Cover
                                         })
+                                    
+                                    if (uiState.cover != null) {
+                                        AppDropdownMenuItem(
+                                            text = REMOVE_COVER_LABEL,
+                                            onClick = {
+                                                isCoverMenuExpanded = false
+                                                
+                                                viewModel.removeCover()
+                                            })
+                                    }
                                 }
                             }
                             
