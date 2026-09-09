@@ -1,6 +1,7 @@
 package com.aiwazian.messenger.ui.screens.settings.stickers.created
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -86,6 +87,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.animations.expressiveScaleIn
+import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
@@ -254,7 +257,7 @@ fun StickerPackEditorScreen(
         }
     }
     
-    val isFabVisible = uiState.canSave || uiState.isSaving
+    val isFabVisible = uiState.hasChanges && (uiState.canSave || uiState.isSaving)
     
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -301,7 +304,11 @@ fun StickerPackEditorScreen(
                 )
             },
             floatingActionButton = {
-                if (isFabVisible) {
+                AnimatedVisibility(
+                    visible = isFabVisible,
+                    enter = expressiveScaleIn,
+                    exit = expressiveScaleOut
+                ) {
                     FloatingActionButton(onClick = viewModel::save, shape = CircleShape) {
                         if (uiState.isSaving) {
                             CircularProgressIndicator(
