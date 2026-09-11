@@ -13,11 +13,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -69,6 +73,7 @@ import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
+import com.aiwazian.messenger.ui.components.PlayerSpeedBadge
 import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.animatedBackgroundAlpha
 import com.aiwazian.messenger.ui.components.animatedOffsetY
@@ -89,6 +94,7 @@ data class ViewerMediaItem(
     val isVideo: Boolean
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FullScreenViewer(
     media: List<ViewerMediaItem>,
@@ -106,6 +112,7 @@ fun FullScreenViewer(
     var showSpeedBottomSheet by remember { mutableStateOf(false) }
     var showMoreActions by remember { mutableStateOf(false) }
     var isVideoPlaying by remember { mutableStateOf(false) }
+    var isVideoFastForwarding by remember { mutableStateOf(false) }
     var lastInteractionTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
     
     val dismissDragState = rememberDismissDragState()
@@ -146,226 +153,261 @@ fun FullScreenViewer(
         isVideoPlaying = false
     }
     
+    // Пока идёт удержание, таймер автоскрытия стоит: иначе после отпускания контролы бы не вернулись
     LaunchedEffect(
-        isUiVisible, isVideoPlaying, lastInteractionTime, showVideoSettings, showMoreActions
+        isUiVisible,
+        isVideoPlaying,
+        lastInteractionTime,
+        showVideoSettings,
+        showMoreActions,
+        isVideoFastForwarding
     ) {
-        if (isUiVisible && isVideoPlaying && !showVideoSettings && !showMoreActions) {
+        if (isUiVisible && isVideoPlaying && !showVideoSettings && !showMoreActions && !isVideoFastForwarding) {
             delay(2000.milliseconds)
             isUiVisible = false
         }
     }
     
-    val isChromeVisible = !dismissDragState.isDragging && isUiVisible && hero.isSettled
+    val isChromeVisible =
+        !dismissDragState.isDragging && isUiVisible && hero.isSettled && !isVideoFastForwarding
     
-    Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .mediaHeroBackground(hero, MaterialTheme.colorScheme.surface) { backgroundAlpha }
-            .navigationBarsPadding()
-            .mediaHeroContainer(hero)
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        awaitPointerEvent(PointerEventPass.Initial)
-                        lastInteractionTime = System.currentTimeMillis()
-                    }
-                }
-            },
-        topBar = {
-            AnimatedVisibility(
-                visible = isChromeVisible,
-                modifier = Modifier.fillMaxWidth(),
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                val currentItem = media.getOrNull(pagerState.currentPage)
-                val isCurrentVideo = currentItem?.isVideo == true
-                val showMoreActionsButton = canDownloadMedia && currentItem != null
-                
-                LaunchedEffect(isCurrentVideo) {
-                    if (!isCurrentVideo) {
-                        showVideoSettings = false
-                    }
-                }
-                
-                LaunchedEffect(showMoreActionsButton) {
-                    if (!showMoreActionsButton) {
-                        showMoreActions = false
-                    }
-                }
-                
-                TopAppBar(
-                    title = {}, navigationIcon = {
-                        IconButton(
-                            onClick = hero::dismiss, colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack, null
-                            )
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+                .mediaHeroBackground(hero, MaterialTheme.colorScheme.surface) { backgroundAlpha }
+                .navigationBarsPadding()
+                .mediaHeroContainer(hero)
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            awaitPointerEvent(PointerEventPass.Initial)
+                            lastInteractionTime = System.currentTimeMillis()
                         }
-                    }, actions = {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            AnimatedVisibility(
-                                visible = isCurrentVideo,
-                                enter = expressiveScaleIn,
-                                exit = expressiveScaleOut
+                    }
+                },
+            topBar = {
+                AnimatedVisibility(
+                    visible = isChromeVisible,
+                    modifier = Modifier.fillMaxWidth(),
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    val currentItem = media.getOrNull(pagerState.currentPage)
+                    val isCurrentVideo = currentItem?.isVideo == true
+                    val showMoreActionsButton = canDownloadMedia && currentItem != null
+                    
+                    LaunchedEffect(isCurrentVideo) {
+                        if (!isCurrentVideo) {
+                            showVideoSettings = false
+                        }
+                    }
+                    
+                    LaunchedEffect(showMoreActionsButton) {
+                        if (!showMoreActionsButton) {
+                            showMoreActions = false
+                        }
+                    }
+                    
+                    TopAppBar(
+                        title = {}, navigationIcon = {
+                            IconButton(
+                                onClick = hero::dismiss,
+                                colors = IconButtonDefaults.iconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                )
                             ) {
-                                IconButton(
-                                    onClick = { showVideoSettings = true },
-                                    colors = IconButtonDefaults.iconButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                    )
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Settings,
-                                        contentDescription = stringResource(R.string.video_settings)
-                                    )
-                                }
-                                AppDropdownMenu(
-                                    expanded = showVideoSettings,
-                                    onDismissRequest = { showVideoSettings = false }) {
-                                    AppDropdownMenuItem(
-                                        text = stringResource(R.string.speed),
-                                        onClick = {
-                                            showVideoSettings = false
-                                            showSpeedBottomSheet = true
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Speed,
-                                                contentDescription = null
-                                            )
-                                        },
-                                        trailingIcon = {
-                                            Text(
-                                                text = String.format(
-                                                    Locale.ROOT, "%.1f", videoPlaybackSpeed
-                                                ) + 'x',
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        })
-                                    AppDropdownMenuItem(
-                                        text = stringResource(R.string.loop),
-                                        onClick = {
-                                            onVideoLoopingChange(!isVideoLooping)
-                                            showVideoSettings = false
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Repeat,
-                                                contentDescription = null
-                                            )
-                                        },
-                                        contentColor = if (isVideoLooping) {
-                                            MaterialTheme.colorScheme.primary
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurface
-                                        }
-                                    )
-                                }
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack, null
+                                )
                             }
-                            
-                            AnimatedVisibility(
-                                visible = showMoreActionsButton,
-                                enter = expressiveScaleIn,
-                                exit = expressiveScaleOut
-                            ) {
-                                IconButton(
-                                    onClick = { showMoreActions = true },
-                                    colors = IconButtonDefaults.iconButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                    )
+                        }, actions = {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                AnimatedVisibility(
+                                    visible = isCurrentVideo,
+                                    enter = expressiveScaleIn,
+                                    exit = expressiveScaleOut
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.MoreVert,
-                                        contentDescription = stringResource(R.string.actions)
-                                    )
-                                }
-                                AppDropdownMenu(
-                                    expanded = showMoreActions,
-                                    onDismissRequest = { showMoreActions = false }) {
-                                    if (canDownloadMedia && currentItem != null) {
+                                    IconButton(
+                                        onClick = { showVideoSettings = true },
+                                        colors = IconButtonDefaults.iconButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                        )
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Settings,
+                                            contentDescription = stringResource(R.string.video_settings)
+                                        )
+                                    }
+                                    AppDropdownMenu(
+                                        expanded = showVideoSettings,
+                                        onDismissRequest = { showVideoSettings = false }) {
                                         AppDropdownMenuItem(
-                                            text = stringResource(R.string.save_to_gallery),
+                                            text = stringResource(R.string.speed),
                                             onClick = {
-                                                onSaveToGallery(currentItem.uri)
-                                                showMoreActions = false
+                                                showVideoSettings = false
+                                                showSpeedBottomSheet = true
                                             },
                                             leadingIcon = {
                                                 Icon(
-                                                    imageVector = Icons.Rounded.SaveAlt,
+                                                    imageVector = Icons.Rounded.Speed,
                                                     contentDescription = null
                                                 )
+                                            },
+                                            trailingIcon = {
+                                                Text(
+                                                    text = String.format(
+                                                        Locale.ROOT, "%.1f", videoPlaybackSpeed
+                                                    ) + 'x',
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
                                             })
+                                        AppDropdownMenuItem(
+                                            text = stringResource(R.string.loop),
+                                            onClick = {
+                                                onVideoLoopingChange(!isVideoLooping)
+                                                showVideoSettings = false
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Repeat,
+                                                    contentDescription = null
+                                                )
+                                            },
+                                            contentColor = if (isVideoLooping) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface
+                                            }
+                                        )
+                                    }
+                                }
+                                
+                                AnimatedVisibility(
+                                    visible = showMoreActionsButton,
+                                    enter = expressiveScaleIn,
+                                    exit = expressiveScaleOut
+                                ) {
+                                    IconButton(
+                                        onClick = { showMoreActions = true },
+                                        colors = IconButtonDefaults.iconButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                        )
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.MoreVert,
+                                            contentDescription = stringResource(R.string.actions)
+                                        )
+                                    }
+                                    AppDropdownMenu(
+                                        expanded = showMoreActions,
+                                        onDismissRequest = { showMoreActions = false }) {
+                                        if (canDownloadMedia && currentItem != null) {
+                                            AppDropdownMenuItem(
+                                                text = stringResource(R.string.save_to_gallery),
+                                                onClick = {
+                                                    onSaveToGallery(currentItem.uri)
+                                                    showMoreActions = false
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.SaveAlt,
+                                                        contentDescription = null
+                                                    )
+                                                })
+                                        }
                                     }
                                 }
                             }
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-                )
-            }
-        },
-        containerColor = Color.Transparent,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
-    ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            if (media.isEmpty()) {
-                CircularWavyProgressIndicator()
-            }
-            
-            HorizontalPager(
-                state = pagerState, modifier = Modifier
-                    .fillMaxSize()
-                    .dismissDragGestures(
-                        state = dismissDragState,
-                        onTap = { isUiVisible = !isUiVisible },
-                        onDismiss = hero::dismiss
-                    )
-                    .mediaHeroContent(hero)
-            ) { page ->
-                val item = media.getOrNull(page)
-                val isCurrentPage = pagerState.currentPage == page
-                
-                if (item == null) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularWavyProgressIndicator()
-                    }
-                } else {
-                    ZoomableMediaPage(
-                        uri = item.uri,
-                        isVideo = item.isVideo,
-                        isCurrentPage = isCurrentPage,
-                        pagerState = pagerState,
-                        onTap = { isUiVisible = !isUiVisible },
-                        isVideoUiVisible = isChromeVisible,
-                        isVideoLooping = isVideoLooping,
-                        videoPlaybackSpeed = videoPlaybackSpeed,
-                        onVideoPlayingChanged = { playing ->
-                            isVideoPlaying = playing
                         },
-                        onShowVideoUiRequest = {
-                            isUiVisible = true
-                            lastInteractionTime = System.currentTimeMillis()
-                        },
-                        onHeroContentSizeChanged = hero::updateContentSize
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                     )
                 }
-            }
-            
-            AnimatedVisibility(
-                visible = isChromeVisible,
-                modifier = Modifier.fillMaxSize(),
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    TopBarScrim(height = innerPadding.calculateTopPadding())
+            },
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        ) { innerPadding ->
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                if (media.isEmpty()) {
+                    CircularWavyProgressIndicator()
+                }
+                
+                HorizontalPager(
+                    state = pagerState, modifier = Modifier
+                        .fillMaxSize()
+                        .dismissDragGestures(
+                            state = dismissDragState,
+                            onTap = { isUiVisible = !isUiVisible },
+                            onDismiss = hero::dismiss
+                        )
+                        .mediaHeroContent(hero)
+                ) { page ->
+                    val item = media.getOrNull(page)
+                    val isCurrentPage = pagerState.currentPage == page
+                    
+                    if (item == null) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularWavyProgressIndicator()
+                        }
+                    } else {
+                        ZoomableMediaPage(
+                            uri = item.uri,
+                            isVideo = item.isVideo,
+                            isCurrentPage = isCurrentPage,
+                            pagerState = pagerState,
+                            onTap = { isUiVisible = !isUiVisible },
+                            isVideoUiVisible = isChromeVisible,
+                            isVideoLooping = isVideoLooping,
+                            videoPlaybackSpeed = videoPlaybackSpeed,
+                            onVideoPlayingChanged = { playing ->
+                                isVideoPlaying = playing
+                            },
+                            onShowVideoUiRequest = {
+                                isUiVisible = true
+                                lastInteractionTime = System.currentTimeMillis()
+                            },
+                            onVideoFastForwardChanged = { fastForwarding ->
+                                if (isCurrentPage) {
+                                    isVideoFastForwarding = fastForwarding
+                                    
+                                    // После отпускания контролы возвращаются и снова уходят по таймеру
+                                    if (!fastForwarding) {
+                                        lastInteractionTime = System.currentTimeMillis()
+                                    }
+                                }
+                            },
+                            onHeroContentSizeChanged = hero::updateContentSize
+                        )
+                    }
+                }
+                
+                AnimatedVisibility(
+                    visible = isChromeVisible,
+                    modifier = Modifier.fillMaxSize(),
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        TopBarScrim(height = innerPadding.calculateTopPadding())
+                    }
                 }
             }
         }
+        
+        // Панель 2x рисуется поверх Scaffold, иначе она уходит под TopBar и его тень.
+        // Отступ сверху не зависит от видимости статус-бара: в полноэкранном режиме он скрыт,
+        // и statusBarsPadding дал бы нулевой отступ
+        PlayerSpeedBadge(
+            speed = PLAYER_FAST_FORWARD_SPEED,
+            visible = isVideoFastForwarding,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
+                .padding(top = 12.dp)
+        )
     }
     
     if (showSpeedBottomSheet) {
