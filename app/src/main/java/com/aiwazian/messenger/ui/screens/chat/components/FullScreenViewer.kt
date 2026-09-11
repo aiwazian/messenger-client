@@ -13,13 +13,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -92,6 +94,7 @@ data class ViewerMediaItem(
     val isVideo: Boolean
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FullScreenViewer(
     media: List<ViewerMediaItem>,
@@ -394,13 +397,15 @@ fun FullScreenViewer(
             }
         }
         
-        // Панель 2x рисуется поверх Scaffold, иначе она уходит под TopBar и его тень
+        // Панель 2x рисуется поверх Scaffold, иначе она уходит под TopBar и его тень.
+        // Отступ сверху не зависит от видимости статус-бара: в полноэкранном режиме он скрыт,
+        // и statusBarsPadding дал бы нулевой отступ
         PlayerSpeedBadge(
             speed = PLAYER_FAST_FORWARD_SPEED,
             visible = isVideoFastForwarding,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .statusBarsPadding()
+                .windowInsetsPadding(WindowInsets.statusBarsIgnoringVisibility)
                 .padding(top = 12.dp)
         )
     }
