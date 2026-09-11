@@ -7,6 +7,7 @@ package com.aiwazian.messenger.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,9 +15,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Hd
 import androidx.compose.material.icons.rounded.CropRotate
+import androidx.compose.material.icons.rounded.FastForward
+import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -41,6 +45,8 @@ import androidx.media3.common.Player
 import androidx.media3.ui.compose.material3.indicator.ProgressSlider
 import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.media3.ui.compose.state.rememberProgressStateWithTickInterval
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 private const val PROGRESS_TICK_INTERVAL_MS = 1_000L
 
@@ -176,5 +182,96 @@ fun PlayerBottomControls(
                 }
             }
         }
+    }
+}
+
+/**
+ * Подсказка о перемотке двойным тапом: «-10 с» слева и «+15 с» справа.
+ *
+ * Величина перемотки берётся у плеера, поэтому её передают снаружи.
+ */
+@Composable
+fun PlayerSeekIndicator(
+    seekAmountMs: Long,
+    visible: Boolean,
+    modifier: Modifier = Modifier
+) {
+    AnimatedVisibility(
+        visible = visible, modifier = modifier, enter = fadeIn(), exit = fadeOut()
+    ) {
+        Row(
+            modifier = Modifier
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f),
+                    shape = CircleShape
+                )
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = if (seekAmountMs < 0) {
+                    Icons.Rounded.FastRewind
+                } else {
+                    Icons.Rounded.FastForward
+                },
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(20.dp)
+            )
+
+            Text(text = formatSeekAmount(seekAmountMs), color = Color.White)
+        }
+    }
+}
+
+/**
+ * Бейдж ускоренного воспроизведения, который показывается на удержании.
+ */
+@Composable
+fun PlayerSpeedBadge(
+    speed: Float,
+    visible: Boolean,
+    modifier: Modifier = Modifier
+) {
+    AnimatedVisibility(
+        visible = visible, modifier = modifier, enter = fadeIn(), exit = fadeOut()
+    ) {
+        Row(
+            modifier = Modifier
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f),
+                    shape = CircleShape
+                )
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.FastForward,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(20.dp)
+            )
+
+            Text(text = formatPlaybackSpeed(speed), color = Color.White)
+        }
+    }
+}
+
+private fun formatSeekAmount(amountMs: Long): String {
+    val seconds = abs(amountMs) / 1_000L
+    val sign = if (amountMs < 0) "-" else "+"
+
+    return "$sign$seconds с"
+}
+
+private fun formatPlaybackSpeed(speed: Float): String {
+    val rounded = (speed * 10f).roundToInt() / 10f
+
+    return if (rounded % 1f == 0f) {
+        "${rounded.toInt()}x"
+    } else {
+        "${rounded}x"
     }
 }

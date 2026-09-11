@@ -50,6 +50,7 @@ fun VideoPlayerItem(
     onTransformClick: (() -> Unit)? = null,
     onPlayingChanged: (Boolean) -> Unit = {},
     onShowUiRequest: () -> Unit = {},
+    onPlayerReady: (Player?) -> Unit = {},
     onContentSizeChanged: (Size) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -82,6 +83,7 @@ fun VideoPlayerItem(
     val currentIsLooping by rememberUpdatedState(isLooping)
     val currentOnPlayingChanged by rememberUpdatedState(onPlayingChanged)
     val currentOnShowUiRequest by rememberUpdatedState(onShowUiRequest)
+    val currentOnPlayerReady by rememberUpdatedState(onPlayerReady)
     val currentOnContentSizeChanged by rememberUpdatedState(onContentSizeChanged)
 
     DisposableEffect(player) {
@@ -104,9 +106,12 @@ fun VideoPlayerItem(
         }
         player.addListener(listener)
 
+        // Плеер нужен снаружи: жесты перемотки и ускорения живут на уровне страницы
+        currentOnPlayerReady(player)
         currentOnContentSizeChanged(player.videoSize.toContentSize())
 
         onDispose {
+            currentOnPlayerReady(null)
             player.removeListener(listener)
             player.release()
         }

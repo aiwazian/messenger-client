@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
 
 const val MIN_CONTENT_SCALE = 1f
@@ -271,24 +272,67 @@ internal fun zoomAnchoredOffset(
     offset: Offset, anchor: Offset, pan: Offset, scaleDelta: Float
 ): Offset = anchor - (anchor - offset) * scaleDelta + pan
 
+/**
+ * Жесты зума, панорамирования и тапов.
+ *
+ * @param onDoubleTap вызывается раньше зума и получает точку двойного тапа. Если вернуть `true`,
+ * жест считается обработанным и зум не переключается.
+ * @param onLongPress вызывается после удержания одним пальцем. Пока параметр равен `null`,
+ * удержание не отслеживается вовсе.
+ * @param onLongPressFinished вызывается после удержания, когда палец отпустили либо жест
+ * перехватил зум или панорамирование.
+ */
 @Composable
 fun Modifier.zoomableGestures(
     state: ZoomableState,
     onTap: () -> Unit = {},
+    onDoubleTap: ((Offset) -> Boolean)? = null,
+    onLongPress: (() -> Unit)? = null,
+    onLongPressFinished: (() -> Unit)? = null,
     onPanBeyondEdge: (Float) -> Unit = {},
     onPanBeyondEdgeFinished: () -> Unit = {}
 ): Modifier {
     val scope = rememberCoroutineScope()
     val currentOnTap by rememberUpdatedState(onTap)
+    val currentOnDoubleTap by rememberUpdatedState(onDoubleTap)
+    val currentOnLongPress by rememberUpdatedState(onLongPress)
+    val currentOnLongPressFinished by rememberUpdatedState(onLongPressFinished)
     val currentOnPanBeyondEdge by rememberUpdatedState(onPanBeyondEdge)
     val currentOnPanBeyondEdgeFinished by rememberUpdatedState(onPanBeyondEdgeFinished)
+    val isLongPressEnabled = onLongPress != null
     
     return this
         .onSizeChanged(state::updateContainerSize)
-        .pointerInput(state) {
+        .pointerInput(state, isLongPressEnabled) {
+            var isLongPressActive = false
+            
             detectTapGestures(
                 onTap = { currentOnTap() },
-                onDoubleTap = { position -> scope.launch { state.toggleZoom(position) } })
+                onDoubleTap = { position ->
+                    if (currentOnDoubleTap?.invoke(position) != true) {
+                        scope.launch { state.toggleZoom(position) }
+                    }
+                },
+                onLongPress = if (isLongPressEnabled) {
+                    {
+                        isLongPressActive = true
+                        currentOnLongPress?.invoke()
+                    }
+                } else {
+                    null
+                },
+                onPress = {
+                    try {
+                        tryAwaitRelease()
+                    } catch (cancellation: CancellationException) {
+                        // Жест перехватил зум или панорамирование
+                    } finally {
+                        if (isLongPressActive) {
+                            isLongPressActive = false
+                            currentOnLongPressFinished?.invoke()
+                        }
+                    }
+                })
         }
         .pointerInput(state) {
             awaitEachGesture {
