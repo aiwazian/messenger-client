@@ -5,20 +5,20 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.net.Uri
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Hd
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -28,12 +28,11 @@ import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.compose.ContentFrame
 import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
-import com.aiwazian.messenger.ui.components.PlayerUi
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
+import androidx.media3.ui.compose.material3.Player as Media3Player
+import com.aiwazian.messenger.ui.components.PlayerBottomControls
+import com.aiwazian.messenger.ui.components.PlayerCenterControls
 
 @Composable
 fun VideoPlayerItem(
@@ -54,7 +53,7 @@ fun VideoPlayerItem(
     onContentSizeChanged: (Size) -> Unit = {}
 ) {
     val context = LocalContext.current
-    
+
     val player = remember {
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(uri))
@@ -63,70 +62,60 @@ fun VideoPlayerItem(
             prepare()
         }
     }
-    
+
     LaunchedEffect(isLooping) {
         player.repeatMode = if (isLooping) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF
     }
-    
+
     LaunchedEffect(playbackSpeed) {
         player.playbackParameters = PlaybackParameters(playbackSpeed)
     }
-    
-    var isPlaying by remember { mutableStateOf(false) }
-    var currentPosition by remember { mutableLongStateOf(0L) }
-    var duration by remember { mutableLongStateOf(0L) }
+
     var isBuffering by remember { mutableStateOf(false) }
-    
+
     LaunchedEffect(isCurrentPage) {
-        if (!isCurrentPage && isPlaying) {
+        if (!isCurrentPage) {
             player.pause()
         }
     }
-    
+
     val currentIsLooping by rememberUpdatedState(isLooping)
+    val currentOnPlayingChanged by rememberUpdatedState(onPlayingChanged)
     val currentOnShowUiRequest by rememberUpdatedState(onShowUiRequest)
     val currentOnContentSizeChanged by rememberUpdatedState(onContentSizeChanged)
 
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
-                isPlaying = playing
-                onPlayingChanged(playing)
+                currentOnPlayingChanged(playing)
             }
-            
+
             override fun onVideoSizeChanged(videoSize: VideoSize) {
                 currentOnContentSizeChanged(videoSize.toContentSize())
             }
-            
+
             override fun onPlaybackStateChanged(playbackState: Int) {
                 isBuffering = playbackState == Player.STATE_BUFFERING
-                if (playbackState == Player.STATE_READY) {
-                    duration = player.duration.coerceAtLeast(0L)
-                }
+
                 if (playbackState == Player.STATE_ENDED && !currentIsLooping) {
                     currentOnShowUiRequest()
                 }
             }
         }
         player.addListener(listener)
-        
+
         currentOnContentSizeChanged(player.videoSize.toContentSize())
-        
+
         onDispose {
             player.removeListener(listener)
             player.release()
         }
     }
-    
-    LaunchedEffect(isPlaying) {
-        while (isPlaying) {
-            currentPosition = player.currentPosition.coerceAtLeast(0L)
-            delay(16.milliseconds)
-        }
-    }
-    
+
     Box(modifier = Modifier.fillMaxSize()) {
-        ContentFrame(
+        // Слоты Player оставлены пустыми: зум и поворот приходят в modifier, а он применяется
+        // ко всему Player сразу, поэтому контролы рисуем отдельным слоем без трансформаций
+        Media3Player(
             player = player,
             modifier = Modifier
                 .fillMaxSize()
@@ -137,46 +126,37 @@ fun VideoPlayerItem(
                 SURFACE_TYPE_SURFACE_VIEW
             },
             keepContentOnReset = true,
-            shutter = {}
+            shutter = {},
+            topControls = null,
+            centerControls = null,
+            bottomControls = null,
+            errorOverlay = null
         )
-        
-        AnimatedVisibility(
-            visible = isUiVisible,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            PlayerUi(
-                isPlaying = isPlaying,
-                currentPosition = currentPosition,
-                duration = duration,
-                isBuffering = isBuffering,
-                onSeekBarPositionChange = { newPos ->
-                    currentPosition = newPos
-                },
-                onSeekBarPositionChangeFinished = {
-                    player.seekTo(currentPosition)
-                },
-                onPlayPauseClick = {
-                    if (!isPlaying && player.playbackState == Player.STATE_ENDED) {
-                        player.seekTo(0L)
-                        player.play()
-                    } else if (isPlaying) {
-                        player.pause()
-                    } else {
-                        player.play()
-                    }
-                },
-                isSeekBarVisible = isSeekBarVisible,
-                qualityIcon = qualityIcon,
-                isTransformed = isTransformed,
-                onQualityClick = onQualityClick,
-                onTransformClick = onTransformClick
-            )
-        }
+
+        PlayerCenterControls(
+            player = player,
+            showControls = isUiVisible,
+            modifier = Modifier.align(Alignment.Center),
+            isBuffering = isBuffering
+        )
+
+        PlayerBottomControls(
+            player = player,
+            showControls = isUiVisible,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth(),
+            isSeekBarVisible = isSeekBarVisible,
+            qualityIcon = qualityIcon,
+            isTransformed = isTransformed,
+            onQualityClick = onQualityClick,
+            onTransformClick = onTransformClick
+        )
     }
 }
 
 private fun VideoSize.toContentSize(): Size {
     val pixelRatio = if (pixelWidthHeightRatio > 0f) pixelWidthHeightRatio else 1f
-    
+
     return Size(width * pixelRatio, height.toFloat())
 }
