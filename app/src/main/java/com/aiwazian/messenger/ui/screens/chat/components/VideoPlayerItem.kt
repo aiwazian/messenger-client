@@ -34,6 +34,9 @@ import androidx.media3.ui.compose.material3.Player as Media3Player
 import com.aiwazian.messenger.ui.components.PlayerBottomControls
 import com.aiwazian.messenger.ui.components.PlayerCenterControls
 
+// Шаг перемотки для seekBack/seekForward: двойной тап меняет позицию на 10 секунд
+private const val SEEK_INCREMENT_MS = 10_000L
+
 @Composable
 fun VideoPlayerItem(
     uri: Uri,
@@ -56,12 +59,16 @@ fun VideoPlayerItem(
     val context = LocalContext.current
 
     val player = remember {
-        ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(uri))
-            repeatMode = if (isLooping) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF
-            playbackParameters = PlaybackParameters(playbackSpeed)
-            prepare()
-        }
+        ExoPlayer.Builder(context)
+            .setSeekBackIncrementMs(SEEK_INCREMENT_MS)
+            .setSeekForwardIncrementMs(SEEK_INCREMENT_MS)
+            .build()
+            .apply {
+                setMediaItem(MediaItem.fromUri(uri))
+                repeatMode = if (isLooping) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF
+                playbackParameters = PlaybackParameters(playbackSpeed)
+                prepare()
+            }
     }
 
     LaunchedEffect(isLooping) {

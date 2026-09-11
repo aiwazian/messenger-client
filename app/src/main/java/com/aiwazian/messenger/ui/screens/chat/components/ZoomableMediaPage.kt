@@ -12,12 +12,14 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Hd
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,11 +40,12 @@ import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.aiwazian.messenger.ui.components.MediaTransformState
 import com.aiwazian.messenger.ui.components.PlayerSeekIndicator
-import com.aiwazian.messenger.ui.components.PlayerSpeedBadge
 import com.aiwazian.messenger.ui.components.mediaTransform
 import com.aiwazian.messenger.ui.components.rememberZoomableState
 import com.aiwazian.messenger.ui.components.zoomableContent
 import com.aiwazian.messenger.ui.components.zoomableGestures
+import com.aiwazian.messenger.utils.VibrationManager
+import com.aiwazian.messenger.utils.VibrationPattern
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -50,7 +53,9 @@ import kotlinx.coroutines.launch
 // Двойной тап по крайним третям перематывает видео, центральная треть остаётся под зум
 private const val SEEK_ZONE_FRACTION = 1f / 3f
 private const val SEEK_INDICATOR_TIMEOUT_MS = 600L
-private const val FAST_FORWARD_SPEED = 2f
+
+// Скорость удержания нужна и экранам: панель 2x они рисуют поверх своего TopBar
+internal const val PLAYER_FAST_FORWARD_SPEED = 2f
 
 @Composable
 internal fun ZoomableMediaPage(
@@ -73,6 +78,7 @@ internal fun ZoomableMediaPage(
     transformState: MediaTransformState? = null,
     onVideoPlayingChanged: (Boolean) -> Unit = {},
     onShowVideoUiRequest: () -> Unit = {},
+    onVideoFastForwardChanged: (Boolean) -> Unit = {},
     onHeroContentSizeChanged: (Size) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -82,6 +88,8 @@ internal fun ZoomableMediaPage(
     var pageSize by remember { mutableStateOf(IntSize.Zero) }
     var player by remember { mutableStateOf<Player?>(null) }
     
+    val vibrationManager = remember(context) { VibrationManager(context.applicationContext) }
+    
     val seekBackButtonState = rememberSeekBackButtonState(player)
     val seekForwardButtonState = rememberSeekForwardButtonState(player)
     val playbackSpeedState = rememberPlaybackSpeedState(player)
@@ -90,6 +98,8 @@ internal fun ZoomableMediaPage(
     var isSeekIndicatorVisible by remember { mutableStateOf(false) }
     var isFastForwarding by remember { mutableStateOf(false) }
     val seekIndicatorJob = remember { mutableStateOf<Job?>(null) }
+    
+    val currentOnVideoFastForwardChanged by rememberUpdatedState(onVideoFastForwardChanged)
     
     fun showSeekIndicator(amountMs: Long) {
         seekAmountMs = amountMs
@@ -101,9 +111,24 @@ internal fun ZoomableMediaPage(
         }
     }
     
+    // Если страница уходит из композиции прямо во время удержания, снимаем режим 2x у экрана
+    DisposableEffect(Unit) {
+        onDispose {
+            if (isFastForwarding) {
+                currentOnVideoFastForwardChanged(false)
+            }
+        }
+    }
+    
     LaunchedEffect(isCurrentPage) {
         if (!isCurrentPage) {
             zoomableState.reset()
+            
+            if (isFastForwarding) {
+                isFastForwarding = false
+                playbackSpeedState.restoreOverriddenSpeed()
+                currentOnVideoFastForwardChanged(false)
+            }
         }
     }
     
@@ -156,12 +181,14 @@ internal fun ZoomableMediaPage(
         null
     }
     
-    // Удержание в любой точке видео временно ускоряет воспроизведение
+    // Удержание в любой точке видео временно ускоряет воспроизведение и даёт тактильный отклик
     val onLongPress: (() -> Unit)? = if (isVideo) {
         {
             if (playbackSpeedState.isEnabled) {
                 isFastForwarding = true
-                playbackSpeedState.temporarilyOverrideSpeedWith(FAST_FORWARD_SPEED)
+                playbackSpeedState.temporarilyOverrideSpeedWith(PLAYER_FAST_FORWARD_SPEED)
+                vibrationManager.vibrate(VibrationPattern.TactileResponse)
+                currentOnVideoFastForwardChanged(true)
             }
         }
     } else {
@@ -173,6 +200,7 @@ internal fun ZoomableMediaPage(
             if (isFastForwarding) {
                 isFastForwarding = false
                 playbackSpeedState.restoreOverriddenSpeed()
+                currentOnVideoFastForwardChanged(false)
             }
         }
     } else {
@@ -230,14 +258,6 @@ internal fun ZoomableMediaPage(
                 modifier = Modifier
                     .align(if (seekAmountMs < 0) Alignment.CenterStart else Alignment.CenterEnd)
                     .padding(horizontal = 32.dp)
-            )
-            
-            PlayerSpeedBadge(
-                speed = playbackSpeedState.playbackSpeed,
-                visible = isFastForwarding,
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 32.dp)
             )
         } else {
             AsyncImage(

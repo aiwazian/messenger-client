@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -69,6 +70,7 @@ import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.MediaFlipButton
 import com.aiwazian.messenger.ui.components.MediaOverlayIconButton
 import com.aiwazian.messenger.ui.components.MediaRotateButton
+import com.aiwazian.messenger.ui.components.PlayerSpeedBadge
 import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.animatedBackgroundAlpha
 import com.aiwazian.messenger.ui.components.animatedOffsetY
@@ -120,6 +122,7 @@ fun MediaPickerPreview(
     
     var mode by remember { mutableStateOf(PreviewMode.Content) }
     var draftQuality by remember { mutableStateOf<VideoQuality?>(null) }
+    var isVideoFastForwarding by remember { mutableStateOf(false) }
     
     var transformAttempt by remember { mutableIntStateOf(0) }
     
@@ -234,196 +237,216 @@ fun MediaPickerPreview(
             }
         }
         
-        val isChromeVisible = !dismissDragState.isDragging && hero.isSettled
+        // На время удержания 2x контролы скрываются, после отпускания возвращаются
+        val isChromeVisible =
+            !dismissDragState.isDragging && hero.isSettled && !isVideoFastForwarding
         
-        Scaffold(
-            modifier = Modifier
-                .fillMaxSize()
-                .mediaHeroBackground(hero, MaterialTheme.colorScheme.surface) { backgroundAlpha }
-                .navigationBarsPadding()
-                .mediaHeroContainer(hero),
-            topBar = {
-                AnimatedVisibility(
-                    visible = isChromeVisible,
-                    modifier = Modifier.fillMaxWidth(),
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    TopAppBar(
-                        title = {
-                            if (frame != null && estimate != null) {
-                                AnimatedContent(
-                                    targetState = frame,
-                                    transitionSpec = {
-                                        slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .mediaHeroBackground(hero, MaterialTheme.colorScheme.surface) { backgroundAlpha }
+                    .navigationBarsPadding()
+                    .mediaHeroContainer(hero),
+                topBar = {
+                    AnimatedVisibility(
+                        visible = isChromeVisible,
+                        modifier = Modifier.fillMaxWidth(),
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        TopAppBar(
+                            title = {
+                                if (frame != null && estimate != null) {
+                                    AnimatedContent(
+                                        targetState = frame,
+                                        transitionSpec = {
+                                            slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
+                                        }
+                                    ) { frame ->
+                                        Text(
+                                            text = "${frame.width} × ${frame.height}, ~${estimate.formatFileSize()}",
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
                                     }
-                                ) { frame ->
-                                    Text(
-                                        text = "${frame.width} × ${frame.height}, ~${estimate.formatFileSize()}",
-                                        style = MaterialTheme.typography.titleMedium
+                                }
+                            }, navigationIcon = {
+                                IconButton(
+                                    onClick = goBack, colors = IconButtonDefaults.iconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                    )
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack, null
                                     )
                                 }
-                            }
-                        }, navigationIcon = {
-                            IconButton(
-                                onClick = goBack, colors = IconButtonDefaults.iconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                )
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack, null
-                                )
-                            }
-                        }, actions = {
-                            if (currentItem != null) {
-                                IconButton(onClick = { onToggleSelection(currentItem) }) {
-                                    MediaSelectionBadge(number = selectionNumber(currentItem))
+                            }, actions = {
+                                if (currentItem != null) {
+                                    IconButton(onClick = { onToggleSelection(currentItem) }) {
+                                        MediaSelectionBadge(number = selectionNumber(currentItem))
+                                    }
                                 }
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-                    )
-                }
-            },
-            bottomBar = {
-                AnimatedVisibility(
-                    visible = isChromeVisible && isEditing,
-                    modifier = Modifier.fillMaxWidth(),
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            },
+                            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                        )
+                    }
+                },
+                bottomBar = {
+                    AnimatedVisibility(
+                        visible = isChromeVisible && isEditing,
+                        modifier = Modifier.fillMaxWidth(),
+                        enter = fadeIn(),
+                        exit = fadeOut()
                     ) {
-                        when (mode) {
-                            PreviewMode.Quality -> VideoQualitySlider(
-                                stops = stops, selected = selectedQuality,
-                                onSelect = { draftQuality = it })
-                            
-                            PreviewMode.Transform -> Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                MediaFlipButton(state = transformState)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            when (mode) {
+                                PreviewMode.Quality -> VideoQualitySlider(
+                                    stops = stops, selected = selectedQuality,
+                                    onSelect = { draftQuality = it })
                                 
-                                MediaRotateButton(state = transformState)
+                                PreviewMode.Transform -> Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    MediaFlipButton(state = transformState)
+                                    
+                                    MediaRotateButton(state = transformState)
+                                }
+                                
+                                PreviewMode.Content -> Unit
                             }
                             
-                            PreviewMode.Content -> Unit
-                        }
-                        
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                            TextButton(
-                                onClick = goBack, modifier = Modifier.align(Alignment.CenterStart),
-                                colors = ButtonDefaults.textButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.onSurface
-                                )
-                            ) {
-                                Text(text = stringResource(R.string.cancel).uppercase())
-                            }
-                            
-                            this@Column.AnimatedVisibility(
-                                visible = mode == PreviewMode.Transform && transformState.isChanged,
-                                modifier = Modifier.align(Alignment.Center),
-                                enter = expressiveScaleIn,
-                                exit = expressiveScaleOut
-                            ) {
+                            Box(modifier = Modifier.fillMaxWidth()) {
                                 TextButton(
-                                    onClick = {
-                                        coroutineScope.launch { transformState.reset() }
-                                    }, colors = ButtonDefaults.textButtonColors(
+                                    onClick = goBack,
+                                    modifier = Modifier.align(Alignment.CenterStart),
+                                    colors = ButtonDefaults.textButtonColors(
                                         contentColor = MaterialTheme.colorScheme.onSurface
                                     )
                                 ) {
-                                    Text(text = stringResource(R.string.reset).uppercase())
+                                    Text(text = stringResource(R.string.cancel).uppercase())
                                 }
-                            }
-                            
-                            TextButton(
-                                onClick = {
-                                    if (currentItem != null) {
-                                        if (mode == PreviewMode.Transform) {
-                                            onMediaTransformChange(
-                                                currentItem, transformState.transform
-                                            )
-                                        } else {
-                                            onVideoQualityChange(currentItem, selectedQuality)
-                                        }
+                                
+                                this@Column.AnimatedVisibility(
+                                    visible = mode == PreviewMode.Transform && transformState.isChanged,
+                                    modifier = Modifier.align(Alignment.Center),
+                                    enter = expressiveScaleIn,
+                                    exit = expressiveScaleOut
+                                ) {
+                                    TextButton(
+                                        onClick = {
+                                            coroutineScope.launch { transformState.reset() }
+                                        }, colors = ButtonDefaults.textButtonColors(
+                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    ) {
+                                        Text(text = stringResource(R.string.reset).uppercase())
                                     }
-                                    
-                                    draftQuality = null
-                                    mode = PreviewMode.Content
-                                }, modifier = Modifier.align(Alignment.CenterEnd)
-                            ) {
-                                Text(text = stringResource(R.string.done).uppercase())
+                                }
+                                
+                                TextButton(
+                                    onClick = {
+                                        if (currentItem != null) {
+                                            if (mode == PreviewMode.Transform) {
+                                                onMediaTransformChange(
+                                                    currentItem, transformState.transform
+                                                )
+                                            } else {
+                                                onVideoQualityChange(currentItem, selectedQuality)
+                                            }
+                                        }
+                                        
+                                        draftQuality = null
+                                        mode = PreviewMode.Content
+                                    }, modifier = Modifier.align(Alignment.CenterEnd)
+                                ) {
+                                    Text(text = stringResource(R.string.done).uppercase())
+                                }
                             }
                         }
                     }
-                }
-            },
-            containerColor = Color.Transparent,
-            contentWindowInsets = WindowInsets()
-        ) { innerPadding ->
-            Box(modifier = Modifier.fillMaxSize()) {
-                HorizontalPager(
-                    state = pagerState, userScrollEnabled = !isEditing, modifier = Modifier
-                        .fillMaxSize()
-                        .then(
-                            if (isEditing) {
-                                Modifier
-                            } else {
-                                Modifier.dismissDragGestures(
-                                    state = dismissDragState, onDismiss = hero::dismiss
-                                )
-                            }
-                        )
-                        .mediaHeroContent(hero)
-                ) { page ->
-                    val item = media[page]
-                    val isCurrentPage = pagerState.currentPage == page
+                },
+                containerColor = Color.Transparent,
+                contentWindowInsets = WindowInsets()
+            ) { innerPadding ->
+                Box(modifier = Modifier.fillMaxSize()) {
+                    HorizontalPager(
+                        state = pagerState, userScrollEnabled = !isEditing, modifier = Modifier
+                            .fillMaxSize()
+                            .then(
+                                if (isEditing) {
+                                    Modifier
+                                } else {
+                                    Modifier.dismissDragGestures(
+                                        state = dismissDragState, onDismiss = hero::dismiss
+                                    )
+                                }
+                            )
+                            .mediaHeroContent(hero)
+                    ) { page ->
+                        val item = media[page]
+                        val isCurrentPage = pagerState.currentPage == page
+                        
+                        Box {
+                            ZoomableMediaPage(
+                                uri = item.uri,
+                                isVideo = item.isVideo,
+                                isCurrentPage = isCurrentPage,
+                                pagerState = pagerState,
+                                onTap = {},
+                                isPageChangeEnabled = !isEditing,
+                                isVideoUiVisible = isChromeVisible,
+                                isVideoSeekBarVisible = !isEditing,
+                                isTransformable = !item.isGif,
+                                isTransformed = mediaTransform(item)?.isIdentity == false,
+                                videoQualityIcon = qualityIcon,
+                                onVideoQualityClick = if (isCurrentPage) openQuality else null,
+                                onVideoTransformClick = if (isCurrentPage) openTransform else null,
+                                transformState = if (isCurrentPage) transformState else null,
+                                onVideoFastForwardChanged = { fastForwarding ->
+                                    if (isCurrentPage) {
+                                        isVideoFastForwarding = fastForwarding
+                                    }
+                                },
+                                onHeroContentSizeChanged = hero::updateContentSize
+                            )
+                            
+                            TopBarScrim(height = innerPadding.calculateTopPadding())
+                            
+                            BottomBarScrim(height = innerPadding.calculateBottomPadding())
+                        }
+                    }
                     
-                    Box {
-                        ZoomableMediaPage(
-                            uri = item.uri,
-                            isVideo = item.isVideo,
-                            isCurrentPage = isCurrentPage,
-                            pagerState = pagerState,
-                            onTap = {},
-                            isPageChangeEnabled = !isEditing,
-                            isVideoUiVisible = isChromeVisible,
-                            isVideoSeekBarVisible = !isEditing,
-                            isTransformable = !item.isGif,
-                            isTransformed = mediaTransform(item)?.isIdentity == false,
-                            videoQualityIcon = qualityIcon,
-                            onVideoQualityClick = if (isCurrentPage) openQuality else null,
-                            onVideoTransformClick = if (isCurrentPage) openTransform else null,
-                            transformState = if (isCurrentPage) transformState else null,
-                            onHeroContentSizeChanged = hero::updateContentSize
-                        )
-                        
-                        TopBarScrim(height = innerPadding.calculateTopPadding())
-                        
-                        BottomBarScrim(height = innerPadding.calculateBottomPadding())
+                    AnimatedVisibility(
+                        visible = isChromeVisible && openTransform != null && currentItem?.isVideo == false,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(16.dp),
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        MediaOverlayIconButton(
+                            icon = Icons.Rounded.CropRotate,
+                            onClick = { mode = PreviewMode.Transform },
+                            isActive = isTransformed)
                     }
                 }
-                
-                AnimatedVisibility(
-                    visible = isChromeVisible && openTransform != null && currentItem?.isVideo == false,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(16.dp),
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    MediaOverlayIconButton(
-                        icon = Icons.Rounded.CropRotate,
-                        onClick = { mode = PreviewMode.Transform },
-                        isActive = isTransformed)
-                }
             }
+            
+            // Панель 2x рисуется поверх Scaffold, иначе она уходит под TopBar и его тень
+            PlayerSpeedBadge(
+                speed = PLAYER_FAST_FORWARD_SPEED,
+                visible = isVideoFastForwarding,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .padding(top = 12.dp)
+            )
         }
     }
 }
