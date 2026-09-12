@@ -24,21 +24,6 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Галерея чата: сначала из Room, потом с сервера.
- *
- * Сервер не знает, что из переписки уже лежит на устройстве, поэтому путь и
- * статус доклеиваются здесь: скачанное показывается сразу и второй раз не качается.
- *
- * Сам список вложений тоже кэшируется: без этого возврат в галерею начинался с
- * крутящегося колеса, а без сети вкладки были пусты, хотя файлы лежали рядом.
- *
- * В кэш пишется только первая страница каждой вкладки: читается оттуда ровно
- * она, а хранить всю пролистанную историю значит растить базу без пользы.
- *
- * Кэш файлов читается одним запросом на страницу, а не по файлу на элемент:
- * шестьдесят походов в базу на одну страницу сетки заметны на скролле.
- */
 @Singleton
 class ChatMediaRepository @Inject constructor(
     private val chatMediaApi: ChatMediaApi,
@@ -46,25 +31,21 @@ class ChatMediaRepository @Inject constructor(
     private val fileRepository: FileRepository
 ) {
     
-    /** Фото и видео из кэша, от новых к старым. */
     suspend fun getCachedMedia(
         chatId: Long,
         limit: Int = PAGE_SIZE
     ): List<ChatMediaItem> = cached(chatId, MEDIA_TYPES, limit)
     
-    /** Документы из кэша, от новых к старым. */
     suspend fun getCachedFiles(
         chatId: Long,
         limit: Int = PAGE_SIZE
     ): List<ChatMediaItem> = cached(chatId, FILE_TYPES, limit)
     
-    /** Голосовые из кэша, от новых к старым. */
     suspend fun getCachedVoices(
         chatId: Long,
         limit: Int = PAGE_SIZE
     ): List<ChatMediaItem> = cached(chatId, VOICE_TYPES, limit)
     
-    /** Фото и видео чата, от новых к старым. */
     suspend fun getMedia(
         chatId: Long,
         cursorId: Int? = null,
@@ -73,7 +54,6 @@ class ChatMediaRepository @Inject constructor(
         chatMediaApi.getChatMedia(chatId, cursorId, limit)
     }
     
-    /** Документы чата, от новых к старым. */
     suspend fun getFiles(
         chatId: Long,
         cursorId: Int? = null,
@@ -82,7 +62,6 @@ class ChatMediaRepository @Inject constructor(
         chatMediaApi.getChatFiles(chatId, cursorId, limit)
     }
     
-    /** Голосовые чата, от новых к старым. */
     suspend fun getVoices(
         chatId: Long,
         cursorId: Int? = null,
@@ -91,7 +70,6 @@ class ChatMediaRepository @Inject constructor(
         chatMediaApi.getChatVoices(chatId, cursorId, limit)
     }
     
-    /** Счётчики вложений из кэша — для подписи в шапке. */
     suspend fun getCachedCounts(chatId: Long): ChatMediaCounts? {
         return try {
             chatMediaDao.getCounts(chatId)?.let { counts ->
@@ -108,7 +86,6 @@ class ChatMediaRepository @Inject constructor(
         }
     }
     
-    /** Сколько вложений в чате всего. */
     suspend fun getCounts(chatId: Long): Result<ChatMediaCounts> {
         return try {
             val response = chatMediaApi.getChatMediaCounts(chatId)
@@ -144,12 +121,6 @@ class ChatMediaRepository @Inject constructor(
         }
     }
     
-    /**
-     * Запоминает длину голосового, посчитанную по файлу.
-     *
-     * Сервер её не хранит, а разбирать те же файлы при каждом открытии
-     * вкладки — заметная пауза на длинном списке.
-     */
     suspend fun saveVoiceDuration(fileId: String, durationMs: Int) {
         try {
             chatMediaDao.upsertVoiceDuration(
@@ -160,12 +131,6 @@ class ChatMediaRepository @Inject constructor(
         }
     }
     
-    /**
-     * Свежее состояние файлов для уже загруженного списка.
-     *
-     * Нужно после скачивания: список уже на экране, и запрашивать его у сервера
-     * заново ради появившегося локального файла незачем.
-     */
     suspend fun withLocalState(items: List<ChatMediaItem>): List<ChatMediaItem> {
         if (items.isEmpty()) return items
         
@@ -289,12 +254,6 @@ class ChatMediaRepository @Inject constructor(
         durationMs = durationMs
     )
     
-    /**
-     * Скачанные файлы лежат абсолютным путём, отправленные — готовым uri.
-     *
-     * Обе формы должны дать один и тот же адрес, иначе Coil откажется показывать
-     * только что скачанную картинку.
-     */
     private fun FileEntity?.localUri() = this?.path
         ?.takeIf { it.isNotBlank() }
         ?.let { path ->
@@ -302,13 +261,8 @@ class ChatMediaRepository @Inject constructor(
         }
     
     companion object {
-        /** Шесть рядов сетки по три столбца: с запасом на один экран вперёд. */
         const val PAGE_SIZE = 60
         
-        /**
-         * Гифки в списке вместе с фото и видео про запас: сервер их пока не
-         * выделяет, но если начнёт — чтение из кэша их не потеряет.
-         */
         private val MEDIA_TYPES = listOf(
             AttachmentType.IMAGE.name,
             AttachmentType.VIDEO.name,
