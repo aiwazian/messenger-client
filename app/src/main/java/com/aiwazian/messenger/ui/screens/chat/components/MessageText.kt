@@ -4,12 +4,25 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
@@ -18,6 +31,10 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.aiwazian.messenger.ui.screens.chat.ChatEmojiViewModel
 import com.aiwazian.messenger.utils.RegexPatterns
 
 @Composable
@@ -27,127 +44,67 @@ fun MessageText(
     onUsernameClicked: ((String) -> Unit)? = null,
     onEmailClicked: ((String) -> Unit)? = null
 ) {
+    val context = LocalContext.current
+    
+    val emojiViewModel: ChatEmojiViewModel = hiltViewModel()
+    val resolvedEmojis by emojiViewModel.resolvedEmojis.collectAsState()
+    
+    val parts = remember(text) { CustomEmojiText.parse(text) }
+    val emojiIds = remember(parts) {
+        parts.filterIsInstance<CustomEmojiTextPart.Emoji>()
+            .map { it.emojiId }
+            .distinct()
+    }
+    
+    LaunchedEffect(emojiIds) {
+        if (emojiIds.isNotEmpty()) {
+            emojiViewModel.requestEmojis(emojiIds)
+        }
+    }
+    
+    val linkColor = MaterialTheme.colorScheme.primary
+    val pressedColor = MaterialTheme.colorScheme.primary.copy(alpha = LINK_PRESSED_ALPHA)
+    
+    val inlineContent = emojiIds.mapNotNull { emojiId ->
+        val emoji = resolvedEmojis[emojiId] ?: return@mapNotNull null
+        
+        emojiId.toString() to InlineTextContent(
+            placeholder = Placeholder(
+                width = CUSTOM_EMOJI_SIZE,
+                height = CUSTOM_EMOJI_SIZE,
+                placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter
+            )
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(emoji.url)
+                    .memoryCacheKey(emoji.fileId)
+                    .diskCacheKey(emoji.fileId)
+                    .build(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
+            )
+        }
+    }.toMap()
+    
     val annotatedString = buildAnnotatedString {
-        var lastIndex = 0
-        
-        val emailMatches = RegexPatterns.EMAIL_IN_TEXT.findAll(text).toList()
-        val emailRanges = emailMatches.map { it.range }
-        
-        val urlMatches = RegexPatterns.URL.findAll(text)
-            .filterNot { url -> emailRanges.any { url.range.first <= it.last && it.first <= url.range.last } }
-            .map { it to "url" }
-        val usernameMatches = RegexPatterns.MENTION.findAll(text).map { it to "username" }
-        
-        val allMatches = (emailMatches.map { it to "email" } + urlMatches + usernameMatches)
-            .sortedBy { it.first.range.first }
-            .toList()
-        
-        if (allMatches.isEmpty()) {
-            append(text)
-            return@buildAnnotatedString
-        }
-        
-        allMatches.forEach { (matchResult, type) ->
-            val startIndex = matchResult.range.first
-            val endIndex = matchResult.range.last + 1
-            
-            if (startIndex < lastIndex) return@forEach
-            
-            if (startIndex > lastIndex) {
-                append(text.substring(lastIndex, startIndex))
+        parts.forEach { part ->
+            when (part) {
+                is CustomEmojiTextPart.Text -> appendMessageText(
+                    text = part.value,
+                    linkColor = linkColor,
+                    pressedColor = pressedColor,
+                    onLinkClicked = onLinkClicked,
+                    onUsernameClicked = onUsernameClicked,
+                    onEmailClicked = onEmailClicked
+                )
+                
+                is CustomEmojiTextPart.Emoji -> appendInlineContent(
+                    id = part.emojiId.toString(),
+                    alternateText = CustomEmojiText.PLACEHOLDER
+                )
             }
-            
-            val matchedValue = matchResult.value
-            
-            when (type) {
-                "url" if onLinkClicked != null -> {
-                    withLink(
-                        link = LinkAnnotation.Clickable(
-                            tag = matchedValue,
-                            styles = TextLinkStyles(
-                                style = SpanStyle(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    textDecoration = TextDecoration.Underline
-                                ),
-                                pressedStyle = SpanStyle(
-                                    background = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                                )
-                            ),
-                            linkInteractionListener = {
-                                onLinkClicked(matchedValue)
-                            }
-                        )
-                    ) {
-                        append(matchedValue)
-                    }
-                }
-                
-                "email" if onEmailClicked != null -> {
-                    withLink(
-                        link = LinkAnnotation.Clickable(
-                            tag = matchedValue,
-                            styles = TextLinkStyles(
-                                style = SpanStyle(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    textDecoration = TextDecoration.Underline
-                                ),
-                                pressedStyle = SpanStyle(
-                                    background = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                                )
-                            ),
-                            linkInteractionListener = {
-                                onEmailClicked(matchedValue)
-                            }
-                        )
-                    ) {
-                        append(matchedValue)
-                    }
-                }
-                
-                "username" if onUsernameClicked != null -> {
-                    withLink(
-                        link = LinkAnnotation.Clickable(
-                            tag = matchedValue,
-                            styles = TextLinkStyles(
-                                style = SpanStyle(
-                                    color = MaterialTheme.colorScheme.primary,
-                                ),
-                                pressedStyle = SpanStyle(
-                                    background = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                                )
-                            ),
-                            linkInteractionListener = {
-                                onUsernameClicked(matchedValue)
-                            }
-                        )
-                    ) {
-                        append(matchedValue)
-                    }
-                }
-                
-                else -> {
-                    val style = if (type == "url" || type == "email") {
-                        SpanStyle(
-                            color = MaterialTheme.colorScheme.primary,
-                            textDecoration = TextDecoration.Underline
-                        )
-                    } else {
-                        SpanStyle(
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    
-                    withStyle(style = style) {
-                        append(matchedValue)
-                    }
-                }
-            }
-            
-            lastIndex = endIndex
-        }
-        
-        if (lastIndex < text.length) {
-            append(text.substring(lastIndex))
         }
     }
     
@@ -155,6 +112,132 @@ fun MessageText(
         text = annotatedString,
         fontSize = 16.sp,
         lineHeight = 18.sp,
+        inlineContent = inlineContent,
         modifier = Modifier.padding(8.dp)
     )
 }
+
+private fun AnnotatedString.Builder.appendMessageText(
+    text: String,
+    linkColor: Color,
+    pressedColor: Color,
+    onLinkClicked: ((String) -> Unit)?,
+    onUsernameClicked: ((String) -> Unit)?,
+    onEmailClicked: ((String) -> Unit)?
+) {
+    var lastIndex = 0
+    
+    val emailMatches = RegexPatterns.EMAIL_IN_TEXT.findAll(text).toList()
+    val emailRanges = emailMatches.map { it.range }
+    
+    val urlMatches = RegexPatterns.URL.findAll(text)
+        .filterNot { url -> emailRanges.any { url.range.first <= it.last && it.first <= url.range.last } }
+        .map { it to "url" }
+    val usernameMatches = RegexPatterns.MENTION.findAll(text).map { it to "username" }
+    
+    val allMatches = (emailMatches.map { it to "email" } + urlMatches + usernameMatches)
+        .sortedBy { it.first.range.first }
+        .toList()
+    
+    if (allMatches.isEmpty()) {
+        append(text)
+        
+        return
+    }
+    
+    allMatches.forEach { (matchResult, type) ->
+        val startIndex = matchResult.range.first
+        val endIndex = matchResult.range.last + 1
+        
+        if (startIndex < lastIndex) return@forEach
+        
+        if (startIndex > lastIndex) {
+            append(text.substring(lastIndex, startIndex))
+        }
+        
+        val matchedValue = matchResult.value
+        
+        when (type) {
+            "url" if onLinkClicked != null -> {
+                withLink(
+                    link = LinkAnnotation.Clickable(
+                        tag = matchedValue,
+                        styles = TextLinkStyles(
+                            style = SpanStyle(
+                                color = linkColor,
+                                textDecoration = TextDecoration.Underline
+                            ),
+                            pressedStyle = SpanStyle(background = pressedColor)
+                        ),
+                        linkInteractionListener = {
+                            onLinkClicked(matchedValue)
+                        }
+                    )
+                ) {
+                    append(matchedValue)
+                }
+            }
+            
+            "email" if onEmailClicked != null -> {
+                withLink(
+                    link = LinkAnnotation.Clickable(
+                        tag = matchedValue,
+                        styles = TextLinkStyles(
+                            style = SpanStyle(
+                                color = linkColor,
+                                textDecoration = TextDecoration.Underline
+                            ),
+                            pressedStyle = SpanStyle(background = pressedColor)
+                        ),
+                        linkInteractionListener = {
+                            onEmailClicked(matchedValue)
+                        }
+                    )
+                ) {
+                    append(matchedValue)
+                }
+            }
+            
+            "username" if onUsernameClicked != null -> {
+                withLink(
+                    link = LinkAnnotation.Clickable(
+                        tag = matchedValue,
+                        styles = TextLinkStyles(
+                            style = SpanStyle(color = linkColor),
+                            pressedStyle = SpanStyle(background = pressedColor)
+                        ),
+                        linkInteractionListener = {
+                            onUsernameClicked(matchedValue)
+                        }
+                    )
+                ) {
+                    append(matchedValue)
+                }
+            }
+            
+            else -> {
+                val style = if (type == "url" || type == "email") {
+                    SpanStyle(
+                        color = linkColor,
+                        textDecoration = TextDecoration.Underline
+                    )
+                } else {
+                    SpanStyle(color = linkColor)
+                }
+                
+                withStyle(style = style) {
+                    append(matchedValue)
+                }
+            }
+        }
+        
+        lastIndex = endIndex
+    }
+    
+    if (lastIndex < text.length) {
+        append(text.substring(lastIndex))
+    }
+}
+
+private val CUSTOM_EMOJI_SIZE = 18.sp
+private const val LINK_PRESSED_ALPHA = 0.4f
