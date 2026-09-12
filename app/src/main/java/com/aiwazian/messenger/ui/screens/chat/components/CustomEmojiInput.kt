@@ -15,14 +15,14 @@ import android.text.Spanned
 import android.text.style.ReplacementSpan
 import android.widget.EditText
 import androidx.core.graphics.withSave
-import coil.Coil
-import coil.request.ImageRequest
-import coil.request.SuccessResult
+import coil3.SingletonImageLoader
+import coil3.asDrawable
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
 import com.aiwazian.messenger.domain.CustomEmoji
+import com.aiwazian.messenger.utils.RegexPatterns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-
-private val CUSTOM_EMOJI_TOKEN_PATTERN = Regex("""\[ce:(\d+):(\d+)]""")
 
 class CustomEmojiSpan(
     private val drawable: Drawable,
@@ -110,7 +110,7 @@ object CustomEmojiText {
         val parts = mutableListOf<CustomEmojiTextPart>()
         var index = 0
         
-        CUSTOM_EMOJI_TOKEN_PATTERN.findAll(text).forEach { match ->
+        RegexPatterns.CUSTOM_EMOJI_TOKEN.findAll(text).forEach { match ->
             val packId = match.groupValues[1].toLongOrNull()
             val emojiId = match.groupValues[2].toLongOrNull()
             
@@ -240,13 +240,13 @@ private suspend fun loadCustomEmojiDrawable(
         .size(size, size)
         .build()
     
-    val result = Coil.imageLoader(context).execute(request)
+    val result = SingletonImageLoader.get(context).execute(request)
     
     if (result !is SuccessResult) {
         return null
     }
     
-    val drawable = result.drawable.mutate()
+    val drawable = result.image.asDrawable(context.resources).mutate()
     
     drawable.setBounds(0, 0, size, size)
     

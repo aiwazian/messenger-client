@@ -70,6 +70,10 @@ object RegexPatterns {
         )
     }
     
+    val CUSTOM_EMOJI_TOKEN by lazy {
+        Regex("""\[ce:(\d+):(\d+)]""")
+    }
+    
     val SINGLE_EMOJI by lazy {
         Regex("^[\\p{So}\\p{Cntrl}\\p{InEmoticons}\\p{InMiscellaneousSymbolsAndPictographs}\\p{InSupplementalSymbolsAndPictographs}\\uD83C\\uDFF0-\\uD83D\\uDFFF]+$")
     }
