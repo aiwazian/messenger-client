@@ -9,15 +9,16 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
-import androidx.core.graphics.drawable.toBitmap
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import coil.imageLoader
-import coil.request.ImageRequest
-import coil.request.SuccessResult
+import coil3.SingletonImageLoader
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.request.allowHardware
+import coil3.toBitmap
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -233,9 +234,9 @@ class VoicePlayerManager @Inject constructor(
             .size(ARTWORK_SIZE_PX)
             .allowHardware(false)
             .build()
-        val result = context.imageLoader.execute(request)
+        val result = SingletonImageLoader.get(context).execute(request)
         if (result !is SuccessResult) return null
-        val bitmap = result.drawable.toBitmap()
+        val bitmap = result.image.toBitmap()
         val safeBitmap = if (bitmap.config == Bitmap.Config.HARDWARE) {
             bitmap.copy(Bitmap.Config.ARGB_8888, false)
         } else {
