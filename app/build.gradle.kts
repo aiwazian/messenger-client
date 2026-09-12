@@ -103,10 +103,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.exifinterface)
     
-    // DataStore
     implementation(libs.androidx.datastore.preferences)
     
-    // Biometric
     implementation(libs.androidx.biometric)
     
     implementation(libs.accompanist.systemuicontroller)
@@ -119,25 +117,21 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.retrofit2.kotlinx.serialization.converter)
     
-    // Navigation 3
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     
-    // Lottie animation
     implementation(libs.lottie.compose)
     
     implementation(libs.material.kolor)
     
     implementation(libs.okhttp)
     
-    // Dagger Hilt
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.android)
     implementation(libs.androidx.graphics.shapes)
     implementation(libs.androidx.hilt.navigation.compose)
     
-    // Room database
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     
@@ -154,13 +148,12 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.video)
     implementation(libs.coil.gif)
+    implementation(libs.coil.network.okhttp)
     
-    // Firebase Cloud Messaging & Analytics
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.analytics)
     
-    // Google Play In-App Updates
     implementation(libs.play.app.update)
     
     implementation(libs.androidx.media3.exoplayer)
@@ -169,11 +162,9 @@ dependencies {
     implementation(libs.androidx.media3.ui.compose.material3)
     implementation(libs.androidx.media3.session)
     
-    // Пересжатие видео перед отправкой
     implementation(libs.androidx.media3.transformer)
     implementation(libs.androidx.media3.effect)
     
-    // Preview Composable
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
 
