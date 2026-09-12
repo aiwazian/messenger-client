@@ -13,13 +13,13 @@ import android.graphics.PorterDuffXfermode
 import android.net.Uri
 import android.util.Log
 import androidx.core.graphics.createBitmap
-import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.scale
 import androidx.core.net.toUri
-import coil.imageLoader
-import coil.memory.MemoryCache
-import coil.request.ImageRequest
-import coil.request.SuccessResult
+import coil3.SingletonImageLoader
+import coil3.memory.MemoryCache
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.toBitmap
 import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.database.entity.AvatarWithFile
 import com.aiwazian.messenger.enums.ChatType
@@ -29,19 +29,12 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Достаёт активную аватарку чата и готовит из неё круглую иконку.
- *
- * Тип чата определяется по первой цифре id через [ChatType.fromId], поэтому один и тот
- * же вызов работает для личных чатов, групп и каналов.
- */
 @Singleton
 class ChatAvatarIconLoader @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val database: AppDatabase
 ) {
     
-    /** Имя чата и путь к его активной аватарке. */
     data class ChatAvatar(
         val chatName: String?,
         val avatarUri: Uri?
@@ -79,28 +72,12 @@ class ChatAvatarIconLoader @Inject constructor(
         resolved ?: ChatAvatar(chatName = null, avatarUri = null)
     }
     
-    /**
-     * Загрузить аватарку и обрезать её в круг.
-     *
-     * Возвращает null, если аватарки нет или файл ещё не скачался: чем заменить иконку,
-     * решает вызывающий.
-     */
     suspend fun loadCircleAvatar(uri: Uri?): Bitmap? {
         val bitmap = loadAvatar(uri) ?: return null
         
         return bitmap.cropToCircle()
     }
     
-    /**
-     * Активная аватарка — это фотография с самым большим sortOrder.
-     *
-     * Сервер нумерует фотографии по порядку добавления и новой ставит sortOrder
-     * предыдущей + 1, а список отдаёт по возрастанию. Значит текущая аватарка профиля
-     * лежит в конце списка, а не в начале.
-     *
-     * Если её файл ещё не скачан, берём ближайшую скачанную — пустая иконка хуже
-     * слегка устаревшей.
-     */
     private fun List<AvatarWithFile>.activeAvatarUri(): Uri? = this
         .sortedByDescending { avatarWithFile -> avatarWithFile.avatar.sortOrder }
         .firstNotNullOfOrNull { avatarWithFile ->
@@ -114,12 +91,12 @@ class ChatAvatarIconLoader @Inject constructor(
         try {
             val size = (ICON_SIZE_DP * context.resources.displayMetrics.density).toInt()
             
-            /*
-             * Экран профиля только что показал эту аватарку, поэтому обычно она уже
-             * лежит в памяти Coil и второй раз с диска не читается.
-             */
-            val cached =
-                context.imageLoader.memoryCache?.get(MemoryCache.Key(uri.toString()))?.bitmap
+            val imageLoader = SingletonImageLoader.get(context)
+            
+            val cached = imageLoader.memoryCache
+                ?.get(MemoryCache.Key(uri.toString()))
+                ?.image
+                ?.toBitmap()
             
             val loaded = cached ?: run {
                 val request = ImageRequest.Builder(context)
@@ -127,10 +104,9 @@ class ChatAvatarIconLoader @Inject constructor(
                     .size(ICON_SIZE_DP)
                     .build()
                 
-                (context.imageLoader.execute(request) as? SuccessResult)?.drawable?.toBitmap()
+                (imageLoader.execute(request) as? SuccessResult)?.image?.toBitmap()
             } ?: return@withContext null
             
-            /* HARDWARE-битмап нельзя рисовать на Canvas, поэтому копируем его в память. */
             val softwareBitmap = if (loaded.config == Bitmap.Config.HARDWARE) {
                 loaded.copy(Bitmap.Config.ARGB_8888, false)
             } else {
