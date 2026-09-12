@@ -13,6 +13,16 @@ data class CustomEmojiDto(
 )
 
 @Serializable
+data class CustomEmojiItemDto(
+    @SerialName("id") val id: String,
+    @SerialName("packId") val packId: String,
+    @SerialName("fileId") val fileId: String,
+    @SerialName("url") val url: String,
+    @SerialName("emojis") val emojis: List<String> = emptyList(),
+    @SerialName("sortOrder") val sortOrder: Int = 0
+)
+
+@Serializable
 data class EmojiPackDto(
     @SerialName("id") val id: String,
     @SerialName("name") val name: String,

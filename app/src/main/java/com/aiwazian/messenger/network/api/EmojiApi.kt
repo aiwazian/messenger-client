@@ -1,6 +1,7 @@
 package com.aiwazian.messenger.network.api
 
 import com.aiwazian.messenger.network.dto.CreateEmojiPackRequestDto
+import com.aiwazian.messenger.network.dto.CustomEmojiItemDto
 import com.aiwazian.messenger.network.dto.EmojiFileDto
 import com.aiwazian.messenger.network.dto.EmojiPackDto
 import com.aiwazian.messenger.network.dto.EmojiPackIdDto
@@ -42,6 +43,11 @@ interface EmojiApi {
     suspend fun getPack(
         @Path("packId") packId: String
     ): Response<EmojiPackDto>
+    
+    @GET("emoji/items")
+    suspend fun getEmojiItems(
+        @Query("ids") ids: String
+    ): Response<List<CustomEmojiItemDto>>
     
     @POST("emoji/packs/reserve")
     suspend fun reservePackId(): Response<EmojiPackIdDto>

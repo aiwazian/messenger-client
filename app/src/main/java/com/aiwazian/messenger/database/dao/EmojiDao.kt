@@ -24,6 +24,9 @@ interface EmojiDao {
     @Query("SELECT * FROM emoji WHERE packId = :packId ORDER BY sortOrder ASC")
     suspend fun getEmojis(packId: Long): List<CustomEmojiEntity>
     
+    @Query("SELECT * FROM emoji WHERE id IN (:emojiIds)")
+    suspend fun getEmojisByIds(emojiIds: List<Long>): List<CustomEmojiEntity>
+    
     @Upsert
     suspend fun upsertPacks(packs: List<EmojiPackEntity>)
     

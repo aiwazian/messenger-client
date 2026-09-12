@@ -3,6 +3,7 @@ package com.aiwazian.messenger.repository
 import android.util.Log
 import com.aiwazian.messenger.database.dao.EmojiDao
 import com.aiwazian.messenger.di.FileClient
+import com.aiwazian.messenger.domain.CustomEmoji
 import com.aiwazian.messenger.domain.CustomEmojiDraft
 import com.aiwazian.messenger.domain.EmojiPack
 import com.aiwazian.messenger.mappers.toDomain
@@ -90,6 +91,45 @@ class EmojiRepository @Inject constructor(
             cachePack(pack)
             
             result
+        }
+    
+    suspend fun resolveEmojis(emojiIds: List<Long>): Result<List<CustomEmoji>> =
+        withContext(Dispatchers.IO) {
+            val uniqueIds = emojiIds.filter { it > 0L }.distinct()
+            
+            if (uniqueIds.isEmpty()) {
+                return@withContext Result.success(emptyList())
+            }
+            
+            val cached = emojiDao.getEmojisByIds(uniqueIds).map { it.toDomain() }
+            val cachedIds = cached.map { it.id }.toSet()
+            val missingIds = uniqueIds.filterNot { cachedIds.contains(it) }
+            
+            if (missingIds.isEmpty()) {
+                return@withContext Result.success(cached)
+            }
+            
+            val result = request("emoji items") {
+                emojiApi.getEmojiItems(missingIds.joinToString(EMOJI_ID_SEPARATOR))
+            }
+            
+            val loaded = result.getOrNull()
+            
+            if (loaded == null) {
+                return@withContext if (cached.isEmpty()) {
+                    Result.failure(
+                        result.exceptionOrNull() ?: Exception("Failed to load emoji items")
+                    )
+                } else {
+                    Result.success(cached)
+                }
+            }
+            
+            if (loaded.isNotEmpty()) {
+                emojiDao.upsertEmojis(loaded.map { it.toEntity() })
+            }
+            
+            Result.success(cached + loaded.map { it.toDomain() })
         }
     
     suspend fun isUsernameAvailable(username: String, packId: Long? = null): Result<Boolean> =
@@ -348,5 +388,7 @@ class EmojiRepository @Inject constructor(
         const val TAG = "EmojiRepository"
         
         const val FILE_FIELD_NAME = "file"
+        
+        const val EMOJI_ID_SEPARATOR = ","
     }
 }
