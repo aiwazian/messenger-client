@@ -46,7 +46,7 @@ import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.domain.StickerPack
 import kotlinx.coroutines.launch
 
-private const val PANEL_GRID_COLUMNS = 5
+private val STICKER_CELL_MIN_SIZE = 64.dp
 private val PACK_LOGO_SIZE = 30.dp
 
 @Composable
@@ -111,7 +111,7 @@ fun StickerInputPanel(
         }
         
         LazyVerticalGrid(
-            columns = GridCells.Fixed(PANEL_GRID_COLUMNS),
+            columns = GridCells.Adaptive(minSize = STICKER_CELL_MIN_SIZE),
             state = gridState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 4.dp, top = 40.dp, end = 4.dp, bottom = 4.dp),

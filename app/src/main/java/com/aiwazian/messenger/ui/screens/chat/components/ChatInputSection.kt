@@ -145,6 +145,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(FlowPreview::class)
 @Composable
@@ -194,7 +195,7 @@ fun ChatInputSection(
     
     LaunchedEffect(imeInsets, density) {
         snapshotFlow { imeInsets.getBottom(density) }
-            .debounce(KEYBOARD_MEASURE_DELAY_MS)
+            .debounce(KEYBOARD_MEASURE_DELAY_MS.milliseconds)
             .distinctUntilChanged()
             .collect { imeBottomPx ->
                 if (imeBottomPx <= 0) return@collect
@@ -404,53 +405,49 @@ fun ChatInputSection(
                             indication = null
                         ) {}
                 ) {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        AppPrimaryScrollableTabRow(selectedTabIndex = panelPagerState.currentPage) {
-                            AppTab(
-                                selected = panelPagerState.currentPage == EMOJI_PANEL_PAGE,
-                                text = stringResource(R.string.emoji),
-                                onClick = {
-                                    scope.launch {
-                                        panelPagerState.animateScrollToPage(EMOJI_PANEL_PAGE)
-                                    }
-                                })
-                            
-                            AppTab(
-                                selected = panelPagerState.currentPage == STICKER_PANEL_PAGE,
-                                text = stringResource(R.string.stickers),
-                                onClick = {
-                                    scope.launch {
-                                        panelPagerState.animateScrollToPage(STICKER_PANEL_PAGE)
-                                    }
-                                })
-                        }
-                        
-                        HorizontalPager(
-                            state = panelPagerState,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                        ) { page ->
-                            if (page == EMOJI_PANEL_PAGE) {
-                                EmojiInputPanel(
-                                    packs = emojiState.addedPacks,
-                                    onEmojiClick = { pack, emoji ->
-                                        val view = messageInputView
-                                        
-                                        if (view != null) {
-                                            scope.launch {
-                                                insertCustomEmoji(view, pack.id, emoji)
-                                            }
+                    HorizontalPager(
+                        state = panelPagerState
+                    ) { page ->
+                        if (page == EMOJI_PANEL_PAGE) {
+                            EmojiInputPanel(
+                                packs = emojiState.addedPacks,
+                                onEmojiClick = { pack, emoji ->
+                                    messageInputView?.let { view ->
+                                        scope.launch {
+                                            insertCustomEmoji(view, pack.id, emoji)
                                         }
-                                    })
-                            } else {
-                                StickerInputPanel(
-                                    packs = stickersState.addedPacks,
-                                    onStickerClick = { sticker ->
-                                        stickersViewModel.sendSticker(uiState.chatId, sticker.id)
-                                    })
-                            }
+                                    }
+                                })
+                        } else {
+                            StickerInputPanel(
+                                packs = stickersState.addedPacks,
+                                onStickerClick = { sticker ->
+                                    stickersViewModel.sendSticker(uiState.chatId, sticker.id)
+                                })
                         }
+                    }
+                    
+                    AppPrimaryScrollableTabRow(
+                        selectedTabIndex = panelPagerState.currentPage,
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    ) {
+                        AppTab(
+                            selected = panelPagerState.currentPage == EMOJI_PANEL_PAGE,
+                            text = stringResource(R.string.emoji),
+                            onClick = {
+                                scope.launch {
+                                    panelPagerState.animateScrollToPage(EMOJI_PANEL_PAGE)
+                                }
+                            })
+                        
+                        AppTab(
+                            selected = panelPagerState.currentPage == STICKER_PANEL_PAGE,
+                            text = stringResource(R.string.stickers),
+                            onClick = {
+                                scope.launch {
+                                    panelPagerState.animateScrollToPage(STICKER_PANEL_PAGE)
+                                }
+                            })
                     }
                     
                     val navBackStack = LocalNavBackStack.current

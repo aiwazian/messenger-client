@@ -134,6 +134,12 @@ fun EmojiInputPanel(
                     items = pack.emojis,
                     key = { emoji -> "emoji-${pack.id}-${emoji.id}" }) { emoji ->
                     val interactionSource = remember { MutableInteractionSource() }
+                    val isPressed by interactionSource.collectIsPressedAsState()
+                    val scale by animateFloatAsState(
+                        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+                        targetValue = if (isPressed) 0.9f else 1f,
+                        label = "search_navigation_button_scale_animation"
+                    )
                     
                     AsyncImage(
                         model = ImageRequest.Builder(context)
@@ -143,6 +149,7 @@ fun EmojiInputPanel(
                             .build(),
                         contentDescription = null,
                         modifier = Modifier
+                            .graphicsLayer(scaleX = scale, scaleY = scale)
                             .aspectRatio(1f)
                             .clickable(
                                 interactionSource = interactionSource,
