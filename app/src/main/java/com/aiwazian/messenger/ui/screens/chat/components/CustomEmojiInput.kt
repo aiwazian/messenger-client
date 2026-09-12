@@ -5,14 +5,16 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.graphics.drawable.Drawable
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.Spanned
-import android.text.style.DynamicDrawableSpan
-import android.text.style.ImageSpan
+import android.text.style.ReplacementSpan
 import android.widget.EditText
+import androidx.core.graphics.withSave
 import coil.Coil
 import coil.request.ImageRequest
 import coil.request.SuccessResult
@@ -20,14 +22,44 @@ import com.aiwazian.messenger.domain.CustomEmoji
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private const val CUSTOM_EMOJI_SIZE_RATIO = 1.4f
 private val CUSTOM_EMOJI_TOKEN_PATTERN = Regex("""\[ce:(\d+):(\d+)]""")
 
 class CustomEmojiSpan(
-    drawable: Drawable,
+    private val drawable: Drawable,
     val packId: Long,
     val emojiId: Long
-) : ImageSpan(drawable, DynamicDrawableSpan.ALIGN_BOTTOM)
+) : ReplacementSpan() {
+    
+    override fun getSize(
+        paint: Paint,
+        text: CharSequence?,
+        start: Int,
+        end: Int,
+        fm: Paint.FontMetricsInt?
+    ): Int {
+        return drawable.bounds.width()
+    }
+    
+    override fun draw(
+        canvas: Canvas,
+        text: CharSequence?,
+        start: Int,
+        end: Int,
+        x: Float,
+        top: Int,
+        y: Int,
+        bottom: Int,
+        paint: Paint
+    ) {
+        canvas.withSave {
+            val lineCenterY = top + (bottom - top) / 2f
+            val emojiHeight = drawable.bounds.height()
+            val transY = lineCenterY - (emojiHeight / 2f)
+            translate(x, transY)
+            drawable.draw(this)
+        }
+    }
+}
 
 sealed interface CustomEmojiTextPart {
     
@@ -189,9 +221,9 @@ private fun customEmojiSize(editText: EditText): Int {
     val lineHeight = editText.lineHeight
     
     return if (lineHeight > 0) {
-        (lineHeight * CUSTOM_EMOJI_SIZE_RATIO).toInt()
+        lineHeight
     } else {
-        (editText.textSize * CUSTOM_EMOJI_SIZE_RATIO).toInt()
+        editText.textSize.toInt()
     }
 }
 

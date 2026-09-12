@@ -7,7 +7,6 @@ import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
 import android.util.TypedValue
-import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -118,10 +117,13 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.CustomEmoji
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.extensions.findActivity
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppPrimaryScrollableTabRow
@@ -678,6 +680,7 @@ private fun InputMessage(
                     IconButton(onClick = {
                         if (isKeyboardVisible || !isStickerPanelVisible) {
                             onShowStickerPanel()
+                            inputView?.let { view -> hideKeyboardKeepFocus(view) }
                         } else {
                             inputView?.let { view -> focusMessageInput(view) }
                         }
@@ -795,6 +798,9 @@ private fun InputMessage(
                                 setColor(inputCursorColor)
                                 setSize(inputCursorWidth, 0)
                             }
+                            view.textSelectHandle?.mutate()?.setTint(inputCursorColor)
+                            view.textSelectHandleLeft?.mutate()?.setTint(inputCursorColor)
+                            view.textSelectHandleRight?.mutate()?.setTint(inputCursorColor)
                         })
                     
                     VoiceRecordingStatus(
@@ -1168,9 +1174,15 @@ private class MessageInputTextSync {
 private fun focusMessageInput(view: EditText) {
     view.requestFocus()
     
-    val manager = view.context.getSystemService(InputMethodManager::class.java)
-    
-    view.post { manager?.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT) }
+    view.post {
+        val window = view.context.findActivity()?.window ?: return@post
+        WindowCompat.getInsetsController(window, view).show(WindowInsetsCompat.Type.ime())
+    }
+}
+
+private fun hideKeyboardKeepFocus(view: EditText) {
+    val window = view.context.findActivity()?.window ?: return
+    WindowCompat.getInsetsController(window, view).hide(WindowInsetsCompat.Type.ime())
 }
 
 private const val KEYBOARD_MEASURE_DELAY_MS = 300L
