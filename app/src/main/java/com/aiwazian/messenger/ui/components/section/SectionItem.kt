@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aiwazian.messenger.utils.LinkNormalizer
 import com.aiwazian.messenger.utils.RegexPatterns
 
 @Composable
@@ -178,7 +179,7 @@ fun SectionItem(
                                             )
                                         ),
                                         linkInteractionListener = {
-                                            onLinkClicked(matchedValue)
+                                            onLinkClicked(LinkNormalizer.normalize(matchedValue))
                                         }
                                     )
                                 ) {
