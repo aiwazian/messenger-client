@@ -138,7 +138,7 @@ fun EmojiInputPanel(
                     val scale by animateFloatAsState(
                         animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
                         targetValue = if (isPressed) 0.9f else 1f,
-                        label = "search_navigation_button_scale_animation"
+                        label = "custom_emoji_button_scale_animation"
                     )
                     
                     AsyncImage(
