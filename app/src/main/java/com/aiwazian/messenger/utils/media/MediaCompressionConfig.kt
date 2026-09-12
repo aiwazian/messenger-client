@@ -20,6 +20,14 @@ object MediaCompressionConfig {
     
     const val STICKER_WEBP_QUALITY = 90
     
+    const val EMOJI_SIZE = 100
+    
+    const val EMOJI_WEBP_QUALITY = 90
+    
+    const val EMOJI_MIN_WEBP_QUALITY = 30
+    
+    const val EMOJI_MAX_SIZE_BYTES = 64L * 1024
+    
     const val TRANSPARENCY_BACKGROUND_COLOR = Color.WHITE
     
     val KEEP_AS_IS_IMAGE_MIME_TYPES = setOf(

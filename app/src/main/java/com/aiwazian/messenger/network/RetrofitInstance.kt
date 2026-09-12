@@ -10,6 +10,7 @@ import com.aiwazian.messenger.network.api.ChannelApi
 import com.aiwazian.messenger.network.api.ChatApi
 import com.aiwazian.messenger.network.api.ChatFolderApi
 import com.aiwazian.messenger.network.api.ChatMediaApi
+import com.aiwazian.messenger.network.api.EmojiApi
 import com.aiwazian.messenger.network.api.GroupApi
 import com.aiwazian.messenger.network.api.MessageApi
 import com.aiwazian.messenger.network.api.NotificationSettingsApi
@@ -70,6 +71,7 @@ object RetrofitInstance {
     val sessionApi: SessionApi by lazy { retrofit.create(SessionApi::class.java) }
     val privacyApi: PrivacyApi by lazy { retrofit.create(PrivacyApi::class.java) }
     val stickerApi: StickerApi by lazy { retrofit.create(StickerApi::class.java) }
+    val emojiApi: EmojiApi by lazy { retrofit.create(EmojiApi::class.java) }
     val notificationSettingsApi: NotificationSettingsApi by lazy {
         retrofit.create(NotificationSettingsApi::class.java)
     }
