@@ -1,6 +1,7 @@
 package com.aiwazian.messenger.ui.screens.settings.stickers.created
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,9 +36,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppSnackbar
+import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.ShareBottomSheet
 import com.aiwazian.messenger.ui.components.StickerCard
+import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
@@ -99,52 +102,63 @@ fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltView
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = innerPadding.plus(PaddingValues(horizontal = 10.dp)),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            item {
-                SectionContainer(contentPadding = PaddingValues.Zero) {
-                    FramelessTextBox(
-                        placeholder = stringResource(R.string.search),
-                        value = uiState.query,
-                        onValueChange = viewModel::onQueryChange
+        Box {
+            TopBarScrim(height = innerPadding.calculateTopPadding())
+            BottomBarScrim(height = innerPadding.calculateBottomPadding())
+            
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = innerPadding.plus(
+                    PaddingValues(
+                        start = 10.dp,
+                        end = 10.dp,
+                        bottom = 10.dp
+                    )
+                ),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                item {
+                    SectionContainer(contentPadding = PaddingValues.Zero) {
+                        FramelessTextBox(
+                            placeholder = stringResource(R.string.search),
+                            value = uiState.query,
+                            onValueChange = viewModel::onQueryChange
+                        )
+                    }
+                }
+                
+                items(
+                    items = uiState.visiblePacks,
+                    key = { it.id }) { pack ->
+                    StickerCard(
+                        pack = pack,
+                        deleteMessage = deleteMessage,
+                        onClick = {
+                            navBackStack.add(
+                                AppRoute.StickerPackEditor(
+                                    packId = pack.id,
+                                    packName = pack.name,
+                                    packUsername = pack.username
+                                )
+                            )
+                        },
+                        onDelete = { viewModel.delete(pack.id) },
+                        modifier = Modifier.clip(MaterialTheme.shapes.large),
+                        onShare = { viewModel.share(pack) }
                     )
                 }
-            }
-            
-            items(
-                items = uiState.visiblePacks,
-                key = { it.id }) { pack ->
-                StickerCard(
-                    pack = pack,
-                    deleteMessage = deleteMessage,
-                    onClick = {
-                        navBackStack.add(
-                            AppRoute.StickerPackEditor(
-                                packId = pack.id,
-                                packName = pack.name,
-                                packUsername = pack.username
-                            )
+                
+                if (uiState.visiblePacks.isEmpty() && !uiState.isLoading) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.sticker_packs_empty),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 40.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
                         )
-                    },
-                    onDelete = { viewModel.delete(pack.id) },
-                    modifier = Modifier.clip(MaterialTheme.shapes.large),
-                    onShare = { viewModel.share(pack) }
-                )
-            }
-            
-            if (uiState.visiblePacks.isEmpty() && !uiState.isLoading) {
-                item {
-                    Text(
-                        text = stringResource(R.string.sticker_packs_empty),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 40.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
+                    }
                 }
             }
         }

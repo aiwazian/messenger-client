@@ -1,6 +1,7 @@
 package com.aiwazian.messenger.ui.screens.settings.stickers.added
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,8 +41,10 @@ import coil3.request.ImageRequest
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppSnackbar
+import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.StickerCard
+import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.settings.stickers.StickerPackListEffect
@@ -89,43 +92,54 @@ fun AddedStickerPacksScreen(viewModel: AddedStickerPacksViewModel = hiltViewMode
         snackbarHost = { AppSnackbar(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = innerPadding.plus(PaddingValues(horizontal = 10.dp)),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            item(key = SEARCH_ITEM_KEY) {
-                SectionContainer(contentPadding = PaddingValues.Zero) {
-                    FramelessTextBox(
-                        placeholder = stringResource(R.string.search),
-                        value = uiState.query,
-                        onValueChange = viewModel::onQueryChange
+        Box {
+            TopBarScrim(height = innerPadding.calculateTopPadding())
+            BottomBarScrim(height = innerPadding.calculateBottomPadding())
+            
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = innerPadding.plus(
+                    PaddingValues(
+                        start = 10.dp,
+                        end = 10.dp,
+                        bottom = 10.dp
+                    )
+                ),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                item(key = SEARCH_ITEM_KEY) {
+                    SectionContainer(contentPadding = PaddingValues.Zero) {
+                        FramelessTextBox(
+                            placeholder = stringResource(R.string.search),
+                            value = uiState.query,
+                            onValueChange = viewModel::onQueryChange
+                        )
+                    }
+                }
+                
+                items(
+                    items = uiState.visiblePacks,
+                    key = { it.id }) { pack ->
+                    StickerCard(
+                        pack = pack,
+                        deleteMessage = stringResource(R.string.sticker_pack_remove_message),
+                        onClick = { viewModel.open(pack.id) },
+                        onDelete = { viewModel.remove(pack.id) },
+                        modifier = Modifier.clip(MaterialTheme.shapes.large)
                     )
                 }
-            }
-            
-            items(
-                items = uiState.visiblePacks,
-                key = { it.id }) { pack ->
-                StickerCard(
-                    pack = pack,
-                    deleteMessage = stringResource(R.string.sticker_pack_remove_message),
-                    onClick = { viewModel.open(pack.id) },
-                    onDelete = { viewModel.remove(pack.id) },
-                    modifier = Modifier.clip(MaterialTheme.shapes.large)
-                )
-            }
-            
-            if (uiState.visiblePacks.isEmpty() && !uiState.isLoading) {
-                item(key = EMPTY_ITEM_KEY) {
-                    Text(
-                        text = stringResource(R.string.sticker_packs_empty),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 40.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
+                
+                if (uiState.visiblePacks.isEmpty() && !uiState.isLoading) {
+                    item(key = EMPTY_ITEM_KEY) {
+                        Text(
+                            text = stringResource(R.string.sticker_packs_empty),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 40.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }

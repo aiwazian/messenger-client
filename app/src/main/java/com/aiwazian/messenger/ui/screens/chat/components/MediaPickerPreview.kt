@@ -240,7 +240,6 @@ fun MediaPickerPreview(
             }
         }
         
-        // На время удержания 2x контролы скрываются, после отпускания возвращаются
         val isChromeVisible =
             !dismissDragState.isDragging && hero.isSettled && !isVideoFastForwarding
         
@@ -441,8 +440,6 @@ fun MediaPickerPreview(
                 }
             }
             
-            // Панель 2x рисуется поверх Scaffold, иначе она уходит под TopBar и его тень.
-            // Отступ сверху не зависит от видимости статус-бара
             PlayerSpeedBadge(
                 speed = PLAYER_FAST_FORWARD_SPEED,
                 visible = isVideoFastForwarding,

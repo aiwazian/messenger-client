@@ -153,7 +153,6 @@ fun FullScreenViewer(
         isVideoPlaying = false
     }
     
-    // Пока идёт удержание, таймер автоскрытия стоит: иначе после отпускания контролы бы не вернулись
     LaunchedEffect(
         isUiVisible,
         isVideoPlaying,
@@ -397,9 +396,6 @@ fun FullScreenViewer(
             }
         }
         
-        // Панель 2x рисуется поверх Scaffold, иначе она уходит под TopBar и его тень.
-        // Отступ сверху не зависит от видимости статус-бара: в полноэкранном режиме он скрыт,
-        // и statusBarsPadding дал бы нулевой отступ
         PlayerSpeedBadge(
             speed = PLAYER_FAST_FORWARD_SPEED,
             visible = isVideoFastForwarding,
