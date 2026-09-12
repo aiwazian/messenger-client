@@ -28,7 +28,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,12 +49,6 @@ import kotlin.math.roundToInt
 
 private const val PROGRESS_TICK_INTERVAL_MS = 1_000L
 
-/**
- * Центральные контролы плеера: индикатор буферизации либо кнопка play/pause.
- *
- * Сигнатура повторяет слот `centerControls` у media3 `Player`, поэтому контролы можно
- * отрисовать как отдельный слой над видео или передать прямо в слот.
- */
 @Composable
 fun PlayerCenterControls(
     player: Player?,
@@ -64,9 +57,9 @@ fun PlayerCenterControls(
     isBuffering: Boolean = false
 ) {
     val playPauseButtonState = rememberPlayPauseButtonState(player)
-
+    
     val containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.2f)
-
+    
     AnimatedVisibility(
         visible = showControls, modifier = modifier, enter = fadeIn(), exit = fadeOut()
     ) {
@@ -96,11 +89,6 @@ fun PlayerCenterControls(
     }
 }
 
-/**
- * Нижние контролы плеера: прогресс воспроизведения и кнопки поворота и качества.
- *
- * Сигнатура повторяет слот `bottomControls` у media3 `Player`.
- */
 @Composable
 fun PlayerBottomControls(
     player: Player?,
@@ -115,16 +103,14 @@ fun PlayerBottomControls(
     val progressState = rememberProgressStateWithTickInterval(
         player = player, tickIntervalMs = PROGRESS_TICK_INTERVAL_MS
     )
-
-    // Пока пользователь тянет ползунок, плеер ещё не перемотан, поэтому время слева
-    // показываем по позиции ползунка
+    
     var seekProgress by remember { mutableStateOf<Float?>(null) }
-
+    
     val duration = progressState.durationMs.takeIf { it != C.TIME_UNSET }?.coerceAtLeast(0L) ?: 0L
-
+    
     val currentPosition = seekProgress?.let { (it * duration).toLong() }
         ?: progressState.currentPositionMs
-
+    
     AnimatedVisibility(
         visible = showControls, modifier = modifier, enter = fadeIn(), exit = fadeOut()
     ) {
@@ -144,28 +130,23 @@ fun PlayerBottomControls(
                         text = formatDuration(currentPosition),
                         color = MaterialTheme.colorScheme.onSurface
                     )
-
+                    
                     Box(modifier = Modifier.weight(1f)) {
                         ProgressSlider(
                             player = player,
                             modifier = Modifier.fillMaxWidth(),
                             onValueChange = { progress -> seekProgress = progress },
-                            onValueChangeFinished = { seekProgress = null },
-                            colors = SliderDefaults.colors(
-                                thumbColor = Color.White,
-                                activeTrackColor = MaterialTheme.colorScheme.primary,
-                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
+                            onValueChangeFinished = { seekProgress = null }
                         )
                     }
-
+                    
                     Text(
                         text = formatDuration(duration),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
-
+            
             if (onTransformClick != null || onQualityClick != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (onTransformClick != null) {
@@ -175,7 +156,7 @@ fun PlayerBottomControls(
                             isActive = isTransformed
                         )
                     }
-
+                    
                     if (onQualityClick != null) {
                         MediaOverlayIconButton(icon = qualityIcon, onClick = onQualityClick)
                     }
@@ -185,11 +166,6 @@ fun PlayerBottomControls(
     }
 }
 
-/**
- * Подсказка о перемотке двойным тапом: «-10 с» слева и «+15 с» справа.
- *
- * Величина перемотки берётся у плеера, поэтому её передают снаружи.
- */
 @Composable
 fun PlayerSeekIndicator(
     seekAmountMs: Long,
@@ -216,18 +192,15 @@ fun PlayerSeekIndicator(
                     Icons.Rounded.FastForward
                 },
                 contentDescription = null,
-                tint = Color.White,
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(20.dp)
             )
-
-            Text(text = formatSeekAmount(seekAmountMs), color = Color.White)
+            
+            Text(text = formatSeekAmount(seekAmountMs), color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
 
-/**
- * Бейдж ускоренного воспроизведения, который показывается на удержании.
- */
 @Composable
 fun PlayerSpeedBadge(
     speed: Float,
@@ -250,11 +223,11 @@ fun PlayerSpeedBadge(
             Icon(
                 imageVector = Icons.Rounded.FastForward,
                 contentDescription = null,
-                tint = Color.White,
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(20.dp)
             )
-
-            Text(text = formatPlaybackSpeed(speed), color = Color.White)
+            
+            Text(text = formatPlaybackSpeed(speed), color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
@@ -262,13 +235,13 @@ fun PlayerSpeedBadge(
 private fun formatSeekAmount(amountMs: Long): String {
     val seconds = abs(amountMs) / 1_000L
     val sign = if (amountMs < 0) "-" else "+"
-
+    
     return "$sign$seconds с"
 }
 
 private fun formatPlaybackSpeed(speed: Float): String {
     val rounded = (speed * 10f).roundToInt() / 10f
-
+    
     return if (rounded % 1f == 0f) {
         "${rounded.toInt()}x"
     } else {

@@ -14,20 +14,6 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Лента фото и видео устройства.
- *
- * Системный выбор файлов отдаёт только то, что пользователь уже отметил, а
- * шторке вложений нужна вся галерея целиком, чтобы показать её сеткой.
- *
- * GIF для MediaStore — обычная картинка, поэтому он приходит той же выборкой,
- * что и фото, и отличается только типом файла.
- *
- * Миниатюры репозиторий не отдаёт: кадр видео и первый кадр GIF рисует Coil в
- * самой ячейке. Раньше здесь был loadThumbnail из MediaStore, но у него нет ни
- * кэша между прокрутками, ни отмены загрузки уехавшей ячейки, а файлам без
- * готовой миниатюры он возвращал пустоту.
- */
 @Singleton
 class DeviceMediaRepository @Inject constructor(
     @param:ApplicationContext private val context: Context

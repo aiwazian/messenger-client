@@ -21,6 +21,7 @@ import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
+import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.UiText
 import java.time.ZoneId
 import java.time.format.TextStyle
@@ -313,8 +314,6 @@ class ChatItemMapper(
     }
     
     private fun isSingleEmoji(text: String): Boolean {
-        val emojiRegex =
-            Regex("^[\\p{So}\\p{Cntrl}\\p{InEmoticons}\\p{InMiscellaneousSymbolsAndPictographs}\\p{InSupplementalSymbolsAndPictographs}\\uD83C\\uDFF0-\\uD83D\\uDFFF]+$")
-        return emojiRegex.matches(text.trim())
+        return RegexPatterns.SINGLE_EMOJI.matches(text.trim())
     }
 }

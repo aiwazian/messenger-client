@@ -5,33 +5,76 @@
 package com.aiwazian.messenger.utils
 
 object RegexPatterns {
-    val INVITE_LINK = Regex("(https?://)?[\\w-.]+/([a-f0-9]{32})")
-
-    val URL =
-        Regex("(https?://)?(www\\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\\.[a-zA-Z0-9()]{2,6}\\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)")
+    private const val SCHEME = "https?://"
     
-    val SET_USERNAME = Regex("^[a-zA-Z0-9_]{0,32}$")
+    private const val OCTET = "(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)"
     
-    val MENTION = Regex("@[a-zA-Z0-9_]{5,32}\\b")
+    private const val IPV4 = "$OCTET(?:\\.$OCTET){3}"
     
-    val PASSWORD = Regex("^\\S{0,64}$")
+    private const val LABEL = "[a-z0-9](?:[a-z0-9\\-]*[a-z0-9])?"
     
-    val LOGIN = Regex("^\\S{0,64}$")
+    private const val DOMAIN = "(?:$LABEL\\.)+[a-z]{2,24}"
     
-    val EMAIL = Regex("^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$")
+    private const val PORT = "(?::\\d{1,5})?"
     
-    /**
-     * Адрес внутри произвольного текста — без якорей ^ и $, иначе EMAIL находит
-     * только строку, целиком состоящую из адреса.
-     *
-     * Поддерживает точки, дефисы, плюсы и теги в локальной части (work.time+tag@…),
-     * многоуровневые домены (mail.ru, co.uk, mail.yandex.com.tr) и длинные зоны (.company).
-     * Границы — чтобы не цеплять часть ссылки типа site.com/a@b и не брать точку в конце фразы.
-     */
-    val EMAIL_IN_TEXT = Regex(
-        "(?<![\\w.+-])[a-zA-Z0-9](?:[a-zA-Z0-9._%+\\-]*[a-zA-Z0-9])?" +
-                "@[a-zA-Z0-9](?:[a-zA-Z0-9\\-]*[a-zA-Z0-9])?" +
-                "(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9\\-]*[a-zA-Z0-9])?)*" +
-                "\\.[a-zA-Z]{2,24}\\b"
-    )
+    private const val PATH = "(?:[/?#][-a-z0-9()@:%_+.~#?&/=]*)?"
+    
+    val INVITE_LINK by lazy {
+        Regex("(https?://)?[\\w\\-.]+/([a-f0-9]{32})", RegexOption.IGNORE_CASE)
+    }
+    
+    val URL by lazy {
+        Regex(
+            "(?<![\\w@.\\-])(?:$SCHEME$LABEL(?:\\.$LABEL)*|$DOMAIN|$IPV4(?!\\.\\d))$PORT$PATH",
+            RegexOption.IGNORE_CASE
+        )
+    }
+    
+    val URL_SCHEME by lazy {
+        Regex("^$SCHEME", RegexOption.IGNORE_CASE)
+    }
+    
+    val SET_USERNAME by lazy {
+        Regex("^[a-zA-Z0-9_]{0,32}$")
+    }
+    
+    val MENTION by lazy {
+        Regex("@[a-zA-Z0-9_]{5,32}\\b")
+    }
+    
+    val PASSWORD by lazy {
+        Regex("^\\S{0,64}$")
+    }
+    
+    val LOGIN by lazy {
+        Regex("^\\S{0,64}$")
+    }
+    
+    val EMAIL by lazy {
+        Regex("^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$")
+    }
+    
+    val EMAIL_IN_TEXT by lazy {
+        Regex(
+            "(?<![\\w.+-])[a-zA-Z0-9](?:[a-zA-Z0-9._%+\\-]*[a-zA-Z0-9])?" +
+                    "@[a-zA-Z0-9](?:[a-zA-Z0-9\\-]*[a-zA-Z0-9])?" +
+                    "(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9\\-]*[a-zA-Z0-9])?)*" +
+                    "\\.[a-zA-Z]{2,24}\\b"
+        )
+    }
+    
+    val STICKER_LINK by lazy {
+        Regex(
+            "(?:https?://)?(?:www\\.)?aiwazian\\.ru/addstickers/([A-Za-z0-9_]+)",
+            RegexOption.IGNORE_CASE
+        )
+    }
+    
+    val CUSTOM_EMOJI_TOKEN by lazy {
+        Regex("""\[ce:(\d+):(\d+)]""")
+    }
+    
+    val SINGLE_EMOJI by lazy {
+        Regex("^[\\p{So}\\p{Cntrl}\\p{InEmoticons}\\p{InMiscellaneousSymbolsAndPictographs}\\p{InSupplementalSymbolsAndPictographs}\\uD83C\\uDFF0-\\uD83D\\uDFFF]+$")
+    }
 }

@@ -24,37 +24,13 @@ import javax.inject.Inject
 
 data class MediaPickerUiState(
     val media: List<DeviceMediaItem> = emptyList(),
-    /** Порядок важен: номер в кружке — это позиция в этом списке. */
     val selected: List<Uri> = emptyList(),
     val isLoading: Boolean = false,
-    /**
-     * Ступень сжатия, выбранная для видео. Чего здесь нет, то уйдёт со ступенью
-     * по умолчанию: настройку открывать необязательно.
-     */
     val videoQualities: Map<Uri, VideoQuality> = emptyMap(),
-    /**
-     * Повороты и отражения, выбранные в предпросмотре. Нетронутые кадры здесь
-     * не лежат вовсе: пустая правка заставила бы отправку пересобирать файл ради
-     * ничего.
-     */
     val mediaTransforms: Map<Uri, MediaTransform> = emptyMap(),
-    /** Размеры видео, открытого во весь экран: по ним считаются ступени и вес. */
     val openedVideo: VideoMetadata? = null
 )
 
-/**
- * Галерея в шторке вложений: лента устройства, нумерованный выбор и отправка.
- *
- * Отправка идёт через [MessageSendQueue], а не через viewModelScope: шторка
- * закрывается сразу после нажатия, и своя корутина не дожила бы до конца
- * загрузки файлов.
- *
- * Подпись здесь больше не хранится — это черновик чата из ChatViewModel. Своя
- * подпись означала бы два разных текста: набранный в поле ввода пропадал бы
- * при открытии шторки, а набранный в шторке — при её закрытии.
- *
- * Миниатюр здесь тоже нет: кадры для сетки рисует Coil прямо в ячейке.
- */
 @HiltViewModel
 class MediaPickerViewModel @Inject constructor(
     private val deviceMediaRepository: DeviceMediaRepository,
@@ -65,7 +41,6 @@ class MediaPickerViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(MediaPickerUiState())
     val uiState = _uiState.asStateFlow()
     
-    /** Чьи размеры сейчас ждём: пока читали, могли пролистать на другое видео. */
     private var openedVideoUri: Uri? = null
     
     fun loadMedia() {
@@ -78,7 +53,6 @@ class MediaPickerViewModel @Inject constructor(
         }
     }
     
-    /** Шторка каждый раз открывается с чистым выбором. */
     fun reset() {
         openedVideoUri = null
         
@@ -95,7 +69,6 @@ class MediaPickerViewModel @Inject constructor(
     fun toggleSelection(uri: Uri) {
         _uiState.update { state ->
             val selected = if (state.selected.contains(uri)) {
-                // Убрали не последнее — номера остальных сдвигаются сами.
                 state.selected - uri
             } else {
                 state.selected + uri
@@ -105,18 +78,11 @@ class MediaPickerViewModel @Inject constructor(
         }
     }
     
-    /**
-     * Медиа открыли во весь экран: у видео заодно читаются его размеры.
-     *
-     * Читать их сразу на всю ленту незачем: настройка сжатия открыта для одного
-     * видео, а каждые размеры — это отдельное открытие файла.
-     */
     fun openMedia(item: DeviceMediaItem?) {
         val uri = item?.takeIf { it.isVideo }?.uri
         
         openedVideoUri = uri
         
-        /* Размеры прошлого видео здесь чужие, поэтому подпись пустеет сразу. */
         _uiState.update { it.copy(openedVideo = null) }
         
         if (uri == null) {
@@ -136,13 +102,6 @@ class MediaPickerViewModel @Inject constructor(
         _uiState.update { it.copy(videoQualities = it.videoQualities + (uri to quality)) }
     }
     
-    /**
-     * Кадр повернули либо отразили в предпросмотре.
-     *
-     * Вернувшийся в исходное положение уходит из карты, а не ложится в неё
-     * пустым значением: так отправке не придётся различать “правили и вернули
-     * как было” и “не правили вовсе”.
-     */
     fun setMediaTransform(uri: Uri, transform: MediaTransform) {
         _uiState.update { state ->
             val transforms = if (transform.isIdentity) {
@@ -173,12 +132,6 @@ class MediaPickerViewModel @Inject constructor(
         }
     }
     
-    /**
-     * Файлы из системного выбора уходят тем же путём, что и галерея.
-     *
-     * Раньше их отправлял ChatViewModel, и подпись к ним прикрепить было нечем:
-     * текст оставался в поле ввода и уходил отдельным сообщением.
-     */
     fun sendUris(chatId: Long, uris: List<Uri>, caption: String, replyTo: MessageReplyPreview?) {
         if (uris.isEmpty()) {
             return

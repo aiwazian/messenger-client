@@ -36,8 +36,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.enums.MessageStatus
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction

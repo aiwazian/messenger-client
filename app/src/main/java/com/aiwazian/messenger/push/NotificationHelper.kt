@@ -181,7 +181,7 @@ class NotificationHelper @Inject constructor(
             )
             
             val notification = NotificationCompat.Builder(context, getChannel(chatId))
-                .setSmallIcon(R.mipmap.logo_foreground)
+                .setSmallIcon(R.drawable.logo_monochrome)
                 .setStyle(style)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)

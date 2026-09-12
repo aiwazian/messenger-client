@@ -23,30 +23,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.decode.GifDecoder
-import coil.decode.VideoFrameDecoder
-import coil.request.ImageRequest
-import coil.request.videoFrameMillis
+import coil3.compose.AsyncImage
+import coil3.gif.GifDecoder
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.video.VideoFrameDecoder
+import coil3.video.videoFrameMillis
 import com.aiwazian.messenger.domain.ChatMediaItem
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.mediaTransitionOrigin
 
-/**
- * Ячейка сетки медиа.
- *
- * Квадратная, без скруглений и с Crop внутри: именно в этот квадрат полный
- * экран и садится обратно при сворачивании вниз.
- *
- * Нескачанное остаётся просто заливкой, без индикатора: загрузка идёт
- * сама по мере прокрутки, и кольцо в каждой ячейке превращало сетку в рябь
- * из мелькающих индикаторов.
- *
- * Переход регистрируется тем же ключом, что и миниатюры в переписке: адресом
- * самого файла. Оба экрана одновременно не видны, так что FullScreenViewer
- * годится без правок.
- */
 @Composable
 fun ChatMediaCell(
     item: ChatMediaItem,

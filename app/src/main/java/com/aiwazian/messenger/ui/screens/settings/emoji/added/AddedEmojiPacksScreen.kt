@@ -1,6 +1,7 @@
 package com.aiwazian.messenger.ui.screens.settings.emoji.added
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,13 +36,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppSnackbar
+import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.EmojiPackCard
 import com.aiwazian.messenger.ui.components.FramelessTextBox
+import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.settings.emoji.EMOJI_CELL_MIN_SIZE
@@ -92,43 +95,54 @@ fun AddedEmojiPacksScreen(viewModel: AddedEmojiPacksViewModel = hiltViewModel())
         snackbarHost = { AppSnackbar(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = innerPadding.plus(PaddingValues(horizontal = 10.dp)),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            item(key = SEARCH_ITEM_KEY) {
-                SectionContainer(contentPadding = PaddingValues.Zero) {
-                    FramelessTextBox(
-                        placeholder = stringResource(R.string.search),
-                        value = uiState.query,
-                        onValueChange = viewModel::onQueryChange
+        Box {
+            TopBarScrim(height = innerPadding.calculateTopPadding())
+            BottomBarScrim(height = innerPadding.calculateBottomPadding())
+            
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = innerPadding.plus(
+                    PaddingValues(
+                        start = 10.dp,
+                        end = 10.dp,
+                        bottom = 10.dp
+                    )
+                ),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                item(key = SEARCH_ITEM_KEY) {
+                    SectionContainer(contentPadding = PaddingValues.Zero) {
+                        FramelessTextBox(
+                            placeholder = stringResource(R.string.search),
+                            value = uiState.query,
+                            onValueChange = viewModel::onQueryChange
+                        )
+                    }
+                }
+                
+                items(
+                    items = uiState.visiblePacks,
+                    key = { it.id }) { pack ->
+                    EmojiPackCard(
+                        pack = pack,
+                        deleteMessage = stringResource(R.string.emoji_pack_remove_message),
+                        onClick = { viewModel.open(pack.id) },
+                        onDelete = { viewModel.remove(pack.id) },
+                        modifier = Modifier.clip(MaterialTheme.shapes.large)
                     )
                 }
-            }
-            
-            items(
-                items = uiState.visiblePacks,
-                key = { it.id }) { pack ->
-                EmojiPackCard(
-                    pack = pack,
-                    deleteMessage = stringResource(R.string.emoji_pack_remove_message),
-                    onClick = { viewModel.open(pack.id) },
-                    onDelete = { viewModel.remove(pack.id) },
-                    modifier = Modifier.clip(MaterialTheme.shapes.large)
-                )
-            }
-            
-            if (uiState.visiblePacks.isEmpty() && !uiState.isLoading) {
-                item(key = EMPTY_ITEM_KEY) {
-                    Text(
-                        text = stringResource(R.string.emoji_packs_empty),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 40.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
+                
+                if (uiState.visiblePacks.isEmpty() && !uiState.isLoading) {
+                    item(key = EMPTY_ITEM_KEY) {
+                        Text(
+                            text = stringResource(R.string.emoji_packs_empty),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 40.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }

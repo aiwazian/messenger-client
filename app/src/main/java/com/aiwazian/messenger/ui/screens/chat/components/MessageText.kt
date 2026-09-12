@@ -23,6 +23,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.ui.components.rememberCustomEmojiInlineContent
+import com.aiwazian.messenger.utils.LinkNormalizer
 import com.aiwazian.messenger.utils.RegexPatterns
 
 @Composable
@@ -124,7 +125,7 @@ private fun AnnotatedString.Builder.appendMessageText(
                             pressedStyle = SpanStyle(background = pressedColor)
                         ),
                         linkInteractionListener = {
-                            onLinkClicked(matchedValue)
+                            onLinkClicked(LinkNormalizer.normalize(matchedValue))
                         }
                     )
                 ) {

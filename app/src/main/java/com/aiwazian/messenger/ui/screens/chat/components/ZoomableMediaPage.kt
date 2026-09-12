@@ -35,9 +35,9 @@ import androidx.media3.common.Player
 import androidx.media3.ui.compose.state.rememberPlaybackSpeedState
 import androidx.media3.ui.compose.state.rememberSeekBackButtonState
 import androidx.media3.ui.compose.state.rememberSeekForwardButtonState
-import coil.compose.AsyncImage
-import coil.decode.ImageDecoderDecoder
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.gif.AnimatedImageDecoder
+import coil3.request.ImageRequest
 import com.aiwazian.messenger.ui.components.MediaTransformState
 import com.aiwazian.messenger.ui.components.PlayerSeekIndicator
 import com.aiwazian.messenger.ui.components.mediaTransform
@@ -50,11 +50,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-// Двойной тап по крайним третям перематывает видео, центральная треть остаётся под зум
 private const val SEEK_ZONE_FRACTION = 1f / 3f
 private const val SEEK_INDICATOR_TIMEOUT_MS = 600L
 
-// Скорость удержания нужна и экранам: панель 2x они рисуют поверх своего TopBar
 internal const val PLAYER_FAST_FORWARD_SPEED = 2f
 
 @Composable
@@ -111,7 +109,6 @@ internal fun ZoomableMediaPage(
         }
     }
     
-    // Если страница уходит из композиции прямо во время удержания, снимаем режим 2x у экрана
     DisposableEffect(Unit) {
         onDispose {
             if (isFastForwarding) {
@@ -146,7 +143,6 @@ internal fun ZoomableMediaPage(
         Modifier
     }
     
-    // Крайние трети перематывают видео, центральная треть отдана зуму
     val onDoubleTap: ((Offset) -> Boolean)? = if (isVideo) {
         { position ->
             val width = pageSize.width.toFloat()
@@ -181,7 +177,6 @@ internal fun ZoomableMediaPage(
         null
     }
     
-    // Удержание в любой точке видео временно ускоряет воспроизведение и даёт тактильный отклик
     val onLongPress: (() -> Unit)? = if (isVideo) {
         {
             if (playbackSpeedState.isEnabled) {
@@ -263,7 +258,7 @@ internal fun ZoomableMediaPage(
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(uri)
-                    .decoderFactory(ImageDecoderDecoder.Factory())
+                    .decoderFactory(AnimatedImageDecoder.Factory())
                     .build(),
                 contentDescription = null,
                 onSuccess = { success ->

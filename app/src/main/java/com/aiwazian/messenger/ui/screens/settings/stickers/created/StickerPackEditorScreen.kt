@@ -31,11 +31,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DeleteOutline
@@ -84,8 +86,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
@@ -328,11 +330,18 @@ fun StickerPackEditorScreen(
         ) { innerPadding ->
             Box {
                 TopBarScrim(height = innerPadding.calculateTopPadding())
+                BottomBarScrim(height = innerPadding.calculateBottomPadding())
                 
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = STICKER_CELL_MIN_SIZE),
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = innerPadding.plus(PaddingValues(horizontal = 10.dp)),
+                    contentPadding = innerPadding.plus(
+                        PaddingValues(
+                            start = 10.dp,
+                            end = 10.dp,
+                            bottom = 10.dp
+                        )
+                    ),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
@@ -444,8 +453,6 @@ fun StickerPackEditorScreen(
                         }
                     }
                 }
-                
-                BottomBarScrim(height = innerPadding.calculateBottomPadding())
             }
         }
         
@@ -509,7 +516,8 @@ fun StickerPackEditorScreen(
                 }.toSet()
             } else {
                 emptySet()
-            })
+            }
+        )
     }
     
     if (isExitDialogVisible) {
@@ -763,13 +771,15 @@ private fun StickerFocusOverlay(
                 interactionSource = scrimInteractionSource,
                 indication = null,
                 onClick = onDismiss
-            ),
+            )
+            .verticalScroll(rememberScrollState())
+            .imePadding(),
         contentAlignment = Alignment.TopCenter
     ) {
         Column(
             modifier = Modifier
                 .statusBarsPadding()
-                .padding(top = STICKER_FOCUS_TOP_PADDING),
+                .padding(vertical = STICKER_FOCUS_TOP_PADDING),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
