@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -44,6 +45,8 @@ import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ForwardSourceAccess
 import com.aiwazian.messenger.enums.MessageType
+import com.aiwazian.messenger.ui.components.appendCustomEmojiText
+import com.aiwazian.messenger.ui.components.rememberCustomEmojiInlineContent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -92,6 +95,12 @@ fun ReplyQuote(
         label = "reply_quote_scale_animation"
     )
     
+    val previewText = replyPreviewText(preview)
+    val previewInlineContent = rememberCustomEmojiInlineContent(
+        text = previewText,
+        emojiSize = REPLY_QUOTE_EMOJI_SIZE
+    )
+    
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -129,10 +138,11 @@ fun ReplyQuote(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = replyPreviewText(preview),
+                text = buildAnnotatedString { appendCustomEmojiText(previewText) },
                 fontSize = 14.sp,
-                lineHeight = 14.sp,
+                lineHeight = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                inlineContent = previewInlineContent,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -214,3 +224,5 @@ fun ForwardedFromHeader(
         }
     }
 }
+
+private val REPLY_QUOTE_EMOJI_SIZE = 14.sp

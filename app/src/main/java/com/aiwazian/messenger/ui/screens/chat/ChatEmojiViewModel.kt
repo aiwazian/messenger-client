@@ -2,7 +2,6 @@ package com.aiwazian.messenger.ui.screens.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.aiwazian.messenger.domain.CustomEmoji
 import com.aiwazian.messenger.domain.EmojiPack
 import com.aiwazian.messenger.repository.EmojiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,11 +24,6 @@ class ChatEmojiViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ChatEmojiUiState())
     val uiState = _uiState.asStateFlow()
     
-    private val _resolvedEmojis = MutableStateFlow<Map<Long, CustomEmoji>>(emptyMap())
-    val resolvedEmojis = _resolvedEmojis.asStateFlow()
-    
-    private val requestedEmojiIds = mutableSetOf<Long>()
-    
     private var isAddedPacksRequested = false
     
     fun preloadPacks() {
@@ -38,46 +32,6 @@ class ChatEmojiViewModel @Inject constructor(
         }
         
         loadAddedPacks()
-    }
-    
-    fun requestEmojis(emojiIds: List<Long>) {
-        val missingIds = emojiIds
-            .filter { it > 0L }
-            .distinct()
-            .filterNot { id ->
-                requestedEmojiIds.contains(id) || _resolvedEmojis.value.containsKey(id)
-            }
-        
-        if (missingIds.isEmpty()) {
-            return
-        }
-        
-        requestedEmojiIds.addAll(missingIds)
-        
-        viewModelScope.launch {
-            emojiRepository.resolveEmojis(missingIds).onSuccess { emojis ->
-                cacheEmojis(emojis)
-            }.onFailure {
-                requestedEmojiIds.removeAll(missingIds.toSet())
-            }
-        }
-    }
-    
-    suspend fun resolveEmoji(emojiId: Long): CustomEmoji? {
-        if (emojiId <= 0L) {
-            return null
-        }
-        
-        _resolvedEmojis.value[emojiId]?.let { return it }
-        
-        val emoji = emojiRepository.resolveEmojis(listOf(emojiId))
-            .getOrNull()
-            ?.firstOrNull { it.id == emojiId }
-            ?: return null
-        
-        cacheEmojis(listOf(emoji))
-        
-        return emoji
     }
     
     private fun loadAddedPacks() {
@@ -93,8 +47,6 @@ class ChatEmojiViewModel @Inject constructor(
                     }
                 }
                 
-                cacheEmojis(detailed.flatMap { it.emojis })
-                
                 _uiState.update { state ->
                     state.copy(
                         addedPacks = detailed,
@@ -105,15 +57,5 @@ class ChatEmojiViewModel @Inject constructor(
                 isAddedPacksRequested = false
             }
         }
-    }
-    
-    private fun cacheEmojis(emojis: List<CustomEmoji>) {
-        if (emojis.isEmpty()) {
-            return
-        }
-        
-        requestedEmojiIds.addAll(emojis.map { it.id })
-        
-        _resolvedEmojis.update { cache -> cache + emojis.associateBy { it.id } }
     }
 }

@@ -4,25 +4,16 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.Placeholder
-import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
@@ -31,10 +22,7 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import com.aiwazian.messenger.ui.screens.chat.ChatEmojiViewModel
+import com.aiwazian.messenger.ui.components.rememberCustomEmojiInlineContent
 import com.aiwazian.messenger.utils.RegexPatterns
 
 @Composable
@@ -44,49 +32,15 @@ fun MessageText(
     onUsernameClicked: ((String) -> Unit)? = null,
     onEmailClicked: ((String) -> Unit)? = null
 ) {
-    val context = LocalContext.current
-    
-    val emojiViewModel: ChatEmojiViewModel = hiltViewModel()
-    val resolvedEmojis by emojiViewModel.resolvedEmojis.collectAsState()
-    
     val parts = remember(text) { CustomEmojiText.parse(text) }
-    val emojiIds = remember(parts) {
-        parts.filterIsInstance<CustomEmojiTextPart.Emoji>()
-            .map { it.emojiId }
-            .distinct()
-    }
     
-    LaunchedEffect(emojiIds) {
-        if (emojiIds.isNotEmpty()) {
-            emojiViewModel.requestEmojis(emojiIds)
-        }
-    }
+    val inlineContent = rememberCustomEmojiInlineContent(
+        text = text,
+        emojiSize = CUSTOM_EMOJI_SIZE
+    )
     
     val linkColor = MaterialTheme.colorScheme.primary
     val pressedColor = MaterialTheme.colorScheme.primary.copy(alpha = LINK_PRESSED_ALPHA)
-    
-    val inlineContent = emojiIds.mapNotNull { emojiId ->
-        val emoji = resolvedEmojis[emojiId] ?: return@mapNotNull null
-        
-        emojiId.toString() to InlineTextContent(
-            placeholder = Placeholder(
-                width = CUSTOM_EMOJI_SIZE,
-                height = CUSTOM_EMOJI_SIZE,
-                placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter
-            )
-        ) {
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(emoji.url)
-                    .memoryCacheKey(emoji.fileId)
-                    .diskCacheKey(emoji.fileId)
-                    .build(),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Fit
-            )
-        }
-    }.toMap()
     
     val annotatedString = buildAnnotatedString {
         parts.forEach { part ->

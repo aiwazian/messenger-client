@@ -92,6 +92,21 @@ fun ChatCard(
             }
         },
         supportingContent = {
+            val lastMessage = chat.lastMessage
+            
+            val emojiSourceText = when {
+                !chat.draftText.isNullOrBlank() -> chat.draftText.orEmpty()
+                lastMessage == null -> ""
+                lastMessage.sticker != null -> ""
+                lastMessage.attachments.isNotEmpty() -> ""
+                else -> lastMessage.text.orEmpty()
+            }
+            
+            val emojiInlineContent = rememberCustomEmojiInlineContent(
+                text = emojiSourceText,
+                emojiSize = CHAT_CARD_EMOJI_SIZE
+            )
+            
             var text = AnnotatedString("")
             
             if (!chat.draftText.isNullOrBlank()) {
@@ -99,7 +114,7 @@ fun ChatCard(
                     withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.error)) {
                         append(stringResource(R.string.draft) + ": ")
                     }
-                    append(chat.draftText.trim())
+                    appendCustomEmojiText(chat.draftText.trim())
                 }
             } else if (chat.lastMessage != null) {
                 val sticker = chat.lastMessage.sticker
@@ -142,7 +157,7 @@ fun ChatCard(
                         if (showMyPrefix) {
                             append(stringResource(R.string.you) + ": ")
                         }
-                        append(chat.lastMessage.text.trim())
+                        appendCustomEmojiText(chat.lastMessage.text.trim())
                     }
                 } else if (chat.lastMessage.systemMessageEventType != null) {
                     text = buildAnnotatedString {
@@ -165,6 +180,7 @@ fun ChatCard(
                 text = text,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                inlineContent = emojiInlineContent,
                 style = MaterialTheme.typography.bodySmall
             )
         },
@@ -366,3 +382,5 @@ fun ChatAvatar(
         }
     }
 }
+
+private val CHAT_CARD_EMOJI_SIZE = 14.sp
