@@ -21,7 +21,7 @@ fun SettingsStickersScreen() {
     val navBackStack = LocalNavBackStack.current
     
     AppScaffold(topBar = {
-        PageTopBar(title = { Text(stringResource(R.string.stickers)) })
+        PageTopBar(title = { Text(stringResource(R.string.stickers_and_emoji)) })
     }) {
         SectionContainer(header = {
             SectionHeader(stringResource(R.string.sticker_packs))
@@ -36,6 +36,22 @@ fun SettingsStickersScreen() {
                 headlineText = stringResource(R.string.sticker_packs_added),
                 onClick = {
                     navBackStack.add(AppRoute.AddedStickerPacks)
+                })
+        }
+        
+        SectionContainer(header = {
+            SectionHeader(stringResource(R.string.emoji))
+        }) {
+            SectionItem(
+                headlineText = stringResource(R.string.emoji_packs_created),
+                onClick = {
+                    navBackStack.add(AppRoute.CreatedEmojiPacks)
+                })
+            
+            SectionItem(
+                headlineText = stringResource(R.string.emoji_packs_added),
+                onClick = {
+                    navBackStack.add(AppRoute.AddedEmojiPacks)
                 })
         }
     }

@@ -78,7 +78,7 @@ fun SettingsScreen() {
             
             SectionItem(
                 leadingIcon = Icons.Outlined.EmojiEmotions,
-                headlineText = stringResource(R.string.stickers),
+                headlineText = stringResource(R.string.stickers_and_emoji),
                 onClick = {
                     navBackStack.add(AppRoute.SettingsStickers)
                 })
