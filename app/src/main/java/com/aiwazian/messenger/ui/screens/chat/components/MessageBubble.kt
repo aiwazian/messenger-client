@@ -55,11 +55,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import coil.compose.AsyncImage
-import coil.decode.GifDecoder
-import coil.decode.VideoFrameDecoder
-import coil.request.ImageRequest
-import coil.request.videoFrameMillis
+import coil3.compose.AsyncImage
+import coil3.gif.GifDecoder
+import coil3.request.ImageRequest
+import coil3.video.VideoFrameDecoder
+import coil3.video.videoFrameMillis
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReadInfo
