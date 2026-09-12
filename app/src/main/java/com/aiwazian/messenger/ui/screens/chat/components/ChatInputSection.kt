@@ -129,8 +129,11 @@ import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppPrimaryScrollableTabRow
 import com.aiwazian.messenger.ui.app.AppTab
 import com.aiwazian.messenger.ui.components.BottomBarScrim
+import com.aiwazian.messenger.ui.components.CustomEmojiViewModel
+import com.aiwazian.messenger.ui.components.appendCustomEmojiText
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.rememberCustomEmojiInlineContent
 import com.aiwazian.messenger.ui.screens.chat.ChatEmojiViewModel
 import com.aiwazian.messenger.ui.screens.chat.ChatStickersViewModel
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
@@ -159,6 +162,8 @@ fun ChatInputSection(
     
     val emojiViewModel: ChatEmojiViewModel = hiltViewModel()
     val emojiState by emojiViewModel.uiState.collectAsState()
+    
+    val customEmojiViewModel: CustomEmojiViewModel = hiltViewModel()
     
     var messageInputView by remember { mutableStateOf<EditText?>(null) }
     
@@ -275,7 +280,7 @@ fun ChatInputSection(
                                 isKeyboardVisible = isKeyboardVisible,
                                 onShowStickerPanel = showStickerPanel,
                                 onInputViewReady = onInputViewReady,
-                                onResolveEmoji = emojiViewModel::resolveEmoji
+                                onResolveEmoji = customEmojiViewModel::resolveEmoji
                             )
                             
                             "join" -> JoinButton(onClick = chatViewModel::onJoinClicked)
@@ -298,7 +303,7 @@ fun ChatInputSection(
                                 isKeyboardVisible = isKeyboardVisible,
                                 onShowStickerPanel = showStickerPanel,
                                 onInputViewReady = onInputViewReady,
-                                onResolveEmoji = emojiViewModel::resolveEmoji
+                                onResolveEmoji = customEmojiViewModel::resolveEmoji
                             )
                         } else {
                             JoinButton(onClick = chatViewModel::onJoinClicked)
@@ -372,7 +377,7 @@ fun ChatInputSection(
                                     isKeyboardVisible = isKeyboardVisible,
                                     onShowStickerPanel = showStickerPanel,
                                     onInputViewReady = onInputViewReady,
-                                    onResolveEmoji = emojiViewModel::resolveEmoji
+                                    onResolveEmoji = customEmojiViewModel::resolveEmoji
                                 )
                             }
                         }
@@ -617,6 +622,12 @@ private fun InputMessage(
             val preview = uiState.replyToMessage
             
             if (preview != null) {
+                val previewText = replyPreviewText(preview)
+                val previewInlineContent = rememberCustomEmojiInlineContent(
+                    text = previewText,
+                    emojiSize = REPLY_PREVIEW_EMOJI_SIZE
+                )
+                
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -634,9 +645,10 @@ private fun InputMessage(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = replyPreviewText(preview),
+                            text = buildAnnotatedString { appendCustomEmojiText(previewText) },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            inlineContent = previewInlineContent,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -1185,6 +1197,7 @@ private fun hideKeyboardKeepFocus(view: EditText) {
     WindowCompat.getInsetsController(window, view).hide(WindowInsetsCompat.Type.ime())
 }
 
+private val REPLY_PREVIEW_EMOJI_SIZE = 14.sp
 private const val KEYBOARD_MEASURE_DELAY_MS = 300L
 private const val INPUT_TEXT_SIZE_SP = 16f
 private const val INPUT_MAX_LINES = 5
