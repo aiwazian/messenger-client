@@ -88,10 +88,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
-import coil.decode.BitmapFactoryDecoder
-import coil.decode.VideoFrameDecoder
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.decode.BitmapFactoryDecoder
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.video.VideoFrameDecoder
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.domain.MessageReplyPreview
@@ -293,7 +294,6 @@ fun MediaPickerBottomSheet(
             onCancel = {
                 isResetDialogVisible = false
                 
-                /* Шторку уже увели вниз — поднимаем обратно вместе с выбором. */
                 coroutineScope.launch { sheetState.show() }
             },
             onReset = {
@@ -372,14 +372,6 @@ private fun MediaGridItem(
     
     val scale = remember { Animatable(if (isSelected) SELECTED_SCALE else 1f) }
     
-    /*
-     * Выбор отыгрывается в два шага: ячейка проваливается ниже конечного размера
-     * и возвращается к нему. Одна пружина сразу до конечного значения читалась
-     * бы как обычное уменьшение, без отклика на нажатие.
-     *
-     * Совпадение с конечным значением означает первый кадр: ячейку с готовым
-     * выбором только что вернули в окно прокрутки, отыгрывать нечего.
-     */
     LaunchedEffect(isSelected) {
         val target = if (isSelected) SELECTED_SCALE else 1f
         
@@ -393,11 +385,6 @@ private fun MediaGridItem(
         }
     }
     
-    /*
-     * Пока медиа открыто в предпросмотре, ячейка пустеет целиком — вместе с
-     * подложкой и номером выбора. На полпути свайпа фон прозрачен, и любой
-     * остаток ячейки читался бы как второй экземпляр поднятого кадра.
-     */
     Box(
         modifier = Modifier
             .aspectRatio(1f)
@@ -411,33 +398,14 @@ private fun MediaGridItem(
                     scaleX = scale.value
                     scaleY = scale.value
                     
-                    /*
-                     * Невыбранная сетка стоит острыми углами встык: скругление
-                     * принадлежит только выбранной ячейке и растёт тем же
-                     * движением, что и уменьшение. Провал ниже конечного
-                     * масштаба обрезается — радиус доходит до предела и ждёт там.
-                     */
                     val rounding = ((1f - scale.value) / (1f - SELECTED_SCALE)).coerceIn(0f, 1f)
                     
                     shape = RoundedCornerShape(SELECTED_CORNER_RADIUS * rounding)
                     clip = true
                 }
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                /*
-                 * Сообщается уменьшенная рамка выбранного медиа, а не исходная ячейка:
-                 * предпросмотр должен возвращаться ровно туда, где миниатюра видна.
-                 */
                 .mediaTransitionBounds(key)
         ) {
-            /*
-             * Кадр видео достаёт coil-video, а картинкам и GIF намеренно ставится
-             * обычный декодер: в сетке гифка должна стоять неподвижно, анимация
-             * включается только в предпросмотре во весь экран.
-             *
-             * Раньше миниатюры приходили готовыми битмапами из MediaStore, и у
-             * каждой ячейки была своя корутина: при прокрутке кадр декодировался
-             * заново, а у файлов без готовой миниатюры ячейка оставалась пустой.
-             */
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(item.uri)
@@ -654,10 +622,6 @@ private fun mediaPermissions(): Array<String> = when {
     else -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
 }
 
-/**
- * На Android 14 и новее пользователь может открыть доступ только к части
- * галереи: тогда READ_MEDIA_IMAGES не выдаётся, а MediaStore отдаёт выбранное.
- */
 private fun Context.hasMediaPermission(): Boolean = when {
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
         isGranted(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) || (isGranted(
