@@ -1,7 +1,13 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.content.pm.PackageManager
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
+import android.text.Editable
+import android.text.InputType
+import android.text.TextWatcher
+import android.util.TypedValue
+import android.widget.EditText
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,13 +32,8 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.content.MediaType
-import androidx.compose.foundation.content.consume
-import androidx.compose.foundation.content.contentReceiver
-import androidx.compose.foundation.content.hasMediaType
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -53,14 +54,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.TextFieldDecorator
-import androidx.compose.foundation.text.input.TextFieldLineLimits
-import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.outlined.EmojiEmotions
@@ -94,11 +91,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -108,9 +103,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -120,16 +113,28 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.CustomEmoji
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.extensions.findActivity
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
+import com.aiwazian.messenger.ui.app.AppPrimaryScrollableTabRow
+import com.aiwazian.messenger.ui.app.AppTab
 import com.aiwazian.messenger.ui.components.BottomBarScrim
+import com.aiwazian.messenger.ui.components.CustomEmojiViewModel
+import com.aiwazian.messenger.ui.components.appendCustomEmojiText
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.rememberCustomEmojiInlineContent
+import com.aiwazian.messenger.ui.screens.chat.ChatEmojiViewModel
 import com.aiwazian.messenger.ui.screens.chat.ChatStickersViewModel
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
@@ -140,6 +145,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(FlowPreview::class)
 @Composable
@@ -154,6 +160,18 @@ fun ChatInputSection(
     
     val stickersViewModel: ChatStickersViewModel = hiltViewModel()
     val stickersState by stickersViewModel.uiState.collectAsState()
+    
+    val emojiViewModel: ChatEmojiViewModel = hiltViewModel()
+    val emojiState by emojiViewModel.uiState.collectAsState()
+    
+    val customEmojiViewModel: CustomEmojiViewModel = hiltViewModel()
+    
+    var messageInputView by remember { mutableStateOf<EditText?>(null) }
+    
+    val panelPagerState = rememberPagerState(
+        initialPage = EMOJI_PANEL_PAGE,
+        pageCount = { PANEL_PAGE_COUNT }
+    )
     
     val bottomPadding = with(density) {
         WindowInsets.navigationBars.getBottom(density).toDp()
@@ -177,7 +195,7 @@ fun ChatInputSection(
     
     LaunchedEffect(imeInsets, density) {
         snapshotFlow { imeInsets.getBottom(density) }
-            .debounce(KEYBOARD_MEASURE_DELAY_MS)
+            .debounce(KEYBOARD_MEASURE_DELAY_MS.milliseconds)
             .distinctUntilChanged()
             .collect { imeBottomPx ->
                 if (imeBottomPx <= 0) return@collect
@@ -207,6 +225,7 @@ fun ChatInputSection(
     LaunchedEffect(isKeyboardVisible, isStickersVisible) {
         if (isKeyboardVisible || isStickersVisible) {
             stickersViewModel.preloadPacks()
+            emojiViewModel.preloadPacks()
         }
     }
     
@@ -229,6 +248,10 @@ fun ChatInputSection(
         scope.launch {
             stickerPanelHeight.animateTo(keyboardHeight.coerceAtLeast(bottomPadding))
         }
+    }
+    
+    val onInputViewReady: (EditText) -> Unit = { view ->
+        messageInputView = view
     }
     
     Column(
@@ -256,7 +279,9 @@ fun ChatInputSection(
                                 chatViewModel = chatViewModel,
                                 isStickerPanelVisible = isStickersVisible,
                                 isKeyboardVisible = isKeyboardVisible,
-                                onShowStickerPanel = showStickerPanel
+                                onShowStickerPanel = showStickerPanel,
+                                onInputViewReady = onInputViewReady,
+                                onResolveEmoji = customEmojiViewModel::resolveEmoji
                             )
                             
                             "join" -> JoinButton(onClick = chatViewModel::onJoinClicked)
@@ -277,7 +302,9 @@ fun ChatInputSection(
                                 chatViewModel = chatViewModel,
                                 isStickerPanelVisible = isStickersVisible,
                                 isKeyboardVisible = isKeyboardVisible,
-                                onShowStickerPanel = showStickerPanel
+                                onShowStickerPanel = showStickerPanel,
+                                onInputViewReady = onInputViewReady,
+                                onResolveEmoji = customEmojiViewModel::resolveEmoji
                             )
                         } else {
                             JoinButton(onClick = chatViewModel::onJoinClicked)
@@ -349,7 +376,9 @@ fun ChatInputSection(
                                     chatViewModel = chatViewModel,
                                     isStickerPanelVisible = isStickersVisible,
                                     isKeyboardVisible = isKeyboardVisible,
-                                    onShowStickerPanel = showStickerPanel
+                                    onShowStickerPanel = showStickerPanel,
+                                    onInputViewReady = onInputViewReady,
+                                    onResolveEmoji = customEmojiViewModel::resolveEmoji
                                 )
                             }
                         }
@@ -376,11 +405,51 @@ fun ChatInputSection(
                             indication = null
                         ) {}
                 ) {
-                    StickerInputPanel(
-                        packs = stickersState.addedPacks,
-                        onStickerClick = { sticker ->
-                            stickersViewModel.sendSticker(uiState.chatId, sticker.id)
-                        })
+                    HorizontalPager(
+                        state = panelPagerState
+                    ) { page ->
+                        if (page == EMOJI_PANEL_PAGE) {
+                            EmojiInputPanel(
+                                packs = emojiState.addedPacks,
+                                onEmojiClick = { pack, emoji ->
+                                    messageInputView?.let { view ->
+                                        scope.launch {
+                                            insertCustomEmoji(view, pack.id, emoji)
+                                        }
+                                    }
+                                })
+                        } else {
+                            StickerInputPanel(
+                                packs = stickersState.addedPacks,
+                                onStickerClick = { sticker ->
+                                    stickersViewModel.sendSticker(uiState.chatId, sticker.id)
+                                })
+                        }
+                    }
+                    
+                    AppPrimaryScrollableTabRow(
+                        selectedTabIndex = panelPagerState.currentPage,
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    ) {
+                        AppTab(
+                            selected = panelPagerState.currentPage == EMOJI_PANEL_PAGE,
+                            text = stringResource(R.string.emoji),
+                            onClick = {
+                                scope.launch {
+                                    panelPagerState.animateScrollToPage(EMOJI_PANEL_PAGE)
+                                }
+                            })
+                        
+                        AppTab(
+                            selected = panelPagerState.currentPage == STICKER_PANEL_PAGE,
+                            text = stringResource(R.string.stickers),
+                            onClick = {
+                                scope.launch {
+                                    panelPagerState.animateScrollToPage(STICKER_PANEL_PAGE)
+                                }
+                            })
+                    }
+                    
                     val navBackStack = LocalNavBackStack.current
                     IconButton(
                         onClick = {
@@ -415,43 +484,59 @@ private fun JoinButton(onClick: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun InputMessage(
     uiState: ChatUiState,
     chatViewModel: ChatViewModel,
     isStickerPanelVisible: Boolean,
     isKeyboardVisible: Boolean,
-    onShowStickerPanel: () -> Unit
+    onShowStickerPanel: () -> Unit,
+    onInputViewReady: (EditText) -> Unit,
+    onResolveEmoji: suspend (Long) -> CustomEmoji?
 ) {
     var attachmentModal by remember { mutableStateOf(DialogController()) }
     var micTranslationX by remember { mutableFloatStateOf(0f) }
     var micTranslationY by remember { mutableFloatStateOf(0f) }
     
-    val focusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
+    val density = LocalDensity.current
     
     val mediaPickerViewModel: MediaPickerViewModel = hiltViewModel()
     
-    val textFieldState = rememberTextFieldState(initialText = uiState.messageText)
+    var inputView by remember { mutableStateOf<EditText?>(null) }
+    val textSync = remember { MessageInputTextSync() }
     
-    LaunchedEffect(textFieldState, chatViewModel) {
-        snapshotFlow { textFieldState.text.toString() }.collect { text ->
-            chatViewModel.changeText(text)
-        }
-    }
+    val inputHint = stringResource(R.string.message)
+    val inputTextColor = MaterialTheme.colorScheme.onSurface.toArgb()
+    val inputHintColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
+    val inputCursorColor = MaterialTheme.colorScheme.primary.toArgb()
+    val inputSelectionColor = MaterialTheme.colorScheme.primary
+        .copy(alpha = INPUT_SELECTION_ALPHA)
+        .toArgb()
+    val inputVerticalPadding = with(density) { 12.dp.roundToPx() }
+    val inputCursorWidth = with(density) { 2.dp.roundToPx() }
     
-    LaunchedEffect(uiState.messageText) {
-        if (uiState.messageText != textFieldState.text.toString()) {
-            textFieldState.setTextAndPlaceCursorAtEnd(uiState.messageText)
+    LaunchedEffect(inputView, uiState.messageText) {
+        val view = inputView ?: return@LaunchedEffect
+        
+        if (CustomEmojiText.serialize(view.text) == uiState.messageText) {
+            return@LaunchedEffect
         }
+        
+        val content = buildCustomEmojiText(view, uiState.messageText, onResolveEmoji)
+        
+        textSync.isApplyingExternalText = true
+        textSync.lastReportedText = uiState.messageText
+        
+        view.setText(content)
+        view.setSelection(view.text.length)
+        
+        textSync.isApplyingExternalText = false
     }
     
     LaunchedEffect(uiState.editingMessageId) {
         if (uiState.editingMessageId == null) return@LaunchedEffect
         
-        textFieldState.setTextAndPlaceCursorAtEnd(uiState.messageText)
-        focusRequester.requestFocus()
+        inputView?.let { view -> focusMessageInput(view) }
     }
     
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -534,6 +619,12 @@ private fun InputMessage(
             val preview = uiState.replyToMessage
             
             if (preview != null) {
+                val previewText = replyPreviewText(preview)
+                val previewInlineContent = rememberCustomEmojiInlineContent(
+                    text = previewText,
+                    emojiSize = REPLY_PREVIEW_EMOJI_SIZE
+                )
+                
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -551,9 +642,10 @@ private fun InputMessage(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = replyPreviewText(preview),
+                            text = buildAnnotatedString { appendCustomEmojiText(previewText) },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            inlineContent = previewInlineContent,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -597,9 +689,9 @@ private fun InputMessage(
                     IconButton(onClick = {
                         if (isKeyboardVisible || !isStickerPanelVisible) {
                             onShowStickerPanel()
+                            inputView?.let { view -> hideKeyboardKeepFocus(view) }
                         } else {
-                            focusRequester.requestFocus()
-                            keyboardController?.show()
+                            inputView?.let { view -> focusMessageInput(view) }
                         }
                     }) {
                         AnimatedContent(
@@ -634,55 +726,90 @@ private fun InputMessage(
                         animationSpec = tween(200)
                     )
                     
-                    BasicTextField(
-                        state = textFieldState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .alpha(textFieldAlpha)
-                            .focusRequester(focusRequester)
-                            .contentReceiver { content ->
-                                if (content.hasMediaType(MediaType.Image)) {
-                                    content.consume { item ->
-                                        val uri = item.uri
-                                        
-                                        if (uri != null) {
-                                            chatViewModel.sendFiles(listOf(uri))
+                    AndroidView(
+                        factory = { viewContext ->
+                            EditText(viewContext).apply {
+                                background = null
+                                setPadding(0, inputVerticalPadding, 0, inputVerticalPadding)
+                                setTextSize(TypedValue.COMPLEX_UNIT_SP, INPUT_TEXT_SIZE_SP)
+                                inputType = InputType.TYPE_CLASS_TEXT or
+                                        InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+                                        InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+                                minLines = 1
+                                maxLines = INPUT_MAX_LINES
+                                
+                                addTextChangedListener(object : TextWatcher {
+                                    override fun beforeTextChanged(
+                                        s: CharSequence?,
+                                        start: Int,
+                                        count: Int,
+                                        after: Int
+                                    ) = Unit
+                                    
+                                    override fun onTextChanged(
+                                        s: CharSequence?,
+                                        start: Int,
+                                        before: Int,
+                                        count: Int
+                                    ) = Unit
+                                    
+                                    override fun afterTextChanged(s: Editable?) {
+                                        if (textSync.isApplyingExternalText || s == null) {
+                                            return
                                         }
                                         
-                                        uri != null
+                                        val text = CustomEmojiText.serialize(s)
+                                        
+                                        if (text == textSync.lastReportedText) {
+                                            return
+                                        }
+                                        
+                                        textSync.lastReportedText = text
+                                        
+                                        chatViewModel.changeText(text)
                                     }
-                                } else {
-                                    content
+                                })
+                                
+                                ViewCompat.setOnReceiveContentListener(
+                                    this,
+                                    arrayOf(INPUT_IMAGE_MIME_TYPE)
+                                ) { _, payload ->
+                                    val clip = payload.clip
+                                    val uris = mutableListOf<Uri>()
+                                    
+                                    for (index in 0 until clip.itemCount) {
+                                        clip.getItemAt(index).uri?.let { uris.add(it) }
+                                    }
+                                    
+                                    if (uris.isEmpty()) {
+                                        payload
+                                    } else {
+                                        chatViewModel.sendFiles(uris)
+                                        
+                                        null
+                                    }
                                 }
-                            },
-                        textStyle = TextStyle.Default.copy(
-                            color = MaterialTheme.colorScheme.onSurface,
-                            lineHeight = 16.sp,
-                            fontSize = 16.sp
-                        ),
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Sentences
-                        ),
-                        lineLimits = TextFieldLineLimits.MultiLine(
-                            minHeightInLines = 1, maxHeightInLines = 5
-                        ),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        decorator = TextFieldDecorator { innerTextField ->
-                            Box(
-                                modifier = Modifier.padding(
-                                    top = 12.dp, bottom = 12.dp
-                                )
-                            ) {
-                                if (textFieldState.text.isEmpty() && !uiState.isRecording) {
-                                    Text(
-                                        text = stringResource(R.string.message),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        lineHeight = 16.sp,
-                                        fontSize = 16.sp
-                                    )
-                                }
-                                innerTextField()
+                                
+                                inputView = this
+                                
+                                onInputViewReady(this)
                             }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .alpha(textFieldAlpha),
+                        update = { view ->
+                            view.hint = inputHint
+                            view.setTextColor(inputTextColor)
+                            view.setHintTextColor(inputHintColor)
+                            view.highlightColor = inputSelectionColor
+                            view.textCursorDrawable = GradientDrawable().apply {
+                                setColor(inputCursorColor)
+                                setSize(inputCursorWidth, 0)
+                            }
+                            view.textSelectHandle?.mutate()?.setTint(inputCursorColor)
+                            view.textSelectHandleLeft?.mutate()?.setTint(inputCursorColor)
+                            view.textSelectHandleRight?.mutate()?.setTint(inputCursorColor)
                         })
                     
                     VoiceRecordingStatus(
@@ -1048,4 +1175,31 @@ private fun VoiceRecordingAmplitudeEffect(amplitude: Float) {
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)))
 }
 
+private class MessageInputTextSync {
+    var isApplyingExternalText = false
+    var lastReportedText = ""
+}
+
+private fun focusMessageInput(view: EditText) {
+    view.requestFocus()
+    
+    view.post {
+        val window = view.context.findActivity()?.window ?: return@post
+        WindowCompat.getInsetsController(window, view).show(WindowInsetsCompat.Type.ime())
+    }
+}
+
+private fun hideKeyboardKeepFocus(view: EditText) {
+    val window = view.context.findActivity()?.window ?: return
+    WindowCompat.getInsetsController(window, view).hide(WindowInsetsCompat.Type.ime())
+}
+
+private val REPLY_PREVIEW_EMOJI_SIZE = 14.sp
 private const val KEYBOARD_MEASURE_DELAY_MS = 300L
+private const val INPUT_TEXT_SIZE_SP = 16f
+private const val INPUT_MAX_LINES = 5
+private const val INPUT_SELECTION_ALPHA = 0.4f
+private const val INPUT_IMAGE_MIME_TYPE = "image/*"
+private const val EMOJI_PANEL_PAGE = 0
+private const val STICKER_PANEL_PAGE = 1
+private const val PANEL_PAGE_COUNT = 2

@@ -60,6 +60,9 @@ import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsAppearanceS
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsDarkThemeScreen
 import com.aiwazian.messenger.ui.screens.settings.data_storage.AutoDownloadMediaScreen
 import com.aiwazian.messenger.ui.screens.settings.data_storage.DataAndStorageScreen
+import com.aiwazian.messenger.ui.screens.settings.emoji.added.AddedEmojiPacksScreen
+import com.aiwazian.messenger.ui.screens.settings.emoji.created.CreatedEmojiPacksScreen
+import com.aiwazian.messenger.ui.screens.settings.emoji.created.EmojiPackEditorScreen
 import com.aiwazian.messenger.ui.screens.settings.folders.ChatFoldersScreen
 import com.aiwazian.messenger.ui.screens.settings.folders.chats.SelectFolderChatsScreen
 import com.aiwazian.messenger.ui.screens.settings.folders.editor.ChatFolderEditorScreen
@@ -202,6 +205,15 @@ fun AppNavDisplay(
                     entry<AppRoute.AddedStickerPacks> { AddedStickerPacksScreen() }
                     entry<AppRoute.StickerPackEditor> {
                         StickerPackEditorScreen(
+                            packId = it.packId,
+                            packName = it.packName,
+                            packUsername = it.packUsername
+                        )
+                    }
+                    entry<AppRoute.CreatedEmojiPacks> { CreatedEmojiPacksScreen() }
+                    entry<AppRoute.AddedEmojiPacks> { AddedEmojiPacksScreen() }
+                    entry<AppRoute.EmojiPackEditor> {
+                        EmojiPackEditorScreen(
                             packId = it.packId,
                             packName = it.packName,
                             packUsername = it.packUsername

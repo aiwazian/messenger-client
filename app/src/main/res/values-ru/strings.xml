@@ -425,6 +425,7 @@
         <item quantity="other">%1$s результата</item>
     </plurals>
     <string name="stickers">Стикеры</string>
+    <string name="stickers_and_emoji">Стикеры и эмодзи</string>
     <string name="sticker_packs">Стикерпаки</string>
     <string name="sticker_packs_created">Созданные</string>
     <string name="sticker_packs_added">Добавленные</string>
@@ -474,6 +475,50 @@
     <string name="sticker_pack_installed">Набор %1$s добавлен в ваши стикеры</string>
     <string name="sticker_pack_uninstalled">Набор %1$s удален из ваших стикеров</string>
     <string name="sticker_message">Стикер</string>
+
+    <string name="emoji">Эмодзи</string>
+    <string name="emoji_packs_created">Созданные</string>
+    <string name="emoji_packs_added">Добавленные</string>
+    <string name="emoji_pack">Набор эмодзи</string>
+    <string name="emoji_pack_new">Новый набор эмодзи</string>
+    <string name="emoji_pack_name">Название</string>
+    <string name="emoji_pack_username">Короткое имя</string>
+    <string name="emoji_pack_username_hint">Латиница, цифры и подчёркивание</string>
+    <string name="emoji_pack_username_too_short">Минимум %1$d символа</string>
+    <string name="emoji_pack_username_checking">Проверяем…</string>
+    <string name="emoji_pack_username_available">Имя свободно</string>
+    <string name="emoji_pack_username_taken">Имя уже занято</string>
+    <string name="emoji_pack_username_unknown">Не удалось проверить имя</string>
+    <string name="emoji_add">Добавить эмодзи</string>
+    <string name="emoji_delete">Удалить</string>
+    <string name="emoji_symbols">Эмодзи</string>
+    <string name="emoji_add_error">Не удалось обработать картинку</string>
+    <string name="emoji_upload_error">Не удалось загрузить эмодзи</string>
+    <string name="emoji_removed">Эмодзи удалён</string>
+    <string name="emoji_removed_undo">Отмена</string>
+    <string name="emoji_pack_saved">Набор эмодзи сохранён</string>
+    <string name="emoji_pack_save_error">Не удалось сохранить набор эмодзи</string>
+    <string name="emoji_pack_load_error">Не удалось загрузить набор эмодзи</string>
+    <string name="emoji_packs_load_error">Не удалось загрузить наборы эмодзи</string>
+    <string name="emoji_packs_empty">Наборов эмодзи пока нет</string>
+    <string name="emoji_pack_unsaved_message">Есть несохранённые изменения</string>
+    <string name="emoji_pack_unsaved_discard">Сбросить</string>
+    <string name="emoji_pack_unsaved_apply">Применить</string>
+    <string name="emoji_pack_delete_action">Удалить</string>
+    <string name="emoji_pack_delete_cancel">Отмена</string>
+    <string name="emoji_pack_delete_message">Удаление необратимо. Вы и другие пользователи больше не смогут использовать эмодзи из набора.</string>
+    <string name="emoji_pack_remove_message">Набор пропадёт только у вас. У остальных он останется.</string>
+    <string name="emoji_pack_deleted">Набор эмодзи удалён</string>
+    <string name="emoji_pack_delete_error">Не удалось удалить набор эмодзи</string>
+    <string name="emoji_pack_removed">Набор эмодзи убран</string>
+    <string name="emoji_pack_remove_error">Не удалось убрать набор эмодзи</string>
+    <plurals name="emoji_count">
+        <item quantity="one">%1$d эмодзи</item>
+        <item quantity="few">%1$d эмодзи</item>
+        <item quantity="many">%1$d эмодзи</item>
+        <item quantity="other">%1$d эмодзи</item>
+    </plurals>
+
     <string name="storage_cache_cleared">%1$s очистилось</string>
     <string name="storage_cache_already_empty">Очищать нечего</string>
     <string name="storage_cache_clear_failed">Не удалось очистить кэш</string>

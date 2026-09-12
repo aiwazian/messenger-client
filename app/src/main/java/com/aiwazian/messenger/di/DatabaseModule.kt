@@ -11,6 +11,7 @@ import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.ChatFolderDao
 import com.aiwazian.messenger.database.dao.ChatMediaDao
 import com.aiwazian.messenger.database.dao.DraftDao
+import com.aiwazian.messenger.database.dao.EmojiDao
 import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.database.dao.MessageDao
@@ -83,4 +84,7 @@ object DatabaseModule {
     
     @Provides
     fun provideStickerDao(database: AppDatabase): StickerDao = database.stickerDao()
+    
+    @Provides
+    fun provideEmojiDao(database: AppDatabase): EmojiDao = database.emojiDao()
 }

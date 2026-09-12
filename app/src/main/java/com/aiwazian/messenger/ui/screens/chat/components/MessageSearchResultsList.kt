@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,6 +38,8 @@ import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.extensions.toChatListTime
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.ui.components.ChatAvatar
+import com.aiwazian.messenger.ui.components.appendCustomEmojiText
+import com.aiwazian.messenger.ui.components.rememberCustomEmojiInlineContent
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -126,6 +129,11 @@ private fun MessageSearchResultCard(
     avatarUri: Uri?,
     onClick: () -> Unit
 ) {
+    val messageText = hit.text.orEmpty()
+    val emojiInlineContent = rememberCustomEmojiInlineContent(
+        text = messageText, emojiSize = SEARCH_RESULT_EMOJI_SIZE
+    )
+    
     ListItem(
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.clickable(onClick = onClick),
@@ -149,9 +157,10 @@ private fun MessageSearchResultCard(
         },
         supportingContent = {
             Text(
-                text = hit.text.orEmpty(),
+                text = buildAnnotatedString { appendCustomEmojiText(messageText) },
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
+                inlineContent = emojiInlineContent,
                 style = MaterialTheme.typography.bodySmall
             )
         },
@@ -163,3 +172,5 @@ private fun MessageSearchResultCard(
 }
 
 private const val PREFETCH_THRESHOLD = 10
+
+private val SEARCH_RESULT_EMOJI_SIZE = 14.sp

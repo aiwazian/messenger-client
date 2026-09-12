@@ -48,12 +48,12 @@ fun AppPrimaryScrollableTabRow(
     tabs: @Composable () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         PrimaryScrollableTabRow(
             selectedTabIndex = selectedTabIndex,
-            modifier = modifier
+            modifier = Modifier
                 .padding(start = 8.dp, top = 4.dp, end = 8.dp, bottom = 8.dp)
                 .clip(CircleShape)
                 .width(IntrinsicSize.Max),

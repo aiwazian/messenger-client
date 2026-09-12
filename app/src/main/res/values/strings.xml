@@ -413,6 +413,7 @@
         <item quantity="other">%1$s results</item>
     </plurals>
     <string name="stickers">Stickers</string>
+    <string name="stickers_and_emoji">Stickers and emoji</string>
     <string name="sticker_packs">Sticker packs</string>
     <string name="sticker_packs_created">Created</string>
     <string name="sticker_packs_added">Added</string>
@@ -460,6 +461,48 @@
     <string name="sticker_pack_installed">Pack %1$s added to your stickers</string>
     <string name="sticker_pack_uninstalled">Pack %1$s removed from your stickers</string>
     <string name="sticker_message">Sticker</string>
+
+    <string name="emoji">Emoji</string>
+    <string name="emoji_packs_created">Created</string>
+    <string name="emoji_packs_added">Added</string>
+    <string name="emoji_pack">Emoji pack</string>
+    <string name="emoji_pack_new">New emoji pack</string>
+    <string name="emoji_pack_name">Name</string>
+    <string name="emoji_pack_username">Short name</string>
+    <string name="emoji_pack_username_hint">Latin letters, digits and underscore</string>
+    <string name="emoji_pack_username_too_short">At least %1$d characters</string>
+    <string name="emoji_pack_username_checking">Checking…</string>
+    <string name="emoji_pack_username_available">Short name is available</string>
+    <string name="emoji_pack_username_taken">Short name is already taken</string>
+    <string name="emoji_pack_username_unknown">Couldn\'t check the short name</string>
+    <string name="emoji_add">Add emoji</string>
+    <string name="emoji_delete">Delete</string>
+    <string name="emoji_symbols">Emoji</string>
+    <string name="emoji_add_error">Couldn\'t process the image</string>
+    <string name="emoji_upload_error">Couldn\'t upload the emoji</string>
+    <string name="emoji_removed">Emoji deleted</string>
+    <string name="emoji_removed_undo">Undo</string>
+    <string name="emoji_pack_saved">Emoji pack saved</string>
+    <string name="emoji_pack_save_error">Couldn\'t save the emoji pack</string>
+    <string name="emoji_pack_load_error">Couldn\'t load the emoji pack</string>
+    <string name="emoji_packs_load_error">Couldn\'t load emoji packs</string>
+    <string name="emoji_packs_empty">No emoji packs yet</string>
+    <string name="emoji_pack_unsaved_message">You have unsaved changes</string>
+    <string name="emoji_pack_unsaved_discard">Discard</string>
+    <string name="emoji_pack_unsaved_apply">Apply</string>
+    <string name="emoji_pack_delete_action">Delete</string>
+    <string name="emoji_pack_delete_cancel">Cancel</string>
+    <string name="emoji_pack_delete_message">Deleting is irreversible. You and other users will no longer be able to use emoji from this pack.</string>
+    <string name="emoji_pack_remove_message">The pack will be removed from your list only. Other users will keep it.</string>
+    <string name="emoji_pack_deleted">Emoji pack deleted</string>
+    <string name="emoji_pack_delete_error">Couldn\'t delete the emoji pack</string>
+    <string name="emoji_pack_removed">Emoji pack removed</string>
+    <string name="emoji_pack_remove_error">Couldn\'t remove the emoji pack</string>
+    <plurals name="emoji_count">
+        <item quantity="one">%1$d emoji</item>
+        <item quantity="other">%1$d emoji</item>
+    </plurals>
+
     <string name="storage_cache_cleared">%1$s cleared</string>
     <string name="storage_cache_already_empty">Nothing to clear</string>
     <string name="storage_cache_clear_failed">Failed to clear the cache</string>

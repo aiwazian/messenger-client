@@ -146,6 +146,19 @@ sealed interface AppRoute : NavKey {
     ) : AppRoute
     
     @Serializable
+    data object CreatedEmojiPacks : AppRoute
+    
+    @Serializable
+    data object AddedEmojiPacks : AppRoute
+    
+    @Serializable
+    data class EmojiPackEditor(
+        val packId: Long? = null,
+        val packName: String? = null,
+        val packUsername: String? = null
+    ) : AppRoute
+    
+    @Serializable
     data object ChatFolders : AppRoute
     
     @Serializable

@@ -12,6 +12,7 @@ import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.ChatFolderDao
 import com.aiwazian.messenger.database.dao.ChatMediaDao
 import com.aiwazian.messenger.database.dao.DraftDao
+import com.aiwazian.messenger.database.dao.EmojiDao
 import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.database.dao.MessageDao
@@ -27,7 +28,9 @@ import com.aiwazian.messenger.database.entity.ChatFolderChatEntity
 import com.aiwazian.messenger.database.entity.ChatFolderEntity
 import com.aiwazian.messenger.database.entity.ChatMediaCountsEntity
 import com.aiwazian.messenger.database.entity.ChatMediaEntity
+import com.aiwazian.messenger.database.entity.CustomEmojiEntity
 import com.aiwazian.messenger.database.entity.DraftEntity
+import com.aiwazian.messenger.database.entity.EmojiPackEntity
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.database.entity.GroupEntity
 import com.aiwazian.messenger.database.entity.MessageEntity
@@ -57,9 +60,11 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         ChatMediaCountsEntity::class,
         VoiceDurationEntity::class,
         StickerPackEntity::class,
-        StickerEntity::class
+        StickerEntity::class,
+        EmojiPackEntity::class,
+        CustomEmojiEntity::class
     ],
-    version = 59,
+    version = 60,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 38, to = 39),
@@ -82,6 +87,7 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         AutoMigration(from = 56, to = 57),
         AutoMigration(from = 57, to = 58),
         AutoMigration(from = 58, to = 59),
+        AutoMigration(from = 59, to = 60),
     ]
 )
 @ColumnTypeConverters(Converters::class)
@@ -113,4 +119,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun chatMediaDao(): ChatMediaDao
     
     abstract fun stickerDao(): StickerDao
+    
+    abstract fun emojiDao(): EmojiDao
 }

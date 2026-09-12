@@ -10,6 +10,7 @@ import com.aiwazian.messenger.network.api.ChannelApi
 import com.aiwazian.messenger.network.api.ChatApi
 import com.aiwazian.messenger.network.api.ChatFolderApi
 import com.aiwazian.messenger.network.api.ChatMediaApi
+import com.aiwazian.messenger.network.api.EmojiApi
 import com.aiwazian.messenger.network.api.GroupApi
 import com.aiwazian.messenger.network.api.MessageApi
 import com.aiwazian.messenger.network.api.NotificationSettingsApi
@@ -98,6 +99,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideStickerApi(): StickerApi = RetrofitInstance.stickerApi
+    
+    @Provides
+    @Singleton
+    fun provideEmojiApi(): EmojiApi = RetrofitInstance.emojiApi
     
     @Provides
     @Singleton

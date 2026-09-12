@@ -42,17 +42,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.aiwazian.messenger.domain.Sticker
-import com.aiwazian.messenger.domain.StickerPack
+import com.aiwazian.messenger.domain.CustomEmoji
+import com.aiwazian.messenger.domain.EmojiPack
 import kotlinx.coroutines.launch
 
-private val STICKER_CELL_MIN_SIZE = 64.dp
-private val PACK_LOGO_SIZE = 30.dp
+private val PANEL_EMOJI_MIN_SIZE = 40.dp
+private val EMOJI_PACK_LOGO_SIZE = 30.dp
 
 @Composable
-fun StickerInputPanel(
-    packs: List<StickerPack>,
-    onStickerClick: (Sticker) -> Unit,
+fun EmojiInputPanel(
+    packs: List<EmojiPack>,
+    onEmojiClick: (EmojiPack, CustomEmoji) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -65,7 +65,7 @@ fun StickerInputPanel(
         packs.map { pack ->
             val headerIndex = nextIndex
             
-            nextIndex += pack.stickers.size + 1
+            nextIndex += pack.emojis.size + 1
             
             headerIndex
         }
@@ -95,7 +95,7 @@ fun StickerInputPanel(
                 minTabWidth = 0.dp
             ) {
                 packs.forEachIndexed { index, pack ->
-                    StickerPackTab(
+                    EmojiPackTab(
                         pack = pack,
                         onClick = {
                             scope.launch {
@@ -111,7 +111,7 @@ fun StickerInputPanel(
         }
         
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = STICKER_CELL_MIN_SIZE),
+            columns = GridCells.Adaptive(PANEL_EMOJI_MIN_SIZE),
             state = gridState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 4.dp, top = 40.dp, end = 4.dp, bottom = 4.dp),
@@ -131,23 +131,30 @@ fun StickerInputPanel(
                 }
                 
                 items(
-                    items = pack.stickers,
-                    key = { sticker -> "sticker-${pack.id}-${sticker.id}" }) { sticker ->
+                    items = pack.emojis,
+                    key = { emoji -> "emoji-${pack.id}-${emoji.id}" }) { emoji ->
                     val interactionSource = remember { MutableInteractionSource() }
+                    val isPressed by interactionSource.collectIsPressedAsState()
+                    val scale by animateFloatAsState(
+                        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+                        targetValue = if (isPressed) 0.9f else 1f,
+                        label = "custom_emoji_button_scale_animation"
+                    )
                     
                     AsyncImage(
                         model = ImageRequest.Builder(context)
-                            .data(sticker.url)
-                            .memoryCacheKey(sticker.fileId)
-                            .diskCacheKey(sticker.fileId)
+                            .data(emoji.url)
+                            .memoryCacheKey(emoji.fileId)
+                            .diskCacheKey(emoji.fileId)
                             .build(),
                         contentDescription = null,
                         modifier = Modifier
+                            .graphicsLayer(scaleX = scale, scaleY = scale)
                             .aspectRatio(1f)
                             .clickable(
                                 interactionSource = interactionSource,
                                 indication = null
-                            ) { onStickerClick(sticker) },
+                            ) { onEmojiClick(pack, emoji) },
                         contentScale = ContentScale.Fit
                     )
                 }
@@ -161,8 +168,8 @@ fun StickerInputPanel(
 }
 
 @Composable
-private fun StickerPackTab(
-    pack: StickerPack,
+private fun EmojiPackTab(
+    pack: EmojiPack,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -193,7 +200,7 @@ private fun StickerPackTab(
                 .build(),
             contentDescription = pack.name,
             modifier = Modifier
-                .size(PACK_LOGO_SIZE)
+                .size(EMOJI_PACK_LOGO_SIZE)
                 .clip(MaterialTheme.shapes.small),
             contentScale = ContentScale.Fit
         )
