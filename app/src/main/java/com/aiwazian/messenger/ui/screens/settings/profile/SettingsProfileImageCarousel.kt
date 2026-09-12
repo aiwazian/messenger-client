@@ -54,15 +54,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Avatar
 import com.aiwazian.messenger.ui.screens.chat.components.PhotoPickerBottomSheet
 
-/**
- * @param onAddPhoto получает уже обрезанный под круг кадр в кеше, а не исходный
- * файл галереи: кадрирование живёт внутри шторки выбора.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsProfileImageCarousel(
