@@ -10,6 +10,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlexAlignSelf
+import androidx.compose.foundation.layout.FlexBox
+import androidx.compose.foundation.layout.FlexDirection
+import androidx.compose.foundation.layout.FlexJustifyContent
+import androidx.compose.foundation.layout.FlexWrap
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -216,7 +221,7 @@ fun MessageBubble(
             
             Box(
                 modifier = Modifier
-                    .widthIn(min = 90.dp, max = dynamicMaxWidth)
+                    .widthIn(min = 64.dp, max = dynamicMaxWidth)
                     .padding(horizontal = BubbleHorizontalPadding)
                     .clip(MaterialTheme.shapes.large)
                     .background(containerColor)
@@ -362,22 +367,50 @@ fun MessageBubble(
                     }
                     
                     if (!message.text.isNullOrBlank()) {
-                        MessageText(
-                            text = message.text,
-                            onLinkClicked = handleLinkClicked,
-                            onUsernameClicked = onUsernameClicked,
-                            onEmailClicked = onEmailClicked
-                        )
+                        FlexBox(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 4.dp),
+                            config = {
+                                direction(FlexDirection.Row)
+                                wrap(FlexWrap.Wrap)
+                                justifyContent(FlexJustifyContent.End)
+                                gap(4.dp)
+                            }) {
+                            MessageText(
+                                text = message.text,
+                                modifier = Modifier
+                                    .widthIn(max = contentMaxWidth - 16.dp)
+                                    .padding(bottom = 2.dp)
+                                    .flex {
+                                        grow(1f)
+                                    },
+                                onLinkClicked = handleLinkClicked,
+                                onUsernameClicked = onUsernameClicked,
+                                onEmailClicked = onEmailClicked
+                            )
+                            MessageFooter(
+                                time = item.time,
+                                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                                modifier = Modifier.flex {
+                                    alignSelf(FlexAlignSelf.End)
+                                },
+                                status = message.status,
+                                isEdited = message.isEdited
+                            )
+                        }
                     }
                 }
                 
-                Box(modifier = Modifier.align(Alignment.BottomEnd)) {
-                    MessageFooter(
-                        time = item.time,
-                        isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
-                        status = message.status,
-                        isEdited = message.isEdited
-                    )
+                if (message.text.isNullOrBlank()) {
+                    Box(modifier = Modifier.align(Alignment.BottomEnd)) {
+                        StickerMessageFooter(
+                            time = item.time,
+                            isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                            status = message.status,
+                            modifier = Modifier.padding(4.dp)
+                        )
+                    }
                 }
                 
                 val readers = remember(item.readInfo) {

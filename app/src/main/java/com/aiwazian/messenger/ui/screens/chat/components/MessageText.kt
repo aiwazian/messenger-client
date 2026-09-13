@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,7 +19,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.ui.components.rememberCustomEmojiInlineContent
 import com.aiwazian.messenger.utils.LinkNormalizer
@@ -29,6 +27,7 @@ import com.aiwazian.messenger.utils.RegexPatterns
 @Composable
 fun MessageText(
     text: String,
+    modifier: Modifier = Modifier,
     onLinkClicked: ((String) -> Unit)? = null,
     onUsernameClicked: ((String) -> Unit)? = null,
     onEmailClicked: ((String) -> Unit)? = null
@@ -68,7 +67,7 @@ fun MessageText(
         fontSize = 16.sp,
         lineHeight = 18.sp,
         inlineContent = inlineContent,
-        modifier = Modifier.padding(8.dp)
+        modifier = modifier
     )
 }
 

@@ -119,7 +119,7 @@ fun StickerMessageItem(
 }
 
 @Composable
-private fun StickerMessageFooter(
+fun StickerMessageFooter(
     time: String,
     isRead: Boolean?,
     status: MessageStatus,
