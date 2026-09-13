@@ -63,7 +63,6 @@ import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.rounded.Photo
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -121,8 +120,6 @@ import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.CustomEmojiViewModel
 import com.aiwazian.messenger.ui.components.mediaTransitionBounds
 import com.aiwazian.messenger.ui.components.mediaTransitionVisibility
-import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.pickerMediaKey
 import com.aiwazian.messenger.ui.screens.chat.ChatEmojiViewModel
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
@@ -151,7 +148,6 @@ fun MediaPickerBottomSheet(
     
     val customEmojiViewModel: CustomEmojiViewModel = hiltViewModel()
     
-    val navBackStack = LocalNavBackStack.current
     val density = LocalDensity.current
     
     val context = LocalContext.current
@@ -365,7 +361,7 @@ fun MediaPickerBottomSheet(
                 }
             }
             
-            AnimatedVisibility(
+            this@AppBottomSheet.AnimatedVisibility(
                 visible = isEmojiPanelVisible,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -387,11 +383,8 @@ fun MediaPickerBottomSheet(
                                 insertCustomEmoji(view, pack.id, emoji)
                             }
                         }
-                    },
-                    onSettingsClick = {
-                        onDismissRequest()
-                        navBackStack.add(AppRoute.SettingsStickers)
-                    })
+                    }
+                )
             }
         }
     }
@@ -414,7 +407,8 @@ fun MediaPickerBottomSheet(
             onMediaTransformChange = { item, transform ->
                 viewModel.setMediaTransform(item.uri, transform)
             },
-            onCurrentItemChange = viewModel::openMedia)
+            onCurrentItemChange = viewModel::openMedia
+        )
     }
     
     if (isResetDialogVisible) {
@@ -454,8 +448,7 @@ private fun MediaPickerEmojiPanel(
     packs: List<EmojiPack>,
     height: Dp,
     bottomPadding: Dp,
-    onEmojiClick: (EmojiPack, CustomEmoji) -> Unit,
-    onSettingsClick: () -> Unit
+    onEmojiClick: (EmojiPack, CustomEmoji) -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -468,15 +461,6 @@ private fun MediaPickerEmojiPanel(
             ) {}
     ) {
         EmojiInputPanel(packs = packs, onEmojiClick = onEmojiClick)
-        
-        IconButton(
-            onClick = onSettingsClick,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .navigationBarsPadding()
-        ) {
-            Icon(Icons.Rounded.Settings, null)
-        }
         
         BottomBarScrim(height = bottomPadding)
     }

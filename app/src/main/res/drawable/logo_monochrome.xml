@@ -1,23 +1,19 @@
-<!--
-  ~ Copyright (c) 2026. Aiwazian.
-  -->
-
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <group
-        android:scaleX="0.8"
-        android:scaleY="0.8"
-        android:translateX="10.8"
-        android:translateY="10.8">
-        <path
-            android:pathData="M37.8,33.5H70.2C75.6,33.5 78.8,36.7 78.8,42.1V59.4C78.8,64.8 75.6,68 70.2,68H68.7V73L70.8,78.2L57.9,68H37.8C32.4,68 29.2,64.8 29.2,59.4V42.1C29.2,36.7 32.4,33.5 37.8,33.5Z"
-            android:strokeLineJoin="round"
-            android:strokeWidth="4.3"
-            android:fillColor="#00000000"
-            android:strokeColor="@color/splashScreenIcon"
-            android:strokeLineCap="round" />
-    </group>
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+  <group
+      android:scaleX="0.74"
+      android:scaleY="0.74"
+      android:translateX="66.56"
+      android:translateY="66.56">
+    <path
+        android:pathData="M151,134H361C381,134 397,150 397,170V318C397,339 382,356 357,356H355V408L285,356H151C129,356 114,340 114,319V170C114,150 130,134 151,134Z"
+        android:strokeLineJoin="round"
+        android:strokeWidth="21"
+        android:fillColor="#00000000"
+        android:strokeColor="@color/splashScreenIcon"
+        android:strokeLineCap="round" />
+  </group>
 </vector>
