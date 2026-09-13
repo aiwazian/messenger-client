@@ -187,6 +187,12 @@ fun MessageBubble(
         }
     }
     
+    val mediaAttachments = remember(message.attachments) {
+        message.attachments.filter {
+            it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF
+        }
+    }
+    
     SwipeToReplyBox(
         enabled = item.canReply && onSwipeToReply != null,
         onReply = { onSwipeToReply?.invoke() },
@@ -299,9 +305,6 @@ fun MessageBubble(
                         )
                     }
                     
-                    val mediaAttachments = message.attachments.filter {
-                        it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF
-                    }
                     if (mediaAttachments.isNotEmpty()) {
                         val mediaSizes = mediaAttachments.map { attachment ->
                             val frameWidth = attachment.width ?: 0
@@ -404,12 +407,22 @@ fun MessageBubble(
                 
                 if (message.text.isNullOrBlank()) {
                     Box(modifier = Modifier.align(Alignment.BottomEnd)) {
-                        StickerMessageFooter(
-                            time = item.time,
-                            isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
-                            status = message.status,
-                            modifier = Modifier.padding(4.dp)
-                        )
+                        if (mediaAttachments.isNotEmpty()) {
+                            StickerMessageFooter(
+                                time = item.time,
+                                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                                status = message.status,
+                                modifier = Modifier.padding(4.dp)
+                            )
+                        } else {
+                            MessageFooter(
+                                time = item.time,
+                                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                status = message.status,
+                                isEdited = message.isEdited
+                            )
+                        }
                     }
                 }
                 
