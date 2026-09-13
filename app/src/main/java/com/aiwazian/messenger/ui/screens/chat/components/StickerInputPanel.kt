@@ -114,7 +114,7 @@ fun StickerInputPanel(
             columns = GridCells.Adaptive(minSize = STICKER_CELL_MIN_SIZE),
             state = gridState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 4.dp, top = 40.dp, end = 4.dp, bottom = 4.dp),
+            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 40.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
