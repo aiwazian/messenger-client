@@ -2,11 +2,15 @@ package com.aiwazian.messenger.ui.screens.settings.emoji
 
 import androidx.annotation.StringRes
 import com.aiwazian.messenger.domain.EmojiPack
+import com.aiwazian.messenger.ui.components.ShareItem
 
 data class EmojiPackListUiState(
     val packs: List<EmojiPack> = emptyList(),
     val query: String = "",
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val sharingPack: EmojiPack? = null,
+    val shareTargets: List<ShareItem> = emptyList(),
+    val selectedShareChatIds: Set<Long> = emptySet()
 ) {
     val visiblePacks: List<EmojiPack>
         get() {

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Photo
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -44,7 +45,8 @@ fun EmojiPackCard(
     deleteMessage: String,
     onClick: () -> Unit,
     onDelete: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onShare: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     
@@ -94,6 +96,21 @@ fun EmojiPackCard(
                 AppDropdownMenu(
                     expanded = isMenuExpanded,
                     onDismissRequest = { isMenuExpanded = false }) {
+                    if (onShare != null) {
+                        AppDropdownMenuItem(
+                            text = stringResource(R.string.share),
+                            onClick = {
+                                isMenuExpanded = false
+                                onShare()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Rounded.Share,
+                                    contentDescription = null
+                                )
+                            })
+                    }
+                    
                     AppDropdownMenuItem(
                         text = stringResource(R.string.emoji_pack_delete_action),
                         onClick = {

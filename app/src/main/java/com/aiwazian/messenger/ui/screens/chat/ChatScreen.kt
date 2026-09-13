@@ -94,6 +94,7 @@ import com.aiwazian.messenger.ui.screens.chat.components.ChatSearchNavigationBut
 import com.aiwazian.messenger.ui.screens.chat.components.ChatSearchSummaryBar
 import com.aiwazian.messenger.ui.screens.chat.components.ChatTopBar
 import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
+import com.aiwazian.messenger.ui.screens.chat.components.EmojiPackBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
@@ -104,6 +105,7 @@ import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.UnreadSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
 import com.aiwazian.messenger.utils.ActiveChatTracker
+import com.aiwazian.messenger.utils.EmojiLink
 import com.aiwazian.messenger.utils.StickerLink
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.FlowPreview
@@ -149,6 +151,8 @@ fun ChatScreen(
     val readerAvatars by readersViewModel.avatars.collectAsState()
     val stickersViewModel: ChatStickersViewModel = hiltViewModel()
     val stickersState by stickersViewModel.uiState.collectAsState()
+    val emojiViewModel: ChatEmojiViewModel = hiltViewModel()
+    val emojiState by emojiViewModel.uiState.collectAsState()
     val isChatMuted by notificationsViewModel.isMuted.collectAsState()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -814,6 +818,22 @@ fun ChatScreen(
             onCopyLink = {
                 stickersViewModel.closePack()
                 chatViewModel.copyLink(StickerLink.build(pack.username))
+            })
+    }
+    
+    emojiState.openedPack?.let { pack ->
+        EmojiPackBottomSheet(
+            pack = pack,
+            onDismiss = emojiViewModel::closePack,
+            onInstall = emojiViewModel::installOpenedPack,
+            onUninstall = emojiViewModel::uninstallOpenedPack,
+            onShare = {
+                emojiViewModel.closePack()
+                chatViewModel.startShareLink(EmojiLink.build(pack.username))
+            },
+            onCopyLink = {
+                emojiViewModel.closePack()
+                chatViewModel.copyLink(EmojiLink.build(pack.username))
             })
     }
     

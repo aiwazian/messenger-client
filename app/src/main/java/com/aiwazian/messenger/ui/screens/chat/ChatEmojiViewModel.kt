@@ -13,7 +13,8 @@ import javax.inject.Inject
 
 data class ChatEmojiUiState(
     val addedPacks: List<EmojiPack> = emptyList(),
-    val packsById: Map<Long, EmojiPack> = emptyMap()
+    val packsById: Map<Long, EmojiPack> = emptyMap(),
+    val openedPack: EmojiPack? = null
 )
 
 @HiltViewModel
@@ -32,6 +33,66 @@ class ChatEmojiViewModel @Inject constructor(
         }
         
         loadAddedPacks()
+    }
+    
+    fun openPackByUsername(username: String) {
+        viewModelScope.launch {
+            emojiRepository.getPackByUsername(username).onSuccess { pack ->
+                _uiState.update {
+                    it.copy(
+                        openedPack = pack,
+                        packsById = it.packsById + (pack.id to pack)
+                    )
+                }
+            }
+        }
+    }
+    
+    fun closePack() {
+        _uiState.update { it.copy(openedPack = null) }
+    }
+    
+    fun installOpenedPack() {
+        val pack = _uiState.value.openedPack ?: return
+        
+        viewModelScope.launch {
+            emojiRepository.installPack(pack.id).onSuccess {
+                updateInstalled(pack.id, true)
+                loadAddedPacks()
+                
+                _uiState.update { it.copy(openedPack = null) }
+            }
+        }
+    }
+    
+    fun uninstallOpenedPack() {
+        val pack = _uiState.value.openedPack ?: return
+        
+        viewModelScope.launch {
+            emojiRepository.uninstallPack(pack.id).onSuccess {
+                updateInstalled(pack.id, false)
+                loadAddedPacks()
+                
+                _uiState.update { it.copy(openedPack = null) }
+            }
+        }
+    }
+    
+    private fun updateInstalled(packId: Long, isInstalled: Boolean) {
+        _uiState.update { state ->
+            val opened =
+                state.openedPack?.takeIf { it.id == packId }?.copy(isInstalled = isInstalled)
+            val cached = state.packsById[packId]?.copy(isInstalled = isInstalled)
+            
+            state.copy(
+                openedPack = opened ?: state.openedPack,
+                packsById = if (cached == null) {
+                    state.packsById
+                } else {
+                    state.packsById + (packId to cached)
+                }
+            )
+        }
     }
     
     private fun loadAddedPacks() {
