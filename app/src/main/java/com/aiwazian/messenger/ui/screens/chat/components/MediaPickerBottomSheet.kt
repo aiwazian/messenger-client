@@ -754,4 +754,83 @@ private fun MediaPickerResetDialog(onCancel: () -> Unit, onReset: () -> Unit) {
                     contentColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Text(text = stringResource(R.string.media_picker_reset_action
+                Text(text = stringResource(R.string.media_picker_reset_action))
+            }
+        })
+}
+
+private fun formatDuration(durationMs: Long): String {
+    val totalSeconds = durationMs / 1000
+    val hours = totalSeconds / 3600
+    val minutes = totalSeconds % 3600 / 60
+    val seconds = totalSeconds % 60
+    
+    return if (hours > 0) {
+        String.format(Locale.ROOT, "%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format(Locale.ROOT, "%d:%02d", minutes, seconds)
+    }
+}
+
+private fun mediaPermissions(): Array<String> = when {
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> arrayOf(
+        Manifest.permission.READ_MEDIA_IMAGES,
+        Manifest.permission.READ_MEDIA_VIDEO,
+        Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+    )
+    
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> arrayOf(
+        Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO
+    )
+    
+    else -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+}
+
+private fun Context.hasMediaPermission(): Boolean = when {
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
+        isGranted(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) || (isGranted(
+            Manifest.permission.READ_MEDIA_IMAGES
+        ) && isGranted(Manifest.permission.READ_MEDIA_VIDEO))
+    }
+    
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+        isGranted(Manifest.permission.READ_MEDIA_IMAGES) && isGranted(Manifest.permission.READ_MEDIA_VIDEO)
+    }
+    
+    else -> isGranted(Manifest.permission.READ_EXTERNAL_STORAGE)
+}
+
+private fun Context.isGranted(permission: String): Boolean =
+    ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+
+private fun Context.canRequestMediaPermission(wasAsked: Boolean): Boolean {
+    if (!wasAsked) return true
+    
+    val activity = findActivity() ?: return false
+    
+    return mediaPermissions().any {
+        ActivityCompat.shouldShowRequestPermissionRationale(activity, it)
+    }
+}
+
+private fun Context.openAppSettings() {
+    val intent = Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)
+    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    
+    startActivity(intent)
+}
+
+private val TOOLBAR_SHAPE = RoundedCornerShape(24.dp)
+private val TOOLBAR_ELEVATION = 3.dp
+private val LABEL_SHAPE = RoundedCornerShape(6.dp)
+private val SELECTED_CORNER_RADIUS = 12.dp
+private val EMOJI_PANEL_SHAPE = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+private val EMOJI_PANEL_MIN_HEIGHT = 280.dp
+private val KEYBOARD_VISIBILITY_THRESHOLD = 100.dp
+private const val EMOJI_PANEL_ANIMATION_DURATION_MS = 250
+private const val LABEL_SCRIM_ALPHA = 0.45f
+private const val GIF_LABEL = "GIF"
+private const val GRID_COLUMNS = 3
+private const val SELECTED_SCALE = 0.9f
+private const val SELECTED_OVERSHOOT_SCALE = 0.85f
