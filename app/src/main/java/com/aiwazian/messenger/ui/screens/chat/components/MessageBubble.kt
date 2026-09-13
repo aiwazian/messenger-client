@@ -80,8 +80,10 @@ import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.ui.components.mediaTransitionOrigin
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
+import com.aiwazian.messenger.ui.screens.chat.ChatEmojiViewModel
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
 import com.aiwazian.messenger.ui.screens.chat.ChatStickersViewModel
+import com.aiwazian.messenger.utils.EmojiLink
 import com.aiwazian.messenger.utils.StickerLink
 import com.aiwazian.messenger.utils.UiText
 import java.time.LocalDate
@@ -124,6 +126,8 @@ fun MessageBubble(
     val stickersViewModel: ChatStickersViewModel = hiltViewModel()
     val stickersState by stickersViewModel.uiState.collectAsState()
     
+    val emojiViewModel: ChatEmojiViewModel = hiltViewModel()
+    
     val backgroundColor by animateColorAsState(
         targetValue = if (item.isHighlighted) MaterialTheme.colorScheme.primary.copy(
             alpha = 0.1f
@@ -161,12 +165,15 @@ fun MessageBubble(
     }
     
     val handleLinkClicked: (String) -> Unit = { url ->
-        val packUsername = StickerLink.parseUsername(url)
+        val stickerPackUsername = StickerLink.parseUsername(url)
+        val emojiPackUsername = EmojiLink.parseUsername(url)
         
-        if (packUsername != null) {
-            stickersViewModel.openPackByUsername(packUsername)
-        } else {
-            onLinkClicked?.invoke(url)
+        when {
+            stickerPackUsername != null -> stickersViewModel.openPackByUsername(stickerPackUsername)
+            
+            emojiPackUsername != null -> emojiViewModel.openPackByUsername(emojiPackUsername)
+            
+            else -> onLinkClicked?.invoke(url)
         }
     }
     
