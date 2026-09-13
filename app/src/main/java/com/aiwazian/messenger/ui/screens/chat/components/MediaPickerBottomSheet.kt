@@ -11,27 +11,41 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.widget.EditText
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -44,10 +58,10 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.outlined.EmojiEmotions
+import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.rounded.Photo
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.ButtonDefaults
@@ -72,14 +86,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -94,14 +109,19 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.video.VideoFrameDecoder
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.CustomEmoji
 import com.aiwazian.messenger.domain.DeviceMediaItem
+import com.aiwazian.messenger.domain.EmojiPack
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.extensions.findActivity
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDialog
+import com.aiwazian.messenger.ui.components.BottomBarScrim
+import com.aiwazian.messenger.ui.components.CustomEmojiViewModel
 import com.aiwazian.messenger.ui.components.mediaTransitionBounds
 import com.aiwazian.messenger.ui.components.mediaTransitionVisibility
 import com.aiwazian.messenger.ui.components.pickerMediaKey
+import com.aiwazian.messenger.ui.screens.chat.ChatEmojiViewModel
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -112,6 +132,7 @@ fun MediaPickerBottomSheet(
     chatId: Long,
     replyTo: MessageReplyPreview?,
     caption: String,
+    keyboardHeight: Dp,
     onCaptionChange: (String) -> Unit,
     onDismissRequest: () -> Unit,
     onFileSystemClick: () -> Unit,
@@ -122,11 +143,42 @@ fun MediaPickerBottomSheet(
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val coroutineScope = rememberCoroutineScope()
     
+    val emojiViewModel: ChatEmojiViewModel = hiltViewModel()
+    val emojiState by emojiViewModel.uiState.collectAsStateWithLifecycle()
+    
+    val customEmojiViewModel: CustomEmojiViewModel = hiltViewModel()
+    
+    val density = LocalDensity.current
+    
     val context = LocalContext.current
     var hasPermission by remember { mutableStateOf(context.hasMediaPermission()) }
     var wasAsked by remember { mutableStateOf(false) }
     var previewIndex by remember { mutableStateOf<Int?>(null) }
     var isResetDialogVisible by remember { mutableStateOf(false) }
+    var isEmojiPanelVisible by remember { mutableStateOf(false) }
+    var captionInputView by remember { mutableStateOf<EditText?>(null) }
+    var measuredKeyboardHeight by remember { mutableStateOf(keyboardHeight) }
+    
+    val imeInsets = WindowInsets.ime
+    val imeHeight = with(density) {
+        imeInsets.getBottom(density).toDp()
+    }
+    val bottomPadding = with(density) {
+        WindowInsets.navigationBars.getBottom(density).toDp()
+    }
+    
+    val isKeyboardVisible = imeHeight > KEYBOARD_VISIBILITY_THRESHOLD
+    val emojiPanelHeight = measuredKeyboardHeight.coerceAtLeast(EMOJI_PANEL_MIN_HEIGHT)
+    
+    val emojiPanelPadding by animateDpAsState(
+        targetValue = if (isEmojiPanelVisible) {
+            (emojiPanelHeight - bottomPadding).coerceAtLeast(0.dp)
+        } else {
+            0.dp
+        },
+        animationSpec = tween(durationMillis = EMOJI_PANEL_ANIMATION_DURATION_MS),
+        label = "media_picker_emoji_panel_padding"
+    )
     
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -154,6 +206,34 @@ fun MediaPickerBottomSheet(
         } else {
             permissionLauncher.launch(mediaPermissions())
         }
+    }
+    
+    LaunchedEffect(imeHeight) {
+        if (imeHeight > measuredKeyboardHeight) {
+            measuredKeyboardHeight = imeHeight
+        }
+    }
+    
+    LaunchedEffect(isKeyboardVisible) {
+        if (isKeyboardVisible) {
+            isEmojiPanelVisible = false
+        }
+    }
+    
+    LaunchedEffect(uiState.selected.isEmpty()) {
+        if (uiState.selected.isEmpty()) {
+            isEmojiPanelVisible = false
+        }
+    }
+    
+    LaunchedEffect(isEmojiPanelVisible, isKeyboardVisible) {
+        if (isEmojiPanelVisible || isKeyboardVisible) {
+            emojiViewModel.preloadPacks()
+        }
+    }
+    
+    BackHandler(enabled = isEmojiPanelVisible) {
+        isEmojiPanelVisible = false
     }
     
     AppBottomSheet(
@@ -243,6 +323,7 @@ fun MediaPickerBottomSheet(
                     .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) }
                     .navigationBarsPadding()
                     .imePadding()
+                    .padding(bottom = emojiPanelPadding)
                     .padding(10.dp)
             ) {
                 AnimatedContent(
@@ -253,7 +334,21 @@ fun MediaPickerBottomSheet(
                     if (hasSelection) {
                         CaptionRow(
                             caption = caption,
+                            isEmojiPanelVisible = isEmojiPanelVisible,
                             onCaptionChange = onCaptionChange,
+                            onResolveEmoji = customEmojiViewModel::resolveEmoji,
+                            onEmojiClick = {
+                                if (isEmojiPanelVisible) {
+                                    isEmojiPanelVisible = false
+                                    
+                                    captionInputView?.let { view -> focusMessageInput(view) }
+                                } else {
+                                    isEmojiPanelVisible = true
+                                    
+                                    captionInputView?.let { view -> hideKeyboardKeepFocus(view) }
+                                }
+                            },
+                            onInputViewReady = { view -> captionInputView = view },
                             onSendClick = {
                                 viewModel.send(
                                     chatId = chatId, replyTo = replyTo, caption = caption
@@ -264,6 +359,32 @@ fun MediaPickerBottomSheet(
                         SourceRow(onFileClick = onFileSystemClick)
                     }
                 }
+            }
+            
+            this@AppBottomSheet.AnimatedVisibility(
+                visible = isEmojiPanelVisible,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) },
+                enter = slideInVertically(
+                    animationSpec = tween(durationMillis = EMOJI_PANEL_ANIMATION_DURATION_MS)
+                ) { it },
+                exit = slideOutVertically(
+                    animationSpec = tween(durationMillis = EMOJI_PANEL_ANIMATION_DURATION_MS)
+                ) { it }
+            ) {
+                MediaPickerEmojiPanel(
+                    packs = emojiState.addedPacks,
+                    height = emojiPanelHeight,
+                    bottomPadding = bottomPadding,
+                    onEmojiClick = { pack, emoji ->
+                        captionInputView?.let { view ->
+                            coroutineScope.launch {
+                                insertCustomEmoji(view, pack.id, emoji)
+                            }
+                        }
+                    }
+                )
             }
         }
     }
@@ -286,7 +407,8 @@ fun MediaPickerBottomSheet(
             onMediaTransformChange = { item, transform ->
                 viewModel.setMediaTransform(item.uri, transform)
             },
-            onCurrentItemChange = viewModel::openMedia)
+            onCurrentItemChange = viewModel::openMedia
+        )
     }
     
     if (isResetDialogVisible) {
@@ -318,6 +440,29 @@ private fun MediaPickerToolbar(
         contentAlignment = Alignment.Center
     ) {
         content()
+    }
+}
+
+@Composable
+private fun MediaPickerEmojiPanel(
+    packs: List<EmojiPack>,
+    height: Dp,
+    bottomPadding: Dp,
+    onEmojiClick: (EmojiPack, CustomEmoji) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(EMOJI_PANEL_SHAPE)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() }, indication = null
+            ) {}
+    ) {
+        EmojiInputPanel(packs = packs, onEmojiClick = onEmojiClick)
+        
+        BottomBarScrim(height = bottomPadding)
     }
 }
 
@@ -492,45 +637,48 @@ private fun SourceRow(onFileClick: () -> Unit) {
 
 @Composable
 private fun CaptionRow(
-    caption: String, onCaptionChange: (String) -> Unit, onSendClick: () -> Unit
+    caption: String,
+    isEmojiPanelVisible: Boolean,
+    onCaptionChange: (String) -> Unit,
+    onResolveEmoji: suspend (Long) -> CustomEmoji?,
+    onEmojiClick: () -> Unit,
+    onInputViewReady: (EditText) -> Unit,
+    onSendClick: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom
     ) {
-        BasicTextField(
-            value = caption,
-            onValueChange = onCaptionChange,
+        IconButton(onClick = onEmojiClick) {
+            AnimatedContent(
+                targetState = isEmojiPanelVisible,
+                transitionSpec = {
+                    if (targetState > initialState) {
+                        slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
+                    } else {
+                        slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
+                    }
+                }) { isPanelVisible ->
+                Icon(
+                    imageVector = if (isPanelVisible) {
+                        Icons.Outlined.Keyboard
+                    } else {
+                        Icons.Outlined.EmojiEmotions
+                    },
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        
+        CustomEmojiTextField(
+            text = caption,
+            hint = stringResource(R.string.media_picker_caption),
+            onTextChange = onCaptionChange,
+            onResolveEmoji = onResolveEmoji,
             modifier = Modifier
                 .weight(1f)
                 .align(Alignment.CenterVertically),
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                color = MaterialTheme.colorScheme.onSurface,
-                lineHeight = 16.sp,
-                fontSize = 16.sp
-            ),
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.Sentences
-            ),
-            maxLines = 5,
-            minLines = 1,
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            decorationBox = { innerTextField ->
-                Box(
-                    modifier = Modifier.padding(
-                        vertical = 12.dp, horizontal = 14.dp
-                    )
-                ) {
-                    if (caption.isEmpty()) {
-                        Text(
-                            text = stringResource(R.string.media_picker_caption),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            lineHeight = 16.sp,
-                            fontSize = 16.sp
-                        )
-                    }
-                    innerTextField()
-                }
-            },
+            onViewReady = onInputViewReady
         )
         
         IconButton(onClick = onSendClick) {
@@ -661,6 +809,10 @@ private val TOOLBAR_SHAPE = RoundedCornerShape(24.dp)
 private val TOOLBAR_ELEVATION = 3.dp
 private val LABEL_SHAPE = RoundedCornerShape(6.dp)
 private val SELECTED_CORNER_RADIUS = 12.dp
+private val EMOJI_PANEL_SHAPE = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+private val EMOJI_PANEL_MIN_HEIGHT = 280.dp
+private val KEYBOARD_VISIBILITY_THRESHOLD = 100.dp
+private const val EMOJI_PANEL_ANIMATION_DURATION_MS = 250
 private const val LABEL_SCRIM_ALPHA = 0.45f
 private const val GIF_LABEL = "GIF"
 private const val GRID_COLUMNS = 3

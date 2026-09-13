@@ -1,12 +1,7 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.content.pm.PackageManager
-import android.graphics.drawable.GradientDrawable
 import android.net.Uri
-import android.text.Editable
-import android.text.InputType
-import android.text.TextWatcher
-import android.util.TypedValue
 import android.widget.EditText
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -93,7 +88,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -113,17 +107,12 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.CustomEmoji
 import com.aiwazian.messenger.enums.ChatType
-import com.aiwazian.messenger.extensions.findActivity
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppPrimaryScrollableTabRow
@@ -279,6 +268,7 @@ fun ChatInputSection(
                                 chatViewModel = chatViewModel,
                                 isStickerPanelVisible = isStickersVisible,
                                 isKeyboardVisible = isKeyboardVisible,
+                                keyboardHeight = keyboardHeight,
                                 onShowStickerPanel = showStickerPanel,
                                 onInputViewReady = onInputViewReady,
                                 onResolveEmoji = customEmojiViewModel::resolveEmoji
@@ -302,6 +292,7 @@ fun ChatInputSection(
                                 chatViewModel = chatViewModel,
                                 isStickerPanelVisible = isStickersVisible,
                                 isKeyboardVisible = isKeyboardVisible,
+                                keyboardHeight = keyboardHeight,
                                 onShowStickerPanel = showStickerPanel,
                                 onInputViewReady = onInputViewReady,
                                 onResolveEmoji = customEmojiViewModel::resolveEmoji
@@ -376,6 +367,7 @@ fun ChatInputSection(
                                     chatViewModel = chatViewModel,
                                     isStickerPanelVisible = isStickersVisible,
                                     isKeyboardVisible = isKeyboardVisible,
+                                    keyboardHeight = keyboardHeight,
                                     onShowStickerPanel = showStickerPanel,
                                     onInputViewReady = onInputViewReady,
                                     onResolveEmoji = customEmojiViewModel::resolveEmoji
@@ -490,6 +482,7 @@ private fun InputMessage(
     chatViewModel: ChatViewModel,
     isStickerPanelVisible: Boolean,
     isKeyboardVisible: Boolean,
+    keyboardHeight: Dp,
     onShowStickerPanel: () -> Unit,
     onInputViewReady: (EditText) -> Unit,
     onResolveEmoji: suspend (Long) -> CustomEmoji?
@@ -498,40 +491,11 @@ private fun InputMessage(
     var micTranslationX by remember { mutableFloatStateOf(0f) }
     var micTranslationY by remember { mutableFloatStateOf(0f) }
     
-    val density = LocalDensity.current
-    
     val mediaPickerViewModel: MediaPickerViewModel = hiltViewModel()
     
     var inputView by remember { mutableStateOf<EditText?>(null) }
-    val textSync = remember { MessageInputTextSync() }
     
     val inputHint = stringResource(R.string.message)
-    val inputTextColor = MaterialTheme.colorScheme.onSurface.toArgb()
-    val inputHintColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
-    val inputCursorColor = MaterialTheme.colorScheme.primary.toArgb()
-    val inputSelectionColor = MaterialTheme.colorScheme.primary
-        .copy(alpha = INPUT_SELECTION_ALPHA)
-        .toArgb()
-    val inputVerticalPadding = with(density) { 12.dp.roundToPx() }
-    val inputCursorWidth = with(density) { 2.dp.roundToPx() }
-    
-    LaunchedEffect(inputView, uiState.messageText) {
-        val view = inputView ?: return@LaunchedEffect
-        
-        if (CustomEmojiText.serialize(view.text) == uiState.messageText) {
-            return@LaunchedEffect
-        }
-        
-        val content = buildCustomEmojiText(view, uiState.messageText, onResolveEmoji)
-        
-        textSync.isApplyingExternalText = true
-        textSync.lastReportedText = uiState.messageText
-        
-        view.setText(content)
-        view.setSelection(view.text.length)
-        
-        textSync.isApplyingExternalText = false
-    }
     
     LaunchedEffect(uiState.editingMessageId) {
         if (uiState.editingMessageId == null) return@LaunchedEffect
@@ -709,7 +673,8 @@ private fun InputMessage(
                                 } else {
                                     Icons.Outlined.EmojiEmotions
                                 },
-                                contentDescription = null
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -726,90 +691,19 @@ private fun InputMessage(
                         animationSpec = tween(200)
                     )
                     
-                    AndroidView(
-                        factory = { viewContext ->
-                            EditText(viewContext).apply {
-                                background = null
-                                setPadding(0, inputVerticalPadding, 0, inputVerticalPadding)
-                                setTextSize(TypedValue.COMPLEX_UNIT_SP, INPUT_TEXT_SIZE_SP)
-                                inputType = InputType.TYPE_CLASS_TEXT or
-                                        InputType.TYPE_TEXT_FLAG_MULTI_LINE or
-                                        InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
-                                minLines = 1
-                                maxLines = INPUT_MAX_LINES
-                                
-                                addTextChangedListener(object : TextWatcher {
-                                    override fun beforeTextChanged(
-                                        s: CharSequence?,
-                                        start: Int,
-                                        count: Int,
-                                        after: Int
-                                    ) = Unit
-                                    
-                                    override fun onTextChanged(
-                                        s: CharSequence?,
-                                        start: Int,
-                                        before: Int,
-                                        count: Int
-                                    ) = Unit
-                                    
-                                    override fun afterTextChanged(s: Editable?) {
-                                        if (textSync.isApplyingExternalText || s == null) {
-                                            return
-                                        }
-                                        
-                                        val text = CustomEmojiText.serialize(s)
-                                        
-                                        if (text == textSync.lastReportedText) {
-                                            return
-                                        }
-                                        
-                                        textSync.lastReportedText = text
-                                        
-                                        chatViewModel.changeText(text)
-                                    }
-                                })
-                                
-                                ViewCompat.setOnReceiveContentListener(
-                                    this,
-                                    arrayOf(INPUT_IMAGE_MIME_TYPE)
-                                ) { _, payload ->
-                                    val clip = payload.clip
-                                    val uris = mutableListOf<Uri>()
-                                    
-                                    for (index in 0 until clip.itemCount) {
-                                        clip.getItemAt(index).uri?.let { uris.add(it) }
-                                    }
-                                    
-                                    if (uris.isEmpty()) {
-                                        payload
-                                    } else {
-                                        chatViewModel.sendFiles(uris)
-                                        
-                                        null
-                                    }
-                                }
-                                
-                                inputView = this
-                                
-                                onInputViewReady(this)
-                            }
-                        },
+                    CustomEmojiTextField(
+                        text = uiState.messageText,
+                        hint = inputHint,
+                        onTextChange = chatViewModel::changeText,
+                        onResolveEmoji = onResolveEmoji,
                         modifier = Modifier
                             .fillMaxWidth()
                             .alpha(textFieldAlpha),
-                        update = { view ->
-                            view.hint = inputHint
-                            view.setTextColor(inputTextColor)
-                            view.setHintTextColor(inputHintColor)
-                            view.highlightColor = inputSelectionColor
-                            view.textCursorDrawable = GradientDrawable().apply {
-                                setColor(inputCursorColor)
-                                setSize(inputCursorWidth, 0)
-                            }
-                            view.textSelectHandle?.mutate()?.setTint(inputCursorColor)
-                            view.textSelectHandleLeft?.mutate()?.setTint(inputCursorColor)
-                            view.textSelectHandleRight?.mutate()?.setTint(inputCursorColor)
+                        onReceiveUris = { uris -> chatViewModel.sendFiles(uris) },
+                        onViewReady = { view ->
+                            inputView = view
+                            
+                            onInputViewReady(view)
                         })
                     
                     VoiceRecordingStatus(
@@ -1022,6 +916,7 @@ private fun InputMessage(
             chatId = uiState.chatId,
             replyTo = uiState.replyToMessage,
             caption = uiState.messageText,
+            keyboardHeight = keyboardHeight,
             onCaptionChange = chatViewModel::changeText,
             onDismissRequest = attachmentModal::hide,
             onFileSystemClick = { filePickerLauncher.launch(arrayOf("*/*")) },
@@ -1175,31 +1070,8 @@ private fun VoiceRecordingAmplitudeEffect(amplitude: Float) {
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)))
 }
 
-private class MessageInputTextSync {
-    var isApplyingExternalText = false
-    var lastReportedText = ""
-}
-
-private fun focusMessageInput(view: EditText) {
-    view.requestFocus()
-    
-    view.post {
-        val window = view.context.findActivity()?.window ?: return@post
-        WindowCompat.getInsetsController(window, view).show(WindowInsetsCompat.Type.ime())
-    }
-}
-
-private fun hideKeyboardKeepFocus(view: EditText) {
-    val window = view.context.findActivity()?.window ?: return
-    WindowCompat.getInsetsController(window, view).hide(WindowInsetsCompat.Type.ime())
-}
-
 private val REPLY_PREVIEW_EMOJI_SIZE = 14.sp
 private const val KEYBOARD_MEASURE_DELAY_MS = 300L
-private const val INPUT_TEXT_SIZE_SP = 16f
-private const val INPUT_MAX_LINES = 5
-private const val INPUT_SELECTION_ALPHA = 0.4f
-private const val INPUT_IMAGE_MIME_TYPE = "image/*"
 private const val EMOJI_PANEL_PAGE = 0
 private const val STICKER_PANEL_PAGE = 1
 private const val PANEL_PAGE_COUNT = 2
