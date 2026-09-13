@@ -23,11 +23,6 @@ class FileRepository @Inject constructor(
                 updateFilePath(file.id, file.path)
             }
             
-            /*
-             * Пустыми размерами ничего не затирается: сюда заходят и те, кто о кадре
-             * не знает вовсе — например, завершившееся скачивание. Иначе картинка
-             * теряла бы форму ровно в тот момент, когда её скачали.
-             */
             if (
                 file.width != null &&
                 file.height != null &&
@@ -58,19 +53,20 @@ class FileRepository @Inject constructor(
         fileDao.updatePath(fileId, path)
     }
     
+    suspend fun updateFilePathAndStatus(fileId: String, path: String?, status: DownloadStatus) {
+        fileDao.updatePathAndStatus(fileId, path, status)
+    }
+    
     suspend fun updateFileSize(fileId: String, size: Long) {
         fileDao.updateSize(fileId, size)
     }
     
-    /**
-     * Записывает размеры кадра у уже существующего файла.
-     *
-     * Нужно при отправке: пузырёк с картинкой появляется в чате сразу, а
-     * кадр измеряется по файлу — это чтение с диска, и держать на нём показ
-     * сообщения нельзя.
-     */
     suspend fun updateFileDimensions(fileId: String, width: Int?, height: Int?) {
         fileDao.updateDimensions(fileId, width, height)
+    }
+    
+    suspend fun updateLocalMedia(fileId: String, size: Long, width: Int?, height: Int?) {
+        fileDao.updateLocalMedia(fileId, size, width, height)
     }
     
     suspend fun deleteFile(fileId: String) {

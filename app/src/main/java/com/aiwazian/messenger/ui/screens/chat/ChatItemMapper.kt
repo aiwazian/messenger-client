@@ -1,6 +1,7 @@
 package com.aiwazian.messenger.ui.screens.chat
 
 import android.content.Context
+import android.webkit.MimeTypeMap
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Forward
 import androidx.compose.material.icons.automirrored.outlined.Reply
@@ -273,22 +274,38 @@ class ChatItemMapper(
     }
     
     private fun processAttachments(message: Message): Message {
+        var hasChanges = false
+        
         val updatedAttachments = message.attachments.map { attachment ->
-            if (attachment.localUri != null) {
-                val mimeType = attachment.localUri.getFileType(context)
-                val newType = when {
-                    mimeType == "image/gif" -> AttachmentType.GIF
-                    mimeType.startsWith("image/") -> AttachmentType.IMAGE
-                    mimeType.startsWith("video/") -> AttachmentType.VIDEO
-                    mimeType.startsWith("audio/") -> AttachmentType.VOICE
-                    else -> attachment.type
-                }
-                attachment.copy(type = newType)
-            } else {
-                attachment
+            val localUri = attachment.localUri ?: return@map attachment
+            
+            val mimeType = mimeTypeOf(attachment.extension) ?: localUri.getFileType(context)
+            
+            val newType = when {
+                mimeType == "image/gif" -> AttachmentType.GIF
+                mimeType.startsWith("image/") -> AttachmentType.IMAGE
+                mimeType.startsWith("video/") -> AttachmentType.VIDEO
+                mimeType.startsWith("audio/") -> AttachmentType.VOICE
+                else -> attachment.type
             }
+            
+            if (newType == attachment.type) {
+                return@map attachment
+            }
+            
+            hasChanges = true
+            attachment.copy(type = newType)
         }
-        return message.copy(attachments = updatedAttachments)
+        
+        return if (hasChanges) message.copy(attachments = updatedAttachments) else message
+    }
+    
+    private fun mimeTypeOf(extension: String): String? {
+        if (extension.isBlank()) {
+            return null
+        }
+        
+        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
     }
     
     private fun mergeReadInfo(message: Message): List<MessageReadInfo>? {
