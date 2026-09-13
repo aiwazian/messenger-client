@@ -39,6 +39,7 @@ import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.EmojiPackCard
 import com.aiwazian.messenger.ui.components.FramelessTextBox
+import com.aiwazian.messenger.ui.components.ShareBottomSheet
 import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -142,7 +143,8 @@ fun CreatedEmojiPacksScreen(viewModel: CreatedEmojiPacksViewModel = hiltViewMode
                             )
                         },
                         onDelete = { viewModel.delete(pack.id) },
-                        modifier = Modifier.clip(MaterialTheme.shapes.large)
+                        modifier = Modifier.clip(MaterialTheme.shapes.large),
+                        onShare = { viewModel.share(pack) }
                     )
                 }
                 
@@ -160,5 +162,14 @@ fun CreatedEmojiPacksScreen(viewModel: CreatedEmojiPacksViewModel = hiltViewMode
                 }
             }
         }
+    }
+    
+    if (uiState.sharingPack != null) {
+        ShareBottomSheet(
+            items = uiState.shareTargets,
+            onItemClick = viewModel::toggleShareTarget,
+            onSendClick = viewModel::sendShare,
+            onDismiss = viewModel::dismissShare
+        )
     }
 }

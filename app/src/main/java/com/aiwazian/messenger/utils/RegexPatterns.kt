@@ -70,6 +70,13 @@ object RegexPatterns {
         )
     }
     
+    val EMOJI_LINK by lazy {
+        Regex(
+            "(?:https?://)?(?:www\\.)?aiwazian\\.ru/addemoji/([A-Za-z0-9_]+)",
+            RegexOption.IGNORE_CASE
+        )
+    }
+    
     val CUSTOM_EMOJI_TOKEN by lazy {
         Regex("""\[ce:(\d+):(\d+)]""")
     }
