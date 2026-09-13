@@ -4,9 +4,12 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Done
@@ -29,22 +32,22 @@ import com.aiwazian.messenger.enums.MessageStatus
 fun MessageFooter(
     time: String,
     isRead: Boolean?,
+    modifier: Modifier = Modifier,
     status: MessageStatus = MessageStatus.SENT,
     isEdited: Boolean = false
 ) {
     Row(
-        modifier = Modifier.padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         if (isEdited) {
-            Spacer(modifier = Modifier.size(2.dp))
             Text(
                 text = stringResource(R.string.edited).lowercase(),
                 fontSize = 10.sp,
                 lineHeight = 10.sp,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(modifier = Modifier.size(4.dp))
         }
         
         Text(
@@ -53,8 +56,6 @@ fun MessageFooter(
             lineHeight = 10.sp,
             color = MaterialTheme.colorScheme.onSurface
         )
-        
-        Spacer(modifier = Modifier.size(4.dp))
         
         when (status) {
             MessageStatus.SENDING -> {
@@ -75,18 +76,24 @@ fun MessageFooter(
             }
             
             MessageStatus.SENT -> {
-                if (isRead == true) {
-                    Icon(
-                        Icons.Rounded.DoneAll,
-                        null,
-                        Modifier.size(12.dp)
-                    )
-                } else if (isRead == false) {
-                    Icon(
-                        Icons.Rounded.Done,
-                        null,
-                        Modifier.size(12.dp)
-                    )
+                AnimatedContent(
+                    targetState = isRead,
+                    transitionSpec = {
+                        fadeIn() togetherWith fadeOut()
+                    }) { isRead ->
+                    if (isRead == true) {
+                        Icon(
+                            Icons.Rounded.DoneAll,
+                            null,
+                            Modifier.size(12.dp)
+                        )
+                    } else if (isRead == false) {
+                        Icon(
+                            Icons.Rounded.Done,
+                            null,
+                            Modifier.size(12.dp)
+                        )
+                    }
                 }
             }
         }

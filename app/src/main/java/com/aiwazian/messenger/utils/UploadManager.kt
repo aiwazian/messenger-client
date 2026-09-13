@@ -43,7 +43,8 @@ class UploadManager @Inject constructor(
         fileUri: Uri,
         upload: FileInitResponseDto,
         fileId: String,
-        maxAttempts: Int = DEFAULT_MAX_ATTEMPTS
+        maxAttempts: Int = DEFAULT_MAX_ATTEMPTS,
+        keepLocalCopy: Boolean = true
     ): Result<String> = withContext(Dispatchers.IO) {
         val fileSize = fileUri.getFileSize(context) ?: 0
         
@@ -68,11 +69,9 @@ class UploadManager @Inject constructor(
             try {
                 val fileType = fileUri.getFileType(context)
                 val contentType = fileType.toMediaTypeOrNull()
-                val fileName = fileUri.getFileName(context) ?: "file"
+                val fileName = fileUri.getFileName(context) ?: DEFAULT_FILE_NAME
                 
-                val requestBody = ProgressRequestBody(contentType, fileSize, { progress ->
-                    // TODO Update progress
-                }) {
+                val requestBody = ProgressRequestBody(contentType, fileSize, {}) {
                     context.contentResolver.openInputStream(fileUri)
                         ?: throw IOException("Unable to open input stream")
                 }
@@ -93,18 +92,30 @@ class UploadManager @Inject constructor(
                 val response = call.execute()
                 
                 if (response.isSuccessful) {
-                    val extension = fileName.substringAfterLast('.', "")
-                    val folderName = fileType.getFolderNameFromMimeType()
-                    val path =
-                        File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
-                    path.mkdirs()
-                    val filePath = saveFileLocally(fileUri, "${path}/${fileId}.${extension}")
+                    var localPath: String? = null
                     
-                    fileRepository.updateFileStatus(fileId, DownloadStatus.COMPLETED)
-                    fileRepository.updateFilePath(fileId, filePath)
+                    if (keepLocalCopy) {
+                        localPath = keepLocally(
+                            fileUri = fileUri,
+                            fileId = fileId,
+                            fileName = fileName,
+                            mimeType = fileType,
+                            allowMove = false
+                        )
+                        
+                        if (localPath == null) {
+                            fileRepository.updateFileStatus(fileId, DownloadStatus.COMPLETED)
+                        } else {
+                            fileRepository.updateFilePathAndStatus(
+                                fileId,
+                                localPath,
+                                DownloadStatus.COMPLETED
+                            )
+                        }
+                    }
                     
                     activeUploads.remove(fileId)
-                    return@withContext Result.success(filePath)
+                    return@withContext Result.success(localPath ?: fileUri.toString())
                 }
                 
                 activeUploads.remove(fileId)
@@ -143,6 +154,31 @@ class UploadManager @Inject constructor(
         Result.failure(lastError ?: IOException("Upload failed"))
     }
     
+    suspend fun adoptLocalCopy(
+        fileUri: Uri,
+        fileId: String,
+        status: DownloadStatus
+    ): String? = withContext(Dispatchers.IO) {
+        val fileName = fileUri.getFileName(context) ?: DEFAULT_FILE_NAME
+        val mimeType = fileUri.getFileType(context)
+        
+        val localPath = keepLocally(
+            fileUri = fileUri,
+            fileId = fileId,
+            fileName = fileName,
+            mimeType = mimeType,
+            allowMove = true
+        )
+        
+        if (localPath == null) {
+            fileRepository.updateFileStatus(fileId, status)
+        } else {
+            fileRepository.updateFilePathAndStatus(fileId, localPath, status)
+        }
+        
+        localPath
+    }
+    
     fun cancel(fileId: String) {
         activeUploads[fileId]?.cancel()
         activeUploads.remove(fileId)
@@ -173,26 +209,64 @@ class UploadManager @Inject constructor(
         return if (increased > RetryPolicy.MAX_DELAY) RetryPolicy.MAX_DELAY else increased
     }
     
-    private fun saveFileLocally(uri: Uri, pathName: String): String {
-        val targetFile = File(pathName)
+    private fun keepLocally(
+        fileUri: Uri,
+        fileId: String,
+        fileName: String,
+        mimeType: String,
+        allowMove: Boolean
+    ): String? {
+        val directory = File(
+            context.getExternalFilesDir(null) ?: context.filesDir,
+            mimeType.getFolderNameFromMimeType()
+        )
+        directory.mkdirs()
         
-        if (!targetFile.exists()) {
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                targetFile.outputStream().use { output ->
+        val extension = fileName.substringAfterLast('.', "")
+        val target = File(directory, if (extension.isEmpty()) fileId else "$fileId.$extension")
+        
+        if (target.exists() && target.length() > 0) {
+            return target.absolutePath
+        }
+        
+        val source = if (fileUri.scheme == SCHEME_FILE) fileUri.path?.let { File(it) } else null
+        
+        if (allowMove && source != null && source.renameTo(target)) {
+            return target.absolutePath
+        }
+        
+        return try {
+            val stream = context.contentResolver.openInputStream(fileUri) ?: return null
+            
+            stream.use { input ->
+                target.outputStream().use { output ->
                     input.copyTo(output)
                 }
             }
+            
+            if (allowMove) {
+                source?.delete()
+            }
+            
+            target.absolutePath
+        } catch (e: IOException) {
+            Log.e(TAG, "Unable to keep $fileUri locally: ${e.message}", e)
+            target.delete()
+            null
+        } catch (e: SecurityException) {
+            Log.e(TAG, "Unable to keep $fileUri locally: ${e.message}", e)
+            target.delete()
+            null
         }
-        
-        return targetFile.absolutePath
     }
     
     companion object {
         const val DEFAULT_MAX_ATTEMPTS = 3
         
-        /** Повторять, пока файл не уйдёт либо его не отклонят окончательно. */
         const val UNLIMITED_ATTEMPTS = Int.MAX_VALUE
         
         private const val TAG = "UploadManager"
+        private const val SCHEME_FILE = "file"
+        private const val DEFAULT_FILE_NAME = "file"
     }
 }

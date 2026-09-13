@@ -225,7 +225,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                     fileUri = sourceUri,
                     upload = initResponse,
                     fileId = initResponse.fileId,
-                    maxAttempts = UploadManager.UNLIMITED_ATTEMPTS
+                    maxAttempts = UploadManager.UNLIMITED_ATTEMPTS,
+                    keepLocalCopy = false
                 )
                 
                 if (uploadResult.isFailure) {
@@ -279,14 +280,23 @@ class SendMessageWithFilesUseCase @Inject constructor(
         
         result.onSuccess {
             pendingSendStore.forget(tempId)
-            sourceUris.forEach { uri -> attachmentOutbox.release(uri) }
             
             chatRepository.updateMessageId(tempId, it.id)
             
             chatRepository.updateMessageStatus(it.id, MessageStatus.SENT)
             
-            uploadResults.forEach { uploaded ->
-                fileRepository.updateFileStatus(uploaded.fileId, DownloadStatus.UPLOADED)
+            uploadResults.forEachIndexed { index, uploaded ->
+                val sourceUri = sourceUris.getOrNull(index) ?: return@forEachIndexed
+                
+                val localPath = uploadManager.adoptLocalCopy(
+                    fileUri = sourceUri,
+                    fileId = uploaded.fileId,
+                    status = DownloadStatus.UPLOADED
+                )
+                
+                if (localPath != null) {
+                    attachmentOutbox.release(sourceUri)
+                }
             }
             
             val localChat = chatRepository.getById(chatId).firstOrNull()
@@ -328,20 +338,22 @@ class SendMessageWithFilesUseCase @Inject constructor(
     ) {
         attachments.forEachIndexed { index, attachment ->
             val size = sizeOf(sourceUris[index])
+            val frame = frames[index]
             
-            if (size > 0 && size != attachment.size) {
-                fileRepository.updateFileSize(attachment.fileId, size)
+            val hasNewSize = size > 0 && size != attachment.size
+            val hasNewFrame = frame != null &&
+                    (frame.width != attachment.width || frame.height != attachment.height)
+            
+            if (!hasNewSize && !hasNewFrame) {
+                return@forEachIndexed
             }
             
-            val frame = frames[index] ?: return@forEachIndexed
-            
-            if (frame.width != attachment.width || frame.height != attachment.height) {
-                fileRepository.updateFileDimensions(
-                    attachment.fileId,
-                    frame.width,
-                    frame.height
-                )
-            }
+            fileRepository.updateLocalMedia(
+                fileId = attachment.fileId,
+                size = if (hasNewSize) size else 0,
+                width = if (hasNewFrame) frame?.width else null,
+                height = if (hasNewFrame) frame?.height else null
+            )
         }
     }
     

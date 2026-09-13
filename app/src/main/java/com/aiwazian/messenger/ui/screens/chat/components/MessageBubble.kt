@@ -10,6 +10,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlexAlignSelf
+import androidx.compose.foundation.layout.FlexBox
+import androidx.compose.foundation.layout.FlexDirection
+import androidx.compose.foundation.layout.FlexJustifyContent
+import androidx.compose.foundation.layout.FlexWrap
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,6 +44,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -86,11 +92,15 @@ import com.aiwazian.messenger.ui.screens.chat.ChatStickersViewModel
 import com.aiwazian.messenger.utils.EmojiLink
 import com.aiwazian.messenger.utils.StickerLink
 import com.aiwazian.messenger.utils.UiText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 private val BubbleHorizontalPadding = 8.dp
+
+private const val MEDIA_CACHE_KEY_PREFIX = "chat-media"
 
 @Composable
 fun MessageBubble(
@@ -177,6 +187,12 @@ fun MessageBubble(
         }
     }
     
+    val mediaAttachments = remember(message.attachments) {
+        message.attachments.filter {
+            it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF
+        }
+    }
+    
     SwipeToReplyBox(
         enabled = item.canReply && onSwipeToReply != null,
         onReply = { onSwipeToReply?.invoke() },
@@ -211,7 +227,7 @@ fun MessageBubble(
             
             Box(
                 modifier = Modifier
-                    .widthIn(min = 90.dp, max = dynamicMaxWidth)
+                    .widthIn(min = 64.dp, max = dynamicMaxWidth)
                     .padding(horizontal = BubbleHorizontalPadding)
                     .clip(MaterialTheme.shapes.large)
                     .background(containerColor)
@@ -289,9 +305,6 @@ fun MessageBubble(
                         )
                     }
                     
-                    val mediaAttachments = message.attachments.filter {
-                        it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF
-                    }
                     if (mediaAttachments.isNotEmpty()) {
                         val mediaSizes = mediaAttachments.map { attachment ->
                             val frameWidth = attachment.width ?: 0
@@ -301,80 +314,28 @@ fun MessageBubble(
                             else IntSize.Zero
                         }
                         
+                        val mediaCacheKeyPrefix =
+                            "$MEDIA_CACHE_KEY_PREFIX:${message.chatId}:${message.senderId}:${message.sendTime}"
+                        
                         ImageGridCustomLayout(
                             maxWidth = contentMaxWidth,
                             itemSizes = mediaSizes,
                             content = {
                                 mediaAttachments.forEach { attachment ->
-                                    if (attachment.localUri == null ||
-                                        attachment.status == DownloadStatus.UPLOADING ||
-                                        attachment.status == DownloadStatus.DOWNLOADING
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .clip(MaterialTheme.shapes.extraSmall)
-                                                .background(
-                                                    MaterialTheme.colorScheme.surfaceVariant.copy(
-                                                        alpha = 0.4f
-                                                    )
-                                                )
-                                                .clickable {
-                                                    val action = when (attachment.status) {
-                                                        DownloadStatus.DOWNLOADING -> FileAction.DOWNLOAD
-                                                        DownloadStatus.PAUSED -> FileAction.DOWNLOAD
-                                                        DownloadStatus.IDLE,
-                                                        DownloadStatus.CANCELLED,
-                                                        DownloadStatus.FAILED,
-                                                        DownloadStatus.UPLOADED,
-                                                        DownloadStatus.COMPLETED -> FileAction.DOWNLOAD
-                                                        
-                                                        DownloadStatus.UPLOADING -> FileAction.CANCEL
-                                                    }
-                                                    onFileAction(attachment, action)
-                                                }, contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = attachment.size.formatFileSize(),
-                                                modifier = Modifier
-                                                    .align(Alignment.TopStart)
-                                                    .padding(4.dp),
-                                                fontSize = 12.sp,
-                                                lineHeight = 12.sp
-                                            )
-                                            when (attachment.status) {
-                                                DownloadStatus.DOWNLOADING -> {
-                                                    CircularWavyProgressIndicator()
-                                                    Icon(Icons.Rounded.Pause, null)
-                                                }
-                                                
-                                                DownloadStatus.UPLOADING -> {
-                                                    CircularWavyProgressIndicator()
-                                                    Icon(Icons.Rounded.Close, null)
-                                                }
-                                                
-                                                DownloadStatus.PAUSED -> {
-                                                    Icon(Icons.Rounded.Downloading, null)
-                                                }
-                                                
-                                                else -> {
-                                                    Icon(Icons.Rounded.Download, null)
-                                                }
-                                            }
-                                        }
+                                    val mediaUri = attachment.localUri
+                                    
+                                    if (mediaUri == null) {
+                                        MediaPlaceholder(
+                                            attachment = attachment,
+                                            onFileAction = onFileAction
+                                        )
                                     } else {
-                                        if (attachment.type == AttachmentType.VIDEO) {
-                                            VideoThumbnail(attachment.localUri) {
-                                                onFileAction(attachment, FileAction.OPEN)
-                                            }
-                                        } else {
-                                            ImageThumbnail(
-                                                attachment.localUri,
-                                                attachment.type == AttachmentType.GIF
-                                            ) {
-                                                onFileAction(attachment, FileAction.OPEN)
-                                            }
-                                        }
+                                        MediaThumbnail(
+                                            attachment = attachment,
+                                            mediaUri = mediaUri,
+                                            cacheKey = "$mediaCacheKeyPrefix:${attachment.sortOrder}",
+                                            onFileAction = onFileAction
+                                        )
                                     }
                                 }
                             })
@@ -409,22 +370,60 @@ fun MessageBubble(
                     }
                     
                     if (!message.text.isNullOrBlank()) {
-                        MessageText(
-                            text = message.text,
-                            onLinkClicked = handleLinkClicked,
-                            onUsernameClicked = onUsernameClicked,
-                            onEmailClicked = onEmailClicked
-                        )
+                        FlexBox(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 4.dp),
+                            config = {
+                                direction(FlexDirection.Row)
+                                wrap(FlexWrap.Wrap)
+                                justifyContent(FlexJustifyContent.End)
+                                gap(4.dp)
+                            }) {
+                            MessageText(
+                                text = message.text,
+                                modifier = Modifier
+                                    .widthIn(max = contentMaxWidth - 16.dp)
+                                    .padding(bottom = 2.dp)
+                                    .flex {
+                                        grow(1f)
+                                    },
+                                onLinkClicked = handleLinkClicked,
+                                onUsernameClicked = onUsernameClicked,
+                                onEmailClicked = onEmailClicked
+                            )
+                            MessageFooter(
+                                time = item.time,
+                                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                                modifier = Modifier.flex {
+                                    alignSelf(FlexAlignSelf.End)
+                                },
+                                status = message.status,
+                                isEdited = message.isEdited
+                            )
+                        }
                     }
                 }
                 
-                Box(modifier = Modifier.align(Alignment.BottomEnd)) {
-                    MessageFooter(
-                        time = item.time,
-                        isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
-                        status = message.status,
-                        isEdited = message.isEdited
-                    )
+                if (message.text.isNullOrBlank()) {
+                    Box(modifier = Modifier.align(Alignment.BottomEnd)) {
+                        if (mediaAttachments.isNotEmpty()) {
+                            StickerMessageFooter(
+                                time = item.time,
+                                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                                status = message.status,
+                                modifier = Modifier.padding(4.dp)
+                            )
+                        } else {
+                            MessageFooter(
+                                time = item.time,
+                                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                status = message.status,
+                                isEdited = message.isEdited
+                            )
+                        }
+                    }
                 }
                 
                 val readers = remember(item.readInfo) {
@@ -577,9 +576,120 @@ private fun buildDropdownActions(
     return actions
 }
 
+private fun DownloadStatus.isTransferring(): Boolean {
+    return this == DownloadStatus.UPLOADING ||
+            this == DownloadStatus.DOWNLOADING ||
+            this == DownloadStatus.PAUSED
+}
+
+private fun DownloadStatus.toFileAction(): FileAction {
+    return if (this == DownloadStatus.UPLOADING) FileAction.CANCEL else FileAction.DOWNLOAD
+}
+
 @Composable
-private fun VideoThumbnail(videoUri: Uri, onClick: () -> Unit) {
+private fun MediaPlaceholder(
+    attachment: MessageAttachment,
+    onFileAction: (MessageAttachment, FileAction) -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+            .clickable { onFileAction(attachment, attachment.status.toFileAction()) },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = attachment.size.formatFileSize(),
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(4.dp),
+            fontSize = 12.sp,
+            lineHeight = 12.sp
+        )
+        
+        MediaStatusIndicator(attachment.status)
+    }
+}
+
+@Composable
+private fun MediaThumbnail(
+    attachment: MessageAttachment,
+    mediaUri: Uri,
+    cacheKey: String,
+    onFileAction: (MessageAttachment, FileAction) -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (attachment.type == AttachmentType.VIDEO) {
+            VideoThumbnail(videoUri = mediaUri, cacheKey = cacheKey) {
+                onFileAction(attachment, FileAction.OPEN)
+            }
+        } else {
+            ImageThumbnail(
+                imageUri = mediaUri,
+                cacheKey = cacheKey,
+                isGif = attachment.type == AttachmentType.GIF
+            ) {
+                onFileAction(attachment, FileAction.OPEN)
+            }
+        }
+        
+        if (attachment.status.isTransferring()) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.35f))
+                    .clickable { onFileAction(attachment, attachment.status.toFileAction()) },
+                contentAlignment = Alignment.Center
+            ) {
+                MediaStatusIndicator(attachment.status)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MediaStatusIndicator(status: DownloadStatus) {
+    when (status) {
+        DownloadStatus.DOWNLOADING -> {
+            CircularWavyProgressIndicator()
+            Icon(Icons.Rounded.Pause, null)
+        }
+        
+        DownloadStatus.UPLOADING -> {
+            CircularWavyProgressIndicator()
+            Icon(Icons.Rounded.Close, null)
+        }
+        
+        DownloadStatus.PAUSED -> {
+            Icon(Icons.Rounded.Downloading, null)
+        }
+        
+        else -> {
+            Icon(Icons.Rounded.Download, null)
+        }
+    }
+}
+
+@Composable
+private fun VideoThumbnail(videoUri: Uri, cacheKey: String, onClick: () -> Unit) {
     val context = LocalContext.current
+    val decoderFactory = remember { VideoFrameDecoder.Factory() }
+    
+    val request = remember(context, videoUri, cacheKey, decoderFactory) {
+        ImageRequest.Builder(context)
+            .data(videoUri)
+            .decoderFactory(decoderFactory)
+            .videoFrameMillis(0)
+            .memoryCacheKey(cacheKey)
+            .placeholderMemoryCacheKey(cacheKey)
+            .build()
+    }
+    
+    val duration by produceState(0L, videoUri) {
+        value = withContext(Dispatchers.IO) { videoUri.getDuration(context) }
+    }
     
     Box(
         modifier = Modifier
@@ -587,11 +697,7 @@ private fun VideoThumbnail(videoUri: Uri, onClick: () -> Unit) {
             .mediaTransitionOrigin(chatMediaKey(videoUri))
     ) {
         AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(videoUri)
-                .decoderFactory(VideoFrameDecoder.Factory())
-                .videoFrameMillis(0)
-                .build(),
+            model = request,
             contentDescription = "Thumbnail of the video",
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -599,27 +705,44 @@ private fun VideoThumbnail(videoUri: Uri, onClick: () -> Unit) {
                 .fillMaxSize()
                 .clip(MaterialTheme.shapes.extraSmall)
         )
-        Box(
-            modifier = Modifier
-                .padding(start = 4.dp, top = 4.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
-        ) {
-            Text(
-                text = formatDuration(videoUri.getDuration(context)),
+        if (duration > 0) {
+            Box(
                 modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(vertical = 2.dp, horizontal = 4.dp),
-                fontSize = 12.sp,
-                lineHeight = 12.sp
-            )
+                    .padding(start = 4.dp, top = 4.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
+            ) {
+                Text(
+                    text = formatDuration(duration),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(vertical = 2.dp, horizontal = 4.dp),
+                    fontSize = 12.sp,
+                    lineHeight = 12.sp
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun ImageThumbnail(imageUri: Uri, isGif: Boolean, onClick: () -> Unit) {
+private fun ImageThumbnail(
+    imageUri: Uri,
+    cacheKey: String,
+    isGif: Boolean,
+    onClick: () -> Unit
+) {
     val context = LocalContext.current
+    val decoderFactory = remember { GifDecoder.Factory() }
+    
+    val request = remember(context, imageUri, cacheKey, decoderFactory) {
+        ImageRequest.Builder(context)
+            .data(imageUri)
+            .decoderFactory(decoderFactory)
+            .memoryCacheKey(cacheKey)
+            .placeholderMemoryCacheKey(cacheKey)
+            .build()
+    }
     
     Box(
         modifier = Modifier
@@ -627,10 +750,7 @@ private fun ImageThumbnail(imageUri: Uri, isGif: Boolean, onClick: () -> Unit) {
             .mediaTransitionOrigin(chatMediaKey(imageUri))
     ) {
         AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(imageUri)
-                .decoderFactory(GifDecoder.Factory())
-                .build(),
+            model = request,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
