@@ -160,6 +160,13 @@ suspend fun insertCustomEmoji(editText: EditText, packId: Long, emoji: CustomEmo
     }
 }
 
+fun insertSystemEmoji(editText: EditText, emoji: String) {
+    val editable = editText.text
+    val cursor = editText.selectionEnd.takeIf { it in 0..editable.length } ?: editable.length
+    
+    editable.insert(cursor, emoji)
+}
+
 suspend fun buildCustomEmojiText(
     editText: EditText,
     text: String,

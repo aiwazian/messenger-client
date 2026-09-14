@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.EmojiPack
 import com.aiwazian.messenger.repository.EmojiRepository
+import com.aiwazian.messenger.repository.SystemEmojiRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,13 +14,15 @@ import javax.inject.Inject
 
 data class ChatEmojiUiState(
     val addedPacks: List<EmojiPack> = emptyList(),
+    val systemEmojis: List<String> = emptyList(),
     val packsById: Map<Long, EmojiPack> = emptyMap(),
     val openedPack: EmojiPack? = null
 )
 
 @HiltViewModel
 class ChatEmojiViewModel @Inject constructor(
-    private val emojiRepository: EmojiRepository
+    private val emojiRepository: EmojiRepository,
+    private val systemEmojiRepository: SystemEmojiRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ChatEmojiUiState())
@@ -27,7 +30,11 @@ class ChatEmojiViewModel @Inject constructor(
     
     private var isAddedPacksRequested = false
     
+    private var isSystemEmojisRequested = false
+    
     fun preloadPacks() {
+        loadSystemEmojis()
+        
         if (isAddedPacksRequested) {
             return
         }
@@ -92,6 +99,26 @@ class ChatEmojiViewModel @Inject constructor(
                     state.packsById + (packId to cached)
                 }
             )
+        }
+    }
+    
+    private fun loadSystemEmojis() {
+        if (isSystemEmojisRequested) {
+            return
+        }
+        
+        isSystemEmojisRequested = true
+        
+        viewModelScope.launch {
+            val emojis = systemEmojiRepository.getEmojis()
+            
+            if (emojis.isEmpty()) {
+                isSystemEmojisRequested = false
+                
+                return@launch
+            }
+            
+            _uiState.update { it.copy(systemEmojis = emojis) }
         }
     }
     
