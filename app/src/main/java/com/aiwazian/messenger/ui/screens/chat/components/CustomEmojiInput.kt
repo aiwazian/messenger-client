@@ -8,6 +8,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.drawable.Drawable
+import android.icu.text.BreakIterator
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
@@ -158,6 +159,48 @@ suspend fun insertCustomEmoji(editText: EditText, packId: Long, emoji: CustomEmo
         
         editable.insert(cursor, spannable)
     }
+}
+
+fun insertSystemEmoji(editText: EditText, emoji: String) {
+    val editable = editText.text
+    val cursor = editText.selectionEnd.takeIf { it in 0..editable.length } ?: editable.length
+    
+    editable.insert(cursor, emoji)
+}
+
+fun deleteBeforeCursor(editText: EditText) {
+    val editable = editText.text
+    
+    if (editable.isEmpty()) {
+        return
+    }
+    
+    val start = editText.selectionStart.takeIf { it in 0..editable.length } ?: editable.length
+    val end = editText.selectionEnd.takeIf { it in 0..editable.length } ?: editable.length
+    
+    val from = minOf(start, end)
+    val to = maxOf(start, end)
+    
+    if (from != to) {
+        editable.delete(from, to)
+        
+        return
+    }
+    
+    if (from == 0) {
+        return
+    }
+    
+    val iterator = BreakIterator.getCharacterInstance()
+    
+    iterator.setText(editable.toString())
+    
+    val previous = iterator.preceding(from)
+    
+    editable.delete(
+        if (previous == BreakIterator.DONE) from - 1 else previous,
+        from
+    )
 }
 
 suspend fun buildCustomEmojiText(

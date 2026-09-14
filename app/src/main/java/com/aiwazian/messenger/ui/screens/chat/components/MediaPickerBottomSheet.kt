@@ -375,6 +375,7 @@ fun MediaPickerBottomSheet(
             ) {
                 MediaPickerEmojiPanel(
                     packs = emojiState.addedPacks,
+                    systemEmojis = emojiState.systemEmojis,
                     height = emojiPanelHeight,
                     bottomPadding = bottomPadding,
                     onEmojiClick = { pack, emoji ->
@@ -382,6 +383,11 @@ fun MediaPickerBottomSheet(
                             coroutineScope.launch {
                                 insertCustomEmoji(view, pack.id, emoji)
                             }
+                        }
+                    },
+                    onSystemEmojiClick = { emoji ->
+                        captionInputView?.let { view ->
+                            insertSystemEmoji(view, emoji)
                         }
                     }
                 )
@@ -446,9 +452,11 @@ private fun MediaPickerToolbar(
 @Composable
 private fun MediaPickerEmojiPanel(
     packs: List<EmojiPack>,
+    systemEmojis: List<String>,
     height: Dp,
     bottomPadding: Dp,
-    onEmojiClick: (EmojiPack, CustomEmoji) -> Unit
+    onEmojiClick: (EmojiPack, CustomEmoji) -> Unit,
+    onSystemEmojiClick: (String) -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -460,7 +468,12 @@ private fun MediaPickerEmojiPanel(
                 interactionSource = remember { MutableInteractionSource() }, indication = null
             ) {}
     ) {
-        EmojiInputPanel(packs = packs, onEmojiClick = onEmojiClick)
+        EmojiInputPanel(
+            packs = packs,
+            systemEmojis = systemEmojis,
+            onEmojiClick = onEmojiClick,
+            onSystemEmojiClick = onSystemEmojiClick
+        )
         
         BottomBarScrim(height = bottomPadding)
     }

@@ -54,6 +54,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Backspace
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Keyboard
@@ -64,10 +65,10 @@ import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Mic
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -86,6 +87,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -120,8 +122,6 @@ import com.aiwazian.messenger.ui.app.AppTab
 import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.CustomEmojiViewModel
 import com.aiwazian.messenger.ui.components.appendCustomEmojiText
-import com.aiwazian.messenger.ui.components.navigation.AppRoute
-import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.rememberCustomEmojiInlineContent
 import com.aiwazian.messenger.ui.screens.chat.ChatEmojiViewModel
 import com.aiwazian.messenger.ui.screens.chat.ChatStickersViewModel
@@ -403,11 +403,17 @@ fun ChatInputSection(
                         if (page == EMOJI_PANEL_PAGE) {
                             EmojiInputPanel(
                                 packs = emojiState.addedPacks,
+                                systemEmojis = emojiState.systemEmojis,
                                 onEmojiClick = { pack, emoji ->
                                     messageInputView?.let { view ->
                                         scope.launch {
                                             insertCustomEmoji(view, pack.id, emoji)
                                         }
+                                    }
+                                },
+                                onSystemEmojiClick = { emoji ->
+                                    messageInputView?.let { view ->
+                                        insertSystemEmoji(view, emoji)
                                     }
                                 })
                         } else {
@@ -421,7 +427,8 @@ fun ChatInputSection(
                     
                     AppPrimaryScrollableTabRow(
                         selectedTabIndex = panelPagerState.currentPage,
-                        modifier = Modifier.align(Alignment.BottomCenter)
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
                         AppTab(
                             selected = panelPagerState.currentPage == EMOJI_PANEL_PAGE,
@@ -442,17 +449,23 @@ fun ChatInputSection(
                             })
                     }
                     
-                    val navBackStack = LocalNavBackStack.current
-                    IconButton(
-                        onClick = {
-                            navBackStack.add(AppRoute.SettingsStickers)
-                        },
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .navigationBarsPadding()
-                    ) {
-                        Icon(Icons.Rounded.Settings, null)
+                    if (panelPagerState.currentPage == EMOJI_PANEL_PAGE) {
+                        IconButton(
+                            onClick = {
+                                messageInputView?.let { view -> deleteBeforeCursor(view) }
+                            },
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .navigationBarsPadding()
+                                .scale(0.8f),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                            )
+                        ) {
+                            Icon(Icons.AutoMirrored.Outlined.Backspace, null)
+                        }
                     }
+                    
                     BottomBarScrim(height = bottomPadding)
                 }
             }

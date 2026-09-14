@@ -34,9 +34,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.InputTransformation
-import androidx.compose.foundation.text.input.TextFieldBuffer
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -62,13 +59,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
@@ -78,10 +72,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
@@ -102,6 +93,7 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.chat.components.PhotoPickerBottomSheet
+import com.aiwazian.messenger.ui.screens.settings.emoji.SystemEmojiPickerBottomSheet
 import com.aiwazian.messenger.ui.screens.settings.stickers.StickerPickerBottomSheet
 import com.aiwazian.messenger.utils.EmojiInput
 import com.aiwazian.messenger.utils.UiText
@@ -129,24 +121,6 @@ private val FOCUS_CLOSE_SPEC: AnimationSpec<Float> =
 private enum class StickerPickTarget {
     Cover,
     Sticker
-}
-
-private object EmojiOnlyTransformation : InputTransformation {
-    
-    override fun TextFieldBuffer.transformInput() {
-        val value = asCharSequence()
-            .toString()
-        
-        val emojis = EmojiInput.format(EmojiInput.parse(value))
-        
-        if (emojis == value) {
-            return
-        }
-        
-        replace(0, length, emojis)
-        
-        selection = TextRange(length)
-    }
 }
 
 @Stable
@@ -707,15 +681,11 @@ private fun StickerFocusOverlay(
     val context = LocalContext.current
     val density = LocalDensity.current
     
-    val focusRequester = remember { FocusRequester() }
     val scrimInteractionSource = remember { MutableInteractionSource() }
     val progress = remember { Animatable(0f) }
     
     var stickerCenter by remember { mutableStateOf(Offset.Zero) }
-    
-    val emojiState = remember(slot.key) {
-        TextFieldState(initialText = EmojiInput.format(slot.emojis))
-    }
+    var isEmojiPickerVisible by remember(slot.key) { mutableStateOf(false) }
     
     val scrimColor = MaterialTheme.colorScheme.scrim
     
@@ -751,16 +721,6 @@ private fun StickerFocusOverlay(
         onClosed()
     }
     
-    LaunchedEffect(slot.key) {
-        focusRequester.requestFocus()
-    }
-    
-    LaunchedEffect(emojiState) {
-        snapshotFlow { emojiState.text.toString() }.collect { value ->
-            onEmojisChange(value)
-        }
-    }
-    
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -772,8 +732,7 @@ private fun StickerFocusOverlay(
                 indication = null,
                 onClick = onDismiss
             )
-            .verticalScroll(rememberScrollState())
-            .imePadding(),
+            .verticalScroll(rememberScrollState()),
         contentAlignment = Alignment.TopCenter
     ) {
         Column(
@@ -783,25 +742,26 @@ private fun StickerFocusOverlay(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            val symbols = EmojiInput.format(slot.emojis)
+            
             Box(
                 modifier = Modifier
                     .fillMaxWidth(EMOJI_FIELD_WIDTH_FRACTION)
                     .graphicsLayer { alpha = progress.value }
                     .clip(MaterialTheme.shapes.large)
                     .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .clickable { isEmojiPickerVisible = true }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                contentAlignment = Alignment.Center
             ) {
-                FramelessTextBox(
-                    placeholder = stringResource(R.string.sticker_emojis),
-                    state = emojiState,
-                    modifier = Modifier.focusRequester(focusRequester),
-                    inputTransformation = EmojiOnlyTransformation,
-                    textStyle = MaterialTheme.typography.titleLarge,
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.None,
-                        autoCorrectEnabled = false,
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done
-                    )
+                Text(
+                    text = symbols.ifEmpty { stringResource(R.string.sticker_emojis) },
+                    color = if (symbols.isEmpty()) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    style = MaterialTheme.typography.titleLarge
                 )
             }
             
@@ -873,6 +833,21 @@ private fun StickerFocusOverlay(
                 Text(stringResource(R.string.sticker_delete))
             }
         }
+    }
+    
+    if (isEmojiPickerVisible) {
+        SystemEmojiPickerBottomSheet(
+            selectedEmojis = slot.emojis,
+            onEmojiSelected = { emoji ->
+                onEmojisChange(EmojiInput.format(slot.emojis + emoji))
+            },
+            onEmojiRemoved = { emoji ->
+                onEmojisChange(EmojiInput.format(slot.emojis - emoji))
+            },
+            onBackspaceClick = {
+                onEmojisChange(EmojiInput.format(slot.emojis.dropLast(1)))
+            },
+            onDismissRequest = { isEmojiPickerVisible = false })
     }
 }
 
