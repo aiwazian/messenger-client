@@ -427,7 +427,8 @@ fun ChatInputSection(
                     
                     AppPrimaryScrollableTabRow(
                         selectedTabIndex = panelPagerState.currentPage,
-                        modifier = Modifier.align(Alignment.BottomCenter)
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
                         AppTab(
                             selected = panelPagerState.currentPage == EMOJI_PANEL_PAGE,

@@ -351,8 +351,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
             fileRepository.updateLocalMedia(
                 fileId = attachment.fileId,
                 size = if (hasNewSize) size else 0,
-                width = if (hasNewFrame) frame?.width else null,
-                height = if (hasNewFrame) frame?.height else null
+                width = if (hasNewFrame) frame.width else null,
+                height = if (hasNewFrame) frame.height else null
             )
         }
     }
