@@ -403,11 +403,17 @@ fun ChatInputSection(
                         if (page == EMOJI_PANEL_PAGE) {
                             EmojiInputPanel(
                                 packs = emojiState.addedPacks,
+                                systemEmojis = emojiState.systemEmojis,
                                 onEmojiClick = { pack, emoji ->
                                     messageInputView?.let { view ->
                                         scope.launch {
                                             insertCustomEmoji(view, pack.id, emoji)
                                         }
+                                    }
+                                },
+                                onSystemEmojiClick = { emoji ->
+                                    messageInputView?.let { view ->
+                                        insertSystemEmoji(view, emoji)
                                     }
                                 })
                         } else {
