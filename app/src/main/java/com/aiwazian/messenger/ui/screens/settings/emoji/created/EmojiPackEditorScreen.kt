@@ -839,6 +839,9 @@ private fun EmojiFocusOverlay(
             onEmojiSelected = { emoji ->
                 onEmojisChange(EmojiInput.format(slot.emojis + emoji))
             },
+            onEmojiRemoved = { emoji ->
+                onEmojisChange(EmojiInput.format(slot.emojis - emoji))
+            },
             onBackspaceClick = {
                 onEmojisChange(EmojiInput.format(slot.emojis.dropLast(1)))
             },

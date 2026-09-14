@@ -59,6 +59,7 @@ private val SYSTEM_EMOJI_SIZE = 26.sp
 fun SystemEmojiPickerBottomSheet(
     selectedEmojis: List<String>,
     onEmojiSelected: (String) -> Unit,
+    onEmojiRemoved: (String) -> Unit,
     onBackspaceClick: () -> Unit,
     onDismissRequest: () -> Unit,
     viewModel: SystemEmojiPickerViewModel = hiltViewModel()
@@ -127,10 +128,18 @@ fun SystemEmojiPickerBottomSheet(
                     items(
                         items = emojis,
                         key = { it }) { emoji ->
+                        val isSelected = selectedEmojis.contains(emoji)
+                        
                         SystemEmojiCell(
                             emoji = emoji,
-                            isSelected = selectedEmojis.contains(emoji),
-                            onClick = { onEmojiSelected(emoji) })
+                            isSelected = isSelected,
+                            onClick = {
+                                if (isSelected) {
+                                    onEmojiRemoved(emoji)
+                                } else {
+                                    onEmojiSelected(emoji)
+                                }
+                            })
                     }
                 }
             }
@@ -166,7 +175,6 @@ private fun SystemEmojiCell(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                enabled = !isSelected,
                 onClick = onClick
             ),
         contentAlignment = Alignment.Center
