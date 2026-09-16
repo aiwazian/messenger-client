@@ -412,6 +412,7 @@
         <item quantity="many">%1$s résultats</item>
     </plurals>
     <string name="stickers">Stickers</string>
+    <string name="stickers_and_emoji">Stickers et émojis</string>
     <string name="sticker_packs">Packs de stickers</string>
     <string name="sticker_packs_created">Créés</string>
     <string name="sticker_packs_added">Ajoutés</string>
@@ -460,6 +461,46 @@
     <string name="sticker_pack_installed">Le pack %1$s a été ajouté à vos stickers</string>
     <string name="sticker_pack_uninstalled">Le pack %1$s a été retiré de vos stickers</string>
     <string name="sticker_message">Sticker</string>
+    <string name="emoji">Emoji</string>
+    <string name="emoji_packs_created">Creati</string>
+    <string name="emoji_packs_added">Aggiunti</string>
+    <string name="emoji_pack">Pacchetto emoji</string>
+    <string name="emoji_pack_new">Nuovo pacchetto emoji</string>
+    <string name="emoji_pack_name">Nome</string>
+    <string name="emoji_pack_username">Nome breve</string>
+    <string name="emoji_pack_username_hint">Lettere latine, cifre e trattino basso</string>
+    <string name="emoji_pack_username_too_short">Almeno %1$d caratteri</string>
+    <string name="emoji_pack_username_checking">Verifica in corso…</string>
+    <string name="emoji_pack_username_available">Il nome breve è disponibile</string>
+    <string name="emoji_pack_username_taken">Il nome breve è già occupato</string>
+    <string name="emoji_pack_username_unknown">Impossibile verificare il nome breve</string>
+    <string name="emoji_add">Aggiungi emoji</string>
+    <string name="emoji_delete">Elimina</string>
+    <string name="emoji_symbols">Emoji</string>
+    <string name="emoji_add_error">Impossibile elaborare l\'immagine</string>
+    <string name="emoji_upload_error">Impossibile caricare l\'emoji</string>
+    <string name="emoji_removed">Emoji eliminata</string>
+    <string name="emoji_removed_undo">Annulla</string>
+    <string name="emoji_pack_saved">Pacchetto emoji salvato</string>
+    <string name="emoji_pack_save_error">Impossibile salvare il pacchetto emoji</string>
+    <string name="emoji_pack_load_error">Impossibile caricare il pacchetto emoji</string>
+    <string name="emoji_packs_load_error">Impossibile caricare i pacchetti emoji</string>
+    <string name="emoji_packs_empty">Nessun pacchetto emoji per ora</string>
+    <string name="emoji_pack_unsaved_message">Hai modifiche non salvate</string>
+    <string name="emoji_pack_unsaved_discard">Scarta</string>
+    <string name="emoji_pack_unsaved_apply">Applica</string>
+    <string name="emoji_pack_delete_action">Elimina</string>
+    <string name="emoji_pack_delete_cancel">Annulla</string>
+    <string name="emoji_pack_delete_message">L\'eliminazione è irreversibile. Tu e gli altri utenti non potrete più usare le emoji di questo pacchetto.</string>
+    <string name="emoji_pack_remove_message">Il pacchetto verrà rimosso solo dalla tua lista. Gli altri utenti continueranno ad averlo.</string>
+    <string name="emoji_pack_deleted">Pacchetto emoji eliminato</string>
+    <string name="emoji_pack_delete_error">Impossibile eliminare il pacchetto emoji</string>
+    <string name="emoji_pack_removed">Pacchetto emoji rimosso</string>
+    <string name="emoji_pack_remove_error">Impossibile rimuovere il pacchetto emoji</string>
+    <plurals name="emoji_count">
+        <item quantity="one">%1$d emoji</item>
+        <item quantity="other">%1$d emoji</item>
+    </plurals>
     <string name="storage_cache_cleared">%1$s libérés</string>
     <string name="storage_cache_already_empty">Rien à effacer</string>
     <string name="storage_cache_clear_failed">Échec de l\'effacement du cache</string>
@@ -467,4 +508,5 @@
     <string name="storage_database_cleared">Base de données locale effacée</string>
     <string name="storage_database_clear_failed">Échec de l\'effacement de la base de données</string>
     <string name="done">Terminé</string>
+    <string name="empty_chats_hint">Pour commencer à discuter, appuyez sur le champ de recherche en haut de l’écran et trouvez un utilisateur grâce à son @username</string>
 </resources>

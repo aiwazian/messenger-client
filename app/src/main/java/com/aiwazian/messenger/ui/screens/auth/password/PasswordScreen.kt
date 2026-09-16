@@ -225,7 +225,7 @@ fun PasswordScreen(
                 onDismissRequest = viewModel::hideForgotPasswordDialog,
                 content = {
                     Text(
-                        text = "Отправить код для сброса пароля на электронную почту привязанную к аккаунту?",
+                        text = stringResource(R.string.forgot_password),
                         lineHeight = 18.sp
                     )
                 },

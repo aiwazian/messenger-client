@@ -461,7 +461,6 @@
     <string name="sticker_pack_installed">Pack %1$s added to your stickers</string>
     <string name="sticker_pack_uninstalled">Pack %1$s removed from your stickers</string>
     <string name="sticker_message">Sticker</string>
-
     <string name="emoji">Emoji</string>
     <string name="emoji_packs_created">Created</string>
     <string name="emoji_packs_added">Added</string>
@@ -502,7 +501,6 @@
         <item quantity="one">%1$d emoji</item>
         <item quantity="other">%1$d emoji</item>
     </plurals>
-
     <string name="storage_cache_cleared">%1$s cleared</string>
     <string name="storage_cache_already_empty">Nothing to clear</string>
     <string name="storage_cache_clear_failed">Failed to clear the cache</string>
@@ -510,4 +508,5 @@
     <string name="storage_database_cleared">Local database cleared</string>
     <string name="storage_database_clear_failed">Failed to clear the database</string>
     <string name="done">Done</string>
+    <string name="empty_chats_hint">To start chatting, tap the search field at the top of the screen and find a user by their @username</string>
 </resources>

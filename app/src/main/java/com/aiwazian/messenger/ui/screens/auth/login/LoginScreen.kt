@@ -148,19 +148,19 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
                 onDismissRequest = viewModel::hideFoundDialog,
                 content = {
                     Text(
-                        text = "Аккаунт с таким логином уже существует. Войти?",
+                        text = stringResource(R.string.username_taken),
                         lineHeight = 18.sp
                     )
                 },
                 buttons = {
                     TextButton(onClick = viewModel::hideFoundDialog) {
-                        Text(stringResource(R.string.no))
+                        Text(stringResource(R.string.cancel))
                     }
                     TextButton(onClick = {
                         viewModel.hideFoundDialog()
                         navBackStack.add(AppRoute.Password(uiState.login, uiState.canReset))
                     }) {
-                        Text(stringResource(R.string.yes))
+                        Text(stringResource(R.string.login))
                     }
                 }
             )
@@ -172,19 +172,19 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
                 onDismissRequest = viewModel::hideNotFoundDialog,
                 content = {
                     Text(
-                        text = "Аккаунт не найден. Зарегистрироваться?",
+                        text = stringResource(R.string.user_not_found),
                         lineHeight = 18.sp
                     )
                 },
                 buttons = {
                     TextButton(onClick = viewModel::hideNotFoundDialog) {
-                        Text(stringResource(R.string.no))
+                        Text(stringResource(R.string.cancel))
                     }
                     TextButton(onClick = {
                         viewModel.hideNotFoundDialog()
                         navBackStack.add(AppRoute.Register(uiState.login))
                     }) {
-                        Text(stringResource(R.string.yes))
+                        Text(stringResource(R.string.registration))
                     }
                 }
             )

@@ -344,8 +344,10 @@
     <string name="chat_voices_tab">Voz</string>
     <string name="chat_attachments_empty">Todavía no hay adjuntos en este chat</string>
     <string name="chat_media_load_error">No se pudieron cargar los adjuntos</string>
+
     <string name="chat_voice_sent_at">a las %1$s</string>
     <string name="chat_voice_sent_on">%1$s a las %2$s</string>
+
     <plurals name="chat_media_photos_count">
         <item quantity="one">%1$d foto</item>
         <item quantity="other">%1$d fotos</item>
@@ -410,6 +412,7 @@
         <item quantity="other">%1$s resultados</item>
     </plurals>
     <string name="stickers">Stickers</string>
+    <string name="stickers_and_emoji">Pegatinas y emojis</string>
     <string name="sticker_packs">Paquetes de stickers</string>
     <string name="sticker_packs_created">Creados</string>
     <string name="sticker_packs_added">Añadidos</string>
@@ -457,6 +460,48 @@
     <string name="sticker_pack_installed">El paquete %1$s se añadió a tus stickers</string>
     <string name="sticker_pack_uninstalled">El paquete %1$s se quitó de tus stickers</string>
     <string name="sticker_message">Sticker</string>
+
+    <string name="emoji">emojis</string>
+    <string name="emoji_packs_created">Creado</string>
+    <string name="emoji_packs_added">Agregado</string>
+    <string name="emoji_pack">paquete de emojis</string>
+    <string name="emoji_pack_new">Nuevo paquete de emojis</string>
+    <string name="emoji_pack_name">Nombre</string>
+    <string name="emoji_pack_username">nombre corto</string>
+    <string name="emoji_pack_username_hint">Letras latinas, dígitos y guiones bajos.</string>
+    <string name="emoji_pack_username_too_short">Al menos %1$d caracteres</string>
+    <string name="emoji_pack_username_checking">De cheques…</string>
+    <string name="emoji_pack_username_available">El nombre corto está disponible</string>
+    <string name="emoji_pack_username_taken">El nombre corto ya está en uso.</string>
+    <string name="emoji_pack_username_unknown">No se pudo verificar el nombre corto</string>
+    <string name="emoji_add">Agregar emojis</string>
+    <string name="emoji_delete">Borrar</string>
+    <string name="emoji_symbols">emojis</string>
+    <string name="emoji_add_error">No se pudo procesar la imagen</string>
+    <string name="emoji_upload_error">No se pudo subir el emoji</string>
+    <string name="emoji_removed">Emoji eliminado</string>
+    <string name="emoji_removed_undo">Deshacer</string>
+    <string name="emoji_pack_saved">Paquete de emojis guardado</string>
+    <string name="emoji_pack_save_error">No se pudo guardar el paquete de emojis</string>
+    <string name="emoji_pack_load_error">No se pudo cargar el paquete de emojis</string>
+    <string name="emoji_packs_load_error">No se pudieron cargar paquetes de emojis</string>
+    <string name="emoji_packs_empty">Aún no hay paquetes de emojis</string>
+    <string name="emoji_pack_unsaved_message">Tienes cambios sin guardar</string>
+    <string name="emoji_pack_unsaved_discard">Desechar</string>
+    <string name="emoji_pack_unsaved_apply">Aplicar</string>
+    <string name="emoji_pack_delete_action">Borrar</string>
+    <string name="emoji_pack_delete_cancel">Cancelar</string>
+    <string name="emoji_pack_delete_message">Eliminar es irreversible. Tú y otros usuarios ya no podrán usar emoji de este paquete.</string>
+    <string name="emoji_pack_remove_message">El paquete se eliminará únicamente de su lista. Otros usuarios lo conservarán.</string>
+    <string name="emoji_pack_deleted">Paquete de emojis eliminado</string>
+    <string name="emoji_pack_delete_error">No se pudo eliminar el paquete de emojis</string>
+    <string name="emoji_pack_removed">Paquete de emojis eliminado</string>
+    <string name="emoji_pack_remove_error">No se pudo eliminar el paquete de emojis</string>
+    <plurals name="emoji_count">
+        <item quantity="one">%1$d emojis</item>
+        <item quantity="other">%1$d emojis</item>
+    </plurals>
+
     <string name="storage_cache_cleared">%1$s liberados</string>
     <string name="storage_cache_already_empty">No hay nada que borrar</string>
     <string name="storage_cache_clear_failed">No se pudo borrar la caché</string>
@@ -464,4 +509,5 @@
     <string name="storage_database_cleared">Base de datos local borrada</string>
     <string name="storage_database_clear_failed">No se pudo borrar la base de datos</string>
     <string name="done">Hecho</string>
+    <string name="empty_chats_hint">Para empezar a chatear, toca el campo de búsqueda en la parte superior de la pantalla y busca a un usuario por su @username</string>
 </resources>
