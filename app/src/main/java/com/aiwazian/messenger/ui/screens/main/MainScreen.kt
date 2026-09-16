@@ -212,12 +212,14 @@ private fun Content(drawerState: DrawerState, viewModel: MainViewModel) {
             )) {
                 if (uiState.chats.isEmpty()) {
                     Column(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = stringResource(R.string.new_message),
+                            text = stringResource(R.string.empty_chats_hint),
                             textAlign = TextAlign.Center,
                             lineHeight = 16.sp
                         )
@@ -265,12 +267,16 @@ private fun Content(drawerState: DrawerState, viewModel: MainViewModel) {
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.primary)) {
+                    Box(modifier = Modifier
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)) {
                         Icon(
                             Icons.Rounded.NotificationsNone,
                             null,
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.padding(14.dp).size(28.dp)
+                            modifier = Modifier
+                                .padding(14.dp)
+                                .size(28.dp)
                         )
                     }
                     Text(stringResource(R.string.notification_exception_receive))
@@ -326,11 +332,15 @@ private fun ChatFolderTabs(
                 targetValue = if (index == selectedIndex) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Box(modifier = Modifier.padding(vertical = 4.dp).zIndex(1f), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier
+                .padding(vertical = 4.dp)
+                .zIndex(1f), contentAlignment = Alignment.Center) {
                 Box(
-                    modifier = Modifier.graphicsLayer(scaleX = scale, scaleY = scale)
+                    modifier = Modifier
+                        .graphicsLayer(scaleX = scale, scaleY = scale)
                         .widthIn(min = TabRowDefaults.ScrollableTabRowMinTabWidth)
-                        .clip(CircleShape).background(backgroundColor)
+                        .clip(CircleShape)
+                        .background(backgroundColor)
                         .combinedClickable(
                             onClick = { onTabClick(index) },
                             onLongClick = { expanded = !expanded },

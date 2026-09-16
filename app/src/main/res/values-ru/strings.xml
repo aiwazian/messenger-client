@@ -526,4 +526,5 @@
     <string name="storage_database_cleared">Локальная база данных очищена</string>
     <string name="storage_database_clear_failed">Не удалось очистить базу данных</string>
     <string name="done">Готово</string>
+    <string name="empty_chats_hint">Чтобы начать общение, нажмите на поле поиска в верхней части экрана и найдите пользователя по его @username</string>
 </resources>
