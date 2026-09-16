@@ -5,11 +5,9 @@
 package com.aiwazian.messenger.ui.screens.main
 
 import android.Manifest
-import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,46 +19,32 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.MarkChatRead
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Create
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material3.Badge
 import androidx.compose.material3.ButtonDefaults
@@ -69,11 +53,8 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.TabRowDefaults
@@ -85,7 +66,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -94,11 +74,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -108,17 +85,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.rememberLottieComposition
-import com.aiwazian.messenger.BuildConfig
-import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Chat
-import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ChatType
-import com.aiwazian.messenger.enums.ThemeOption
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppBottomSheet
@@ -127,22 +96,12 @@ import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppPrimaryScrollableTabRow
 import com.aiwazian.messenger.ui.components.BottomBarScrim
-import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.screens.lock.LockScreen
-import com.yandex.mobile.ads.common.AdRequest
-import com.yandex.mobile.ads.common.AdTheme
-import com.yandex.mobile.ads.compose.Banner
-import com.yandex.mobile.ads.compose.BannerEvents
-import com.yandex.mobile.ads.compose.BannerSize
-import com.yandex.mobile.ads.compose.rememberBannerAdState
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
@@ -301,7 +260,19 @@ private fun Content(
                 )
             ) {
                 if (uiState.chats.isEmpty()) {
-                    EmptyChatPlaceholder(text = "Чтобы начать общение нажмите на поле поиска сверху экрана и найдите пользователя по его @username")
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Чтобы начать общение нажмите на поле поиска сверху экрана и найдите пользователя по его @username",
+                            textAlign = TextAlign.Center,
+                            lineHeight = 16.sp
+                        )
+                    }
                 } else if (uiState.folderPages.size <= 1) {
                     LaunchedEffect(Unit) {
                         viewModel.setActiveFolder(ALL_CHATS_FOLDER_ID)
@@ -594,336 +565,4 @@ private fun ChatList(
             Spacer(Modifier.height(bottomPadding))
         }
     }
-}
-
-@Composable
-private fun EmptyChatPlaceholder(
-    text: String, animation: String? = null
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        if (animation != null) {
-            val composition by rememberLottieComposition(
-                spec = LottieCompositionSpec.Asset(animation)
-            )
-            
-            LottieAnimation(
-                composition = composition,
-                modifier = Modifier
-                    .size(100.dp)
-                    .padding(bottom = 10.dp),
-                iterations = LottieConstants.IterateForever,
-                isPlaying = true
-            )
-        }
-        
-        Text(
-            text = text, textAlign = TextAlign.Center, lineHeight = 16.sp
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AccountSwitcherBottomSheet(
-    currentUser: User?,
-    otherAccounts: List<User>,
-    onAccountClick: (Long) -> Unit,
-    onAddAccount: () -> Unit,
-    onDismissRequest: () -> Unit
-) {
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-    
-    AppBottomSheet(
-        onDismissRequest = onDismissRequest,
-        sheetState = sheetState
-    ) {
-        currentUser?.let { user ->
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                ChatAvatar(
-                    id = user.id,
-                    chatName = user.firstName,
-                    avatarUri = user.avatars.firstOrNull()?.uri,
-                    size = 64.dp,
-                    sharedTransition = false
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        }
-        
-        otherAccounts.forEach { account ->
-            AccountRow(
-                user = account,
-                onClick = { onAccountClick(account.id) }
-            )
-        }
-        
-        AddAccountRow(onClick = onAddAccount)
-    }
-}
-
-@Composable
-private fun AccountRow(
-    user: User, onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(onClick = onClick)
-            .padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        ChatAvatar(
-            id = user.id,
-            chatName = user.firstName,
-            avatarUri = user.avatars.firstOrNull()?.uri,
-            size = 40.dp,
-            sharedTransition = false
-        )
-        Text(
-            text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-}
-
-@Composable
-private fun AddAccountRow(onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(onClick = onClick)
-            .padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Add,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
-        Text(
-            text = stringResource(R.string.add_account),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-}
-
-@Composable
-private fun DrawerContent(
-    drawerState: DrawerState,
-    user: User,
-    theme: ThemeOption,
-    showAccountSheet: Boolean,
-    onShowAccountSheet: () -> Unit,
-    onHideAccountSheet: () -> Unit,
-    accountSwitcherViewModel: AccountSwitcherViewModel = hiltViewModel()
-) {
-    val context = LocalContext.current
-    val navBackStack = LocalNavBackStack.current
-    val scope = rememberCoroutineScope()
-    val screenHeight = LocalWindowInfo.current.containerDpSize.height
-    val accountSwitcherState by accountSwitcherViewModel.uiState.collectAsState()
-    
-    LaunchedEffect(Unit) {
-        accountSwitcherViewModel.sideEffect.collectLatest { sideEffect ->
-            when (sideEffect) {
-                is AccountSwitcherSideEffect.AccountSwitched -> {
-                    val intent = Intent(context, MainActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
-                    context.startActivity(intent)
-                    (context as? Activity)?.finish()
-                }
-            }
-        }
-    }
-    
-    val verticalPadding = if (screenHeight < 400.dp) {
-        20.dp
-    } else {
-        80.dp
-    }
-    
-    val maxAdHeight = if (screenHeight < 400.dp) {
-        100.dp
-    } else {
-        300.dp
-    }
-    
-    ModalDrawerSheet(
-        drawerState = drawerState,
-        modifier = Modifier
-            .width(300.dp)
-            .fillMaxHeight()
-            .verticalScroll(rememberScrollState()),
-        windowInsets = WindowInsets()
-    ) {
-        Column(modifier = Modifier.statusBarsPadding()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = verticalPadding),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-                    modifier = Modifier.weight(1f),
-                    fontSize = 24.sp,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                
-                IconButton(onClick = onShowAccountSheet) {
-                    Icon(
-                        imageVector = Icons.Rounded.MoreVert, contentDescription = null
-                    )
-                }
-            }
-            
-            DrawerItem(
-                label = stringResource(R.string.profile), icon = Icons.Outlined.AccountCircle
-            ) {
-                scope.launch {
-                    drawerState.close()
-                }
-                navBackStack.add(
-                    AppRoute.Profile(
-                        profileId = user.id,
-                        profileName = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-                        avatarUri = user.avatars.firstOrNull()?.uri.toString()
-                    )
-                )
-            }
-            
-            val savedMessagesText = stringResource(R.string.saved_messages)
-            
-            DrawerItem(
-                label = savedMessagesText, icon = Icons.Rounded.BookmarkBorder
-            ) {
-                scope.launch {
-                    drawerState.close()
-                }
-                navBackStack.add(
-                    AppRoute.Chat(
-                        chatId = user.id,
-                        chatName = savedMessagesText,
-                        avatarUri = user.avatars.firstOrNull()?.uri?.toString()
-                    )
-                )
-            }
-            
-            DrawerItem(
-                label = stringResource(R.string.settings), icon = Icons.Outlined.Settings
-            ) {
-                scope.launch {
-                    drawerState.close()
-                }
-                navBackStack.add(AppRoute.Settings)
-            }
-        }
-        
-        Spacer(Modifier.weight(1f))
-        
-        val scope = rememberCoroutineScope()
-        var loadTrigger by remember { mutableLongStateOf(0L) }
-        val adTheme =
-            if (theme == ThemeOption.DARK || theme == ThemeOption.SYSTEM && isSystemInDarkTheme()) {
-                AdTheme.DARK
-            } else {
-                AdTheme.LIGHT
-            }
-        val adRequest =
-            AdRequest.Builder(BuildConfig.AD_BANNER_ID).setPreferredTheme(adTheme).build()
-        
-        val bannerState = rememberBannerAdState(
-            adSize = BannerSize.Inline(width = 300.dp, maxHeight = maxAdHeight),
-            events = BannerEvents(onAdFailedToLoad = { error ->
-                Log.e("YandexAds", error.description)
-                scope.launch {
-                    delay(4.seconds)
-                    loadTrigger++
-                }
-            }, onImpression = { data ->
-                Log.d("YandexAds", "Показ: ${data?.rawData}")
-                scope.launch {
-                    delay(60.seconds)
-                    loadTrigger++
-                }
-            })
-        )
-        
-        LaunchedEffect(loadTrigger) {
-            bannerState.loadAd(adRequest)
-        }
-        
-        Banner(
-            state = bannerState, modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-        )
-    }
-    
-    if (showAccountSheet) {
-        AccountSwitcherBottomSheet(
-            currentUser = accountSwitcherState.currentUser,
-            otherAccounts = accountSwitcherState.otherAccounts,
-            onAccountClick = accountSwitcherViewModel::switchAccount,
-            onAddAccount = {
-                onHideAccountSheet()
-                scope.launch {
-                    drawerState.close()
-                }
-                navBackStack.add(AppRoute.Login)
-            },
-            onDismissRequest = onHideAccountSheet
-        )
-    }
-}
-
-@Composable
-private fun DrawerItem(
-    label: String, icon: ImageVector, onClick: () -> Unit
-) {
-    NavigationDrawerItem(
-        shape = RectangleShape, label = {
-            Text(text = label)
-        }, icon = {
-            Icon(
-                imageVector = icon, contentDescription = null
-            )
-        }, selected = false, onClick = onClick
-    )
 }
