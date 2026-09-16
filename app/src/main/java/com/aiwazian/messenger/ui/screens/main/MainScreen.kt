@@ -110,17 +110,13 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     
     BackHandler(enabled = drawerState.isOpen) {
-        scope.launch {
-            drawerState.close()
-        }
+        scope.launch { drawerState.close() }
     }
     
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { isGranted: Boolean ->
-        if (!isGranted) {
-            viewModel.showNotificationSheet()
-        }
+        if (!isGranted) viewModel.showNotificationSheet()
     }
     
     LaunchedEffect(Unit) {
@@ -142,75 +138,45 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
                 onHideAccountSheet = viewModel::hideAccountSheet
             )
         },
-    ) {
-        Content(drawerState, viewModel)
-    }
+    ) { Content(drawerState, viewModel) }
     
-    AnimatedVisibility(
-        visible = uiState.isLocked,
-        enter = fadeIn(),
-        exit = fadeOut()
-    ) {
+    AnimatedVisibility(visible = uiState.isLocked, enter = fadeIn(), exit = fadeOut()) {
         LockScreen()
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Content(
-    drawerState: DrawerState, viewModel: MainViewModel
-) {
+private fun Content(drawerState: DrawerState, viewModel: MainViewModel) {
     val navBackStack = LocalNavBackStack.current
     val scope = rememberCoroutineScope()
     val uiState by viewModel.uiState.collectAsState()
     val hasSelection = uiState.selectedChatIds.isNotEmpty()
     val socketState by viewModel.socketState.collectAsState()
     
-    BackHandler(hasSelection) {
-        viewModel.clearSelection()
-    }
-    
+    BackHandler(hasSelection) { viewModel.clearSelection() }
     val pagerState = rememberPagerState(pageCount = { uiState.folderPages.size })
-    
     BackHandler(enabled = !hasSelection && !drawerState.isOpen && pagerState.currentPage != 0) {
-        scope.launch {
-            pagerState.animateScrollToPage(0)
-        }
+        scope.launch { pagerState.animateScrollToPage(0) }
     }
     
     Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
-        AnimatedContent(
-            targetState = hasSelection, transitionSpec = {
-                fadeIn() togetherWith fadeOut()
-            }) { hasSelection ->
-            if (!hasSelection) {
+        AnimatedContent(targetState = hasSelection, transitionSpec = { fadeIn() togetherWith fadeOut() }) { selected ->
+            if (!selected) {
                 Column {
                     DefaultTopBar(
                         drawerState = drawerState,
                         passcodeEnabled = uiState.hasPasscode,
-                        onLockClick = {
-                            scope.launch {
-                                viewModel.lockApp()
-                            }
-                        },
+                        onLockClick = { scope.launch { viewModel.lockApp() } },
                         socketState = socketState
                     )
-                    
                     if (uiState.folderPages.size > 1) {
                         ChatFolderTabs(
                             pages = uiState.folderPages,
                             selectedIndex = pagerState.currentPage,
-                            onTabClick = { index ->
-                                scope.launch {
-                                    pagerState.animateScrollToPage(index)
-                                }
-                            },
-                            onEditFolder = { folderId ->
-                                navBackStack.add(AppRoute.ChatFolderEditor(folderId))
-                            },
-                            onEditFolders = {
-                                navBackStack.add(AppRoute.ChatFolders)
-                            },
+                            onTabClick = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+                            onEditFolder = { folderId -> navBackStack.add(AppRoute.ChatFolderEditor(folderId)) },
+                            onEditFolders = { navBackStack.add(AppRoute.ChatFolders) },
                             onDeleteFolder = viewModel::requestFolderDeletion,
                             onMarkFolderRead = viewModel::markFolderChatsRead
                         )
@@ -230,54 +196,34 @@ private fun Content(
             }
         }
     }, floatingActionButton = {
-        AnimatedVisibility(
-            visible = !hasSelection, enter = expressiveScaleIn, exit = expressiveScaleOut
-        ) {
-            FloatingActionButton(
-                shape = CircleShape, onClick = {
-                    navBackStack.add(AppRoute.NewMessage)
-                }
-            ) {
+        AnimatedVisibility(visible = !hasSelection, enter = expressiveScaleIn, exit = expressiveScaleOut) {
+            FloatingActionButton(shape = CircleShape, onClick = { navBackStack.add(AppRoute.NewMessage) }) {
                 Icon(imageVector = Icons.Rounded.Create, contentDescription = null)
             }
         }
     }) { innerPadding ->
         val openChat: (Chat, String) -> Unit = { chat, chatName ->
-            navBackStack.add(
-                AppRoute.Chat(
-                    chatId = chat.id,
-                    chatName = chatName,
-                    avatarUri = chat.avatarUri?.toString()
-                )
-            )
+            navBackStack.add(AppRoute.Chat(chatId = chat.id, chatName = chatName, avatarUri = chat.avatarUri?.toString()))
         }
-        
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.padding(
-                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
-                    end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
-                )
-            ) {
+            Column(modifier = Modifier.padding(
+                start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
+            )) {
                 if (uiState.chats.isEmpty()) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 20.dp),
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Чтобы начать общение нажмите на поле поиска сверху экрана и найдите пользователя по его @username",
+                            text = stringResource(R.string.new_message),
                             textAlign = TextAlign.Center,
                             lineHeight = 16.sp
                         )
                     }
                 } else if (uiState.folderPages.size <= 1) {
-                    LaunchedEffect(Unit) {
-                        viewModel.setActiveFolder(ALL_CHATS_FOLDER_ID)
-                    }
-                    
+                    LaunchedEffect(Unit) { viewModel.setActiveFolder(ALL_CHATS_FOLDER_ID) }
                     ChatList(
                         chats = uiState.chats,
                         myId = uiState.me.id,
@@ -291,16 +237,9 @@ private fun Content(
                     )
                 } else {
                     LaunchedEffect(pagerState.currentPage, uiState.folderPages) {
-                        uiState.folderPages.getOrNull(pagerState.currentPage)?.let { page ->
-                            viewModel.setActiveFolder(page.id)
-                        }
+                        uiState.folderPages.getOrNull(pagerState.currentPage)?.let { viewModel.setActiveFolder(it.id) }
                     }
-                    
-                    HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier.fillMaxSize(),
-                        userScrollEnabled = !hasSelection
-                    ) { page ->
+                    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize(), userScrollEnabled = !hasSelection) { page ->
                         ChatList(
                             chats = uiState.folderPages[page].chats,
                             myId = uiState.me.id,
@@ -315,38 +254,26 @@ private fun Content(
                     }
                 }
             }
-            
             TopBarScrim(height = innerPadding.calculateTopPadding())
-            
             BottomBarScrim(height = innerPadding.calculateBottomPadding())
         }
-        
         if (uiState.showNotificationBottomSheet) {
             val context = LocalContext.current
             val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-            AppBottomSheet(
-                onDismissRequest = viewModel::hideNotificationSheet,
-                sheetState = sheetState
-            ) {
+            AppBottomSheet(onDismissRequest = viewModel::hideNotificationSheet, sheetState = sheetState) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                    ) {
+                    Box(modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.primary)) {
                         Icon(
                             Icons.Rounded.NotificationsNone,
                             null,
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier
-                                .padding(14.dp)
-                                .size(28.dp)
+                            modifier = Modifier.padding(14.dp).size(28.dp)
                         )
                     }
-                    Text("Включите уведомления, чтобы не пропускать важные сообщения")
+                    Text(stringResource(R.string.notification_exception_receive))
                     TextButton(modifier = Modifier.fillMaxWidth(), onClick = {
                         val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
                             putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
@@ -359,38 +286,26 @@ private fun Content(
             }
         }
     }
-    
     uiState.folderPendingDeletion?.let {
         AppDialog(
             title = stringResource(R.string.remove_folder),
             onDismissRequest = viewModel::cancelFolderDeletion,
-            content = {
-                Text(stringResource(R.string.delete_folder_confirm_message))
-            },
+            content = { Text(stringResource(R.string.delete_folder_confirm_message)) },
             buttons = {
-                TextButton(onClick = viewModel::cancelFolderDeletion) {
-                    Text(stringResource(R.string.cancel))
-                }
-                
+                TextButton(onClick = viewModel::cancelFolderDeletion) { Text(stringResource(R.string.cancel)) }
                 TextButton(
                     onClick = viewModel::confirmFolderDeletion,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(text = stringResource(R.string.delete))
-                }
+                ) { Text(text = stringResource(R.string.delete)) }
             })
     }
 }
 
 @Composable
 private fun ChatFolderTabs(
-    pages: List<ChatFolderPage>,
-    selectedIndex: Int,
-    onTabClick: (Int) -> Unit,
-    onEditFolder: (Int) -> Unit,
-    onEditFolders: () -> Unit,
-    onDeleteFolder: (Int) -> Unit,
-    onMarkFolderRead: (Int) -> Unit,
+    pages: List<ChatFolderPage>, selectedIndex: Int, onTabClick: (Int) -> Unit,
+    onEditFolder: (Int) -> Unit, onEditFolders: () -> Unit,
+    onDeleteFolder: (Int) -> Unit, onMarkFolderRead: (Int) -> Unit,
 ) {
     AppPrimaryScrollableTabRow(selectedTabIndex = selectedIndex) {
         pages.forEachIndexed { index, page ->
@@ -404,36 +319,21 @@ private fun ChatFolderTabs(
             )
             var expanded by remember { mutableStateOf(false) }
             val backgroundColor by animateColorAsState(
-                targetValue = if (expanded && selectedIndex != index) {
-                    MaterialTheme.colorScheme.surfaceContainerHighest
-                } else {
-                    MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0f)
-                }
+                targetValue = if (expanded && selectedIndex != index) MaterialTheme.colorScheme.surfaceContainerHighest
+                else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0f)
             )
             val accentColor by animateColorAsState(
-                targetValue = if (index == selectedIndex) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                }
+                targetValue = if (index == selectedIndex) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 4.dp)
-                    .zIndex(1f),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.padding(vertical = 4.dp).zIndex(1f), contentAlignment = Alignment.Center) {
                 Box(
-                    modifier = Modifier
-                        .graphicsLayer(scaleX = scale, scaleY = scale)
+                    modifier = Modifier.graphicsLayer(scaleX = scale, scaleY = scale)
                         .widthIn(min = TabRowDefaults.ScrollableTabRowMinTabWidth)
-                        .clip(CircleShape)
-                        .background(backgroundColor)
+                        .clip(CircleShape).background(backgroundColor)
                         .combinedClickable(
                             onClick = { onTabClick(index) },
-                            onLongClick = {
-                                expanded = !expanded
-                            },
+                            onLongClick = { expanded = !expanded },
                             interactionSource = interactionSource,
                             indication = null
                         ),
@@ -445,25 +345,13 @@ private fun ChatFolderTabs(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = page.name.asString(),
-                            color = accentColor,
-                            fontSize = 14.sp,
-                            lineHeight = 14.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                            text = page.name.asString(), color = accentColor, fontSize = 14.sp,
+                            lineHeight = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
-                        
-                        AnimatedVisibility(
-                            visible = page.unreadChatCount > 0,
-                            enter = expressiveScaleIn,
-                            exit = expressiveScaleOut
-                        ) {
+                        AnimatedVisibility(visible = page.unreadChatCount > 0, enter = expressiveScaleIn, exit = expressiveScaleOut) {
                             val containerColor by animateColorAsState(
-                                targetValue = if (selectedIndex == index) {
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                                } else {
-                                    Color(0xFFC6C6C6)
-                                }
+                                targetValue = if (selectedIndex == index) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                else Color(0xFFC6C6C6)
                             )
                             Badge(containerColor = containerColor) {
                                 Text(
@@ -475,45 +363,33 @@ private fun ChatFolderTabs(
                         }
                     }
                 }
-                AppDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }) {
+                AppDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                     AppDropdownMenuItem(
-                        leadingIcon = {
-                            Icon(Icons.Rounded.Edit, null)
-                        },
-                        text = stringResource(
-                            if (isAllChats) R.string.edit_folders
-                            else R.string.edit_folder
-                        ),
+                        leadingIcon = { Icon(Icons.Rounded.Edit, null) },
+                        text = stringResource(if (isAllChats) R.string.edit_folders else R.string.edit_folder),
                         onClick = {
                             expanded = false
-                            if (isAllChats) {
-                                onEditFolders()
-                            } else {
-                                onEditFolder(page.id)
-                            }
+                            if (isAllChats) onEditFolders() else onEditFolder(page.id)
                         })
-                    
                     if (page.unreadChatCount > 0) {
                         AppDropdownMenuItem(
-                            leadingIcon = {
-                                Icon(Icons.Outlined.MarkChatRead, null)
-                            },
+                            leadingIcon = { Icon(Icons.Outlined.MarkChatRead, null) },
                             text = stringResource(R.string.mark_all_as_read),
                             onClick = {
                                 expanded = false
                                 onMarkFolderRead(page.id)
                             })
                     }
-                    
                     if (!isAllChats) {
-                        AppDropdownMenuItem(leadingIcon = {
-                            Icon(Icons.Rounded.DeleteOutline, null)
-                        }, text = stringResource(R.string.delete), onClick = {
-                            expanded = false
-                            onDeleteFolder(page.id)
-                        }, contentColor = MaterialTheme.colorScheme.error)
+                        AppDropdownMenuItem(
+                            leadingIcon = { Icon(Icons.Rounded.DeleteOutline, null) },
+                            text = stringResource(R.string.delete),
+                            onClick = {
+                                expanded = false
+                                onDeleteFolder(page.id)
+                            },
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             }
@@ -523,46 +399,25 @@ private fun ChatFolderTabs(
 
 @Composable
 private fun ChatList(
-    chats: List<Chat>,
-    myId: Long,
-    selectedChatIds: Set<Long>,
-    onlineUserIds: Set<Long>,
-    hasSelection: Boolean,
-    topPadding: Dp,
-    bottomPadding: Dp,
-    onOpenChat: (Chat, String) -> Unit,
-    onToggleSelection: (Long) -> Unit
+    chats: List<Chat>, myId: Long, selectedChatIds: Set<Long>, onlineUserIds: Set<Long>,
+    hasSelection: Boolean, topPadding: Dp, bottomPadding: Dp,
+    onOpenChat: (Chat, String) -> Unit, onToggleSelection: (Long) -> Unit
 ) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        item {
-            Spacer(Modifier.height(topPadding))
-        }
+        item { Spacer(Modifier.height(topPadding)) }
         items(chats) { chat ->
             val chatName = chat.chatName.asString()
             val isSelected = chat.id in selectedChatIds
-            val isOnline = ChatType.fromId(chat.id) == ChatType.PRIVATE &&
-                    chat.id != myId &&
-                    chat.id in onlineUserIds
+            val isOnline = ChatType.fromId(chat.id) == ChatType.PRIVATE && chat.id != myId && chat.id in onlineUserIds
             ChatCard(
-                modifier = Modifier.animateItem(),
-                chat = chat,
-                myId = myId,
-                isSelected = isSelected,
-                isOnline = isOnline,
+                modifier = Modifier.animateItem(), chat = chat, myId = myId,
+                isSelected = isSelected, isOnline = isOnline,
                 unreadMessageCount = chat.unreadCount,
                 onClickChat = {
-                    if (hasSelection) {
-                        onToggleSelection(chat.id)
-                    } else {
-                        onOpenChat(chat, chatName)
-                    }
+                    if (hasSelection) onToggleSelection(chat.id) else onOpenChat(chat, chatName)
                 },
-                onLongClickChat = {
-                    onToggleSelection(chat.id)
-                })
+                onLongClickChat = { onToggleSelection(chat.id) })
         }
-        item {
-            Spacer(Modifier.height(bottomPadding))
-        }
+        item { Spacer(Modifier.height(bottomPadding)) }
     }
 }
