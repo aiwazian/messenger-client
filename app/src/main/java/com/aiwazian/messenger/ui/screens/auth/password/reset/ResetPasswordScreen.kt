@@ -23,12 +23,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -40,7 +44,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 @Composable
 fun ResetPasswordScreen(
@@ -57,6 +64,9 @@ fun ResetPasswordScreen(
     
     val uiState by viewModel.uiState.collectAsState()
     
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var snackbarJob by remember { mutableStateOf<Job?>(null) }
     val focusRequester = remember { FocusRequester() }
     
     LaunchedEffect(Unit) {
@@ -75,7 +85,10 @@ fun ResetPasswordScreen(
                 }
                 
                 is ResetPasswordUiEffect.ShowSnackbar -> {
-                    // Handle snackbar if needed
+                    snackbarJob?.cancel()
+                    snackbarJob = scope.launch {
+                        snackbarHostState.showSnackbar(effect.message.asString(context))
+                    }
                 }
             }
         }
@@ -105,6 +118,9 @@ fun ResetPasswordScreen(
                     }
                 }
             }
+        },
+        snackbarHost = {
+            AppSnackbar(snackbarHostState)
         }) { innerPadding ->
         Column(
             modifier = Modifier
