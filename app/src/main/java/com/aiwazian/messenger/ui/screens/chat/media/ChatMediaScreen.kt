@@ -56,6 +56,7 @@ import com.aiwazian.messenger.ui.app.AppPrimaryScrollableTabRow
 import com.aiwazian.messenger.ui.app.AppTab
 import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.TopBarScrim
+import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
@@ -234,7 +235,11 @@ fun ChatMediaScreen(
         val viewerMedia = remember(uiState.media) {
             uiState.media.mapNotNull { item ->
                 item.localUri?.let { uri ->
-                    ViewerMediaItem(uri = uri, isVideo = item.type == AttachmentType.VIDEO)
+                    ViewerMediaItem(
+                        uri = uri,
+                        isVideo = item.type == AttachmentType.VIDEO,
+                        originKey = chatMediaKey(item.messageId, uri)
+                    )
                 }
             }
         }

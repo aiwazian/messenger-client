@@ -115,8 +115,14 @@ private val GlobalMediaOriginRegistry = MediaOriginRegistry()
 
 val LocalMediaOriginRegistry = staticCompositionLocalOf { GlobalMediaOriginRegistry }
 
-/** Ключ миниатюры вложения в переписке. */
-fun chatMediaKey(uri: Uri): String = uri.toString()
+/**
+ * Ключ миниатюры вложения в переписке.
+ *
+ * Пересланные копии ссылаются на тот же файл, поэтому одного [uri] недостаточно:
+ * без [messageId] две копии в одном чате делили бы одну запись реестра, и
+ * переход возвращался бы в первую из них.
+ */
+fun chatMediaKey(messageId: Long, uri: Uri): String = "chat:$messageId:$uri"
 
 /**
  * Ключ миниатюры в сетке шторки вложений.
