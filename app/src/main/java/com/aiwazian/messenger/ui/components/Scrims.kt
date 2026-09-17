@@ -52,7 +52,6 @@ fun BoxScope.BottomBarScrim(height: Dp) {
                 brush = Brush.verticalGradient(
                     colors = listOf(
                         Color.Transparent,
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
                         MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
                     )
                 )
