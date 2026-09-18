@@ -33,6 +33,7 @@ private object Keys {
     val AUTO_DOWNLOAD_FILES = booleanPreferencesKey("auto_download_files")
     val FINGERPRINT_ENABLED = booleanPreferencesKey("fingerprint_enabled")
     val KEYBOARD_HEIGHT = floatPreferencesKey("keyboard_height")
+    val EQUALIZER_BAND_LEVELS = stringPreferencesKey("equalizer_band_levels")
 }
 
 @Singleton
@@ -87,7 +88,10 @@ class DataStoreManager @Inject constructor(
         setValue(Keys.FINGERPRINT_ENABLED, enabled)
     
     suspend fun saveKeyboardHeight(height: Float) = setValue(Keys.KEYBOARD_HEIGHT, height)
-    
+
+    suspend fun saveEqualizerBandLevels(levels: List<Int>) =
+        setValue(Keys.EQUALIZER_BAND_LEVELS, levels.joinToString(separator = ","))
+
     fun getPasscode() = getValue(Keys.PASSCODE, "")
     
     fun getIsLockApp() = getValue(Keys.IS_LOCK_APP, false)
@@ -117,12 +121,20 @@ class DataStoreManager @Inject constructor(
     fun getFingerprintEnabled() = getValue(Keys.FINGERPRINT_ENABLED, false)
     
     fun getKeyboardHeight() = getValue(Keys.KEYBOARD_HEIGHT, DEFAULT_KEYBOARD_HEIGHT)
-    
+
+    fun getEqualizerBandLevels(): Flow<List<Int>> =
+        getValue(Keys.EQUALIZER_BAND_LEVELS, "").map { encoded ->
+            encoded.split(',')
+                .mapNotNull { it.toIntOrNull() }
+                .ifEmpty { List(EQUALIZER_BAND_COUNT) { 0 } }
+        }
+
     suspend fun clear() {
         context.dataStore.edit { it.clear() }
     }
     
     companion object {
         const val DEFAULT_KEYBOARD_HEIGHT = 250f
+        const val EQUALIZER_BAND_COUNT = 5
     }
 }

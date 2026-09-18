@@ -15,6 +15,7 @@ import com.aiwazian.messenger.playback.MusicRepeatMode
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.chat.paging.ScrollTarget
 import com.aiwazian.messenger.utils.DataStoreManager
+import com.aiwazian.messenger.utils.EqualizerInfo
 import com.aiwazian.messenger.utils.UiText
 
 data class ChatUiState(
@@ -73,6 +74,8 @@ data class ChatUiState(
     val musicDurationMs: Int = 0,
     val musicRepeatMode: MusicRepeatMode = MusicRepeatMode.REPEAT_ALL,
     val audioMetadata: Map<String, AudioTrackMetadata> = emptyMap(),
+    val equalizerInfo: EqualizerInfo? = null,
+    val equalizerBandLevels: List<Int> = emptyList(),
     val isFirstLoadDone: Boolean = false,
     val groupReadInfo: Map<Long, List<MessageReadInfo>> = emptyMap(),
     val editingMessageId: Long? = null,

@@ -59,6 +59,7 @@ import com.aiwazian.messenger.utils.AudioRecorderManager
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DataStoreManager
 import com.aiwazian.messenger.utils.DownloaderManager
+import com.aiwazian.messenger.utils.EqualizerManager
 import com.aiwazian.messenger.utils.FileHandler
 import com.aiwazian.messenger.utils.LastSeenHelper
 import com.aiwazian.messenger.utils.RegexPatterns
@@ -115,6 +116,7 @@ class ChatViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
     private val voicePlayerManager: VoicePlayerManager,
     private val musicPlayerManager: MusicPlayerManager,
+    private val equalizerManager: EqualizerManager,
     private val onlineUsersTracker: OnlineUsersTracker,
     private val realtimeEventSyncService: RealtimeEventSyncService,
     private val notificationHelper: NotificationHelper
@@ -175,6 +177,7 @@ class ChatViewModel @Inject constructor(
         observeMusicPlayer()
         observeMusicQueueUpdates()
         observeAudioMetadata()
+        observeEqualizer()
         observeQueueUpdates()
         setupSocketConnectionObserver()
     }
@@ -299,6 +302,19 @@ class ChatViewModel @Inject constructor(
             _uiState.collect { state ->
                 if (state.currentMusicFileId == null) return@collect
                 musicPlayerManager.updateQueue(buildMusicQueue(state))
+            }
+        }
+    }
+
+    private fun observeEqualizer() {
+        viewModelScope.launch {
+            equalizerManager.info.collect { info ->
+                _uiState.update { it.copy(equalizerInfo = info) }
+            }
+        }
+        viewModelScope.launch {
+            equalizerManager.bandLevels.collect { levels ->
+                _uiState.update { it.copy(equalizerBandLevels = levels) }
             }
         }
     }
@@ -1589,6 +1605,14 @@ class ChatViewModel @Inject constructor(
 
     fun stopMusic() {
         musicPlayerManager.stop()
+    }
+
+    fun setEqualizerBandLevel(band: Int, levelMb: Int) {
+        equalizerManager.setBandLevel(band, levelMb)
+    }
+
+    fun persistEqualizerBandLevels() {
+        equalizerManager.persistBandLevels()
     }
 
     private fun playVoice(fileId: String, startPositionMs: Int = 0) {

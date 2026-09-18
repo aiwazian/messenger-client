@@ -76,6 +76,7 @@ fun MusicPlayerSheet(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onShare: () -> Unit,
+    onOpenEqualizer: (() -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -240,6 +241,16 @@ fun MusicPlayerSheet(
                             onShare()
                         }
                     )
+
+                    if (onOpenEqualizer != null) {
+                        AppDropdownMenuItem(
+                            text = stringResource(R.string.equalizer),
+                            onClick = {
+                                menuExpanded = false
+                                onOpenEqualizer()
+                            }
+                        )
+                    }
                 }
             }
         }

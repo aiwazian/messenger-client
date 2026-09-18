@@ -5,15 +5,24 @@
 package com.aiwazian.messenger.playback
 
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.aiwazian.messenger.MainActivity
+import com.aiwazian.messenger.utils.EqualizerManager
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MusicPlaybackService : MediaSessionService() {
+
+    @Inject
+    lateinit var equalizerManager: EqualizerManager
 
     private var mediaSession: MediaSession? = null
 
@@ -25,10 +34,18 @@ class MusicPlaybackService : MediaSessionService() {
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
 
+        val audioSessionId = (getSystemService(Context.AUDIO_SERVICE) as AudioManager)
+            .generateAudioSessionId()
+
         val player = ExoPlayer.Builder(this)
             .setAudioAttributes(audioAttributes, true)
             .setHandleAudioBecomingNoisy(true)
             .build()
+
+        if (audioSessionId > 0) {
+            player.setAudioSessionId(audioSessionId)
+            equalizerManager.attach(audioSessionId)
+        }
 
         val sessionActivityIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -59,6 +76,7 @@ class MusicPlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        equalizerManager.detach()
         mediaSession?.run {
             player.release()
             release()
