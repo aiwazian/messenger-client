@@ -72,7 +72,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
@@ -447,23 +446,44 @@ fun ChatScreen(
             AppSnackbar(snackbarHostState)
         }
     }, topBar = {
-        ChatTopBar(
-            title = uiState.chatName.asString(),
-            avatarUri = uiState.avatarUri,
-            subTitle = uiState.subTitle.asString(),
-            topBarActions = uiState.topBarActions,
-            isConnected = uiState.isConnected,
-            chatId = uiState.chatId,
-            myId = uiState.myId,
-            isMuted = isChatMuted,
-            isSearchActive = uiState.isMessageSearchActive,
-            searchQuery = uiState.messageSearchQuery,
-            onSearchQueryChange = chatViewModel::changeMessageSearchQuery,
-            onClearSearchQuery = chatViewModel::clearMessageSearchQuery,
-            onStartSearch = chatViewModel::startMessageSearch,
-            onToggleNotifications = notificationsViewModel::toggle,
-            onBackClick = onBackClick
-        )
+        Column {
+            ChatTopBar(
+                title = uiState.chatName.asString(),
+                avatarUri = uiState.avatarUri,
+                subTitle = uiState.subTitle.asString(),
+                topBarActions = uiState.topBarActions,
+                isConnected = uiState.isConnected,
+                chatId = uiState.chatId,
+                myId = uiState.myId,
+                isMuted = isChatMuted,
+                isSearchActive = uiState.isMessageSearchActive,
+                searchQuery = uiState.messageSearchQuery,
+                onSearchQueryChange = chatViewModel::changeMessageSearchQuery,
+                onClearSearchQuery = chatViewModel::clearMessageSearchQuery,
+                onStartSearch = chatViewModel::startMessageSearch,
+                onToggleNotifications = notificationsViewModel::toggle,
+                onBackClick = onBackClick
+            )
+            AnimatedContent(
+                targetState = uiState.currentMusicFileId,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                contentAlignment = Alignment.TopCenter
+            ) { currentMusicFileId ->
+                if (currentMusicFileId != null) {
+                    MusicMiniPlayer(
+                        title = uiState.currentMusicTitle,
+                        artist = uiState.currentMusicArtist,
+                        isPlaying = uiState.isMusicPlaying,
+                        onTogglePlayPause = chatViewModel::toggleMusicPlayPause,
+                        onClose = chatViewModel::stopMusic,
+                        onOpen = { showMusicPlayerSheet = true }
+                    )
+                }
+            }
+        }
     }, bottomBar = {
         val bottomBarModifier = Modifier.windowInsetsPadding(
             WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
@@ -545,28 +565,6 @@ fun ChatScreen(
                             end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
                         )
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .zIndex(10f)
-                    ) {
-                        Spacer(Modifier.height(innerPadding.calculateTopPadding()))
-                        AnimatedContent(
-                            targetState = uiState.currentMusicFileId,
-                            transitionSpec = { fadeIn() togetherWith fadeOut() }) { currentMusicFileId ->
-                            if (currentMusicFileId != null) {
-                                MusicMiniPlayer(
-                                    title = uiState.currentMusicTitle,
-                                    artist = uiState.currentMusicArtist,
-                                    isPlaying = uiState.isMusicPlaying,
-                                    onTogglePlayPause = chatViewModel::toggleMusicPlayPause,
-                                    onClose = chatViewModel::stopMusic,
-                                    onOpen = { showMusicPlayerSheet = true }
-                                )
-                            }
-                        }
-                    }
-                    
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         state = listState,
