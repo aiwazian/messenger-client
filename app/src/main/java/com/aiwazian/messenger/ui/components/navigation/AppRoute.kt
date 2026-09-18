@@ -28,7 +28,10 @@ sealed interface AppRoute : NavKey {
         val chatId: Long,
         val chatName: String? = null
     ) : AppRoute
-    
+
+    @Serializable
+    data object Equalizer : AppRoute
+
     @Serializable
     data class Profile(
         val profileId: Long,

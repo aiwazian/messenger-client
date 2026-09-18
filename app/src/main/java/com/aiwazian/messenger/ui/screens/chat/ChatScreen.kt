@@ -100,7 +100,6 @@ import com.aiwazian.messenger.ui.screens.chat.components.ChatSearchSummaryBar
 import com.aiwazian.messenger.ui.screens.chat.components.ChatTopBar
 import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.EmojiPackBottomSheet
-import com.aiwazian.messenger.ui.screens.chat.components.EqualizerSheet
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
@@ -330,7 +329,6 @@ fun ChatScreen(
     var fileToCancelId by remember { mutableStateOf<Long?>(null) }
     var showCancelRecordingDialog by remember { mutableStateOf(false) }
     var showMusicPlayerSheet by remember { mutableStateOf(false) }
-    var showEqualizerSheet by remember { mutableStateOf(false) }
     
     LaunchedEffect(uiState.currentMusicFileId) {
         if (uiState.currentMusicFileId == null) showMusicPlayerSheet = false
@@ -968,25 +966,15 @@ fun ChatScreen(
             onNext = chatViewModel::playNextMusicTrack,
             onShare = chatViewModel::shareCurrentMusicTrack,
             onOpenEqualizer = if (uiState.equalizerInfo != null) {
-                { showEqualizerSheet = true }
+                {
+                    showMusicPlayerSheet = false
+                    navBackStack.add(AppRoute.Equalizer)
+                }
             } else {
                 null
             },
             onDismiss = { showMusicPlayerSheet = false }
         )
-    }
-
-    if (showEqualizerSheet) {
-        val equalizerInfo = uiState.equalizerInfo
-        if (equalizerInfo != null) {
-            EqualizerSheet(
-                info = equalizerInfo,
-                bandLevels = uiState.equalizerBandLevels,
-                onBandLevelChange = chatViewModel::setEqualizerBandLevel,
-                onEditingFinished = chatViewModel::persistEqualizerBandLevels,
-                onDismiss = { showEqualizerSheet = false }
-            )
-        }
     }
 }
 
