@@ -42,6 +42,7 @@ class VoicePlaybackService : MediaSessionService() {
         
         mediaSession = MediaSession.Builder(this, player)
             .setSessionActivity(sessionActivityPendingIntent)
+            .setId(VOICE_SESSION_ID)
             .build()
     }
     
@@ -64,5 +65,9 @@ class VoicePlaybackService : MediaSessionService() {
         }
         mediaSession = null
         super.onDestroy()
+    }
+
+    companion object {
+        private const val VOICE_SESSION_ID = "voice_playback"
     }
 }

@@ -42,6 +42,7 @@ class MusicPlaybackService : MediaSessionService() {
 
         mediaSession = MediaSession.Builder(this, player)
             .setSessionActivity(sessionActivityPendingIntent)
+            .setId(MUSIC_SESSION_ID)
             .build()
     }
 
@@ -64,5 +65,9 @@ class MusicPlaybackService : MediaSessionService() {
         }
         mediaSession = null
         super.onDestroy()
+    }
+
+    companion object {
+        private const val MUSIC_SESSION_ID = "music_playback"
     }
 }
