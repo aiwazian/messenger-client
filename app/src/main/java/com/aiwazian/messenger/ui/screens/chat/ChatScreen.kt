@@ -72,6 +72,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
@@ -325,7 +326,7 @@ fun ChatScreen(
     var fileToCancelId by remember { mutableStateOf<Long?>(null) }
     var showCancelRecordingDialog by remember { mutableStateOf(false) }
     var showMusicPlayerSheet by remember { mutableStateOf(false) }
-
+    
     LaunchedEffect(uiState.currentMusicFileId) {
         if (uiState.currentMusicFileId == null) showMusicPlayerSheet = false
     }
@@ -536,24 +537,24 @@ fun ChatScreen(
                     onLoadMore = chatViewModel::loadMoreSearchResults
                 )
             } else {
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(
                             start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
-                            end = innerPadding.calculateEndPadding(LayoutDirection.Ltr),
-                            bottom = innerPadding.calculateBottomPadding()
-                        ),
-                    verticalArrangement = Arrangement.Bottom
+                            end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
+                        )
                 ) {
-                    LazyColumn(
-                        state = listState,
-                        reverseLayout = true,
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                        overscrollEffect = rememberOverscrollEffect()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .zIndex(10f)
                     ) {
-                        if (uiState.currentMusicFileId != null) {
-                            stickyHeader(key = "music_mini_player") {
+                        Spacer(Modifier.height(innerPadding.calculateTopPadding()))
+                        AnimatedContent(
+                            targetState = uiState.currentMusicFileId,
+                            transitionSpec = { fadeIn() togetherWith fadeOut() }) { currentMusicFileId ->
+                            if (currentMusicFileId != null) {
                                 MusicMiniPlayer(
                                     title = uiState.currentMusicTitle,
                                     artist = uiState.currentMusicArtist,
@@ -564,7 +565,15 @@ fun ChatScreen(
                                 )
                             }
                         }
-
+                    }
+                    
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        state = listState,
+                        reverseLayout = true,
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        overscrollEffect = rememberOverscrollEffect()
+                    ) {
                         item(key = "chat_footer") {
                             Column {
                                 if (uiState.isLoadingNewer) {
@@ -577,6 +586,7 @@ fun ChatScreen(
                                         CircularWavyProgressIndicator()
                                     }
                                 }
+                                Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
                             }
                         }
                         
@@ -878,17 +888,18 @@ fun ChatScreen(
                             )
                 }
         }
-
+        
         val tapped = tappedMedia
         val viewerAttachments = when {
             tapped == null -> downloadedMedia
             downloadedMedia.any {
                 it.messageId == tapped.messageId && it.fileId == tapped.fileId
             } -> downloadedMedia
+            
             tapped.localUri != null -> listOf(tapped)
             else -> downloadedMedia
         }
-
+        
         val viewerEntries = viewerAttachments.mapNotNull { attachment ->
             val uri = attachment.localUri ?: return@mapNotNull null
             attachment to ViewerMediaItem(
@@ -927,7 +938,7 @@ fun ChatScreen(
             AppSnackbar(snackbarHostState)
         }
     }
-
+    
     if (showMusicPlayerSheet && uiState.currentMusicFileId != null) {
         val musicMetadata = uiState.audioMetadata[uiState.currentMusicFileId]
         MusicPlayerSheet(

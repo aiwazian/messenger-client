@@ -7,7 +7,6 @@ package com.aiwazian.messenger.ui.screens.chat.components
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,8 +25,8 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,10 +37,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -74,11 +71,6 @@ fun MusicPlayerSheet(
 
     var dragPositionMs by remember { mutableStateOf<Int?>(null) }
     val shownPositionMs = dragPositionMs ?: positionMs
-    val progress = if (durationMs > 0) {
-        (shownPositionMs.toFloat() / durationMs).coerceIn(0f, 1f)
-    } else {
-        0f
-    }
 
     AppBottomSheet(onDismissRequest = onDismiss) {
         Row(
@@ -133,46 +125,17 @@ fun MusicPlayerSheet(
             }
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(28.dp)
-                .pointerInput(durationMs) {
-                    if (durationMs <= 0) return@pointerInput
-
-                    detectHorizontalDragGestures(
-                        onDragStart = { offset ->
-                            dragPositionMs = offset.x
-                                .coerceIn(0f, size.width.toFloat())
-                                .div(size.width)
-                                .times(durationMs)
-                                .toInt()
-                                .coerceIn(0, durationMs)
-                        },
-                        onDragEnd = {
-                            dragPositionMs?.let(onSeek)
-                            dragPositionMs = null
-                        },
-                        onDragCancel = {
-                            dragPositionMs = null
-                        },
-                        onHorizontalDrag = { change, _ ->
-                            change.consume()
-                            dragPositionMs = change.position.x
-                                .coerceIn(0f, size.width.toFloat())
-                                .div(size.width)
-                                .times(durationMs)
-                                .toInt()
-                                .coerceIn(0, durationMs)
-                        }
-                    )
+        if (durationMs > 0) {
+            Slider(
+                value = shownPositionMs.toFloat().coerceIn(0f, durationMs.toFloat()),
+                onValueChange = { dragPositionMs = it.toInt() },
+                onValueChangeFinished = {
+                    dragPositionMs?.let(onSeek)
+                    dragPositionMs = null
                 },
-            contentAlignment = Alignment.CenterStart
-        ) {
-            LinearProgressIndicator(
-                progress = { progress },
+                valueRange = 0f..durationMs.toFloat(),
                 modifier = Modifier.fillMaxWidth()
             )
         }

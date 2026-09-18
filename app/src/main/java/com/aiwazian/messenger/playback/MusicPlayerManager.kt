@@ -115,9 +115,10 @@ class MusicPlayerManager @Inject constructor(
             metadataBuilder.setArtist(it)
             metadataBuilder.setSubtitle(it)
         }
-        track.artworkUri?.let { metadataBuilder.setArtworkUri(it) }
-        track.artworkData?.let {
-            metadataBuilder.setArtworkData(it, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+        if (track.artworkData != null) {
+            metadataBuilder.setArtworkData(track.artworkData, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+        } else {
+            track.artworkUri?.let { metadataBuilder.setArtworkUri(it) }
         }
 
         val mediaItem = MediaItem.Builder()

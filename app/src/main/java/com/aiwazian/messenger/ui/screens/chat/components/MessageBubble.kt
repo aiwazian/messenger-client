@@ -77,6 +77,7 @@ import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.extensions.getDuration
+import com.aiwazian.messenger.extensions.isAudioFile
 import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
@@ -367,19 +368,26 @@ fun MessageBubble(
                             }
                             
                             AttachmentType.FILE -> {
-                                MessageFile(
-                                    file = attachment,
-                                    metadata = audioMetadata[attachment.fileId],
-                                    isCurrentTrack = currentMusicFileId == attachment.fileId,
-                                    isPlaying = isMusicPlaying,
-                                    positionMs = if (currentMusicFileId == attachment.fileId) musicPositionMs else 0,
-                                    durationMs = if (currentMusicFileId == attachment.fileId) musicDurationMs else 0,
-                                    onAction = { action ->
-                                        onFileAction(attachment, action)
-                                    },
-                                    onSeek = { positionMs ->
-                                        onMusicSeek(attachment, positionMs)
-                                    })
+                                if (attachment.extension.isAudioFile()) {
+                                    MessageMusic(
+                                        file = attachment,
+                                        metadata = audioMetadata[attachment.fileId],
+                                        isCurrentTrack = currentMusicFileId == attachment.fileId,
+                                        isPlaying = isMusicPlaying && currentMusicFileId == attachment.fileId,
+                                        positionMs = if (currentMusicFileId == attachment.fileId) musicPositionMs else 0,
+                                        durationMs = if (currentMusicFileId == attachment.fileId) musicDurationMs else 0,
+                                        onAction = { action ->
+                                            onFileAction(attachment, action)
+                                        },
+                                        onSeek = { positionMs ->
+                                            onMusicSeek(attachment, positionMs)
+                                        })
+                                } else {
+                                    MessageFile(
+                                        file = attachment, onAction = { action ->
+                                            onFileAction(attachment, action)
+                                        })
+                                }
                             }
                             
                             else -> {}
