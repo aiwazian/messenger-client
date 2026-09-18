@@ -47,7 +47,7 @@ fun MusicMiniPlayer(
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .clickable(onClick = onOpen),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         IconButton(onClick = onTogglePlayPause) {
             Icon(
@@ -72,7 +72,6 @@ fun MusicMiniPlayer(
             )
             Text(
                 text = artist,
-                modifier = Modifier.weight(1f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontSize = 14.sp,
