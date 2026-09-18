@@ -77,7 +77,6 @@ import com.aiwazian.messenger.ui.components.PlayerSpeedBadge
 import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.animatedBackgroundAlpha
 import com.aiwazian.messenger.ui.components.animatedOffsetY
-import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.dismissDragGestures
 import com.aiwazian.messenger.ui.components.mediaHeroBackground
 import com.aiwazian.messenger.ui.components.mediaHeroContainer
@@ -91,7 +90,9 @@ import kotlin.time.Duration.Companion.milliseconds
 
 data class ViewerMediaItem(
     val uri: Uri,
-    val isVideo: Boolean
+    val isVideo: Boolean,
+    /** Ключ миниатюры-источника для обратной анимации. */
+    val originKey: String
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -142,7 +143,7 @@ fun FullScreenViewer(
         pageCount = { media.size })
     
     val hero = rememberMediaHeroState(
-        originKey = media.getOrNull(pagerState.currentPage)?.let { chatMediaKey(it.uri) },
+        originKey = media.getOrNull(pagerState.currentPage)?.originKey,
         dragOffsetY = dismissDragState.animatedOffsetY(),
         onDismissed = onDismiss
     )

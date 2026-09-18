@@ -333,7 +333,8 @@ fun MessageBubble(
                                         MediaThumbnail(
                                             attachment = attachment,
                                             mediaUri = mediaUri,
-                                            cacheKey = "$mediaCacheKeyPrefix:${attachment.sortOrder}",
+                                            cacheKey = "$mediaCacheKeyPrefix:${attachment.fileId}",
+                                            transitionKey = chatMediaKey(attachment.messageId, mediaUri),
                                             onFileAction = onFileAction
                                         )
                                     }
@@ -617,17 +618,19 @@ private fun MediaThumbnail(
     attachment: MessageAttachment,
     mediaUri: Uri,
     cacheKey: String,
+    transitionKey: String,
     onFileAction: (MessageAttachment, FileAction) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (attachment.type == AttachmentType.VIDEO) {
-            VideoThumbnail(videoUri = mediaUri, cacheKey = cacheKey) {
+            VideoThumbnail(videoUri = mediaUri, cacheKey = cacheKey, transitionKey = transitionKey) {
                 onFileAction(attachment, FileAction.OPEN)
             }
         } else {
             ImageThumbnail(
                 imageUri = mediaUri,
                 cacheKey = cacheKey,
+                transitionKey = transitionKey,
                 isGif = attachment.type == AttachmentType.GIF
             ) {
                 onFileAction(attachment, FileAction.OPEN)
@@ -673,10 +676,10 @@ private fun MediaStatusIndicator(status: DownloadStatus) {
 }
 
 @Composable
-private fun VideoThumbnail(videoUri: Uri, cacheKey: String, onClick: () -> Unit) {
+private fun VideoThumbnail(videoUri: Uri, cacheKey: String, transitionKey: String, onClick: () -> Unit) {
     val context = LocalContext.current
     val decoderFactory = remember { VideoFrameDecoder.Factory() }
-    
+
     val request = remember(context, videoUri, cacheKey, decoderFactory) {
         ImageRequest.Builder(context)
             .data(videoUri)
@@ -686,22 +689,22 @@ private fun VideoThumbnail(videoUri: Uri, cacheKey: String, onClick: () -> Unit)
             .placeholderMemoryCacheKey(cacheKey)
             .build()
     }
-    
+
     val duration by produceState(0L, videoUri) {
         value = withContext(Dispatchers.IO) { videoUri.getDuration(context) }
     }
-    
+
     Box(
         modifier = Modifier
             .clickable(onClick = onClick)
-            .mediaTransitionOrigin(chatMediaKey(videoUri))
+            .mediaTransitionOrigin(transitionKey)
     ) {
         AsyncImage(
             model = request,
             contentDescription = "Thumbnail of the video",
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .sharedElement(key = videoUri.toString())
+                .sharedElement(key = transitionKey)
                 .fillMaxSize()
                 .clip(MaterialTheme.shapes.extraSmall)
         )
@@ -729,12 +732,13 @@ private fun VideoThumbnail(videoUri: Uri, cacheKey: String, onClick: () -> Unit)
 private fun ImageThumbnail(
     imageUri: Uri,
     cacheKey: String,
+    transitionKey: String,
     isGif: Boolean,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
     val decoderFactory = remember { GifDecoder.Factory() }
-    
+
     val request = remember(context, imageUri, cacheKey, decoderFactory) {
         ImageRequest.Builder(context)
             .data(imageUri)
@@ -743,18 +747,18 @@ private fun ImageThumbnail(
             .placeholderMemoryCacheKey(cacheKey)
             .build()
     }
-    
+
     Box(
         modifier = Modifier
             .clickable(onClick = onClick)
-            .mediaTransitionOrigin(chatMediaKey(imageUri))
+            .mediaTransitionOrigin(transitionKey)
     ) {
         AsyncImage(
             model = request,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .sharedElement(key = imageUri.toString())
+                .sharedElement(key = transitionKey)
                 .fillMaxSize()
                 .clip(MaterialTheme.shapes.extraSmall)
         )

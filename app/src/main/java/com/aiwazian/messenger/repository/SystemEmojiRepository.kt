@@ -89,6 +89,6 @@ class SystemEmojiRepository @Inject constructor(
         
         const val TEMP_SUFFIX = ".tmp"
         
-        const val EMOJI_LIST_URL = "https://www.unicode.org/Public/emoji/latest/emoji-test.txt"
+        const val EMOJI_LIST_URL = "https://www.unicode.org/Public/emoji/16.0/emoji-test.txt"
     }
 }

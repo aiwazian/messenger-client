@@ -86,6 +86,7 @@ import com.aiwazian.messenger.ui.components.SecureScreenEffect
 import com.aiwazian.messenger.ui.components.ShareBottomSheet
 import com.aiwazian.messenger.ui.components.ShareItem
 import com.aiwazian.messenger.ui.components.TopBarScrim
+import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.screens.chat.components.ChatDialogs
@@ -851,24 +852,32 @@ fun ChatScreen(
                             )
                 }
         }
-        
+
         val tapped = tappedMedia
         val viewerAttachments = when {
             tapped == null -> downloadedMedia
-            downloadedMedia.any { it.fileId == tapped.fileId } -> downloadedMedia
+            downloadedMedia.any {
+                it.messageId == tapped.messageId && it.fileId == tapped.fileId
+            } -> downloadedMedia
             tapped.localUri != null -> listOf(tapped)
             else -> downloadedMedia
         }
-        
-        val viewerMedia = viewerAttachments.mapNotNull { attachment ->
+
+        val viewerEntries = viewerAttachments.mapNotNull { attachment ->
             val uri = attachment.localUri ?: return@mapNotNull null
-            ViewerMediaItem(
+            attachment to ViewerMediaItem(
                 uri = uri,
-                isVideo = attachment.type == AttachmentType.VIDEO
+                isVideo = attachment.type == AttachmentType.VIDEO,
+                originKey = chatMediaKey(attachment.messageId, uri)
             )
         }
-        val viewerInitialPage = viewerAttachments
-            .indexOfFirst { it.fileId == tapped?.fileId }
+        val viewerMedia = viewerEntries.map { it.second }
+        val viewerInitialPage = viewerEntries
+            .indexOfFirst { (attachment, _) ->
+                tapped != null &&
+                        attachment.messageId == tapped.messageId &&
+                        attachment.fileId == tapped.fileId
+            }
             .coerceAtLeast(0)
         
         FullScreenViewer(
