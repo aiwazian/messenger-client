@@ -333,7 +333,7 @@ fun MessageBubble(
                                         MediaThumbnail(
                                             attachment = attachment,
                                             mediaUri = mediaUri,
-                                            cacheKey = "$mediaCacheKeyPrefix:${attachment.sortOrder}",
+                                            cacheKey = "$mediaCacheKeyPrefix:${attachment.fileId}",
                                             transitionKey = chatMediaKey(attachment.messageId, mediaUri),
                                             onFileAction = onFileAction
                                         )
