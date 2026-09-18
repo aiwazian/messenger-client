@@ -10,6 +10,8 @@ import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.domain.MessageSearchHit
+import com.aiwazian.messenger.enums.AttachmentType
+import com.aiwazian.messenger.playback.MusicRepeatMode
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.chat.paging.ScrollTarget
 import com.aiwazian.messenger.utils.DataStoreManager
@@ -69,6 +71,7 @@ data class ChatUiState(
     val isMusicPlaying: Boolean = false,
     val musicPositionMs: Int = 0,
     val musicDurationMs: Int = 0,
+    val musicRepeatMode: MusicRepeatMode = MusicRepeatMode.REPEAT_ALL,
     val audioMetadata: Map<String, AudioTrackMetadata> = emptyMap(),
     val isFirstLoadDone: Boolean = false,
     val groupReadInfo: Map<Long, List<MessageReadInfo>> = emptyMap(),

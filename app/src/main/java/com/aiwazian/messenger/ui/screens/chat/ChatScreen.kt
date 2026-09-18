@@ -958,8 +958,13 @@ fun ChatScreen(
             } else {
                 musicMetadata?.durationMs ?: 0
             },
+            repeatMode = uiState.musicRepeatMode,
             onSeek = chatViewModel::seekMusicTo,
             onTogglePlayPause = chatViewModel::toggleMusicPlayPause,
+            onToggleRepeat = chatViewModel::toggleMusicRepeat,
+            onPrevious = chatViewModel::playPreviousMusicTrack,
+            onNext = chatViewModel::playNextMusicTrack,
+            onShare = chatViewModel::shareCurrentMusicTrack,
             onDismiss = { showMusicPlayerSheet = false }
         )
     }

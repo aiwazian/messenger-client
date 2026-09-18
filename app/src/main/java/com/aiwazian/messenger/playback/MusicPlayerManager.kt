@@ -38,11 +38,17 @@ class MusicPlayerManager @Inject constructor(
     private val _state = MutableStateFlow(MusicPlayerState())
     val state = _state.asStateFlow()
 
+    private val _repeatMode = MutableStateFlow(MusicRepeatMode.REPEAT_ALL)
+    val repeatMode = _repeatMode.asStateFlow()
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var positionJob: Job? = null
 
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
+
+    private var queue: List<MusicTrack> = emptyList()
+    private var currentIndex: Int = -1
 
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -61,8 +67,10 @@ class MusicPlayerManager @Inject constructor(
 
                 Player.STATE_ENDED -> {
                     positionJob?.cancel()
-                    ctrl.clearMediaItems()
-                    _state.update { MusicPlayerState() }
+                    if (!playNextAutomatically()) {
+                        ctrl.clearMediaItems()
+                        _state.update { MusicPlayerState() }
+                    }
                 }
 
                 else -> {}
@@ -93,12 +101,74 @@ class MusicPlayerManager @Inject constructor(
         )
     }
 
-    fun play(track: MusicTrack, startPositionMs: Int = 0) {
+    fun play(queue: List<MusicTrack>, fileId: String, startPositionMs: Int = 0) {
+        val index = queue.indexOfFirst { it.fileId == fileId }
+        if (index < 0) return
+
+        this.queue = queue
+        currentIndex = index
+        playTrack(queue[index], startPositionMs)
+    }
+
+    fun updateQueue(newQueue: List<MusicTrack>) {
+        val currentFileId = _state.value.fileId ?: return
+        val newIndex = newQueue.indexOfFirst { it.fileId == currentFileId }
+        if (newIndex < 0) return
+
+        queue = newQueue
+        currentIndex = newIndex
+    }
+
+    fun next() {
+        if (queue.size <= 1) return
+
+        val nextIndex = (currentIndex + 1).mod(queue.size)
+        val track = queue.getOrNull(nextIndex) ?: return
+        currentIndex = nextIndex
+        playTrack(track, 0)
+    }
+
+    fun previous() {
+        if (queue.size <= 1) {
+            seekTo(0)
+            return
+        }
+
+        val previousIndex = (currentIndex - 1).mod(queue.size)
+        val track = queue.getOrNull(previousIndex) ?: return
+        currentIndex = previousIndex
+        playTrack(track, 0)
+    }
+
+    fun toggleRepeatMode() {
+        _repeatMode.update { mode ->
+            if (mode == MusicRepeatMode.REPEAT_ALL) {
+                MusicRepeatMode.REPEAT_ONE
+            } else {
+                MusicRepeatMode.REPEAT_ALL
+            }
+        }
+    }
+
+    private fun playNextAutomatically(): Boolean {
+        if (queue.isEmpty() || currentIndex < 0) return false
+
+        val nextIndex = when (_repeatMode.value) {
+            MusicRepeatMode.REPEAT_ONE -> currentIndex
+            MusicRepeatMode.REPEAT_ALL -> (currentIndex + 1).mod(queue.size)
+        }
+        val track = queue.getOrNull(nextIndex) ?: return false
+        currentIndex = nextIndex
+        playTrack(track, 0)
+        return true
+    }
+
+    private fun playTrack(track: MusicTrack, startPositionMs: Int) {
         val ctrl = controller
         if (ctrl == null) {
             connect()
             controllerFuture?.addListener(
-                { play(track, startPositionMs) }, MoreExecutors.directExecutor()
+                { playTrack(track, startPositionMs) }, MoreExecutors.directExecutor()
             )
             return
         }
@@ -168,6 +238,8 @@ class MusicPlayerManager @Inject constructor(
                 ctrl.clearMediaItems()
             }
         }
+        queue = emptyList()
+        currentIndex = -1
         _state.update { MusicPlayerState() }
     }
 
@@ -177,6 +249,8 @@ class MusicPlayerManager @Inject constructor(
         controllerFuture?.let { MediaController.releaseFuture(it) }
         controllerFuture = null
         controller = null
+        queue = emptyList()
+        currentIndex = -1
         _state.update { MusicPlayerState() }
     }
 

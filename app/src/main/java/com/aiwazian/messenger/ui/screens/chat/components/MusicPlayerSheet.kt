@@ -19,11 +19,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -40,11 +46,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aiwazian.messenger.R
+import com.aiwazian.messenger.playback.MusicRepeatMode
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.formatDuration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -58,10 +69,16 @@ fun MusicPlayerSheet(
     isPlaying: Boolean,
     positionMs: Int,
     durationMs: Int,
+    repeatMode: MusicRepeatMode,
     onSeek: (Int) -> Unit,
     onTogglePlayPause: () -> Unit,
+    onToggleRepeat: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onShare: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
     val coverBitmap by produceState<ImageBitmap?>(null, cover) {
         if (cover == null) return@produceState
         value = withContext(Dispatchers.IO) {
@@ -154,12 +171,33 @@ fun MusicPlayerSheet(
             )
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
 
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(onClick = onToggleRepeat) {
+                Icon(
+                    imageVector = if (repeatMode == MusicRepeatMode.REPEAT_ONE) {
+                        Icons.Rounded.RepeatOne
+                    } else {
+                        Icons.Rounded.Repeat
+                    },
+                    contentDescription = null
+                )
+            }
+
+            IconButton(onClick = onPrevious) {
+                Icon(
+                    imageVector = Icons.Rounded.SkipPrevious,
+                    contentDescription = null
+                )
+            }
+
             FilledIconButton(
                 onClick = onTogglePlayPause,
                 modifier = Modifier.size(64.dp),
@@ -174,6 +212,35 @@ fun MusicPlayerSheet(
                     contentDescription = null,
                     modifier = Modifier.size(36.dp)
                 )
+            }
+
+            IconButton(onClick = onNext) {
+                Icon(
+                    imageVector = Icons.Rounded.SkipNext,
+                    contentDescription = null
+                )
+            }
+
+            Box {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Rounded.MoreVert,
+                        contentDescription = null
+                    )
+                }
+
+                AppDropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    AppDropdownMenuItem(
+                        text = stringResource(R.string.share),
+                        onClick = {
+                            menuExpanded = false
+                            onShare()
+                        }
+                    )
+                }
             }
         }
 

@@ -23,7 +23,9 @@ import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.enums.ForwardSourceAccess
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.extensions.isAudioFile
+import com.aiwazian.messenger.extensions.isMusicFile
 import com.aiwazian.messenger.playback.MusicPlayerManager
+import com.aiwazian.messenger.playback.MusicRepeatMode
 import com.aiwazian.messenger.playback.MusicTrack
 import com.aiwazian.messenger.playback.VoicePlayerManager
 import com.aiwazian.messenger.playback.VoiceQueueItem
@@ -171,6 +173,7 @@ class ChatViewModel @Inject constructor(
         loadSettings()
         observeVoicePlayer()
         observeMusicPlayer()
+        observeMusicQueueUpdates()
         observeAudioMetadata()
         observeQueueUpdates()
         setupSocketConnectionObserver()
@@ -282,6 +285,20 @@ class ChatViewModel @Inject constructor(
                         musicDurationMs = state.durationMs
                     )
                 }
+            }
+        }
+        viewModelScope.launch {
+            musicPlayerManager.repeatMode.collect { mode ->
+                _uiState.update { it.copy(musicRepeatMode = mode) }
+            }
+        }
+    }
+
+    private fun observeMusicQueueUpdates() {
+        viewModelScope.launch {
+            _uiState.collect { state ->
+                if (state.currentMusicFileId == null) return@collect
+                musicPlayerManager.updateQueue(buildMusicQueue(state))
             }
         }
     }
@@ -1501,26 +1518,35 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun handlePlayMusic(file: MessageAttachment) {
-        val uri = file.localUri ?: return
+        if (file.localUri == null) return
+
         if (_uiState.value.currentMusicFileId == file.fileId) {
             musicPlayerManager.togglePlayPause()
             return
         }
 
         voicePlayerManager.stop()
-        val metadata = _uiState.value.audioMetadata[file.fileId]
+        val queue = buildMusicQueue(_uiState.value)
         val startPosition = pendingMusicStartPositions.remove(file.fileId) ?: 0
-        musicPlayerManager.play(
-            MusicTrack(
-                fileId = file.fileId,
-                uri = uri,
-                title = metadata?.title ?: file.name,
-                artist = metadata?.artist,
-                artworkUri = _uiState.value.avatarUri,
-                artworkData = metadata?.cover
-            ),
-            startPosition
-        )
+        musicPlayerManager.play(queue, file.fileId, startPosition)
+    }
+
+    private fun buildMusicQueue(state: ChatUiState): List<MusicTrack> {
+        return state.chatItems.asReversed()
+            .filterIsInstance<ChatItem.MessageItem>()
+            .flatMap { it.message.attachments }
+            .filter { it.extension.isMusicFile() && it.localUri != null }
+            .map { attachment ->
+                val metadata = state.audioMetadata[attachment.fileId]
+                MusicTrack(
+                    fileId = attachment.fileId,
+                    uri = attachment.localUri!!,
+                    title = metadata?.title ?: attachment.name,
+                    artist = metadata?.artist,
+                    artworkUri = state.avatarUri,
+                    artworkData = metadata?.cover
+                )
+            }
     }
 
     fun onMusicSeek(file: MessageAttachment, positionMs: Int) {
@@ -1537,6 +1563,28 @@ class ChatViewModel @Inject constructor(
 
     fun toggleMusicPlayPause() {
         musicPlayerManager.togglePlayPause()
+    }
+
+    fun toggleMusicRepeat() {
+        musicPlayerManager.toggleRepeatMode()
+    }
+
+    fun playNextMusicTrack() {
+        musicPlayerManager.next()
+    }
+
+    fun playPreviousMusicTrack() {
+        musicPlayerManager.previous()
+    }
+
+    fun shareCurrentMusicTrack() {
+        val fileId = _uiState.value.currentMusicFileId ?: return
+        val message = _uiState.value.chatItems
+            .filterIsInstance<ChatItem.MessageItem>()
+            .firstOrNull { item -> item.message.attachments.any { it.fileId == fileId } }
+            ?.message ?: return
+
+        startForward(message)
     }
 
     fun stopMusic() {
