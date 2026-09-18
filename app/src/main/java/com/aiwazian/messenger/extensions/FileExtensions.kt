@@ -38,6 +38,8 @@ fun String.isAudioFile() = trim().lowercase() in AudioFileExtensions
 
 fun String.isVoiceRecordingExtension() = trim().lowercase() in VoiceRecordingExtensions
 
+fun String.isMusicFile() = isAudioFile() && !isVoiceRecordingExtension()
+
 fun String.getFileIcon() = when (this.trim().lowercase()) {
     "js" -> Icons.Rounded.Javascript
     "css" -> Icons.Rounded.Css

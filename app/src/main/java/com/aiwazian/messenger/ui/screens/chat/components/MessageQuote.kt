@@ -45,6 +45,7 @@ import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ForwardSourceAccess
 import com.aiwazian.messenger.enums.MessageType
+import com.aiwazian.messenger.extensions.isMusicFile
 import com.aiwazian.messenger.ui.components.appendCustomEmojiText
 import com.aiwazian.messenger.ui.components.rememberCustomEmojiInlineContent
 import kotlinx.coroutines.delay
@@ -66,9 +67,14 @@ fun replyPreviewText(preview: MessageReplyPreview): String {
     }
     
     if (!text.isNullOrBlank()) return text
-    
+
     if (type == null) return ""
-    
+
+    val extension = preview.attachmentExtensions.firstOrNull()
+    if (extension?.isMusicFile() == true) {
+        return stringResource(R.string.music_message)
+    }
+
     return stringResource(
         when (type) {
             AttachmentType.IMAGE -> R.string.attachment_photo

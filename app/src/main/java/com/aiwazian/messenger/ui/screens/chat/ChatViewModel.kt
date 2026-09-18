@@ -113,7 +113,6 @@ class ChatViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
     private val voicePlayerManager: VoicePlayerManager,
     private val musicPlayerManager: MusicPlayerManager,
-    private val audioMetadataCache: AudioMetadataCache,
     private val onlineUsersTracker: OnlineUsersTracker,
     private val realtimeEventSyncService: RealtimeEventSyncService,
     private val notificationHelper: NotificationHelper
@@ -300,7 +299,7 @@ class ChatViewModel @Inject constructor(
                         if (!pendingMetadataRequests.add(fileId)) return@forEach
 
                         viewModelScope.launch {
-                            val metadata = audioMetadataCache.get(
+                            val metadata = AudioMetadataCache.get(
                                 fileId = fileId,
                                 filePath = localUri.path ?: localUri.toString(),
                                 fallbackTitle = attachment.name
@@ -993,6 +992,7 @@ class ChatViewModel @Inject constructor(
             else state.chatName.asString(context),
             text = message.text,
             attachmentTypes = message.attachments.map { it.type },
+            attachmentExtensions = message.attachments.map { it.extension },
             messageType = message.messageType,
             stickerEmoji = message.sticker?.emojis?.firstOrNull()
         )

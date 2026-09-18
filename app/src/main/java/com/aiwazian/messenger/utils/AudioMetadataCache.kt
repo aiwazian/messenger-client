@@ -9,11 +9,8 @@ import com.aiwazian.messenger.domain.AudioTrackMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class AudioMetadataCache @Inject constructor() {
+object AudioMetadataCache {
 
     private val cache = ConcurrentHashMap<String, AudioTrackMetadata>()
 

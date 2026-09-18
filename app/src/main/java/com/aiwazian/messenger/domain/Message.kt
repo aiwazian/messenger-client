@@ -21,6 +21,7 @@ data class MessageReplyPreview(
     val chatName: String? = null,
     val text: String? = null,
     val attachmentTypes: List<AttachmentType> = emptyList(),
+    val attachmentExtensions: List<String> = emptyList(),
     val messageType: MessageType = MessageType.TEXT,
     val stickerEmoji: String? = null
 ) {
