@@ -30,6 +30,10 @@ import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.VideoFile
 
+private val AudioFileExtensions = setOf("mp3", "wav", "ogg", "flac", "m4a", "opus", "aac", "wma", "amr")
+
+fun String.isAudioFile() = trim().lowercase() in AudioFileExtensions
+
 fun String.getFileIcon() = when (this.trim().lowercase()) {
     "js" -> Icons.Rounded.Javascript
     "css" -> Icons.Rounded.Css

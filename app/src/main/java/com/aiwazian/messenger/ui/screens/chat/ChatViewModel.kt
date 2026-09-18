@@ -22,6 +22,9 @@ import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.enums.ForwardSourceAccess
 import com.aiwazian.messenger.enums.MessageType
+import com.aiwazian.messenger.extensions.isAudioFile
+import com.aiwazian.messenger.playback.MusicPlayerManager
+import com.aiwazian.messenger.playback.MusicTrack
 import com.aiwazian.messenger.playback.VoicePlayerManager
 import com.aiwazian.messenger.playback.VoiceQueueItem
 import com.aiwazian.messenger.push.NotificationHelper
@@ -48,6 +51,7 @@ import com.aiwazian.messenger.usecase.JoinViaInviteLinkUseCase
 import com.aiwazian.messenger.usecase.LeaveChatUseCase
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.usecase.SendMessageWithFilesUseCase
+import com.aiwazian.messenger.utils.AudioMetadataCache
 import com.aiwazian.messenger.utils.AudioRecorderManager
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DataStoreManager
@@ -106,6 +110,8 @@ class ChatViewModel @Inject constructor(
     private val leaveChatUseCase: LeaveChatUseCase,
     private val dataStoreManager: DataStoreManager,
     private val voicePlayerManager: VoicePlayerManager,
+    private val musicPlayerManager: MusicPlayerManager,
+    private val audioMetadataCache: AudioMetadataCache,
     private val onlineUsersTracker: OnlineUsersTracker,
     private val realtimeEventSyncService: RealtimeEventSyncService,
     private val notificationHelper: NotificationHelper
@@ -116,6 +122,8 @@ class ChatViewModel @Inject constructor(
     private var draftSaveJob: Job? = null
 
     private val pendingVoiceStartPositions = mutableMapOf<String, Int>()
+    private val pendingMusicStartPositions = mutableMapOf<String, Int>()
+    private val pendingMetadataRequests = mutableSetOf<String>()
     private val sendingJobs = mutableMapOf<Long, Job>()
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -161,6 +169,8 @@ class ChatViewModel @Inject constructor(
     init {
         loadSettings()
         observeVoicePlayer()
+        observeMusicPlayer()
+        observeAudioMetadata()
         observeQueueUpdates()
         setupSocketConnectionObserver()
     }
@@ -252,6 +262,55 @@ class ChatViewModel @Inject constructor(
                         voicePositionMs = state.positionMs,
                         voiceDurationMs = state.durationMs
                     )
+                }
+            }
+        }
+    }
+
+    private fun observeMusicPlayer() {
+        musicPlayerManager.connect()
+        viewModelScope.launch {
+            musicPlayerManager.state.collect { state ->
+                _uiState.update {
+                    it.copy(
+                        currentMusicFileId = state.fileId,
+                        currentMusicTitle = state.title,
+                        currentMusicArtist = state.artist,
+                        isMusicPlaying = state.isPlaying,
+                        musicPositionMs = state.positionMs,
+                        musicDurationMs = state.durationMs
+                    )
+                }
+            }
+        }
+    }
+
+    private fun observeAudioMetadata() {
+        viewModelScope.launch {
+            _uiState.collect { state ->
+                state.chatItems.forEach { item ->
+                    if (item !is ChatItem.MessageItem) return@forEach
+                    item.message.attachments.forEach { attachment ->
+                        val fileId = attachment.fileId
+                        if (!attachment.extension.isAudioFile()) return@forEach
+                        val localUri = attachment.localUri ?: return@forEach
+                        if (state.audioMetadata.containsKey(fileId)) return@forEach
+                        if (!pendingMetadataRequests.add(fileId)) return@forEach
+
+                        viewModelScope.launch {
+                            val metadata = audioMetadataCache.get(
+                                fileId = fileId,
+                                filePath = localUri.path ?: localUri.toString(),
+                                fallbackTitle = attachment.name
+                            )
+                            pendingMetadataRequests.remove(fileId)
+                            if (metadata != null) {
+                                _uiState.update {
+                                    it.copy(audioMetadata = it.audioMetadata + (fileId to metadata))
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1392,7 +1451,13 @@ class ChatViewModel @Inject constructor(
             FileAction.RESUME -> viewModelScope.launch { downloaderManager.resume(file.fileId) }
             FileAction.CANCEL -> viewModelScope.launch { downloaderManager.cancel(file.fileId) }
             FileAction.OPEN -> handleOpenFile(file)
-            FileAction.PLAY -> handlePlayVoice(file)
+            FileAction.PLAY -> {
+                if (file.type == AttachmentType.VOICE) {
+                    handlePlayVoice(file)
+                } else if (file.extension.isAudioFile()) {
+                    handlePlayMusic(file)
+                }
+            }
         }
     }
 
@@ -1419,12 +1484,56 @@ class ChatViewModel @Inject constructor(
 
     private fun handlePlayVoice(file: MessageAttachment) {
         if (file.type != AttachmentType.VOICE || file.localUri == null) return
+        musicPlayerManager.stop()
         if (_uiState.value.currentPlayingVoiceFileId == file.fileId) {
             voicePlayerManager.togglePlayPause()
         } else {
             val startPos = pendingVoiceStartPositions.remove(file.fileId) ?: 0
             playVoice(file.fileId, startPos)
         }
+    }
+
+    private fun handlePlayMusic(file: MessageAttachment) {
+        val uri = file.localUri ?: return
+        if (_uiState.value.currentMusicFileId == file.fileId) {
+            musicPlayerManager.togglePlayPause()
+            return
+        }
+
+        voicePlayerManager.stop()
+        val metadata = _uiState.value.audioMetadata[file.fileId]
+        val startPosition = pendingMusicStartPositions.remove(file.fileId) ?: 0
+        musicPlayerManager.play(
+            MusicTrack(
+                fileId = file.fileId,
+                uri = uri,
+                title = metadata?.title ?: file.name,
+                artist = metadata?.artist,
+                artworkUri = _uiState.value.avatarUri,
+                artworkData = metadata?.cover
+            ),
+            startPosition
+        )
+    }
+
+    fun onMusicSeek(file: MessageAttachment, positionMs: Int) {
+        if (_uiState.value.currentMusicFileId == file.fileId) {
+            musicPlayerManager.seekTo(positionMs)
+        } else {
+            pendingMusicStartPositions[file.fileId] = positionMs
+        }
+    }
+
+    fun seekMusicTo(positionMs: Int) {
+        musicPlayerManager.seekTo(positionMs)
+    }
+
+    fun toggleMusicPlayPause() {
+        musicPlayerManager.togglePlayPause()
+    }
+
+    fun stopMusic() {
+        musicPlayerManager.stop()
     }
 
     private fun playVoice(fileId: String, startPositionMs: Int = 0) {

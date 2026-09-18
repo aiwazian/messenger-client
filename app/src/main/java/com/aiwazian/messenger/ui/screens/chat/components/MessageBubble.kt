@@ -67,6 +67,7 @@ import coil3.request.ImageRequest
 import coil3.video.VideoFrameDecoder
 import coil3.video.videoFrameMillis
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.AudioTrackMetadata
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.enums.AttachmentType
@@ -112,6 +113,12 @@ fun MessageBubble(
     voicePositionMs: Int = 0,
     voiceDurationMs: Int = 0,
     onVoiceSeek: (MessageAttachment, Int) -> Unit = { _, _ -> },
+    audioMetadata: Map<String, AudioTrackMetadata> = emptyMap(),
+    currentMusicFileId: String? = null,
+    isMusicPlaying: Boolean = false,
+    musicPositionMs: Int = 0,
+    musicDurationMs: Int = 0,
+    onMusicSeek: (MessageAttachment, Int) -> Unit = { _, _ -> },
     onLinkClicked: ((String) -> Unit)? = null,
     onUsernameClicked: ((String) -> Unit)? = null,
     onEmailClicked: ((String) -> Unit)? = null,
@@ -361,8 +368,17 @@ fun MessageBubble(
                             
                             AttachmentType.FILE -> {
                                 MessageFile(
-                                    file = attachment, onAction = { action ->
+                                    file = attachment,
+                                    metadata = audioMetadata[attachment.fileId],
+                                    isCurrentTrack = currentMusicFileId == attachment.fileId,
+                                    isPlaying = isMusicPlaying,
+                                    positionMs = if (currentMusicFileId == attachment.fileId) musicPositionMs else 0,
+                                    durationMs = if (currentMusicFileId == attachment.fileId) musicDurationMs else 0,
+                                    onAction = { action ->
                                         onFileAction(attachment, action)
+                                    },
+                                    onSeek = { positionMs ->
+                                        onMusicSeek(attachment, positionMs)
                                     })
                             }
                             

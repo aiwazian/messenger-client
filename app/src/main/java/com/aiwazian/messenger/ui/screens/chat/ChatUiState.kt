@@ -1,6 +1,7 @@
 package com.aiwazian.messenger.ui.screens.chat
 
 import android.net.Uri
+import com.aiwazian.messenger.domain.AudioTrackMetadata
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.ChatAdminPermissions
 import com.aiwazian.messenger.domain.InviteLinkInfo
@@ -62,6 +63,13 @@ data class ChatUiState(
     val isVoicePlaying: Boolean = false,
     val voicePositionMs: Int = 0,
     val voiceDurationMs: Int = 0,
+    val currentMusicFileId: String? = null,
+    val currentMusicTitle: String = "",
+    val currentMusicArtist: String? = null,
+    val isMusicPlaying: Boolean = false,
+    val musicPositionMs: Int = 0,
+    val musicDurationMs: Int = 0,
+    val audioMetadata: Map<String, AudioTrackMetadata> = emptyMap(),
     val isFirstLoadDone: Boolean = false,
     val groupReadInfo: Map<Long, List<MessageReadInfo>> = emptyMap(),
     val editingMessageId: Long? = null,
