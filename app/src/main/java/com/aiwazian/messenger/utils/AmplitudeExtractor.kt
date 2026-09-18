@@ -14,39 +14,46 @@ import com.aiwazian.messenger.utils.AmplitudeExtractor.AMPLITUDES_COUNT
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.ByteOrder
+import java.nio.ShortBuffer
+import kotlin.math.min
 import kotlin.math.sqrt
 
 /**
- * Декодирует аудиофайл в PCM и возвращает фиксированное число амплитуд (RMS по чанкам).
- * Количество всегда [AMPLITUDES_COUNT], значения в диапазоне 0f..1f.
- * Амплитуды нормируются к максимуму для лучшей визуализации.
+ * Decodes an audio file into a fixed number of amplitudes (RMS per bucket),
+ * normalized to the maximum. Values are in the 0f..1f range and the result
+ * always contains [AMPLITUDES_COUNT] entries.
+ *
+ * The PCM stream is never accumulated in memory: decoding only keeps a
+ * per-chunk sum of squares, so memory usage does not grow with recording length.
  */
 object AmplitudeExtractor {
-    
+
     private const val TAG = "AmplitudeExtractor"
     const val AMPLITUDES_COUNT = 40
-    
+
+    private const val CHUNK_SAMPLES = 1024
+
     data class AudioAnalysis(
         val amplitudes: List<Float>,
         val durationMs: Int
     )
-    
+
     suspend fun extract(context: Context, uri: Uri): AudioAnalysis = withContext(Dispatchers.IO) {
         runCatching { extractInternal(context, uri) }
             .onFailure { Log.e(TAG, "Failed to extract from $uri", it) }
             .getOrDefault(AudioAnalysis(emptyAmplitudes(), 0))
     }
-    
+
     private fun extractInternal(context: Context, uri: Uri): AudioAnalysis {
         val extractor = MediaExtractor()
         var decoder: MediaCodec? = null
 
         try {
             extractor.setDataSource(context, uri, null)
-            
+
             val (trackIndex, format) = selectAudioTrack(extractor)
                 ?: return AudioAnalysis(emptyAmplitudes(), 0)
-            
+
             val durationUs = runCatching { format.getLong(MediaFormat.KEY_DURATION) }
                 .getOrDefault(0L)
             val durationMs = (durationUs / 1000).toInt()
@@ -64,9 +71,9 @@ object AmplitudeExtractor {
                 start()
             }
 
-            val samples = decodeToPcm(extractor, decoder)
-            Log.d(TAG, "Decoded ${samples.size} PCM samples, duration=${durationMs}ms from $uri")
-            return AudioAnalysis(computeAmplitudes(samples), durationMs)
+            val accumulator = AmplitudeAccumulator()
+            decode(extractor, decoder, accumulator)
+            return AudioAnalysis(accumulator.computeAmplitudes(), durationMs)
         } finally {
             try {
                 decoder?.stop()
@@ -91,13 +98,16 @@ object AmplitudeExtractor {
         return null
     }
 
-    private fun decodeToPcm(extractor: MediaExtractor, decoder: MediaCodec): ShortArray {
-        val samples = ArrayList<Short>()
+    private fun decode(
+        extractor: MediaExtractor,
+        decoder: MediaCodec,
+        accumulator: AmplitudeAccumulator
+    ) {
         val bufferInfo = MediaCodec.BufferInfo()
         var sawInputEos = false
         var sawOutputEos = false
         val timeoutUs = 10_000L
-        
+
         while (!sawOutputEos) {
             if (!sawInputEos) {
                 val inputIndex = decoder.dequeueInputBuffer(timeoutUs)
@@ -117,18 +127,14 @@ object AmplitudeExtractor {
                     }
                 }
             }
-            
+
             val outputIndex = decoder.dequeueOutputBuffer(bufferInfo, timeoutUs)
             if (outputIndex >= 0) {
                 val outputBuffer = decoder.getOutputBuffer(outputIndex)
                 if (outputBuffer != null && bufferInfo.size > 0) {
                     outputBuffer.position(bufferInfo.offset)
                     outputBuffer.limit(bufferInfo.offset + bufferInfo.size)
-                    val shortBuffer =
-                        outputBuffer.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
-                    while (shortBuffer.hasRemaining()) {
-                        samples.add(shortBuffer.get())
-                    }
+                    accumulator.add(outputBuffer.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer())
                 }
                 decoder.releaseOutputBuffer(outputIndex, false)
                 if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
@@ -136,44 +142,85 @@ object AmplitudeExtractor {
                 }
             }
         }
-        
-        return samples.toShortArray()
     }
-    
-    private fun computeAmplitudes(samples: ShortArray): List<Float> {
-        if (samples.isEmpty()) return emptyAmplitudes()
-        
-        val totalSamples = samples.size
-        val baseChunkSize = totalSamples / AMPLITUDES_COUNT
-        val remainder = totalSamples % AMPLITUDES_COUNT
-        val raw = FloatArray(AMPLITUDES_COUNT)
-        
-        var currentStart = 0
-        for (i in 0 until AMPLITUDES_COUNT) {
-            val chunkSize = baseChunkSize + if (i < remainder) 1 else 0
-            val end = currentStart + chunkSize
 
-            var sumSquares = 0.0
-            for (j in currentStart until end) {
-                val sample = samples[j].toDouble()
-                sumSquares += sample * sample
+    private class AmplitudeAccumulator {
+        private val chunkSumSquares = ArrayList<Double>()
+        private val scratch = ShortArray(CHUNK_SAMPLES)
+        private var currentSumSquares = 0.0
+        private var currentCount = 0
+        private var totalSamples = 0L
+
+        fun add(pcm: ShortBuffer) {
+            while (pcm.hasRemaining()) {
+                val count = min(pcm.remaining(), CHUNK_SAMPLES)
+                pcm.get(scratch, 0, count)
+                for (i in 0 until count) {
+                    val sample = scratch[i].toDouble()
+                    currentSumSquares += sample * sample
+                }
+                currentCount += count
+                totalSamples += count
+                if (currentCount == CHUNK_SAMPLES) {
+                    flushChunk()
+                }
             }
-            val rms = if (chunkSize > 0) sqrt(sumSquares / chunkSize) / Short.MAX_VALUE else 0.0
-            raw[i] = rms.toFloat().coerceIn(0f, 1f)
-            
-            currentStart = end
         }
-        
-        val maxAmp = raw.maxOrNull() ?: 0f
-        val minAmp = raw.minOrNull() ?: 0f
-        Log.d(TAG, "RMS raw range: min=$minAmp max=$maxAmp, sample of values: ${raw.take(5)}")
 
-        return if (maxAmp > 0f) {
-            raw.map { it / maxAmp }
-        } else {
-            emptyAmplitudes()
+        private fun flushChunk() {
+            if (currentCount > 0) {
+                chunkSumSquares.add(currentSumSquares)
+                currentSumSquares = 0.0
+                currentCount = 0
+            }
+        }
+
+        fun computeAmplitudes(): List<Float> {
+            flushChunk()
+            if (totalSamples == 0L || chunkSumSquares.isEmpty()) return emptyAmplitudes()
+
+            val sums = DoubleArray(AMPLITUDES_COUNT)
+            val counts = LongArray(AMPLITUDES_COUNT)
+
+            var position = 0L
+            chunkSumSquares.forEachIndexed { chunkIndex, chunkSum ->
+                val chunkSize = if (chunkIndex == chunkSumSquares.lastIndex) {
+                    (totalSamples - chunkIndex * CHUNK_SAMPLES).toInt()
+                } else {
+                    CHUNK_SAMPLES
+                }
+
+                var offset = 0
+                while (offset < chunkSize) {
+                    val bucket = ((position * AMPLITUDES_COUNT) / totalSamples)
+                        .toInt()
+                        .coerceIn(0, AMPLITUDES_COUNT - 1)
+                    val bucketEnd =
+                        ((bucket + 1) * totalSamples + AMPLITUDES_COUNT - 1) / AMPLITUDES_COUNT
+                    val take = minOf(
+                        chunkSize - offset,
+                        (bucketEnd - position).toInt().coerceAtLeast(1)
+                    )
+
+                    sums[bucket] += chunkSum * take / chunkSize
+                    counts[bucket] += take
+                    position += take
+                    offset += take
+                }
+            }
+
+            val raw = FloatArray(AMPLITUDES_COUNT) { i ->
+                if (counts[i] > 0) {
+                    (sqrt(sums[i] / counts[i]) / Short.MAX_VALUE).toFloat().coerceIn(0f, 1f)
+                } else {
+                    0f
+                }
+            }
+
+            val maxAmp = raw.maxOrNull() ?: 0f
+            return if (maxAmp > 0f) raw.map { it / maxAmp } else emptyAmplitudes()
         }
     }
-    
+
     private fun emptyAmplitudes(): List<Float> = List(AMPLITUDES_COUNT) { 0f }
 }

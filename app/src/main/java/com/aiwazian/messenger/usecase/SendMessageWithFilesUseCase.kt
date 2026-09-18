@@ -25,6 +25,7 @@ import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.getMediaDimensions
+import com.aiwazian.messenger.extensions.isVoiceRecordingExtension
 import com.aiwazian.messenger.network.dto.AttachmentInputDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.repository.ChatRepository
@@ -174,7 +175,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
             val attachmentType = when {
                 mimeType.startsWith("image/") -> AttachmentType.IMAGE
                 mimeType.startsWith("video/") -> AttachmentType.VIDEO
-                mimeType.startsWith("audio/") -> AttachmentType.VOICE
+                mimeType.startsWith("audio/") &&
+                        fileName.substringAfterLast('.', "").isVoiceRecordingExtension() -> AttachmentType.VOICE
                 else -> AttachmentType.FILE
             }
             

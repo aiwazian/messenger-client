@@ -32,7 +32,11 @@ import androidx.compose.material.icons.rounded.VideoFile
 
 private val AudioFileExtensions = setOf("mp3", "wav", "ogg", "flac", "m4a", "opus", "aac", "wma", "amr")
 
+private val VoiceRecordingExtensions = setOf("ogg", "oga", "opus")
+
 fun String.isAudioFile() = trim().lowercase() in AudioFileExtensions
+
+fun String.isVoiceRecordingExtension() = trim().lowercase() in VoiceRecordingExtensions
 
 fun String.getFileIcon() = when (this.trim().lowercase()) {
     "js" -> Icons.Rounded.Javascript

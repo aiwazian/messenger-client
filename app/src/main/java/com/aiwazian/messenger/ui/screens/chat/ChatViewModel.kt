@@ -30,6 +30,7 @@ import com.aiwazian.messenger.playback.VoiceQueueItem
 import com.aiwazian.messenger.push.NotificationHelper
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
+import com.aiwazian.messenger.repository.FileRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.ReplyDraftCache
@@ -88,6 +89,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class ChatViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val chatRepository: ChatRepository,
+    private val fileRepository: FileRepository,
     private val channelRepository: ChannelRepository,
     private val groupRepository: GroupRepository,
     private val channelAdminsRepository: ChannelAdminsRepository,
@@ -667,7 +669,10 @@ class ChatViewModel @Inject constructor(
         if (autoDownloadMedia) {
             messages.forEach { msg ->
                 msg.attachments.forEach { attachment ->
-                    if (attachment.status == DownloadStatus.IDLE || attachment.status == DownloadStatus.UPLOADED) {
+                    val alreadyLocal = attachment.localUri != null
+                    if (!alreadyLocal &&
+                        (attachment.status == DownloadStatus.IDLE || attachment.status == DownloadStatus.UPLOADED)
+                    ) {
                         val shouldDownload = when (attachment.type) {
                             AttachmentType.VOICE -> true
                             AttachmentType.IMAGE, AttachmentType.GIF -> autoDownloadPhotos
@@ -1463,6 +1468,8 @@ class ChatViewModel @Inject constructor(
 
     private fun downloadFile(message: Message, file: MessageAttachment) {
         viewModelScope.launch {
+            if (fileRepository.getById(file.fileId)?.path != null) return@launch
+
             chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
                 .onSuccess { url -> downloaderManager.download(url, file.name, file.fileId) }
         }
