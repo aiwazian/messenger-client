@@ -126,7 +126,7 @@ fun MusicPlayerSheet(
             Box(
                 modifier = Modifier
                     .size(72.dp)
-                    .clip(MaterialTheme.shapes.medium)
+                    .clip(MaterialTheme.shapes.large)
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh),
                 contentAlignment = Alignment.Center
             ) {

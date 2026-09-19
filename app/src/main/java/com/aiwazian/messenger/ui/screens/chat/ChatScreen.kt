@@ -967,6 +967,7 @@ fun ChatScreen(
             onShare = chatViewModel::shareCurrentMusicTrack,
             onOpenEqualizer = if (uiState.equalizerInfo != null) {
                 {
+                    showMusicPlayerSheet = false
                     navBackStack.add(AppRoute.Equalizer)
                 }
             } else {
