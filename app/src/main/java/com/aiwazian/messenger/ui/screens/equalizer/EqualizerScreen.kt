@@ -15,18 +15,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalSlider
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,7 +42,7 @@ fun EqualizerScreen(viewModel: EqualizerViewModel = hiltViewModel()) {
     val info by viewModel.info.collectAsState()
     val bandLevels by viewModel.bandLevels.collectAsState()
     val hapticFeedback = LocalHapticFeedback.current
-
+    
     AppScaffold(
         topBar = {
             PageTopBar(
@@ -57,17 +57,17 @@ fun EqualizerScreen(viewModel: EqualizerViewModel = hiltViewModel()) {
             Spacer(Modifier.fillMaxSize())
             return@AppScaffold
         }
-
+        
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 24.dp),
+                .padding(bottom = 10.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             repeat(equalizerInfo.bandCount) { band ->
                 val levelMb = (bandLevels.getOrNull(band) ?: 0)
                     .coerceIn(equalizerInfo.minLevelMb, equalizerInfo.maxLevelMb)
-
+                
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -78,27 +78,33 @@ fun EqualizerScreen(viewModel: EqualizerViewModel = hiltViewModel()) {
                         lineHeight = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
+                    
                     Box(
                         modifier = Modifier
                             .width(56.dp)
                             .height(320.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Slider(
+                        val sliderState = rememberSliderState(
                             value = levelMb.toFloat(),
+                            trackRange = equalizerInfo.minLevelMb.toFloat()..equalizerInfo.maxLevelMb.toFloat()
+                        )
+                        
+                        LaunchedEffect(levelMb) {
+                            sliderState.value = levelMb.toFloat()
+                        }
+                        
+                        VerticalSlider(
+                            state = sliderState,
                             onValueChange = {
                                 viewModel.setBandLevel(band, it.roundToInt())
                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             },
                             onValueChangeFinished = viewModel::persistBandLevels,
-                            valueRange = equalizerInfo.minLevelMb.toFloat()..equalizerInfo.maxLevelMb.toFloat(),
-                            modifier = Modifier
-                                .graphicsLayer { rotationZ = 270f }
-                                .width(320.dp)
+                            topToBottom = false
                         )
                     }
-
+                    
                     Text(
                         text = formatFrequency(equalizerInfo.centerFrequenciesMilliHz[band]),
                         fontSize = 12.sp,

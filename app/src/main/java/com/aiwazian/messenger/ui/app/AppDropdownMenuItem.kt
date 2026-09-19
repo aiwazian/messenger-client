@@ -18,16 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 
-/**
- * Пункт выпадающего меню.
- *
- * [text] — строка, а не Composable-слот: все вызовы в приложении всё равно
- * клали внутрь один Text, а слот позволял каждому меню завести свои размеры и
- * цвета. Со строкой типографика пункта живёт только здесь.
- *
- * [supportingText] — вторая строка под названием для случаев вроде «имя и время
- * просмотра»: тоже обычная строка, а не возврат к произвольной разметке.
- */
 @Composable
 fun AppDropdownMenuItem(
     text: String,

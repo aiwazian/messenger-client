@@ -19,14 +19,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Equalizer
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,7 +37,9 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -60,7 +65,7 @@ import com.aiwazian.messenger.ui.components.formatDuration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MusicPlayerSheet(
     title: String,
@@ -117,7 +122,7 @@ fun MusicPlayerSheet(
                     )
                 }
             }
-
+            
             Box(
                 modifier = Modifier
                     .size(72.dp)
@@ -142,22 +147,30 @@ fun MusicPlayerSheet(
                 }
             }
         }
-
+        
         Spacer(Modifier.height(16.dp))
-
+        
         if (durationMs > 0) {
-            Slider(
+            val sliderState = rememberSliderState(
                 value = shownPositionMs.toFloat().coerceIn(0f, durationMs.toFloat()),
+                trackRange = 0f..durationMs.toFloat()
+            )
+            
+            LaunchedEffect(shownPositionMs) {
+                sliderState.value = shownPositionMs.toFloat().coerceIn(0f, durationMs.toFloat())
+            }
+            
+            Slider(
+                state = sliderState,
                 onValueChange = { dragPositionMs = it.toInt() },
                 onValueChangeFinished = {
                     dragPositionMs?.let(onSeek)
                     dragPositionMs = null
                 },
-                valueRange = 0f..durationMs.toFloat(),
                 modifier = Modifier.fillMaxWidth()
             )
         }
-
+        
         Row(modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = formatDuration(shownPositionMs.toLong()),
@@ -171,9 +184,9 @@ fun MusicPlayerSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-
+        
         Spacer(Modifier.height(16.dp))
-
+        
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -191,14 +204,14 @@ fun MusicPlayerSheet(
                     contentDescription = null
                 )
             }
-
+            
             IconButton(onClick = onPrevious) {
                 Icon(
                     imageVector = Icons.Rounded.SkipPrevious,
                     contentDescription = null
                 )
             }
-
+            
             FilledIconButton(
                 onClick = onTogglePlayPause,
                 modifier = Modifier.size(64.dp),
@@ -214,14 +227,14 @@ fun MusicPlayerSheet(
                     modifier = Modifier.size(36.dp)
                 )
             }
-
+            
             IconButton(onClick = onNext) {
                 Icon(
                     imageVector = Icons.Rounded.SkipNext,
                     contentDescription = null
                 )
             }
-
+            
             Box {
                 IconButton(onClick = { menuExpanded = true }) {
                     Icon(
@@ -229,7 +242,7 @@ fun MusicPlayerSheet(
                         contentDescription = null
                     )
                 }
-
+                
                 AppDropdownMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false }
@@ -239,22 +252,28 @@ fun MusicPlayerSheet(
                         onClick = {
                             menuExpanded = false
                             onShare()
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Rounded.Share, null)
                         }
                     )
-
+                    
                     if (onOpenEqualizer != null) {
                         AppDropdownMenuItem(
                             text = stringResource(R.string.equalizer),
                             onClick = {
                                 menuExpanded = false
                                 onOpenEqualizer()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Rounded.Equalizer, null)
                             }
                         )
                     }
                 }
             }
         }
-
+        
         Spacer(Modifier.height(8.dp))
     }
 }
