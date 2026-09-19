@@ -84,6 +84,13 @@ class EqualizerManager @Inject constructor(
         scope.launch { dataStoreManager.saveEqualizerBandLevels(currentLevels) }
     }
 
+    fun resetBandLevels() {
+        currentLevels = List(DataStoreManager.EQUALIZER_BAND_COUNT) { 0 }
+        _bandLevels.value = currentLevels
+        applyBandLevels()
+        persistBandLevels()
+    }
+
     private suspend fun loadBandLevels() {
         if (levelsLoaded) return
         levelsLoaded = true

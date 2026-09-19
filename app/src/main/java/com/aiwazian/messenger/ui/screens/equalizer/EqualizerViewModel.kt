@@ -27,4 +27,8 @@ class EqualizerViewModel @Inject constructor(
     fun persistBandLevels() {
         equalizerManager.persistBandLevels()
     }
+
+    fun resetBandLevels() {
+        equalizerManager.resetBandLevels()
+    }
 }

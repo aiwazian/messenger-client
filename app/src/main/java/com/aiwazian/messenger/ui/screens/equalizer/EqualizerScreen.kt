@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalSlider
@@ -34,6 +36,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -48,7 +51,13 @@ fun EqualizerScreen(viewModel: EqualizerViewModel = hiltViewModel()) {
             PageTopBar(
                 title = {
                     Text(stringResource(R.string.equalizer))
-                }
+                },
+                actions = listOf(
+                    TopBarAction(
+                        icon = Icons.Rounded.Restore,
+                        onClick = viewModel::resetBandLevels
+                    )
+                )
             )
         }
     ) { _ ->
