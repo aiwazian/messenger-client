@@ -78,6 +78,7 @@ import com.aiwazian.messenger.ui.screens.settings.privacy.bio.SettingsBioScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.blockedUsers.BlockedUserListScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.forwardedProfile.SettingsForwardedProfileScreen
+import com.aiwazian.messenger.ui.screens.settings.privacy.exceptions.SelectPrivacyExceptionUsersScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.invites.SettingsInvitesScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.lastSeen.SettingsLastSeenScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.photo.SettingsPhotoScreen
@@ -227,6 +228,13 @@ fun AppNavDisplay(
                         SelectFolderChatsScreen(
                             selectedChatIds = it.selectedChatIds,
                             selectedCategories = it.selectedCategories
+                        )
+                    }
+                    entry<AppRoute.SelectPrivacyExceptionUsers> {
+                        SelectPrivacyExceptionUsersScreen(
+                            field = it.field,
+                            kind = it.kind,
+                            selectedUserIds = it.selectedUserIds
                         )
                     }
                     entry<AppRoute.NewMessage> { NewMessageScreen() }

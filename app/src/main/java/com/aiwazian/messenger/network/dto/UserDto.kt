@@ -1,5 +1,6 @@
 package com.aiwazian.messenger.network.dto
 
+import com.aiwazian.messenger.enums.PrivacyField
 import com.aiwazian.messenger.enums.PrivacyLevel
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -56,7 +57,14 @@ data class PrivacySettingsResponseDto(
     @SerialName("profilePhoto") val profilePhoto: PrivacyLevel = PrivacyLevel.EVERYBODY,
     @SerialName("forwardedProfile") val forwardedProfile: PrivacyLevel = PrivacyLevel.EVERYBODY,
     @SerialName("forwardAndCopy") val forwardAndCopy: PrivacyLevel = PrivacyLevel.EVERYBODY,
-    @SerialName("deleteAfterDays") val deleteAfterDays: Int = 365
+    @SerialName("deleteAfterDays") val deleteAfterDays: Int = 365,
+    @SerialName("exceptions") val exceptions: Map<PrivacyField, PrivacyExceptionListsDto> = emptyMap()
+)
+
+@Serializable
+data class PrivacyExceptionListsDto(
+    @SerialName("alwaysShow") val alwaysShow: List<String> = emptyList(),
+    @SerialName("alwaysHide") val alwaysHide: List<String> = emptyList()
 )
 
 @Serializable
@@ -69,7 +77,8 @@ data class UpdatePrivacySettingsRequestDto(
     @SerialName("profilePhoto") val profilePhoto: PrivacyLevel? = null,
     @SerialName("forwardedProfile") val forwardedProfile: PrivacyLevel? = null,
     @SerialName("forwardAndCopy") val forwardAndCopy: PrivacyLevel? = null,
-    @SerialName("deleteAfterDays") val deleteAfterDays: Int? = null
+    @SerialName("deleteAfterDays") val deleteAfterDays: Int? = null,
+    @SerialName("exceptions") val exceptions: Map<PrivacyField, PrivacyExceptionListsDto>? = null
 )
 
 @Serializable

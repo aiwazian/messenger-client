@@ -6,6 +6,8 @@ package com.aiwazian.messenger.ui.components.navigation
 
 import androidx.navigation3.runtime.NavKey
 import com.aiwazian.messenger.enums.ChatFolderCategory
+import com.aiwazian.messenger.enums.PrivacyExceptionKind
+import com.aiwazian.messenger.enums.PrivacyField
 import com.aiwazian.messenger.enums.PrivacyLevel
 import kotlinx.serialization.Serializable
 
@@ -171,6 +173,13 @@ sealed interface AppRoute : NavKey {
     data class SelectFolderChats(
         val selectedChatIds: List<Long> = emptyList(),
         val selectedCategories: List<ChatFolderCategory> = emptyList()
+    ) : AppRoute
+
+    @Serializable
+    data class SelectPrivacyExceptionUsers(
+        val field: PrivacyField,
+        val kind: PrivacyExceptionKind,
+        val selectedUserIds: List<Long> = emptyList()
     ) : AppRoute
     
     @Serializable

@@ -288,6 +288,9 @@
     <string name="message_forwarding">Inoltro dei messaggi</string>
     <string name="who_can_open_my_profile_from_forwarded_messages">Chi può aprire il mio profilo dai messaggi inoltrati\?</string>
     <string name="who_can_forward_and_copy_messages_from_chat_with_me">Chi può inoltrare e copiare i messaggi dalla chat con me</string>
+    <string name="add_exceptions">Aggiungi eccezioni</string>
+    <string name="always_show">Mostra sempre</string>
+    <string name="always_hide">Nascondi sempre</string>
     <string name="unknown_chat">Chat sconosciuta</string>
     <string name="attachment_photo">Foto</string>
     <string name="attachment_video">Video</string>
