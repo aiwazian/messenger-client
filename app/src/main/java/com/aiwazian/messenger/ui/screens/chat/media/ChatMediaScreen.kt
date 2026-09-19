@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.AudioTrackMetadata
 import com.aiwazian.messenger.domain.ChatMediaCounts
 import com.aiwazian.messenger.domain.ChatMediaItem
 import com.aiwazian.messenger.enums.AttachmentType
@@ -62,6 +63,7 @@ import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
 import com.aiwazian.messenger.ui.screens.chat.media.components.ChatFileCard
 import com.aiwazian.messenger.ui.screens.chat.media.components.ChatMediaCell
+import com.aiwazian.messenger.ui.screens.chat.media.components.ChatMusicCard
 import com.aiwazian.messenger.ui.screens.chat.media.components.ChatVoiceCard
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -73,6 +75,7 @@ private const val PREFETCH_DISTANCE = 12
 private enum class ChatMediaTab(@param:StringRes val titleRes: Int) {
     MEDIA(R.string.chat_media_tab),
     FILES(R.string.chat_files_tab),
+    MUSIC(R.string.chat_media_music_tab),
     VOICES(R.string.chat_voices_tab)
 }
 
@@ -88,17 +91,22 @@ fun ChatMediaScreen(
     val tabs = remember(
         uiState.media.isEmpty(),
         uiState.files.isEmpty(),
+        uiState.music.isEmpty(),
         uiState.voices.isEmpty()
     ) {
         buildList {
             if (uiState.media.isNotEmpty()) {
                 add(ChatMediaTab.MEDIA)
             }
-            
+
             if (uiState.files.isNotEmpty()) {
                 add(ChatMediaTab.FILES)
             }
-            
+
+            if (uiState.music.isNotEmpty()) {
+                add(ChatMediaTab.MUSIC)
+            }
+
             if (uiState.voices.isNotEmpty()) {
                 add(ChatMediaTab.VOICES)
             }
@@ -160,7 +168,8 @@ fun ChatMediaScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 val isLoading =
-                    uiState.isMediaLoading || uiState.isFilesLoading || uiState.isVoicesLoading
+                    uiState.isMediaLoading || uiState.isFilesLoading || uiState.isMusicLoading ||
+                            uiState.isVoicesLoading
                 
                 if (isLoading && tabs.isEmpty()) {
                     LoadingState()
@@ -204,6 +213,20 @@ fun ChatMediaScreen(
                             items = uiState.files,
                             onItemClick = viewModel::onFileClick,
                             onLoadMore = viewModel::loadMoreFiles,
+                            contentPadding = innerPadding
+                        )
+
+                        ChatMediaTab.MUSIC -> MusicTab(
+                            items = uiState.music,
+                            musicMetadata = uiState.musicMetadata,
+                            currentFileId = uiState.musicPlayingFileId,
+                            isPlaying = uiState.isMusicPlaying,
+                            positionMs = uiState.musicPositionMs,
+                            durationMs = uiState.musicDurationMs,
+                            onItemClick = viewModel::onMusicClick,
+                            onSeek = viewModel::onMusicSeek,
+                            onMetadataResolved = viewModel::onMusicMetadataResolved,
+                            onLoadMore = viewModel::loadMoreMusic,
                             contentPadding = innerPadding
                         )
                         
@@ -266,13 +289,19 @@ private fun tabCountsText(tab: ChatMediaTab?, counts: ChatMediaCounts?): String?
     
     return when (tab) {
         ChatMediaTab.MEDIA -> mediaCountsText(counts)
-        
+
         ChatMediaTab.FILES -> pluralStringResource(
             R.plurals.chat_media_files_count,
             counts.files,
             counts.files
         )
-        
+
+        ChatMediaTab.MUSIC -> pluralStringResource(
+            R.plurals.chat_media_music_count,
+            counts.music,
+            counts.music
+        )
+
         ChatMediaTab.VOICES -> pluralStringResource(
             R.plurals.chat_media_voices_count,
             counts.voices,
@@ -366,6 +395,53 @@ private fun FilesTab(
     ) {
         items(items = items, key = { it.id }) { item ->
             ChatFileCard(file = item, onClick = { onItemClick(item) })
+        }
+    }
+}
+
+@Composable
+private fun MusicTab(
+    items: List<ChatMediaItem>,
+    musicMetadata: Map<String, AudioTrackMetadata>,
+    currentFileId: String?,
+    isPlaying: Boolean,
+    positionMs: Int,
+    durationMs: Int,
+    onItemClick: (ChatMediaItem) -> Unit,
+    onSeek: (ChatMediaItem, Int) -> Unit,
+    onMetadataResolved: (ChatMediaItem, AudioTrackMetadata?) -> Unit,
+    onLoadMore: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues.Zero
+) {
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(listState, items) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .distinctUntilChanged()
+            .collect { lastVisible ->
+                if (lastVisible != null && lastVisible >= items.lastIndex - PREFETCH_DISTANCE) {
+                    onLoadMore()
+                }
+            }
+    }
+
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = contentPadding
+    ) {
+        items(items = items, key = { it.id }) { item ->
+            ChatMusicCard(
+                music = item,
+                metadata = musicMetadata[item.fileId],
+                isCurrentTrack = currentFileId == item.fileId,
+                isPlaying = isPlaying,
+                positionMs = positionMs,
+                durationMs = durationMs,
+                onClick = { onItemClick(item) },
+                onSeek = { onSeek(item, it) },
+                onMetadataResolved = { onMetadataResolved(item, it) }
+            )
         }
     }
 }
