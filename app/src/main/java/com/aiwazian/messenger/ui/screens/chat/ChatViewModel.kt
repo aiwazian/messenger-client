@@ -1090,6 +1090,8 @@ class ChatViewModel @Inject constructor(
                     forwardCandidates = candidates,
                     selectedForwardChatIds = emptySet(),
                     isForwarding = false,
+                    forwardHideAuthor = false,
+                    forwardHideCaption = false,
                     isForwardSheetVisible = true
                 )
             }
@@ -1109,6 +1111,8 @@ class ChatViewModel @Inject constructor(
                     forwardCandidates = candidates,
                     selectedForwardChatIds = emptySet(),
                     isForwarding = false,
+                    forwardHideAuthor = false,
+                    forwardHideCaption = false,
                     isForwardSheetVisible = true
                 )
             }
@@ -1155,7 +1159,23 @@ class ChatViewModel @Inject constructor(
                 forwardCandidates = emptyList(),
                 selectedForwardChatIds = emptySet(),
                 isForwarding = false,
+                forwardHideAuthor = false,
+                forwardHideCaption = false,
                 sharingLink = null
+            )
+        }
+    }
+
+    fun toggleForwardHideAuthor() {
+        _uiState.update { it.copy(forwardHideAuthor = !it.forwardHideAuthor) }
+    }
+
+    fun toggleForwardHideCaption() {
+        _uiState.update { state ->
+            val hideCaption = !state.forwardHideCaption
+            state.copy(
+                forwardHideCaption = hideCaption,
+                forwardHideAuthor = if (hideCaption) true else state.forwardHideAuthor
             )
         }
     }
@@ -1177,7 +1197,13 @@ class ChatViewModel @Inject constructor(
         _uiState.update { it.copy(isForwarding = true) }
 
         viewModelScope.launch {
-            chatRepository.forwardMessage(state.chatId, message.id, targets)
+            chatRepository.forwardMessage(
+                sourceChatId = state.chatId,
+                messageId = message.id,
+                targetChatIds = targets,
+                hideAuthor = state.forwardHideAuthor,
+                hideCaption = state.forwardHideCaption
+            )
                 .onSuccess {
                     dismissForwardSheet()
                     if (targets.contains(state.chatId)) {

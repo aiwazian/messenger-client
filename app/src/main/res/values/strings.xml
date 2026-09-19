@@ -284,6 +284,10 @@
     <string name="forwarded_from">Forwarded from</string>
     <string name="message_forwarded">Message forwarded</string>
     <string name="forward_failed">Could\'t forward the message</string>
+    <string name="hide_sender_name">Hide sender name</string>
+    <string name="show_sender_name">Show sender name</string>
+    <string name="hide_caption">Hide caption</string>
+    <string name="show_caption">Show caption</string>
     <string name="forwarded_from_private_channel">Forwarded from a private channel</string>
     <string name="forwarded_from_private_group">Forwarded from a private group</string>
     <string name="forwarded_from_hidden_account">Forwarded from a hidden account</string>

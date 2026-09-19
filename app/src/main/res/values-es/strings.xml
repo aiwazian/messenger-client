@@ -278,6 +278,10 @@
     <string name="forwarded_from">Reenviado desde</string>
     <string name="message_forwarded">Mensaje reenviado</string>
     <string name="forward_failed">No se pudo reenviar el mensaje</string>
+    <string name="hide_sender_name">Ocultar nombre del remitente</string>
+    <string name="show_sender_name">Mostrar nombre del remitente</string>
+    <string name="hide_caption">Ocultar pie de foto</string>
+    <string name="show_caption">Mostrar pie de foto</string>
     <string name="forwarded_from_private_channel">Reenviado desde un canal privado</string>
     <string name="forwarded_from_private_group">Reenviado desde un grupo privado</string>
     <string name="forwarded_from_hidden_account">Reenviado desde una cuenta oculta</string>

@@ -284,6 +284,10 @@
     <string name="forwarded_from">Переслано от</string>
     <string name="message_forwarded">Сообщение переслано</string>
     <string name="forward_failed">Не удалось переслать сообщение</string>
+    <string name="hide_sender_name">Скрыть имя отправителя</string>
+    <string name="show_sender_name">Показать имя отправителя</string>
+    <string name="hide_caption">Скрыть подпись</string>
+    <string name="show_caption">Показать подпись</string>
     <string name="forwarded_from_private_channel">Переслано из частного канала</string>
     <string name="forwarded_from_private_group">Переслано из частной группы</string>
     <string name="forwarded_from_hidden_account">Автор сообщения скрыл свой профиль</string>

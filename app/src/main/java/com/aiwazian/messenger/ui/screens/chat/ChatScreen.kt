@@ -88,6 +88,7 @@ import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.SecureScreenEffect
 import com.aiwazian.messenger.ui.components.ShareBottomSheet
+import com.aiwazian.messenger.ui.components.ShareForwardOptions
 import com.aiwazian.messenger.ui.components.ShareItem
 import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.chatMediaKey
@@ -828,6 +829,7 @@ fun ChatScreen(
     }
     
     if (uiState.isForwardSheetVisible) {
+        val forwardingMessage = uiState.forwardingMessage
         ShareBottomSheet(
             items = uiState.forwardCandidates.map { chat ->
                 ShareItem(
@@ -840,7 +842,18 @@ fun ChatScreen(
             },
             onItemClick = chatViewModel::toggleForwardTarget,
             onSendClick = chatViewModel::confirmForward,
-            onDismiss = chatViewModel::dismissForwardSheet
+            onDismiss = chatViewModel::dismissForwardSheet,
+            forwardOptions = if (forwardingMessage != null && uiState.sharingLink == null) {
+                ShareForwardOptions(
+                    hasAttachments = forwardingMessage.attachments.isNotEmpty(),
+                    hideAuthor = uiState.forwardHideAuthor,
+                    hideCaption = uiState.forwardHideCaption,
+                    onHideAuthorClick = chatViewModel::toggleForwardHideAuthor,
+                    onHideCaptionClick = chatViewModel::toggleForwardHideCaption
+                )
+            } else {
+                null
+            }
         )
     }
     

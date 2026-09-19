@@ -11,15 +11,18 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -31,21 +34,26 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CommentsDisabled
+import androidx.compose.material.icons.outlined.PersonOff
+import androidx.compose.material.icons.outlined.PersonOutline
+import androidx.compose.material.icons.outlined.Subject
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorPosition
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberBottomSheetState
@@ -70,6 +78,8 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.utils.UiText
 
 data class ShareItem(
@@ -80,18 +90,29 @@ data class ShareItem(
     val isSavedMessages: Boolean = false
 )
 
+data class ShareForwardOptions(
+    val hasAttachments: Boolean,
+    val hideAuthor: Boolean,
+    val hideCaption: Boolean,
+    val onHideAuthorClick: () -> Unit,
+    val onHideCaptionClick: () -> Unit
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShareBottomSheet(
     items: List<ShareItem>,
     onItemClick: (Long) -> Unit,
     onSendClick: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    forwardOptions: ShareForwardOptions? = null
 ) {
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     val hasSelected = remember(items) { items.any { it.isSelected } }
+    var forwardMenuExpanded by remember { mutableStateOf(false) }
+
     val visibleItems = remember(items, searchQuery, context) {
         val ordered = items.sortedByDescending { it.isSavedMessages }
         val query = searchQuery.trim()
@@ -170,19 +191,91 @@ fun ShareBottomSheet(
             }
             
             if (hasSelected) {
-                TextButton(
-                    onClick = onSendClick,
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .navigationBarsPadding()
                         .imePadding()
                         .align(Alignment.BottomCenter)
-                        .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) },
-                    colors = ButtonDefaults.textButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    )
+                        .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) }
                 ) {
-                    Text(stringResource(R.string.send))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(percent = 50))
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
+                            .combinedClickable(
+                                onClick = onSendClick,
+                                onLongClick = if (forwardOptions != null) {
+                                    { forwardMenuExpanded = true }
+                                } else {
+                                    null
+                                }
+                            )
+                            .heightIn(min = 40.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.send),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                    
+                    forwardOptions?.let { options ->
+                        AppDropdownMenu(
+                            expanded = forwardMenuExpanded,
+                            onDismissRequest = { forwardMenuExpanded = false },
+                            popupPositionProvider = MenuDefaults.rememberDropdownMenuPopupPositionProvider(
+                                MenuAnchorPosition.Above
+                            )
+                        ) {
+                            AppDropdownMenuItem(
+                                text = stringResource(
+                                    if (options.hideAuthor) {
+                                        R.string.show_sender_name
+                                    } else {
+                                        R.string.hide_sender_name
+                                    }
+                                ),
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = if (options.hideAuthor) {
+                                            Icons.Outlined.PersonOutline
+                                        } else {
+                                            Icons.Outlined.PersonOff
+                                        },
+                                        contentDescription = null
+                                    )
+                                },
+                                onClick = options.onHideAuthorClick
+                            )
+
+                            if (options.hasAttachments) {
+                                AppDropdownMenuItem(
+                                    text = stringResource(
+                                        if (options.hideCaption) {
+                                            R.string.show_caption
+                                        } else {
+                                            R.string.hide_caption
+                                        }
+                                    ),
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = if (options.hideCaption) {
+                                                Icons.Outlined.Subject
+                                            } else {
+                                                Icons.Outlined.CommentsDisabled
+                                            },
+                                            contentDescription = null
+                                        )
+                                    },
+                                    onClick = options.onHideCaptionClick
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
