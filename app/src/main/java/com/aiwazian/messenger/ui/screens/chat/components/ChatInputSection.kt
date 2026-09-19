@@ -427,7 +427,9 @@ fun ChatInputSection(
                     
                     AppPrimaryScrollableTabRow(
                         selectedTabIndex = panelPagerState.currentPage,
-                        modifier = Modifier.align(Alignment.BottomCenter),
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .navigationBarsPadding(),
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
                         AppTab(

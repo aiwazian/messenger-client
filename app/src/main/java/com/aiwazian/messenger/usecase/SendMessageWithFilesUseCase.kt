@@ -25,6 +25,7 @@ import com.aiwazian.messenger.extensions.getFileName
 import com.aiwazian.messenger.extensions.getFileSize
 import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.getMediaDimensions
+import com.aiwazian.messenger.extensions.isVoiceRecordingExtension
 import com.aiwazian.messenger.network.dto.AttachmentInputDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.repository.ChatRepository
@@ -73,8 +74,14 @@ class SendMessageWithFilesUseCase @Inject constructor(
         videoQualities: Map<Uri, VideoQuality> = emptyMap(),
         mediaTransforms: Map<Uri, MediaTransform> = emptyMap()
     ): Result<Message> {
+        val chunks = chunkByMediaLimit(uris)
+        
         val sending = appScope.async(start = CoroutineStart.LAZY) {
-            send(chatId, uris, text, tempId, replyTo, videoQualities, mediaTransforms)
+            if (chunks.size == 1) {
+                send(chatId, chunks.first(), text, tempId, replyTo, videoQualities, mediaTransforms)
+            } else {
+                sendInChunks(chatId, chunks, text, tempId, replyTo, videoQualities, mediaTransforms)
+            }
         }
         
         running.put(tempId, sending)?.cancel()
@@ -86,6 +93,67 @@ class SendMessageWithFilesUseCase @Inject constructor(
     
     fun cancel(tempId: Long) {
         running.remove(tempId)?.cancel()
+    }
+    
+    private suspend fun sendInChunks(
+        chatId: Long,
+        chunks: List<List<Uri>>,
+        text: String?,
+        tempId: Long,
+        replyTo: MessageReplyPreview?,
+        videoQualities: Map<Uri, VideoQuality>,
+        mediaTransforms: Map<Uri, MediaTransform>
+    ): Result<Message> {
+        var firstResult: Result<Message>? = null
+        
+        chunks.forEachIndexed { index, chunk ->
+            val chunkTempId = if (index == 0) tempId else -System.currentTimeMillis()
+            val result = send(
+                chatId,
+                chunk,
+                if (index == 0) text else null,
+                chunkTempId,
+                if (index == 0) replyTo else null,
+                videoQualities,
+                mediaTransforms
+            )
+            
+            if (index == 0) firstResult = result
+            
+            if (result.exceptionOrNull() is SendCancelledException) return result
+        }
+        
+        return firstResult ?: Result.failure(IllegalStateException("No media chunks to send"))
+    }
+    
+    private fun chunkByMediaLimit(uris: List<Uri>): List<List<Uri>> {
+        if (uris.count(::isMediaUri) <= MAX_MEDIA_PER_MESSAGE) return listOf(uris)
+        
+        val chunks = mutableListOf<List<Uri>>()
+        var current = mutableListOf<Uri>()
+        var mediaCount = 0
+        
+        uris.forEach { uri ->
+            if (isMediaUri(uri) && mediaCount == MAX_MEDIA_PER_MESSAGE) {
+                chunks.add(current)
+                current = mutableListOf()
+                mediaCount = 0
+            }
+            
+            current.add(uri)
+            
+            if (isMediaUri(uri)) mediaCount++
+        }
+        
+        if (current.isNotEmpty()) chunks.add(current)
+        
+        return chunks
+    }
+    
+    private fun isMediaUri(uri: Uri): Boolean {
+        val mimeType = uri.getFileType(context)
+        
+        return mimeType.startsWith("image/") || mimeType.startsWith("video/")
     }
     
     private suspend fun send(
@@ -107,7 +175,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
             val attachmentType = when {
                 mimeType.startsWith("image/") -> AttachmentType.IMAGE
                 mimeType.startsWith("video/") -> AttachmentType.VIDEO
-                mimeType.startsWith("audio/") -> AttachmentType.VOICE
+                mimeType.startsWith("audio/") &&
+                        fileName.substringAfterLast('.', "").isVoiceRecordingExtension() -> AttachmentType.VOICE
                 else -> AttachmentType.FILE
             }
             
@@ -385,5 +454,6 @@ class SendMessageWithFilesUseCase @Inject constructor(
         const val TAG = "SendMessageWithFiles"
         const val SCHEME_FILE = "file"
         const val DEFAULT_FILE_NAME = "file"
+        const val MAX_MEDIA_PER_MESSAGE = 10
     }
 }

@@ -26,6 +26,11 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,18 +49,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.AudioTrackMetadata
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.SystemMessageEventType
+import com.aiwazian.messenger.extensions.isMusicFile
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.extensions.toChatListTime
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
+import com.aiwazian.messenger.utils.AudioMetadataCache
 
 @Composable
 fun ChatCard(
@@ -133,19 +142,30 @@ fun ChatCard(
                         }
                     }
                 } else if (chat.lastMessage.attachments.isNotEmpty()) {
-                    text = buildAnnotatedString {
-                        withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                            append(
-                                stringResource(
-                                    when (chat.lastMessage.attachments.first().type) {
-                                        AttachmentType.IMAGE -> R.string.photo
-                                        AttachmentType.FILE -> R.string.file
-                                        AttachmentType.VIDEO -> R.string.video
-                                        AttachmentType.VOICE -> R.string.voice_message
-                                        AttachmentType.GIF -> R.string.gif
-                                    }
+                    val attachment = chat.lastMessage.attachments.first()
+                    val musicPreview = rememberMusicPreview(attachment)
+
+                    text = if (musicPreview != null) {
+                        buildAnnotatedString {
+                            withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                                append(musicPreview)
+                            }
+                        }
+                    } else {
+                        buildAnnotatedString {
+                            withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                                append(
+                                    stringResource(
+                                        when (attachment.type) {
+                                            AttachmentType.IMAGE -> R.string.photo
+                                            AttachmentType.FILE -> R.string.file
+                                            AttachmentType.VIDEO -> R.string.video
+                                            AttachmentType.VOICE -> R.string.voice_message
+                                            AttachmentType.GIF -> R.string.gif
+                                        }
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                 } else if (!chat.lastMessage.text.isNullOrBlank()) {
@@ -271,6 +291,26 @@ fun ChatCard(
                 }
             }
         })
+}
+
+@Composable
+private fun rememberMusicPreview(attachment: MessageAttachment): String? {
+    if (!attachment.extension.isMusicFile()) return null
+
+    var metadata by remember(attachment.fileId) { mutableStateOf<AudioTrackMetadata?>(null) }
+
+    LaunchedEffect(attachment.fileId, attachment.localUri) {
+        val uri = attachment.localUri ?: return@LaunchedEffect
+        metadata = AudioMetadataCache.get(
+            fileId = attachment.fileId,
+            filePath = uri.path ?: uri.toString(),
+            fallbackTitle = attachment.name
+        )
+    }
+
+    val title = metadata?.title ?: attachment.name.substringBeforeLast('.')
+    val artist = metadata?.artist?.takeIf { it.isNotBlank() }
+    return if (artist == null) title else "$title - $artist"
 }
 
 @Composable

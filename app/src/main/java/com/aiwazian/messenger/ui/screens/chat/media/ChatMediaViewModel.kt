@@ -251,7 +251,9 @@ class ChatMediaViewModel @Inject constructor(
     
     fun onMediaClick(item: ChatMediaItem) {
         val downloaded = _uiState.value.media.filter { it.localUri != null }
-        val index = downloaded.indexOfFirst { it.fileId == item.fileId }
+        val index = downloaded.indexOfFirst {
+            it.messageId == item.messageId && it.fileId == item.fileId
+        }
         
         /* Нескачанное показывать нечего — по нажатию торопим загрузку. */
         if (index == -1) {

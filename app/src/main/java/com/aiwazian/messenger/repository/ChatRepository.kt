@@ -96,7 +96,9 @@ class ChatRepository @Inject constructor(
                     val avatarUri = info.second
 
                     val lastMessage = messageWithAttachments?.let {
-                        val attachments = it.attachments.map { att -> att.toDomain() }
+                        val attachments = it.attachments
+                            .sortedBy { att -> att.attachment.sortOrder }
+                            .map { att -> att.toDomain() }
                         it.message.toDomain(attachments)
                     }
                     
@@ -228,7 +230,9 @@ class ChatRepository @Inject constructor(
         
         return combine(source, readInfoCache.readInfo) { list, readInfo ->
             list.map { messageWithAttachments ->
-                val attachments = messageWithAttachments.attachments.map { it.toDomain() }
+                val attachments = messageWithAttachments.attachments
+                    .sortedBy { it.attachment.sortOrder }
+                    .map { it.toDomain() }
                 val message = messageWithAttachments.message.toDomain(attachments)
                 
                 readInfo[message.id]?.let { message.copy(readInfo = it) } ?: message
@@ -316,7 +320,9 @@ class ChatRepository @Inject constructor(
     fun getLastMessageFlow(chatId: Long): Flow<Message?> {
         return messageDao.getChatLastMessageFlow(chatId).map { messageWithAttachments ->
             messageWithAttachments?.let {
-                val attachments = it.attachments.map { att -> att.toDomain() }
+                val attachments = it.attachments
+                    .sortedBy { att -> att.attachment.sortOrder }
+                    .map { att -> att.toDomain() }
                 it.message.toDomain(attachments)
             }
         }

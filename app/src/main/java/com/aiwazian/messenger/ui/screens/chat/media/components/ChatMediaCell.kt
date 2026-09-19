@@ -75,7 +75,7 @@ fun ChatMediaCell(
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
-                .mediaTransitionOrigin(chatMediaKey(localUri))
+                .mediaTransitionOrigin(chatMediaKey(item.messageId, localUri))
         )
         
         if (item.type == AttachmentType.VIDEO) {

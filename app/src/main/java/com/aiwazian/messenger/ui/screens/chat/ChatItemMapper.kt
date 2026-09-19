@@ -19,6 +19,7 @@ import com.aiwazian.messenger.enums.MessageStatus
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.extensions.getFileType
+import com.aiwazian.messenger.extensions.isVoiceRecordingExtension
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
@@ -285,7 +286,8 @@ class ChatItemMapper(
                 mimeType == "image/gif" -> AttachmentType.GIF
                 mimeType.startsWith("image/") -> AttachmentType.IMAGE
                 mimeType.startsWith("video/") -> AttachmentType.VIDEO
-                mimeType.startsWith("audio/") -> AttachmentType.VOICE
+                mimeType.startsWith("audio/") && attachment.extension.isVoiceRecordingExtension() -> AttachmentType.VOICE
+                mimeType.startsWith("audio/") -> AttachmentType.FILE
                 else -> attachment.type
             }
             

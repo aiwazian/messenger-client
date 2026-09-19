@@ -49,7 +49,7 @@ fun MessageFile(file: MessageAttachment, onAction: (FileAction) -> Unit) {
                     onAction(FileAction.OPEN)
                     return@clickable
                 }
-                
+
                 val action = when (file.status) {
                     DownloadStatus.DOWNLOADING -> FileAction.PAUSE
                     DownloadStatus.PAUSED -> FileAction.DOWNLOAD
@@ -57,7 +57,7 @@ fun MessageFile(file: MessageAttachment, onAction: (FileAction) -> Unit) {
                     DownloadStatus.CANCELLED,
                     DownloadStatus.FAILED,
                     DownloadStatus.UPLOADED -> FileAction.DOWNLOAD
-                    
+
                     DownloadStatus.UPLOADING -> FileAction.CANCEL
                     DownloadStatus.COMPLETED -> FileAction.OPEN
                 }
@@ -91,7 +91,7 @@ fun MessageFile(file: MessageAttachment, onAction: (FileAction) -> Unit) {
                             targetValue = file.progress / 100f,
                             animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
                         )
-                        
+
                         CircularWavyProgressIndicator(
                             progress = { animatedProgress }, modifier = Modifier.size(48.dp)
                         )
@@ -99,7 +99,7 @@ fun MessageFile(file: MessageAttachment, onAction: (FileAction) -> Unit) {
                 }
             }
         }
-        
+
         Column(
             modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -111,7 +111,7 @@ fun MessageFile(file: MessageAttachment, onAction: (FileAction) -> Unit) {
                 fontSize = 14.sp,
                 lineHeight = 14.sp
             )
-            
+
             Text(
                 text = "${file.size.formatFileSize()} • ${file.extension.uppercase()}",
                 fontSize = 10.sp,
@@ -123,7 +123,7 @@ fun MessageFile(file: MessageAttachment, onAction: (FileAction) -> Unit) {
 }
 
 @Composable
-private fun StatusIcon(
+internal fun StatusIcon(
     file: MessageAttachment
 ) {
     val icon = when (file.status) {

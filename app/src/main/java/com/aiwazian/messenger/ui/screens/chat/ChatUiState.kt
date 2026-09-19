@@ -1,6 +1,7 @@
 package com.aiwazian.messenger.ui.screens.chat
 
 import android.net.Uri
+import com.aiwazian.messenger.domain.AudioTrackMetadata
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.ChatAdminPermissions
 import com.aiwazian.messenger.domain.InviteLinkInfo
@@ -9,9 +10,12 @@ import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.domain.MessageSearchHit
+import com.aiwazian.messenger.enums.AttachmentType
+import com.aiwazian.messenger.playback.MusicRepeatMode
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.chat.paging.ScrollTarget
 import com.aiwazian.messenger.utils.DataStoreManager
+import com.aiwazian.messenger.utils.EqualizerInfo
 import com.aiwazian.messenger.utils.UiText
 
 data class ChatUiState(
@@ -62,6 +66,16 @@ data class ChatUiState(
     val isVoicePlaying: Boolean = false,
     val voicePositionMs: Int = 0,
     val voiceDurationMs: Int = 0,
+    val currentMusicFileId: String? = null,
+    val currentMusicTitle: String = "",
+    val currentMusicArtist: String? = null,
+    val isMusicPlaying: Boolean = false,
+    val musicPositionMs: Int = 0,
+    val musicDurationMs: Int = 0,
+    val musicRepeatMode: MusicRepeatMode = MusicRepeatMode.REPEAT_ALL,
+    val audioMetadata: Map<String, AudioTrackMetadata> = emptyMap(),
+    val equalizerInfo: EqualizerInfo? = null,
+    val equalizerBandLevels: List<Int> = emptyList(),
     val isFirstLoadDone: Boolean = false,
     val groupReadInfo: Map<Long, List<MessageReadInfo>> = emptyMap(),
     val editingMessageId: Long? = null,

@@ -67,6 +67,7 @@ import coil3.request.ImageRequest
 import coil3.video.VideoFrameDecoder
 import coil3.video.videoFrameMillis
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.AudioTrackMetadata
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.enums.AttachmentType
@@ -76,6 +77,7 @@ import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.extensions.getDuration
+import com.aiwazian.messenger.extensions.isAudioFile
 import com.aiwazian.messenger.extensions.sharedElement
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyTime
@@ -112,6 +114,12 @@ fun MessageBubble(
     voicePositionMs: Int = 0,
     voiceDurationMs: Int = 0,
     onVoiceSeek: (MessageAttachment, Int) -> Unit = { _, _ -> },
+    audioMetadata: Map<String, AudioTrackMetadata> = emptyMap(),
+    currentMusicFileId: String? = null,
+    isMusicPlaying: Boolean = false,
+    musicPositionMs: Int = 0,
+    musicDurationMs: Int = 0,
+    onMusicSeek: (MessageAttachment, Int) -> Unit = { _, _ -> },
     onLinkClicked: ((String) -> Unit)? = null,
     onUsernameClicked: ((String) -> Unit)? = null,
     onEmailClicked: ((String) -> Unit)? = null,
@@ -333,7 +341,8 @@ fun MessageBubble(
                                         MediaThumbnail(
                                             attachment = attachment,
                                             mediaUri = mediaUri,
-                                            cacheKey = "$mediaCacheKeyPrefix:${attachment.sortOrder}",
+                                            cacheKey = "$mediaCacheKeyPrefix:${attachment.fileId}",
+                                            transitionKey = chatMediaKey(attachment.messageId, mediaUri),
                                             onFileAction = onFileAction
                                         )
                                     }
@@ -359,10 +368,26 @@ fun MessageBubble(
                             }
                             
                             AttachmentType.FILE -> {
-                                MessageFile(
-                                    file = attachment, onAction = { action ->
-                                        onFileAction(attachment, action)
-                                    })
+                                if (attachment.extension.isAudioFile()) {
+                                    MessageMusic(
+                                        file = attachment,
+                                        metadata = audioMetadata[attachment.fileId],
+                                        isCurrentTrack = currentMusicFileId == attachment.fileId,
+                                        isPlaying = isMusicPlaying && currentMusicFileId == attachment.fileId,
+                                        positionMs = if (currentMusicFileId == attachment.fileId) musicPositionMs else 0,
+                                        durationMs = if (currentMusicFileId == attachment.fileId) musicDurationMs else 0,
+                                        onAction = { action ->
+                                            onFileAction(attachment, action)
+                                        },
+                                        onSeek = { positionMs ->
+                                            onMusicSeek(attachment, positionMs)
+                                        })
+                                } else {
+                                    MessageFile(
+                                        file = attachment, onAction = { action ->
+                                            onFileAction(attachment, action)
+                                        })
+                                }
                             }
                             
                             else -> {}
@@ -617,17 +642,19 @@ private fun MediaThumbnail(
     attachment: MessageAttachment,
     mediaUri: Uri,
     cacheKey: String,
+    transitionKey: String,
     onFileAction: (MessageAttachment, FileAction) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (attachment.type == AttachmentType.VIDEO) {
-            VideoThumbnail(videoUri = mediaUri, cacheKey = cacheKey) {
+            VideoThumbnail(videoUri = mediaUri, cacheKey = cacheKey, transitionKey = transitionKey) {
                 onFileAction(attachment, FileAction.OPEN)
             }
         } else {
             ImageThumbnail(
                 imageUri = mediaUri,
                 cacheKey = cacheKey,
+                transitionKey = transitionKey,
                 isGif = attachment.type == AttachmentType.GIF
             ) {
                 onFileAction(attachment, FileAction.OPEN)
@@ -673,10 +700,10 @@ private fun MediaStatusIndicator(status: DownloadStatus) {
 }
 
 @Composable
-private fun VideoThumbnail(videoUri: Uri, cacheKey: String, onClick: () -> Unit) {
+private fun VideoThumbnail(videoUri: Uri, cacheKey: String, transitionKey: String, onClick: () -> Unit) {
     val context = LocalContext.current
     val decoderFactory = remember { VideoFrameDecoder.Factory() }
-    
+
     val request = remember(context, videoUri, cacheKey, decoderFactory) {
         ImageRequest.Builder(context)
             .data(videoUri)
@@ -686,22 +713,22 @@ private fun VideoThumbnail(videoUri: Uri, cacheKey: String, onClick: () -> Unit)
             .placeholderMemoryCacheKey(cacheKey)
             .build()
     }
-    
+
     val duration by produceState(0L, videoUri) {
         value = withContext(Dispatchers.IO) { videoUri.getDuration(context) }
     }
-    
+
     Box(
         modifier = Modifier
             .clickable(onClick = onClick)
-            .mediaTransitionOrigin(chatMediaKey(videoUri))
+            .mediaTransitionOrigin(transitionKey)
     ) {
         AsyncImage(
             model = request,
             contentDescription = "Thumbnail of the video",
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .sharedElement(key = videoUri.toString())
+                .sharedElement(key = transitionKey)
                 .fillMaxSize()
                 .clip(MaterialTheme.shapes.extraSmall)
         )
@@ -729,12 +756,13 @@ private fun VideoThumbnail(videoUri: Uri, cacheKey: String, onClick: () -> Unit)
 private fun ImageThumbnail(
     imageUri: Uri,
     cacheKey: String,
+    transitionKey: String,
     isGif: Boolean,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
     val decoderFactory = remember { GifDecoder.Factory() }
-    
+
     val request = remember(context, imageUri, cacheKey, decoderFactory) {
         ImageRequest.Builder(context)
             .data(imageUri)
@@ -743,18 +771,18 @@ private fun ImageThumbnail(
             .placeholderMemoryCacheKey(cacheKey)
             .build()
     }
-    
+
     Box(
         modifier = Modifier
             .clickable(onClick = onClick)
-            .mediaTransitionOrigin(chatMediaKey(imageUri))
+            .mediaTransitionOrigin(transitionKey)
     ) {
         AsyncImage(
             model = request,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .sharedElement(key = imageUri.toString())
+                .sharedElement(key = transitionKey)
                 .fillMaxSize()
                 .clip(MaterialTheme.shapes.extraSmall)
         )

@@ -279,8 +279,7 @@ fun ChatTopBar(
                 )
             ) {
                 IconButton(
-                    onClick = onBackClick,
-                    modifier = Modifier.padding(1.dp)
+                    onClick = onBackClick
                 ) {
                     Icon(Icons.AutoMirrored.Rounded.ArrowBack, null)
                 }
@@ -302,8 +301,7 @@ fun ChatTopBar(
                         IconButton(
                             onClick = {
                                 expand = true
-                            },
-                            modifier = Modifier.padding(1.dp),
+                            }
                         ) {
                             Icon(action.icon, null)
                         }

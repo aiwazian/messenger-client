@@ -179,6 +179,8 @@
     <string name="file">Файл</string>
     <string name="video">Видео</string>
     <string name="voice_message">Голосовое сообщение</string>
+    <string name="music_message">Музыка</string>
+    <string name="equalizer">Эквалайзер</string>
     <string name="chat_not_found">Чат не найден</string>
     <string name="you_are_already_in_this_chat">Вы уже в этом чате</string>
     <string name="invalid_link">Ссылка недействительна.</string>
@@ -190,6 +192,8 @@
     <string name="failed_to_connect">Ошибка соединения</string>
     <string name="enter_login">Введите логин</string>
     <string name="login">Логин</string>
+    <string name="sign_in">Войти</string>
+    <string name="login_user_exists">Пользователь с таким логином уже существует</string>
     <string name="password">Пароль</string>
     <string name="min_length_5_characters">Минимальная длинна 5 символов</string>
     <string name="enter_first_name">Введите имя</string>

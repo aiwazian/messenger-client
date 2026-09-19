@@ -19,9 +19,11 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.displayCutout
@@ -32,6 +34,7 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.plus
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -52,6 +55,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -86,6 +90,7 @@ import com.aiwazian.messenger.ui.components.SecureScreenEffect
 import com.aiwazian.messenger.ui.components.ShareBottomSheet
 import com.aiwazian.messenger.ui.components.ShareItem
 import com.aiwazian.messenger.ui.components.TopBarScrim
+import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.screens.chat.components.ChatDialogs
@@ -100,6 +105,8 @@ import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.MessageSearchResultsList
 import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
+import com.aiwazian.messenger.ui.screens.chat.components.MusicMiniPlayer
+import com.aiwazian.messenger.ui.screens.chat.components.MusicPlayerSheet
 import com.aiwazian.messenger.ui.screens.chat.components.StickerPackBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.UnreadSeparatorItem
@@ -321,6 +328,11 @@ fun ChatScreen(
     
     var fileToCancelId by remember { mutableStateOf<Long?>(null) }
     var showCancelRecordingDialog by remember { mutableStateOf(false) }
+    var showMusicPlayerSheet by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(uiState.currentMusicFileId) {
+        if (uiState.currentMusicFileId == null) showMusicPlayerSheet = false
+    }
     
     var tappedMedia by remember { mutableStateOf<MessageAttachment?>(null) }
     val scope = rememberCoroutineScope()
@@ -438,23 +450,48 @@ fun ChatScreen(
             AppSnackbar(snackbarHostState)
         }
     }, topBar = {
-        ChatTopBar(
-            title = uiState.chatName.asString(),
-            avatarUri = uiState.avatarUri,
-            subTitle = uiState.subTitle.asString(),
-            topBarActions = uiState.topBarActions,
-            isConnected = uiState.isConnected,
-            chatId = uiState.chatId,
-            myId = uiState.myId,
-            isMuted = isChatMuted,
-            isSearchActive = uiState.isMessageSearchActive,
-            searchQuery = uiState.messageSearchQuery,
-            onSearchQueryChange = chatViewModel::changeMessageSearchQuery,
-            onClearSearchQuery = chatViewModel::clearMessageSearchQuery,
-            onStartSearch = chatViewModel::startMessageSearch,
-            onToggleNotifications = notificationsViewModel::toggle,
-            onBackClick = onBackClick
-        )
+        Column {
+            ChatTopBar(
+                title = uiState.chatName.asString(),
+                avatarUri = uiState.avatarUri,
+                subTitle = uiState.subTitle.asString(),
+                topBarActions = uiState.topBarActions,
+                isConnected = uiState.isConnected,
+                chatId = uiState.chatId,
+                myId = uiState.myId,
+                isMuted = isChatMuted,
+                isSearchActive = uiState.isMessageSearchActive,
+                searchQuery = uiState.messageSearchQuery,
+                onSearchQueryChange = chatViewModel::changeMessageSearchQuery,
+                onClearSearchQuery = chatViewModel::clearMessageSearchQuery,
+                onStartSearch = chatViewModel::startMessageSearch,
+                onToggleNotifications = notificationsViewModel::toggle,
+                onBackClick = onBackClick
+            )
+            AnimatedContent(
+                targetState = uiState.currentMusicFileId,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Horizontal)
+                            .asPaddingValues()
+                            .plus(PaddingValues(horizontal = 4.dp))
+                    ),
+                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                contentAlignment = Alignment.TopCenter
+            ) { currentMusicFileId ->
+                if (currentMusicFileId != null) {
+                    MusicMiniPlayer(
+                        title = uiState.currentMusicTitle,
+                        artist = uiState.currentMusicArtist,
+                        isPlaying = uiState.isMusicPlaying,
+                        onTogglePlayPause = chatViewModel::toggleMusicPlayPause,
+                        onClose = chatViewModel::stopMusic,
+                        onOpen = { showMusicPlayerSheet = true }
+                    )
+                }
+            }
+        }
     }, bottomBar = {
         val bottomBarModifier = Modifier.windowInsetsPadding(
             WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
@@ -528,16 +565,16 @@ fun ChatScreen(
                     onLoadMore = chatViewModel::loadMoreSearchResults
                 )
             } else {
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(
                             start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
                             end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
-                        ),
-                    verticalArrangement = Arrangement.Bottom
+                        )
                 ) {
                     LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
                         state = listState,
                         reverseLayout = true,
                         verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -604,6 +641,12 @@ fun ChatScreen(
                                     voicePositionMs = uiState.voicePositionMs,
                                     voiceDurationMs = uiState.voiceDurationMs,
                                     onVoiceSeek = chatViewModel::onVoiceSeek,
+                                    audioMetadata = uiState.audioMetadata,
+                                    currentMusicFileId = uiState.currentMusicFileId,
+                                    isMusicPlaying = uiState.isMusicPlaying,
+                                    musicPositionMs = uiState.musicPositionMs,
+                                    musicDurationMs = uiState.musicDurationMs,
+                                    onMusicSeek = chatViewModel::onMusicSeek,
                                     onLinkClicked = chatViewModel::onLinkClicked,
                                     onUsernameClicked = chatViewModel::onUsernameClicked,
                                     onEmailClicked = chatViewModel::onEmailClicked,
@@ -855,20 +898,29 @@ fun ChatScreen(
         val tapped = tappedMedia
         val viewerAttachments = when {
             tapped == null -> downloadedMedia
-            downloadedMedia.any { it.fileId == tapped.fileId } -> downloadedMedia
+            downloadedMedia.any {
+                it.messageId == tapped.messageId && it.fileId == tapped.fileId
+            } -> downloadedMedia
+            
             tapped.localUri != null -> listOf(tapped)
             else -> downloadedMedia
         }
         
-        val viewerMedia = viewerAttachments.mapNotNull { attachment ->
+        val viewerEntries = viewerAttachments.mapNotNull { attachment ->
             val uri = attachment.localUri ?: return@mapNotNull null
-            ViewerMediaItem(
+            attachment to ViewerMediaItem(
                 uri = uri,
-                isVideo = attachment.type == AttachmentType.VIDEO
+                isVideo = attachment.type == AttachmentType.VIDEO,
+                originKey = chatMediaKey(attachment.messageId, uri)
             )
         }
-        val viewerInitialPage = viewerAttachments
-            .indexOfFirst { it.fileId == tapped?.fileId }
+        val viewerMedia = viewerEntries.map { it.second }
+        val viewerInitialPage = viewerEntries
+            .indexOfFirst { (attachment, _) ->
+                tapped != null &&
+                        attachment.messageId == tapped.messageId &&
+                        attachment.fileId == tapped.fileId
+            }
             .coerceAtLeast(0)
         
         FullScreenViewer(
@@ -891,6 +943,38 @@ fun ChatScreen(
         ) {
             AppSnackbar(snackbarHostState)
         }
+    }
+    
+    if (showMusicPlayerSheet && uiState.currentMusicFileId != null) {
+        val musicMetadata = uiState.audioMetadata[uiState.currentMusicFileId]
+        MusicPlayerSheet(
+            title = uiState.currentMusicTitle,
+            artist = uiState.currentMusicArtist,
+            cover = musicMetadata?.cover,
+            isPlaying = uiState.isMusicPlaying,
+            positionMs = uiState.musicPositionMs,
+            durationMs = if (uiState.musicDurationMs > 0) {
+                uiState.musicDurationMs
+            } else {
+                musicMetadata?.durationMs ?: 0
+            },
+            repeatMode = uiState.musicRepeatMode,
+            onSeek = chatViewModel::seekMusicTo,
+            onTogglePlayPause = chatViewModel::toggleMusicPlayPause,
+            onToggleRepeat = chatViewModel::toggleMusicRepeat,
+            onPrevious = chatViewModel::playPreviousMusicTrack,
+            onNext = chatViewModel::playNextMusicTrack,
+            onShare = chatViewModel::shareCurrentMusicTrack,
+            onOpenEqualizer = if (uiState.equalizerInfo != null) {
+                {
+                    showMusicPlayerSheet = false
+                    navBackStack.add(AppRoute.Equalizer)
+                }
+            } else {
+                null
+            },
+            onDismiss = { showMusicPlayerSheet = false }
+        )
     }
 }
 

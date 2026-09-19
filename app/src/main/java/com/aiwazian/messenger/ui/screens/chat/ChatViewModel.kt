@@ -22,11 +22,17 @@ import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.enums.ForwardSourceAccess
 import com.aiwazian.messenger.enums.MessageType
+import com.aiwazian.messenger.extensions.isAudioFile
+import com.aiwazian.messenger.extensions.isMusicFile
+import com.aiwazian.messenger.playback.MusicPlayerManager
+import com.aiwazian.messenger.playback.MusicRepeatMode
+import com.aiwazian.messenger.playback.MusicTrack
 import com.aiwazian.messenger.playback.VoicePlayerManager
 import com.aiwazian.messenger.playback.VoiceQueueItem
 import com.aiwazian.messenger.push.NotificationHelper
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
+import com.aiwazian.messenger.repository.FileRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.ReplyDraftCache
@@ -48,10 +54,12 @@ import com.aiwazian.messenger.usecase.JoinViaInviteLinkUseCase
 import com.aiwazian.messenger.usecase.LeaveChatUseCase
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.usecase.SendMessageWithFilesUseCase
+import com.aiwazian.messenger.utils.AudioMetadataCache
 import com.aiwazian.messenger.utils.AudioRecorderManager
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DataStoreManager
 import com.aiwazian.messenger.utils.DownloaderManager
+import com.aiwazian.messenger.utils.EqualizerManager
 import com.aiwazian.messenger.utils.FileHandler
 import com.aiwazian.messenger.utils.LastSeenHelper
 import com.aiwazian.messenger.utils.RegexPatterns
@@ -84,6 +92,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class ChatViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val chatRepository: ChatRepository,
+    private val fileRepository: FileRepository,
     private val channelRepository: ChannelRepository,
     private val groupRepository: GroupRepository,
     private val channelAdminsRepository: ChannelAdminsRepository,
@@ -106,6 +115,8 @@ class ChatViewModel @Inject constructor(
     private val leaveChatUseCase: LeaveChatUseCase,
     private val dataStoreManager: DataStoreManager,
     private val voicePlayerManager: VoicePlayerManager,
+    private val musicPlayerManager: MusicPlayerManager,
+    private val equalizerManager: EqualizerManager,
     private val onlineUsersTracker: OnlineUsersTracker,
     private val realtimeEventSyncService: RealtimeEventSyncService,
     private val notificationHelper: NotificationHelper
@@ -116,6 +127,8 @@ class ChatViewModel @Inject constructor(
     private var draftSaveJob: Job? = null
 
     private val pendingVoiceStartPositions = mutableMapOf<String, Int>()
+    private val pendingMusicStartPositions = mutableMapOf<String, Int>()
+    private val pendingMetadataRequests = mutableSetOf<String>()
     private val sendingJobs = mutableMapOf<Long, Job>()
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -161,6 +174,10 @@ class ChatViewModel @Inject constructor(
     init {
         loadSettings()
         observeVoicePlayer()
+        observeMusicPlayer()
+        observeMusicQueueUpdates()
+        observeAudioMetadata()
+        observeEqualizer()
         observeQueueUpdates()
         setupSocketConnectionObserver()
     }
@@ -252,6 +269,82 @@ class ChatViewModel @Inject constructor(
                         voicePositionMs = state.positionMs,
                         voiceDurationMs = state.durationMs
                     )
+                }
+            }
+        }
+    }
+
+    private fun observeMusicPlayer() {
+        musicPlayerManager.connect()
+        viewModelScope.launch {
+            musicPlayerManager.state.collect { state ->
+                _uiState.update {
+                    it.copy(
+                        currentMusicFileId = state.fileId,
+                        currentMusicTitle = state.title,
+                        currentMusicArtist = state.artist,
+                        isMusicPlaying = state.isPlaying,
+                        musicPositionMs = state.positionMs,
+                        musicDurationMs = state.durationMs
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            musicPlayerManager.repeatMode.collect { mode ->
+                _uiState.update { it.copy(musicRepeatMode = mode) }
+            }
+        }
+    }
+
+    private fun observeMusicQueueUpdates() {
+        viewModelScope.launch {
+            _uiState.collect { state ->
+                if (state.currentMusicFileId == null) return@collect
+                musicPlayerManager.updateQueue(buildMusicQueue(state))
+            }
+        }
+    }
+
+    private fun observeEqualizer() {
+        viewModelScope.launch {
+            equalizerManager.info.collect { info ->
+                _uiState.update { it.copy(equalizerInfo = info) }
+            }
+        }
+        viewModelScope.launch {
+            equalizerManager.bandLevels.collect { levels ->
+                _uiState.update { it.copy(equalizerBandLevels = levels) }
+            }
+        }
+    }
+
+    private fun observeAudioMetadata() {
+        viewModelScope.launch {
+            _uiState.collect { state ->
+                state.chatItems.forEach { item ->
+                    if (item !is ChatItem.MessageItem) return@forEach
+                    item.message.attachments.forEach { attachment ->
+                        val fileId = attachment.fileId
+                        if (!attachment.extension.isAudioFile()) return@forEach
+                        val localUri = attachment.localUri ?: return@forEach
+                        if (state.audioMetadata.containsKey(fileId)) return@forEach
+                        if (!pendingMetadataRequests.add(fileId)) return@forEach
+
+                        viewModelScope.launch {
+                            val metadata = AudioMetadataCache.get(
+                                fileId = fileId,
+                                filePath = localUri.path ?: localUri.toString(),
+                                fallbackTitle = attachment.name
+                            )
+                            pendingMetadataRequests.remove(fileId)
+                            if (metadata != null) {
+                                _uiState.update {
+                                    it.copy(audioMetadata = it.audioMetadata + (fileId to metadata))
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -608,7 +701,10 @@ class ChatViewModel @Inject constructor(
         if (autoDownloadMedia) {
             messages.forEach { msg ->
                 msg.attachments.forEach { attachment ->
-                    if (attachment.status == DownloadStatus.IDLE || attachment.status == DownloadStatus.UPLOADED) {
+                    val alreadyLocal = attachment.localUri != null
+                    if (!alreadyLocal &&
+                        (attachment.status == DownloadStatus.IDLE || attachment.status == DownloadStatus.UPLOADED)
+                    ) {
                         val shouldDownload = when (attachment.type) {
                             AttachmentType.VOICE -> true
                             AttachmentType.IMAGE, AttachmentType.GIF -> autoDownloadPhotos
@@ -929,6 +1025,7 @@ class ChatViewModel @Inject constructor(
             else state.chatName.asString(context),
             text = message.text,
             attachmentTypes = message.attachments.map { it.type },
+            attachmentExtensions = message.attachments.map { it.extension },
             messageType = message.messageType,
             stickerEmoji = message.sticker?.emojis?.firstOrNull()
         )
@@ -1392,12 +1489,20 @@ class ChatViewModel @Inject constructor(
             FileAction.RESUME -> viewModelScope.launch { downloaderManager.resume(file.fileId) }
             FileAction.CANCEL -> viewModelScope.launch { downloaderManager.cancel(file.fileId) }
             FileAction.OPEN -> handleOpenFile(file)
-            FileAction.PLAY -> handlePlayVoice(file)
+            FileAction.PLAY -> {
+                if (file.type == AttachmentType.VOICE) {
+                    handlePlayVoice(file)
+                } else if (file.extension.isAudioFile()) {
+                    handlePlayMusic(file)
+                }
+            }
         }
     }
 
     private fun downloadFile(message: Message, file: MessageAttachment) {
         viewModelScope.launch {
+            if (fileRepository.getById(file.fileId)?.path != null) return@launch
+
             chatRepository.getDownloadUrl(message.chatId, message.id, file.fileId)
                 .onSuccess { url -> downloaderManager.download(url, file.name, file.fileId) }
         }
@@ -1419,12 +1524,95 @@ class ChatViewModel @Inject constructor(
 
     private fun handlePlayVoice(file: MessageAttachment) {
         if (file.type != AttachmentType.VOICE || file.localUri == null) return
+        musicPlayerManager.stop()
         if (_uiState.value.currentPlayingVoiceFileId == file.fileId) {
             voicePlayerManager.togglePlayPause()
         } else {
             val startPos = pendingVoiceStartPositions.remove(file.fileId) ?: 0
             playVoice(file.fileId, startPos)
         }
+    }
+
+    private fun handlePlayMusic(file: MessageAttachment) {
+        if (file.localUri == null) return
+
+        if (_uiState.value.currentMusicFileId == file.fileId) {
+            musicPlayerManager.togglePlayPause()
+            return
+        }
+
+        voicePlayerManager.stop()
+        val queue = buildMusicQueue(_uiState.value)
+        val startPosition = pendingMusicStartPositions.remove(file.fileId) ?: 0
+        musicPlayerManager.play(queue, file.fileId, startPosition)
+    }
+
+    private fun buildMusicQueue(state: ChatUiState): List<MusicTrack> {
+        return state.chatItems.asReversed()
+            .filterIsInstance<ChatItem.MessageItem>()
+            .flatMap { it.message.attachments }
+            .filter { it.extension.isMusicFile() && it.localUri != null }
+            .map { attachment ->
+                val metadata = state.audioMetadata[attachment.fileId]
+                MusicTrack(
+                    fileId = attachment.fileId,
+                    uri = attachment.localUri!!,
+                    title = metadata?.title ?: attachment.name,
+                    artist = metadata?.artist,
+                    artworkUri = state.avatarUri,
+                    artworkData = metadata?.cover
+                )
+            }
+    }
+
+    fun onMusicSeek(file: MessageAttachment, positionMs: Int) {
+        if (_uiState.value.currentMusicFileId == file.fileId) {
+            musicPlayerManager.seekTo(positionMs)
+        } else {
+            pendingMusicStartPositions[file.fileId] = positionMs
+        }
+    }
+
+    fun seekMusicTo(positionMs: Int) {
+        musicPlayerManager.seekTo(positionMs)
+    }
+
+    fun toggleMusicPlayPause() {
+        musicPlayerManager.togglePlayPause()
+    }
+
+    fun toggleMusicRepeat() {
+        musicPlayerManager.toggleRepeatMode()
+    }
+
+    fun playNextMusicTrack() {
+        musicPlayerManager.next()
+    }
+
+    fun playPreviousMusicTrack() {
+        musicPlayerManager.previous()
+    }
+
+    fun shareCurrentMusicTrack() {
+        val fileId = _uiState.value.currentMusicFileId ?: return
+        val message = _uiState.value.chatItems
+            .filterIsInstance<ChatItem.MessageItem>()
+            .firstOrNull { item -> item.message.attachments.any { it.fileId == fileId } }
+            ?.message ?: return
+
+        startForward(message)
+    }
+
+    fun stopMusic() {
+        musicPlayerManager.stop()
+    }
+
+    fun setEqualizerBandLevel(band: Int, levelMb: Int) {
+        equalizerManager.setBandLevel(band, levelMb)
+    }
+
+    fun persistEqualizerBandLevels() {
+        equalizerManager.persistBandLevels()
     }
 
     private fun playVoice(fileId: String, startPositionMs: Int = 0) {

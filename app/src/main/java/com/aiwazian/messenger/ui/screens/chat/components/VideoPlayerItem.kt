@@ -31,6 +31,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
 import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
 import androidx.media3.ui.compose.material3.Player as Media3Player
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.aiwazian.messenger.ui.components.PlayerBottomControls
 import com.aiwazian.messenger.ui.components.PlayerCenterControls
 
@@ -84,6 +87,21 @@ fun VideoPlayerItem(
     LaunchedEffect(isCurrentPage) {
         if (!isCurrentPage) {
             player.pause()
+        }
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                player.pause()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
