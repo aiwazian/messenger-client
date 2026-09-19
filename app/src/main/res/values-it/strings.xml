@@ -345,6 +345,7 @@
     <string name="chat_media">Media</string>
     <string name="chat_media_tab">Media</string>
     <string name="chat_files_tab">File</string>
+    <string name="chat_media_music_tab">Musica</string>
     <string name="chat_voices_tab">Vocali</string>
     <string name="chat_attachments_empty">Ancora nessun allegato in questa chat</string>
     <string name="chat_media_load_error">Impossibile caricare gli allegati</string>
@@ -371,6 +372,12 @@
         <item quantity="other">%1$d messaggi vocali</item>
         <item quantity="many">%1$d messaggi vocali</item>
     </plurals>
+    <plurals name="chat_media_music_count">
+        <item quantity="one">%1$d file audio</item>
+        <item quantity="other">%1$d file audio</item>
+        <item quantity="many">%1$d file audio</item>
+    </plurals>
+
     <string name="chat_disable_notifications">Disattiva le notifiche</string>
     <string name="chat_enable_notifications">Attiva le notifiche</string>
     <string name="chat_notifications_disabled">Notifiche disattivate</string>

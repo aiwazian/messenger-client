@@ -351,6 +351,7 @@
     <string name="chat_media">Медиа</string>
     <string name="chat_media_tab">Медиа</string>
     <string name="chat_files_tab">Файлы</string>
+    <string name="chat_media_music_tab">Музыка</string>
     <string name="chat_voices_tab">Голосовые</string>
     <string name="chat_attachments_empty">В этом чате пока нет вложений</string>
     <string name="chat_media_load_error">Не удалось загрузить вложения</string>
@@ -382,6 +383,13 @@
         <item quantity="many">%1$d голосовых сообщений</item>
         <item quantity="other">%1$d голосовых сообщений</item>
     </plurals>
+    <plurals name="chat_media_music_count">
+        <item quantity="one">%1$d файл с музыкой</item>
+        <item quantity="few">%1$d файла с музыкой</item>
+        <item quantity="many">%1$d файлов с музыкой</item>
+        <item quantity="other">%1$d файлов с музыкой</item>
+    </plurals>
+
     <string name="chat_disable_notifications">Выключить уведомления</string>
     <string name="chat_enable_notifications">Включить уведомления</string>
     <string name="chat_notifications_disabled">Уведомления отключены</string>
