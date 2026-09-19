@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalSlider
 import androidx.compose.material3.rememberSliderState
@@ -110,7 +111,10 @@ fun EqualizerScreen(viewModel: EqualizerViewModel = hiltViewModel()) {
                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             },
                             onValueChangeFinished = viewModel::persistBandLevels,
-                            topToBottom = false
+                            topToBottom = false,
+                            track = {
+                                SliderDefaults.CenteredTrack(sliderState)
+                            }
                         )
                     }
                     

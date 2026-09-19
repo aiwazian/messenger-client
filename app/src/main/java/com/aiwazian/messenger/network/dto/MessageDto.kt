@@ -123,7 +123,9 @@ data class FileConfirmRequestDto(
 
 @Serializable
 data class ForwardMessageRequestDto(
-    @SerialName("targetChatIds") val targetChatIds: List<String>
+    @SerialName("targetChatIds") val targetChatIds: List<String>,
+    @SerialName("hideAuthor") val hideAuthor: Boolean = false,
+    @SerialName("hideCaption") val hideCaption: Boolean = false
 )
 
 @Serializable

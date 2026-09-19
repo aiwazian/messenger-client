@@ -278,6 +278,10 @@
     <string name="forwarded_from">Transféré de</string>
     <string name="message_forwarded">Message transféré</string>
     <string name="forward_failed">Impossible de transférer le message</string>
+    <string name="hide_sender_name">Masquer le nom de l\'expéditeur</string>
+    <string name="show_sender_name">Afficher le nom de l\'expéditeur</string>
+    <string name="hide_caption">Masquer la légende</string>
+    <string name="show_caption">Afficher la légende</string>
     <string name="forwarded_from_private_channel">Transféré depuis un canal privé</string>
     <string name="forwarded_from_private_group">Transféré depuis un groupe privé</string>
     <string name="forwarded_from_hidden_account">Transféré depuis un compte caché</string>

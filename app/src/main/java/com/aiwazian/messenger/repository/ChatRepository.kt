@@ -240,7 +240,7 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    /** id последних сообщений из кэша — для открытия чата без сети. */
+
     suspend fun getLastMessageIds(userId: Long, chatId: Long, limit: Int): List<Long> {
         return when (ChatType.fromId(chatId)) {
             ChatType.CHANNEL -> messageDao.getLastPrivateMessageIds(chatId, chatId, limit)
@@ -250,10 +250,7 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    /**
-     * Загрузка окна истории с сервера и запись в Room.
-     * Передавать надо не более одного курсора (anchorId / beforeId / afterId).
-     */
+
     suspend fun fetchMessagesWindow(
         chatId: Long,
         anchorId: Long? = null,
@@ -296,7 +293,7 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    /** Поиск сообщений внутри чата (сервер дешифрует и фильтрует текст сам). */
+
     suspend fun searchMessages(
         chatId: Long,
         query: String,
@@ -451,13 +448,7 @@ class ChatRepository @Inject constructor(
                 val existingFile = fileRepository.getById(attachment.fileId)
                 
                 val file = if (existingFile != null) {
-                    /*
-                     * Размеры кадра могли появиться позже самого файла: запись
-                     * создаётся ещё до отправки, а с сервера они приходят вместе с
-                     * сообщением — как у своего, так и у пересланного вложения. Без
-                     * этого дописывания уже известный файл навсегда оставался бы без
-                     * формы, и карточка в чате считалась бы по старому правилу.
-                     */
+
                     if (
                         attachment.width != null &&
                         attachment.height != null &&
@@ -536,21 +527,21 @@ class ChatRepository @Inject constructor(
             Result.failure(e)
         }
     }
-    
-    /**
-     * Пересылка сообщения в несколько чатов.
-     *
-     * Копии сразу кладём в Room: если один из получателей — текущий чат, сообщение
-     * появится в списке без ожидания сокет-события.
-     */
+
     suspend fun forwardMessage(
         sourceChatId: Long,
         messageId: Long,
-        targetChatIds: List<Long>
+        targetChatIds: List<Long>,
+        hideAuthor: Boolean = false,
+        hideCaption: Boolean = false
     ): Result<List<Message>> {
         if (targetChatIds.isEmpty()) return Result.success(emptyList())
         return try {
-            val request = ForwardMessageRequestDto(targetChatIds.map { it.toString() })
+            val request = ForwardMessageRequestDto(
+                targetChatIds = targetChatIds.map { it.toString() },
+                hideAuthor = hideAuthor,
+                hideCaption = hideCaption
+            )
             val response = messageApi.forwardMessage(
                 sourceChatId,
                 messageId,
@@ -603,12 +594,7 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    /**
-     * Отметить прочитанным всё до messageId включительно.
-     *
-     * Один запрос на пачку сообщений, а не по запросу на каждое:
-     * при быстром скролле иначе летит десятки запросов в секунду.
-     */
+
     suspend fun markReadUpTo(chatId: Long, messageId: Long): Boolean {
         markLocalReadUpTo(messageId)
         
@@ -670,7 +656,7 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    /** Массовое «Пометить непрочитанным» из списка чатов. */
+
     suspend fun markChatsUnread(chatIds: List<Long>): Boolean {
         if (chatIds.isEmpty()) return true
         return try {
@@ -690,12 +676,7 @@ class ChatRepository @Inject constructor(
         }
     }
     
-    /**
-     * Состояние прочтения с сервера → в Room.
-     *
-     * Счётчик никогда не считается на клиенте по сообщениям: в локальном кэше
-     * лежит только окно истории, а не вся история.
-     */
+
     suspend fun applyUnreadState(
         chatId: Long,
         unreadCount: Int,
@@ -706,10 +687,7 @@ class ChatRepository @Inject constructor(
         chatDao.setUnreadState(myId, chatId, unreadCount, firstUnreadMessageId, isManuallyUnread)
     }
     
-    /**
-     * Локальный инкремент бейджа на случай, если message:new опередило chat:unread.
-     * Последующий chat:unread всё равно перезапишет значение серверным.
-     */
+
     suspend fun incrementUnread(chatId: Long, messageId: Long) {
         val myId = userRepository.getMe().firstOrNull()?.id ?: return
         chatDao.incrementUnread(myId, chatId, messageId)
