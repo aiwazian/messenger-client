@@ -192,6 +192,8 @@
     <string name="failed_to_connect">Failed to connect</string>
     <string name="enter_login">Enter login</string>
     <string name="login">Login</string>
+    <string name="sign_in">Sign in</string>
+    <string name="login_user_exists">A user with this login already exists</string>
     <string name="password">Password</string>
     <string name="min_length_5_characters">Minimum length: 5 characters</string>
     <string name="enter_first_name">Enter first name</string>

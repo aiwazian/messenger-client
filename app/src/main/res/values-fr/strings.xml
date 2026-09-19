@@ -173,6 +173,8 @@
     <string name="file">Déposer</string>
     <string name="video">Vidéo</string>
     <string name="voice_message">Message vocal</string>
+    <string name="music_message">Musique</string>
+    <string name="equalizer">Égaliseur</string>
     <string name="chat_not_found">Chat introuvable</string>
     <string name="you_are_already_in_this_chat">Vous êtes déjà dans ce chat</string>
     <string name="invalid_link">Le lien n\'est pas valide.</string>
@@ -184,13 +186,15 @@
     <string name="failed_to_connect">Échec de connexion</string>
     <string name="enter_login">Entrer la connexion</string>
     <string name="login">Connexion</string>
+    <string name="sign_in">Se connecter</string>
+    <string name="login_user_exists">Un utilisateur avec cet identifiant existe déjà</string>
     <string name="password">Mot de passe</string>
     <string name="min_length_5_characters">Longueur minimale : 5 caractères</string>
     <string name="enter_first_name">Voici le prénom</string>
     <string name="user_login">Connexion utilisateur</string>
     <string name="registration">Enregistrement</string>
     <string name="unexpected_error">Erreur inattendue</string>
-    <string name="username_taken">Nom d’utilisateur adopté</string>
+    <string name="username_taken">Nom d’utilisateur déjà pris</string>
     <string name="username_available">Nom d’utilisateur disponible</string>
     <string name="authorization">Autorisation</string>
     <string name="group">Groupe</string>

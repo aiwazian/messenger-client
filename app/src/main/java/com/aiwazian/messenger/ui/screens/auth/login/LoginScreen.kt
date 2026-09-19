@@ -148,7 +148,7 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
                 onDismissRequest = viewModel::hideFoundDialog,
                 content = {
                     Text(
-                        text = stringResource(R.string.username_taken),
+                        text = stringResource(R.string.login_user_exists),
                         lineHeight = 18.sp
                     )
                 },
@@ -160,7 +160,7 @@ fun LoginScreen(viewModel: LoginViewModel = hiltViewModel()) {
                         viewModel.hideFoundDialog()
                         navBackStack.add(AppRoute.Password(uiState.login, uiState.canReset))
                     }) {
-                        Text(stringResource(R.string.login))
+                        Text(stringResource(R.string.sign_in))
                     }
                 }
             )
