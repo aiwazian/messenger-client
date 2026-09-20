@@ -2,7 +2,6 @@ package com.aiwazian.messenger.ui.screens.main
 
 import android.app.Activity
 import android.content.Intent
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -43,10 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,8 +54,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.aiwazian.messenger.BuildConfig
 import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
@@ -68,16 +64,9 @@ import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
-import com.yandex.mobile.ads.common.AdRequest
 import com.yandex.mobile.ads.common.AdTheme
-import com.yandex.mobile.ads.compose.Banner
-import com.yandex.mobile.ads.compose.BannerEvents
-import com.yandex.mobile.ads.compose.BannerSize
-import com.yandex.mobile.ads.compose.rememberBannerAdState
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun DrawerContent(
@@ -87,7 +76,8 @@ fun DrawerContent(
     showAccountSheet: Boolean,
     onShowAccountSheet: () -> Unit,
     onHideAccountSheet: () -> Unit,
-    accountSwitcherViewModel: AccountSwitcherViewModel = hiltViewModel()
+    accountSwitcherViewModel: AccountSwitcherViewModel = hiltViewModel(),
+    adBannerViewModel: AdBannerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val navBackStack = LocalNavBackStack.current
@@ -197,40 +187,20 @@ fun DrawerContent(
         
         Spacer(Modifier.weight(1f))
         
-        val scope = rememberCoroutineScope()
-        var loadTrigger by remember { mutableLongStateOf(0L) }
         val adTheme =
             if (theme == ThemeOption.DARK || theme == ThemeOption.SYSTEM && isSystemInDarkTheme()) {
                 AdTheme.DARK
             } else {
                 AdTheme.LIGHT
             }
-        val adRequest =
-            AdRequest.Builder(BuildConfig.AD_BANNER_ID).setPreferredTheme(adTheme).build()
         
-        val bannerState = rememberBannerAdState(
-            adSize = BannerSize.Inline(width = 300.dp, maxHeight = maxAdHeight),
-            events = BannerEvents(onAdFailedToLoad = { error ->
-                Log.e("YandexAds", error.description)
-                scope.launch {
-                    delay(4.seconds)
-                    loadTrigger++
-                }
-            }, onImpression = { data ->
-                Log.d("YandexAds", "Показ: ${data?.rawData}")
-                scope.launch {
-                    delay(60.seconds)
-                    loadTrigger++
-                }
-            })
-        )
-        
-        LaunchedEffect(loadTrigger) {
-            bannerState.loadAd(adRequest)
+        LaunchedEffect(Unit) {
+            adBannerViewModel.ensureInitialLoad(adTheme)
         }
         
-        Banner(
-            state = bannerState, modifier = Modifier
+        AndroidView(
+            factory = { adBannerViewModel.bannerView },
+            modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
         )
