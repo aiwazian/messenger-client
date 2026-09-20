@@ -46,11 +46,18 @@ class SettingsLastSeenViewModel @Inject constructor(
     private val _effect = MutableSharedFlow<SettingsLastSeenEffect>()
     val effect = _effect.asSharedFlow()
 
+    private var initializedLevel: PrivacyLevel? = null
+
     fun vibrate(pattern: LongArray) {
         vibrationManager.vibrate(pattern)
     }
 
     fun init(initialValue: PrivacyLevel) {
+        if (initializedLevel == initialValue) {
+            return
+        }
+        initializedLevel = initialValue
+
         _initialLevel.update { initialValue }
         _currentLevel.update { initialValue }
         hideSaveButton()
@@ -68,11 +75,7 @@ class SettingsLastSeenViewModel @Inject constructor(
         }
 
         _currentExceptions.update { current ->
-            val base = current ?: PrivacyExceptions()
-            when (selection.kind) {
-                PrivacyExceptionKind.ALWAYS_SHOW -> base.copy(alwaysShow = selection.userIds.toSet())
-                PrivacyExceptionKind.ALWAYS_HIDE -> base.copy(alwaysHide = selection.userIds.toSet())
-            }
+            applySelection(current, selection)
         }
         updateSaveButtonVisibility()
     }
@@ -96,6 +99,25 @@ class SettingsLastSeenViewModel @Inject constructor(
                 )
                 vibrate(VibrationPattern.Error)
             }
+        }
+    }
+
+    private fun applySelection(
+        current: PrivacyExceptions?,
+        selection: PrivacyExceptionSelection
+    ): PrivacyExceptions {
+        val base = current ?: PrivacyExceptions()
+        val userIds = selection.userIds.toSet()
+        return when (selection.kind) {
+            PrivacyExceptionKind.ALWAYS_SHOW -> base.copy(
+                alwaysShow = userIds,
+                alwaysHide = base.alwaysHide - userIds
+            )
+
+            PrivacyExceptionKind.ALWAYS_HIDE -> base.copy(
+                alwaysHide = userIds,
+                alwaysShow = base.alwaysShow - userIds
+            )
         }
     }
 

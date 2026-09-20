@@ -291,6 +291,8 @@
     <string name="add_exceptions">Aggiungi eccezioni</string>
     <string name="always_show">Mostra sempre</string>
     <string name="always_hide">Nascondi sempre</string>
+    <string name="always_allow">Consenti sempre</string>
+    <string name="always_deny">Nega sempre</string>
     <string name="unknown_chat">Chat sconosciuta</string>
     <string name="attachment_photo">Foto</string>
     <string name="attachment_video">Video</string>

@@ -20,10 +20,21 @@ fun PrivacyExceptionsSection(
     exceptions: PrivacyExceptions?,
     onNavigate: (PrivacyField, PrivacyExceptionKind, List<Long>) -> Unit
 ) {
-    val items = listOf(
-        PrivacyExceptionKind.ALWAYS_SHOW to R.string.always_show,
-        PrivacyExceptionKind.ALWAYS_HIDE to R.string.always_hide
-    )
+    val usesAllowDenyWording = field == PrivacyField.INVITES ||
+            field == PrivacyField.FORWARDED_PROFILE ||
+            field == PrivacyField.FORWARD_AND_COPY
+
+    val items = if (usesAllowDenyWording) {
+        listOf(
+            PrivacyExceptionKind.ALWAYS_SHOW to R.string.always_allow,
+            PrivacyExceptionKind.ALWAYS_HIDE to R.string.always_deny
+        )
+    } else {
+        listOf(
+            PrivacyExceptionKind.ALWAYS_SHOW to R.string.always_show,
+            PrivacyExceptionKind.ALWAYS_HIDE to R.string.always_hide
+        )
+    }
 
     SectionContainer(header = {
         SectionHeader(stringResource(R.string.add_exceptions))
