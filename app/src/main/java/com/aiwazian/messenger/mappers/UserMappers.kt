@@ -7,10 +7,12 @@ import com.aiwazian.messenger.database.entity.AvatarWithFile
 import com.aiwazian.messenger.database.entity.UserEntity
 import com.aiwazian.messenger.domain.Avatar
 import com.aiwazian.messenger.domain.PendingJoinRequest
+import com.aiwazian.messenger.domain.PrivacyExceptions
 import com.aiwazian.messenger.domain.PrivacySettings
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.network.dto.AvatarDto
 import com.aiwazian.messenger.network.dto.PendingJoinRequestDto
+import com.aiwazian.messenger.network.dto.PrivacyExceptionListsDto
 import com.aiwazian.messenger.network.dto.PrivacySettingsResponseDto
 import com.aiwazian.messenger.network.dto.UpdateUserRequestDto
 import com.aiwazian.messenger.network.dto.UserResponseDto
@@ -61,7 +63,18 @@ fun PrivacySettingsResponseDto.toDomain() = PrivacySettings(
     profilePhoto = profilePhoto,
     forwardedProfile = forwardedProfile,
     forwardAndCopy = forwardAndCopy,
-    deleteAfterDays = deleteAfterDays
+    deleteAfterDays = deleteAfterDays,
+    exceptions = exceptions.mapValues { (_, lists) -> lists.toDomain() }
+)
+
+fun PrivacyExceptionListsDto.toDomain() = PrivacyExceptions(
+    alwaysShow = alwaysShow.mapNotNull { it.toLongOrNull() }.toSet(),
+    alwaysHide = alwaysHide.mapNotNull { it.toLongOrNull() }.toSet()
+)
+
+fun PrivacyExceptions.toRequestLists() = PrivacyExceptionListsDto(
+    alwaysShow = alwaysShow.map(Long::toString),
+    alwaysHide = alwaysHide.map(Long::toString)
 )
 
 fun UserEntity.toDomain(avatars: List<Avatar> = emptyList()): User = User(

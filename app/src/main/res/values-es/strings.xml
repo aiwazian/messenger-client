@@ -288,6 +288,11 @@
     <string name="message_forwarding">Reenvío de mensajes</string>
     <string name="who_can_open_my_profile_from_forwarded_messages">¿Quién puede abrir mi perfil a partir de mensajes reenviados\?</string>
     <string name="who_can_forward_and_copy_messages_from_chat_with_me">Quién puede reenviar y copiar mensajes del chat conmigo</string>
+    <string name="add_exceptions">Añadir excepciones</string>
+    <string name="always_show">Mostrar siempre</string>
+    <string name="always_hide">Ocultar siempre</string>
+    <string name="always_allow">Permitir siempre</string>
+    <string name="always_deny">Denegar siempre</string>
     <string name="unknown_chat">chat desconocido</string>
     <string name="attachment_photo">Foto</string>
     <string name="attachment_video">Video</string>

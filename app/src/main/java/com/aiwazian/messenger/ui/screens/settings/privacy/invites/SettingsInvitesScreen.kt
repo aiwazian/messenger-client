@@ -13,15 +13,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation3.runtime.result.ResultEffect
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.PrivacyLevel
 import com.aiwazian.messenger.ui.app.AppScaffold
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.enums.PrivacyField
+import com.aiwazian.messenger.ui.screens.settings.privacy.exceptions.PrivacyExceptionSelection
+import com.aiwazian.messenger.ui.screens.settings.privacy.exceptions.PrivacyExceptionsSection
 
 @Composable
 fun SettingsInvitesScreen(
@@ -29,10 +34,11 @@ fun SettingsInvitesScreen(
     settingsInvitesViewModel: SettingsInvitesViewModel = hiltViewModel()
 ) {
     val navBackStack = LocalNavBackStack.current
-    
+
     val currentValue by settingsInvitesViewModel.currentLevel.collectAsState()
+    val currentExceptions by settingsInvitesViewModel.currentExceptions.collectAsState()
     val showSaveButton by settingsInvitesViewModel.showSaveButton.collectAsState()
-    
+
     LaunchedEffect(Unit) {
         settingsInvitesViewModel.effect.collect { effect ->
             when (effect) {
@@ -42,7 +48,11 @@ fun SettingsInvitesScreen(
             }
         }
     }
-    
+
+    ResultEffect<PrivacyExceptionSelection> { selection ->
+        settingsInvitesViewModel.applyExceptionSelection(selection)
+    }
+
     val actions = if (showSaveButton) {
         listOf(
             TopBarAction(
@@ -54,11 +64,11 @@ fun SettingsInvitesScreen(
     } else {
         emptyList()
     }
-    
+
     LaunchedEffect(level) {
         settingsInvitesViewModel.init(level)
     }
-    
+
     AppScaffold(
         topBar = {
             PageTopBar(
@@ -84,5 +94,18 @@ fun SettingsInvitesScreen(
                     settingsInvitesViewModel.selectValue(PrivacyLevel.NOBODY)
                 })
         }
+
+        PrivacyExceptionsSection(
+            field = PrivacyField.INVITES,
+            exceptions = currentExceptions,
+            onNavigate = { field, kind, selectedUserIds ->
+                navBackStack.add(
+                    AppRoute.SelectPrivacyExceptionUsers(
+                        field = field,
+                        kind = kind,
+                        selectedUserIds = selectedUserIds
+                    )
+                )
+            })
     }
 }

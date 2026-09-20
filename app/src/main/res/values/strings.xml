@@ -294,6 +294,11 @@
     <string name="message_forwarding">Message Forwarding</string>
     <string name="who_can_open_my_profile_from_forwarded_messages">Who can open my profile from forwarded messages?</string>
     <string name="who_can_forward_and_copy_messages_from_chat_with_me">Who can forward and copy messages from the chat with me</string>
+    <string name="add_exceptions">Add exceptions</string>
+    <string name="always_show">Always show</string>
+    <string name="always_hide">Always hide</string>
+    <string name="always_allow">Always allow</string>
+    <string name="always_deny">Always deny</string>
     <string name="unknown_chat">Unknown chat</string>
     <string name="attachment_photo">Photo</string>
     <string name="attachment_video">Video</string>

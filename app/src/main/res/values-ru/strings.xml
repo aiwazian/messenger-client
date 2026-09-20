@@ -294,6 +294,11 @@
     <string name="message_forwarding">Пересылка сообщений</string>
     <string name="who_can_open_my_profile_from_forwarded_messages">Кто может ссылаться на мой профиль при пересылке сообщений?</string>
     <string name="who_can_forward_and_copy_messages_from_chat_with_me">Кто может пересылать и копировать сообщения из чата со мной</string>
+    <string name="add_exceptions">Добавить исключения</string>
+    <string name="always_show">Всегда показывать</string>
+    <string name="always_hide">Всегда скрывать</string>
+    <string name="always_allow">Всегда разрешать</string>
+    <string name="always_deny">Всегда запрещать</string>
     <string name="unknown_chat">Неизвестный чат</string>
     <string name="attachment_photo">Фото</string>
     <string name="attachment_video">Видео</string>

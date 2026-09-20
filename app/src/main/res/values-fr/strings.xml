@@ -288,6 +288,11 @@
     <string name="message_forwarding">Transfert de messages</string>
     <string name="who_can_open_my_profile_from_forwarded_messages"><![CDATA[Qui peut ouvrir mon profil à partir des messages transférés \?]]></string>
     <string name="who_can_forward_and_copy_messages_from_chat_with_me">Qui peut transférer et copier les messages de la discussion avec moi</string>
+    <string name="add_exceptions">Ajouter des exceptions</string>
+    <string name="always_show">Toujours afficher</string>
+    <string name="always_hide">Toujours masquer</string>
+    <string name="always_allow">Toujours autoriser</string>
+    <string name="always_deny">Toujours interdire</string>
     <string name="unknown_chat">Discussion inconnue</string>
     <string name="attachment_photo">Photo</string>
     <string name="attachment_video">Vidéo</string>
