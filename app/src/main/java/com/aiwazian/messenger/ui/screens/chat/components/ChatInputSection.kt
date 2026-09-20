@@ -451,20 +451,25 @@ fun ChatInputSection(
                             })
                     }
                     
-                    if (panelPagerState.currentPage == EMOJI_PANEL_PAGE) {
-                        IconButton(
-                            onClick = {
-                                messageInputView?.let { view -> deleteBeforeCursor(view) }
-                            },
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .navigationBarsPadding()
-                                .scale(0.8f),
-                            colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                            )
+                    Box(modifier = Modifier.align(Alignment.BottomEnd)) {
+                        this@Column.AnimatedVisibility(
+                            visible = panelPagerState.currentPage == EMOJI_PANEL_PAGE,
+                            enter = expressiveScaleIn,
+                            exit = expressiveScaleOut
                         ) {
-                            Icon(Icons.AutoMirrored.Outlined.Backspace, null)
+                            IconButton(
+                                onClick = {
+                                    messageInputView?.let { view -> deleteBeforeCursor(view) }
+                                },
+                                modifier = Modifier
+                                    .navigationBarsPadding()
+                                    .scale(0.8f),
+                                colors = IconButtonDefaults.iconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                )
+                            ) {
+                                Icon(Icons.AutoMirrored.Outlined.Backspace, null)
+                            }
                         }
                     }
                     

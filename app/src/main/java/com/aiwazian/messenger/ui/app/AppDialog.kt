@@ -55,7 +55,8 @@ fun AppDialog(
                             bottom = 8.dp
                         ),
                         fontSize = 20.sp,
-                        fontWeight = FontWeight.W500
+                        fontWeight = FontWeight.W500,
+                        lineHeight = 18.sp
                     )
                 }
                 
