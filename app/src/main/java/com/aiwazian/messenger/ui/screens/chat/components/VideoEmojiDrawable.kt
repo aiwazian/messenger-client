@@ -27,6 +27,7 @@ import java.net.URL
 
 private const val FRAME_INTERVAL_MS = 66L
 private const val FRAME_STEP_US = 66_000L
+private const val RETRY_DELAY_MS = 2_000L
 private const val EMOJI_VIDEO_CACHE_DIRECTORY = "emoji_videos"
 private const val EMOJI_VIDEO_MAX_AGE_MS = 6L * 60 * 60 * 1000
 private const val DOWNLOAD_BUFFER_SIZE = 8 * 1024
@@ -49,13 +50,18 @@ class VideoEmojiDrawable(
 
     init {
         setBounds(0, 0, size, size)
+        callback = view
 
         view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) {
+                callback = v
+
                 start(context)
             }
 
             override fun onViewDetachedFromWindow(v: View) {
+                callback = null
+
                 stop()
             }
         })
@@ -86,10 +92,21 @@ class VideoEmojiDrawable(
     }
 
     private suspend fun runLoop(context: Context) {
-        val file = emojiVideoFile(context, url) ?: return
         val retriever = MediaMetadataRetriever()
 
         try {
+            val file: File = run {
+                var candidate = emojiVideoFile(context, url)
+
+                while (candidate == null) {
+                    delay(RETRY_DELAY_MS)
+
+                    candidate = emojiVideoFile(context, url)
+                }
+
+                candidate
+            }
+
             retriever.setDataSource(file.absolutePath)
 
             val durationUs = retriever
