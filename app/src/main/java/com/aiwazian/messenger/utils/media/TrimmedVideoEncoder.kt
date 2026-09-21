@@ -149,12 +149,14 @@ class TrimmedVideoEncoder @Inject constructor(
         }
 
         if (crop != null && !crop.isFullFrame) {
-            effects += Crop(
-                ndc(crop.left),
-                ndc(crop.right),
-                ndc(crop.bottom),
-                ndc(crop.top)
-            )
+            val leftNdc = ndc(crop.left)
+            val rightNdc = ndc(crop.right)
+            val topNdc = flippedNdc(crop.top)
+            val bottomNdc = flippedNdc(crop.bottom)
+
+            if (rightNdc > leftNdc && topNdc > bottomNdc) {
+                effects += Crop(leftNdc, rightNdc, bottomNdc, topNdc)
+            }
         }
 
         effects += Presentation.createForWidthAndHeight(
@@ -166,7 +168,9 @@ class TrimmedVideoEncoder @Inject constructor(
         return effects
     }
 
-    private fun ndc(value: Float): Float = value * 2f - 1f
+    private fun ndc(value: Float): Float = (value * 2f - 1f).coerceIn(-1f, 1f)
+
+    private fun flippedNdc(fraction: Float): Float = (1f - fraction * 2f).coerceIn(-1f, 1f)
 
     private fun counterClockwiseDegrees(clockwiseDegrees: Int): Float =
         (FULL_TURN - clockwiseDegrees).mod(FULL_TURN).toFloat()
