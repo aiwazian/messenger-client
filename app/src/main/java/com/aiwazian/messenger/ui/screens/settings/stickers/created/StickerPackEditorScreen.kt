@@ -1,5 +1,6 @@
 package com.aiwazian.messenger.ui.screens.settings.stickers.created
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -79,6 +80,7 @@ import androidx.compose.ui.util.lerp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import coil3.video.VideoFrameDecoder
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
@@ -97,6 +99,9 @@ import com.aiwazian.messenger.ui.screens.settings.emoji.SystemEmojiPickerBottomS
 import com.aiwazian.messenger.ui.screens.settings.stickers.StickerPickerBottomSheet
 import com.aiwazian.messenger.utils.EmojiInput
 import com.aiwazian.messenger.utils.UiText
+import com.aiwazian.messenger.utils.media.VIDEO_WEBM_MIME_TYPE
+import com.aiwazian.messenger.utils.media.VideoExportTarget
+import com.aiwazian.messenger.utils.media.WEBM_FILE_EXTENSION
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -117,6 +122,55 @@ private val FOCUS_OPEN_SPEC: AnimationSpec<Float> =
 
 private val FOCUS_CLOSE_SPEC: AnimationSpec<Float> =
     tween(durationMillis = 220, easing = FastOutSlowInEasing)
+
+private fun stickerModel(
+    context: Context,
+    data: Any,
+    isVideo: Boolean,
+    cacheKey: String? = null
+): ImageRequest = ImageRequest.Builder(context)
+    .data(data)
+    .apply {
+        if (isVideo) {
+            decoderFactory(VideoFrameDecoder.Factory())
+        }
+
+        if (cacheKey != null) {
+            memoryCacheKey(cacheKey)
+            diskCacheKey(cacheKey)
+        }
+    }
+    .build()
+
+private fun slotModel(context: Context, slot: StickerSlot): ImageRequest = when (slot) {
+    is StickerSlot.Local -> stickerModel(
+        context,
+        slot.sticker.uri,
+        slot.sticker.mimeType == VIDEO_WEBM_MIME_TYPE
+    )
+
+    is StickerSlot.Remote -> stickerModel(
+        context,
+        slot.url,
+        slot.url.endsWith(WEBM_FILE_EXTENSION),
+        slot.fileId
+    )
+}
+
+private fun coverModel(context: Context, cover: StickerPackCover): ImageRequest = when (cover) {
+    is StickerPackCover.Local -> stickerModel(
+        context,
+        cover.sticker.uri,
+        cover.sticker.mimeType == VIDEO_WEBM_MIME_TYPE
+    )
+
+    is StickerPackCover.Remote -> stickerModel(
+        context,
+        cover.url,
+        cover.url.endsWith(WEBM_FILE_EXTENSION),
+        cover.fileId
+    )
+}
 
 private enum class StickerPickTarget {
     Cover,
@@ -460,10 +514,17 @@ fun StickerPackEditorScreen(
             } else {
                 MaterialTheme.shapes.extraLarge
             },
+            videoExportTarget = VideoExportTarget.STICKER,
             onPhotoPicked = { uri ->
                 when (activePhotoTarget) {
                     StickerPickTarget.Cover -> viewModel.setCoverFromFile(uri)
                     StickerPickTarget.Sticker -> viewModel.addSticker(uri)
+                }
+            },
+            onVideoPicked = { video ->
+                when (activePhotoTarget) {
+                    StickerPickTarget.Cover -> viewModel.setCoverFromVideo(video)
+                    StickerPickTarget.Sticker -> viewModel.addVideoSticker(video)
                 }
             },
             onDismissRequest = { photoPickerTarget = null },
@@ -546,18 +607,8 @@ private fun CoverPicker(
         return
     }
     
-    val model = when (cover) {
-        is StickerPackCover.Local -> ImageRequest.Builder(context)
-            .data(cover.sticker.uri)
-            .build()
-        
-        is StickerPackCover.Remote -> ImageRequest.Builder(context)
-            .data(cover.url)
-            .memoryCacheKey(cover.fileId)
-            .diskCacheKey(cover.fileId)
-            .build()
-    }
-    
+    val model = coverModel(context, cover)
+
     Box(
         modifier = Modifier
             .size(COVER_SIZE)
@@ -634,16 +685,8 @@ private fun StickerSlotCell(
         label = "sticker_slot_scale"
     )
     
-    val model = when (slot) {
-        is StickerSlot.Local -> ImageRequest.Builder(context).data(slot.sticker.uri).build()
-        
-        is StickerSlot.Remote -> ImageRequest.Builder(context)
-            .data(slot.url)
-            .memoryCacheKey(slot.fileId)
-            .diskCacheKey(slot.fileId)
-            .build()
-    }
-    
+    val model = slotModel(context, slot)
+
     Box(
         modifier = Modifier
             .aspectRatio(1f)
@@ -695,16 +738,8 @@ private fun StickerFocusOverlay(
     
     val focusedSize = with(density) { (cellSize * FOCUS_SCALE).toDp() }
     
-    val model = when (slot) {
-        is StickerSlot.Local -> ImageRequest.Builder(context).data(slot.sticker.uri).build()
-        
-        is StickerSlot.Remote -> ImageRequest.Builder(context)
-            .data(slot.url)
-            .memoryCacheKey(slot.fileId)
-            .diskCacheKey(slot.fileId)
-            .build()
-    }
-    
+    val model = slotModel(context, slot)
+
     LaunchedEffect(slot.key) {
         progress.snapTo(0f)
         

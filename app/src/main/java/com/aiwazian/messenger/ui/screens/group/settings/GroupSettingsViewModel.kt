@@ -23,6 +23,7 @@ import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.UploadManager
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
+import com.aiwazian.messenger.utils.media.EncodedVideo
 import com.aiwazian.messenger.utils.media.ImageCompressor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -129,6 +130,48 @@ class GroupSettingsViewModel @Inject constructor(
             ).onSuccess { uploadInfo ->
                 uploadManager.upload(
                     fileUri = avatarUri,
+                    upload = uploadInfo,
+                    fileId = uploadInfo.fileId
+                ).onSuccess {
+                    groupRepository.confirmUploadAvatar(groupId, uploadInfo.fileId).onFailure {
+                        val error = if (it.isNetworkError()) {
+                            UiText.StringResource(R.string.failed_to_connect)
+                        } else {
+                            UiText.StringResource(R.string.unexpected_error)
+                        }
+                        _uiEffect.emit(GroupSettingsUiEffect.ShowSnackbar(error))
+                    }
+                }.onFailure {
+                    val error = if (it.isNetworkError()) {
+                        UiText.StringResource(R.string.failed_to_connect)
+                    } else {
+                        UiText.StringResource(R.string.unexpected_error)
+                    }
+                    _uiEffect.emit(GroupSettingsUiEffect.ShowSnackbar(error))
+                }
+            }.onFailure {
+                val error = if (it.isNetworkError()) {
+                    UiText.StringResource(R.string.failed_to_connect)
+                } else {
+                    UiText.StringResource(R.string.unexpected_error)
+                }
+                _uiEffect.emit(GroupSettingsUiEffect.ShowSnackbar(error))
+            }
+        }
+    }
+
+    fun uploadVideoAvatar(video: EncodedVideo) {
+        viewModelScope.launch {
+            val groupId = _uiState.value.group.id
+
+            groupRepository.initUploadAvatar(
+                groupId,
+                video.name,
+                video.size,
+                video.mimeType
+            ).onSuccess { uploadInfo ->
+                uploadManager.upload(
+                    fileUri = video.uri,
                     upload = uploadInfo,
                     fileId = uploadInfo.fileId
                 ).onSuccess {

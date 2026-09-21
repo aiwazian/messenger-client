@@ -10,7 +10,9 @@ import com.aiwazian.messenger.domain.StickerDraft
 import com.aiwazian.messenger.repository.StickerRepository
 import com.aiwazian.messenger.utils.EmojiInput
 import com.aiwazian.messenger.utils.media.EncodedSticker
+import com.aiwazian.messenger.utils.media.EncodedVideo
 import com.aiwazian.messenger.utils.media.StickerEncoder
+import com.aiwazian.messenger.utils.media.toEncodedSticker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -284,22 +286,22 @@ class StickerPackEditorViewModel @Inject constructor(
     fun addSticker(uri: Uri) {
         viewModelScope.launch {
             _uiState.update { it.copy(isAddingSticker = true) }
-            
+
             val encoded = stickerEncoder.encode(uri)
-            
+
             if (encoded == null) {
                 _uiState.update { it.copy(isAddingSticker = false) }
-                
+
                 _uiEffect.emit(StickerPackEditorEffect.ShowMessage(R.string.sticker_add_error))
-                
+
                 return@launch
             }
-            
+
             val slot = StickerSlot.Local(
                 sticker = encoded,
                 emojis = listOf(EmojiInput.DEFAULT_EMOJI)
             )
-            
+
             _uiState.update { state ->
                 state.copy(
                     stickers = state.stickers + slot,
@@ -307,6 +309,20 @@ class StickerPackEditorViewModel @Inject constructor(
                     isAddingSticker = false
                 )
             }
+        }
+    }
+
+    fun addVideoSticker(video: EncodedVideo) {
+        val slot = StickerSlot.Local(
+            sticker = video.toEncodedSticker(),
+            emojis = listOf(EmojiInput.DEFAULT_EMOJI)
+        )
+
+        _uiState.update { state ->
+            state.copy(
+                stickers = state.stickers + slot,
+                focusedStickerKey = slot.key
+            )
         }
     }
     
@@ -351,6 +367,12 @@ class StickerPackEditorViewModel @Inject constructor(
         }
     }
     
+    fun setCoverFromVideo(video: EncodedVideo) {
+        _uiState.update { state ->
+            state.copy(cover = StickerPackCover.Local(sticker = video.toEncodedSticker()))
+        }
+    }
+
     fun setCoverFromSticker(sticker: Sticker) {
         _uiState.update { state ->
             state.copy(

@@ -58,12 +58,15 @@ import coil3.compose.AsyncImage
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Avatar
 import com.aiwazian.messenger.ui.screens.chat.components.PhotoPickerBottomSheet
+import com.aiwazian.messenger.utils.media.EncodedVideo
+import com.aiwazian.messenger.utils.media.VideoExportTarget
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsProfileImageCarousel(
     avatars: List<Avatar>,
     onAddPhoto: (Uri) -> Unit,
+    onAddVideo: (EncodedVideo) -> Unit,
     onDeletePhoto: (String) -> Unit
 ) {
     val carouselState = rememberCarouselState { avatars.size + 1 }
@@ -204,7 +207,9 @@ fun SettingsProfileImageCarousel(
     if (showPhotoPicker) {
         PhotoPickerBottomSheet(
             maskShape = CircleShape,
+            videoExportTarget = VideoExportTarget.AVATAR,
             onPhotoPicked = onAddPhoto,
+            onVideoPicked = onAddVideo,
             onDismissRequest = { showPhotoPicker = false })
     }
 }

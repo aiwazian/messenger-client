@@ -11,6 +11,8 @@ import com.aiwazian.messenger.repository.EmojiRepository
 import com.aiwazian.messenger.utils.EmojiInput
 import com.aiwazian.messenger.utils.media.EmojiEncoder
 import com.aiwazian.messenger.utils.media.EncodedEmoji
+import com.aiwazian.messenger.utils.media.EncodedVideo
+import com.aiwazian.messenger.utils.media.toEncodedEmoji
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -310,6 +312,20 @@ class EmojiPackEditorViewModel @Inject constructor(
         }
     }
     
+    fun addVideoEmoji(video: EncodedVideo) {
+        val slot = EmojiSlot.Local(
+            emoji = video.toEncodedEmoji(),
+            emojis = listOf(EmojiInput.DEFAULT_EMOJI)
+        )
+
+        _uiState.update { state ->
+            state.copy(
+                emojis = state.emojis + slot,
+                focusedEmojiKey = slot.key
+            )
+        }
+    }
+
     fun addEmojiFromExisting(emoji: CustomEmoji) {
         val state = _uiState.value
         
@@ -351,6 +367,12 @@ class EmojiPackEditorViewModel @Inject constructor(
         }
     }
     
+    fun setCoverFromVideo(video: EncodedVideo) {
+        _uiState.update { state ->
+            state.copy(cover = EmojiPackCover.Local(emoji = video.toEncodedEmoji()))
+        }
+    }
+
     fun setCoverFromEmoji(emoji: CustomEmoji) {
         _uiState.update { state ->
             state.copy(

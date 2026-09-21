@@ -101,6 +101,7 @@ fun GroupSettingsScreen(
             SettingsProfileImageCarousel(
                 avatars = uiState.group.avatars,
                 onAddPhoto = viewModel::uploadAvatar,
+                onAddVideo = viewModel::uploadVideoAvatar,
                 onDeletePhoto = viewModel::deleteAvatar
             )
             

@@ -92,10 +92,10 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
             SectionHeader(title = stringResource(R.string.profile_photos))
         }
         
-        /* Шторка выбора сама кадрирует кадр под круг и отдаёт готовый файл. */
         SettingsProfileImageCarousel(
             avatars = uiState.user.avatars,
             onAddPhoto = viewModel::uploadAvatar,
+            onAddVideo = viewModel::uploadVideoAvatar,
             onDeletePhoto = viewModel::deleteAvatar
         )
         

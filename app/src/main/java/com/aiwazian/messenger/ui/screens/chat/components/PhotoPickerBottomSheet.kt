@@ -12,6 +12,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -53,12 +56,17 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.video.VideoFrameDecoder
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.repository.DeviceMediaRepository
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.ui.components.mediaTransitionOrigin
 import com.aiwazian.messenger.ui.components.pickerMediaKey
+import com.aiwazian.messenger.utils.media.EncodedVideo
+import com.aiwazian.messenger.utils.media.VideoExportTarget
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -69,31 +77,33 @@ import javax.inject.Inject
 @Composable
 fun PhotoPickerBottomSheet(
     maskShape: Shape,
+    videoExportTarget: VideoExportTarget,
     onPhotoPicked: (Uri) -> Unit,
+    onVideoPicked: (EncodedVideo) -> Unit,
     onDismissRequest: () -> Unit,
     clipsToMask: Boolean = false,
     viewModel: PhotoPickerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    
+
     val photos by viewModel.photos.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    
+
     var hasPermission by remember { mutableStateOf(context.hasPhotoPermission()) }
-    var croppingUri by remember { mutableStateOf<Uri?>(null) }
-    
+    var pickedMedia by remember { mutableStateOf<DeviceMediaItem?>(null) }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
         hasPermission = result.values.any { it }
     }
-    
+
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
             viewModel.load()
         }
     }
-    
+
     AppBottomSheet(onDismissRequest = onDismissRequest, contentPadding = PaddingValues.Zero) {
         when {
             !hasPermission -> {
@@ -109,13 +119,13 @@ fun PhotoPickerBottomSheet(
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    
+
                     Button(onClick = { permissionLauncher.launch(photoPermissions()) }) {
                         Text(stringResource(R.string.media_picker_permission_action))
                     }
                 }
             }
-            
+
             isLoading && photos.isEmpty() -> {
                 Box(
                     modifier = Modifier
@@ -126,7 +136,7 @@ fun PhotoPickerBottomSheet(
                     CircularWavyProgressIndicator()
                 }
             }
-            
+
             photos.isEmpty() -> {
                 Text(
                     text = stringResource(R.string.media_picker_empty),
@@ -137,7 +147,7 @@ fun PhotoPickerBottomSheet(
                         .padding(32.dp)
                 )
             }
-            
+
             else -> {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(GRID_COLUMNS),
@@ -154,11 +164,11 @@ fun PhotoPickerBottomSheet(
                                 .statusBarsPadding()
                         )
                     }
-                    
+
                     items(photos, key = { it.id }) { photo ->
-                        PhotoCell(photo = photo, onClick = { croppingUri = photo.uri })
+                        PickerMediaCell(photo = photo, onClick = { pickedMedia = photo })
                     }
-                    
+
                     item(span = { GridItemSpan(maxLineSpan) }) {
                         Spacer(
                             modifier = Modifier
@@ -170,36 +180,86 @@ fun PhotoPickerBottomSheet(
             }
         }
     }
-    
-    val uri = croppingUri
-    
-    if (uri != null) {
-        MediaPickerCropDialog(
-            uri = uri,
-            maskShape = maskShape,
-            onConfirm = { cropped ->
-                croppingUri = null
-                
-                onPhotoPicked(cropped)
-                onDismissRequest()
-            },
-            onDismiss = { croppingUri = null },
-            clipsToMask = clipsToMask
-        )
+
+    val picked = pickedMedia
+
+    if (picked != null) {
+        if (picked.isVideo) {
+            VideoPickerCropDialog(
+                uri = picked.uri,
+                maskShape = maskShape,
+                exportTarget = videoExportTarget,
+                onConfirm = { videoUri ->
+                    pickedMedia = null
+
+                    onVideoPicked(videoUri)
+                    onDismissRequest()
+                },
+                onDismiss = { pickedMedia = null }
+            )
+        } else {
+            MediaPickerCropDialog(
+                uri = picked.uri,
+                maskShape = maskShape,
+                onConfirm = { cropped ->
+                    pickedMedia = null
+
+                    onPhotoPicked(cropped)
+                    onDismissRequest()
+                },
+                onDismiss = { pickedMedia = null },
+                clipsToMask = clipsToMask
+            )
+        }
     }
 }
 
 @Composable
-private fun PhotoCell(photo: DeviceMediaItem, onClick: () -> Unit) {
-    AsyncImage(
-        model = photo.uri,
-        contentDescription = null,
-        contentScale = ContentScale.Crop,
+private fun PickerMediaCell(photo: DeviceMediaItem, onClick: () -> Unit) {
+    if (!photo.isVideo) {
+        AsyncImage(
+            model = photo.uri,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .aspectRatio(1f)
+                .clickable(onClick = onClick)
+                .mediaTransitionOrigin(pickerMediaKey(photo.uri))
+        )
+
+        return
+    }
+
+    val decoderFactory = remember { VideoFrameDecoder.Factory() }
+
+    Box(
         modifier = Modifier
             .aspectRatio(1f)
             .clickable(onClick = onClick)
             .mediaTransitionOrigin(pickerMediaKey(photo.uri))
-    )
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(photo.uri)
+                .decoderFactory(decoderFactory)
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        Text(
+            text = formatDuration(photo.durationMs),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(4.dp)
+                .clip(MaterialTheme.shapes.extraSmall)
+                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f))
+                .padding(horizontal = 4.dp, vertical = 1.dp)
+        )
+    }
 }
 
 @HiltViewModel
@@ -216,9 +276,9 @@ class PhotoPickerViewModel @Inject constructor(
     fun load() {
         viewModelScope.launch {
             _isLoading.value = true
-            
-            _photos.value = deviceMediaRepository.getMedia().filter { !it.isVideo && !it.isGif }
-            
+
+            _photos.value = deviceMediaRepository.getMedia().filter { !it.isGif }
+
             _isLoading.value = false
         }
     }
@@ -227,13 +287,15 @@ class PhotoPickerViewModel @Inject constructor(
 private fun photoPermissions(): Array<String> = when {
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> arrayOf(
         Manifest.permission.READ_MEDIA_IMAGES,
+        Manifest.permission.READ_MEDIA_VIDEO,
         Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
     )
-    
+
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> arrayOf(
-        Manifest.permission.READ_MEDIA_IMAGES
+        Manifest.permission.READ_MEDIA_IMAGES,
+        Manifest.permission.READ_MEDIA_VIDEO
     )
-    
+
     else -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
 }
 

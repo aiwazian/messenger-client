@@ -19,6 +19,7 @@ import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.UploadManager
+import com.aiwazian.messenger.utils.media.EncodedVideo
 import com.aiwazian.messenger.utils.media.ImageCompressor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -154,6 +155,50 @@ class SettingsProfileViewModel @Inject constructor(
             ).onSuccess { uploadInfo ->
                 uploadManager.upload(
                     fileUri = avatarUri,
+                    upload = uploadInfo,
+                    fileId = uploadInfo.fileId
+                ).onSuccess {
+                    userRepository.confirmUploadAvatar(uploadInfo.fileId).onSuccess {
+                        userRepository.addAvatarLocal(uploadInfo.fileId)
+                    }.onFailure {
+                        val error = if (it.isNetworkError()) {
+                            UiText.StringResource(R.string.failed_to_connect)
+                        } else {
+                            UiText.StringResource(R.string.unexpected_error)
+                        }
+                        _sideEffect.emit(SettingsProfileSideEffect.ShowSnackbar(error))
+                        Log.e("SettingsProfileViewModel", "error confirm", it)
+                    }
+                }.onFailure {
+                    val error = if (it.isNetworkError()) {
+                        UiText.StringResource(R.string.failed_to_connect)
+                    } else {
+                        UiText.StringResource(R.string.unexpected_error)
+                    }
+                    _sideEffect.emit(SettingsProfileSideEffect.ShowSnackbar(error))
+                    Log.e("SettingsProfileViewModel", "error upload", it)
+                }
+            }.onFailure {
+                val error = if (it.isNetworkError()) {
+                    UiText.StringResource(R.string.failed_to_connect)
+                } else {
+                    UiText.StringResource(R.string.unexpected_error)
+                }
+                _sideEffect.emit(SettingsProfileSideEffect.ShowSnackbar(error))
+                Log.e("SettingsProfileViewModel", "error initUploadAvatar", it)
+            }
+        }
+    }
+
+    fun uploadVideoAvatar(video: EncodedVideo) {
+        viewModelScope.launch {
+            userRepository.initUploadAvatar(
+                video.name,
+                video.size,
+                video.mimeType
+            ).onSuccess { uploadInfo ->
+                uploadManager.upload(
+                    fileUri = video.uri,
                     upload = uploadInfo,
                     fileId = uploadInfo.fileId
                 ).onSuccess {

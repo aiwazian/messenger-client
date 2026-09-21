@@ -100,6 +100,7 @@ fun ChannelSettingsScreen(
             SettingsProfileImageCarousel(
                 avatars = uiState.channel.avatars,
                 onAddPhoto = viewModel::uploadAvatar,
+                onAddVideo = viewModel::uploadVideoAvatar,
                 onDeletePhoto = viewModel::deleteAvatar
             )
             
