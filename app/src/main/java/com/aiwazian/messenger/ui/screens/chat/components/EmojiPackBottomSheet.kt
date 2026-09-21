@@ -39,6 +39,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.EmojiPack
 import com.aiwazian.messenger.ui.app.AppBottomSheet
@@ -129,15 +131,12 @@ fun EmojiPackBottomSheet(
             items(
                 items = pack.emojis,
                 key = { it.id }) { emoji ->
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(emoji.url)
-                        .memoryCacheKey(emoji.fileId)
-                        .diskCacheKey(emoji.fileId)
-                        .build(),
+                AnimatedStickerImage(
+                    data = emoji.url,
+                    isVideo = isVideoMediaUrl(emoji.url),
+                    cacheKey = emoji.fileId,
                     contentDescription = null,
-                    modifier = Modifier.aspectRatio(1f),
-                    contentScale = ContentScale.Fit
+                    modifier = Modifier.aspectRatio(1f)
                 )
             }
         }

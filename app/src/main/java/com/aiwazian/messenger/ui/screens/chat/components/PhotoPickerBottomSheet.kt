@@ -253,7 +253,7 @@ private fun PickerMediaCell(photo: DeviceMediaItem, onClick: () -> Unit) {
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
-                .align(Alignment.BottomEnd)
+                .align(Alignment.BottomStart)
                 .padding(4.dp)
                 .clip(MaterialTheme.shapes.extraSmall)
                 .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f))

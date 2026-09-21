@@ -21,6 +21,8 @@ import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil3.compose.AsyncImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
 import coil3.request.ImageRequest
 import com.aiwazian.messenger.ui.screens.chat.components.CustomEmojiText
 import com.aiwazian.messenger.ui.screens.chat.components.CustomEmojiTextPart
@@ -57,15 +59,12 @@ fun rememberCustomEmojiInlineContent(
                 placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter
             )
         ) {
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(emoji.url)
-                    .memoryCacheKey(emoji.fileId)
-                    .diskCacheKey(emoji.fileId)
-                    .build(),
+            AnimatedStickerImage(
+                data = emoji.url,
+                isVideo = isVideoMediaUrl(emoji.url),
+                cacheKey = emoji.fileId,
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Fit
+                modifier = Modifier.fillMaxSize()
             )
         }
     }.toMap()

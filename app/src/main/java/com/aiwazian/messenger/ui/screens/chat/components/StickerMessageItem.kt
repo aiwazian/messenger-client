@@ -32,14 +32,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
 import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.enums.MessageStatus
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 
 private val STICKER_MESSAGE_SIZE = 180.dp
@@ -56,8 +54,6 @@ fun StickerMessageItem(
     onStickerClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    
     var isMenuExpanded by remember { mutableStateOf(false) }
     
     val interactionSource = remember { MutableInteractionSource() }
@@ -76,12 +72,11 @@ fun StickerMessageItem(
             
             Box(modifier = Modifier.size(STICKER_MESSAGE_SIZE)) {
                 if (sticker != null) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(sticker.url)
-                            .memoryCacheKey(sticker.fileId)
-                            .diskCacheKey(sticker.fileId)
-                            .build(),
+                    AnimatedStickerImage(
+                        data = sticker.url,
+                        isVideo = isVideoMediaUrl(sticker.url),
+                        cacheKey = sticker.fileId,
+                        videoShape = MaterialTheme.shapes.extraLarge,
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxSize()
@@ -90,8 +85,7 @@ fun StickerMessageItem(
                                 indication = null,
                                 onLongClick = { isMenuExpanded = true },
                                 onClick = onStickerClick
-                            ),
-                        contentScale = ContentScale.Fit
+                            )
                     )
                 }
                 

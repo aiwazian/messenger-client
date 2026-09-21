@@ -79,10 +79,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.video.VideoFrameDecoder
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppDialog
@@ -102,9 +101,7 @@ import com.aiwazian.messenger.ui.screens.settings.emoji.EmojiPickerBottomSheet
 import com.aiwazian.messenger.ui.screens.settings.emoji.SystemEmojiPickerBottomSheet
 import com.aiwazian.messenger.utils.EmojiInput
 import com.aiwazian.messenger.utils.UiText
-import com.aiwazian.messenger.utils.media.VIDEO_WEBM_MIME_TYPE
 import com.aiwazian.messenger.utils.media.VideoExportTarget
-import com.aiwazian.messenger.utils.media.WEBM_FILE_EXTENSION
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -122,53 +119,14 @@ private const val REMOVE_COVER_LABEL = "Удалить обложку"
 private val FOCUS_OPEN_SPEC: AnimationSpec<Float> =
     tween(durationMillis = 260, easing = FastOutSlowInEasing)
 
-private fun emojiModel(
-    context: Context,
-    data: Any,
-    isVideo: Boolean,
-    cacheKey: String? = null
-): ImageRequest = ImageRequest.Builder(context)
-    .data(data)
-    .apply {
-        if (isVideo) {
-            decoderFactory(VideoFrameDecoder.Factory())
-        }
-
-        if (cacheKey != null) {
-            memoryCacheKey(cacheKey)
-            diskCacheKey(cacheKey)
-        }
-    }
-    .build()
-
-private fun slotModel(context: Context, slot: EmojiSlot): ImageRequest = when (slot) {
-    is EmojiSlot.Local -> emojiModel(
-        context,
-        slot.emoji.uri,
-        slot.emoji.mimeType == VIDEO_WEBM_MIME_TYPE
-    )
-
-    is EmojiSlot.Remote -> emojiModel(
-        context,
-        slot.url,
-        slot.url.endsWith(WEBM_FILE_EXTENSION),
-        slot.fileId
-    )
+private fun slotData(slot: EmojiSlot): Any = when (slot) {
+    is EmojiSlot.Local -> slot.emoji.uri
+    is EmojiSlot.Remote -> slot.url
 }
 
-private fun coverModel(context: Context, cover: EmojiPackCover): ImageRequest = when (cover) {
-    is EmojiPackCover.Local -> emojiModel(
-        context,
-        cover.emoji.uri,
-        cover.emoji.mimeType == VIDEO_WEBM_MIME_TYPE
-    )
-
-    is EmojiPackCover.Remote -> emojiModel(
-        context,
-        cover.url,
-        cover.url.endsWith(WEBM_FILE_EXTENSION),
-        cover.fileId
-    )
+private fun coverData(cover: EmojiPackCover): Any = when (cover) {
+    is EmojiPackCover.Local -> cover.emoji.uri
+    is EmojiPackCover.Remote -> cover.url
 }
 
 private val FOCUS_CLOSE_SPEC: AnimationSpec<Float> =
@@ -605,7 +563,7 @@ private fun CoverPicker(
         return
     }
     
-    val model = coverModel(context, cover)
+    val data = coverData(cover)
     
     Box(
         modifier = Modifier
@@ -618,8 +576,9 @@ private fun CoverPicker(
         if (isBusy) {
             CircularWavyProgressIndicator(modifier = Modifier.size(28.dp))
         } else {
-            AsyncImage(
-                model = model,
+            AnimatedStickerImage(
+                data = data,
+                isVideo = isVideoMediaUrl(data.toString()),
                 contentDescription = COVER_BUTTON_LABEL,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -683,7 +642,7 @@ private fun EmojiSlotCell(
         label = "emoji_slot_scale"
     )
     
-    val model = slotModel(context, slot)
+    val data = slotData(slot)
     
     Box(
         modifier = Modifier
@@ -700,11 +659,11 @@ private fun EmojiSlotCell(
                 onClick = onClick
             )
     ) {
-        AsyncImage(
-            model = model,
+        AnimatedStickerImage(
+            data = data,
+            isVideo = isVideoMediaUrl(data.toString()),
             contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Fit
+            modifier = Modifier.fillMaxSize()
         )
     }
 }
@@ -736,7 +695,7 @@ private fun EmojiFocusOverlay(
     
     val focusedSize = with(density) { (cellSize * FOCUS_SCALE).toDp() }
     
-    val model = slotModel(context, slot)
+    val data = slotData(slot)
     
     LaunchedEffect(slot.key) {
         progress.snapTo(0f)
@@ -805,8 +764,9 @@ private fun EmojiFocusOverlay(
                         emojiCenter = coordinates.boundsInRoot().center
                     }
             ) {
-                AsyncImage(
-                    model = model,
+                AnimatedStickerImage(
+                    data = data,
+                    isVideo = isVideoMediaUrl(data.toString()),
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
@@ -842,8 +802,7 @@ private fun EmojiFocusOverlay(
                                 0f,
                                 fraction
                             )
-                        },
-                    contentScale = ContentScale.Fit
+                        }
                 )
             }
             

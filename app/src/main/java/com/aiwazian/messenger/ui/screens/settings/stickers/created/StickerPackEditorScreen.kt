@@ -1,6 +1,5 @@
 package com.aiwazian.messenger.ui.screens.settings.stickers.created
 
-import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -70,7 +69,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -78,10 +76,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.video.VideoFrameDecoder
+import androidx.compose.ui.platform.LocalContext
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppDialog
@@ -123,53 +121,14 @@ private val FOCUS_OPEN_SPEC: AnimationSpec<Float> =
 private val FOCUS_CLOSE_SPEC: AnimationSpec<Float> =
     tween(durationMillis = 220, easing = FastOutSlowInEasing)
 
-private fun stickerModel(
-    context: Context,
-    data: Any,
-    isVideo: Boolean,
-    cacheKey: String? = null
-): ImageRequest = ImageRequest.Builder(context)
-    .data(data)
-    .apply {
-        if (isVideo) {
-            decoderFactory(VideoFrameDecoder.Factory())
-        }
-
-        if (cacheKey != null) {
-            memoryCacheKey(cacheKey)
-            diskCacheKey(cacheKey)
-        }
-    }
-    .build()
-
-private fun slotModel(context: Context, slot: StickerSlot): ImageRequest = when (slot) {
-    is StickerSlot.Local -> stickerModel(
-        context,
-        slot.sticker.uri,
-        slot.sticker.mimeType == VIDEO_WEBM_MIME_TYPE
-    )
-
-    is StickerSlot.Remote -> stickerModel(
-        context,
-        slot.url,
-        slot.url.endsWith(WEBM_FILE_EXTENSION),
-        slot.fileId
-    )
+private fun slotData(slot: StickerSlot): Any = when (slot) {
+    is StickerSlot.Local -> slot.sticker.uri
+    is StickerSlot.Remote -> slot.url
 }
 
-private fun coverModel(context: Context, cover: StickerPackCover): ImageRequest = when (cover) {
-    is StickerPackCover.Local -> stickerModel(
-        context,
-        cover.sticker.uri,
-        cover.sticker.mimeType == VIDEO_WEBM_MIME_TYPE
-    )
-
-    is StickerPackCover.Remote -> stickerModel(
-        context,
-        cover.url,
-        cover.url.endsWith(WEBM_FILE_EXTENSION),
-        cover.fileId
-    )
+private fun coverData(cover: StickerPackCover): Any = when (cover) {
+    is StickerPackCover.Local -> cover.sticker.uri
+    is StickerPackCover.Remote -> cover.url
 }
 
 private enum class StickerPickTarget {
@@ -590,8 +549,6 @@ private fun CoverPicker(
     isBusy: Boolean,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
-    
     if (cover == null) {
         Button(onClick = onClick, enabled = !isBusy) {
             if (isBusy) {
@@ -607,7 +564,7 @@ private fun CoverPicker(
         return
     }
     
-    val model = coverModel(context, cover)
+    val data = coverData(cover)
 
     Box(
         modifier = Modifier
@@ -620,8 +577,9 @@ private fun CoverPicker(
         if (isBusy) {
             CircularWavyProgressIndicator(modifier = Modifier.size(28.dp))
         } else {
-            AsyncImage(
-                model = model,
+            AnimatedStickerImage(
+                data = data,
+                isVideo = isVideoMediaUrl(data.toString()),
                 contentDescription = COVER_BUTTON_LABEL,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -672,8 +630,6 @@ private fun StickerSlotCell(
     onBoundsChange: (Rect) -> Unit,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
-    
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     
@@ -685,7 +641,7 @@ private fun StickerSlotCell(
         label = "sticker_slot_scale"
     )
     
-    val model = slotModel(context, slot)
+    val data = slotData(slot)
 
     Box(
         modifier = Modifier
@@ -702,11 +658,12 @@ private fun StickerSlotCell(
                 onClick = onClick
             )
     ) {
-        AsyncImage(
-            model = model,
+        AnimatedStickerImage(
+            data = data,
+            isVideo = isVideoMediaUrl(data.toString()),
+            videoShape = MaterialTheme.shapes.extraLarge,
             contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Fit
+            modifier = Modifier.fillMaxSize()
         )
     }
 }
@@ -721,7 +678,6 @@ private fun StickerFocusOverlay(
     onDismiss: () -> Unit,
     onClosed: () -> Unit
 ) {
-    val context = LocalContext.current
     val density = LocalDensity.current
     
     val scrimInteractionSource = remember { MutableInteractionSource() }
@@ -738,7 +694,7 @@ private fun StickerFocusOverlay(
     
     val focusedSize = with(density) { (cellSize * FOCUS_SCALE).toDp() }
     
-    val model = slotModel(context, slot)
+    val data = slotData(slot)
 
     LaunchedEffect(slot.key) {
         progress.snapTo(0f)
@@ -807,8 +763,10 @@ private fun StickerFocusOverlay(
                         stickerCenter = coordinates.boundsInRoot().center
                     }
             ) {
-                AsyncImage(
-                    model = model,
+                AnimatedStickerImage(
+                    data = data,
+                    isVideo = isVideoMediaUrl(data.toString()),
+                    videoShape = MaterialTheme.shapes.extraLarge,
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
@@ -844,8 +802,7 @@ private fun StickerFocusOverlay(
                                 0f,
                                 fraction
                             )
-                        },
-                    contentScale = ContentScale.Fit
+                        }
                 )
             }
             

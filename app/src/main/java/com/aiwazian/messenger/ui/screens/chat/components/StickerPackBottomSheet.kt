@@ -66,6 +66,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.domain.StickerPack
@@ -224,12 +226,11 @@ private fun StickerGridCell(
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(targetValue = if (isPressed) PRESSED_CELL_SCALE else 1f)
     
-    AsyncImage(
-        model = ImageRequest.Builder(context)
-            .data(sticker.url)
-            .memoryCacheKey(sticker.fileId)
-            .diskCacheKey(sticker.fileId)
-            .build(),
+    AnimatedStickerImage(
+        data = sticker.url,
+        isVideo = isVideoMediaUrl(sticker.url),
+        cacheKey = sticker.fileId,
+        videoShape = MaterialTheme.shapes.extraLarge,
         contentDescription = null,
         modifier = Modifier
             .aspectRatio(1f)
@@ -242,8 +243,7 @@ private fun StickerGridCell(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null
-            ) { onClick(bounds) },
-        contentScale = ContentScale.Fit
+            ) { onClick(bounds) }
     )
 }
 
@@ -328,12 +328,11 @@ private fun StickerFocusOverlay(
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(sticker.url)
-                        .memoryCacheKey(sticker.fileId)
-                        .diskCacheKey(sticker.fileId)
-                        .build(),
+                AnimatedStickerImage(
+                    data = sticker.url,
+                    isVideo = isVideoMediaUrl(sticker.url),
+                    cacheKey = sticker.fileId,
+                    videoShape = MaterialTheme.shapes.extraLarge,
                     contentDescription = null,
                     modifier = Modifier
                         .size(targetSize)
@@ -342,8 +341,7 @@ private fun StickerFocusOverlay(
                             scaleY = scale
                             this.translationX = translationX
                             this.translationY = translationY
-                        },
-                    contentScale = ContentScale.Fit
+                        }
                 )
                 
                 Spacer(modifier = Modifier.height(12.dp))

@@ -36,12 +36,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.domain.StickerPack
 import kotlinx.coroutines.launch
@@ -55,7 +53,6 @@ fun StickerInputPanel(
     onStickerClick: (Sticker) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val gridState = rememberLazyGridState()
     
@@ -134,21 +131,19 @@ fun StickerInputPanel(
                     items = pack.stickers,
                     key = { sticker -> "sticker-${pack.id}-${sticker.id}" }) { sticker ->
                     val interactionSource = remember { MutableInteractionSource() }
-                    
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(sticker.url)
-                            .memoryCacheKey(sticker.fileId)
-                            .diskCacheKey(sticker.fileId)
-                            .build(),
+
+                    AnimatedStickerImage(
+                        data = sticker.url,
+                        isVideo = isVideoMediaUrl(sticker.url),
+                        cacheKey = sticker.fileId,
+                        videoShape = MaterialTheme.shapes.extraLarge,
                         contentDescription = null,
                         modifier = Modifier
                             .aspectRatio(1f)
                             .clickable(
                                 interactionSource = interactionSource,
                                 indication = null
-                            ) { onStickerClick(sticker) },
-                        contentScale = ContentScale.Fit
+                            ) { onStickerClick(sticker) }
                     )
                 }
             }
@@ -165,7 +160,6 @@ private fun StickerPackTab(
     pack: StickerPack,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -185,17 +179,14 @@ private fun StickerPackTab(
                 onClick = onClick
             )
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(pack.coverImageUrl)
-                .memoryCacheKey(pack.coverCacheKey)
-                .diskCacheKey(pack.coverCacheKey)
-                .build(),
+        AnimatedStickerImage(
+            data = pack.coverImageUrl,
+            isVideo = isVideoMediaUrl(pack.coverImageUrl),
+            cacheKey = pack.coverCacheKey,
             contentDescription = pack.name,
             modifier = Modifier
                 .size(PACK_LOGO_SIZE)
-                .clip(MaterialTheme.shapes.small),
-            contentScale = ContentScale.Fit
+                .clip(MaterialTheme.shapes.small)
         )
     }
 }

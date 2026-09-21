@@ -38,6 +38,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.domain.StickerPack
@@ -149,12 +151,11 @@ private fun StickerPickerCell(
         label = "sticker_picker_scale"
     )
     
-    AsyncImage(
-        model = ImageRequest.Builder(context)
-            .data(sticker.url)
-            .memoryCacheKey(sticker.fileId)
-            .diskCacheKey(sticker.fileId)
-            .build(),
+    AnimatedStickerImage(
+        data = sticker.url,
+        isVideo = isVideoMediaUrl(sticker.url),
+        cacheKey = sticker.fileId,
+        videoShape = MaterialTheme.shapes.extraLarge,
         contentDescription = null,
         modifier = Modifier
             .aspectRatio(1f)
@@ -168,8 +169,7 @@ private fun StickerPickerCell(
                 indication = null,
                 enabled = !isAdded,
                 onClick = onClick
-            ),
-        contentScale = ContentScale.Fit
+            )
     )
 }
 
