@@ -78,16 +78,22 @@ class DownloaderManager @Inject constructor(
             if (_downloads.any { it.fileId == fileId }) {
                 this@DownloaderManager.cancel(fileId)
             }
-            
-            val uri = Uri.fromFile(File(fileName))
+
+            val extension = fileName.substringAfterLast('.', "").ifEmpty {
+                url.substringBefore('?').substringAfterLast('.', "")
+                    .takeIf { candidate -> candidate.matches(URL_EXTENSION_PATTERN) }
+                    ?.lowercase()
+            } ?: ""
+
+            val finalFileName = if (extension.isNotEmpty()) "$fileId.$extension" else fileId
+
+            val uri = Uri.fromFile(File(finalFileName))
             val mimeType = uri.getFileType(context)
             val folderName = mimeType.getFolderNameFromMimeType()
-            
+
             val path = File(context.getExternalFilesDir(null) ?: context.filesDir, folderName)
             path.mkdirs()
-            val extension = fileName.substringAfterLast('.', "")
-            val finalFileName = if (extension.isNotEmpty()) "$fileId.$extension" else fileId
-            
+
             val id = ketch.download(
                 url = url,
                 fileName = finalFileName,
@@ -208,5 +214,9 @@ class DownloaderManager @Inject constructor(
         Status.FAILED -> DownloadStatus.FAILED
         Status.CANCELLED -> DownloadStatus.CANCELLED
         Status.STARTED -> DownloadStatus.DOWNLOADING
+    }
+
+    private companion object {
+        val URL_EXTENSION_PATTERN = Regex("^[A-Za-z0-9]{1,8}$")
     }
 }

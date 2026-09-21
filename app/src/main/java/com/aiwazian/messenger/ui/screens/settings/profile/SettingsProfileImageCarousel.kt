@@ -52,11 +52,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Avatar
+import com.aiwazian.messenger.ui.components.avatarImageRequest
 import com.aiwazian.messenger.ui.screens.chat.components.PhotoPickerBottomSheet
 import com.aiwazian.messenger.utils.media.EncodedVideo
 import com.aiwazian.messenger.utils.media.VideoExportTarget
@@ -104,12 +106,15 @@ fun SettingsProfileImageCarousel(
                         CircularWavyProgressIndicator()
                     }
                 } else {
+                    val context = LocalContext.current
+                    val model = remember(avatar.uri) { avatarImageRequest(context, avatar.uri) }
+
                     AsyncImage(
                         modifier = Modifier
                             .aspectRatio(1f)
                             .fillMaxWidth()
                             .maskClip(MaterialTheme.shapes.large),
-                        model = avatar.uri,
+                        model = model,
                         contentDescription = null,
                         contentScale = ContentScale.Crop
                     )

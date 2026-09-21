@@ -20,9 +20,11 @@ import coil3.memory.MemoryCache
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.toBitmap
+import coil3.video.VideoFrameDecoder
 import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.database.entity.AvatarWithFile
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.extensions.getFileType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -102,8 +104,13 @@ class ChatAvatarIconLoader @Inject constructor(
                 val request = ImageRequest.Builder(context)
                     .data(uri)
                     .size(ICON_SIZE_DP)
+                    .apply {
+                        if (uri.getFileType(context).startsWith("video/")) {
+                            decoderFactory(VideoFrameDecoder.Factory())
+                        }
+                    }
                     .build()
-                
+
                 (imageLoader.execute(request) as? SuccessResult)?.image?.toBitmap()
             } ?: return@withContext null
             
