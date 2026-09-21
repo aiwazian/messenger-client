@@ -6,6 +6,7 @@ package com.aiwazian.messenger.utils.media
 
 import androidx.annotation.OptIn
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.Metadata
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
@@ -53,6 +54,14 @@ class WebmMuxerFactory : Muxer.Factory {
         private val delegate: WebmMuxer
     ) : Muxer by delegate {
 
+        override fun addTrack(format: Format): Int = delegate.addTrack(
+            format.buildUpon().setLanguage(format.language ?: UNDETERMINED_LANGUAGE).build()
+        )
+
         override fun addMetadataEntry(metadataEntry: Metadata.Entry) = Unit
+    }
+
+    private companion object {
+        const val UNDETERMINED_LANGUAGE = "und"
     }
 }
