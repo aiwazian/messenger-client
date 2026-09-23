@@ -11,12 +11,15 @@ import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.ForwardMessageRequestDto
 import com.aiwazian.messenger.network.dto.MarkReadRequestDto
 import com.aiwazian.messenger.network.dto.MessageDto
+import com.aiwazian.messenger.network.dto.MessagePinResponseDto
 import com.aiwazian.messenger.network.dto.MessageSearchResponseDto
 import com.aiwazian.messenger.network.dto.MessagesWindowDto
+import com.aiwazian.messenger.network.dto.PinMessageRequestDto
 import com.aiwazian.messenger.network.dto.StickerMessageRequestDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.HTTP
 import retrofit2.http.Header
@@ -133,4 +136,24 @@ interface MessageApi {
         @Body request: EditMessageRequestDto,
         @Header("x-socket-id") socketId: String
     ): Response<MessageDto>
+
+    @GET("chats/{chatId}/messages/pinned")
+    suspend fun getPinnedMessages(
+        @Path("chatId") chatId: Long
+    ): Response<List<MessagePinResponseDto>>
+
+    @POST("chats/{chatId}/messages/{messageId}/pin")
+    suspend fun pinMessage(
+        @Path("chatId") chatId: Long,
+        @Path("messageId") messageId: Long,
+        @Body request: PinMessageRequestDto,
+        @Header("x-socket-id") socketId: String
+    ): Response<MessagePinResponseDto>
+
+    @DELETE("chats/{chatId}/messages/{messageId}/pin")
+    suspend fun unpinMessage(
+        @Path("chatId") chatId: Long,
+        @Path("messageId") messageId: Long,
+        @Header("x-socket-id") socketId: String
+    ): Response<Unit>
 }

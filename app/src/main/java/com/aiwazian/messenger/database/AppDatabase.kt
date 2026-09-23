@@ -16,6 +16,7 @@ import com.aiwazian.messenger.database.dao.EmojiDao
 import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.database.dao.MessageDao
+import com.aiwazian.messenger.database.dao.MessagePinDao
 import com.aiwazian.messenger.database.dao.NotificationSettingsDao
 import com.aiwazian.messenger.database.dao.StickerDao
 import com.aiwazian.messenger.database.dao.UserDao
@@ -34,6 +35,7 @@ import com.aiwazian.messenger.database.entity.EmojiPackEntity
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.database.entity.GroupEntity
 import com.aiwazian.messenger.database.entity.MessageEntity
+import com.aiwazian.messenger.database.entity.MessagePinEntity
 import com.aiwazian.messenger.database.entity.NotificationSettingsEntity
 import com.aiwazian.messenger.database.entity.StickerEntity
 import com.aiwazian.messenger.database.entity.StickerPackEntity
@@ -62,9 +64,10 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         StickerPackEntity::class,
         StickerEntity::class,
         EmojiPackEntity::class,
-        CustomEmojiEntity::class
+        CustomEmojiEntity::class,
+        MessagePinEntity::class
     ],
-    version = 61,
+    version = 62,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 38, to = 39),
@@ -89,6 +92,7 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         AutoMigration(from = 58, to = 59),
         AutoMigration(from = 59, to = 60),
         AutoMigration(from = 60, to = 61),
+        AutoMigration(from = 61, to = 62),
     ]
 )
 @ColumnTypeConverters(Converters::class)
@@ -122,4 +126,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun stickerDao(): StickerDao
     
     abstract fun emojiDao(): EmojiDao
+    
+    abstract fun messagePinDao(): MessagePinDao
 }

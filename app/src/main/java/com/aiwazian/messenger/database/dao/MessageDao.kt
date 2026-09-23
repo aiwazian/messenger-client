@@ -99,6 +99,16 @@ interface MessageDao {
                 "LIMIT 1"
     )
     suspend fun getMessageById(messageId: Long): MessageWithAttachments?
+
+    /** Сообщения по списку id — для панели закреплённых сообщений. */
+    @Transaction
+    @Query(
+        "SELECT * FROM message " +
+                "WHERE id IN (:ids) " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
+    )
+    fun getMessagesByIds(ids: List<Long>): Flow<List<MessageWithAttachments>>
     
     @Transaction
     @Query(

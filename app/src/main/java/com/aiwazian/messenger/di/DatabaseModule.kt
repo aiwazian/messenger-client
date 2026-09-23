@@ -15,6 +15,7 @@ import com.aiwazian.messenger.database.dao.EmojiDao
 import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.dao.GroupDao
 import com.aiwazian.messenger.database.dao.MessageDao
+import com.aiwazian.messenger.database.dao.MessagePinDao
 import com.aiwazian.messenger.database.dao.NotificationSettingsDao
 import com.aiwazian.messenger.database.dao.StickerDao
 import com.aiwazian.messenger.database.dao.UserDao
@@ -59,6 +60,9 @@ object DatabaseModule {
     
     @Provides
     fun provideMessageDao(database: AppDatabase): MessageDao = database.messageDao()
+
+    @Provides
+    fun provideMessagePinDao(database: AppDatabase): MessagePinDao = database.messagePinDao()
     
     @Provides
     fun provideAttachmentDao(database: AppDatabase): AttachmentDao = database.attachmentDao()

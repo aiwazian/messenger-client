@@ -17,6 +17,7 @@ data class ChannelAdminResponseDto(
     @SerialName("canManageInviteLinks") val canManageInviteLinks: Boolean = false,
     @SerialName("canEditProfile") val canEditProfile: Boolean = false,
     @SerialName("canManageAdmins") val canManageAdmins: Boolean = false,
+    @SerialName("canPinMessages") val canPinMessages: Boolean = false,
     @SerialName("grantedAt") val grantedAt: String? = null
 )
 
@@ -30,6 +31,7 @@ data class GroupAdminResponseDto(
     @SerialName("canManageInviteLinks") val canManageInviteLinks: Boolean = false,
     @SerialName("canEditProfile") val canEditProfile: Boolean = false,
     @SerialName("canManageAdmins") val canManageAdmins: Boolean = false,
+    @SerialName("canPinMessages") val canPinMessages: Boolean = false,
     @SerialName("tag") val tag: String? = null,
     @SerialName("grantedAt") val grantedAt: String? = null
 )
@@ -39,7 +41,8 @@ data class GroupAdminResponseDto(
 data class UpsertChannelAdminRequestDto(
     @SerialName("canManageInviteLinks") val canManageInviteLinks: Boolean = false,
     @SerialName("canEditProfile") val canEditProfile: Boolean = false,
-    @SerialName("canManageAdmins") val canManageAdmins: Boolean = false
+    @SerialName("canManageAdmins") val canManageAdmins: Boolean = false,
+    @SerialName("canPinMessages") val canPinMessages: Boolean = false
 )
 
 /**
@@ -52,6 +55,7 @@ data class UpsertGroupAdminRequestDto(
     @SerialName("canManageInviteLinks") val canManageInviteLinks: Boolean = false,
     @SerialName("canEditProfile") val canEditProfile: Boolean = false,
     @SerialName("canManageAdmins") val canManageAdmins: Boolean = false,
+    @SerialName("canPinMessages") val canPinMessages: Boolean = false,
     @SerialName("tag") val tag: String? = null
 )
 
@@ -63,6 +67,7 @@ data class ChatAdminPermissionsResponseDto(
     @SerialName("canManageInviteLinks") val canManageInviteLinks: Boolean = false,
     @SerialName("canEditProfile") val canEditProfile: Boolean = false,
     @SerialName("canManageAdmins") val canManageAdmins: Boolean = false,
+    @SerialName("canPinMessages") val canPinMessages: Boolean = false,
     @SerialName("tag") val tag: String? = null
 )
 

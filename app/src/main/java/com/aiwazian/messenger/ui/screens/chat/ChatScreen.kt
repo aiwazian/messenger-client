@@ -63,6 +63,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -108,6 +109,9 @@ import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.MessageSearchResultsList
 import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
+import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
+import com.aiwazian.messenger.ui.screens.chat.components.PinMessageBottomSheet
+import com.aiwazian.messenger.ui.screens.chat.components.PinnedMessageBar
 import com.aiwazian.messenger.ui.screens.chat.components.AudioMiniPlayer
 import com.aiwazian.messenger.ui.screens.chat.components.MusicPlayerSheet
 import com.aiwazian.messenger.ui.screens.chat.components.StickerPackBottomSheet
@@ -302,6 +306,37 @@ fun ChatScreen(
     LaunchedEffect(isAtBottom) {
         chatViewModel.onViewportAtBottomChanged(isAtBottom)
     }
+
+    val displayedPinIndex = remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(uiState.pinnedMessages) {
+        displayedPinIndex.intValue = 0
+    }
+
+    val visibleMessageIds by remember {
+        derivedStateOf {
+            listState.layoutInfo.visibleItemsInfo.mapNotNull { info ->
+                (uiState.chatItems.getOrNull(info.index - 1) as? ChatItem.MessageItem)
+                    ?.takeIf { it.message.id > 0 }
+                    ?.message?.id
+            }.toSet()
+        }
+    }
+
+    LaunchedEffect(visibleMessageIds, uiState.pinnedMessages) {
+        val pins = uiState.pinnedMessages
+        if (pins.isEmpty()) return@LaunchedEffect
+
+        var index = displayedPinIndex.intValue.coerceIn(0, pins.lastIndex)
+        var steps = 0
+
+        while (steps <= pins.size && pins[index].messageId in visibleMessageIds) {
+            index = (index + 1) % pins.size
+            steps++
+        }
+
+        displayedPinIndex.intValue = index
+    }
     
     LaunchedEffect(listState, uiState.myId) {
         snapshotFlow {
@@ -478,6 +513,24 @@ fun ChatScreen(
                         .asPaddingValues()
                         .plus(PaddingValues(horizontal = 4.dp))
                 )
+            AnimatedContent(
+                targetState = uiState.pinnedMessages,
+                modifier = miniPlayerModifier,
+                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                contentAlignment = Alignment.TopCenter
+            ) { pins ->
+                if (pins.isNotEmpty()) {
+                    val displayed = pins.getOrNull(displayedPinIndex.intValue) ?: pins.first()
+
+                    displayed.message?.let { message ->
+                        PinnedMessageBar(
+                            title = stringResource(R.string.pinned_message),
+                            message = message,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                    }
+                }
+            }
             AnimatedContent(
                 targetState = uiState.currentMusicFileId,
                 modifier = miniPlayerModifier,
@@ -848,6 +901,15 @@ fun ChatScreen(
         }
     }
     
+    if (uiState.pinSheetMessage != null) {
+        PinMessageBottomSheet(
+            forEveryone = uiState.pinForEveryone,
+            onSelectScope = chatViewModel::selectPinScope,
+            onConfirm = chatViewModel::confirmPin,
+            onDismiss = chatViewModel::dismissPinSheet
+        )
+    }
+
     if (uiState.isForwardSheetVisible) {
         val forwardingMessage = uiState.forwardingMessage
         ShareBottomSheet(

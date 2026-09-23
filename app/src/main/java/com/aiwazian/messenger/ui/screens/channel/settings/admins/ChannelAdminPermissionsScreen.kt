@@ -113,6 +113,14 @@ fun ChannelAdminPermissionsScreen(
                 enabled = !uiState.isReadOnly,
                 onCheckedChange = viewModel::toggleManageAdmins
             )
+
+            SectionToggleItem(
+                text = stringResource(R.string.can_pin_messages),
+                supportingText = stringResource(R.string.can_pin_messages_description),
+                isChecked = uiState.canPinMessages,
+                enabled = !uiState.isReadOnly,
+                onCheckedChange = viewModel::togglePinMessages
+            )
         }
     }
 }
