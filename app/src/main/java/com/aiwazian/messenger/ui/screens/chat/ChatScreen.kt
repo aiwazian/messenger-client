@@ -526,7 +526,8 @@ fun ChatScreen(
                         PinnedMessageBar(
                             title = stringResource(R.string.pinned_message),
                             message = message,
-                            modifier = Modifier.padding(vertical = 4.dp)
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            onClick = { chatViewModel.jumpToMessage(displayed.messageId) }
                         )
                     }
                 }
@@ -903,9 +904,11 @@ fun ChatScreen(
     
     if (uiState.pinSheetMessage != null) {
         PinMessageBottomSheet(
+            chatType = ChatType.fromId(uiState.chatId),
             forEveryone = uiState.pinForEveryone,
             onSelectScope = chatViewModel::selectPinScope,
             onConfirm = chatViewModel::confirmPin,
+            onUnpin = chatViewModel::confirmUnpin,
             onDismiss = chatViewModel::dismissPinSheet
         )
     }

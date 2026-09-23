@@ -333,8 +333,10 @@
     <string name="edit_pin">Modifier l\'épinglage</string>
     <string name="unpin_message">Désépingler</string>
     <string name="pin_message_title">Épingler le message</string>
-    <string name="pin_for_me">Pour moi</string>
-    <string name="pin_for_everyone">Pour nous deux</string>
+    <string name="pin_scope_for_me_only">Uniquement pour moi</string>
+    <string name="pin_scope_for_both">Pour nous deux</string>
+    <string name="pin_scope_for_all_subscribers">Pour tous les abonnés</string>
+    <string name="pin_scope_for_all_members">Pour tous les membres</string>
     <string name="message_pinned">Message épinglé</string>
     <string name="message_unpinned">Message désépinglé</string>
     <string name="pin_message_failed">Impossible d\'épingler le message</string>

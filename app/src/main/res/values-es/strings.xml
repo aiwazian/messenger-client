@@ -333,8 +333,10 @@
     <string name="edit_pin">Editar fijado</string>
     <string name="unpin_message">Desfijar</string>
     <string name="pin_message_title">Fijar mensaje</string>
-    <string name="pin_for_me">Para mí</string>
-    <string name="pin_for_everyone">Para ambos</string>
+    <string name="pin_scope_for_me_only">Solo para mí</string>
+    <string name="pin_scope_for_both">Para ambos</string>
+    <string name="pin_scope_for_all_subscribers">Para todos los suscriptores</string>
+    <string name="pin_scope_for_all_members">Para todos los miembros</string>
     <string name="message_pinned">Mensaje fijado</string>
     <string name="message_unpinned">Mensaje desfijado</string>
     <string name="pin_message_failed">No se pudo fijar el mensaje</string>

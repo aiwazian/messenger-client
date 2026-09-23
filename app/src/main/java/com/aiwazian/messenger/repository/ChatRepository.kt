@@ -851,7 +851,19 @@ class ChatRepository @Inject constructor(
         }
     }
 
-    suspend fun unpinMessage(chatId: Long, messageId: Long): Result<Unit> {
+    /**
+     * Открепление сообщения.
+     *
+     * Сервер снимает личное закрепление всегда, а общее — когда открепляющий
+     * вправе: в личном чате или с правом закрепления. includeShared удаляет
+     * локальную строку общего закрепления сразу: свой сокет исключён из
+     * рассылки и события о снятии не получит.
+     */
+    suspend fun unpinMessage(
+        chatId: Long,
+        messageId: Long,
+        includeShared: Boolean = false
+    ): Result<Unit> {
         return try {
             val response = messageApi.unpinMessage(
                 chatId = chatId,
@@ -865,6 +877,14 @@ class ChatRepository @Inject constructor(
                     messageId = messageId,
                     forEveryone = false
                 )
+
+                if (includeShared) {
+                    messagePinDao.deletePin(
+                        chatId = chatId,
+                        messageId = messageId,
+                        forEveryone = true
+                    )
+                }
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))

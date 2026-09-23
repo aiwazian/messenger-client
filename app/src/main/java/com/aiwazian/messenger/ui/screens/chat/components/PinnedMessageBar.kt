@@ -1,6 +1,7 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,19 +26,21 @@ import com.aiwazian.messenger.ui.components.rememberMessagePreview
 
 /**
  * Панель закреплённого сообщения над полем мини-плеера: заголовок цветом
- * accent и превью-текст закреплённого сообщения.
+ * accent и превью-текст закреплённого сообщения. Клик переносит к сообщению.
  */
 @Composable
 fun PinnedMessageBar(
     title: String,
     message: Message,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
             .background(MaterialTheme.colorScheme.surfaceContainer)
+            .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

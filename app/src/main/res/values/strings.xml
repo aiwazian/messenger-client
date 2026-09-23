@@ -339,8 +339,10 @@
     <string name="edit_pin">Edit pin</string>
     <string name="unpin_message">Unpin</string>
     <string name="pin_message_title">Pin message</string>
-    <string name="pin_for_me">For me</string>
-    <string name="pin_for_everyone">For both</string>
+    <string name="pin_scope_for_me_only">Only me</string>
+    <string name="pin_scope_for_both">For both of us</string>
+    <string name="pin_scope_for_all_subscribers">For all subscribers</string>
+    <string name="pin_scope_for_all_members">For all members</string>
     <string name="message_pinned">Message pinned</string>
     <string name="message_unpinned">Message unpinned</string>
     <string name="pin_message_failed">Failed to pin message</string>

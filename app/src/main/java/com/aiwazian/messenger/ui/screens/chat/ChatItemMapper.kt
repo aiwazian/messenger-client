@@ -169,8 +169,9 @@ class ChatItemMapper(
      *
      * «Закрепить» открывает выбор области закрепления в личном чате и у тех, кому
      * сервер разрешил закреплять для всех; обычный участник группы или канала
-     * закрепляет сразу только у себя. Уже закреплённое: «Изменить закреп» для
-     * управляющих и «Открепить» для личного закрепления обычного участника.
+     * закрепляет сразу только у себя. Уже закреплённое открывается через
+     * «Изменить закреп» со шторкой выбора; пункт «Открепить» остаётся только у
+     * обычного участника группы или канала, закрепившего сообщение у себя.
      */
     private fun createPinAction(
         message: Message,
@@ -188,15 +189,10 @@ class ChatItemMapper(
 
         val hasSelfPin = message.id in pinnedByMeMessageIds
         val hasSharedPin = message.id in sharedPinnedMessageIds
+        val canManagePin = chatType == ChatType.PRIVATE || canPinForEveryone
 
         return when {
-            chatType == ChatType.PRIVATE -> when {
-                hasSharedPin -> editPinAction(message)
-                hasSelfPin -> unpinAction(message)
-                else -> pinAction(message)
-            }
-
-            canPinForEveryone -> when {
+            canManagePin -> when {
                 hasSharedPin || hasSelfPin -> editPinAction(message)
                 else -> pinAction(message)
             }

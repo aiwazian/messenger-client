@@ -1276,7 +1276,7 @@ class ChatViewModel @Inject constructor(
     fun onUnpinMessage(message: Message) {
         if (message.id <= 0) return
 
-        unpinMessage(message)
+        unpinMessage(message, includeShared = false)
     }
 
     fun selectPinScope(forEveryone: Boolean) {
@@ -1296,6 +1296,19 @@ class ChatViewModel @Inject constructor(
         pinMessage(message, forEveryone = state.pinForEveryone)
     }
 
+    /** «Открепить» из шторки: снимает и личное, и общее закрепление, если оно доступно. */
+    fun confirmUnpin() {
+        val state = _uiState.value
+        val message = state.pinSheetMessage ?: return
+
+        _uiState.update { it.copy(pinSheetMessage = null, pinForEveryone = false) }
+
+        val includeShared =
+            ChatType.fromId(state.chatId) == ChatType.PRIVATE || state.myPermissions.canPinMessages
+
+        unpinMessage(message, includeShared)
+    }
+
     private fun pinMessage(message: Message, forEveryone: Boolean) {
         viewModelScope.launch {
             chatRepository.pinMessage(_uiState.value.chatId, message.id, forEveryone)
@@ -1312,9 +1325,9 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun unpinMessage(message: Message) {
+    private fun unpinMessage(message: Message, includeShared: Boolean) {
         viewModelScope.launch {
-            chatRepository.unpinMessage(_uiState.value.chatId, message.id)
+            chatRepository.unpinMessage(_uiState.value.chatId, message.id, includeShared)
                 .onSuccess {
                     _uiEffect.emit(
                         ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.message_unpinned))
