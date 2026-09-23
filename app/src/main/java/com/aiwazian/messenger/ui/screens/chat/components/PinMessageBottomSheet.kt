@@ -32,19 +32,12 @@ import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionRadioItem
 
-/**
- * Выбор области закрепления и открепление.
- *
- * Первый вариант всегда «только для себя»; подпись второго зависит от типа
- * чата: «для обоих» в личном чате, «для всех подписчиков» в канале и
- * «для всех участников» в группе. Кнопка «Открепить» снимает закрепление
- * независимо от выбранного варианта.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PinMessageBottomSheet(
     chatType: ChatType,
     forEveryone: Boolean,
+    isPinned: Boolean,
     onSelectScope: (Boolean) -> Unit,
     onConfirm: () -> Unit,
     onUnpin: () -> Unit,
@@ -93,14 +86,16 @@ fun PinMessageBottomSheet(
                 )
             }
 
-            TextButton(
-                onClick = onUnpin,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            ) {
-                Text(text = stringResource(R.string.unpin_message))
+            if (isPinned) {
+                TextButton(
+                    onClick = onUnpin,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                ) {
+                    Text(text = stringResource(R.string.unpin_message))
+                }
             }
         }
     }

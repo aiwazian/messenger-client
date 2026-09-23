@@ -132,7 +132,8 @@ fun MessageBubble(
     onReadersRequested: ((List<Long>) -> Unit)? = null,
     onSenderNameClick: (() -> Unit)? = null,
     onReaderClick: ((MessageReadInfo) -> Unit)? = null,
-    showContextMenu: Boolean = true
+    showContextMenu: Boolean = true,
+    isPinned: Boolean = false
 ) {
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
@@ -176,7 +177,9 @@ fun MessageBubble(
                 actions = item.dropdownActions,
                 onStickerClick = {
                     messageSticker?.let { stickersViewModel.openPack(it.packId) }
-                })
+                },
+                isPinned = isPinned
+            )
         }
         
         return
@@ -424,7 +427,8 @@ fun MessageBubble(
                                     alignSelf(FlexAlignSelf.End)
                                 },
                                 status = message.status,
-                                isEdited = message.isEdited
+                                isEdited = message.isEdited,
+                                isPinned = isPinned
                             )
                         }
                     }
@@ -437,7 +441,8 @@ fun MessageBubble(
                                 time = item.time,
                                 isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
                                 status = message.status,
-                                modifier = Modifier.padding(4.dp)
+                                modifier = Modifier.padding(4.dp),
+                                isPinned = isPinned
                             )
                         } else {
                             MessageFooter(
@@ -445,7 +450,8 @@ fun MessageBubble(
                                 isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                 status = message.status,
-                                isEdited = message.isEdited
+                                isEdited = message.isEdited,
+                                isPinned = isPinned
                             )
                         }
                     }

@@ -170,7 +170,11 @@ fun ChatScreen(
     val isChatMuted by notificationsViewModel.isMuted.collectAsState()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
-    
+
+    val pinnedMessageIds = remember(uiState.pinnedMessages) {
+        uiState.pinnedMessages.map { pin -> pin.messageId }.toSet()
+    }
+
     val density = LocalDensity.current
     val imeInsets = WindowInsets.ime
     
@@ -766,7 +770,9 @@ fun ChatScreen(
                                                 avatarUri = readerAvatars[reader.userId]?.toString()
                                             )
                                         )
-                                    })
+                                    },
+                                    isPinned = item.message.id in pinnedMessageIds
+                                )
                             }
                         }
                         
@@ -902,10 +908,11 @@ fun ChatScreen(
         }
     }
     
-    if (uiState.pinSheetMessage != null) {
+    uiState.pinSheetMessage?.let { sheetMessage ->
         PinMessageBottomSheet(
             chatType = ChatType.fromId(uiState.chatId),
             forEveryone = uiState.pinForEveryone,
+            isPinned = sheetMessage.id in pinnedMessageIds,
             onSelectScope = chatViewModel::selectPinScope,
             onConfirm = chatViewModel::confirmPin,
             onUnpin = chatViewModel::confirmUnpin,

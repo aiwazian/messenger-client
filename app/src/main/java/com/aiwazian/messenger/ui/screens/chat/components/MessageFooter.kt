@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.Error
@@ -22,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,13 +36,25 @@ fun MessageFooter(
     isRead: Boolean?,
     modifier: Modifier = Modifier,
     status: MessageStatus = MessageStatus.SENT,
-    isEdited: Boolean = false
+    isEdited: Boolean = false,
+    isPinned: Boolean = false
 ) {
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
+        if (isPinned) {
+            Icon(
+                imageVector = Icons.Outlined.PushPin,
+                contentDescription = null,
+                modifier = Modifier
+                    .rotate(45f)
+                    .size(10.dp),
+                tint = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
         if (isEdited) {
             Text(
                 text = stringResource(R.string.edited).lowercase(),

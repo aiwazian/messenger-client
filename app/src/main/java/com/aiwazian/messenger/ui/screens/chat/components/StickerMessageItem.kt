@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.Error
@@ -31,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,7 +54,8 @@ fun StickerMessageItem(
     status: MessageStatus,
     actions: List<DropdownMenuAction>,
     onStickerClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isPinned: Boolean = false
 ) {
     var isMenuExpanded by remember { mutableStateOf(false) }
     
@@ -94,7 +97,8 @@ fun StickerMessageItem(
                     status = status,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(4.dp)
+                        .padding(4.dp),
+                    isPinned = isPinned
                 )
             }
             
@@ -116,7 +120,8 @@ fun StickerMessageFooter(
     time: String,
     isRead: Boolean?,
     status: MessageStatus,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isPinned: Boolean = false
 ) {
     Row(
         modifier = modifier
@@ -125,6 +130,17 @@ fun StickerMessageFooter(
             .padding(horizontal = 6.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (isPinned) {
+            Icon(
+                imageVector = Icons.Outlined.PushPin,
+                contentDescription = null,
+                modifier = Modifier
+                    .rotate(45f)
+                    .size(10.dp),
+                tint = Color.White
+            )
+        }
+
         Text(
             text = time,
             fontSize = 10.sp,
