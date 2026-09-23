@@ -38,6 +38,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.CustomEmoji
 import com.aiwazian.messenger.domain.EmojiPack
@@ -147,12 +149,10 @@ private fun EmojiPickerCell(
         label = "emoji_picker_scale"
     )
     
-    AsyncImage(
-        model = ImageRequest.Builder(context)
-            .data(emoji.url)
-            .memoryCacheKey(emoji.fileId)
-            .diskCacheKey(emoji.fileId)
-            .build(),
+    AnimatedStickerImage(
+        data = emoji.url,
+        isVideo = isVideoMediaUrl(emoji.url),
+        cacheKey = emoji.fileId,
         contentDescription = null,
         modifier = Modifier
             .aspectRatio(1f)
@@ -166,8 +166,7 @@ private fun EmojiPickerCell(
                 indication = null,
                 enabled = !isAdded,
                 onClick = onClick
-            ),
-        contentScale = ContentScale.Fit
+            )
     )
 }
 

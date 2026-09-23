@@ -959,9 +959,7 @@ private fun VoiceRecordingStatus(
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier
-                .heightIn(min = 48.dp)
-                .padding(horizontal = 14.dp),
+            modifier = Modifier.heightIn(min = 48.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             val durationText = String.format(

@@ -365,7 +365,7 @@ fun MediaCropMask(maskShape: Shape, modifier: Modifier = Modifier) {
     }
 }
 
-private fun maskSideFor(width: Float, height: Float, inset: Float): Float =
+internal fun maskSideFor(width: Float, height: Float, inset: Float): Float =
     (minOf(width, height) - inset * 2f).coerceAtLeast(1f)
 
 private fun Bitmap.clippedTo(
@@ -426,7 +426,7 @@ private val SNAP_SPEC = spring<Float>(
     dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow
 )
 
-private val MASK_INSET = 16.dp
+internal val MASK_INSET = 16.dp
 private const val MAX_SCALE = 10f
 private const val SCRIM_ALPHA = 0.62f
 private const val MAX_SOURCE_DIMENSION = 2048

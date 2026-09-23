@@ -21,6 +21,7 @@ import coil3.asDrawable
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import com.aiwazian.messenger.domain.CustomEmoji
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.utils.RegexPatterns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -107,6 +108,25 @@ object CustomEmojiText {
         return builder.toString()
     }
     
+    fun toPlainText(
+        text: String,
+        defaultEmoji: (emojiId: Long) -> String?
+    ): String {
+        val parts = parse(text)
+        
+        if (parts.none { it is CustomEmojiTextPart.Emoji }) {
+            return text
+        }
+        
+        return parts.joinToString(separator = "") { part ->
+            when (part) {
+                is CustomEmojiTextPart.Text -> part.value
+                
+                is CustomEmojiTextPart.Emoji -> defaultEmoji(part.emojiId).orEmpty()
+            }
+        }
+    }
+    
     fun parse(text: String): List<CustomEmojiTextPart> {
         val parts = mutableListOf<CustomEmojiTextPart>()
         var index = 0
@@ -136,13 +156,22 @@ object CustomEmojiText {
 
 suspend fun insertCustomEmoji(editText: EditText, packId: Long, emoji: CustomEmoji) {
     val size = customEmojiSize(editText)
-    
-    val drawable = loadCustomEmojiDrawable(
-        context = editText.context,
-        url = emoji.url,
-        cacheKey = emoji.fileId,
-        size = size
-    ) ?: return
+
+    val drawable = if (isVideoMediaUrl(emoji.url)) {
+        VideoEmojiDrawable(
+            context = editText.context,
+            url = emoji.url,
+            size = size,
+            view = editText
+        )
+    } else {
+        loadCustomEmojiDrawable(
+            context = editText.context,
+            url = emoji.url,
+            cacheKey = emoji.fileId,
+            size = size
+        )
+    } ?: return
     
     withContext(Dispatchers.Main) {
         val spannable = SpannableString(CustomEmojiText.PLACEHOLDER)
@@ -223,11 +252,18 @@ suspend fun buildCustomEmojiText(
             
             is CustomEmojiTextPart.Emoji -> {
                 val emoji = resolveEmoji(part.emojiId)
-                
-                val drawable = if (emoji == null) {
-                    null
-                } else {
-                    loadCustomEmojiDrawable(
+
+                val drawable = when {
+                    emoji == null -> null
+
+                    isVideoMediaUrl(emoji.url) -> VideoEmojiDrawable(
+                        context = editText.context,
+                        url = emoji.url,
+                        size = size,
+                        view = editText
+                    )
+
+                    else -> loadCustomEmojiDrawable(
                         context = editText.context,
                         url = emoji.url,
                         cacheKey = emoji.fileId,

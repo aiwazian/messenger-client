@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun MusicMiniPlayer(
+fun AudioMiniPlayer(
     title: String,
     artist: String?,
     isPlaying: Boolean,

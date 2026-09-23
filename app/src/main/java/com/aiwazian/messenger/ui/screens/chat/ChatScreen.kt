@@ -83,6 +83,8 @@ import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.FileAction
+import com.aiwazian.messenger.extensions.toInstance
+import com.aiwazian.messenger.extensions.toMiniPlayerTime
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.BottomBarScrim
@@ -106,7 +108,7 @@ import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.MessageSearchResultsList
 import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
-import com.aiwazian.messenger.ui.screens.chat.components.MusicMiniPlayer
+import com.aiwazian.messenger.ui.screens.chat.components.AudioMiniPlayer
 import com.aiwazian.messenger.ui.screens.chat.components.MusicPlayerSheet
 import com.aiwazian.messenger.ui.screens.chat.components.StickerPackBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
@@ -469,26 +471,44 @@ fun ChatScreen(
                 onToggleNotifications = notificationsViewModel::toggle,
                 onBackClick = onBackClick
             )
+            val miniPlayerModifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Horizontal)
+                        .asPaddingValues()
+                        .plus(PaddingValues(horizontal = 4.dp))
+                )
             AnimatedContent(
                 targetState = uiState.currentMusicFileId,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Horizontal)
-                            .asPaddingValues()
-                            .plus(PaddingValues(horizontal = 4.dp))
-                    ),
+                modifier = miniPlayerModifier,
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
                 contentAlignment = Alignment.TopCenter
             ) { currentMusicFileId ->
                 if (currentMusicFileId != null) {
-                    MusicMiniPlayer(
+                    AudioMiniPlayer(
                         title = uiState.currentMusicTitle,
                         artist = uiState.currentMusicArtist,
                         isPlaying = uiState.isMusicPlaying,
                         onTogglePlayPause = chatViewModel::toggleMusicPlayPause,
                         onClose = chatViewModel::stopMusic,
                         onOpen = { showMusicPlayerSheet = true }
+                    )
+                }
+            }
+            AnimatedContent(
+                targetState = uiState.currentVoiceMessageId,
+                modifier = miniPlayerModifier,
+                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                contentAlignment = Alignment.TopCenter
+            ) { currentVoiceMessageId ->
+                if (currentVoiceMessageId != null) {
+                    AudioMiniPlayer(
+                        title = uiState.currentVoiceSenderName.orEmpty(),
+                        artist = uiState.currentVoiceSendTime?.toInstance()?.toMiniPlayerTime(),
+                        isPlaying = uiState.isVoicePlaying,
+                        onTogglePlayPause = chatViewModel::toggleVoicePlayPause,
+                        onClose = chatViewModel::stopVoice,
+                        onOpen = { chatViewModel.jumpToMessage(currentVoiceMessageId) }
                     )
                 }
             }
@@ -575,7 +595,7 @@ fun ChatScreen(
                         )
                 ) {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.align(Alignment.BottomCenter),
                         state = listState,
                         reverseLayout = true,
                         verticalArrangement = Arrangement.spacedBy(2.dp),

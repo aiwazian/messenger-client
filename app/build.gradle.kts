@@ -145,10 +145,7 @@ dependencies {
     
     implementation(libs.androidx.browser)
     
-    implementation(libs.coil.compose)
-    implementation(libs.coil.video)
-    implementation(libs.coil.gif)
-    implementation(libs.coil.network.okhttp)
+    implementation(libs.bundles.coil)
     
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
@@ -156,14 +153,7 @@ dependencies {
     
     implementation(libs.play.app.update)
     
-    implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.androidx.media3.common.ktx)
-    implementation(libs.androidx.media3.ui.compose)
-    implementation(libs.androidx.media3.ui.compose.material3)
-    implementation(libs.androidx.media3.session)
-    
-    implementation(libs.androidx.media3.transformer)
-    implementation(libs.androidx.media3.effect)
+    implementation(libs.bundles.media3)
     
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

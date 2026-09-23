@@ -111,6 +111,18 @@ protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit2-kotlinx-serialization-converter = { module = "com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter", version.ref = "retrofit2KotlinxSerializationConverter" }
 
+[bundles]
+coil = ["coil-compose", "coil-gif", "coil-network-okhttp", "coil-video"]
+media3 = [
+    "androidx-media3-common-ktx",
+    "androidx-media3-effect",
+    "androidx-media3-exoplayer",
+    "androidx-media3-session",
+    "androidx-media3-transformer",
+    "androidx-media3-ui-compose",
+    "androidx-media3-ui-compose-material3",
+]
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

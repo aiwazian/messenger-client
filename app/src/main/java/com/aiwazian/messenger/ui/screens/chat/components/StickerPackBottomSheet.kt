@@ -51,7 +51,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -64,14 +63,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.domain.StickerPack
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 
 private const val SHEET_GRID_COLUMNS = 5
 private val SHEET_GRID_MAX_HEIGHT = 380.dp
@@ -224,12 +223,10 @@ private fun StickerGridCell(
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(targetValue = if (isPressed) PRESSED_CELL_SCALE else 1f)
     
-    AsyncImage(
-        model = ImageRequest.Builder(context)
-            .data(sticker.url)
-            .memoryCacheKey(sticker.fileId)
-            .diskCacheKey(sticker.fileId)
-            .build(),
+    AnimatedStickerImage(
+        data = sticker.url,
+        isVideo = isVideoMediaUrl(sticker.url),
+        cacheKey = sticker.fileId,
         contentDescription = null,
         modifier = Modifier
             .aspectRatio(1f)
@@ -242,8 +239,7 @@ private fun StickerGridCell(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null
-            ) { onClick(bounds) },
-        contentScale = ContentScale.Fit
+            ) { onClick(bounds) }
     )
 }
 
@@ -328,12 +324,10 @@ private fun StickerFocusOverlay(
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(sticker.url)
-                        .memoryCacheKey(sticker.fileId)
-                        .diskCacheKey(sticker.fileId)
-                        .build(),
+                AnimatedStickerImage(
+                    data = sticker.url,
+                    isVideo = isVideoMediaUrl(sticker.url),
+                    cacheKey = sticker.fileId,
                     contentDescription = null,
                     modifier = Modifier
                         .size(targetSize)
@@ -342,8 +336,7 @@ private fun StickerFocusOverlay(
                             scaleY = scale
                             this.translationX = translationX
                             this.translationY = translationY
-                        },
-                    contentScale = ContentScale.Fit
+                        }
                 )
                 
                 Spacer(modifier = Modifier.height(12.dp))

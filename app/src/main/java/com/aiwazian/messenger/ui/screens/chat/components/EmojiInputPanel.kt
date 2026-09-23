@@ -43,9 +43,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.domain.CustomEmoji
 import com.aiwazian.messenger.domain.EmojiPack
 import kotlinx.coroutines.launch
@@ -196,12 +196,10 @@ fun EmojiInputPanel(
                                 label = "custom_emoji_button_scale_animation"
                             )
                             
-                            AsyncImage(
-                                model = ImageRequest.Builder(context)
-                                    .data(emoji.url)
-                                    .memoryCacheKey(emoji.fileId)
-                                    .diskCacheKey(emoji.fileId)
-                                    .build(),
+                            AnimatedStickerImage(
+                                data = emoji.url,
+                                isVideo = isVideoMediaUrl(emoji.url),
+                                cacheKey = emoji.fileId,
                                 contentDescription = null,
                                 modifier = Modifier
                                     .graphicsLayer(scaleX = scale, scaleY = scale)
@@ -209,8 +207,7 @@ fun EmojiInputPanel(
                                     .clickable(
                                         interactionSource = interactionSource,
                                         indication = null
-                                    ) { onEmojiClick(pack, emoji) },
-                                contentScale = ContentScale.Fit
+                                    ) { onEmojiClick(pack, emoji) }
                             )
                         }
                     }
@@ -319,17 +316,14 @@ private fun EmojiPackTab(
                 onClick = onClick
             )
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(pack.coverImageUrl)
-                .memoryCacheKey(pack.coverCacheKey)
-                .diskCacheKey(pack.coverCacheKey)
-                .build(),
+        AnimatedStickerImage(
+            data = pack.coverImageUrl,
+            isVideo = isVideoMediaUrl(pack.coverImageUrl),
+            cacheKey = pack.coverCacheKey,
             contentDescription = pack.name,
             modifier = Modifier
                 .size(EMOJI_PACK_LOGO_SIZE)
-                .clip(MaterialTheme.shapes.small),
-            contentScale = ContentScale.Fit
+                .clip(MaterialTheme.shapes.small)
         )
     }
 }

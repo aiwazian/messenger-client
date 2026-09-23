@@ -1,5 +1,6 @@
 package com.aiwazian.messenger.ui.screens.settings.emoji.created
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -78,9 +79,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppDialog
@@ -100,6 +101,7 @@ import com.aiwazian.messenger.ui.screens.settings.emoji.EmojiPickerBottomSheet
 import com.aiwazian.messenger.ui.screens.settings.emoji.SystemEmojiPickerBottomSheet
 import com.aiwazian.messenger.utils.EmojiInput
 import com.aiwazian.messenger.utils.UiText
+import com.aiwazian.messenger.utils.media.VideoExportTarget
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -116,6 +118,16 @@ private const val REMOVE_COVER_LABEL = "Удалить обложку"
 
 private val FOCUS_OPEN_SPEC: AnimationSpec<Float> =
     tween(durationMillis = 260, easing = FastOutSlowInEasing)
+
+private fun slotData(slot: EmojiSlot): Any = when (slot) {
+    is EmojiSlot.Local -> slot.emoji.uri
+    is EmojiSlot.Remote -> slot.url
+}
+
+private fun coverData(cover: EmojiPackCover): Any = when (cover) {
+    is EmojiPackCover.Local -> cover.emoji.uri
+    is EmojiPackCover.Remote -> cover.url
+}
 
 private val FOCUS_CLOSE_SPEC: AnimationSpec<Float> =
     tween(durationMillis = 220, easing = FastOutSlowInEasing)
@@ -458,10 +470,17 @@ fun EmojiPackEditorScreen(
     if (activePhotoTarget != null) {
         PhotoPickerBottomSheet(
             maskShape = RectangleShape,
+            videoExportTarget = VideoExportTarget.EMOJI,
             onPhotoPicked = { uri ->
                 when (activePhotoTarget) {
                     EmojiPickTarget.Cover -> viewModel.setCoverFromFile(uri)
                     EmojiPickTarget.Emoji -> viewModel.addEmoji(uri)
+                }
+            },
+            onVideoPicked = { video ->
+                when (activePhotoTarget) {
+                    EmojiPickTarget.Cover -> viewModel.setCoverFromVideo(video)
+                    EmojiPickTarget.Emoji -> viewModel.addVideoEmoji(video)
                 }
             },
             onDismissRequest = { photoPickerTarget = null },
@@ -544,17 +563,7 @@ private fun CoverPicker(
         return
     }
     
-    val model = when (cover) {
-        is EmojiPackCover.Local -> ImageRequest.Builder(context)
-            .data(cover.emoji.uri)
-            .build()
-        
-        is EmojiPackCover.Remote -> ImageRequest.Builder(context)
-            .data(cover.url)
-            .memoryCacheKey(cover.fileId)
-            .diskCacheKey(cover.fileId)
-            .build()
-    }
+    val data = coverData(cover)
     
     Box(
         modifier = Modifier
@@ -567,8 +576,9 @@ private fun CoverPicker(
         if (isBusy) {
             CircularWavyProgressIndicator(modifier = Modifier.size(28.dp))
         } else {
-            AsyncImage(
-                model = model,
+            AnimatedStickerImage(
+                data = data,
+                isVideo = isVideoMediaUrl(data.toString()),
                 contentDescription = COVER_BUTTON_LABEL,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -632,15 +642,7 @@ private fun EmojiSlotCell(
         label = "emoji_slot_scale"
     )
     
-    val model = when (slot) {
-        is EmojiSlot.Local -> ImageRequest.Builder(context).data(slot.emoji.uri).build()
-        
-        is EmojiSlot.Remote -> ImageRequest.Builder(context)
-            .data(slot.url)
-            .memoryCacheKey(slot.fileId)
-            .diskCacheKey(slot.fileId)
-            .build()
-    }
+    val data = slotData(slot)
     
     Box(
         modifier = Modifier
@@ -657,11 +659,11 @@ private fun EmojiSlotCell(
                 onClick = onClick
             )
     ) {
-        AsyncImage(
-            model = model,
+        AnimatedStickerImage(
+            data = data,
+            isVideo = isVideoMediaUrl(data.toString()),
             contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Fit
+            modifier = Modifier.fillMaxSize()
         )
     }
 }
@@ -693,15 +695,7 @@ private fun EmojiFocusOverlay(
     
     val focusedSize = with(density) { (cellSize * FOCUS_SCALE).toDp() }
     
-    val model = when (slot) {
-        is EmojiSlot.Local -> ImageRequest.Builder(context).data(slot.emoji.uri).build()
-        
-        is EmojiSlot.Remote -> ImageRequest.Builder(context)
-            .data(slot.url)
-            .memoryCacheKey(slot.fileId)
-            .diskCacheKey(slot.fileId)
-            .build()
-    }
+    val data = slotData(slot)
     
     LaunchedEffect(slot.key) {
         progress.snapTo(0f)
@@ -770,8 +764,9 @@ private fun EmojiFocusOverlay(
                         emojiCenter = coordinates.boundsInRoot().center
                     }
             ) {
-                AsyncImage(
-                    model = model,
+                AnimatedStickerImage(
+                    data = data,
+                    isVideo = isVideoMediaUrl(data.toString()),
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
@@ -807,8 +802,7 @@ private fun EmojiFocusOverlay(
                                 0f,
                                 fraction
                             )
-                        },
-                    contentScale = ContentScale.Fit
+                        }
                 )
             }
             

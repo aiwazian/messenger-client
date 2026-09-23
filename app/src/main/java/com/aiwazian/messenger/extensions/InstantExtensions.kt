@@ -44,6 +44,23 @@ fun Instant.toShortDateIfNotToday(
     return dateTime.format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
 }
 
+fun Instant.toMiniPlayerTime(
+    now: Instant = Instant.now(),
+    zoneId: ZoneId = ZoneId.systemDefault()
+): String {
+    val locale = Locale.getDefault()
+    val dateTime = this.atZone(zoneId)
+    val messageDate = dateTime.toLocalDate()
+    val today = now.atZone(zoneId).toLocalDate()
+    val time = dateTime.format(DateTimeFormatter.ofPattern("HH:mm", locale))
+
+    return when (messageDate) {
+        today -> time
+        today.minusDays(1) -> "вчера в $time"
+        else -> "${dateTime.format(DateTimeFormatter.ofPattern("d MMM", locale))} в $time"
+    }
+}
+
 fun Instant.toChatListTime(
     now: Instant = Instant.now(),
     zoneId: ZoneId = ZoneId.systemDefault()

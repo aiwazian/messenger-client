@@ -15,12 +15,17 @@ import androidx.compose.material3.carousel.CarouselDefaults
 import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.sharedBounds
+import com.aiwazian.messenger.ui.components.LoopingVideoPlayer
+import com.aiwazian.messenger.ui.components.avatarImageRequest
 
 @Composable
 fun ProfileImageCarousel(
@@ -53,17 +58,30 @@ fun ProfileImageCarousel(
                 if (uri == null) {
                     CircularWavyProgressIndicator()
                 } else {
-                    val modifier = if (index == 0) {
+                    val context = LocalContext.current
+                    val isVideo = remember(uri) {
+                        uri.getFileType(context).startsWith("video/")
+                    }
+                    
+                    val itemModifier = if (index == 0) {
                         Modifier.sharedBounds(key = "chat-avatar-$profileId")
                     } else {
                         Modifier
                     }
-                    AsyncImage(
-                        model = uri,
-                        contentDescription = null,
-                        modifier = modifier.then(Modifier.fillMaxSize()),
-                        contentScale = ContentScale.Crop,
-                    )
+                    
+                    if (isVideo) {
+                        LoopingVideoPlayer(
+                            uri = uri,
+                            modifier = itemModifier.then(Modifier.fillMaxSize())
+                        )
+                    } else {
+                        AsyncImage(
+                            model = avatarImageRequest(context, uri),
+                            contentDescription = null,
+                            modifier = itemModifier.then(Modifier.fillMaxSize()),
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
                 }
             }
         }

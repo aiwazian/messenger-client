@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -385,9 +386,13 @@ fun ChatAvatar(
     size: Dp = 40.dp,
     sharedTransition: Boolean = false
 ) {
+    val context = LocalContext.current
+
     if (avatarUri != null) {
+        val model = remember(avatarUri) { avatarImageRequest(context, avatarUri) }
+
         AsyncImage(
-            model = avatarUri,
+            model = model,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
