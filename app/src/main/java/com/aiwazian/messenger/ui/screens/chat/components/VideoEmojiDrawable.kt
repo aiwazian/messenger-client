@@ -24,6 +24,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.net.URL
+import java.lang.ref.WeakReference
 
 private const val FRAME_INTERVAL_MS = 66L
 private const val FRAME_STEP_US = 66_000L
@@ -41,6 +42,8 @@ class VideoEmojiDrawable(
 ) : Drawable() {
 
     private val mainHandler = Handler(Looper.getMainLooper())
+
+    private val viewReference = WeakReference(view)
 
     @Volatile
     private var frame: Bitmap? = null
@@ -131,12 +134,12 @@ class VideoEmojiDrawable(
                 if (nextFrame != null) {
                     frame = nextFrame
 
-                    mainHandler.post { invalidateSelf() }
+                    mainHandler.post { invalidateView() }
                 }
 
                 positionUs += FRAME_STEP_US
 
-                if (durationUs > 0L && positionUs >= durationUs) {
+                if (durationUs in 1..positionUs) {
                     positionUs = 0L
                 }
 
@@ -147,6 +150,10 @@ class VideoEmojiDrawable(
         } finally {
             runCatching { retriever.release() }
         }
+    }
+
+    private fun invalidateView() {
+        viewReference.get()?.invalidate()
     }
 
     override fun draw(canvas: Canvas) {

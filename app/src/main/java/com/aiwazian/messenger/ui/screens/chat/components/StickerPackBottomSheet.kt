@@ -51,7 +51,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -64,16 +63,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import com.aiwazian.messenger.ui.components.AnimatedStickerImage
-import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.domain.StickerPack
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 
 private const val SHEET_GRID_COLUMNS = 5
 private val SHEET_GRID_MAX_HEIGHT = 380.dp
@@ -230,7 +227,6 @@ private fun StickerGridCell(
         data = sticker.url,
         isVideo = isVideoMediaUrl(sticker.url),
         cacheKey = sticker.fileId,
-        videoShape = MaterialTheme.shapes.extraLarge,
         contentDescription = null,
         modifier = Modifier
             .aspectRatio(1f)
@@ -332,7 +328,6 @@ private fun StickerFocusOverlay(
                     data = sticker.url,
                     isVideo = isVideoMediaUrl(sticker.url),
                     cacheKey = sticker.fileId,
-                    videoShape = MaterialTheme.shapes.extraLarge,
                     contentDescription = null,
                     modifier = Modifier
                         .size(targetSize)

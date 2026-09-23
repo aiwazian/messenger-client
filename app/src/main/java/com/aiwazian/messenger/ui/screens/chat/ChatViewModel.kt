@@ -10,6 +10,7 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.CustomEmoji
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReadInfo
@@ -33,6 +34,7 @@ import com.aiwazian.messenger.push.NotificationHelper
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.FileRepository
+import com.aiwazian.messenger.repository.EmojiRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.ReplyDraftCache
@@ -46,6 +48,8 @@ import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.ui.screens.chat.components.CustomEmojiText
+import com.aiwazian.messenger.ui.screens.chat.components.CustomEmojiTextPart
 import com.aiwazian.messenger.ui.screens.chat.paging.MessageWindowPager
 import com.aiwazian.messenger.ui.screens.chat.paging.ScrollTarget
 import com.aiwazian.messenger.usecase.JoinChannelUseCase
@@ -100,6 +104,7 @@ class ChatViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val inviteLinkRepository: InviteLinkRepository,
     private val searchRepository: SearchRepository,
+    private val emojiRepository: EmojiRepository,
     private val replyDraftCache: ReplyDraftCache,
     private val clipboardService: ClipboardService,
     private val webSocketClient: WebSocketClient,
@@ -174,6 +179,7 @@ class ChatViewModel @Inject constructor(
     init {
         loadSettings()
         observeVoicePlayer()
+        observeVoicePlayerInfo()
         observeMusicPlayer()
         observeMusicQueueUpdates()
         observeAudioMetadata()
@@ -272,6 +278,39 @@ class ChatViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun observeVoicePlayerInfo() {
+        viewModelScope.launch {
+            _uiState.collect { state ->
+                val fileId = state.currentPlayingVoiceFileId
+                val item = fileId?.let { id ->
+                    state.chatItems.filterIsInstance<ChatItem.MessageItem>()
+                        .firstOrNull { item -> item.message.attachments.any { it.fileId == id } }
+                }
+                val messageId = item?.message?.id
+                val senderName = item?.let { resolveVoiceSenderName(it, state) }
+                val sendTime = item?.message?.sendTime
+
+                if (state.currentVoiceMessageId != messageId ||
+                    state.currentVoiceSenderName != senderName ||
+                    state.currentVoiceSendTime != sendTime
+                ) {
+                    _uiState.update {
+                        it.copy(
+                            currentVoiceMessageId = messageId,
+                            currentVoiceSenderName = senderName,
+                            currentVoiceSendTime = sendTime
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun resolveVoiceSenderName(item: ChatItem.MessageItem, state: ChatUiState): String {
+        if (item.isMine) return context.getString(R.string.you)
+        return item.senderName ?: state.chatName.asString(context)
     }
 
     private fun observeMusicPlayer() {
@@ -1633,6 +1672,14 @@ class ChatViewModel @Inject constructor(
         musicPlayerManager.stop()
     }
 
+    fun stopVoice() {
+        voicePlayerManager.stop()
+    }
+
+    fun toggleVoicePlayPause() {
+        voicePlayerManager.togglePlayPause()
+    }
+
     fun setEqualizerBandLevel(band: Int, levelMb: Int) {
         equalizerManager.setBandLevel(band, levelMb)
     }
@@ -1741,7 +1788,30 @@ class ChatViewModel @Inject constructor(
 
     fun copyToClipboard(message: Message) {
         if (!copyPolicy.canCopyText()) return
-        message.text?.let { clipboardService.copy(it) }
+        
+        val text = message.text ?: return
+        
+        viewModelScope.launch {
+            val emojiIds = CustomEmojiText.parse(text)
+                .filterIsInstance<CustomEmojiTextPart.Emoji>()
+                .map { it.emojiId }
+                .distinct()
+            
+            val emojis = if (emojiIds.isEmpty()) {
+                emptyMap<Long, CustomEmoji>()
+            } else {
+                emojiRepository.resolveEmojis(emojiIds)
+                    .getOrNull()
+                    .orEmpty()
+                    .associateBy { it.id }
+            }
+            
+            clipboardService.copy(
+                CustomEmojiText.toPlainText(text) { emojiId ->
+                    emojis[emojiId]?.emojis?.firstOrNull()
+                }
+            )
+        }
     }
 
     fun vibrate() = vibrationManager.vibrate(VibrationPattern.Error)

@@ -478,7 +478,6 @@ fun VideoPickerCropDialog(
     }
 }
 
-@OptIn(UnstableApi::class)
 @Composable
 private fun VideoCropBox(
     state: VideoCropState,

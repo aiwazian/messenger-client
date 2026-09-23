@@ -21,14 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.media3.common.util.UnstableApi
 import coil3.compose.AsyncImage
-import com.aiwazian.messenger.ui.components.avatarImageRequest
 import com.aiwazian.messenger.extensions.getFileType
 import com.aiwazian.messenger.extensions.sharedBounds
 import com.aiwazian.messenger.ui.components.LoopingVideoPlayer
+import com.aiwazian.messenger.ui.components.avatarImageRequest
 
-@OptIn(UnstableApi::class)
 @Composable
 fun ProfileImageCarousel(
     modifier: Modifier = Modifier,
@@ -36,10 +34,10 @@ fun ProfileImageCarousel(
     avatars: List<Uri?>
 ) {
     val carouselState = rememberCarouselState { avatars.size }
-
+    
     BoxWithConstraints {
         val itemWidth = if (maxWidth < 500.dp) maxWidth else 300.dp
-
+        
         HorizontalUncontainedCarousel(
             state = carouselState,
             itemWidth = itemWidth,
@@ -64,13 +62,13 @@ fun ProfileImageCarousel(
                     val isVideo = remember(uri) {
                         uri.getFileType(context).startsWith("video/")
                     }
-
+                    
                     val itemModifier = if (index == 0) {
                         Modifier.sharedBounds(key = "chat-avatar-$profileId")
                     } else {
                         Modifier
                     }
-
+                    
                     if (isVideo) {
                         LoopingVideoPlayer(
                             uri = uri,

@@ -28,23 +28,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import com.aiwazian.messenger.ui.components.AnimatedStickerImage
-import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.domain.StickerPack
 import com.aiwazian.messenger.repository.StickerRepository
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -138,8 +134,6 @@ private fun StickerPickerCell(
     isAdded: Boolean,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
-    
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     
@@ -155,7 +149,6 @@ private fun StickerPickerCell(
         data = sticker.url,
         isVideo = isVideoMediaUrl(sticker.url),
         cacheKey = sticker.fileId,
-        videoShape = MaterialTheme.shapes.extraLarge,
         contentDescription = null,
         modifier = Modifier
             .aspectRatio(1f)

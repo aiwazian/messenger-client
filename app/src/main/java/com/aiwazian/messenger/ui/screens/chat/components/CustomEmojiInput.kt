@@ -108,6 +108,25 @@ object CustomEmojiText {
         return builder.toString()
     }
     
+    fun toPlainText(
+        text: String,
+        defaultEmoji: (emojiId: Long) -> String?
+    ): String {
+        val parts = parse(text)
+        
+        if (parts.none { it is CustomEmojiTextPart.Emoji }) {
+            return text
+        }
+        
+        return parts.joinToString(separator = "") { part ->
+            when (part) {
+                is CustomEmojiTextPart.Text -> part.value
+                
+                is CustomEmojiTextPart.Emoji -> defaultEmoji(part.emojiId).orEmpty()
+            }
+        }
+    }
+    
     fun parse(text: String): List<CustomEmojiTextPart> {
         val parts = mutableListOf<CustomEmojiTextPart>()
         var index = 0

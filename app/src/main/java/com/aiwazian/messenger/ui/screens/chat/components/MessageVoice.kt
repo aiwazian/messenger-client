@@ -67,9 +67,9 @@ fun MessageVoice(
     val context = LocalContext.current
     val isReady = file.localUri != null
     
-    var amplitudes by remember { mutableStateOf<List<Float>?>(null) }
+    var amplitudes by remember(file.localUri) { mutableStateOf<List<Float>?>(null) }
     var dragPositionMs by remember { mutableStateOf<Int?>(null) }
-    var extractedDurationMs by remember { mutableIntStateOf(0) }
+    var extractedDurationMs by remember(file.localUri) { mutableIntStateOf(0) }
     
     val currentPositionMs by rememberUpdatedState(positionMs)
     val currentDurationMs by rememberUpdatedState(durationMs)
@@ -109,17 +109,15 @@ fun MessageVoice(
         modifier = Modifier
             .width(280.dp)
             .clickable(interactionSource = null, indication = null) {
-                when (file.status) {
-                    DownloadStatus.UPLOADING -> onAction(FileAction.CANCEL)
-                    DownloadStatus.DOWNLOADING -> onAction(FileAction.PAUSE)
-                    DownloadStatus.PAUSED, DownloadStatus.UPLOADED, DownloadStatus.IDLE, DownloadStatus.CANCELLED, DownloadStatus.FAILED -> onAction(
-                        FileAction.DOWNLOAD
-                    )
-                    
-                    DownloadStatus.COMPLETED -> {
+                when {
+                    file.localUri != null && file.status != DownloadStatus.UPLOADING && file.status != DownloadStatus.DOWNLOADING -> {
                         pendingSeekPositionMs?.let { currentOnSeek(it) }
                         onAction(FileAction.PLAY)
                     }
+                    
+                    file.status == DownloadStatus.UPLOADING -> onAction(FileAction.CANCEL)
+                    file.status == DownloadStatus.DOWNLOADING -> onAction(FileAction.PAUSE)
+                    else -> onAction(FileAction.DOWNLOAD)
                 }
             }
             .padding(8.dp),

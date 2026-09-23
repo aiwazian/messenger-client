@@ -10,6 +10,7 @@ import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
 import android.util.TypedValue
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -25,8 +26,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.aiwazian.messenger.domain.CustomEmoji
+import com.aiwazian.messenger.extensions.findActivity
 
 @Composable
 internal fun CustomEmojiTextField(
@@ -80,6 +83,7 @@ internal fun CustomEmojiTextField(
                 background = null
                 setPadding(0, verticalPadding, 0, verticalPadding)
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, INPUT_TEXT_SIZE_SP)
+                imeOptions = imeOptions or EditorInfo.IME_FLAG_NO_EXTRACT_UI
                 inputType = InputType.TYPE_CLASS_TEXT or
                         InputType.TYPE_TEXT_FLAG_MULTI_LINE or
                         InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
@@ -164,12 +168,16 @@ internal fun focusMessageInput(view: EditText) {
     view.requestFocus()
     
     view.post {
-        ViewCompat.getWindowInsetsController(view)?.show(WindowInsetsCompat.Type.ime())
+        view.context.findActivity()?.window?.let { window ->
+            WindowCompat.getInsetsController(window, view).show(WindowInsetsCompat.Type.ime())
+        }
     }
 }
 
 internal fun hideKeyboardKeepFocus(view: EditText) {
-    ViewCompat.getWindowInsetsController(view)?.hide(WindowInsetsCompat.Type.ime())
+    view.context.findActivity()?.window?.let { window ->
+        WindowCompat.getInsetsController(window, view).hide(WindowInsetsCompat.Type.ime())
+    }
 }
 
 private class CustomEmojiTextSync {

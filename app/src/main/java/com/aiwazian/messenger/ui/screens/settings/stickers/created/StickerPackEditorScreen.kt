@@ -97,9 +97,7 @@ import com.aiwazian.messenger.ui.screens.settings.emoji.SystemEmojiPickerBottomS
 import com.aiwazian.messenger.ui.screens.settings.stickers.StickerPickerBottomSheet
 import com.aiwazian.messenger.utils.EmojiInput
 import com.aiwazian.messenger.utils.UiText
-import com.aiwazian.messenger.utils.media.VIDEO_WEBM_MIME_TYPE
 import com.aiwazian.messenger.utils.media.VideoExportTarget
-import com.aiwazian.messenger.utils.media.WEBM_FILE_EXTENSION
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -661,7 +659,6 @@ private fun StickerSlotCell(
         AnimatedStickerImage(
             data = data,
             isVideo = isVideoMediaUrl(data.toString()),
-            videoShape = MaterialTheme.shapes.extraLarge,
             contentDescription = null,
             modifier = Modifier.fillMaxSize()
         )
@@ -766,7 +763,6 @@ private fun StickerFocusOverlay(
                 AnimatedStickerImage(
                     data = data,
                     isVideo = isVideoMediaUrl(data.toString()),
-                    videoShape = MaterialTheme.shapes.extraLarge,
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()

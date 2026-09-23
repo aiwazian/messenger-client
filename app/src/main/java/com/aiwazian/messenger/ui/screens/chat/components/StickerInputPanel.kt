@@ -136,7 +136,6 @@ fun StickerInputPanel(
                         data = sticker.url,
                         isVideo = isVideoMediaUrl(sticker.url),
                         cacheKey = sticker.fileId,
-                        videoShape = MaterialTheme.shapes.extraLarge,
                         contentDescription = null,
                         modifier = Modifier
                             .aspectRatio(1f)

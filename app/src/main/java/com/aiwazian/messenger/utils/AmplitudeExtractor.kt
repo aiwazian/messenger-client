@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.utils
 
 import android.content.Context
+import android.media.AudioFormat
 import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
@@ -14,6 +15,7 @@ import com.aiwazian.messenger.utils.AmplitudeExtractor.AMPLITUDES_COUNT
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 import kotlin.math.min
 import kotlin.math.sqrt
@@ -106,6 +108,8 @@ object AmplitudeExtractor {
         val bufferInfo = MediaCodec.BufferInfo()
         var sawInputEos = false
         var sawOutputEos = false
+        var pcmEncoding = AudioFormat.ENCODING_PCM_16BIT
+        var isEncodingResolved = false
         val timeoutUs = 10_000L
 
         while (!sawOutputEos) {
@@ -129,16 +133,35 @@ object AmplitudeExtractor {
             }
 
             val outputIndex = decoder.dequeueOutputBuffer(bufferInfo, timeoutUs)
-            if (outputIndex >= 0) {
-                val outputBuffer = decoder.getOutputBuffer(outputIndex)
-                if (outputBuffer != null && bufferInfo.size > 0) {
-                    outputBuffer.position(bufferInfo.offset)
-                    outputBuffer.limit(bufferInfo.offset + bufferInfo.size)
-                    accumulator.add(outputBuffer.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer())
+            when {
+                outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+                    pcmEncoding = runCatching {
+                        decoder.outputFormat.getInteger(MediaFormat.KEY_PCM_ENCODING)
+                    }.getOrDefault(pcmEncoding)
+                    isEncodingResolved = true
                 }
-                decoder.releaseOutputBuffer(outputIndex, false)
-                if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
-                    sawOutputEos = true
+
+                outputIndex >= 0 -> {
+                    if (!isEncodingResolved) {
+                        isEncodingResolved = true
+                        pcmEncoding = runCatching {
+                            decoder.outputFormat.getInteger(MediaFormat.KEY_PCM_ENCODING)
+                        }.getOrDefault(pcmEncoding)
+                    }
+                    val outputBuffer = decoder.getOutputBuffer(outputIndex)
+                    if (outputBuffer != null && bufferInfo.size > 0) {
+                        outputBuffer.position(bufferInfo.offset)
+                        outputBuffer.limit(bufferInfo.offset + bufferInfo.size)
+                        if (pcmEncoding == AudioFormat.ENCODING_PCM_FLOAT) {
+                            accumulator.add(outputBuffer.order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer())
+                        } else {
+                            accumulator.add(outputBuffer.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer())
+                        }
+                    }
+                    decoder.releaseOutputBuffer(outputIndex, false)
+                    if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
+                        sawOutputEos = true
+                    }
                 }
             }
         }
@@ -147,6 +170,7 @@ object AmplitudeExtractor {
     private class AmplitudeAccumulator {
         private val chunkSumSquares = ArrayList<Double>()
         private val scratch = ShortArray(CHUNK_SAMPLES)
+        private val floatScratch = FloatArray(CHUNK_SAMPLES)
         private var currentSumSquares = 0.0
         private var currentCount = 0
         private var totalSamples = 0L
@@ -155,12 +179,32 @@ object AmplitudeExtractor {
             while (pcm.hasRemaining()) {
                 val count = min(pcm.remaining(), CHUNK_SAMPLES)
                 pcm.get(scratch, 0, count)
+                accumulate(count)
+            }
+        }
+
+        fun add(pcm: FloatBuffer) {
+            while (pcm.hasRemaining()) {
+                val count = min(pcm.remaining(), CHUNK_SAMPLES)
+                pcm.get(floatScratch, 0, count)
                 for (i in 0 until count) {
+                    scratch[i] = (floatScratch[i].coerceIn(-1f, 1f) * Short.MAX_VALUE).toInt().toShort()
+                }
+                accumulate(count)
+            }
+        }
+
+        private fun accumulate(count: Int) {
+            var index = 0
+            while (index < count) {
+                val take = min(count - index, CHUNK_SAMPLES - currentCount)
+                for (i in index until index + take) {
                     val sample = scratch[i].toDouble()
                     currentSumSquares += sample * sample
                 }
-                currentCount += count
-                totalSamples += count
+                currentCount += take
+                totalSamples += take
+                index += take
                 if (currentCount == CHUNK_SAMPLES) {
                     flushChunk()
                 }
