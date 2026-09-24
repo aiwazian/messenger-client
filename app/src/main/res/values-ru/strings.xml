@@ -348,6 +348,14 @@
     <string name="pin_message_failed">Не удалось закрепить сообщение</string>
     <string name="unpin_message_failed">Не удалось открепить сообщение</string>
     <string name="pinned_message">Закрепленное сообщение</string>
+    <string name="pinned_tab_for_everyone">Для всех</string>
+    <string name="pinned_tab_for_me">Для меня</string>
+    <plurals name="pinned_messages_count">
+        <item quantity="one">%1$d закрепленное сообщение</item>
+        <item quantity="few">%1$d закрепленных сообщения</item>
+        <item quantity="many">%1$d закрепленных сообщений</item>
+        <item quantity="other">%1$d закрепленных сообщений</item>
+    </plurals>
     <string name="requests_to_channel_join">Здесь отображаются заявки на присоединение к вашему каналу.</string>
     <string name="requests_to_group_join">Здесь отображаются заявки на вступление в вашу группу.</string>
     <string name="edit_folder">Редактировать папку</string>

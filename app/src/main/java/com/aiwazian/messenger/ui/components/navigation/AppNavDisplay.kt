@@ -37,6 +37,7 @@ import com.aiwazian.messenger.ui.screens.channel.settings.transfer.ChannelTransf
 import com.aiwazian.messenger.ui.screens.channel.settings.type.ChannelTypeSettingsScreen
 import com.aiwazian.messenger.ui.screens.chat.ChatScreen
 import com.aiwazian.messenger.ui.screens.chat.media.ChatMediaScreen
+import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessagesScreen
 import com.aiwazian.messenger.ui.screens.equalizer.EqualizerScreen
 import com.aiwazian.messenger.ui.screens.group.create.CreateGroupScreen
 import com.aiwazian.messenger.ui.screens.group.settings.GroupSettingsScreen
@@ -155,6 +156,9 @@ fun AppNavDisplay(
                             chatId = it.chatId,
                             chatName = it.chatName
                         )
+                    }
+                    entry<AppRoute.PinnedMessages> {
+                        PinnedMessagesScreen(chatId = it.chatId)
                     }
                     entry<AppRoute.Equalizer> { EqualizerScreen() }
                     entry<AppRoute.Profile>(metadata = PredictiveBackMetadata) {

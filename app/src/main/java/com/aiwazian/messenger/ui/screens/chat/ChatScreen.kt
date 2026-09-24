@@ -82,6 +82,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation3.runtime.result.ResultEffect
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
@@ -119,6 +120,8 @@ import com.aiwazian.messenger.ui.screens.chat.components.PinnedMessageBar
 import com.aiwazian.messenger.ui.screens.chat.components.StickerPackBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.UnreadSeparatorItem
+import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessageOpenAction
+import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessageResult
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
 import com.aiwazian.messenger.utils.ActiveChatTracker
 import com.aiwazian.messenger.utils.EmojiLink
@@ -475,11 +478,11 @@ fun ChatScreen(
     
     LaunchedEffect(stickersState.notice) {
         val notice = stickersState.notice ?: return@LaunchedEffect
-        
+
         val message = notice.message.asString(context)
-        
+
         stickersViewModel.consumeNotice()
-        
+
         snackbarJob?.cancel()
         snackbarJob = scope.launch {
             snackbarHostState.showSnackbar(
@@ -488,7 +491,14 @@ fun ChatScreen(
             )
         }
     }
-    
+
+    ResultEffect<PinnedMessageResult> { result ->
+        when (result.action) {
+            PinnedMessageOpenAction.REPLY -> chatViewModel.startReply(result.message)
+            PinnedMessageOpenAction.EDIT -> chatViewModel.startEditing(result.message)
+        }
+    }
+
     Scaffold(snackbarHost = {
         if (!uiState.showFullScreenViewer) {
             AppSnackbar(snackbarHostState)
@@ -539,7 +549,10 @@ fun ChatScreen(
                             PinnedMessageBar(
                                 title = stringResource(R.string.pinned_message),
                                 message = message,
-                                onClick = { chatViewModel.jumpToMessage(displayed.messageId) }
+                                onClick = { chatViewModel.jumpToMessage(displayed.messageId) },
+                                onListClick = {
+                                    navBackStack.add(AppRoute.PinnedMessages(uiState.chatId))
+                                }
                             )
                         }
                     }

@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,13 +28,14 @@ fun PinnedMessageBar(
     title: String,
     message: Message,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    onListClick: () -> Unit = {}
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(start = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -64,6 +67,13 @@ fun PinnedMessageBar(
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        IconButton(onClick = onListClick) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.List,
+                contentDescription = null
             )
         }
     }

@@ -130,7 +130,7 @@ private fun DeleteChatDialog(
 }
 
 @Composable
-private fun DeleteMessageDialog(
+fun DeleteMessageDialog(
     onDismissRequest: () -> Unit,
     onConfirm: () -> Unit,
     deleteForRecipient: Boolean,
