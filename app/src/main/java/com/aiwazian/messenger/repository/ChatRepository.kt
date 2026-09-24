@@ -11,14 +11,18 @@ import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.DraftDao
 import com.aiwazian.messenger.database.dao.MessageDao
+import com.aiwazian.messenger.database.dao.MessagePinDao
 import com.aiwazian.messenger.database.entity.ChatEntity
 import com.aiwazian.messenger.database.entity.DraftEntity
 import com.aiwazian.messenger.database.entity.FileEntity
+import com.aiwazian.messenger.database.entity.MessagePinEntity
 import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.domain.MessagePinPayload
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.domain.MessageSearchPage
 import com.aiwazian.messenger.domain.MessagesPage
+import com.aiwazian.messenger.domain.PinnedMessage
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.MessageStatus
 import com.aiwazian.messenger.enums.MessageType
@@ -38,6 +42,7 @@ import com.aiwazian.messenger.network.dto.ForwardMessageRequestDto
 import com.aiwazian.messenger.network.dto.MarkChatsRequestDto
 import com.aiwazian.messenger.network.dto.MarkReadRequestDto
 import com.aiwazian.messenger.network.dto.PinChatsRequestDto
+import com.aiwazian.messenger.network.dto.PinMessageRequestDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
 import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.socket.WebSocketClient
@@ -59,6 +64,7 @@ class ChatRepository @Inject constructor(
     private val chatApi: ChatApi,
     private val messageApi: MessageApi,
     private val messageDao: MessageDao,
+    private val messagePinDao: MessagePinDao,
     private val attachmentDao: AttachmentDao,
     private val readInfoCache: MessageReadInfoCache,
     private val fileRepository: FileRepository,
@@ -740,6 +746,7 @@ class ChatRepository @Inject constructor(
     
     suspend fun deleteLocalMessage(messageId: Long) {
         messageDao.deleteMessageById(messageId)
+        messagePinDao.deleteByMessageId(messageId)
         readInfoCache.forget(messageId)
     }
     
@@ -777,6 +784,179 @@ class ChatRepository @Inject constructor(
         if (text != null) {
             messageDao.updateMessageTextAndEditedAt(messageId, text, editedAt)
         }
+    }
+
+    /**
+     * Закрепления чата для текущего пользователя, отсортированные от свежих к старым.
+     *
+     * Поток объединяет таблицу закреплений с сообщениями по id: правка текста
+     * закреплённого сообщения обновляет панель без перезагрузки чата.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observePinnedMessages(chatId: Long): Flow<List<PinnedMessage>> {
+        return messagePinDao.observeChatPins(chatId).flatMapLatest { pins ->
+            if (pins.isEmpty()) {
+                flowOf(emptyList())
+            } else {
+                messageDao.getMessagesByIds(pins.map { it.messageId }).map { messages ->
+                    val byId = messages.associateBy { it.message.id }
+
+                    pins.mapNotNull { pin ->
+                        byId[pin.messageId]?.let { messageWithAttachments ->
+                            val attachments = messageWithAttachments.attachments
+                                .sortedBy { it.attachment.sortOrder }
+                                .map { it.toDomain() }
+                            PinnedMessage(
+                                messageId = pin.messageId,
+                                chatId = pin.chatId,
+                                forEveryone = pin.forEveryone,
+                                pinnedAt = pin.pinnedAt,
+                                message = messageWithAttachments.message.toDomain(attachments)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    suspend fun pinMessage(
+        chatId: Long,
+        messageId: Long,
+        forEveryone: Boolean
+    ): Result<Unit> {
+        return try {
+            val response = messageApi.pinMessage(
+                chatId = chatId,
+                messageId = messageId,
+                request = PinMessageRequestDto(forEveryone = forEveryone),
+                socketId = socket.socketId.orEmpty()
+            )
+
+            val pin = response.body()
+            if (response.isSuccessful && pin != null) {
+                upsertLocalPin(
+                    chatId = pin.chatId,
+                    messageId = pin.messageId,
+                    forEveryone = pin.forEveryone,
+                    pinnedAt = pin.pinnedAt
+                )
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error pinning message $messageId in chat $chatId", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Открепление сообщения.
+     *
+     * Сервер снимает личное закрепление всегда, а общее — когда открепляющий
+     * вправе: в личном чате или с правом закрепления. includeShared удаляет
+     * локальную строку общего закрепления сразу: свой сокет исключён из
+     * рассылки и события о снятии не получит.
+     */
+    suspend fun unpinMessage(
+        chatId: Long,
+        messageId: Long,
+        includeShared: Boolean = false
+    ): Result<Unit> {
+        return try {
+            val response = messageApi.unpinMessage(
+                chatId = chatId,
+                messageId = messageId,
+                socketId = socket.socketId.orEmpty()
+            )
+
+            if (response.isSuccessful) {
+                messagePinDao.deletePin(
+                    chatId = chatId,
+                    messageId = messageId,
+                    forEveryone = false
+                )
+
+                if (includeShared) {
+                    messagePinDao.deletePin(
+                        chatId = chatId,
+                        messageId = messageId,
+                        forEveryone = true
+                    )
+                }
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error unpinning message $messageId in chat $chatId", e)
+            Result.failure(e)
+        }
+    }
+
+    /** Свежие закрепления с сервера вместо локального кэша: вызывается при открытии чата. */
+    suspend fun refreshPinnedMessages(chatId: Long) {
+        try {
+            val response = messageApi.getPinnedMessages(chatId)
+            val pins = response.body()
+            if (!response.isSuccessful || pins == null) return
+
+            val myId = userRepository.getMe().firstOrNull()?.id ?: return
+
+            saveMessagesToDb(pins.mapNotNull { pin -> pin.message?.toDomain() })
+
+            messagePinDao.deleteChatPins(chatId)
+            messagePinDao.upsertPins(pins.map { pin ->
+                MessagePinEntity(
+                    chatId = pin.chatId,
+                    messageId = pin.messageId,
+                    forEveryone = pin.forEveryone,
+                    pinnedAt = pin.pinnedAt,
+                    ownerId = myId
+                )
+            })
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error refreshing pinned messages for chat $chatId", e)
+        }
+    }
+
+    suspend fun applyRemotePin(payload: MessagePinPayload) {
+        upsertLocalPin(
+            chatId = payload.chatId,
+            messageId = payload.messageId,
+            forEveryone = payload.forEveryone,
+            pinnedAt = payload.pinnedAt
+        )
+    }
+
+    suspend fun applyRemoteUnpin(payload: MessagePinPayload) {
+        messagePinDao.deletePin(
+            chatId = payload.chatId,
+            messageId = payload.messageId,
+            forEveryone = payload.forEveryone
+        )
+    }
+
+    private suspend fun upsertLocalPin(
+        chatId: Long,
+        messageId: Long,
+        forEveryone: Boolean,
+        pinnedAt: Long
+    ) {
+        val myId = userRepository.getMe().firstOrNull()?.id ?: return
+
+        messagePinDao.upsertPins(
+            listOf(
+                MessagePinEntity(
+                    chatId = chatId,
+                    messageId = messageId,
+                    forEveryone = forEveryone,
+                    pinnedAt = pinnedAt,
+                    ownerId = myId
+                )
+            )
+        )
     }
     
     suspend fun clearLocalHistory(chatId: Long) {

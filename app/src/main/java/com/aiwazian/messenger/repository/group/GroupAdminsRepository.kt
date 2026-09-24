@@ -37,6 +37,7 @@ class GroupAdminsRepository @Inject constructor(
                         canManageInviteLinks = dto.canManageInviteLinks,
                         canEditProfile = dto.canEditProfile,
                         canManageAdmins = dto.canManageAdmins,
+                        canPinMessages = dto.canPinMessages,
                         tag = dto.tag
                     )
                 })
@@ -105,6 +106,7 @@ class GroupAdminsRepository @Inject constructor(
                         canManageInviteLinks = dto.canManageInviteLinks,
                         canEditProfile = dto.canEditProfile,
                         canManageAdmins = dto.canManageAdmins,
+                        canPinMessages = dto.canPinMessages,
                         tag = dto.tag
                     )
                 )
@@ -124,6 +126,7 @@ class GroupAdminsRepository @Inject constructor(
         canManageInviteLinks: Boolean,
         canEditProfile: Boolean,
         canManageAdmins: Boolean,
+        canPinMessages: Boolean,
         tag: String?
     ): Result<Unit> {
         return try {
@@ -134,6 +137,7 @@ class GroupAdminsRepository @Inject constructor(
                     canManageInviteLinks = canManageInviteLinks,
                     canEditProfile = canEditProfile,
                     canManageAdmins = canManageAdmins,
+                    canPinMessages = canPinMessages,
                     tag = tag?.trim()?.ifBlank { null }
                 )
             )

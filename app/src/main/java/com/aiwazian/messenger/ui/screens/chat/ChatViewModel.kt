@@ -26,15 +26,14 @@ import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.extensions.isAudioFile
 import com.aiwazian.messenger.extensions.isMusicFile
 import com.aiwazian.messenger.playback.MusicPlayerManager
-import com.aiwazian.messenger.playback.MusicRepeatMode
 import com.aiwazian.messenger.playback.MusicTrack
 import com.aiwazian.messenger.playback.VoicePlayerManager
 import com.aiwazian.messenger.playback.VoiceQueueItem
 import com.aiwazian.messenger.push.NotificationHelper
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
-import com.aiwazian.messenger.repository.FileRepository
 import com.aiwazian.messenger.repository.EmojiRepository
+import com.aiwazian.messenger.repository.FileRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.ReplyDraftCache
@@ -211,6 +210,7 @@ class ChatViewModel @Inject constructor(
         loadChatInfo()
         observeRealtimeEvents()
         observeMessages()
+        observePinnedMessages()
     }
 
     private fun loadDraft(chatId: Long) {
@@ -704,20 +704,45 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    private fun observePinnedMessages() {
+        val chatId = _uiState.value.chatId
+
+        viewModelScope.launch {
+            chatRepository.refreshPinnedMessages(chatId)
+        }
+
+        viewModelScope.launch {
+            chatRepository.observePinnedMessages(chatId).collect { pins ->
+                _uiState.update { it.copy(pinnedMessages = pins) }
+                updateChatItems(lastMessages)
+            }
+        }
+    }
+
     private fun updateChatItems(messages: List<Message>) {
         lastMessages = messages
+        val state = _uiState.value
         val mapper = ChatItemMapper(
             context = context,
-            myId = _uiState.value.myId,
-            chatId = _uiState.value.chatId,
-            isOwner = _uiState.value.isOwner,
-            isJoined = _uiState.value.isJoined,
-            userNamesCache = _uiState.value.userNamesCache,
-            memberTagsCache = _uiState.value.memberTagsCache,
-            groupReadInfo = _uiState.value.groupReadInfo,
-            highlightedMessageId = _uiState.value.highlightedMessageId,
+            myId = state.myId,
+            chatId = state.chatId,
+            isOwner = state.isOwner,
+            isJoined = state.isJoined,
+            userNamesCache = state.userNamesCache,
+            memberTagsCache = state.memberTagsCache,
+            groupReadInfo = state.groupReadInfo,
+            highlightedMessageId = state.highlightedMessageId,
             unreadAnchorMessageId = unreadAnchorMessageId,
             copyPolicy = copyPolicy,
+            pinnedByMeMessageIds = state.pinnedMessages
+                .filter { pin -> !pin.forEveryone }
+                .map { pin -> pin.messageId }
+                .toSet(),
+            sharedPinnedMessageIds = state.pinnedMessages
+                .filter { pin -> pin.forEveryone }
+                .map { pin -> pin.messageId }
+                .toSet(),
+            canPinForEveryone = state.myPermissions.canPinMessages,
             onCopyText = ::copyToClipboard,
             onEditMessage = ::startEditing,
             onDeleteMessage = {
@@ -728,6 +753,8 @@ class ChatViewModel @Inject constructor(
             onCancelSendMessage = ::cancelSendMessage,
             onReplyMessage = ::startReply,
             onForwardMessage = ::startForward,
+            onPinMessage = ::onPinMessage,
+            onUnpinMessage = ::onUnpinMessage,
             onLoadUserName = ::loadUserName
         )
 
@@ -1216,6 +1243,97 @@ class ChatViewModel @Inject constructor(
                 forwardHideCaption = hideCaption,
                 forwardHideAuthor = if (hideCaption) true else state.forwardHideAuthor
             )
+        }
+    }
+
+    fun onPinMessage(message: Message) {
+        if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
+        
+        if (isSavedMessages) {
+            pinMessage(message, forEveryone = false)
+            return
+        }
+
+        val state = _uiState.value
+        val canManagePin =
+            ChatType.fromId(state.chatId) == ChatType.PRIVATE || state.myPermissions.canPinMessages
+
+        if (canManagePin) {
+            val pinnedForEveryone = state.pinnedMessages
+                .any { pin -> pin.messageId == message.id && pin.forEveryone }
+
+            _uiState.update {
+                it.copy(pinSheetMessage = message, pinForEveryone = pinnedForEveryone)
+            }
+        } else {
+            pinMessage(message, forEveryone = false)
+        }
+    }
+
+    fun onUnpinMessage(message: Message) {
+        if (message.id <= 0) return
+        
+        unpinMessage(message, includeShared = isSavedMessages)
+    }
+
+    fun selectPinScope(forEveryone: Boolean) {
+        _uiState.update { it.copy(pinForEveryone = forEveryone) }
+    }
+
+    fun dismissPinSheet() {
+        _uiState.update { it.copy(pinSheetMessage = null, pinForEveryone = false) }
+    }
+
+    fun confirmPin() {
+        val state = _uiState.value
+        val message = state.pinSheetMessage ?: return
+
+        _uiState.update { it.copy(pinSheetMessage = null, pinForEveryone = false) }
+
+        pinMessage(message, forEveryone = state.pinForEveryone)
+    }
+
+    fun confirmUnpin() {
+        val state = _uiState.value
+        val message = state.pinSheetMessage ?: return
+
+        _uiState.update { it.copy(pinSheetMessage = null, pinForEveryone = false) }
+
+        val includeShared =
+            ChatType.fromId(state.chatId) == ChatType.PRIVATE || state.myPermissions.canPinMessages
+
+        unpinMessage(message, includeShared)
+    }
+
+    private fun pinMessage(message: Message, forEveryone: Boolean) {
+        viewModelScope.launch {
+            chatRepository.pinMessage(_uiState.value.chatId, message.id, forEveryone)
+                .onSuccess {
+                    _uiEffect.emit(
+                        ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.message_pinned))
+                    )
+                }
+                .onFailure {
+                    _uiEffect.emit(
+                        ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.pin_message_failed))
+                    )
+                }
+        }
+    }
+
+    private fun unpinMessage(message: Message, includeShared: Boolean) {
+        viewModelScope.launch {
+            chatRepository.unpinMessage(_uiState.value.chatId, message.id, includeShared)
+                .onSuccess {
+                    _uiEffect.emit(
+                        ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.message_unpinned))
+                    )
+                }
+                .onFailure {
+                    _uiEffect.emit(
+                        ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.unpin_message_failed))
+                    )
+                }
         }
     }
 

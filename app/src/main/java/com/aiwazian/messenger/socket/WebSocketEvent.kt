@@ -11,6 +11,7 @@ import com.aiwazian.messenger.domain.ChatUnreadPayload
 import com.aiwazian.messenger.domain.DeleteChatPayload
 import com.aiwazian.messenger.domain.DeleteMessagePayload
 import com.aiwazian.messenger.domain.Message
+import com.aiwazian.messenger.domain.MessagePinPayload
 import com.aiwazian.messenger.domain.NotificationSettings
 import com.aiwazian.messenger.domain.PinChatPayload
 import com.aiwazian.messenger.domain.PresencePayload
@@ -37,6 +38,25 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
         override val eventName = "message:edit"
         override val deserializer = MessageDto.serializer()
         override val mapper: (MessageDto) -> Message = MessageDto::toDomain
+    }
+
+    /**
+     * Сообщение закрепили.
+     *
+     * forEveryone = false: событие приходит только в другие сессии этого же
+     * аккаунта; forEveryone = true: во все сессии всех участников чата.
+     */
+    data object MessagePin : WebSocketEvent<MessagePinPayload, MessagePinPayload> {
+        override val eventName = "message:pin"
+        override val deserializer = MessagePinPayload.serializer()
+        override val mapper: (MessagePinPayload) -> MessagePinPayload = { it }
+    }
+
+    /** Сообщение открепили; таргетинг тот же, что у message:pin. */
+    data object MessageUnpin : WebSocketEvent<MessagePinPayload, MessagePinPayload> {
+        override val eventName = "message:unpin"
+        override val deserializer = MessagePinPayload.serializer()
+        override val mapper: (MessagePinPayload) -> MessagePinPayload = { it }
     }
     
     data object DeleteMessage : WebSocketEvent<DeleteMessagePayload, DeleteMessagePayload> {

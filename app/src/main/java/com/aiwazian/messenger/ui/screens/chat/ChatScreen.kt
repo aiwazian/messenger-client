@@ -14,6 +14,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +43,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.ButtonDefaults
@@ -63,6 +65,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -70,6 +73,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -78,6 +82,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation3.runtime.result.ResultEffect
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
@@ -96,6 +101,7 @@ import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.screens.chat.components.AudioMiniPlayer
 import com.aiwazian.messenger.ui.screens.chat.components.ChatDialogs
 import com.aiwazian.messenger.ui.screens.chat.components.ChatInputSection
 import com.aiwazian.messenger.ui.screens.chat.components.ChatSearchNavigationButtons
@@ -108,11 +114,14 @@ import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.MessageSearchResultsList
 import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
-import com.aiwazian.messenger.ui.screens.chat.components.AudioMiniPlayer
 import com.aiwazian.messenger.ui.screens.chat.components.MusicPlayerSheet
+import com.aiwazian.messenger.ui.screens.chat.components.PinMessageBottomSheet
+import com.aiwazian.messenger.ui.screens.chat.components.PinnedMessageBar
 import com.aiwazian.messenger.ui.screens.chat.components.StickerPackBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.UnreadSeparatorItem
+import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessageOpenAction
+import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessageResult
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
 import com.aiwazian.messenger.utils.ActiveChatTracker
 import com.aiwazian.messenger.utils.EmojiLink
@@ -166,7 +175,11 @@ fun ChatScreen(
     val isChatMuted by notificationsViewModel.isMuted.collectAsState()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
-    
+
+    val pinnedMessageIds = remember(uiState.pinnedMessages) {
+        uiState.pinnedMessages.map { pin -> pin.messageId }.toSet()
+    }
+
     val density = LocalDensity.current
     val imeInsets = WindowInsets.ime
     
@@ -302,6 +315,37 @@ fun ChatScreen(
     LaunchedEffect(isAtBottom) {
         chatViewModel.onViewportAtBottomChanged(isAtBottom)
     }
+
+    val displayedPinIndex = remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(uiState.pinnedMessages) {
+        displayedPinIndex.intValue = 0
+    }
+
+    val visibleMessageIds by remember {
+        derivedStateOf {
+            listState.layoutInfo.visibleItemsInfo.mapNotNull { info ->
+                (uiState.chatItems.getOrNull(info.index - 1) as? ChatItem.MessageItem)
+                    ?.takeIf { it.message.id > 0 }
+                    ?.message?.id
+            }.toSet()
+        }
+    }
+
+    LaunchedEffect(visibleMessageIds, uiState.pinnedMessages) {
+        val pins = uiState.pinnedMessages
+        if (pins.isEmpty()) return@LaunchedEffect
+
+        var index = displayedPinIndex.intValue.coerceIn(0, pins.lastIndex)
+        var steps = 0
+
+        while (steps <= pins.size && pins[index].messageId in visibleMessageIds) {
+            index = (index + 1) % pins.size
+            steps++
+        }
+
+        displayedPinIndex.intValue = index
+    }
     
     LaunchedEffect(listState, uiState.myId) {
         snapshotFlow {
@@ -434,11 +478,11 @@ fun ChatScreen(
     
     LaunchedEffect(stickersState.notice) {
         val notice = stickersState.notice ?: return@LaunchedEffect
-        
+
         val message = notice.message.asString(context)
-        
+
         stickersViewModel.consumeNotice()
-        
+
         snackbarJob?.cancel()
         snackbarJob = scope.launch {
             snackbarHostState.showSnackbar(
@@ -447,7 +491,14 @@ fun ChatScreen(
             )
         }
     }
-    
+
+    ResultEffect<PinnedMessageResult> { result ->
+        when (result.action) {
+            PinnedMessageOpenAction.REPLY -> chatViewModel.startReply(result.message)
+            PinnedMessageOpenAction.EDIT -> chatViewModel.startEditing(result.message)
+        }
+    }
+
     Scaffold(snackbarHost = {
         if (!uiState.showFullScreenViewer) {
             AppSnackbar(snackbarHostState)
@@ -471,45 +522,74 @@ fun ChatScreen(
                 onToggleNotifications = notificationsViewModel::toggle,
                 onBackClick = onBackClick
             )
-            val miniPlayerModifier = Modifier
+            val topBarOverlayModifier = Modifier
                 .fillMaxWidth()
                 .padding(
                     TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Horizontal)
                         .asPaddingValues()
                         .plus(PaddingValues(horizontal = 4.dp))
                 )
-            AnimatedContent(
-                targetState = uiState.currentMusicFileId,
-                modifier = miniPlayerModifier,
-                transitionSpec = { fadeIn() togetherWith fadeOut() },
-                contentAlignment = Alignment.TopCenter
-            ) { currentMusicFileId ->
-                if (currentMusicFileId != null) {
-                    AudioMiniPlayer(
-                        title = uiState.currentMusicTitle,
-                        artist = uiState.currentMusicArtist,
-                        isPlaying = uiState.isMusicPlaying,
-                        onTogglePlayPause = chatViewModel::toggleMusicPlayPause,
-                        onClose = chatViewModel::stopMusic,
-                        onOpen = { showMusicPlayerSheet = true }
-                    )
+            Column(
+                modifier = topBarOverlayModifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+            ) {
+                AnimatedContent(
+                    targetState = uiState.pinnedMessages,
+                    modifier = Modifier.fillMaxWidth(),
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    contentAlignment = Alignment.TopCenter
+                ) { pins ->
+                    if (pins.isNotEmpty()) {
+                        val displayed =
+                            pins.getOrNull(displayedPinIndex.intValue) ?: pins.first()
+                        
+                        displayed.message?.let { message ->
+                            PinnedMessageBar(
+                                title = stringResource(R.string.pinned_message),
+                                message = message,
+                                onClick = { chatViewModel.jumpToMessage(displayed.messageId) },
+                                onListClick = {
+                                    navBackStack.add(AppRoute.PinnedMessages(uiState.chatId))
+                                }
+                            )
+                        }
+                    }
                 }
-            }
-            AnimatedContent(
-                targetState = uiState.currentVoiceMessageId,
-                modifier = miniPlayerModifier,
-                transitionSpec = { fadeIn() togetherWith fadeOut() },
-                contentAlignment = Alignment.TopCenter
-            ) { currentVoiceMessageId ->
-                if (currentVoiceMessageId != null) {
-                    AudioMiniPlayer(
-                        title = uiState.currentVoiceSenderName.orEmpty(),
-                        artist = uiState.currentVoiceSendTime?.toInstance()?.toMiniPlayerTime(),
-                        isPlaying = uiState.isVoicePlaying,
-                        onTogglePlayPause = chatViewModel::toggleVoicePlayPause,
-                        onClose = chatViewModel::stopVoice,
-                        onOpen = { chatViewModel.jumpToMessage(currentVoiceMessageId) }
-                    )
+                AnimatedContent(
+                    targetState = uiState.currentMusicFileId,
+                    modifier = Modifier.fillMaxWidth(),
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    contentAlignment = Alignment.TopCenter
+                ) { currentMusicFileId ->
+                    if (currentMusicFileId != null) {
+                        AudioMiniPlayer(
+                            title = uiState.currentMusicTitle,
+                            artist = uiState.currentMusicArtist,
+                            isPlaying = uiState.isMusicPlaying,
+                            onTogglePlayPause = chatViewModel::toggleMusicPlayPause,
+                            onClose = chatViewModel::stopMusic,
+                            onOpen = { showMusicPlayerSheet = true }
+                        )
+                    }
+                }
+                AnimatedContent(
+                    targetState = uiState.currentVoiceMessageId,
+                    modifier = Modifier.fillMaxWidth(),
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    contentAlignment = Alignment.TopCenter
+                ) { currentVoiceMessageId ->
+                    if (currentVoiceMessageId != null) {
+                        AudioMiniPlayer(
+                            title = uiState.currentVoiceSenderName.orEmpty(),
+                            artist = uiState.currentVoiceSendTime?.toInstance()?.toMiniPlayerTime(),
+                            isPlaying = uiState.isVoicePlaying,
+                            onTogglePlayPause = chatViewModel::toggleVoicePlayPause,
+                            onClose = chatViewModel::stopVoice,
+                            onOpen = { chatViewModel.jumpToMessage(currentVoiceMessageId) }
+                        )
+                    }
                 }
             }
         }
@@ -712,7 +792,9 @@ fun ChatScreen(
                                                 avatarUri = readerAvatars[reader.userId]?.toString()
                                             )
                                         )
-                                    })
+                                    },
+                                    isPinned = item.message.id in pinnedMessageIds
+                                )
                             }
                         }
                         
@@ -848,6 +930,18 @@ fun ChatScreen(
         }
     }
     
+    uiState.pinSheetMessage?.let { sheetMessage ->
+        PinMessageBottomSheet(
+            chatType = ChatType.fromId(uiState.chatId),
+            forEveryone = uiState.pinForEveryone,
+            isPinned = sheetMessage.id in pinnedMessageIds,
+            onSelectScope = chatViewModel::selectPinScope,
+            onConfirm = chatViewModel::confirmPin,
+            onUnpin = chatViewModel::confirmUnpin,
+            onDismiss = chatViewModel::dismissPinSheet
+        )
+    }
+
     if (uiState.isForwardSheetVisible) {
         val forwardingMessage = uiState.forwardingMessage
         ShareBottomSheet(

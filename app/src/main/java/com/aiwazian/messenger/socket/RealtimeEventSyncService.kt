@@ -98,6 +98,18 @@ class RealtimeEventSyncService @Inject constructor(
                 )
             }
         }
+
+        webSocketClient.subscribeToEvent(WebSocketEvent.MessagePin) { payload ->
+            serviceScope.launch {
+                chatRepository.applyRemotePin(payload)
+            }
+        }
+
+        webSocketClient.subscribeToEvent(WebSocketEvent.MessageUnpin) { payload ->
+            serviceScope.launch {
+                chatRepository.applyRemoteUnpin(payload)
+            }
+        }
         
         webSocketClient.subscribeToEvent(WebSocketEvent.ReadMessage) { payload ->
             serviceScope.launch {

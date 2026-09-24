@@ -32,6 +32,9 @@ sealed interface AppRoute : NavKey {
     ) : AppRoute
 
     @Serializable
+    data class PinnedMessages(val chatId: Long) : AppRoute
+
+    @Serializable
     data object Equalizer : AppRoute
 
     @Serializable

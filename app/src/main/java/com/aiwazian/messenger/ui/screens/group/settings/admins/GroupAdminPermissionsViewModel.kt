@@ -60,6 +60,7 @@ class GroupAdminPermissionsViewModel @Inject constructor(
                         canManageInviteLinks = admin.canManageInviteLinks,
                         canEditProfile = admin.canEditProfile,
                         canManageAdmins = admin.canManageAdmins,
+                        canPinMessages = admin.canPinMessages,
                         tag = admin.tag.orEmpty()
                     )
                 }
@@ -68,42 +69,48 @@ class GroupAdminPermissionsViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun toggleManageInviteLinks() {
         if (_uiState.value.isReadOnly) return
         _uiState.update { it.copy(canManageInviteLinks = !it.canManageInviteLinks) }
     }
-    
+
     fun toggleEditProfile() {
         if (_uiState.value.isReadOnly) return
         _uiState.update { it.copy(canEditProfile = !it.canEditProfile) }
     }
-    
+
     /** Право на управление администраторами выдаёт только владелец: это проверяет сервер. */
     fun toggleManageAdmins() {
         if (_uiState.value.isReadOnly) return
         _uiState.update { it.copy(canManageAdmins = !it.canManageAdmins) }
     }
-    
+
+    fun togglePinMessages() {
+        if (_uiState.value.isReadOnly) return
+        _uiState.update { it.copy(canPinMessages = !it.canPinMessages) }
+    }
+
     fun changeTag(tag: String) {
         if (_uiState.value.isReadOnly) return
         _uiState.update { it.copy(tag = tag) }
     }
-    
+
     fun save() {
         if (_uiState.value.isSaving || _uiState.value.isReadOnly) return
-        
+
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
-            
+
             val state = _uiState.value
-            
+
             groupAdminsRepository.upsertAdmin(
                 groupId = _groupId,
                 userId = _userId,
                 canManageInviteLinks = state.canManageInviteLinks,
                 canEditProfile = state.canEditProfile,
                 canManageAdmins = state.canManageAdmins,
+                canPinMessages = state.canPinMessages,
                 tag = state.tag
             ).onSuccess {
                 _uiState.update { it.copy(isSaving = false) }

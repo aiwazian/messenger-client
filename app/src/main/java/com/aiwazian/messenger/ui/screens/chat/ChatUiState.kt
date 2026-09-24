@@ -10,6 +10,7 @@ import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.domain.MessageSearchHit
+import com.aiwazian.messenger.domain.PinnedMessage
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.playback.MusicRepeatMode
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -98,6 +99,10 @@ data class ChatUiState(
     val forwardHideAuthor: Boolean = false,
     val forwardHideCaption: Boolean = false,
     val sharingLink: String? = null,
+
+    val pinnedMessages: List<PinnedMessage> = emptyList(),
+    val pinSheetMessage: Message? = null,
+    val pinForEveryone: Boolean = false,
 
     val isLoadingOlder: Boolean = false,
     val isLoadingNewer: Boolean = false,

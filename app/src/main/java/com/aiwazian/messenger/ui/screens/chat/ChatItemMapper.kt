@@ -5,6 +5,7 @@ import android.webkit.MimeTypeMap
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Forward
 import androidx.compose.material.icons.automirrored.outlined.Reply
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DeleteOutline
@@ -41,6 +42,9 @@ class ChatItemMapper(
     private val highlightedMessageId: Long? = null,
     private val unreadAnchorMessageId: Long? = null,
     private val copyPolicy: ChatCopyPolicy = ChatCopyPolicy.Unrestricted,
+    private val pinnedByMeMessageIds: Set<Long> = emptySet(),
+    private val sharedPinnedMessageIds: Set<Long> = emptySet(),
+    private val canPinForEveryone: Boolean = false,
     private val onCopyText: (Message) -> Unit,
     private val onEditMessage: (Message) -> Unit,
     private val onDeleteMessage: (Message) -> Unit,
@@ -48,6 +52,8 @@ class ChatItemMapper(
     private val onCancelSendMessage: (Message) -> Unit,
     private val onReplyMessage: (Message) -> Unit,
     private val onForwardMessage: (Message) -> Unit,
+    private val onPinMessage: (Message) -> Unit,
+    private val onUnpinMessage: (Message) -> Unit,
     private val onLoadUserName: (Long) -> Unit
 ) {
     fun map(messages: List<Message>): List<ChatItem> {
@@ -157,6 +163,58 @@ class ChatItemMapper(
         }
     }
     
+    private fun createPinAction(
+        message: Message,
+        isSent: Boolean,
+        chatType: ChatType
+    ): DropdownMenuAction? {
+        if (!isSent) return null
+        
+        val canPin = when (chatType) {
+            ChatType.PRIVATE -> true
+            ChatType.GROUP, ChatType.CHANNEL -> isJoined
+            else -> false
+        }
+        if (!canPin) return null
+        
+        val hasSelfPin = message.id in pinnedByMeMessageIds
+        val hasSharedPin = message.id in sharedPinnedMessageIds
+        val canManagePin = chatType == ChatType.PRIVATE || canPinForEveryone
+        
+        return when {
+            isSavedMessages -> when {
+                hasSelfPin || hasSharedPin -> unpinAction(message)
+                else -> pinAction(message)
+            }
+            
+            canManagePin -> when {
+                hasSharedPin || hasSelfPin -> editPinAction(message)
+                else -> pinAction(message)
+            }
+            
+            hasSelfPin -> unpinAction(message)
+            else -> pinAction(message)
+        }
+    }
+    
+    private fun pinAction(message: Message) = DropdownMenuAction(
+        Icons.Outlined.PushPin,
+        UiText.StringResource(R.string.pin_message),
+        onClick = { onPinMessage(message) }
+    )
+    
+    private fun editPinAction(message: Message) = DropdownMenuAction(
+        Icons.Outlined.PushPin,
+        UiText.StringResource(R.string.edit_pin),
+        onClick = { onPinMessage(message) }
+    )
+    
+    private fun unpinAction(message: Message) = DropdownMenuAction(
+        Icons.Outlined.PushPin,
+        UiText.StringResource(R.string.unpin_message),
+        onClick = { onUnpinMessage(message) }
+    )
+    
     private val isSavedMessages: Boolean
         get() = ChatType.fromId(chatId) == ChatType.PRIVATE && chatId == myId
     
@@ -234,6 +292,8 @@ class ChatItemMapper(
                     onClick = { onForwardMessage(message) })
             )
         }
+        
+        createPinAction(message, isSent, chatType)?.let { actions.add(it) }
         
         val now = System.currentTimeMillis()
         val twentyFourHoursMs = 24 * 60 * 60 * 1000L
