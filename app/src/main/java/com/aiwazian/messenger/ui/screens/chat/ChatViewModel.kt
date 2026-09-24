@@ -26,15 +26,14 @@ import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.extensions.isAudioFile
 import com.aiwazian.messenger.extensions.isMusicFile
 import com.aiwazian.messenger.playback.MusicPlayerManager
-import com.aiwazian.messenger.playback.MusicRepeatMode
 import com.aiwazian.messenger.playback.MusicTrack
 import com.aiwazian.messenger.playback.VoicePlayerManager
 import com.aiwazian.messenger.playback.VoiceQueueItem
 import com.aiwazian.messenger.push.NotificationHelper
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
-import com.aiwazian.messenger.repository.FileRepository
 import com.aiwazian.messenger.repository.EmojiRepository
+import com.aiwazian.messenger.repository.FileRepository
 import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.ReplyDraftCache
@@ -1247,15 +1246,13 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Закрепление сообщения.
-     *
-     * В личном чате и у тех, кому разрешено закреплять для всех, открывается
-     * выбор области закрепления. Обычный участник группы или канала закрепляет
-     * сразу только у себя.
-     */
     fun onPinMessage(message: Message) {
         if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
+        
+        if (isSavedMessages) {
+            pinMessage(message, forEveryone = false)
+            return
+        }
 
         val state = _uiState.value
         val canManagePin =
@@ -1275,8 +1272,8 @@ class ChatViewModel @Inject constructor(
 
     fun onUnpinMessage(message: Message) {
         if (message.id <= 0) return
-
-        unpinMessage(message, includeShared = false)
+        
+        unpinMessage(message, includeShared = isSavedMessages)
     }
 
     fun selectPinScope(forEveryone: Boolean) {
@@ -1296,7 +1293,6 @@ class ChatViewModel @Inject constructor(
         pinMessage(message, forEveryone = state.pinForEveryone)
     }
 
-    /** «Открепить» из шторки: снимает и личное, и общее закрепление, если оно доступно. */
     fun confirmUnpin() {
         val state = _uiState.value
         val message = state.pinSheetMessage ?: return

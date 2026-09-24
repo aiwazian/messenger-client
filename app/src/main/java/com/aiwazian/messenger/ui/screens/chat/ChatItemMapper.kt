@@ -5,13 +5,12 @@ import android.webkit.MimeTypeMap
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Forward
 import androidx.compose.material.icons.automirrored.outlined.Reply
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material.icons.outlined.PushPin
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageReadInfo
@@ -163,57 +162,53 @@ class ChatItemMapper(
             else -> false
         }
     }
-
-    /**
-     * Пункт меню закрепления.
-     *
-     * «Закрепить» открывает выбор области закрепления в личном чате и у тех, кому
-     * сервер разрешил закреплять для всех; обычный участник группы или канала
-     * закрепляет сразу только у себя. Уже закреплённое открывается через
-     * «Изменить закреп» со шторкой выбора; пункт «Открепить» остаётся только у
-     * обычного участника группы или канала, закрепившего сообщение у себя.
-     */
+    
     private fun createPinAction(
         message: Message,
         isSent: Boolean,
         chatType: ChatType
     ): DropdownMenuAction? {
         if (!isSent) return null
-
+        
         val canPin = when (chatType) {
             ChatType.PRIVATE -> true
             ChatType.GROUP, ChatType.CHANNEL -> isJoined
             else -> false
         }
         if (!canPin) return null
-
+        
         val hasSelfPin = message.id in pinnedByMeMessageIds
         val hasSharedPin = message.id in sharedPinnedMessageIds
         val canManagePin = chatType == ChatType.PRIVATE || canPinForEveryone
-
+        
         return when {
+            isSavedMessages -> when {
+                hasSelfPin || hasSharedPin -> unpinAction(message)
+                else -> pinAction(message)
+            }
+            
             canManagePin -> when {
                 hasSharedPin || hasSelfPin -> editPinAction(message)
                 else -> pinAction(message)
             }
-
+            
             hasSelfPin -> unpinAction(message)
             else -> pinAction(message)
         }
     }
-
+    
     private fun pinAction(message: Message) = DropdownMenuAction(
-        Icons.Rounded.PushPin,
+        Icons.Outlined.PushPin,
         UiText.StringResource(R.string.pin_message),
         onClick = { onPinMessage(message) }
     )
-
+    
     private fun editPinAction(message: Message) = DropdownMenuAction(
-        Icons.Rounded.PushPin,
+        Icons.Outlined.PushPin,
         UiText.StringResource(R.string.edit_pin),
         onClick = { onPinMessage(message) }
     )
-
+    
     private fun unpinAction(message: Message) = DropdownMenuAction(
         Icons.Outlined.PushPin,
         UiText.StringResource(R.string.unpin_message),
@@ -297,7 +292,7 @@ class ChatItemMapper(
                     onClick = { onForwardMessage(message) })
             )
         }
-
+        
         createPinAction(message, isSent, chatType)?.let { actions.add(it) }
         
         val now = System.currentTimeMillis()
