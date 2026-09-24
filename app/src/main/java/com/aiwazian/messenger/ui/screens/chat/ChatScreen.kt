@@ -14,6 +14,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +43,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.ButtonDefaults
@@ -71,6 +73,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -97,6 +100,7 @@ import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.screens.chat.components.AudioMiniPlayer
 import com.aiwazian.messenger.ui.screens.chat.components.ChatDialogs
 import com.aiwazian.messenger.ui.screens.chat.components.ChatInputSection
 import com.aiwazian.messenger.ui.screens.chat.components.ChatSearchNavigationButtons
@@ -109,11 +113,9 @@ import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.MessageSearchResultsList
 import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
-import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
+import com.aiwazian.messenger.ui.screens.chat.components.MusicPlayerSheet
 import com.aiwazian.messenger.ui.screens.chat.components.PinMessageBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.PinnedMessageBar
-import com.aiwazian.messenger.ui.screens.chat.components.AudioMiniPlayer
-import com.aiwazian.messenger.ui.screens.chat.components.MusicPlayerSheet
 import com.aiwazian.messenger.ui.screens.chat.components.StickerPackBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.UnreadSeparatorItem
@@ -510,64 +512,71 @@ fun ChatScreen(
                 onToggleNotifications = notificationsViewModel::toggle,
                 onBackClick = onBackClick
             )
-            val miniPlayerModifier = Modifier
+            val topBarOverlayModifier = Modifier
                 .fillMaxWidth()
                 .padding(
                     TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Horizontal)
                         .asPaddingValues()
                         .plus(PaddingValues(horizontal = 4.dp))
                 )
-            AnimatedContent(
-                targetState = uiState.pinnedMessages,
-                modifier = miniPlayerModifier,
-                transitionSpec = { fadeIn() togetherWith fadeOut() },
-                contentAlignment = Alignment.TopCenter
-            ) { pins ->
-                if (pins.isNotEmpty()) {
-                    val displayed = pins.getOrNull(displayedPinIndex.intValue) ?: pins.first()
-
-                    displayed.message?.let { message ->
-                        PinnedMessageBar(
-                            title = stringResource(R.string.pinned_message),
-                            message = message,
-                            modifier = Modifier.padding(vertical = 4.dp),
-                            onClick = { chatViewModel.jumpToMessage(displayed.messageId) }
+            Column(
+                modifier = topBarOverlayModifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+            ) {
+                AnimatedContent(
+                    targetState = uiState.pinnedMessages,
+                    modifier = Modifier.fillMaxWidth(),
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    contentAlignment = Alignment.TopCenter
+                ) { pins ->
+                    if (pins.isNotEmpty()) {
+                        val displayed =
+                            pins.getOrNull(displayedPinIndex.intValue) ?: pins.first()
+                        
+                        displayed.message?.let { message ->
+                            PinnedMessageBar(
+                                title = stringResource(R.string.pinned_message),
+                                message = message,
+                                onClick = { chatViewModel.jumpToMessage(displayed.messageId) }
+                            )
+                        }
+                    }
+                }
+                AnimatedContent(
+                    targetState = uiState.currentMusicFileId,
+                    modifier = Modifier.fillMaxWidth(),
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    contentAlignment = Alignment.TopCenter
+                ) { currentMusicFileId ->
+                    if (currentMusicFileId != null) {
+                        AudioMiniPlayer(
+                            title = uiState.currentMusicTitle,
+                            artist = uiState.currentMusicArtist,
+                            isPlaying = uiState.isMusicPlaying,
+                            onTogglePlayPause = chatViewModel::toggleMusicPlayPause,
+                            onClose = chatViewModel::stopMusic,
+                            onOpen = { showMusicPlayerSheet = true }
                         )
                     }
                 }
-            }
-            AnimatedContent(
-                targetState = uiState.currentMusicFileId,
-                modifier = miniPlayerModifier,
-                transitionSpec = { fadeIn() togetherWith fadeOut() },
-                contentAlignment = Alignment.TopCenter
-            ) { currentMusicFileId ->
-                if (currentMusicFileId != null) {
-                    AudioMiniPlayer(
-                        title = uiState.currentMusicTitle,
-                        artist = uiState.currentMusicArtist,
-                        isPlaying = uiState.isMusicPlaying,
-                        onTogglePlayPause = chatViewModel::toggleMusicPlayPause,
-                        onClose = chatViewModel::stopMusic,
-                        onOpen = { showMusicPlayerSheet = true }
-                    )
-                }
-            }
-            AnimatedContent(
-                targetState = uiState.currentVoiceMessageId,
-                modifier = miniPlayerModifier,
-                transitionSpec = { fadeIn() togetherWith fadeOut() },
-                contentAlignment = Alignment.TopCenter
-            ) { currentVoiceMessageId ->
-                if (currentVoiceMessageId != null) {
-                    AudioMiniPlayer(
-                        title = uiState.currentVoiceSenderName.orEmpty(),
-                        artist = uiState.currentVoiceSendTime?.toInstance()?.toMiniPlayerTime(),
-                        isPlaying = uiState.isVoicePlaying,
-                        onTogglePlayPause = chatViewModel::toggleVoicePlayPause,
-                        onClose = chatViewModel::stopVoice,
-                        onOpen = { chatViewModel.jumpToMessage(currentVoiceMessageId) }
-                    )
+                AnimatedContent(
+                    targetState = uiState.currentVoiceMessageId,
+                    modifier = Modifier.fillMaxWidth(),
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    contentAlignment = Alignment.TopCenter
+                ) { currentVoiceMessageId ->
+                    if (currentVoiceMessageId != null) {
+                        AudioMiniPlayer(
+                            title = uiState.currentVoiceSenderName.orEmpty(),
+                            artist = uiState.currentVoiceSendTime?.toInstance()?.toMiniPlayerTime(),
+                            isPlaying = uiState.isVoicePlaying,
+                            onTogglePlayPause = chatViewModel::toggleVoicePlayPause,
+                            onClose = chatViewModel::stopVoice,
+                            onOpen = { chatViewModel.jumpToMessage(currentVoiceMessageId) }
+                        )
+                    }
                 }
             }
         }

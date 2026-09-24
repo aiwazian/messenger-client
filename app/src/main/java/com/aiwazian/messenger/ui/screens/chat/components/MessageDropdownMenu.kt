@@ -49,7 +49,7 @@ fun MessageDropdownMenu(
         if (nonClickable.isNotEmpty() || clickable.isNotEmpty()) {
             DropdownMenuGroup(
                 shapes = groupShapes,
-                contentPadding = PaddingValues(0.dp)
+                contentPadding = PaddingValues.Zero
             ) {
                 nonClickable.forEach { action ->
                     Row(
@@ -102,7 +102,7 @@ fun MessageDropdownMenu(
             
             DropdownMenuGroup(
                 shapes = groupShapes,
-                contentPadding = PaddingValues(0.dp)
+                contentPadding = PaddingValues.Zero
             ) {
                 notices.forEach { notice ->
                     Row(
