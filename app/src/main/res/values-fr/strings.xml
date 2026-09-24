@@ -342,6 +342,13 @@
     <string name="pin_message_failed">Impossible d\'épingler le message</string>
     <string name="unpin_message_failed">Impossible de désépingler le message</string>
     <string name="pinned_message">Message épinglé</string>
+    <string name="pinned_tab_for_everyone">Pour tous</string>
+    <string name="pinned_tab_for_me">Pour moi</string>
+    <plurals name="pinned_messages_count">
+        <item quantity="one">%1$d message épinglé</item>
+        <item quantity="other">%1$d messages épinglés</item>
+        <item quantity="many">%1$d messages épinglés</item>
+    </plurals>
     <string name="requests_to_channel_join">Les demandes pour rejoindre votre chaîne sont affichées ici.</string>
     <string name="requests_to_group_join">les demandes pour rejoindre votre groupe sont affichées ici.</string>
     <string name="edit_folder">Modifier le dossier</string>

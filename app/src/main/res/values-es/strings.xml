@@ -342,6 +342,13 @@
     <string name="pin_message_failed">No se pudo fijar el mensaje</string>
     <string name="unpin_message_failed">No se pudo desfijar el mensaje</string>
     <string name="pinned_message">Mensaje fijado</string>
+    <string name="pinned_tab_for_everyone">Para todos</string>
+    <string name="pinned_tab_for_me">Para mí</string>
+    <plurals name="pinned_messages_count">
+        <item quantity="one">%1$d mensaje fijado</item>
+        <item quantity="other">%1$d mensajes fijados</item>
+        <item quantity="many">%1$d mensajes fijados</item>
+    </plurals>
     <string name="requests_to_channel_join">Las solicitudes para unirse a su canal se muestran aquí.</string>
     <string name="requests_to_group_join">Las solicitudes para unirse a su grupo se muestran aquí.</string>
     <string name="edit_folder">Editar carpeta</string>

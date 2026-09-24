@@ -342,6 +342,13 @@
     <string name="pin_message_failed">Impossibile fissare il messaggio</string>
     <string name="unpin_message_failed">Impossibile sbloccare il messaggio</string>
     <string name="pinned_message">Messaggio fissato in alto</string>
+    <string name="pinned_tab_for_everyone">Per tutti</string>
+    <string name="pinned_tab_for_me">Per me</string>
+    <plurals name="pinned_messages_count">
+        <item quantity="one">%1$d messaggio fissato in alto</item>
+        <item quantity="other">%1$d messaggi fissati in alto</item>
+        <item quantity="many">%1$d messaggi fissati in alto</item>
+    </plurals>
     <string name="requests_to_channel_join">Le richieste di iscrizione al tuo canale vengono visualizzate qui.</string>
     <string name="requests_to_group_join">le richieste di adesione al tuo gruppo vengono visualizzate qui.</string>
     <string name="edit_folder">Modifica cartella</string>
