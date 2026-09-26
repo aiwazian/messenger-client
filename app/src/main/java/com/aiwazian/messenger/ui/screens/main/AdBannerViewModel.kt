@@ -32,7 +32,6 @@ class AdBannerViewModel @Inject constructor(
 
     private var reloadJob: Job? = null
     private var initialLoadDone = false
-    private var bannerVisible = false
     private var adTheme = AdTheme.LIGHT
 
     private val bannerEventListener = object : BannerAdEventListener {
@@ -47,7 +46,7 @@ class AdBannerViewModel @Inject constructor(
 
         override fun onImpression(data: ImpressionData?) {
             Log.d(LOG_TAG, "Impression: ${data?.rawData}")
-            if (bannerVisible) scheduleReload(IMPRESSION_RELOAD_DELAY)
+            scheduleReload(IMPRESSION_RELOAD_DELAY)
         }
     }
 
@@ -61,17 +60,6 @@ class AdBannerViewModel @Inject constructor(
         initialLoadDone = true
         adTheme = theme
         bannerView.loadAd(buildAdRequest())
-    }
-
-    fun setBannerVisible(visible: Boolean) {
-        if (bannerVisible == visible) return
-        bannerVisible = visible
-        if (visible) {
-            scheduleReload(IMPRESSION_RELOAD_DELAY)
-        } else {
-            reloadJob?.cancel()
-            reloadJob = null
-        }
     }
 
     private fun scheduleReload(reloadDelay: Duration) {

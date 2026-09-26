@@ -197,11 +197,7 @@ fun DrawerContent(
         LaunchedEffect(Unit) {
             adBannerViewModel.ensureInitialLoad(adTheme)
         }
-        
-        LaunchedEffect(drawerState.isOpen) {
-            adBannerViewModel.setBannerVisible(drawerState.isOpen)
-        }
-        
+
         AndroidView(
             factory = { adBannerViewModel.bannerView },
             modifier = Modifier

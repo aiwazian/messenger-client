@@ -405,6 +405,7 @@ fun PinnedMessagesScreen(
             attachment to ViewerMediaItem(
                 uri = uri,
                 isVideo = attachment.type == AttachmentType.VIDEO,
+                messageId = attachment.messageId,
                 originKey = chatMediaKey(attachment.messageId, uri)
             )
         }

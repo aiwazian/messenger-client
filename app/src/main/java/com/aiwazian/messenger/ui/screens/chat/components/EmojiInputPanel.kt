@@ -37,17 +37,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.AnimatedStickerImage
-import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.domain.CustomEmoji
 import com.aiwazian.messenger.domain.EmojiPack
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import kotlinx.coroutines.launch
 
 private val PANEL_EMOJI_MIN_SIZE = 40.dp
@@ -79,7 +77,6 @@ fun EmojiInputPanel(
     onSystemEmojiClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val gridState = rememberLazyGridState()
     
@@ -296,7 +293,6 @@ private fun EmojiPackTab(
     pack: EmojiPack,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(

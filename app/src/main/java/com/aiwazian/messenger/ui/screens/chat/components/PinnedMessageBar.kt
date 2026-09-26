@@ -73,7 +73,8 @@ fun PinnedMessageBar(
         IconButton(onClick = onListClick) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.List,
-                contentDescription = null
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

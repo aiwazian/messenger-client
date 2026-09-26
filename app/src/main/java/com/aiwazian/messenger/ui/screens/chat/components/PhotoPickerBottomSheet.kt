@@ -30,6 +30,9 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CleaningServices
+import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -84,6 +87,7 @@ fun PhotoPickerBottomSheet(
     clipsToMask: Boolean = false,
     viewModel: PhotoPickerViewModel = hiltViewModel()
 ) {
+    Icons.Outlined.CleaningServices
     val context = LocalContext.current
 
     val photos by viewModel.photos.collectAsState()

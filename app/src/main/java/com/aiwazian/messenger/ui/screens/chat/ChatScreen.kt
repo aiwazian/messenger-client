@@ -61,6 +61,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -123,6 +124,7 @@ import com.aiwazian.messenger.ui.screens.chat.components.UnreadSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessageOpenAction
 import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessageResult
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
+import com.aiwazian.messenger.ui.screens.chat.media.ShowInChatResult
 import com.aiwazian.messenger.utils.ActiveChatTracker
 import com.aiwazian.messenger.utils.EmojiLink
 import com.aiwazian.messenger.utils.StickerLink
@@ -181,6 +183,7 @@ fun ChatScreen(
     }
 
     val density = LocalDensity.current
+    val topBarHeightPx = remember { mutableIntStateOf(0) }
     val imeInsets = WindowInsets.ime
     
     LaunchedEffect(imeInsets, density) {
@@ -305,9 +308,18 @@ fun ChatScreen(
         if (target.animate) {
             listState.animateScrollToItem(listIndex)
         } else {
-            val offset = -(listState.layoutInfo.viewportSize.height *
-                    (1f - target.viewportFraction)).toInt()
-            listState.animateScrollToItem(listIndex, offset)
+            val viewportHeight = listState.layoutInfo.viewportSize.height
+            val desiredOffset = -(viewportHeight * (1f - target.viewportFraction)).toInt()
+            listState.animateScrollToItem(listIndex, desiredOffset)
+            val itemHeight = listState.layoutInfo.visibleItemsInfo
+                .firstOrNull { it.index == listIndex }?.size ?: 0
+            val offset = maxOf(
+                desiredOffset,
+                itemHeight - viewportHeight + topBarHeightPx.intValue
+            )
+            if (offset != desiredOffset) {
+                listState.animateScrollToItem(listIndex, offset)
+            }
         }
         chatViewModel.onScrollTargetHandled(target.requestId)
     }
@@ -499,6 +511,10 @@ fun ChatScreen(
         }
     }
 
+    ResultEffect<ShowInChatResult> { result ->
+        chatViewModel.jumpToMessage(result.messageId)
+    }
+
     Scaffold(snackbarHost = {
         if (!uiState.showFullScreenViewer) {
             AppSnackbar(snackbarHostState)
@@ -657,6 +673,11 @@ fun ChatScreen(
             }
         }
     }) { innerPadding ->
+        SideEffect {
+            topBarHeightPx.intValue =
+                with(density) { innerPadding.calculateTopPadding().roundToPx() }
+        }
+
         Box(modifier = Modifier.fillMaxSize()) {
             if (uiState.isMessageSearchActive && uiState.isMessageSearchListMode) {
                 MessageSearchResultsList(
@@ -1038,6 +1059,7 @@ fun ChatScreen(
             attachment to ViewerMediaItem(
                 uri = uri,
                 isVideo = attachment.type == AttachmentType.VIDEO,
+                messageId = attachment.messageId,
                 originKey = chatMediaKey(attachment.messageId, uri)
             )
         }
@@ -1059,6 +1081,7 @@ fun ChatScreen(
             onVideoLoopingChange = chatViewModel::setVideoLooping,
             onVideoPlaybackSpeedChange = chatViewModel::setVideoPlaybackSpeed,
             onSaveToGallery = chatViewModel::saveToGallery,
+            onShowInChat = { messageId -> chatViewModel.jumpToMessage(messageId) },
             onDismiss = chatViewModel::clearMediaUrl
         )
         Box(

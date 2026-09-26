@@ -221,6 +221,7 @@
     <string name="save_to_gallery">Save to gallery</string>
     <string name="successfully_saved_to_gallery">Successfully saved to gallery</string>
     <string name="failed_to_save_to_gallery">Failed to save to gallery</string>
+    <string name="show_in_chat">Show in chat</string>
     <string name="saved_to_downloads">Saved to downloads</string>
     <string name="failed_to_save_to_downloads">Failed to save to downloads</string>
     <string name="speed">Speed</string>

@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.result.LocalResultEventBus
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.AudioTrackMetadata
 import com.aiwazian.messenger.domain.ChatMediaCounts
@@ -59,6 +60,7 @@ import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
 import com.aiwazian.messenger.ui.screens.chat.media.components.ChatFileCard
@@ -87,6 +89,8 @@ fun ChatMediaScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    val navBackStack = LocalNavBackStack.current
+    val resultBus = LocalResultEventBus.current
     
     val tabs = remember(
         uiState.media.isEmpty(),
@@ -261,6 +265,7 @@ fun ChatMediaScreen(
                     ViewerMediaItem(
                         uri = uri,
                         isVideo = item.type == AttachmentType.VIDEO,
+                        messageId = item.messageId,
                         originKey = chatMediaKey(item.messageId, uri)
                     )
                 }
@@ -276,6 +281,10 @@ fun ChatMediaScreen(
             onVideoLoopingChange = viewModel::onVideoLoopingChange,
             onVideoPlaybackSpeedChange = viewModel::onVideoPlaybackSpeedChange,
             onSaveToGallery = viewModel::onSaveToGallery,
+            onShowInChat = { messageId ->
+                resultBus.sendResult<ShowInChatResult>(ShowInChatResult(messageId))
+                navBackStack.removeLastOrNull()
+            },
             onDismiss = viewModel::onViewerDismiss
         )
     }

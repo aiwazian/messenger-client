@@ -221,6 +221,7 @@
     <string name="save_to_gallery">Сохранить в галерею</string>
     <string name="successfully_saved_to_gallery">Успешно сохранено в галерею</string>
     <string name="failed_to_save_to_gallery">Не удалось сохранить в галерею</string>
+    <string name="show_in_chat">Показать в чате</string>
     <string name="saved_to_downloads">Сохранено в загрузки</string>
     <string name="failed_to_save_to_downloads">Не удалось сохранить в загрузки</string>
     <string name="speed">Скорость</string>

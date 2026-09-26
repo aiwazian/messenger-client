@@ -215,6 +215,7 @@
     <string name="save_to_gallery">Guardar en la galería</string>
     <string name="successfully_saved_to_gallery">Guardado exitosamente en la galería.</string>
     <string name="failed_to_save_to_gallery">No se pudo guardar en la galería</string>
+    <string name="show_in_chat">Mostrar en el chat</string>
     <string name="saved_to_downloads">Guardado en descargas</string>
     <string name="failed_to_save_to_downloads">No se pudo guardar en descargas</string>
     <string name="speed">Velocidad</string>

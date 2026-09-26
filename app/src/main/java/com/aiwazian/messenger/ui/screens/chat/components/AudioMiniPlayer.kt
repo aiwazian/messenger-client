@@ -88,7 +88,8 @@ fun AudioMiniPlayer(
         IconButton(onClick = onClose) {
             Icon(
                 imageVector = Icons.Rounded.Close,
-                contentDescription = null
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

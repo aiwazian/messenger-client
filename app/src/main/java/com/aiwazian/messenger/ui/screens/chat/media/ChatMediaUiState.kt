@@ -32,3 +32,7 @@ data class ChatMediaUiState(
     val isVideoLooping: Boolean = false,
     val videoPlaybackSpeed: Float = 1.0f
 )
+
+data class ShowInChatResult(
+    val messageId: Long
+)

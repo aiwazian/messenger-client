@@ -27,6 +27,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.RemoveRedEye
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Remove
@@ -91,6 +92,7 @@ import kotlin.time.Duration.Companion.milliseconds
 data class ViewerMediaItem(
     val uri: Uri,
     val isVideo: Boolean,
+    val messageId: Long,
     /** Ключ миниатюры-источника для обратной анимации. */
     val originKey: String
 )
@@ -106,6 +108,7 @@ fun FullScreenViewer(
     onVideoLoopingChange: (Boolean) -> Unit,
     onVideoPlaybackSpeedChange: (Float) -> Unit = {},
     onSaveToGallery: (Uri) -> Unit,
+    onShowInChat: ((Long) -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
     var isUiVisible by remember { mutableStateOf(true) }
@@ -195,7 +198,8 @@ fun FullScreenViewer(
                 ) {
                     val currentItem = media.getOrNull(pagerState.currentPage)
                     val isCurrentVideo = currentItem?.isVideo == true
-                    val showMoreActionsButton = canDownloadMedia && currentItem != null
+                    val showMoreActionsButton =
+                        currentItem != null && (canDownloadMedia || onShowInChat != null)
                     
                     LaunchedEffect(isCurrentVideo) {
                         if (!isCurrentVideo) {
@@ -312,6 +316,21 @@ fun FullScreenViewer(
                                                 leadingIcon = {
                                                     Icon(
                                                         imageVector = Icons.Rounded.SaveAlt,
+                                                        contentDescription = null
+                                                    )
+                                                })
+                                        }
+                                        if (onShowInChat != null && currentItem != null) {
+                                            AppDropdownMenuItem(
+                                                text = stringResource(R.string.show_in_chat),
+                                                onClick = {
+                                                    showMoreActions = false
+                                                    hero.dismiss()
+                                                    onShowInChat.invoke(currentItem.messageId)
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        imageVector = Icons.Outlined.RemoveRedEye,
                                                         contentDescription = null
                                                     )
                                                 })
