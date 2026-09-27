@@ -3,6 +3,8 @@ package com.aiwazian.messenger.ui.components
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas as AndroidCanvas
+import android.graphics.RectF
 import android.net.Uri
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -208,6 +210,19 @@ class MediaCropState internal constructor() {
             launch { offsetX.animateTo(0f, SNAP_SPEC) }
             launch { offsetY.animateTo(0f, SNAP_SPEC) }
         }
+    }
+    
+    fun bakeOverlay(overlay: Bitmap) {
+        val current = bitmap ?: return
+
+        val baked = current.copy(Bitmap.Config.ARGB_8888, true) ?: return
+
+        AndroidCanvas(baked).drawBitmap(
+            overlay, null, RectF(0f, 0f, current.width.toFloat(), current.height.toFloat()), null
+        )
+
+        bitmap = baked
+        original = baked
     }
     
     fun crop(): Bitmap? {

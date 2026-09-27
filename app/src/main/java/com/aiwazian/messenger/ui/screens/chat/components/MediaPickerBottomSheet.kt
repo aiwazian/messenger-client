@@ -4,13 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
-import android.Manifest
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
 import android.widget.EditText
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -85,46 +78,42 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
-import coil3.decode.BitmapFactoryDecoder
-import coil3.request.ImageRequest
-import coil3.request.crossfade
-import coil3.video.VideoFrameDecoder
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.CustomEmoji
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.domain.EmojiPack
 import com.aiwazian.messenger.domain.MessageReplyPreview
-import com.aiwazian.messenger.extensions.findActivity
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.CustomEmojiViewModel
+import com.aiwazian.messenger.ui.components.MediaPickerNotice
+import com.aiwazian.messenger.ui.components.PICKER_GRID_COLUMNS
+import com.aiwazian.messenger.ui.components.PickerMediaCellContent
+import com.aiwazian.messenger.ui.components.canRequestMediaPermission
+import com.aiwazian.messenger.ui.components.formatDuration
+import com.aiwazian.messenger.ui.components.hasMediaPermission
+import com.aiwazian.messenger.ui.components.mediaPermissions
 import com.aiwazian.messenger.ui.components.mediaTransitionBounds
 import com.aiwazian.messenger.ui.components.mediaTransitionVisibility
+import com.aiwazian.messenger.ui.components.openAppSettings
 import com.aiwazian.messenger.ui.components.pickerMediaKey
 import com.aiwazian.messenger.ui.screens.chat.ChatEmojiViewModel
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -280,7 +269,7 @@ fun MediaPickerBottomSheet(
                 
                 else -> {
                     LazyVerticalGrid(
-                        columns = GridCells.Fixed(GRID_COLUMNS),
+                        columns = GridCells.Fixed(PICKER_GRID_COLUMNS),
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
                             start = 2.dp, top = 2.dp, end = 2.dp, bottom = 70.dp
@@ -396,8 +385,10 @@ fun MediaPickerBottomSheet(
     }
     
     val index = previewIndex
-    
+
     if (index != null) {
+        val drawColor by viewModel.drawColor.collectAsStateWithLifecycle()
+
         MediaPickerPreview(
             media = uiState.media,
             initialIndex = index,
@@ -413,6 +404,12 @@ fun MediaPickerBottomSheet(
             onMediaTransformChange = { item, transform ->
                 viewModel.setMediaTransform(item.uri, transform)
             },
+            mediaDrawings = { item -> uiState.mediaDrawings[item.uri] },
+            onMediaDrawingsChange = { item, raster ->
+                viewModel.setMediaDrawings(item.uri, raster)
+            },
+            drawColor = drawColor,
+            onDrawColorChange = viewModel::setDrawColor,
             onCurrentItemChange = viewModel::openMedia
         )
     }
@@ -521,20 +518,19 @@ internal fun MediaSelectionBadge(
 private fun MediaGridItem(
     item: DeviceMediaItem, number: Int, onClick: () -> Unit, onToggleSelection: () -> Unit
 ) {
-    val context = LocalContext.current
     val key = pickerMediaKey(item.uri)
     val isSelected = number > 0
-    
+
     val fastSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
     val settleSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
-    
+
     val scale = remember { Animatable(if (isSelected) SELECTED_SCALE else 1f) }
-    
+
     LaunchedEffect(isSelected) {
         val target = if (isSelected) SELECTED_SCALE else 1f
-        
+
         if (scale.value == target) return@LaunchedEffect
-        
+
         if (isSelected) {
             scale.animateTo(SELECTED_OVERSHOOT_SCALE, fastSpec)
             scale.animateTo(target, settleSpec)
@@ -542,7 +538,7 @@ private fun MediaGridItem(
             scale.animateTo(target, fastSpec)
         }
     }
-    
+
     Box(
         modifier = Modifier
             .aspectRatio(1f)
@@ -555,61 +551,24 @@ private fun MediaGridItem(
                 .graphicsLayer {
                     scaleX = scale.value
                     scaleY = scale.value
-                    
+
                     val rounding = ((1f - scale.value) / (1f - SELECTED_SCALE)).coerceIn(0f, 1f)
-                    
+
                     shape = RoundedCornerShape(SELECTED_CORNER_RADIUS * rounding)
                     clip = true
                 }
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .mediaTransitionBounds(key)
         ) {
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(item.uri)
-                    .decoderFactory(
-                        if (item.isVideo) {
-                            VideoFrameDecoder.Factory()
-                        } else {
-                            BitmapFactoryDecoder.Factory()
-                        }
-                    )
-                    .crossfade(true)
-                    .build(),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-            
-            if (item.isVideo || item.isGif) {
-                MediaGridLabel(
-                    text = if (item.isGif) GIF_LABEL else formatDuration(item.durationMs),
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(4.dp)
-                )
-            }
+            PickerMediaCellContent(item = item, modifier = Modifier.fillMaxSize())
         }
-        
+
         MediaSelectionBadge(
             number = number, modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(4.dp), onClick = onToggleSelection
         )
     }
-}
-
-@Composable
-private fun MediaGridLabel(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text = text,
-        modifier = modifier
-            .clip(LABEL_SHAPE)
-            .background(Color.Black.copy(alpha = LABEL_SCRIM_ALPHA))
-            .padding(horizontal = 4.dp, vertical = 1.dp),
-        color = Color.White,
-        style = MaterialTheme.typography.labelSmall
-    )
 }
 
 @Composable
@@ -705,33 +664,6 @@ private fun CaptionRow(
 }
 
 @Composable
-private fun MediaPickerNotice(
-    text: String, actionText: String? = null, onActionClick: (() -> Unit)? = null
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
-    ) {
-        Text(
-            text = text,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-        
-        if (actionText != null && onActionClick != null) {
-            TextButton(onClick = onActionClick, shape = CircleShape) {
-                Text(text = actionText)
-            }
-        }
-    }
-}
-
-@Composable
 private fun MediaPickerResetDialog(onCancel: () -> Unit, onReset: () -> Unit) {
     AppDialog(
         title = stringResource(R.string.media_picker_reset_title),
@@ -756,78 +688,12 @@ private fun MediaPickerResetDialog(onCancel: () -> Unit, onReset: () -> Unit) {
         })
 }
 
-private fun formatDuration(durationMs: Long): String {
-    val totalSeconds = durationMs / 1000
-    val hours = totalSeconds / 3600
-    val minutes = totalSeconds % 3600 / 60
-    val seconds = totalSeconds % 60
-    
-    return if (hours > 0) {
-        String.format(Locale.ROOT, "%d:%02d:%02d", hours, minutes, seconds)
-    } else {
-        String.format(Locale.ROOT, "%d:%02d", minutes, seconds)
-    }
-}
-
-private fun mediaPermissions(): Array<String> = when {
-    Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> arrayOf(
-        Manifest.permission.READ_MEDIA_IMAGES,
-        Manifest.permission.READ_MEDIA_VIDEO,
-        Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
-    )
-    
-    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> arrayOf(
-        Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO
-    )
-    
-    else -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-}
-
-private fun Context.hasMediaPermission(): Boolean = when {
-    Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
-        isGranted(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) || (isGranted(
-            Manifest.permission.READ_MEDIA_IMAGES
-        ) && isGranted(Manifest.permission.READ_MEDIA_VIDEO))
-    }
-    
-    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
-        isGranted(Manifest.permission.READ_MEDIA_IMAGES) && isGranted(Manifest.permission.READ_MEDIA_VIDEO)
-    }
-    
-    else -> isGranted(Manifest.permission.READ_EXTERNAL_STORAGE)
-}
-
-private fun Context.isGranted(permission: String): Boolean =
-    ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
-
-private fun Context.canRequestMediaPermission(wasAsked: Boolean): Boolean {
-    if (!wasAsked) return true
-    
-    val activity = findActivity() ?: return false
-    
-    return mediaPermissions().any {
-        ActivityCompat.shouldShowRequestPermissionRationale(activity, it)
-    }
-}
-
-private fun Context.openAppSettings() {
-    val intent = Intent(
-        Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)
-    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    
-    startActivity(intent)
-}
-
 private val TOOLBAR_SHAPE = RoundedCornerShape(24.dp)
 private val TOOLBAR_ELEVATION = 3.dp
-private val LABEL_SHAPE = RoundedCornerShape(6.dp)
 private val SELECTED_CORNER_RADIUS = 12.dp
 private val EMOJI_PANEL_SHAPE = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
 private val EMOJI_PANEL_MIN_HEIGHT = 280.dp
 private val KEYBOARD_VISIBILITY_THRESHOLD = 100.dp
 private const val EMOJI_PANEL_ANIMATION_DURATION_MS = 250
-private const val LABEL_SCRIM_ALPHA = 0.45f
-private const val GIF_LABEL = "GIF"
-private const val GRID_COLUMNS = 3
 private const val SELECTED_SCALE = 0.9f
 private const val SELECTED_OVERSHOOT_SCALE = 0.85f

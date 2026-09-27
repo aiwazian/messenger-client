@@ -443,6 +443,7 @@
     <string name="media_picker_reset_title">Réinitialiser la sélection</string>
     <string name="media_picker_reset_message">Fermer le menu des pièces jointes ?</string>
     <string name="media_picker_reset_action">Réinitialiser</string>
+    <string name="draw_clear_all">Tout effacer</string>
     <string name="chat_search_show_as_list">En liste</string>
     <string name="chat_search_show_in_chat">Dans le chat</string>
     <string name="chat_search_hint">Saisissez une requête</string>

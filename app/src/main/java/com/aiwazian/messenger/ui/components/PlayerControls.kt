@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.outlined.Hd
 import androidx.compose.material.icons.rounded.CropRotate
 import androidx.compose.material.icons.rounded.FastForward
@@ -97,8 +98,10 @@ fun PlayerBottomControls(
     isSeekBarVisible: Boolean = true,
     qualityIcon: ImageVector = Icons.Outlined.Hd,
     isTransformed: Boolean = false,
+    isDrawn: Boolean = false,
     onQualityClick: (() -> Unit)? = null,
-    onTransformClick: (() -> Unit)? = null
+    onTransformClick: (() -> Unit)? = null,
+    onDrawClick: (() -> Unit)? = null
 ) {
     val progressState = rememberProgressStateWithTickInterval(
         player = player, tickIntervalMs = PROGRESS_TICK_INTERVAL_MS
@@ -147,8 +150,16 @@ fun PlayerBottomControls(
                 }
             }
             
-            if (onTransformClick != null || onQualityClick != null) {
+            if (onDrawClick != null || onTransformClick != null || onQualityClick != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (onDrawClick != null) {
+                        MediaOverlayIconButton(
+                            icon = Icons.Outlined.Brush,
+                            onClick = onDrawClick,
+                            isActive = isDrawn
+                        )
+                    }
+
                     if (onTransformClick != null) {
                         MediaOverlayIconButton(
                             icon = Icons.Rounded.CropRotate,
@@ -156,7 +167,7 @@ fun PlayerBottomControls(
                             isActive = isTransformed
                         )
                     }
-                    
+
                     if (onQualityClick != null) {
                         MediaOverlayIconButton(icon = qualityIcon, onClick = onQualityClick)
                     }

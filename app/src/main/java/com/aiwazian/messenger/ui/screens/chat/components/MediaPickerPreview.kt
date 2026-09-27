@@ -12,22 +12,33 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Undo
+import androidx.compose.material.icons.outlined.Brush
+import androidx.compose.material.icons.outlined.CleaningServices
+import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material.icons.rounded.CropRotate
 import androidx.compose.material.icons.rounded.Hd
 import androidx.compose.material.icons.rounded.Sd
@@ -52,6 +63,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalView
@@ -69,6 +82,11 @@ import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.components.BottomBarScrim
+import com.aiwazian.messenger.ui.components.ColorPickerDialog
+import com.aiwazian.messenger.ui.components.MediaDrawLayer
+import com.aiwazian.messenger.ui.components.MediaDrawRaster
+import com.aiwazian.messenger.ui.components.MediaDrawRasterView
+import com.aiwazian.messenger.ui.components.MediaDrawToolsRow
 import com.aiwazian.messenger.ui.components.MediaFlipButton
 import com.aiwazian.messenger.ui.components.MediaOverlayIconButton
 import com.aiwazian.messenger.ui.components.MediaRotateButton
@@ -84,6 +102,7 @@ import com.aiwazian.messenger.ui.components.pickerMediaKey
 import com.aiwazian.messenger.ui.components.rememberDismissDragState
 import com.aiwazian.messenger.ui.components.rememberMediaHeroState
 import com.aiwazian.messenger.ui.components.rememberMediaTransformState
+import com.aiwazian.messenger.ui.components.rememberZoomableState
 import com.aiwazian.messenger.utils.media.MediaCompressionConfig
 import com.aiwazian.messenger.utils.media.MediaTransform
 import com.aiwazian.messenger.utils.media.VideoMetadata
@@ -95,7 +114,8 @@ import kotlinx.coroutines.launch
 private enum class PreviewMode {
     Content,
     Quality,
-    Transform
+    Transform,
+    Draw
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -111,6 +131,10 @@ fun MediaPickerPreview(
     onVideoQualityChange: (DeviceMediaItem, VideoQuality) -> Unit = { _, _ -> },
     mediaTransform: (DeviceMediaItem) -> MediaTransform? = { null },
     onMediaTransformChange: (DeviceMediaItem, MediaTransform) -> Unit = { _, _ -> },
+    mediaDrawings: (DeviceMediaItem) -> MediaDrawRaster? = { null },
+    onMediaDrawingsChange: (DeviceMediaItem, MediaDrawRaster) -> Unit = { _, _ -> },
+    drawColor: Color = Color.Red,
+    onDrawColorChange: (Color) -> Unit = {},
     onCurrentItemChange: (DeviceMediaItem?) -> Unit = {}
 ) {
     val pagerState = rememberPagerState(
@@ -128,13 +152,32 @@ fun MediaPickerPreview(
     var isVideoFastForwarding by remember { mutableStateOf(false) }
     
     var transformAttempt by remember { mutableIntStateOf(0) }
-    
+    var drawAttempt by remember { mutableIntStateOf(0) }
+    var isEraser by remember { mutableStateOf(false) }
+    var showColorPicker by remember { mutableStateOf(false) }
+    var drawSession by remember { mutableStateOf<MediaDrawRaster?>(null) }
+    var mediaContentSize by remember { mutableStateOf(Size.Zero) }
+
+    val drawZoomableState = rememberZoomableState()
+
+    LaunchedEffect(mode, currentItem?.uri, drawAttempt) {
+        if (mode == PreviewMode.Draw) {
+            val committed = currentItem?.let(mediaDrawings)
+
+            drawSession = committed?.copy()
+                ?: mediaContentSize.takeIf { it != Size.Zero }?.let { MediaDrawRaster.fromContentSize(it) }
+        } else {
+            drawSession = null
+        }
+    }
+
     LaunchedEffect(currentItem?.uri) {
         mode = PreviewMode.Content
         draftQuality = null
+        drawZoomableState.reset()
         onCurrentItemChange(currentItem)
     }
-    
+
     val stops = openedVideo?.let { VideoQuality.availableFor(it.shortSide) }.orEmpty()
     
     val defaultQuality = stops.lastOrNull {
@@ -159,23 +202,29 @@ fun MediaPickerPreview(
         initial = currentItem?.let(mediaTransform) ?: MediaTransform.None,
         key = currentItem?.uri to transformAttempt
     )
-    
+
     val isTransformed = currentItem?.let(mediaTransform)?.isIdentity == false
-    
+
     val canTransform = currentItem != null && !currentItem.isGif
-    
+
     val openQuality: (() -> Unit)? = if (stops.size > 1 && mode == PreviewMode.Content) {
         { mode = PreviewMode.Quality }
     } else {
         null
     }
-    
+
     val openTransform: (() -> Unit)? = if (canTransform && mode == PreviewMode.Content) {
         { mode = PreviewMode.Transform }
     } else {
         null
     }
-    
+
+    val openDraw: (() -> Unit)? = if (mode == PreviewMode.Content && currentItem != null) {
+        { mode = PreviewMode.Draw }
+    } else {
+        null
+    }
+
     val isEditing = mode != PreviewMode.Content
     
     val hero = rememberMediaHeroState(
@@ -190,12 +239,17 @@ fun MediaPickerPreview(
                 draftQuality = null
                 mode = PreviewMode.Content
             }
-            
+
             PreviewMode.Transform -> {
                 transformAttempt++
                 mode = PreviewMode.Content
             }
-            
+
+            PreviewMode.Draw -> {
+                drawAttempt++
+                mode = PreviewMode.Content
+            }
+
             PreviewMode.Content -> hero.dismiss()
         }
     }
@@ -259,7 +313,7 @@ fun MediaPickerPreview(
                     ) {
                         TopAppBar(
                             title = {
-                                if (frame != null && estimate != null) {
+                                if (mode != PreviewMode.Draw && frame != null && estimate != null) {
                                     AnimatedContent(
                                         targetState = frame,
                                         transitionSpec = {
@@ -273,17 +327,39 @@ fun MediaPickerPreview(
                                     }
                                 }
                             }, navigationIcon = {
-                                IconButton(
-                                    onClick = goBack, colors = IconButtonDefaults.iconButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                    )
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack, null
-                                    )
+                                if (mode == PreviewMode.Draw) {
+                                    IconButton(
+                                        onClick = { drawSession?.undo() },
+                                        enabled = (drawSession?.undoCount ?: 0) > 0,
+                                        colors = IconButtonDefaults.iconButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                        )
+                                    ) {
+                                        Icon(imageVector = Icons.AutoMirrored.Rounded.Undo, null)
+                                    }
+                                } else {
+                                    IconButton(
+                                        onClick = goBack, colors = IconButtonDefaults.iconButtonColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                        )
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack, null
+                                        )
+                                    }
                                 }
                             }, actions = {
-                                if (currentItem != null) {
+                                if (mode == PreviewMode.Draw) {
+                                    TextButton(
+                                        onClick = { drawSession?.clearAll() },
+                                        enabled = drawSession?.hasInk == true,
+                                        colors = ButtonDefaults.textButtonColors(
+                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    ) {
+                                        Text(text = stringResource(R.string.draw_clear_all))
+                                    }
+                                } else if (currentItem != null) {
                                     IconButton(onClick = { onToggleSelection(currentItem) }) {
                                         MediaSelectionBadge(number = selectionNumber(currentItem))
                                     }
@@ -310,16 +386,23 @@ fun MediaPickerPreview(
                                 PreviewMode.Quality -> VideoQualitySlider(
                                     stops = stops, selected = selectedQuality,
                                     onSelect = { draftQuality = it })
-                                
+
                                 PreviewMode.Transform -> Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     MediaFlipButton(state = transformState)
-                                    
+
                                     MediaRotateButton(state = transformState)
                                 }
-                                
+
+                                PreviewMode.Draw -> MediaDrawToolsRow(
+                                    color = drawColor,
+                                    isEraser = isEraser,
+                                    onColorClick = { showColorPicker = true },
+                                    onEraserSelected = { isEraser = it }
+                                )
+
                                 PreviewMode.Content -> Unit
                             }
                             
@@ -354,15 +437,27 @@ fun MediaPickerPreview(
                                 TextButton(
                                     onClick = {
                                         if (currentItem != null) {
-                                            if (mode == PreviewMode.Transform) {
-                                                onMediaTransformChange(
+                                            when (mode) {
+                                                PreviewMode.Transform -> onMediaTransformChange(
                                                     currentItem, transformState.transform
                                                 )
-                                            } else {
-                                                onVideoQualityChange(currentItem, selectedQuality)
+
+                                                PreviewMode.Draw -> {
+                                                    val session = drawSession
+
+                                                    if (session != null) {
+                                                        onMediaDrawingsChange(currentItem, session)
+                                                    }
+                                                }
+
+                                                PreviewMode.Quality -> onVideoQualityChange(
+                                                    currentItem, selectedQuality
+                                                )
+
+                                                PreviewMode.Content -> Unit
                                             }
                                         }
-                                        
+
                                         draftQuality = null
                                         mode = PreviewMode.Content
                                     }, modifier = Modifier.align(Alignment.CenterEnd)
@@ -393,7 +488,8 @@ fun MediaPickerPreview(
                     ) { page ->
                         val item = media[page]
                         val isCurrentPage = pagerState.currentPage == page
-                        
+                        val committedRaster = mediaDrawings(item)
+
                         Box {
                             ZoomableMediaPage(
                                 uri = item.uri,
@@ -402,20 +498,62 @@ fun MediaPickerPreview(
                                 pagerState = pagerState,
                                 onTap = {},
                                 isPageChangeEnabled = !isEditing,
-                                isVideoUiVisible = isChromeVisible,
+                                isGesturesEnabled = mode != PreviewMode.Draw,
+                                isVideoUiVisible = isChromeVisible && mode != PreviewMode.Draw,
                                 isVideoSeekBarVisible = !isEditing,
                                 isTransformable = !item.isGif,
                                 isTransformed = mediaTransform(item)?.isIdentity == false,
                                 videoQualityIcon = qualityIcon,
                                 onVideoQualityClick = if (isCurrentPage) openQuality else null,
                                 onVideoTransformClick = if (isCurrentPage) openTransform else null,
+                                onVideoDrawClick = if (isCurrentPage) openDraw else null,
+                                isDrawn = committedRaster?.hasInk == true,
                                 transformState = if (isCurrentPage) transformState else null,
+                                zoomableStateOverride =
+                                    if (isCurrentPage && mode == PreviewMode.Draw) {
+                                        drawZoomableState
+                                    } else {
+                                        null
+                                    },
+                                drawSurface = when {
+                                    isCurrentPage && mode == PreviewMode.Draw -> {
+                                        { surfaceOffset ->
+                                            drawSession?.let { session ->
+                                                MediaDrawLayer(
+                                                    raster = session,
+                                                    color = drawColor,
+                                                    isEraser = isEraser,
+                                                    zoomableState = drawZoomableState,
+                                                    zoomCoordinateOffset = surfaceOffset,
+                                                    modifier = Modifier.fillMaxSize()
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    committedRaster != null -> {
+                                        { _ ->
+                                            MediaDrawRasterView(
+                                                raster = committedRaster,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        }
+                                    }
+
+                                    else -> null
+                                },
                                 onVideoFastForwardChanged = { fastForwarding ->
                                     if (isCurrentPage) {
                                         isVideoFastForwarding = fastForwarding
                                     }
                                 },
-                                onHeroContentSizeChanged = hero::updateContentSize
+                                onHeroContentSizeChanged = { size ->
+                                    hero.updateContentSize(size)
+
+                                    if (isCurrentPage) {
+                                        mediaContentSize = size
+                                    }
+                                }
                             )
                             
                             TopBarScrim(height = innerPadding.calculateTopPadding())
@@ -425,17 +563,31 @@ fun MediaPickerPreview(
                     }
                     
                     AnimatedVisibility(
-                        visible = isChromeVisible && openTransform != null && currentItem?.isVideo == false,
+                        visible = isChromeVisible && mode == PreviewMode.Content &&
+                                currentItem != null && currentItem.isVideo == false,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(16.dp),
                         enter = fadeIn(),
                         exit = fadeOut()
                     ) {
-                        MediaOverlayIconButton(
-                            icon = Icons.Rounded.CropRotate,
-                            onClick = { mode = PreviewMode.Transform },
-                            isActive = isTransformed)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            MediaOverlayIconButton(
+                                icon = Icons.Outlined.Brush,
+                                onClick = { mode = PreviewMode.Draw },
+                                isActive = currentItem?.let { mediaDrawings(it)?.hasInk } == true
+                            )
+
+                            if (openTransform != null) {
+                                MediaOverlayIconButton(
+                                    icon = Icons.Rounded.CropRotate,
+                                    onClick = { mode = PreviewMode.Transform },
+                                    isActive = isTransformed)
+                            }
+                        }
                     }
                 }
             }
@@ -449,5 +601,16 @@ fun MediaPickerPreview(
                     .padding(top = 12.dp)
             )
         }
+    }
+
+    if (showColorPicker) {
+        ColorPickerDialog(
+            currentColor = drawColor,
+            onColorSelected = { color ->
+                onDrawColorChange(color)
+                showColorPicker = false
+            },
+            onDismiss = { showColorPicker = false }
+        )
     }
 }

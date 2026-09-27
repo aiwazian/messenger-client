@@ -444,6 +444,7 @@
     <string name="media_picker_reset_title">Restablecer selección</string>
     <string name="media_picker_reset_message">¿Cerrar el menú de adjuntos?</string>
     <string name="media_picker_reset_action">Restablecer</string>
+    <string name="draw_clear_all">Borrar todo</string>
     <string name="chat_search_show_as_list">En lista</string>
     <string name="chat_search_show_in_chat">En el chat</string>
     <string name="chat_search_hint">Introduce una consulta</string>

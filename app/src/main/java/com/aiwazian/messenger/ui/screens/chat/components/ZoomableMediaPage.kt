@@ -8,6 +8,7 @@ import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Hd
@@ -29,6 +30,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
@@ -40,6 +43,7 @@ import coil3.gif.AnimatedImageDecoder
 import coil3.request.ImageRequest
 import com.aiwazian.messenger.ui.components.MediaTransformState
 import com.aiwazian.messenger.ui.components.PlayerSeekIndicator
+import com.aiwazian.messenger.ui.components.ZoomableState
 import com.aiwazian.messenger.ui.components.mediaTransform
 import com.aiwazian.messenger.ui.components.rememberZoomableState
 import com.aiwazian.messenger.ui.components.zoomableContent
@@ -64,6 +68,7 @@ internal fun ZoomableMediaPage(
     onTap: () -> Unit,
     modifier: Modifier = Modifier,
     isPageChangeEnabled: Boolean = true,
+    isGesturesEnabled: Boolean = true,
     isVideoUiVisible: Boolean = false,
     isVideoLooping: Boolean = false,
     videoPlaybackSpeed: Float = 1f,
@@ -73,7 +78,11 @@ internal fun ZoomableMediaPage(
     videoQualityIcon: ImageVector = Icons.Outlined.Hd,
     onVideoQualityClick: (() -> Unit)? = null,
     onVideoTransformClick: (() -> Unit)? = null,
+    onVideoDrawClick: (() -> Unit)? = null,
+    isDrawn: Boolean = false,
     transformState: MediaTransformState? = null,
+    zoomableStateOverride: ZoomableState? = null,
+    drawSurface: (@Composable (Offset) -> Unit)? = null,
     onVideoPlayingChanged: (Boolean) -> Unit = {},
     onShowVideoUiRequest: () -> Unit = {},
     onVideoFastForwardChanged: (Boolean) -> Unit = {},
@@ -81,7 +90,7 @@ internal fun ZoomableMediaPage(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val zoomableState = rememberZoomableState()
+    val zoomableState = zoomableStateOverride ?: rememberZoomableState()
     var contentSize by remember { mutableStateOf(Size.Zero) }
     var pageSize by remember { mutableStateOf(IntSize.Zero) }
     var player by remember { mutableStateOf<Player?>(null) }
@@ -142,6 +151,26 @@ internal fun ZoomableMediaPage(
     } else {
         Modifier
     }
+
+    val drawFitSize = with(LocalDensity.current) {
+        val fitScale = fitScaleFor(pageSize, contentSize)
+        DpSize(
+            (fitScale * contentSize.width).toDp(),
+            (fitScale * contentSize.height).toDp()
+        )
+    }
+    val isDrawFitUsable = contentSize.width > 0f && contentSize.height > 0f &&
+            pageSize.width > 0 && pageSize.height > 0
+
+    LaunchedEffect(zoomableState, pageSize) {
+        if (pageSize != IntSize.Zero) {
+            zoomableState.updateContainerSize(pageSize)
+        }
+    }
+
+    LaunchedEffect(zoomableState, contentSize) {
+        zoomableState.updateContentSize(contentSize)
+    }
     
     val onDoubleTap: ((Offset) -> Boolean)? = if (isVideo) {
         { position ->
@@ -201,27 +230,33 @@ internal fun ZoomableMediaPage(
     } else {
         null
     }
+
+    val gesturesModifier = if (isGesturesEnabled) {
+        Modifier.zoomableGestures(
+            state = zoomableState,
+            onTap = onTap,
+            onDoubleTap = onDoubleTap,
+            onLongPress = onLongPress,
+            onLongPressFinished = onLongPressFinished,
+            onPanBeyondEdge = { pan ->
+                if (isPageChangeEnabled) {
+                    pagerState.dispatchRawDelta(-pan)
+                }
+            },
+            onPanBeyondEdgeFinished = {
+                if (isPageChangeEnabled) {
+                    coroutineScope.launch { pagerState.settleAfterEdgePan() }
+                }
+            })
+    } else {
+        Modifier
+    }
     
     Box(
         modifier = modifier
             .fillMaxSize()
             .onSizeChanged { size -> pageSize = size }
-            .zoomableGestures(
-                state = zoomableState,
-                onTap = onTap,
-                onDoubleTap = onDoubleTap,
-                onLongPress = onLongPress,
-                onLongPressFinished = onLongPressFinished,
-                onPanBeyondEdge = { pan ->
-                    if (isPageChangeEnabled) {
-                        pagerState.dispatchRawDelta(-pan)
-                    }
-                },
-                onPanBeyondEdgeFinished = {
-                    if (isPageChangeEnabled) {
-                        coroutineScope.launch { pagerState.settleAfterEdgePan() }
-                    }
-                }), contentAlignment = Alignment.Center
+            .then(gesturesModifier), contentAlignment = Alignment.Center
     ) {
         if (isVideo) {
             VideoPlayerItem(
@@ -239,6 +274,8 @@ internal fun ZoomableMediaPage(
                 qualityIcon = videoQualityIcon,
                 onQualityClick = onVideoQualityClick,
                 onTransformClick = onVideoTransformClick,
+                onDrawClick = onVideoDrawClick,
+                isDrawn = isDrawn,
                 onPlayingChanged = onVideoPlayingChanged,
                 onShowUiRequest = onShowVideoUiRequest,
                 onPlayerReady = { readyPlayer -> player = readyPlayer },
@@ -246,7 +283,7 @@ internal fun ZoomableMediaPage(
                     contentSize = size
                     zoomableState.updateContentSize(size)
                 })
-            
+
             PlayerSeekIndicator(
                 seekAmountMs = seekAmountMs,
                 visible = isSeekIndicatorVisible,
@@ -272,5 +309,43 @@ internal fun ZoomableMediaPage(
                     .then(transformModifier)
             )
         }
+
+        if (drawSurface != null && isDrawFitUsable) {
+            val fitScale = fitScaleFor(pageSize, contentSize)
+            val drawSurfaceOffset = Offset(
+                (pageSize.width - fitScale * contentSize.width) / 2f,
+                (pageSize.height - fitScale * contentSize.height) / 2f
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zoomableContent(zoomableState)
+                    .then(transformModifier)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(drawFitSize)
+                ) {
+                    drawSurface(drawSurfaceOffset)
+                }
+            }
+        }
     }
+}
+
+private fun fitScaleFor(pageSize: IntSize, contentSize: Size): Float {
+    if (pageSize.width <= 0 || pageSize.height <= 0) {
+        return 0f
+    }
+
+    if (contentSize.width <= 0f || contentSize.height <= 0f) {
+        return 0f
+    }
+
+    return minOf(
+        pageSize.width / contentSize.width,
+        pageSize.height / contentSize.height
+    )
 }

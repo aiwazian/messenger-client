@@ -457,6 +457,7 @@
     <string name="media_picker_reset_title">Сбросить выбор</string>
     <string name="media_picker_reset_message">Закрыть меню вложений?</string>
     <string name="media_picker_reset_action">Сбросить</string>
+    <string name="draw_clear_all">Очистить всё</string>
     <string name="chat_search_show_as_list">Списком</string>
     <string name="chat_search_show_in_chat">В чате</string>
     <string name="chat_search_hint">Введите запрос</string>

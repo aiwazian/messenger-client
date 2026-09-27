@@ -5,11 +5,15 @@
 package com.aiwazian.messenger.ui.screens.chat
 
 import android.net.Uri
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.repository.DeviceMediaRepository
+import com.aiwazian.messenger.ui.components.MediaDrawRaster
+import com.aiwazian.messenger.utils.DataStoreManager
 import com.aiwazian.messenger.utils.MessageSendQueue
 import com.aiwazian.messenger.utils.media.MediaTransform
 import com.aiwazian.messenger.utils.media.VideoMetadata
@@ -28,6 +32,7 @@ data class MediaPickerUiState(
     val isLoading: Boolean = false,
     val videoQualities: Map<Uri, VideoQuality> = emptyMap(),
     val mediaTransforms: Map<Uri, MediaTransform> = emptyMap(),
+    val mediaDrawings: Map<Uri, MediaDrawRaster> = emptyMap(),
     val openedVideo: VideoMetadata? = null
 )
 
@@ -35,13 +40,33 @@ data class MediaPickerUiState(
 class MediaPickerViewModel @Inject constructor(
     private val deviceMediaRepository: DeviceMediaRepository,
     private val videoMetadataReader: VideoMetadataReader,
-    private val messageSendQueue: MessageSendQueue
+    private val messageSendQueue: MessageSendQueue,
+    private val dataStoreManager: DataStoreManager
 ) : ViewModel() {
-    
+
     private val _uiState = MutableStateFlow(MediaPickerUiState())
     val uiState = _uiState.asStateFlow()
-    
+
+    private val _drawColor = MutableStateFlow(Color(DataStoreManager.DEFAULT_DRAW_COLOR))
+    val drawColor = _drawColor.asStateFlow()
+
     private var openedVideoUri: Uri? = null
+
+    init {
+        viewModelScope.launch {
+            dataStoreManager.getDrawColor().collect { argb ->
+                _drawColor.value = Color(argb)
+            }
+        }
+    }
+
+    fun setDrawColor(color: Color) {
+        _drawColor.value = color
+
+        viewModelScope.launch {
+            dataStoreManager.saveDrawColor(color.toArgb().toLong() and DRAW_COLOR_MASK)
+        }
+    }
     
     fun loadMedia() {
         viewModelScope.launch {
@@ -55,12 +80,13 @@ class MediaPickerViewModel @Inject constructor(
     
     fun reset() {
         openedVideoUri = null
-        
+
         _uiState.update {
             it.copy(
                 selected = emptyList(),
                 videoQualities = emptyMap(),
                 mediaTransforms = emptyMap(),
+                mediaDrawings = emptyMap(),
                 openedVideo = null
             )
         }
@@ -109,8 +135,20 @@ class MediaPickerViewModel @Inject constructor(
             } else {
                 state.mediaTransforms + (uri to transform)
             }
-            
+
             state.copy(mediaTransforms = transforms)
+        }
+    }
+
+    fun setMediaDrawings(uri: Uri, raster: MediaDrawRaster) {
+        _uiState.update { state ->
+            val drawings = if (raster.hasInk) {
+                state.mediaDrawings + (uri to raster)
+            } else {
+                state.mediaDrawings - uri
+            }
+
+            state.copy(mediaDrawings = drawings)
         }
     }
     
@@ -127,7 +165,8 @@ class MediaPickerViewModel @Inject constructor(
             it.copy(
                 selected = emptyList(),
                 videoQualities = emptyMap(),
-                mediaTransforms = emptyMap()
+                mediaTransforms = emptyMap(),
+                mediaDrawings = emptyMap()
             )
         }
     }
@@ -145,5 +184,9 @@ class MediaPickerViewModel @Inject constructor(
             videoQualities = _uiState.value.videoQualities,
             mediaTransforms = _uiState.value.mediaTransforms
         )
+    }
+
+    private companion object {
+        const val DRAW_COLOR_MASK = 0xFFFFFFFFL
     }
 }

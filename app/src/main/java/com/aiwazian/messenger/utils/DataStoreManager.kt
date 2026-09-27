@@ -34,6 +34,7 @@ private object Keys {
     val FINGERPRINT_ENABLED = booleanPreferencesKey("fingerprint_enabled")
     val KEYBOARD_HEIGHT = floatPreferencesKey("keyboard_height")
     val EQUALIZER_BAND_LEVELS = stringPreferencesKey("equalizer_band_levels")
+    val DRAW_COLOR = longPreferencesKey("draw_color")
 }
 
 @Singleton
@@ -92,6 +93,8 @@ class DataStoreManager @Inject constructor(
     suspend fun saveEqualizerBandLevels(levels: List<Int>) =
         setValue(Keys.EQUALIZER_BAND_LEVELS, levels.joinToString(separator = ","))
 
+    suspend fun saveDrawColor(colorArgb: Long) = setValue(Keys.DRAW_COLOR, colorArgb)
+
     fun getPasscode() = getValue(Keys.PASSCODE, "")
     
     fun getIsLockApp() = getValue(Keys.IS_LOCK_APP, false)
@@ -129,6 +132,8 @@ class DataStoreManager @Inject constructor(
                 .ifEmpty { List(EQUALIZER_BAND_COUNT) { 0 } }
         }
 
+    fun getDrawColor() = getValue(Keys.DRAW_COLOR, DEFAULT_DRAW_COLOR)
+
     suspend fun clear() {
         context.dataStore.edit { it.clear() }
     }
@@ -136,5 +141,6 @@ class DataStoreManager @Inject constructor(
     companion object {
         const val DEFAULT_KEYBOARD_HEIGHT = 250f
         const val EQUALIZER_BAND_COUNT = 5
+        const val DEFAULT_DRAW_COLOR = 0xFFFF0000L
     }
 }

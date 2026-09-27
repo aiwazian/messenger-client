@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.utils.media
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -13,7 +14,9 @@ import androidx.annotation.OptIn
 import androidx.media3.common.Effect
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.effect.BitmapOverlay
 import androidx.media3.effect.Crop
+import androidx.media3.effect.OverlayEffect
 import androidx.media3.effect.Presentation
 import androidx.media3.effect.ScaleAndRotateTransformation
 import androidx.media3.transformer.Composition
@@ -76,7 +79,8 @@ class TrimmedVideoEncoder @Inject constructor(
         startMs: Long,
         endMs: Long,
         transform: MediaTransform = MediaTransform.None,
-        crop: VideoCropRect? = null
+        crop: VideoCropRect? = null,
+        overlay: Bitmap? = null
     ): EncodedVideo? = withContext(Dispatchers.IO) {
         val directory = File(context.cacheDir, target.directoryName)
 
@@ -99,7 +103,7 @@ class TrimmedVideoEncoder @Inject constructor(
             )
             .build()
 
-        val effects = videoEffects(target, transform, crop)
+        val effects = videoEffects(target, transform, crop, overlay)
 
         val isExported = try {
             export(mediaItem, partial, target, effects)
@@ -132,9 +136,14 @@ class TrimmedVideoEncoder @Inject constructor(
     private fun videoEffects(
         target: VideoExportTarget,
         transform: MediaTransform,
-        crop: VideoCropRect?
+        crop: VideoCropRect?,
+        overlay: Bitmap?
     ): List<Effect> {
         val effects = mutableListOf<Effect>()
+
+        if (overlay != null) {
+            effects += OverlayEffect(listOf(BitmapOverlay.createStaticBitmapOverlay(overlay)))
+        }
 
         if (transform.isMirrored) {
             effects += ScaleAndRotateTransformation.Builder()

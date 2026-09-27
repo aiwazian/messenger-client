@@ -54,6 +54,8 @@ fun VideoPlayerItem(
     qualityIcon: ImageVector = Icons.Outlined.Hd,
     onQualityClick: (() -> Unit)? = null,
     onTransformClick: (() -> Unit)? = null,
+    onDrawClick: (() -> Unit)? = null,
+    isDrawn: Boolean = false,
     onPlayingChanged: (Boolean) -> Unit = {},
     onShowUiRequest: () -> Unit = {},
     onPlayerReady: (Player?) -> Unit = {},
@@ -179,8 +181,10 @@ fun VideoPlayerItem(
             isSeekBarVisible = isSeekBarVisible,
             qualityIcon = qualityIcon,
             isTransformed = isTransformed,
+            isDrawn = isDrawn,
             onQualityClick = onQualityClick,
-            onTransformClick = onTransformClick
+            onTransformClick = onTransformClick,
+            onDrawClick = onDrawClick
         )
     }
 }

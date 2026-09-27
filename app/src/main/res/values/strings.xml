@@ -443,6 +443,7 @@
     <string name="media_picker_reset_title">Reset selection</string>
     <string name="media_picker_reset_message">Close the attachment menu?</string>
     <string name="media_picker_reset_action">Reset</string>
+    <string name="draw_clear_all">Clear all</string>
     <string name="chat_search_show_as_list">As list</string>
     <string name="chat_search_show_in_chat">In chat</string>
     <string name="chat_search_hint">Enter a search query</string>

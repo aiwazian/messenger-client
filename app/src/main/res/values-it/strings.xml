@@ -442,6 +442,7 @@
     <string name="media_picker_reset_title">Azzera selezione</string>
     <string name="media_picker_reset_message">Chiudere il menu degli allegati?</string>
     <string name="media_picker_reset_action">Azzera</string>
+    <string name="draw_clear_all">Cancella tutto</string>
     <string name="chat_search_show_as_list">In elenco</string>
     <string name="chat_search_show_in_chat">Nella chat</string>
     <string name="chat_search_hint">Inserisci una query</string>

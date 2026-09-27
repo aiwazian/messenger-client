@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.view.WindowManager
@@ -14,6 +15,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -31,6 +33,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.automirrored.rounded.Undo
+import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.rounded.CropRotate
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -53,15 +57,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -71,6 +80,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -81,7 +91,11 @@ import androidx.media3.ui.compose.state.rememberPresentationState
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
+import com.aiwazian.messenger.ui.components.ColorPickerDialog
 import com.aiwazian.messenger.ui.components.MediaCropMask
+import com.aiwazian.messenger.ui.components.MediaDrawLayer
+import com.aiwazian.messenger.ui.components.MediaDrawRaster
+import com.aiwazian.messenger.ui.components.MediaDrawToolsRow
 import com.aiwazian.messenger.ui.components.MediaFlipButton
 import com.aiwazian.messenger.ui.components.MediaOverlayIconButton
 import com.aiwazian.messenger.ui.components.MediaRotateButton
@@ -89,6 +103,7 @@ import com.aiwazian.messenger.ui.components.MediaTransformState
 import com.aiwazian.messenger.ui.components.MASK_INSET
 import com.aiwazian.messenger.ui.components.VideoCropState
 import com.aiwazian.messenger.ui.components.VideoTrimSlider
+import com.aiwazian.messenger.ui.components.DrawToolViewModel
 import com.aiwazian.messenger.ui.components.maskSideFor
 import com.aiwazian.messenger.ui.components.mediaHeroBackground
 import com.aiwazian.messenger.ui.components.mediaHeroContainer
@@ -98,6 +113,8 @@ import com.aiwazian.messenger.ui.components.pickerMediaKey
 import com.aiwazian.messenger.ui.components.rememberMediaHeroState
 import com.aiwazian.messenger.ui.components.rememberMediaTransformState
 import com.aiwazian.messenger.ui.components.rememberVideoCropState
+import com.aiwazian.messenger.ui.components.rememberZoomableState
+import com.aiwazian.messenger.ui.components.zoomableContent
 import com.aiwazian.messenger.utils.media.EncodedVideo
 import com.aiwazian.messenger.utils.media.MIN_VIDEO_DURATION_MS
 import com.aiwazian.messenger.utils.media.MediaTransform
@@ -109,6 +126,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.math.min
 
 @HiltViewModel
 class VideoPickerCropViewModel @Inject constructor(
@@ -126,7 +144,10 @@ fun VideoPickerCropDialog(
     viewModel: VideoPickerCropViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
+    val drawToolViewModel: DrawToolViewModel = hiltViewModel()
+    val drawColor by drawToolViewModel.drawColor.collectAsStateWithLifecycle()
 
     val cropState = rememberVideoCropState()
     val transformState = rememberMediaTransformState(bakesContent = false)
@@ -135,6 +156,13 @@ fun VideoPickerCropDialog(
     var isTransforming by remember { mutableStateOf(false) }
     var isExporting by remember { mutableStateOf(false) }
     var transformOrigin by remember { mutableStateOf(MediaTransform.None) }
+    var isDrawing by remember { mutableStateOf(false) }
+    var drawSession by remember { mutableStateOf<MediaDrawRaster?>(null) }
+    var drawFrame by remember { mutableStateOf<Bitmap?>(null) }
+    var isDrawEraser by remember { mutableStateOf(false) }
+    var showColorPicker by remember { mutableStateOf(false) }
+    var drawContainerSize by remember { mutableStateOf(IntSize.Zero) }
+    val drawZoomableState = rememberZoomableState()
 
     val trimState = rememberRangeSliderState(startValue = 0f, endValue = 1f)
 
@@ -185,6 +213,38 @@ fun VideoPickerCropDialog(
         }
     }
 
+    LaunchedEffect(isDrawing) {
+        if (isDrawing) {
+            player.pause()
+
+            if (drawSession == null && cropState.sourceWidth > 0) {
+                drawSession = MediaDrawRaster.fromContentSize(
+                    Size(cropState.sourceWidth.toFloat(), cropState.sourceHeight.toFloat())
+                )
+            }
+
+            drawFrame = withContext(Dispatchers.IO) {
+                captureFrame(context, uri, player.currentPosition)
+            }
+        } else {
+            player.play()
+        }
+    }
+
+    LaunchedEffect(drawZoomableState, drawContainerSize) {
+        if (drawContainerSize != IntSize.Zero) {
+            drawZoomableState.updateContainerSize(drawContainerSize)
+        }
+    }
+
+    LaunchedEffect(drawZoomableState, cropState.sourceWidth, cropState.sourceHeight) {
+        if (cropState.sourceWidth > 0 && cropState.sourceHeight > 0) {
+            drawZoomableState.updateContentSize(
+                Size(cropState.sourceWidth.toFloat(), cropState.sourceHeight.toFloat())
+            )
+        }
+    }
+
     val openTransform: () -> Unit = {
         transformOrigin = transformState.transform
 
@@ -207,6 +267,10 @@ fun VideoPickerCropDialog(
         }
     }
 
+    val commitDrawing: () -> Unit = {
+        isDrawing = false
+    }
+
     val confirmExport: () -> Unit = {
         if (!isExporting && cropState.isReady && durationMillis > 0L) {
             isExporting = true
@@ -214,6 +278,7 @@ fun VideoPickerCropDialog(
             coroutineScope.launch {
                 val startMs = (trimState.startValue * durationMillis).toLong().coerceAtLeast(0L)
                 val endMs = (trimState.endValue * durationMillis).toLong()
+                val session = drawSession
 
                 val encoded = viewModel.trimmedVideoEncoder.encode(
                     source = uri,
@@ -221,7 +286,8 @@ fun VideoPickerCropDialog(
                     startMs = startMs,
                     endMs = endMs,
                     transform = transformState.transform,
-                    crop = cropState.cropRect()
+                    crop = cropState.cropRect(),
+                    overlay = session?.bitmap?.takeIf { session.hasInk }
                 )
 
                 if (encoded == null) {
@@ -235,10 +301,10 @@ fun VideoPickerCropDialog(
 
     val goBack: () -> Unit = {
         if (!isExporting) {
-            if (isTransforming) {
-                cancelTransform()
-            } else {
-                hero.dismiss()
+            when {
+                isDrawing -> isDrawing = false
+                isTransforming -> cancelTransform()
+                else -> hero.dismiss()
             }
         }
     }
@@ -292,17 +358,77 @@ fun VideoPickerCropDialog(
                 .navigationBarsPadding()
                 .mediaHeroContainer(hero)
         ) {
-            VideoCropBox(
-                state = cropState,
-                transformState = transformState,
-                player = player,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .mediaHeroContent(hero),
-                isGestureEnabled = !transformState.isAnimating && !isExporting
-            )
+            if (isDrawing) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .mediaHeroContent(hero)
+                        .onSizeChanged { drawContainerSize = it }
+                ) {
+                    val frame = drawFrame
+                    val containerWidth = drawContainerSize.width.toFloat()
+                    val containerHeight = drawContainerSize.height.toFloat()
+                    val fitScale = if (frame != null && containerWidth > 0f && containerHeight > 0f) {
+                        minOf(
+                            containerWidth / frame.width,
+                            containerHeight / frame.height
+                        )
+                    } else {
+                        0f
+                    }
 
-            if (!cropState.isReady) {
+                    if (frame != null && fitScale > 0f) {
+                        val session = drawSession
+
+                        if (session != null) {
+                            val fittedWidth = frame.width * fitScale
+                            val fittedHeight = frame.height * fitScale
+                            val surfaceOffset = Offset(
+                                (containerWidth - fittedWidth) / 2f,
+                                (containerHeight - fittedHeight) / 2f
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .size(
+                                        with(density) { fittedWidth.toDp() },
+                                        with(density) { fittedHeight.toDp() }
+                                    )
+                                    .zoomableContent(drawZoomableState)
+                            ) {
+                                Image(
+                                    bitmap = frame.asImageBitmap(),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+
+                                MediaDrawLayer(
+                                    raster = session,
+                                    color = drawColor,
+                                    isEraser = isDrawEraser,
+                                    zoomableState = drawZoomableState,
+                                    zoomCoordinateOffset = surfaceOffset,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                VideoCropBox(
+                    state = cropState,
+                    transformState = transformState,
+                    player = player,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .mediaHeroContent(hero),
+                    isGestureEnabled = !transformState.isAnimating && !isExporting
+                )
+            }
+
+            if (!cropState.isReady && !isDrawing) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -312,7 +438,7 @@ fun VideoPickerCropDialog(
             }
 
             AnimatedVisibility(
-                visible = isChromeVisible && cropState.isReady,
+                visible = isChromeVisible && cropState.isReady && !isDrawing,
                 modifier = Modifier.fillMaxSize(),
                 enter = fadeIn(),
                 exit = fadeOut()
@@ -335,7 +461,7 @@ fun VideoPickerCropDialog(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     AnimatedVisibility(
-                        visible = !isTransforming,
+                        visible = !isTransforming && !isDrawing,
                         enter = fadeIn(),
                         exit = fadeOut(),
                         modifier = Modifier.padding(horizontal = 16.dp)
@@ -355,11 +481,51 @@ fun VideoPickerCropDialog(
                     }
 
                     AnimatedContent(
-                        targetState = isTransforming,
+                        targetState = when {
+                            isDrawing -> 2
+                            isTransforming -> 1
+                            else -> 0
+                        },
                         transitionSpec = { fadeIn() togetherWith fadeOut() },
                         label = "video_crop_tools"
-                    ) { transforming ->
-                        if (transforming) {
+                    ) { mode ->
+                        if (mode == 2) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                MediaDrawToolsRow(
+                                    color = drawColor,
+                                    isEraser = isDrawEraser,
+                                    onColorClick = { showColorPicker = true },
+                                    onEraserSelected = { isDrawEraser = it }
+                                )
+
+                                Box(modifier = Modifier.fillMaxWidth()) {
+                                    TextButton(
+                                        onClick = {
+                                            drawSession = null
+                                            isDrawing = false
+                                        },
+                                        modifier = Modifier.align(Alignment.CenterStart),
+                                        colors = ButtonDefaults.textButtonColors(
+                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    ) {
+                                        Text(text = stringResource(R.string.cancel).uppercase())
+                                    }
+
+                                    TextButton(
+                                        onClick = commitDrawing,
+                                        modifier = Modifier.align(Alignment.CenterEnd)
+                                    ) {
+                                        Text(text = stringResource(R.string.done).uppercase())
+                                    }
+                                }
+                            }
+                        } else if (mode == 1) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -425,6 +591,13 @@ fun VideoPickerCropDialog(
                                     .padding(16.dp)
                             ) {
                                 MediaOverlayIconButton(
+                                    icon = Icons.Outlined.Brush,
+                                    onClick = { isDrawing = true },
+                                    modifier = Modifier.align(Alignment.CenterStart),
+                                    isActive = drawSession?.hasInk == true
+                                )
+
+                                MediaOverlayIconButton(
                                     icon = Icons.Rounded.CropRotate,
                                     onClick = openTransform,
                                     modifier = Modifier.align(Alignment.Center),
@@ -451,16 +624,53 @@ fun VideoPickerCropDialog(
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                IconButton(
-                    onClick = goBack, colors = IconButtonDefaults.iconButtonColors(
+                if (isDrawing) {
+                    IconButton(
+                        onClick = { drawSession?.undo() },
+                        enabled = (drawSession?.undoCount ?: 0) > 0,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.Undo,
+                            contentDescription = null
+                        )
+                    }
+                } else {
+                    IconButton(
+                        onClick = goBack, colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = null
+                        )
+                    }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = isChromeVisible && isDrawing,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(4.dp),
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                TextButton(
+                    onClick = { drawSession?.clearAll() },
+                    enabled = drawSession?.hasInk == true,
+                    colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.onSurface,
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
                     )
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = null
-                    )
+                    Text(text = stringResource(R.string.draw_clear_all))
                 }
             }
 
@@ -475,6 +685,17 @@ fun VideoPickerCropDialog(
                 }
             }
         }
+    }
+
+    if (showColorPicker) {
+        ColorPickerDialog(
+            currentColor = drawColor,
+            onColorSelected = { color ->
+                drawToolViewModel.setDrawColor(color)
+                showColorPicker = false
+            },
+            onDismiss = { showColorPicker = false }
+        )
     }
 }
 
@@ -557,6 +778,19 @@ private fun VideoCropBox(
                 }
             }
         }
+    }
+}
+
+private fun captureFrame(context: Context, uri: Uri, positionMs: Long): Bitmap? {
+    val retriever = MediaMetadataRetriever()
+
+    return try {
+        retriever.setDataSource(context, uri)
+        retriever.getFrameAtTime(positionMs * 1000, MediaMetadataRetriever.OPTION_CLOSEST)
+    } catch (_: Exception) {
+        null
+    } finally {
+        retriever.release()
     }
 }
 
