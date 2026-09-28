@@ -11,6 +11,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,14 +23,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -38,9 +43,9 @@ import coil3.decode.BitmapFactoryDecoder
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.video.VideoFrameDecoder
-import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.extensions.findActivity
+import kotlin.math.roundToInt
 
 internal const val PICKER_GRID_COLUMNS = 3
 
@@ -108,7 +113,9 @@ internal fun MediaPickerNotice(
 }
 
 @Composable
-fun PickerMediaCellContent(item: DeviceMediaItem, modifier: Modifier = Modifier) {
+fun PickerMediaCellContent(
+    item: DeviceMediaItem, modifier: Modifier = Modifier, drawing: MediaDrawRaster? = null
+) {
     val context = LocalContext.current
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -128,6 +135,28 @@ fun PickerMediaCellContent(item: DeviceMediaItem, modifier: Modifier = Modifier)
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
+        
+        if (drawing != null) {
+            val drawingImage = remember(drawing, drawing.revision) {
+                drawing.bitmap.asImageBitmap()
+            }
+            
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val scale = maxOf(size.width / drawing.width, size.height / drawing.height)
+                val dstWidth = drawing.width * scale
+                val dstHeight = drawing.height * scale
+                
+                drawImage(
+                    image = drawingImage,
+                    dstOffset = IntOffset(
+                        x = ((size.width - dstWidth) / 2f).roundToInt(),
+                        y = ((size.height - dstHeight) / 2f).roundToInt()
+                    ),
+                    dstSize = IntSize(dstWidth.roundToInt(), dstHeight.roundToInt()),
+                    filterQuality = FilterQuality.Medium
+                )
+            }
+        }
 
         if (item.isVideo || item.isGif) {
             PickerMediaLabel(

@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.usecase
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
 import android.webkit.MimeTypeMap
@@ -72,15 +73,34 @@ class SendMessageWithFilesUseCase @Inject constructor(
         tempId: Long = -System.currentTimeMillis(),
         replyTo: MessageReplyPreview? = null,
         videoQualities: Map<Uri, VideoQuality> = emptyMap(),
-        mediaTransforms: Map<Uri, MediaTransform> = emptyMap()
+        mediaTransforms: Map<Uri, MediaTransform> = emptyMap(),
+        mediaDrawings: Map<Uri, Bitmap> = emptyMap()
     ): Result<Message> {
         val chunks = chunkByMediaLimit(uris)
         
         val sending = appScope.async(start = CoroutineStart.LAZY) {
             if (chunks.size == 1) {
-                send(chatId, chunks.first(), text, tempId, replyTo, videoQualities, mediaTransforms)
+                send(
+                    chatId,
+                    chunks.first(),
+                    text,
+                    tempId,
+                    replyTo,
+                    videoQualities,
+                    mediaTransforms,
+                    mediaDrawings
+                )
             } else {
-                sendInChunks(chatId, chunks, text, tempId, replyTo, videoQualities, mediaTransforms)
+                sendInChunks(
+                    chatId,
+                    chunks,
+                    text,
+                    tempId,
+                    replyTo,
+                    videoQualities,
+                    mediaTransforms,
+                    mediaDrawings
+                )
             }
         }
         
@@ -102,7 +122,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         tempId: Long,
         replyTo: MessageReplyPreview?,
         videoQualities: Map<Uri, VideoQuality>,
-        mediaTransforms: Map<Uri, MediaTransform>
+        mediaTransforms: Map<Uri, MediaTransform>,
+        mediaDrawings: Map<Uri, Bitmap>
     ): Result<Message> {
         var firstResult: Result<Message>? = null
         
@@ -115,7 +136,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 chunkTempId,
                 if (index == 0) replyTo else null,
                 videoQualities,
-                mediaTransforms
+                mediaTransforms,
+                mediaDrawings
             )
             
             if (index == 0) firstResult = result
@@ -163,7 +185,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         tempId: Long,
         replyTo: MessageReplyPreview?,
         videoQualities: Map<Uri, VideoQuality>,
-        mediaTransforms: Map<Uri, MediaTransform>
+        mediaTransforms: Map<Uri, MediaTransform>,
+        mediaDrawings: Map<Uri, Bitmap>
     ): Result<Message> {
         val myId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
@@ -220,7 +243,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 key = "temp_${tempId}_$index",
                 videoQuality = videoQualities[uri]
                     ?: MediaCompressionConfig.VIDEO_DEFAULT_QUALITY,
-                transform = mediaTransforms[uri] ?: MediaTransform.None
+                transform = mediaTransforms[uri] ?: MediaTransform.None,
+                overlay = mediaDrawings[uri]
             )
         }
         

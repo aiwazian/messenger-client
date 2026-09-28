@@ -176,13 +176,18 @@ class MediaPickerViewModel @Inject constructor(
             return
         }
         
+        val mediaDrawings = _uiState.value.mediaDrawings
+            .filterKeys { uri -> uri in uris }
+            .mapValues { (_, raster) -> raster.bitmap }
+        
         messageSendQueue.enqueueFiles(
             chatId = chatId,
             uris = uris,
             text = caption.trim().ifBlank { null },
             replyTo = replyTo,
             videoQualities = _uiState.value.videoQualities,
-            mediaTransforms = _uiState.value.mediaTransforms
+            mediaTransforms = _uiState.value.mediaTransforms,
+            mediaDrawings = mediaDrawings
         )
     }
 

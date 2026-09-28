@@ -55,11 +55,12 @@ class ImageCompressor @Inject constructor(
         maxDimension: Int,
         quality: Int,
         name: String? = null,
-        transform: MediaTransform = MediaTransform.None
+        transform: MediaTransform = MediaTransform.None,
+        overlay: Bitmap? = null
     ): CompressedImage? = withContext(Dispatchers.IO) {
         val fileName = renamed(name ?: source.getFileName(context), JPEG_EXTENSION)
         val target = File(directory, fileName)
-        
+
         if (target.exists() && target.length() > 0) {
             return@withContext CompressedImage(
                 uri = Uri.fromFile(target),
@@ -67,18 +68,18 @@ class ImageCompressor @Inject constructor(
                 size = target.length()
             )
         }
-        
+
         try {
             val bounds = readBounds(source) ?: return@withContext null
             val decoded = decode(source, bounds, maxDimension) ?: return@withContext null
-            
+
             val prepared = try {
-                prepare(decoded, readOrientation(source), maxDimension, transform)
+                prepare(decoded, readOrientation(source), maxDimension, transform, overlay)
             } catch (e: Exception) {
                 decoded.recycle()
                 throw e
             }
-            
+
             try {
                 write(prepared, target, quality)
             } finally {
@@ -168,17 +169,32 @@ class ImageCompressor @Inject constructor(
         source: Bitmap,
         orientation: Int,
         maxDimension: Int,
-        transform: MediaTransform
+        transform: MediaTransform,
+        overlay: Bitmap?
     ): Bitmap {
+        val oriented = orient(source, orientation, maxDimension)
+        
+        if (overlay != null) {
+            drawOverlay(oriented, overlay)
+        }
+        
+        if (transform.isIdentity) {
+            return oriented
+        }
+        
+        val turned = redraw(oriented, transform.toMatrix(), oriented.hasAlpha())
+        
+        if (oriented !== source) {
+            oriented.recycle()
+        }
+        
+        return turned
+    }
+    
+    private fun orient(source: Bitmap, orientation: Int, maxDimension: Int): Bitmap {
         val longest = max(source.width, source.height)
         val scale = if (longest > maxDimension) maxDimension.toFloat() / longest else 1f
         val matrix = orientationMatrix(orientation)
-        
-        if (transform.isMirrored) {
-            matrix.postScale(-1f, 1f)
-        }
-        
-        matrix.postRotate(transform.rotationDegrees.toFloat())
         
         if (matrix.isIdentity && scale == 1f && !source.hasAlpha()) {
             return source
@@ -186,6 +202,19 @@ class ImageCompressor @Inject constructor(
         
         matrix.postScale(scale, scale)
         
+        return redraw(source, matrix, source.hasAlpha())
+    }
+    
+    private fun drawOverlay(target: Bitmap, overlay: Bitmap) {
+        Canvas(target).drawBitmap(
+            overlay,
+            null,
+            RectF(0f, 0f, target.width.toFloat(), target.height.toFloat()),
+            null
+        )
+    }
+    
+    private fun redraw(source: Bitmap, matrix: Matrix, hasAlpha: Boolean): Bitmap {
         val frame = RectF(0f, 0f, source.width.toFloat(), source.height.toFloat())
         matrix.mapRect(frame)
         matrix.postTranslate(-frame.left, -frame.top)
@@ -196,7 +225,7 @@ class ImageCompressor @Inject constructor(
         val result = createBitmap(width, height)
         val canvas = Canvas(result)
         
-        if (source.hasAlpha()) {
+        if (hasAlpha) {
             canvas.drawColor(MediaCompressionConfig.TRANSPARENCY_BACKGROUND_COLOR)
         }
         

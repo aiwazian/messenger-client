@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.utils.media
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -14,6 +15,8 @@ import androidx.media3.common.Effect
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.effect.BitmapOverlay
+import androidx.media3.effect.OverlayEffect
 import androidx.media3.effect.Presentation
 import androidx.media3.effect.ScaleAndRotateTransformation
 import androidx.media3.transformer.Composition
@@ -69,13 +72,15 @@ class VideoCompressor @Inject constructor(
      *
      * @param transform куда повернуть и отразить кадр. Заметить размер повёрнутого
      * видео отдельно не нужно: стороны читаются уже с готовой копии.
+     * @param overlay рисунок, накладываемый на кадр до поворота и отражения.
      */
     suspend fun compress(
         source: Uri,
         directory: File,
         quality: VideoQuality,
         name: String? = null,
-        transform: MediaTransform = MediaTransform.None
+        transform: MediaTransform = MediaTransform.None,
+        overlay: Bitmap? = null
     ): Uri? {
         val metadata = videoMetadataReader.read(source)
         
@@ -91,7 +96,7 @@ class VideoCompressor @Inject constructor(
         val partial = File(directory, target.name + PARTIAL_SUFFIX)
         partial.delete()
         
-        val effects = videoEffects(presentationFor(metadata, quality), transform)
+        val effects = videoEffects(presentationFor(metadata, quality), transform, overlay)
         
         val isExported = try {
             export(source, partial, effects, quality)
@@ -117,7 +122,9 @@ class VideoCompressor @Inject constructor(
          * равноценен копии: откат отправил бы видео неповёрнутым.
          */
         val sourceSize = metadata?.sizeBytes ?: 0L
-        if (transform.isIdentity && sourceSize > 0 && compressedSize >= sourceSize) {
+        val isEdited = !transform.isIdentity || overlay != null
+        
+        if (!isEdited && sourceSize > 0 && compressedSize >= sourceSize) {
             Log.i(TAG, "Compressed $source is not smaller than the source, keeping the source")
             partial.delete()
             return null
@@ -144,9 +151,14 @@ class VideoCompressor @Inject constructor(
      */
     private fun videoEffects(
         presentation: Presentation?,
-        transform: MediaTransform
+        transform: MediaTransform,
+        overlay: Bitmap?
     ): List<Effect> {
         val effects = mutableListOf<Effect>()
+        
+        if (overlay != null) {
+            effects += OverlayEffect(listOf(BitmapOverlay.createStaticBitmapOverlay(overlay)))
+        }
         
         if (transform.isMirrored) {
             effects += ScaleAndRotateTransformation.Builder()

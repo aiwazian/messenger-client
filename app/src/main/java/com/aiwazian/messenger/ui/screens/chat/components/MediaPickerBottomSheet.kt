@@ -27,7 +27,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -100,11 +99,11 @@ import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.CustomEmojiViewModel
+import com.aiwazian.messenger.ui.components.MediaDrawRaster
 import com.aiwazian.messenger.ui.components.MediaPickerNotice
 import com.aiwazian.messenger.ui.components.PICKER_GRID_COLUMNS
 import com.aiwazian.messenger.ui.components.PickerMediaCellContent
 import com.aiwazian.messenger.ui.components.canRequestMediaPermission
-import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.ui.components.hasMediaPermission
 import com.aiwazian.messenger.ui.components.mediaPermissions
 import com.aiwazian.messenger.ui.components.mediaTransitionBounds
@@ -291,6 +290,7 @@ fun MediaPickerBottomSheet(
                             MediaGridItem(
                                 item = item,
                                 number = uiState.selected.indexOf(item.uri) + 1,
+                                drawing = uiState.mediaDrawings[item.uri],
                                 onClick = { previewIndex = index },
                                 onToggleSelection = { viewModel.toggleSelection(item.uri) })
                         }
@@ -516,7 +516,11 @@ internal fun MediaSelectionBadge(
 
 @Composable
 private fun MediaGridItem(
-    item: DeviceMediaItem, number: Int, onClick: () -> Unit, onToggleSelection: () -> Unit
+    item: DeviceMediaItem,
+    number: Int,
+    drawing: MediaDrawRaster?,
+    onClick: () -> Unit,
+    onToggleSelection: () -> Unit
 ) {
     val key = pickerMediaKey(item.uri)
     val isSelected = number > 0
@@ -551,16 +555,20 @@ private fun MediaGridItem(
                 .graphicsLayer {
                     scaleX = scale.value
                     scaleY = scale.value
-
+                    
                     val rounding = ((1f - scale.value) / (1f - SELECTED_SCALE)).coerceIn(0f, 1f)
-
+                    
                     shape = RoundedCornerShape(SELECTED_CORNER_RADIUS * rounding)
                     clip = true
                 }
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .mediaTransitionBounds(key)
         ) {
-            PickerMediaCellContent(item = item, modifier = Modifier.fillMaxSize())
+            PickerMediaCellContent(
+                item = item,
+                drawing = drawing,
+                modifier = Modifier.fillMaxSize()
+            )
         }
 
         MediaSelectionBadge(

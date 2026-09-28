@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.utils
 
+import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
 import com.aiwazian.messenger.di.ApplicationScope
@@ -75,6 +76,7 @@ class MessageSendQueue @Inject constructor(
      * исходным ссылкам. Чего в карте нет, уходит со ступенью по умолчанию.
      * @param mediaTransforms повороты и отражения, выбранные там же. Нетронутые
      * кадры в карте не лежат.
+     * @param mediaDrawings рисунки поверх кадра по исходным ссылкам.
      */
     fun enqueueFiles(
         chatId: Long,
@@ -83,7 +85,8 @@ class MessageSendQueue @Inject constructor(
         tempId: Long = nextTempId(),
         replyTo: MessageReplyPreview? = null,
         videoQualities: Map<Uri, VideoQuality> = emptyMap(),
-        mediaTransforms: Map<Uri, MediaTransform> = emptyMap()
+        mediaTransforms: Map<Uri, MediaTransform> = emptyMap(),
+        mediaDrawings: Map<Uri, Bitmap> = emptyMap()
     ): Long {
         enqueue(tempId) {
             sendMessageWithFilesUseCase(
@@ -93,7 +96,8 @@ class MessageSendQueue @Inject constructor(
                 tempId = tempId,
                 replyTo = replyTo,
                 videoQualities = videoQualities,
-                mediaTransforms = mediaTransforms
+                mediaTransforms = mediaTransforms,
+                mediaDrawings = mediaDrawings
             )
         }
         

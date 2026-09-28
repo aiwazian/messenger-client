@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.utils
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
 import com.aiwazian.messenger.extensions.getFileName
@@ -62,6 +63,7 @@ class AttachmentOutbox @Inject constructor(
      * в копию вместе со сжатием: сервер и чужие устройства ничего о наших
      * правках не знают. Файлы и GIF уходят байт в байт, и править их нечем —
      * поэтому предпросмотр и не предлагает им кнопку поворота.
+     * @param overlay рисунок поверх кадра, накладываемый до поворота и отражения.
      * @return ссылку на свою копию либо исходную ссылку, если копировать незачем
      * или не удалось: голосовые уже лежат у нас, а про удалённый файл честнее
      * доложит сама отправка.
@@ -70,7 +72,8 @@ class AttachmentOutbox @Inject constructor(
         uri: Uri,
         key: String,
         videoQuality: VideoQuality = MediaCompressionConfig.VIDEO_DEFAULT_QUALITY,
-        transform: MediaTransform = MediaTransform.None
+        transform: MediaTransform = MediaTransform.None,
+        overlay: Bitmap? = null
     ): Uri = withContext(Dispatchers.IO) {
         // Уже наша копия: отправку подняли после перезапуска, и медиа в ней
         // сжато и повёрнуто ещё в прошлый раз — второй проход только срезал бы
@@ -93,7 +96,8 @@ class AttachmentOutbox @Inject constructor(
                 maxDimension = MediaCompressionConfig.PHOTO_MAX_DIMENSION,
                 quality = MediaCompressionConfig.PHOTO_JPEG_QUALITY,
                 name = name,
-                transform = transform
+                transform = transform,
+                overlay = overlay
             )
             
             if (compressed != null) {
@@ -118,7 +122,8 @@ class AttachmentOutbox @Inject constructor(
                 directory = directoryFor(key),
                 quality = videoQuality,
                 name = name,
-                transform = transform
+                transform = transform,
+                overlay = overlay
             )
             
             if (compressed != null) {

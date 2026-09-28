@@ -12,33 +12,24 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.outlined.Brush
-import androidx.compose.material.icons.outlined.CleaningServices
-import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material.icons.rounded.CropRotate
 import androidx.compose.material.icons.rounded.Hd
 import androidx.compose.material.icons.rounded.Sd
@@ -63,7 +54,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
@@ -218,8 +208,10 @@ fun MediaPickerPreview(
     } else {
         null
     }
-
-    val openDraw: (() -> Unit)? = if (mode == PreviewMode.Content && currentItem != null) {
+    
+    val canDraw = currentItem != null && !currentItem.isGif
+    
+    val openDraw: (() -> Unit)? = if (mode == PreviewMode.Content && canDraw) {
         { mode = PreviewMode.Draw }
     } else {
         null
@@ -301,7 +293,10 @@ fun MediaPickerPreview(
             Scaffold(
                 modifier = Modifier
                     .fillMaxSize()
-                    .mediaHeroBackground(hero, MaterialTheme.colorScheme.surface) { backgroundAlpha }
+                    .mediaHeroBackground(
+                        hero,
+                        MaterialTheme.colorScheme.surface
+                    ) { backgroundAlpha }
                     .navigationBarsPadding()
                     .mediaHeroContainer(hero),
                 topBar = {
@@ -564,7 +559,8 @@ fun MediaPickerPreview(
                     
                     AnimatedVisibility(
                         visible = isChromeVisible && mode == PreviewMode.Content &&
-                                currentItem != null && currentItem.isVideo == false,
+                                currentItem != null && currentItem.isVideo == false &&
+                                !currentItem.isGif,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(16.dp),
