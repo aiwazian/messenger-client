@@ -181,6 +181,22 @@ interface MessageDao {
                 "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
     )
     suspend fun updateMessageId(oldId: Long, newId: Long)
+
+    @Query(
+        "UPDATE message SET commentsCount = commentsCount + 1 " +
+                "WHERE id = :messageId " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
+    )
+    suspend fun incrementCommentCount(messageId: Long)
+
+    @Query(
+        "UPDATE message SET commentsCount = 0 " +
+                "WHERE chatId = :chatId " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
+    )
+    suspend fun clearCommentCounts(chatId: Long)
     
     /** Чаты пропали из списка своего аккаунта: кэш чужих аккаунтов при этом не трогаем. */
     @Query(

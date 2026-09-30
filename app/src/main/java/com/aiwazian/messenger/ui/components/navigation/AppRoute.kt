@@ -208,6 +208,12 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data class ChannelTypeSettings(val channelId: Long) : AppRoute
+
+    @Serializable
+    data class ChannelCommentsSettings(val channelId: Long) : AppRoute
+
+    @Serializable
+    data class PostComments(val chatId: Long, val postId: Long) : AppRoute
     
     @Serializable
     data class ChannelSubscribers(val channelId: Long) : AppRoute

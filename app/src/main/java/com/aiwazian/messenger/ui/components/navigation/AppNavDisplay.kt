@@ -28,6 +28,7 @@ import com.aiwazian.messenger.ui.screens.channel.settings.admins.AddChannelAdmin
 import com.aiwazian.messenger.ui.screens.channel.settings.admins.ChannelAdminPermissionsScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.admins.ChannelAdminsScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.blockedUsers.ChannelBlockedUsersScreen
+import com.aiwazian.messenger.ui.screens.channel.settings.comments.ChannelCommentsSettingsScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.invites.ChannelInviteLinksScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.invites.create.CreateInviteLinkScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.joinRequests.ChannelJoinRequestsScreen
@@ -36,6 +37,7 @@ import com.aiwazian.messenger.ui.screens.channel.settings.subscribers.ChannelSub
 import com.aiwazian.messenger.ui.screens.channel.settings.transfer.ChannelTransferOwnershipScreen
 import com.aiwazian.messenger.ui.screens.channel.settings.type.ChannelTypeSettingsScreen
 import com.aiwazian.messenger.ui.screens.chat.ChatScreen
+import com.aiwazian.messenger.ui.screens.chat.comments.PostCommentsScreen
 import com.aiwazian.messenger.ui.screens.chat.media.ChatMediaScreen
 import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessagesScreen
 import com.aiwazian.messenger.ui.screens.equalizer.EqualizerScreen
@@ -250,6 +252,12 @@ fun AppNavDisplay(
                         ChannelTransferOwnershipScreen(channelId = it.channelId)
                     }
                     entry<AppRoute.ChannelTypeSettings> { ChannelTypeSettingsScreen(channelId = it.channelId) }
+                    entry<AppRoute.ChannelCommentsSettings> {
+                        ChannelCommentsSettingsScreen(channelId = it.channelId)
+                    }
+                    entry<AppRoute.PostComments> {
+                        PostCommentsScreen(chatId = it.chatId, postId = it.postId)
+                    }
                     entry<AppRoute.ChannelSubscribers> { ChannelSubscribersScreen(channelId = it.channelId) }
                     entry<AppRoute.ChannelBlackList> { ChannelBlockedUsersScreen(channelId = it.channelId) }
                     entry<AppRoute.ChannelJoinRequests> { ChannelJoinRequestsScreen(channelId = it.channelId) }

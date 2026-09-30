@@ -626,7 +626,7 @@ fun ChatScreen(
             } else {
                 ChatInputSection(
                     uiState = uiState,
-                    chatViewModel = chatViewModel,
+                    actions = chatViewModel,
                     modifier = bottomBarModifier
                 )
             }
@@ -797,6 +797,19 @@ fun ChatScreen(
                                                 AppRoute.Profile(
                                                     profileId = item.message.senderId,
                                                     profileName = item.senderName
+                                                )
+                                            )
+                                        }
+                                    } else null,
+                                    onCommentsClick = if (
+                                        item.chatType == ChatType.CHANNEL &&
+                                        (uiState.commentsEnabled || item.message.commentsCount > 0)
+                                    ) {
+                                        {
+                                            navBackStack.add(
+                                                AppRoute.PostComments(
+                                                    chatId = uiState.chatId,
+                                                    postId = item.message.id
                                                 )
                                             )
                                         }

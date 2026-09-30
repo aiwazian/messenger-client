@@ -21,6 +21,8 @@ data class ChannelResponseDto(
     @SerialName("isSubscribed") val isSubscribed: Boolean = false,
     @SerialName("isOwner") val isOwner: Boolean? = null,
     @SerialName("noCopy") val noCopy: Boolean = false,
+    @SerialName("commentsEnabled") val commentsEnabled: Boolean = false,
+    @SerialName("commentsRestrictedToSubscribers") val commentsRestrictedToSubscribers: Boolean = true,
     @SerialName("avatars") val avatars: List<AvatarDto> = emptyList()
 )
 
@@ -50,4 +52,16 @@ data class UpdateChannelRequestDto(
 @Serializable
 data class SetNoCopyRequestDto(
     @SerialName("noCopy") val noCopy: Boolean
+)
+
+/** Тело запроса на включение или выключение комментирования постов канала. */
+@Serializable
+data class SetCommentsEnabledRequestDto(
+    @SerialName("commentsEnabled") val commentsEnabled: Boolean
+)
+
+/** true — комментировать посты могут только подписчики канала. */
+@Serializable
+data class SetCommentsRestrictedRequestDto(
+    @SerialName("commentsRestrictedToSubscribers") val commentsRestrictedToSubscribers: Boolean
 )

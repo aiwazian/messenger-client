@@ -550,4 +550,25 @@
     <string name="storage_database_clear_failed">Impossibile cancellare il database</string>
     <string name="done">Fatto</string>
     <string name="empty_chats_hint">Per iniziare a chattare, tocca il campo di ricerca nella parte superiore dello schermo e trova un utente tramite il suo @username</string>
+    <string name="comments">Commenti</string>
+    <string name="enable_comments">Attiva commenti</string>
+    <string name="delete_all_comments">Elimina tutti i commenti</string>
+    <string name="delete_all_comments_confirm">Tutti i commenti sotto tutti i post verranno eliminati definitivamente. Questa azione non può essere annullata.</string>
+    <string name="who_can_comment">Chi può scrivere i commenti?</string>
+    <string name="only_subscribers">Solo iscritti</string>
+    <string name="comment">Commenta</string>
+    <string name="comment_field_hint">Aggiungi un commento…</string>
+    <string name="owner_tag">Proprietario</string>
+    <string name="admin_tag">Amministratore</string>
+    <string name="failed_to_load_comments">Impossibile caricare i commenti</string>
+    <string name="failed_to_send_comment">Impossibile inviare il commento</string>
+    <string name="comments_deleted">Tutti i commenti eliminati</string>
+    <plurals name="comments_count">
+        <item quantity="zero">%1$d commenti</item>
+        <item quantity="one">%1$d commento</item>
+        <item quantity="two">%1$d commenti</item>
+        <item quantity="few">%1$d commenti</item>
+        <item quantity="many">%1$d commenti</item>
+        <item quantity="other">%1$d commenti</item>
+    </plurals>
 </resources>

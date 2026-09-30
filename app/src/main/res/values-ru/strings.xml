@@ -573,4 +573,25 @@
     <string name="storage_database_clear_failed">Не удалось очистить базу данных</string>
     <string name="done">Готово</string>
     <string name="empty_chats_hint">Чтобы начать общение, нажмите на поле поиска в верхней части экрана и найдите пользователя по его @username</string>
+    <string name="comments">Комментарии</string>
+    <string name="enable_comments">Включить комментирование</string>
+    <string name="delete_all_comments">Удалить все комментарии</string>
+    <string name="delete_all_comments_confirm">Все комментарии под всеми постами будут удалены безвозвратно. Это действие нельзя отменить.</string>
+    <string name="who_can_comment">Кто может писать комментарии?</string>
+    <string name="only_subscribers">Только подписчики</string>
+    <string name="comment">Прокомментировать</string>
+    <string name="comment_field_hint">Комментарий…</string>
+    <string name="owner_tag">Владелец</string>
+    <string name="admin_tag">Админ</string>
+    <string name="failed_to_load_comments">Не удалось загрузить комментарии</string>
+    <string name="failed_to_send_comment">Не удалось отправить комментарий</string>
+    <string name="comments_deleted">Все комментарии удалены</string>
+    <plurals name="comments_count">
+        <item quantity="zero">%1$d комментариев</item>
+        <item quantity="one">%1$d комментарий</item>
+        <item quantity="two">%1$d комментария</item>
+        <item quantity="few">%1$d комментария</item>
+        <item quantity="many">%1$d комментариев</item>
+        <item quantity="other">%1$d комментариев</item>
+    </plurals>
 </resources>

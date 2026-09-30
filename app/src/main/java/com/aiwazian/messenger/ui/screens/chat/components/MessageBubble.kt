@@ -21,11 +21,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.Download
@@ -53,6 +55,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -133,7 +136,8 @@ fun MessageBubble(
     onSenderNameClick: (() -> Unit)? = null,
     onReaderClick: ((MessageReadInfo) -> Unit)? = null,
     showContextMenu: Boolean = true,
-    isPinned: Boolean = false
+    isPinned: Boolean = false,
+    onCommentsClick: (() -> Unit)? = null
 ) {
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
@@ -345,7 +349,10 @@ fun MessageBubble(
                                             attachment = attachment,
                                             mediaUri = mediaUri,
                                             cacheKey = "$mediaCacheKeyPrefix:${attachment.fileId}:$mediaUri",
-                                            transitionKey = chatMediaKey(attachment.messageId, mediaUri),
+                                            transitionKey = chatMediaKey(
+                                                attachment.messageId,
+                                                mediaUri
+                                            ),
                                             onFileAction = onFileAction
                                         )
                                     }
@@ -431,10 +438,75 @@ fun MessageBubble(
                                 isPinned = isPinned
                             )
                         }
+                    } else if (onCommentsClick != null) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.BottomEnd
+                        ) {
+                            if (mediaAttachments.isNotEmpty()) {
+                                StickerMessageFooter(
+                                    time = item.time,
+                                    isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                                    status = message.status,
+                                    modifier = Modifier.padding(4.dp),
+                                    isPinned = isPinned
+                                )
+                            } else {
+                                MessageFooter(
+                                    time = item.time,
+                                    isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    status = message.status,
+                                    isEdited = message.isEdited,
+                                    isPinned = isPinned
+                                )
+                            }
+                        }
+                    }
+                    
+                    if (onCommentsClick != null) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(onClick = onCommentsClick)
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (message.commentsCount > 0) {
+                                    pluralStringResource(
+                                        R.plurals.comments_count,
+                                        message.commentsCount,
+                                        message.commentsCount
+                                    )
+                                } else {
+                                    stringResource(R.string.comment)
+                                },
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 14.sp
+                            )
+                            Spacer(
+                                modifier = Modifier
+                                    .widthIn(min = 8.dp)
+                                    .weight(1f)
+                            )
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                     }
                 }
                 
-                if (message.text.isNullOrBlank()) {
+                if (message.text.isNullOrBlank() && onCommentsClick == null) {
                     Box(modifier = Modifier.align(Alignment.BottomEnd)) {
                         if (mediaAttachments.isNotEmpty()) {
                             StickerMessageFooter(
@@ -653,7 +725,11 @@ private fun MediaThumbnail(
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (attachment.type == AttachmentType.VIDEO) {
-            VideoThumbnail(videoUri = mediaUri, cacheKey = cacheKey, transitionKey = transitionKey) {
+            VideoThumbnail(
+                videoUri = mediaUri,
+                cacheKey = cacheKey,
+                transitionKey = transitionKey
+            ) {
                 onFileAction(attachment, FileAction.OPEN)
             }
         } else {
@@ -706,10 +782,15 @@ private fun MediaStatusIndicator(status: DownloadStatus) {
 }
 
 @Composable
-private fun VideoThumbnail(videoUri: Uri, cacheKey: String, transitionKey: String, onClick: () -> Unit) {
+private fun VideoThumbnail(
+    videoUri: Uri,
+    cacheKey: String,
+    transitionKey: String,
+    onClick: () -> Unit
+) {
     val context = LocalContext.current
     val decoderFactory = remember { VideoFrameDecoder.Factory() }
-
+    
     val request = remember(context, videoUri, cacheKey, decoderFactory) {
         ImageRequest.Builder(context)
             .data(videoUri)
@@ -719,11 +800,11 @@ private fun VideoThumbnail(videoUri: Uri, cacheKey: String, transitionKey: Strin
             .placeholderMemoryCacheKey(cacheKey)
             .build()
     }
-
+    
     val duration by produceState(0L, videoUri) {
         value = withContext(Dispatchers.IO) { videoUri.getDuration(context) }
     }
-
+    
     Box(
         modifier = Modifier
             .clickable(onClick = onClick)
@@ -768,7 +849,7 @@ private fun ImageThumbnail(
 ) {
     val context = LocalContext.current
     val decoderFactory = remember { GifDecoder.Factory() }
-
+    
     val request = remember(context, imageUri, cacheKey, decoderFactory) {
         ImageRequest.Builder(context)
             .data(imageUri)
@@ -777,7 +858,7 @@ private fun ImageThumbnail(
             .placeholderMemoryCacheKey(cacheKey)
             .build()
     }
-
+    
     Box(
         modifier = Modifier
             .clickable(onClick = onClick)

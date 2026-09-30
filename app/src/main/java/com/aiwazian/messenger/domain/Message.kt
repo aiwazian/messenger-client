@@ -57,5 +57,6 @@ data class Message(
     val replyTo: MessageReplyPreview? = null,
     val forwardedFrom: ForwardedFrom? = null,
     val isEdited: Boolean = false,
+    val commentsCount: Int = 0,
     val sticker: MessageSticker? = null
 )

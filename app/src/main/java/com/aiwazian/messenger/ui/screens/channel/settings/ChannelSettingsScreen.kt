@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Campaign
+import androidx.compose.material.icons.outlined.Comment
 import androidx.compose.material.icons.outlined.PersonAddAlt
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
@@ -133,6 +134,16 @@ fun ChannelSettingsScreen(
                         onClick = {
                             navBackStack.add(AppRoute.ChannelTypeSettings(channelId = uiState.channel.id))
                         })
+                }
+
+                if (uiState.isOwner) {
+                    SectionItem(
+                        leadingIcon = Icons.Outlined.Comment,
+                        headlineText = stringResource(R.string.comments),
+                        onClick = {
+                            navBackStack.add(AppRoute.ChannelCommentsSettings(channelId = uiState.channel.id))
+                        }
+                    )
                 }
                 
                 if (uiState.canManageInviteLinks) {

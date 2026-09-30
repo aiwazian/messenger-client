@@ -573,6 +573,14 @@ class ChatRepository @Inject constructor(
     suspend fun updateMessageId(oldId: Long, newId: Long) {
         messageDao.updateMessageId(oldId, newId)
     }
+
+    suspend fun incrementCommentCount(messageId: Long) {
+        messageDao.incrementCommentCount(messageId)
+    }
+
+    suspend fun clearCommentCounts(chatId: Long) {
+        messageDao.clearCommentCounts(chatId)
+    }
     
     suspend fun updateMessageStatus(id: Long, status: MessageStatus) {
         messageDao.updateMessageStatus(id, status)

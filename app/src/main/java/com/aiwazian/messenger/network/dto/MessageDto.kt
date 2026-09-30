@@ -59,6 +59,7 @@ data class MessageDto(
     @SerialName("sendTime") val sendTime: Long,
     @SerialName("editedAt") val editedAt: Long? = null,
     @SerialName("isEdited") val isEdited: Boolean? = null,
+    @SerialName("commentsCount") val commentsCount: Int = 0,
     @SerialName("isRead") val isRead: Boolean? = null,
     @SerialName("messageType") val messageType: MessageType = MessageType.TEXT,
     @SerialName("systemEventType") val systemEventType: SystemMessageEventType? = null,
