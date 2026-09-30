@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,8 +29,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ChatBubble
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Downloading
@@ -60,6 +61,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -161,13 +163,13 @@ fun MessageBubble(
     
     if (message.messageType == MessageType.STICKER) {
         val messageSticker = message.sticker
-
+        
         LaunchedEffect(messageSticker?.packId) {
             messageSticker?.let { stickersViewModel.requestPack(it.packId) }
         }
-
+        
         val sticker = messageSticker?.let { stickersState.sticker(it.packId, it.id) }
-
+        
         SwipeToReplyBox(
             enabled = item.canReply && onSwipeToReply != null,
             onReply = { onSwipeToReply?.invoke() },
@@ -194,10 +196,19 @@ fun MessageBubble(
                     }
                 } else {
                     null
+                },
+                replyContent = message.replyTo?.let { preview ->
+                    {
+                        ReplyQuote(
+                            preview = preview,
+                            modifier = Modifier.widthIn(max = 200.dp),
+                            onClick = onReplyPreviewClick
+                        )
+                    }
                 }
             )
         }
-
+        
         return
     }
     
@@ -219,6 +230,10 @@ fun MessageBubble(
             it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF
         }
     }
+    
+    val isMediaOnly = message.text.isNullOrBlank() &&
+            mediaAttachments.isNotEmpty() &&
+            message.attachments.size == mediaAttachments.size
     
     SwipeToReplyBox(
         enabled = item.canReply && onSwipeToReply != null,
@@ -336,14 +351,14 @@ fun MessageBubble(
                         val mediaSizes = mediaAttachments.map { attachment ->
                             val frameWidth = attachment.width ?: 0
                             val frameHeight = attachment.height ?: 0
-
+                            
                             if (frameWidth > 0 && frameHeight > 0) IntSize(frameWidth, frameHeight)
                             else IntSize.Zero
                         }
-
+                        
                         val mediaCacheKeyPrefix =
                             "$MEDIA_CACHE_KEY_PREFIX:${message.chatId}:${message.senderId}:${message.sendTime}"
-
+                        
                         Box {
                             ImageGridCustomLayout(
                                 maxWidth = contentMaxWidth,
@@ -351,7 +366,7 @@ fun MessageBubble(
                                 content = {
                                     mediaAttachments.forEach { attachment ->
                                         val mediaUri = attachment.localUri
-
+                                        
                                         if (mediaUri == null) {
                                             MediaPlaceholder(
                                                 attachment = attachment,
@@ -371,7 +386,7 @@ fun MessageBubble(
                                         }
                                     }
                                 })
-
+                            
                             if (message.text.isNullOrBlank()) {
                                 StickerMessageFooter(
                                     time = item.time,
@@ -386,47 +401,62 @@ fun MessageBubble(
                         }
                     }
                     
-                    message.attachments.forEach { attachment ->
-                        when (attachment.type) {
-                            AttachmentType.VOICE -> {
-                                MessageVoice(
-                                    file = attachment,
-                                    isPlaying = currentPlayingVoiceFileId == attachment.fileId && isVoicePlaying,
-                                    positionMs = if (currentPlayingVoiceFileId == attachment.fileId) voicePositionMs else 0,
-                                    durationMs = if (currentPlayingVoiceFileId == attachment.fileId) voiceDurationMs else 0,
-                                    onAction = { action ->
-                                        onFileAction(attachment, action)
-                                    },
-                                    onSeek = { positionMs ->
-                                        onVoiceSeek(attachment, positionMs)
-                                    }
-                                )
-                            }
-                            
-                            AttachmentType.FILE -> {
-                                if (attachment.extension.isAudioFile()) {
-                                    MessageMusic(
+                    Box {
+                        message.attachments.forEach { attachment ->
+                            when (attachment.type) {
+                                AttachmentType.VOICE -> {
+                                    MessageVoice(
                                         file = attachment,
-                                        metadata = audioMetadata[attachment.fileId],
-                                        isCurrentTrack = currentMusicFileId == attachment.fileId,
-                                        isPlaying = isMusicPlaying && currentMusicFileId == attachment.fileId,
-                                        positionMs = if (currentMusicFileId == attachment.fileId) musicPositionMs else 0,
-                                        durationMs = if (currentMusicFileId == attachment.fileId) musicDurationMs else 0,
+                                        isPlaying = currentPlayingVoiceFileId == attachment.fileId && isVoicePlaying,
+                                        positionMs = if (currentPlayingVoiceFileId == attachment.fileId) voicePositionMs else 0,
+                                        durationMs = if (currentPlayingVoiceFileId == attachment.fileId) voiceDurationMs else 0,
                                         onAction = { action ->
                                             onFileAction(attachment, action)
                                         },
                                         onSeek = { positionMs ->
-                                            onMusicSeek(attachment, positionMs)
-                                        })
-                                } else {
-                                    MessageFile(
-                                        file = attachment, onAction = { action ->
-                                            onFileAction(attachment, action)
-                                        })
+                                            onVoiceSeek(attachment, positionMs)
+                                        }
+                                    )
                                 }
+                                
+                                AttachmentType.FILE -> {
+                                    if (attachment.extension.isAudioFile()) {
+                                        MessageMusic(
+                                            file = attachment,
+                                            metadata = audioMetadata[attachment.fileId],
+                                            isCurrentTrack = currentMusicFileId == attachment.fileId,
+                                            isPlaying = isMusicPlaying && currentMusicFileId == attachment.fileId,
+                                            positionMs = if (currentMusicFileId == attachment.fileId) musicPositionMs else 0,
+                                            durationMs = if (currentMusicFileId == attachment.fileId) musicDurationMs else 0,
+                                            onAction = { action ->
+                                                onFileAction(attachment, action)
+                                            },
+                                            onSeek = { positionMs ->
+                                                onMusicSeek(attachment, positionMs)
+                                            })
+                                    } else {
+                                        MessageFile(
+                                            file = attachment, onAction = { action ->
+                                                onFileAction(attachment, action)
+                                            })
+                                    }
+                                }
+                                
+                                else -> {}
                             }
-                            
-                            else -> {}
+                        }
+                        
+                        if (message.text.isNullOrBlank() && mediaAttachments.isEmpty()) {
+                            MessageFooter(
+                                time = item.time,
+                                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                status = message.status,
+                                isEdited = message.isEdited,
+                                isPinned = isPinned
+                            )
                         }
                     }
                     
@@ -464,23 +494,9 @@ fun MessageBubble(
                                 isPinned = isPinned
                             )
                         }
-                    } else if (onCommentsClick != null && mediaAttachments.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.BottomEnd
-                        ) {
-                            MessageFooter(
-                                time = item.time,
-                                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                status = message.status,
-                                isEdited = message.isEdited,
-                                isPinned = isPinned
-                            )
-                        }
                     }
                     
-                    if (onCommentsClick != null) {
+                    if (onCommentsClick != null && !isMediaOnly) {
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 8.dp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -522,19 +538,6 @@ fun MessageBubble(
                     }
                 }
                 
-                if (message.text.isNullOrBlank() && mediaAttachments.isEmpty()) {
-                    Box(modifier = Modifier.align(Alignment.BottomEnd)) {
-                        MessageFooter(
-                            time = item.time,
-                            isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            status = message.status,
-                            isEdited = message.isEdited,
-                            isPinned = isPinned
-                        )
-                    }
-                }
-                
                 val readers = remember(item.readInfo) {
                     item.readInfo.orEmpty().sortedByDescending { it.readAt }
                 }
@@ -568,7 +571,10 @@ fun MessageBubble(
                             }
                         )
                         
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 10.dp))
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 10.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         
                         readers.forEach { reader ->
                             val name = listOf(reader.firstName, reader.lastName.orEmpty())
@@ -605,7 +611,7 @@ private fun formatStatusTime(timestamp: Long, todayVerb: String): String {
     val date = instant.atZone(ZoneId.systemDefault())
     val today = LocalDate.now()
     val time = instant.toPrettyTime()
-
+    
     return when (date.toLocalDate()) {
         today -> "$todayVerb в $time"
         today.minusDays(1) -> "вчера в $time"
@@ -613,30 +619,30 @@ private fun formatStatusTime(timestamp: Long, todayVerb: String): String {
     }
 }
 
+@Preview(showBackground = true)
 @Composable
 private fun CommentCountBadge(
-    count: Int,
-    onClick: () -> Unit
+    count: Int = 2,
+    onClick: () -> Unit = {}
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
+            .padding(4.dp)
             .clip(CircleShape)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = MaterialTheme.colorScheme.primary),
-                onClick = onClick
-            )
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .clickable(onClick = onClick)
+            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.8f))
+            .padding(8.dp)
     ) {
         Icon(
             imageVector = Icons.Rounded.ChatBubble,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(22.dp)
+            modifier = Modifier.size(18.dp)
         )
-
+        
         if (count > 0) {
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = compactCount(count),
                 fontSize = 11.sp,

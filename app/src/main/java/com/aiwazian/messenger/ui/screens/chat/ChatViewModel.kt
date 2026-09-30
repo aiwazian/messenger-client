@@ -1874,8 +1874,18 @@ class ChatViewModel @Inject constructor(
     }
 
     override fun sendSticker(stickerId: Long) {
+        val replyTo = _uiState.value.replyToMessage
+
         viewModelScope.launch {
-            sendStickerUseCase(chatId = _uiState.value.chatId, stickerId = stickerId)
+            val result = sendStickerUseCase(
+                chatId = _uiState.value.chatId,
+                stickerId = stickerId,
+                replyToId = replyTo?.messageId
+            )
+
+            if (result.isSuccess && replyTo != null) {
+                clearReply()
+            }
         }
     }
 

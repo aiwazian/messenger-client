@@ -6,6 +6,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -56,7 +57,8 @@ fun StickerMessageItem(
     onStickerClick: () -> Unit,
     modifier: Modifier = Modifier,
     isPinned: Boolean = false,
-    trailingContent: (@Composable RowScope.() -> Unit)? = null
+    trailingContent: (@Composable () -> Unit)? = null,
+    replyContent: (@Composable () -> Unit)? = null
 ) {
     var isMenuExpanded by remember { mutableStateOf(false) }
 
@@ -72,6 +74,12 @@ fun StickerMessageItem(
         ) {
             if (isMine) {
                 EmptyMenuArea(onClick = { isMenuExpanded = true })
+
+                StickerSideContent(
+                    replyContent = replyContent,
+                    trailingContent = trailingContent,
+                    modifier = Modifier.padding(end = 4.dp)
+                )
             }
 
             Box(modifier = Modifier.size(STICKER_MESSAGE_SIZE)) {
@@ -103,9 +111,13 @@ fun StickerMessageItem(
                 )
             }
 
-            trailingContent?.invoke(this)
-
             if (!isMine) {
+                StickerSideContent(
+                    replyContent = replyContent,
+                    trailingContent = trailingContent,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+
                 EmptyMenuArea(onClick = { isMenuExpanded = true })
             }
         }
@@ -183,6 +195,25 @@ fun StickerMessageFooter(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun StickerSideContent(
+    replyContent: (@Composable () -> Unit)?,
+    trailingContent: (@Composable () -> Unit)?,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.height(STICKER_MESSAGE_SIZE),
+        verticalArrangement = when {
+            replyContent != null && trailingContent != null -> Arrangement.SpaceBetween
+            trailingContent != null -> Arrangement.Bottom
+            else -> Arrangement.Top
+        }
+    ) {
+        replyContent?.invoke()
+        trailingContent?.invoke()
     }
 }
 
