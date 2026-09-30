@@ -69,6 +69,7 @@ import com.aiwazian.messenger.utils.FileHandler
 import com.aiwazian.messenger.utils.LastSeenHelper
 import com.aiwazian.messenger.utils.MessageSendQueue
 import com.aiwazian.messenger.utils.RegexPatterns
+import com.aiwazian.messenger.utils.compactCount
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.UploadManager
 import com.aiwazian.messenger.utils.VibrationManager
@@ -443,10 +444,10 @@ class ChatViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     chatName = UiText.DynamicString(channel.name),
-                    subTitle = UiText.PluralResource(
-                        R.plurals.subscribers_count,
-                        channel.subscribers,
-                        channel.subscribers
+                    subTitle = compactCountSubtitle(
+                        count = channel.subscribers,
+                        pluralRes = R.plurals.subscribers_count,
+                        compactRes = R.string.subscribers_compact
                     ),
                     isJoined = channel.isSubscribed,
                     isOwner = channel.ownerId == myId,
@@ -474,10 +475,10 @@ class ChatViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     chatName = UiText.DynamicString(group.name),
-                    subTitle = UiText.PluralResource(
-                        R.plurals.members_count,
-                        group.members,
-                        group.members
+                    subTitle = compactCountSubtitle(
+                        count = group.members,
+                        pluralRes = R.plurals.members_count,
+                        compactRes = R.string.members_compact
                     ),
                     isJoined = group.isMember,
                     isOwner = group.ownerId == myId,
@@ -1862,6 +1863,14 @@ class ChatViewModel @Inject constructor(
             }
         }
         sendingJobs[tempId] = job
+    }
+
+    private fun compactCountSubtitle(count: Int, pluralRes: Int, compactRes: Int): UiText {
+        return if (count >= 1000) {
+            UiText.DynamicString(context.getString(compactRes, compactCount(count)))
+        } else {
+            UiText.PluralResource(pluralRes, count, count)
+        }
     }
 
     override fun sendSticker(stickerId: Long) {

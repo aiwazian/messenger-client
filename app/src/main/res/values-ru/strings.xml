@@ -586,6 +586,8 @@
     <string name="failed_to_load_comments">Не удалось загрузить комментарии</string>
     <string name="failed_to_send_comment">Не удалось отправить комментарий</string>
     <string name="comments_deleted">Все комментарии удалены</string>
+    <string name="subscribers_compact">%1$s подписчиков</string>
+    <string name="members_compact">%1$s участников</string>
     <plurals name="comments_count">
         <item quantity="zero">%1$d комментариев</item>
         <item quantity="one">%1$d комментарий</item>

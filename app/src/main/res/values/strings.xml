@@ -564,6 +564,8 @@
     <string name="failed_to_load_comments">Failed to load comments</string>
     <string name="failed_to_send_comment">Failed to send the comment</string>
     <string name="comments_deleted">All comments deleted</string>
+    <string name="subscribers_compact">%1$s subscribers</string>
+    <string name="members_compact">%1$s members</string>
     <plurals name="comments_count">
         <item quantity="zero">%1$d comments</item>
         <item quantity="one">%1$d comment</item>

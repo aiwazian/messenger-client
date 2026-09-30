@@ -55,12 +55,13 @@ fun StickerMessageItem(
     actions: List<DropdownMenuAction>,
     onStickerClick: () -> Unit,
     modifier: Modifier = Modifier,
-    isPinned: Boolean = false
+    isPinned: Boolean = false,
+    trailingContent: (@Composable RowScope.() -> Unit)? = null
 ) {
     var isMenuExpanded by remember { mutableStateOf(false) }
-    
+
     val interactionSource = remember { MutableInteractionSource() }
-    
+
     Box(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -72,7 +73,7 @@ fun StickerMessageItem(
             if (isMine) {
                 EmptyMenuArea(onClick = { isMenuExpanded = true })
             }
-            
+
             Box(modifier = Modifier.size(STICKER_MESSAGE_SIZE)) {
                 if (sticker != null) {
                     AnimatedStickerImage(
@@ -90,7 +91,7 @@ fun StickerMessageItem(
                             )
                     )
                 }
-                
+
                 StickerMessageFooter(
                     time = time,
                     isRead = isRead,
@@ -101,7 +102,9 @@ fun StickerMessageItem(
                     isPinned = isPinned
                 )
             }
-            
+
+            trailingContent?.invoke(this)
+
             if (!isMine) {
                 EmptyMenuArea(onClick = { isMenuExpanded = true })
             }

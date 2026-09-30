@@ -563,6 +563,8 @@
     <string name="failed_to_load_comments">Impossibile caricare i commenti</string>
     <string name="failed_to_send_comment">Impossibile inviare il commento</string>
     <string name="comments_deleted">Tutti i commenti eliminati</string>
+    <string name="subscribers_compact">%1$s iscritti</string>
+    <string name="members_compact">%1$s membri</string>
     <plurals name="comments_count">
         <item quantity="zero">%1$d commenti</item>
         <item quantity="one">%1$d commento</item>

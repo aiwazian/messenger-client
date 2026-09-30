@@ -29,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Downloading
@@ -97,6 +98,7 @@ import com.aiwazian.messenger.ui.screens.chat.ChatStickersViewModel
 import com.aiwazian.messenger.utils.EmojiLink
 import com.aiwazian.messenger.utils.StickerLink
 import com.aiwazian.messenger.utils.UiText
+import com.aiwazian.messenger.utils.compactCount
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
@@ -159,13 +161,13 @@ fun MessageBubble(
     
     if (message.messageType == MessageType.STICKER) {
         val messageSticker = message.sticker
-        
+
         LaunchedEffect(messageSticker?.packId) {
             messageSticker?.let { stickersViewModel.requestPack(it.packId) }
         }
-        
+
         val sticker = messageSticker?.let { stickersState.sticker(it.packId, it.id) }
-        
+
         SwipeToReplyBox(
             enabled = item.canReply && onSwipeToReply != null,
             onReply = { onSwipeToReply?.invoke() },
@@ -182,10 +184,20 @@ fun MessageBubble(
                 onStickerClick = {
                     messageSticker?.let { stickersViewModel.openPack(it.packId) }
                 },
-                isPinned = isPinned
+                isPinned = isPinned,
+                trailingContent = if (onCommentsClick != null) {
+                    {
+                        CommentCountBadge(
+                            count = message.commentsCount,
+                            onClick = onCommentsClick
+                        )
+                    }
+                } else {
+                    null
+                }
             )
         }
-        
+
         return
     }
     
@@ -324,40 +336,54 @@ fun MessageBubble(
                         val mediaSizes = mediaAttachments.map { attachment ->
                             val frameWidth = attachment.width ?: 0
                             val frameHeight = attachment.height ?: 0
-                            
+
                             if (frameWidth > 0 && frameHeight > 0) IntSize(frameWidth, frameHeight)
                             else IntSize.Zero
                         }
-                        
+
                         val mediaCacheKeyPrefix =
                             "$MEDIA_CACHE_KEY_PREFIX:${message.chatId}:${message.senderId}:${message.sendTime}"
-                        
-                        ImageGridCustomLayout(
-                            maxWidth = contentMaxWidth,
-                            itemSizes = mediaSizes,
-                            content = {
-                                mediaAttachments.forEach { attachment ->
-                                    val mediaUri = attachment.localUri
-                                    
-                                    if (mediaUri == null) {
-                                        MediaPlaceholder(
-                                            attachment = attachment,
-                                            onFileAction = onFileAction
-                                        )
-                                    } else {
-                                        MediaThumbnail(
-                                            attachment = attachment,
-                                            mediaUri = mediaUri,
-                                            cacheKey = "$mediaCacheKeyPrefix:${attachment.fileId}:$mediaUri",
-                                            transitionKey = chatMediaKey(
-                                                attachment.messageId,
-                                                mediaUri
-                                            ),
-                                            onFileAction = onFileAction
-                                        )
+
+                        Box {
+                            ImageGridCustomLayout(
+                                maxWidth = contentMaxWidth,
+                                itemSizes = mediaSizes,
+                                content = {
+                                    mediaAttachments.forEach { attachment ->
+                                        val mediaUri = attachment.localUri
+
+                                        if (mediaUri == null) {
+                                            MediaPlaceholder(
+                                                attachment = attachment,
+                                                onFileAction = onFileAction
+                                            )
+                                        } else {
+                                            MediaThumbnail(
+                                                attachment = attachment,
+                                                mediaUri = mediaUri,
+                                                cacheKey = "$mediaCacheKeyPrefix:${attachment.fileId}:$mediaUri",
+                                                transitionKey = chatMediaKey(
+                                                    attachment.messageId,
+                                                    mediaUri
+                                                ),
+                                                onFileAction = onFileAction
+                                            )
+                                        }
                                     }
-                                }
-                            })
+                                })
+
+                            if (message.text.isNullOrBlank()) {
+                                StickerMessageFooter(
+                                    time = item.time,
+                                    isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                                    status = message.status,
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(4.dp),
+                                    isPinned = isPinned
+                                )
+                            }
+                        }
                     }
                     
                     message.attachments.forEach { attachment ->
@@ -438,29 +464,19 @@ fun MessageBubble(
                                 isPinned = isPinned
                             )
                         }
-                    } else if (onCommentsClick != null) {
+                    } else if (onCommentsClick != null && mediaAttachments.isEmpty()) {
                         Box(
                             modifier = Modifier.fillMaxWidth(),
                             contentAlignment = Alignment.BottomEnd
                         ) {
-                            if (mediaAttachments.isNotEmpty()) {
-                                StickerMessageFooter(
-                                    time = item.time,
-                                    isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
-                                    status = message.status,
-                                    modifier = Modifier.padding(4.dp),
-                                    isPinned = isPinned
-                                )
-                            } else {
-                                MessageFooter(
-                                    time = item.time,
-                                    isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    status = message.status,
-                                    isEdited = message.isEdited,
-                                    isPinned = isPinned
-                                )
-                            }
+                            MessageFooter(
+                                time = item.time,
+                                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                status = message.status,
+                                isEdited = message.isEdited,
+                                isPinned = isPinned
+                            )
                         }
                     }
                     
@@ -506,26 +522,16 @@ fun MessageBubble(
                     }
                 }
                 
-                if (message.text.isNullOrBlank() && onCommentsClick == null) {
+                if (message.text.isNullOrBlank() && mediaAttachments.isEmpty()) {
                     Box(modifier = Modifier.align(Alignment.BottomEnd)) {
-                        if (mediaAttachments.isNotEmpty()) {
-                            StickerMessageFooter(
-                                time = item.time,
-                                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
-                                status = message.status,
-                                modifier = Modifier.padding(4.dp),
-                                isPinned = isPinned
-                            )
-                        } else {
-                            MessageFooter(
-                                time = item.time,
-                                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                status = message.status,
-                                isEdited = message.isEdited,
-                                isPinned = isPinned
-                            )
-                        }
+                        MessageFooter(
+                            time = item.time,
+                            isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            status = message.status,
+                            isEdited = message.isEdited,
+                            isPinned = isPinned
+                        )
                     }
                 }
                 
@@ -599,11 +605,45 @@ private fun formatStatusTime(timestamp: Long, todayVerb: String): String {
     val date = instant.atZone(ZoneId.systemDefault())
     val today = LocalDate.now()
     val time = instant.toPrettyTime()
-    
+
     return when (date.toLocalDate()) {
         today -> "$todayVerb в $time"
         today.minusDays(1) -> "вчера в $time"
         else -> date.format(DateTimeFormatter.ofPattern("d MMMM")) + " в " + time
+    }
+}
+
+@Composable
+private fun CommentCountBadge(
+    count: Int,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(CircleShape)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(color = MaterialTheme.colorScheme.primary),
+                onClick = onClick
+            )
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.ChatBubble,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(22.dp)
+        )
+
+        if (count > 0) {
+            Text(
+                text = compactCount(count),
+                fontSize = 11.sp,
+                lineHeight = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 

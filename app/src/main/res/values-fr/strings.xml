@@ -566,6 +566,8 @@
     <string name="failed_to_load_comments">Échec du chargement des commentaires</string>
     <string name="failed_to_send_comment">Échec de l\'envoi du commentaire</string>
     <string name="comments_deleted">Tous les commentaires supprimés</string>
+    <string name="subscribers_compact">%1$s abonnés</string>
+    <string name="members_compact">%1$s membres</string>
     <plurals name="comments_count">
         <item quantity="zero">%1$d commentaire</item>
         <item quantity="one">%1$d commentaire</item>
