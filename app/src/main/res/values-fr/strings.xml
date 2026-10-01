@@ -330,6 +330,8 @@
     <string name="manage_admins_description">Peut ajouter et supprimer des administrateurs et modifier leurs autorisations.</string>
     <string name="can_pin_messages">Épingler des messages</string>
     <string name="can_pin_messages_description">Peut épingler et désépingler des messages pour tout le monde.</string>
+    <string name="can_delete_comments">Supprimer des commentaires</string>
+    <string name="can_delete_comments_description">Peut supprimer les commentaires d’autres utilisateurs sous les publications du canal.</string>
     <string name="pin_message">Épingler</string>
     <string name="edit_pin">Modifier l\'épinglage</string>
     <string name="unpin_message">Désépingler</string>
@@ -553,4 +555,30 @@
     <string name="storage_database_clear_failed">Échec de l\'effacement de la base de données</string>
     <string name="done">Terminé</string>
     <string name="empty_chats_hint">Pour commencer à discuter, appuyez sur le champ de recherche en haut de l’écran et trouvez un utilisateur grâce à son @username</string>
+    <string name="comments">Commentaires</string>
+    <string name="enable_comments">Activer les commentaires</string>
+    <string name="delete_all_comments">Supprimer tous les commentaires</string>
+    <string name="delete_all_comments_confirm">Tous les commentaires de toutes les publications seront définitivement supprimés. Cette action est irréversible.</string>
+    <string name="who_can_comment">Qui peut écrire des commentaires ?</string>
+    <string name="only_subscribers">Abonnés uniquement</string>
+    <string name="comment">Commenter</string>
+    <string name="comment_field_hint">Ajouter un commentaire…</string>
+    <string name="owner_tag">Propriétaire</string>
+    <string name="admin_tag">Admin</string>
+    <string name="failed_to_load_comments">Échec du chargement des commentaires</string>
+    <string name="failed_to_send_comment">Échec de l\'envoi du commentaire</string>
+    <string name="comments_deleted">Tous les commentaires supprimés</string>
+    <string name="subscribers_compact">%1$s abonnés</string>
+    <string name="members_compact">%1$s membres</string>
+    <string name="delete_comment">Supprimer le commentaire</string>
+    <string name="delete_comment_confirm">Le commentaire sera supprimé pour tout le monde. Cette action est irréversible.</string>
+    <string name="failed_to_delete_comment">Échec de la suppression du commentaire</string>
+    <plurals name="comments_count">
+        <item quantity="zero">%1$d commentaire</item>
+        <item quantity="one">%1$d commentaire</item>
+        <item quantity="two">%1$d commentaires</item>
+        <item quantity="few">%1$d commentaires</item>
+        <item quantity="many">%1$d commentaires</item>
+        <item quantity="other">%1$d commentaires</item>
+    </plurals>
 </resources>

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Campaign
+import androidx.compose.material.icons.outlined.Comment
 import androidx.compose.material.icons.outlined.PersonAddAlt
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
@@ -131,8 +132,30 @@ fun ChannelSettingsScreen(
                             stringResource(R.string.private_channel)
                         },
                         onClick = {
-                            navBackStack.add(AppRoute.ChannelTypeSettings(channelId = uiState.channel.id))
+                            navBackStack.add(
+                                AppRoute.ChannelTypeSettings(
+                                    channelId = uiState.channel.id,
+                                    channelType = uiState.channel.channelType,
+                                    noCopy = uiState.channel.noCopy
+                                )
+                            )
                         })
+                }
+
+                if (uiState.isOwner) {
+                    SectionItem(
+                        leadingIcon = Icons.Outlined.Comment,
+                        headlineText = stringResource(R.string.comments),
+                        onClick = {
+                            navBackStack.add(
+                                AppRoute.ChannelCommentsSettings(
+                                    channelId = uiState.channel.id,
+                                    commentsEnabled = uiState.channel.commentsEnabled,
+                                    commentsRestrictedToSubscribers = uiState.channel.commentsRestrictedToSubscribers
+                                )
+                            )
+                        }
+                    )
                 }
                 
                 if (uiState.canManageInviteLinks) {

@@ -17,7 +17,9 @@ data class ChannelAdmin(
     /** Управление администраторами: назначение, снятие и изменение их прав. */
     val canManageAdmins: Boolean,
     /** Закрепление сообщений для всех подписчиков. */
-    val canPinMessages: Boolean
+    val canPinMessages: Boolean,
+    /** Удаление чужих комментариев под постами канала. */
+    val canDeleteComments: Boolean = false
 )
 
 /** Администратор группы. Тег есть только в группах. */
@@ -48,5 +50,6 @@ data class ChatAdminPermissions(
     val canEditProfile: Boolean = false,
     val canManageAdmins: Boolean = false,
     val canPinMessages: Boolean = false,
+    val canDeleteComments: Boolean = false,
     val tag: String? = null
 )

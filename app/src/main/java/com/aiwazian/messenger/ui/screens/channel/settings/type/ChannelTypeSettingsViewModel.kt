@@ -48,7 +48,16 @@ class ChannelTypeSettingsViewModel @Inject constructor(
     private val _uiEffect = MutableSharedFlow<ChannelTypeSettingsEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
     
-    fun init(channelId: Long) {
+    fun init(channelId: Long, initialChannelType: ChannelType, initialNoCopy: Boolean) {
+        _uiState.update {
+            it.copy(
+                channelId = channelId,
+                channelType = initialChannelType,
+                noCopy = initialNoCopy,
+                canChangeNoCopy = true
+            )
+        }
+
         viewModelScope.launch {
             channelRepository.fetchById(channelId)
             channelRepository.getById(channelId).firstOrNull()?.let { channel ->

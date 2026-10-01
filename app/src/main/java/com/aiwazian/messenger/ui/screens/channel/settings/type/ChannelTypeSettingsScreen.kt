@@ -56,10 +56,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun ChannelTypeSettingsScreen(
     channelId: Long,
+    channelType: ChannelType,
+    noCopy: Boolean,
     viewModel: ChannelTypeSettingsViewModel = hiltViewModel()
 ) {
     LaunchedEffect(channelId) {
-        viewModel.init(channelId)
+        viewModel.init(channelId, channelType, noCopy)
     }
     
     val context = LocalContext.current

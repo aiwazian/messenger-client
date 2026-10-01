@@ -48,7 +48,16 @@ class GroupTypeSettingsViewModel @Inject constructor(
     private val _uiEffect = MutableSharedFlow<GroupTypeSettingsEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
     
-    fun init(groupId: Long) {
+    fun init(groupId: Long, initialGroupType: GroupType, initialNoCopy: Boolean) {
+        _uiState.update {
+            it.copy(
+                groupId = groupId,
+                groupType = initialGroupType,
+                noCopy = initialNoCopy,
+                canChangeNoCopy = true
+            )
+        }
+
         viewModelScope.launch {
             groupRepository.fetchById(groupId)
             groupRepository.getById(groupId).firstOrNull()?.let { group ->

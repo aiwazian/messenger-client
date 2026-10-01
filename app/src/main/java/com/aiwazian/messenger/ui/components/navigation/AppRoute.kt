@@ -5,7 +5,9 @@
 package com.aiwazian.messenger.ui.components.navigation
 
 import androidx.navigation3.runtime.NavKey
+import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.enums.ChatFolderCategory
+import com.aiwazian.messenger.enums.GroupType
 import com.aiwazian.messenger.enums.PrivacyExceptionKind
 import com.aiwazian.messenger.enums.PrivacyField
 import com.aiwazian.messenger.enums.PrivacyLevel
@@ -207,7 +209,21 @@ sealed interface AppRoute : NavKey {
     data class ChannelTransferOwnership(val channelId: Long) : AppRoute
     
     @Serializable
-    data class ChannelTypeSettings(val channelId: Long) : AppRoute
+    data class ChannelTypeSettings(
+        val channelId: Long,
+        val channelType: ChannelType,
+        val noCopy: Boolean
+    ) : AppRoute
+
+    @Serializable
+    data class ChannelCommentsSettings(
+        val channelId: Long,
+        val commentsEnabled: Boolean,
+        val commentsRestrictedToSubscribers: Boolean
+    ) : AppRoute
+
+    @Serializable
+    data class PostComments(val chatId: Long, val postId: Long) : AppRoute
     
     @Serializable
     data class ChannelSubscribers(val channelId: Long) : AppRoute
@@ -243,7 +259,11 @@ sealed interface AppRoute : NavKey {
     data class GroupTransferOwnership(val groupId: Long) : AppRoute
     
     @Serializable
-    data class GroupTypeSettings(val groupId: Long) : AppRoute
+    data class GroupTypeSettings(
+        val groupId: Long,
+        val groupType: GroupType,
+        val noCopy: Boolean
+    ) : AppRoute
     
     @Serializable
     data class GroupInviteLinks(val groupId: Long) : AppRoute

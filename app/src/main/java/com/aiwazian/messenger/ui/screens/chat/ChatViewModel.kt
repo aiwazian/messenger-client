@@ -47,6 +47,7 @@ import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import com.aiwazian.messenger.ui.screens.chat.components.ChatInputActions
 import com.aiwazian.messenger.ui.screens.chat.components.CustomEmojiText
 import com.aiwazian.messenger.ui.screens.chat.components.CustomEmojiTextPart
 import com.aiwazian.messenger.ui.screens.chat.paging.MessageWindowPager
@@ -57,6 +58,7 @@ import com.aiwazian.messenger.usecase.JoinViaInviteLinkUseCase
 import com.aiwazian.messenger.usecase.LeaveChatUseCase
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.usecase.SendMessageWithFilesUseCase
+import com.aiwazian.messenger.usecase.SendStickerUseCase
 import com.aiwazian.messenger.utils.AudioMetadataCache
 import com.aiwazian.messenger.utils.AudioRecorderManager
 import com.aiwazian.messenger.utils.ClipboardService
@@ -65,7 +67,9 @@ import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.EqualizerManager
 import com.aiwazian.messenger.utils.FileHandler
 import com.aiwazian.messenger.utils.LastSeenHelper
+import com.aiwazian.messenger.utils.MessageSendQueue
 import com.aiwazian.messenger.utils.RegexPatterns
+import com.aiwazian.messenger.utils.compactCount
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.UploadManager
 import com.aiwazian.messenger.utils.VibrationManager
@@ -123,8 +127,10 @@ class ChatViewModel @Inject constructor(
     private val equalizerManager: EqualizerManager,
     private val onlineUsersTracker: OnlineUsersTracker,
     private val realtimeEventSyncService: RealtimeEventSyncService,
-    private val notificationHelper: NotificationHelper
-) : ViewModel() {
+    private val notificationHelper: NotificationHelper,
+    private val messageSendQueue: MessageSendQueue,
+    private val sendStickerUseCase: SendStickerUseCase
+) : ViewModel(), ChatInputActions {
 
     private val audioRecorderManager = AudioRecorderManager(context)
     private var recordingTimerJob: Job? = null
@@ -252,7 +258,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun onKeyboardHeightChanged(height: Float) {
+    override fun onKeyboardHeightChanged(height: Float) {
         if (height <= 0f) return
 
         viewModelScope.launch {
@@ -438,15 +444,16 @@ class ChatViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     chatName = UiText.DynamicString(channel.name),
-                    subTitle = UiText.PluralResource(
-                        R.plurals.subscribers_count,
-                        channel.subscribers,
-                        channel.subscribers
+                    subTitle = compactCountSubtitle(
+                        count = channel.subscribers,
+                        pluralRes = R.plurals.subscribers_count,
+                        compactRes = R.string.subscribers_compact
                     ),
                     isJoined = channel.isSubscribed,
                     isOwner = channel.ownerId == myId,
                     avatarUri = channel.avatars.firstOrNull()?.uri,
                     noCopy = channel.noCopy,
+                    commentsEnabled = channel.commentsEnabled,
                     topBarActions = createTopBarActions(
                         channel.ownerId == myId,
                         channel.isSubscribed,
@@ -468,10 +475,10 @@ class ChatViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     chatName = UiText.DynamicString(group.name),
-                    subTitle = UiText.PluralResource(
-                        R.plurals.members_count,
-                        group.members,
-                        group.members
+                    subTitle = compactCountSubtitle(
+                        count = group.members,
+                        pluralRes = R.plurals.members_count,
+                        compactRes = R.string.members_compact
                     ),
                     isJoined = group.isMember,
                     isOwner = group.ownerId == myId,
@@ -1102,12 +1109,12 @@ class ChatViewModel @Inject constructor(
         replyDraftCache.save(state.myId, state.chatId, preview)
     }
 
-    fun onReplyPanelClicked() {
+    override fun onReplyPanelClicked() {
         val preview = _uiState.value.replyToMessage ?: return
         jumpToMessage(preview.messageId)
     }
 
-    fun cancelReply() {
+    override fun cancelReply() {
         clearReply()
     }
 
@@ -1423,7 +1430,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun changeText(newText: String) {
+    override fun changeText(newText: String) {
         _uiState.update { it.copy(messageText = newText) }
 
         draftSaveJob?.cancel()
@@ -1439,7 +1446,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun onSendMessageClicked() {
+    override fun onSendMessageClicked() {
         val editingId = _uiState.value.editingMessageId
         if (editingId != null) {
             viewModelScope.launch { handleEditMessage(editingId) }
@@ -1539,7 +1546,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun cancelEditing() {
+    override fun cancelEditing() {
         _uiState.update {
             it.copy(
                 editingMessageId = null,
@@ -1590,7 +1597,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun onJoinClicked() {
+    override fun onJoinClicked() {
         viewModelScope.launch {
             val chatId = _uiState.value.chatId
             when (ChatType.fromId(chatId)) {
@@ -1838,7 +1845,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun sendFiles(uris: List<Uri>) {
+    override fun sendFiles(uris: List<Uri>) {
         val tempId = -System.currentTimeMillis()
         val replyTo = _uiState.value.replyToMessage
         clearReply()
@@ -1856,6 +1863,42 @@ class ChatViewModel @Inject constructor(
             }
         }
         sendingJobs[tempId] = job
+    }
+
+    private fun compactCountSubtitle(count: Int, pluralRes: Int, compactRes: Int): UiText {
+        return if (count >= 1000) {
+            UiText.DynamicString(context.getString(compactRes, compactCount(count)))
+        } else {
+            UiText.PluralResource(pluralRes, count, count)
+        }
+    }
+
+    override fun sendSticker(stickerId: Long) {
+        val replyTo = _uiState.value.replyToMessage
+
+        viewModelScope.launch {
+            val result = sendStickerUseCase(
+                chatId = _uiState.value.chatId,
+                stickerId = stickerId,
+                replyToId = replyTo?.messageId
+            )
+
+            if (result.isSuccess && replyTo != null) {
+                clearReply()
+            }
+        }
+    }
+
+    override fun sendMediaUris(uris: List<Uri>, caption: String, replyTo: MessageReplyPreview?) {
+        messageSendQueue.enqueueFiles(
+            chatId = _uiState.value.chatId,
+            uris = uris,
+            text = caption.trim().ifBlank { null },
+            replyTo = replyTo,
+            videoQualities = emptyMap(),
+            mediaTransforms = emptyMap(),
+            mediaDrawings = emptyMap()
+        )
     }
 
     fun cancelUpload(tempMessageId: Long) {
@@ -1947,7 +1990,7 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch { dataStoreManager.saveVideoPlaybackSpeed(speed) }
 
     fun dismissBannedDialog() = _uiState.update { it.copy(showBannedDialog = false) }
-    fun onMicrophonePermissionDenied() =
+    override fun onMicrophonePermissionDenied() =
         _uiState.update { it.copy(showMicrophonePermissionSheet = true) }
 
     fun dismissMicrophonePermissionSheet() =
@@ -2043,7 +2086,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun startRecording() {
+    override fun startRecording() {
         if (_uiState.value.isRecording) return
         val file = audioRecorderManager.startRecording()
         if (file != null) {
@@ -2076,14 +2119,14 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun lockRecording() {
+    override fun lockRecording() {
         if (_uiState.value.isRecording) {
             _uiState.update { it.copy(isRecordingLocked = true) }
             vibrationManager.vibrate(VibrationPattern.TactileResponse)
         }
     }
 
-    fun stopRecordingAndSend() {
+    override fun stopRecordingAndSend() {
         if (!_uiState.value.isRecording) return
         val file = audioRecorderManager.stopRecording()
         recordingTimerJob?.cancel()
@@ -2097,7 +2140,7 @@ class ChatViewModel @Inject constructor(
         if (file != null) sendFiles(listOf(Uri.fromFile(file)))
     }
 
-    fun cancelRecording() {
+    override fun cancelRecording() {
         if (!_uiState.value.isRecording) return
         audioRecorderManager.cancelRecording()
         recordingTimerJob?.cancel()
@@ -2111,7 +2154,7 @@ class ChatViewModel @Inject constructor(
         vibrationManager.vibrate(VibrationPattern.TactileResponse)
     }
 
-    fun showBlockDialog() {
+    override fun showBlockDialog() {
         _uiState.update { it.copy(showBlockDialog = true) }
     }
 

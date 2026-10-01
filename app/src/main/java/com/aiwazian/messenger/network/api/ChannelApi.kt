@@ -7,12 +7,18 @@ package com.aiwazian.messenger.network.api
 import com.aiwazian.messenger.network.dto.ChannelAdminResponseDto
 import com.aiwazian.messenger.network.dto.ChannelResponseDto
 import com.aiwazian.messenger.network.dto.ChatAdminPermissionsResponseDto
+import com.aiwazian.messenger.network.dto.CommentDto
+import com.aiwazian.messenger.network.dto.ConfirmCommentRequestDto
 import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
+import com.aiwazian.messenger.network.dto.CreateCommentRequestDto
+import com.aiwazian.messenger.network.dto.EditCommentRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.InviteLinkResponseDto
+import com.aiwazian.messenger.network.dto.SetCommentsEnabledRequestDto
+import com.aiwazian.messenger.network.dto.SetCommentsRestrictedRequestDto
 import com.aiwazian.messenger.network.dto.SetNoCopyRequestDto
 import com.aiwazian.messenger.network.dto.UpdateChannelRequestDto
 import com.aiwazian.messenger.network.dto.UpsertChannelAdminRequestDto
@@ -21,6 +27,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -88,6 +95,75 @@ interface ChannelApi {
         @Path("channelId") channelId: Long,
         @Body request: SetNoCopyRequestDto
     ): Response<ChannelResponseDto>
+
+    @PATCH("channels/{channelId}/comments-enabled")
+    suspend fun setCommentsEnabled(
+        @Path("channelId") channelId: Long,
+        @Body request: SetCommentsEnabledRequestDto
+    ): Response<ChannelResponseDto>
+
+    @PATCH("channels/{channelId}/comments-restricted")
+    suspend fun setCommentsRestrictedToSubscribers(
+        @Path("channelId") channelId: Long,
+        @Body request: SetCommentsRestrictedRequestDto
+    ): Response<ChannelResponseDto>
+
+    @DELETE("channels/{channelId}/comments")
+    suspend fun deleteAllComments(@Path("channelId") channelId: Long): Response<Unit>
+
+    @GET("channels/{channelId}/posts/{postId}/comments")
+    suspend fun getPostComments(
+        @Path("channelId") channelId: Long,
+        @Path("postId") postId: Long
+    ): Response<List<CommentDto>>
+
+    @POST("channels/{channelId}/posts/{postId}/comments")
+    suspend fun createPostComment(
+        @Path("channelId") channelId: Long,
+        @Path("postId") postId: Long,
+        @Body request: CreateCommentRequestDto,
+        @Header("x-socket-id") socketId: String
+    ): Response<CommentDto>
+
+    @PATCH("channels/{channelId}/posts/{postId}/comments/{commentId}")
+    suspend fun editComment(
+        @Path("channelId") channelId: Long,
+        @Path("postId") postId: Long,
+        @Path("commentId") commentId: Long,
+        @Body request: EditCommentRequestDto,
+        @Header("x-socket-id") socketId: String
+    ): Response<CommentDto>
+
+    @DELETE("channels/{channelId}/posts/{postId}/comments/{commentId}")
+    suspend fun deleteComment(
+        @Path("channelId") channelId: Long,
+        @Path("postId") postId: Long,
+        @Path("commentId") commentId: Long,
+        @Header("x-socket-id") socketId: String
+    ): Response<Unit>
+
+    @POST("channels/{channelId}/posts/{postId}/comments/files/init")
+    suspend fun initCommentFileUpload(
+        @Path("channelId") channelId: Long,
+        @Path("postId") postId: Long,
+        @Body request: FileInitRequestDto
+    ): Response<FileInitResponseDto>
+
+    @POST("channels/{channelId}/posts/{postId}/comments/confirm")
+    suspend fun confirmCommentFiles(
+        @Path("channelId") channelId: Long,
+        @Path("postId") postId: Long,
+        @Body request: ConfirmCommentRequestDto,
+        @Header("x-socket-id") socketId: String
+    ): Response<CommentDto>
+
+    @GET("channels/{channelId}/posts/{postId}/comments/{commentId}/files/{fileId}/download")
+    suspend fun getCommentFileDownloadUrl(
+        @Path("channelId") channelId: Long,
+        @Path("postId") postId: Long,
+        @Path("commentId") commentId: Long,
+        @Path("fileId") fileId: String
+    ): Response<FileDownloadResponseDto>
 
     @DELETE("channels/{channelId}")
     suspend fun deleteChannel(@Path("channelId") channelId: Long): Response<Unit>

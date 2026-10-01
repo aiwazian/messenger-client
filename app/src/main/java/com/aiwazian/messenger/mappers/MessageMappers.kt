@@ -27,6 +27,7 @@ fun MessageDto.toDomain(): Message = Message(
     status = com.aiwazian.messenger.enums.MessageStatus.SENT,
     messageType = messageType,
     systemMessageEventType = systemEventType,
+    commentsCount = commentsCount,
     attachments = attachments.map { it.toDomain(messageId = id) },
     readInfo = readInfo?.map { it.toDomain() },
     replyTo = replyTo?.toDomain() ?: replyToId?.let {
@@ -95,6 +96,7 @@ fun MessageEntity.toDomain(attachments: List<MessageAttachment> = emptyList()) =
     status = status,
     messageType = messageType,
     systemMessageEventType = systemMessageEventType,
+    commentsCount = commentsCount,
     attachments = attachments,
     replyTo = replyToId?.let { originalId ->
         MessageReplyPreview(
@@ -138,6 +140,7 @@ fun Message.toEntity() = MessageEntity(
     messageType = messageType,
     systemMessageEventType = systemMessageEventType,
     status = status,
+    commentsCount = commentsCount,
     replyToId = replyTo?.messageId,
     replyToChatId = replyTo?.chatId,
     replyToSenderId = replyTo?.senderId,

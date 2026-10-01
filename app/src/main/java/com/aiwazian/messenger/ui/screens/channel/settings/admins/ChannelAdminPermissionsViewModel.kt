@@ -59,7 +59,8 @@ class ChannelAdminPermissionsViewModel @Inject constructor(
                         canManageInviteLinks = admin.canManageInviteLinks,
                         canEditProfile = admin.canEditProfile,
                         canManageAdmins = admin.canManageAdmins,
-                        canPinMessages = admin.canPinMessages
+                        canPinMessages = admin.canPinMessages,
+                        canDeleteComments = admin.canDeleteComments
                     )
                 }
             }.onFailure { error ->
@@ -89,6 +90,11 @@ class ChannelAdminPermissionsViewModel @Inject constructor(
         _uiState.update { it.copy(canPinMessages = !it.canPinMessages) }
     }
 
+    fun toggleDeleteComments() {
+        if (_uiState.value.isReadOnly) return
+        _uiState.update { it.copy(canDeleteComments = !it.canDeleteComments) }
+    }
+
     fun save() {
         if (_uiState.value.isSaving || _uiState.value.isReadOnly) return
 
@@ -103,7 +109,8 @@ class ChannelAdminPermissionsViewModel @Inject constructor(
                 canManageInviteLinks = state.canManageInviteLinks,
                 canEditProfile = state.canEditProfile,
                 canManageAdmins = state.canManageAdmins,
-                canPinMessages = state.canPinMessages
+                canPinMessages = state.canPinMessages,
+                canDeleteComments = state.canDeleteComments
             ).onSuccess {
                 _uiState.update { it.copy(isSaving = false) }
                 _sideEffect.emit(ChannelAdminPermissionsSideEffect.NavigateBack)

@@ -20,12 +20,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
+import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.Download
@@ -53,6 +57,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -94,6 +99,7 @@ import com.aiwazian.messenger.ui.screens.chat.ChatStickersViewModel
 import com.aiwazian.messenger.utils.EmojiLink
 import com.aiwazian.messenger.utils.StickerLink
 import com.aiwazian.messenger.utils.UiText
+import com.aiwazian.messenger.utils.compactCount
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
@@ -133,7 +139,9 @@ fun MessageBubble(
     onSenderNameClick: (() -> Unit)? = null,
     onReaderClick: ((MessageReadInfo) -> Unit)? = null,
     showContextMenu: Boolean = true,
-    isPinned: Boolean = false
+    isPinned: Boolean = false,
+    mediaKeyScope: String = "chat",
+    onCommentsClick: (() -> Unit)? = null
 ) {
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
@@ -178,7 +186,26 @@ fun MessageBubble(
                 onStickerClick = {
                     messageSticker?.let { stickersViewModel.openPack(it.packId) }
                 },
-                isPinned = isPinned
+                isPinned = isPinned,
+                trailingContent = if (onCommentsClick != null) {
+                    {
+                        CommentCountBadge(
+                            count = message.commentsCount,
+                            onClick = onCommentsClick
+                        )
+                    }
+                } else {
+                    null
+                },
+                replyContent = message.replyTo?.let { preview ->
+                    {
+                        ReplyQuote(
+                            preview = preview,
+                            modifier = Modifier.widthIn(max = 200.dp),
+                            onClick = onReplyPreviewClick
+                        )
+                    }
+                }
             )
         }
         
@@ -203,6 +230,10 @@ fun MessageBubble(
             it.type == AttachmentType.IMAGE || it.type == AttachmentType.VIDEO || it.type == AttachmentType.GIF
         }
     }
+    
+    val isMediaOnly = message.text.isNullOrBlank() &&
+            mediaAttachments.isNotEmpty() &&
+            message.attachments.size == mediaAttachments.size
     
     SwipeToReplyBox(
         enabled = item.canReply && onSwipeToReply != null,
@@ -328,72 +359,105 @@ fun MessageBubble(
                         val mediaCacheKeyPrefix =
                             "$MEDIA_CACHE_KEY_PREFIX:${message.chatId}:${message.senderId}:${message.sendTime}"
                         
-                        ImageGridCustomLayout(
-                            maxWidth = contentMaxWidth,
-                            itemSizes = mediaSizes,
-                            content = {
-                                mediaAttachments.forEach { attachment ->
-                                    val mediaUri = attachment.localUri
-                                    
-                                    if (mediaUri == null) {
-                                        MediaPlaceholder(
-                                            attachment = attachment,
-                                            onFileAction = onFileAction
-                                        )
-                                    } else {
-                                        MediaThumbnail(
-                                            attachment = attachment,
-                                            mediaUri = mediaUri,
-                                            cacheKey = "$mediaCacheKeyPrefix:${attachment.fileId}:$mediaUri",
-                                            transitionKey = chatMediaKey(attachment.messageId, mediaUri),
-                                            onFileAction = onFileAction
-                                        )
+                        Box {
+                            ImageGridCustomLayout(
+                                maxWidth = contentMaxWidth,
+                                itemSizes = mediaSizes,
+                                content = {
+                                    mediaAttachments.forEach { attachment ->
+                                        val mediaUri = attachment.localUri
+                                        
+                                        if (mediaUri == null) {
+                                            MediaPlaceholder(
+                                                attachment = attachment,
+                                                onFileAction = onFileAction
+                                            )
+                                        } else {
+                                            MediaThumbnail(
+                                                attachment = attachment,
+                                                mediaUri = mediaUri,
+                                                cacheKey = "$mediaCacheKeyPrefix:${attachment.fileId}:$mediaUri",
+                                                transitionKey = chatMediaKey(
+                                                    attachment.messageId,
+                                                    mediaUri,
+                                                    mediaKeyScope
+                                                ),
+                                                onFileAction = onFileAction
+                                            )
+                                        }
                                     }
-                                }
-                            })
-                    }
-                    
-                    message.attachments.forEach { attachment ->
-                        when (attachment.type) {
-                            AttachmentType.VOICE -> {
-                                MessageVoice(
-                                    file = attachment,
-                                    isPlaying = currentPlayingVoiceFileId == attachment.fileId && isVoicePlaying,
-                                    positionMs = if (currentPlayingVoiceFileId == attachment.fileId) voicePositionMs else 0,
-                                    durationMs = if (currentPlayingVoiceFileId == attachment.fileId) voiceDurationMs else 0,
-                                    onAction = { action ->
-                                        onFileAction(attachment, action)
-                                    },
-                                    onSeek = { positionMs ->
-                                        onVoiceSeek(attachment, positionMs)
-                                    }
+                                })
+                            
+                            if (message.text.isNullOrBlank()) {
+                                StickerMessageFooter(
+                                    time = item.time,
+                                    isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                                    status = message.status,
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(4.dp),
+                                    isPinned = isPinned
                                 )
                             }
-                            
-                            AttachmentType.FILE -> {
-                                if (attachment.extension.isAudioFile()) {
-                                    MessageMusic(
+                        }
+                    }
+                    
+                    Box {
+                        message.attachments.forEach { attachment ->
+                            when (attachment.type) {
+                                AttachmentType.VOICE -> {
+                                    MessageVoice(
                                         file = attachment,
-                                        metadata = audioMetadata[attachment.fileId],
-                                        isCurrentTrack = currentMusicFileId == attachment.fileId,
-                                        isPlaying = isMusicPlaying && currentMusicFileId == attachment.fileId,
-                                        positionMs = if (currentMusicFileId == attachment.fileId) musicPositionMs else 0,
-                                        durationMs = if (currentMusicFileId == attachment.fileId) musicDurationMs else 0,
+                                        isPlaying = currentPlayingVoiceFileId == attachment.fileId && isVoicePlaying,
+                                        positionMs = if (currentPlayingVoiceFileId == attachment.fileId) voicePositionMs else 0,
+                                        durationMs = if (currentPlayingVoiceFileId == attachment.fileId) voiceDurationMs else 0,
                                         onAction = { action ->
                                             onFileAction(attachment, action)
                                         },
                                         onSeek = { positionMs ->
-                                            onMusicSeek(attachment, positionMs)
-                                        })
-                                } else {
-                                    MessageFile(
-                                        file = attachment, onAction = { action ->
-                                            onFileAction(attachment, action)
-                                        })
+                                            onVoiceSeek(attachment, positionMs)
+                                        }
+                                    )
                                 }
+                                
+                                AttachmentType.FILE -> {
+                                    if (attachment.extension.isAudioFile()) {
+                                        MessageMusic(
+                                            file = attachment,
+                                            metadata = audioMetadata[attachment.fileId],
+                                            isCurrentTrack = currentMusicFileId == attachment.fileId,
+                                            isPlaying = isMusicPlaying && currentMusicFileId == attachment.fileId,
+                                            positionMs = if (currentMusicFileId == attachment.fileId) musicPositionMs else 0,
+                                            durationMs = if (currentMusicFileId == attachment.fileId) musicDurationMs else 0,
+                                            onAction = { action ->
+                                                onFileAction(attachment, action)
+                                            },
+                                            onSeek = { positionMs ->
+                                                onMusicSeek(attachment, positionMs)
+                                            })
+                                    } else {
+                                        MessageFile(
+                                            file = attachment, onAction = { action ->
+                                                onFileAction(attachment, action)
+                                            })
+                                    }
+                                }
+                                
+                                else -> {}
                             }
-                            
-                            else -> {}
+                        }
+                        
+                        if (message.text.isNullOrBlank() && mediaAttachments.isEmpty()) {
+                            MessageFooter(
+                                time = item.time,
+                                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                status = message.status,
+                                isEdited = message.isEdited,
+                                isPinned = isPinned
+                            )
                         }
                     }
                     
@@ -432,26 +496,46 @@ fun MessageBubble(
                             )
                         }
                     }
-                }
-                
-                if (message.text.isNullOrBlank()) {
-                    Box(modifier = Modifier.align(Alignment.BottomEnd)) {
-                        if (mediaAttachments.isNotEmpty()) {
-                            StickerMessageFooter(
-                                time = item.time,
-                                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
-                                status = message.status,
-                                modifier = Modifier.padding(4.dp),
-                                isPinned = isPinned
+                    
+                    if (onCommentsClick != null) {
+                        if (!isMediaOnly) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
                             )
-                        } else {
-                            MessageFooter(
-                                time = item.time,
-                                isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                status = message.status,
-                                isEdited = message.isEdited,
-                                isPinned = isPinned
+                        }
+                        
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(onClick = onCommentsClick)
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (message.commentsCount > 0) {
+                                    pluralStringResource(
+                                        R.plurals.comments_count,
+                                        message.commentsCount,
+                                        message.commentsCount
+                                    )
+                                } else {
+                                    stringResource(R.string.comment)
+                                },
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 14.sp
+                            )
+                            Spacer(
+                                modifier = Modifier
+                                    .widthIn(min = 8.dp)
+                                    .weight(1f)
+                            )
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp)
                             )
                         }
                     }
@@ -490,7 +574,10 @@ fun MessageBubble(
                             }
                         )
                         
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 10.dp))
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 10.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         
                         readers.forEach { reader ->
                             val name = listOf(reader.firstName, reader.lastName.orEmpty())
@@ -532,6 +619,39 @@ private fun formatStatusTime(timestamp: Long, todayVerb: String): String {
         today -> "$todayVerb в $time"
         today.minusDays(1) -> "вчера в $time"
         else -> date.format(DateTimeFormatter.ofPattern("d MMMM")) + " в " + time
+    }
+}
+
+@Composable
+private fun CommentCountBadge(
+    count: Int,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .padding(4.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
+            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.8f))
+            .padding(8.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.ChatBubble,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
+        
+        if (count > 0) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = compactCount(count),
+                fontSize = 11.sp,
+                lineHeight = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
@@ -653,7 +773,11 @@ private fun MediaThumbnail(
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         if (attachment.type == AttachmentType.VIDEO) {
-            VideoThumbnail(videoUri = mediaUri, cacheKey = cacheKey, transitionKey = transitionKey) {
+            VideoThumbnail(
+                videoUri = mediaUri,
+                cacheKey = cacheKey,
+                transitionKey = transitionKey
+            ) {
                 onFileAction(attachment, FileAction.OPEN)
             }
         } else {
@@ -706,10 +830,15 @@ private fun MediaStatusIndicator(status: DownloadStatus) {
 }
 
 @Composable
-private fun VideoThumbnail(videoUri: Uri, cacheKey: String, transitionKey: String, onClick: () -> Unit) {
+private fun VideoThumbnail(
+    videoUri: Uri,
+    cacheKey: String,
+    transitionKey: String,
+    onClick: () -> Unit
+) {
     val context = LocalContext.current
     val decoderFactory = remember { VideoFrameDecoder.Factory() }
-
+    
     val request = remember(context, videoUri, cacheKey, decoderFactory) {
         ImageRequest.Builder(context)
             .data(videoUri)
@@ -719,11 +848,11 @@ private fun VideoThumbnail(videoUri: Uri, cacheKey: String, transitionKey: Strin
             .placeholderMemoryCacheKey(cacheKey)
             .build()
     }
-
+    
     val duration by produceState(0L, videoUri) {
         value = withContext(Dispatchers.IO) { videoUri.getDuration(context) }
     }
-
+    
     Box(
         modifier = Modifier
             .clickable(onClick = onClick)
@@ -768,7 +897,7 @@ private fun ImageThumbnail(
 ) {
     val context = LocalContext.current
     val decoderFactory = remember { GifDecoder.Factory() }
-
+    
     val request = remember(context, imageUri, cacheKey, decoderFactory) {
         ImageRequest.Builder(context)
             .data(imageUri)
@@ -777,7 +906,7 @@ private fun ImageThumbnail(
             .placeholderMemoryCacheKey(cacheKey)
             .build()
     }
-
+    
     Box(
         modifier = Modifier
             .clickable(onClick = onClick)

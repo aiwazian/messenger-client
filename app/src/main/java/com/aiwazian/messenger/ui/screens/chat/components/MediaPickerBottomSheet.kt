@@ -124,7 +124,8 @@ fun MediaPickerBottomSheet(
     onCaptionChange: (String) -> Unit,
     onDismissRequest: () -> Unit,
     onFileSystemClick: () -> Unit,
-    onSent: () -> Unit
+    onSent: () -> Unit,
+    onSend: (() -> Unit)? = null
 ) {
     val viewModel: MediaPickerViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -339,9 +340,13 @@ fun MediaPickerBottomSheet(
                             },
                             onInputViewReady = { view -> captionInputView = view },
                             onSendClick = {
-                                viewModel.send(
-                                    chatId = chatId, replyTo = replyTo, caption = caption
-                                )
+                                if (onSend != null) {
+                                    onSend()
+                                } else {
+                                    viewModel.send(
+                                        chatId = chatId, replyTo = replyTo, caption = caption
+                                    )
+                                }
                                 onSent()
                             })
                     } else {

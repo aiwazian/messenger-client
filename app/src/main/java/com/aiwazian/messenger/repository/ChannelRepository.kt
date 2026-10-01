@@ -5,10 +5,14 @@
 package com.aiwazian.messenger.repository
 
 import com.aiwazian.messenger.domain.Channel
+import com.aiwazian.messenger.domain.Comment
 import com.aiwazian.messenger.domain.InviteLink
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ChannelType
+import com.aiwazian.messenger.network.dto.AttachmentInputDto
+import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
+import com.aiwazian.messenger.repository.channel.ChannelCommentsRepository
 import com.aiwazian.messenger.repository.channel.ChannelCrudRepository
 import com.aiwazian.messenger.repository.channel.ChannelMembersRepository
 import kotlinx.coroutines.flow.Flow
@@ -16,8 +20,63 @@ import javax.inject.Inject
 
 class ChannelRepository @Inject constructor(
     private val crudRepository: ChannelCrudRepository,
-    private val membersRepository: ChannelMembersRepository
+    private val membersRepository: ChannelMembersRepository,
+    private val commentsRepository: ChannelCommentsRepository
 ) {
+
+    suspend fun getComments(channelId: Long, postId: Long): Result<List<Comment>> =
+        commentsRepository.getComments(channelId, postId)
+
+    suspend fun sendComment(
+        channelId: Long,
+        postId: Long,
+        text: String?,
+        stickerId: Long? = null,
+        replyToId: Long? = null
+    ): Result<Comment> = commentsRepository.sendComment(channelId, postId, text, stickerId, replyToId)
+
+    suspend fun editComment(
+        channelId: Long,
+        postId: Long,
+        commentId: Long,
+        text: String
+    ): Result<Comment> = commentsRepository.editComment(channelId, postId, commentId, text)
+
+    suspend fun deleteComment(
+        channelId: Long,
+        postId: Long,
+        commentId: Long
+    ): Result<Unit> = commentsRepository.deleteComment(channelId, postId, commentId)
+
+    suspend fun initCommentFileUpload(
+        channelId: Long,
+        postId: Long,
+        request: FileInitRequestDto
+    ): FileInitResponseDto? = commentsRepository.initFileUpload(channelId, postId, request)
+
+    suspend fun confirmCommentFiles(
+        channelId: Long,
+        postId: Long,
+        attachments: List<AttachmentInputDto>,
+        text: String?
+    ): Result<Comment> = commentsRepository.confirmFiles(channelId, postId, attachments, text)
+
+    suspend fun getCommentFileDownloadUrl(
+        channelId: Long,
+        postId: Long,
+        commentId: Long,
+        fileId: String
+    ): Result<String> =
+        commentsRepository.getFileDownloadUrl(channelId, postId, commentId, fileId)
+
+    suspend fun setCommentsEnabled(channel: Channel, enabled: Boolean): Result<Unit> =
+        commentsRepository.setCommentsEnabled(channel, enabled)
+
+    suspend fun setCommentsRestrictedToSubscribers(channel: Channel, restricted: Boolean): Result<Unit> =
+        commentsRepository.setCommentsRestrictedToSubscribers(channel, restricted)
+
+    suspend fun deleteAllComments(channelId: Long): Result<Unit> =
+        commentsRepository.deleteAllComments(channelId)
     
     suspend fun create(name: String, bio: String): Result<Long> =
         crudRepository.create(name, bio)

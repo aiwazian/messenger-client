@@ -58,6 +58,7 @@ data class ChatUiState(
     val canDownloadMedia: Boolean = true,
     val noCopy: Boolean = false,
     val peerNoCopy: Boolean = false,
+    val commentsEnabled: Boolean = false,
     val isRecording: Boolean = false,
     val isRecordingLocked: Boolean = false,
     val recordingDurationMs: Long = 0L,

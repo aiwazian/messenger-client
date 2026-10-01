@@ -23,5 +23,7 @@ data class Channel(
      * текст, пересылать сообщения и сохранять медиа.
      */
     val noCopy: Boolean = false,
+    val commentsEnabled: Boolean = false,
+    val commentsRestrictedToSubscribers: Boolean = true,
     val avatars: List<Avatar> = emptyList()
 )

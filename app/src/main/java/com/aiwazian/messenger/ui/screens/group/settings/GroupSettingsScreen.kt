@@ -128,7 +128,13 @@ fun GroupSettingsScreen(
                         leadingIcon = Icons.Outlined.Group,
                         headlineText = stringResource(R.string.group_type),
                         onClick = {
-                            navBackStack.add(AppRoute.GroupTypeSettings(uiState.group.id))
+                            navBackStack.add(
+                                AppRoute.GroupTypeSettings(
+                                    groupId = uiState.group.id,
+                                    groupType = uiState.group.groupType,
+                                    noCopy = uiState.group.noCopy
+                                )
+                            )
                         },
                         trailingText = if (uiState.group.groupType == GroupType.PUBLIC) {
                             stringResource(R.string.public_group)

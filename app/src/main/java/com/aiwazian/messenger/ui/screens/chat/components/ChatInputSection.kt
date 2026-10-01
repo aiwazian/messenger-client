@@ -126,8 +126,6 @@ import com.aiwazian.messenger.ui.components.rememberCustomEmojiInlineContent
 import com.aiwazian.messenger.ui.screens.chat.ChatEmojiViewModel
 import com.aiwazian.messenger.ui.screens.chat.ChatStickersViewModel
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
-import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
-import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import com.aiwazian.messenger.utils.DialogController
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
@@ -140,8 +138,11 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun ChatInputSection(
     uiState: ChatUiState,
-    chatViewModel: ChatViewModel,
-    modifier: Modifier = Modifier
+    actions: ChatInputActions,
+    modifier: Modifier = Modifier,
+    alwaysShowInput: Boolean = false,
+    isVoiceEnabled: Boolean = true,
+    onMediaSheetSend: (() -> Unit)? = null
 ) {
     val density = LocalDensity.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -192,7 +193,7 @@ fun ChatInputSection(
                 val height = with(density) { imeBottomPx.toDp() }
                 
                 measuredKeyboardHeight = height
-                chatViewModel.onKeyboardHeightChanged(height.value)
+                actions.onKeyboardHeightChanged(height.value)
             }
     }
     
@@ -257,6 +258,7 @@ fun ChatInputSection(
                 ChatType.CHANNEL -> {
                     AnimatedContent(
                         targetState = when {
+                            alwaysShowInput -> "input"
                             uiState.isOwner -> "input"
                             !uiState.isJoined -> "join"
                             else -> "none"
@@ -265,7 +267,9 @@ fun ChatInputSection(
                         when (state) {
                             "input" -> InputMessage(
                                 uiState = uiState,
-                                chatViewModel = chatViewModel,
+                                actions = actions,
+                                isVoiceEnabled = isVoiceEnabled,
+                                onMediaSheetSend = onMediaSheetSend,
                                 isStickerPanelVisible = isStickersVisible,
                                 isKeyboardVisible = isKeyboardVisible,
                                 keyboardHeight = keyboardHeight,
@@ -273,8 +277,8 @@ fun ChatInputSection(
                                 onInputViewReady = onInputViewReady,
                                 onResolveEmoji = customEmojiViewModel::resolveEmoji
                             )
-                            
-                            "join" -> JoinButton(onClick = chatViewModel::onJoinClicked)
+
+                            "join" -> JoinButton(onClick = actions::onJoinClicked)
                             "none" -> Unit
                         }
                     }
@@ -289,7 +293,9 @@ fun ChatInputSection(
                         if (showInputField) {
                             InputMessage(
                                 uiState = uiState,
-                                chatViewModel = chatViewModel,
+                                actions = actions,
+                                isVoiceEnabled = isVoiceEnabled,
+                                onMediaSheetSend = onMediaSheetSend,
                                 isStickerPanelVisible = isStickersVisible,
                                 isKeyboardVisible = isKeyboardVisible,
                                 keyboardHeight = keyboardHeight,
@@ -298,7 +304,7 @@ fun ChatInputSection(
                                 onResolveEmoji = customEmojiViewModel::resolveEmoji
                             )
                         } else {
-                            JoinButton(onClick = chatViewModel::onJoinClicked)
+                            JoinButton(onClick = actions::onJoinClicked)
                         }
                     }
                 }
@@ -345,7 +351,7 @@ fun ChatInputSection(
                                                         )
                                                     )
                                                 ), linkInteractionListener = {
-                                                    chatViewModel.showBlockDialog()
+                                                    actions.showBlockDialog()
                                                 })
                                         ) {
                                             append(stringResource(R.string.unblock))
@@ -364,7 +370,9 @@ fun ChatInputSection(
                             "input" -> {
                                 InputMessage(
                                     uiState = uiState,
-                                    chatViewModel = chatViewModel,
+                                    actions = actions,
+                                    isVoiceEnabled = isVoiceEnabled,
+                                    onMediaSheetSend = onMediaSheetSend,
                                     isStickerPanelVisible = isStickersVisible,
                                     isKeyboardVisible = isKeyboardVisible,
                                     keyboardHeight = keyboardHeight,
@@ -420,7 +428,7 @@ fun ChatInputSection(
                             StickerInputPanel(
                                 packs = stickersState.addedPacks,
                                 onStickerClick = { sticker ->
-                                    stickersViewModel.sendSticker(uiState.chatId, sticker.id)
+                                    actions.sendSticker(sticker.id)
                                 })
                         }
                     }
@@ -481,25 +489,11 @@ fun ChatInputSection(
 }
 
 @Composable
-private fun JoinButton(onClick: () -> Unit) {
-    TextButton(
-        shape = CircleShape,
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick,
-        colors = ButtonDefaults.textButtonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-    ) {
-        Text(
-            text = stringResource(R.string.join).uppercase(),
-            fontSize = 18.sp,
-            color = MaterialTheme.colorScheme.primary
-        )
-    }
-}
-
-@Composable
 private fun InputMessage(
     uiState: ChatUiState,
-    chatViewModel: ChatViewModel,
+    actions: ChatInputActions,
+    isVoiceEnabled: Boolean,
+    onMediaSheetSend: (() -> Unit)?,
     isStickerPanelVisible: Boolean,
     isKeyboardVisible: Boolean,
     keyboardHeight: Dp,
@@ -510,11 +504,9 @@ private fun InputMessage(
     var attachmentModal by remember { mutableStateOf(DialogController()) }
     var micTranslationX by remember { mutableFloatStateOf(0f) }
     var micTranslationY by remember { mutableFloatStateOf(0f) }
-    
-    val mediaPickerViewModel: MediaPickerViewModel = hiltViewModel()
-    
+
     var inputView by remember { mutableStateOf<EditText?>(null) }
-    
+
     val inputHint = stringResource(R.string.message)
     
     LaunchedEffect(uiState.editingMessageId) {
@@ -527,27 +519,26 @@ private fun InputMessage(
         contract = ActivityResultContracts.OpenMultipleDocuments(), onResult = { uris: List<Uri> ->
             if (uris.isNotEmpty()) {
                 attachmentModal.hide()
-                
-                mediaPickerViewModel.sendUris(
-                    chatId = uiState.chatId,
+
+                actions.sendMediaUris(
                     uris = uris,
                     caption = uiState.messageText,
                     replyTo = uiState.replyToMessage
                 )
-                
-                chatViewModel.changeText("")
-                chatViewModel.cancelReply()
+
+                actions.changeText("")
+                actions.cancelReply()
             }
         })
-    
+
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            chatViewModel.startRecording()
+            actions.startRecording()
         } else {
-            chatViewModel.onMicrophonePermissionDenied()
+            actions.onMicrophonePermissionDenied()
         }
     }
     
@@ -584,7 +575,7 @@ private fun InputMessage(
                     text = stringResource(R.string.edit_message),
                     color = MaterialTheme.colorScheme.primary
                 )
-                IconButton(onClick = chatViewModel::cancelEditing) {
+                IconButton(onClick = actions::cancelEditing) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
                         contentDescription = null,
@@ -616,7 +607,7 @@ private fun InputMessage(
                     Column(
                         modifier = Modifier
                             .weight(1f)
-                            .clickable(onClick = chatViewModel::onReplyPanelClicked)
+                            .clickable(onClick = actions::onReplyPanelClicked)
                             .padding(vertical = 4.dp)
                     ) {
                         Text(
@@ -635,7 +626,7 @@ private fun InputMessage(
                         )
                     }
                     
-                    IconButton(onClick = chatViewModel::cancelReply) {
+                    IconButton(onClick = actions::cancelReply) {
                         Icon(
                             imageVector = Icons.Rounded.Close,
                             contentDescription = null,
@@ -714,12 +705,12 @@ private fun InputMessage(
                     CustomEmojiTextField(
                         text = uiState.messageText,
                         hint = inputHint,
-                        onTextChange = chatViewModel::changeText,
+                        onTextChange = actions::changeText,
                         onResolveEmoji = onResolveEmoji,
                         modifier = Modifier
                             .fillMaxWidth()
                             .alpha(textFieldAlpha),
-                        onReceiveUris = { uris -> chatViewModel.sendFiles(uris) },
+                        onReceiveUris = { uris -> actions.sendFiles(uris) },
                         onViewReady = { view ->
                             inputView = view
                             
@@ -729,7 +720,7 @@ private fun InputMessage(
                     VoiceRecordingStatus(
                         uiState = uiState,
                         micTranslationX = micTranslationX,
-                        onCancelRecording = chatViewModel::cancelRecording
+                        onCancelRecording = actions::cancelRecording
                     )
                 }
             }
@@ -755,7 +746,7 @@ private fun InputMessage(
                     expressiveScaleIn togetherWith expressiveScaleOut
                 }
             ) { showMic ->
-                if (showMic) {
+                if (showMic && isVoiceEnabled) {
                     Box(
                         modifier = Modifier
                             .zIndex(if (uiState.isRecording) 10f else 0f)
@@ -763,7 +754,7 @@ private fun InputMessage(
                                 if (uiState.isRecordingLocked) {
                                     detectTapGestures(
                                         onTap = {
-                                            chatViewModel.stopRecordingAndSend()
+                                            actions.stopRecordingAndSend()
                                         })
                                 } else {
                                     awaitPointerEventScope {
@@ -791,7 +782,7 @@ private fun InputMessage(
                                                     continue
                                                 }
                                                 
-                                                chatViewModel.startRecording()
+                                                actions.startRecording()
                                             } else {
                                                 permissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
                                                 do {
@@ -836,12 +827,12 @@ private fun InputMessage(
                                                 }
                                                 
                                                 if (deltaY < -250f && !isLocked && !isCanceled) {
-                                                    chatViewModel.lockRecording()
+                                                    actions.lockRecording()
                                                     isLocked = true
                                                     micTranslationX = 0f
                                                     micTranslationY = 0f
                                                 } else if (deltaX < -250f && !isCanceled && !isLocked) {
-                                                    chatViewModel.cancelRecording()
+                                                    actions.cancelRecording()
                                                     isCanceled = true
                                                     micTranslationX = 0f
                                                     micTranslationY = 0f
@@ -858,7 +849,7 @@ private fun InputMessage(
                                             } while (event.changes.any { it.pressed })
                                             
                                             if (!isCanceled && !isLocked) {
-                                                chatViewModel.stopRecordingAndSend()
+                                                actions.stopRecordingAndSend()
                                             }
                                             micTranslationX = 0f
                                             micTranslationY = 0f
@@ -907,7 +898,7 @@ private fun InputMessage(
                         }
                     }
                 } else {
-                    IconButton(onClick = chatViewModel::onSendMessageClicked) {
+                    IconButton(onClick = actions::onSendMessageClicked) {
                         AnimatedContent(
                             targetState = uiState.editingMessageId != null,
                             transitionSpec = { expressiveScaleIn togetherWith expressiveScaleOut }) { isEditing ->
@@ -937,14 +928,15 @@ private fun InputMessage(
             replyTo = uiState.replyToMessage,
             caption = uiState.messageText,
             keyboardHeight = keyboardHeight,
-            onCaptionChange = chatViewModel::changeText,
+            onCaptionChange = actions::changeText,
             onDismissRequest = attachmentModal::hide,
             onFileSystemClick = { filePickerLauncher.launch(arrayOf("*/*")) },
             onSent = {
                 attachmentModal.hide()
-                chatViewModel.changeText("")
-                chatViewModel.cancelReply()
-            })
+                actions.changeText("")
+                actions.cancelReply()
+            },
+            onSend = onMediaSheetSend)
     }
 }
 

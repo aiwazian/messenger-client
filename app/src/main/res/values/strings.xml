@@ -336,6 +336,8 @@
     <string name="manage_admins_description">Can add and remove administrators and change their permissions.</string>
     <string name="can_pin_messages">Pin messages</string>
     <string name="can_pin_messages_description">Can pin and unpin messages for everyone.</string>
+    <string name="can_delete_comments">Delete comments</string>
+    <string name="can_delete_comments_description">Can delete other users\' comments under channel posts.</string>
     <string name="pin_message">Pin</string>
     <string name="edit_pin">Edit pin</string>
     <string name="unpin_message">Unpin</string>
@@ -551,4 +553,30 @@
     <string name="storage_database_clear_failed">Failed to clear the database</string>
     <string name="done">Done</string>
     <string name="empty_chats_hint">To start chatting, tap the search field at the top of the screen and find a user by their @username</string>
+    <string name="comments">Comments</string>
+    <string name="enable_comments">Enable commenting</string>
+    <string name="delete_all_comments">Delete all comments</string>
+    <string name="delete_all_comments_confirm">All comments under all posts will be permanently deleted. This action cannot be undone.</string>
+    <string name="who_can_comment">Who can write comments?</string>
+    <string name="only_subscribers">Subscribers only</string>
+    <string name="comment">Comment</string>
+    <string name="comment_field_hint">Add a comment…</string>
+    <string name="owner_tag">Owner</string>
+    <string name="admin_tag">Admin</string>
+    <string name="failed_to_load_comments">Failed to load comments</string>
+    <string name="failed_to_send_comment">Failed to send the comment</string>
+    <string name="comments_deleted">All comments deleted</string>
+    <string name="subscribers_compact">%1$s subscribers</string>
+    <string name="members_compact">%1$s members</string>
+    <string name="delete_comment">Delete comment</string>
+    <string name="delete_comment_confirm">The comment will be deleted for everyone. This action cannot be undone.</string>
+    <string name="failed_to_delete_comment">Failed to delete the comment</string>
+    <plurals name="comments_count">
+        <item quantity="zero">%1$d comments</item>
+        <item quantity="one">%1$d comment</item>
+        <item quantity="two">%1$d comments</item>
+        <item quantity="few">%1$d comments</item>
+        <item quantity="many">%1$d comments</item>
+        <item quantity="other">%1$d comments</item>
+    </plurals>
 </resources>

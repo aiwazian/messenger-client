@@ -121,6 +121,14 @@ fun ChannelAdminPermissionsScreen(
                 enabled = !uiState.isReadOnly,
                 onCheckedChange = viewModel::togglePinMessages
             )
+
+            SectionToggleItem(
+                text = stringResource(R.string.can_delete_comments),
+                supportingText = stringResource(R.string.can_delete_comments_description),
+                isChecked = uiState.canDeleteComments,
+                enabled = !uiState.isReadOnly,
+                onCheckedChange = viewModel::toggleDeleteComments
+            )
         }
     }
 }
