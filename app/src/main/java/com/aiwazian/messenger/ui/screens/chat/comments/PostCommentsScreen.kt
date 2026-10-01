@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +36,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -58,6 +61,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.FileAction
+import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
@@ -108,6 +112,16 @@ fun PostCommentsScreen(
                 }
 
                 is PostCommentsUiEffect.ShowMediaViewer -> viewerFileId = effect.fileId
+
+                is PostCommentsUiEffect.ScrollToComment -> {
+                    val index = uiState.commentItems.indexOfFirst {
+                        it is ChatItem.MessageItem && it.message.id == effect.commentId
+                    }
+
+                    if (index >= 0) {
+                        scope.launch { listState.animateScrollToItem(index) }
+                    }
+                }
             }
         }
     }
@@ -125,11 +139,19 @@ fun PostCommentsScreen(
         }
     }
 
-    val inputState = remember(uiState.chatId, uiState.commentText, uiState.keyboardHeight) {
+    val inputState = remember(
+        uiState.chatId,
+        uiState.commentText,
+        uiState.keyboardHeight,
+        uiState.replyToMessage,
+        uiState.editingCommentId
+    ) {
         ChatUiState(
             chatId = uiState.chatId,
             messageText = uiState.commentText,
             keyboardHeight = uiState.keyboardHeight,
+            replyToMessage = uiState.replyToMessage,
+            editingMessageId = uiState.editingCommentId,
             isOwner = true,
             isJoined = true
         )
@@ -251,7 +273,6 @@ fun PostCommentsScreen(
                             onFileAction = { file, action ->
                                 viewModel.onFileAction(item.message, file, action)
                             },
-                            showContextMenu = false,
                             onSenderNameClick = {
                                 navBackStack.add(
                                     AppRoute.Profile(
@@ -259,6 +280,13 @@ fun PostCommentsScreen(
                                         profileName = item.senderName
                                     )
                                 )
+                            },
+                            onReplyPreviewClick = {
+                                viewModel.onReplyPreviewClicked(item.message)
+                            },
+                            onSwipeThresholdReached = viewModel::vibrateTactile,
+                            onSwipeToReply = {
+                                viewModel.startReply(item.message.id)
                             }
                         )
 
@@ -276,6 +304,27 @@ fun PostCommentsScreen(
                 }
             }
         }
+    }
+
+    if (uiState.commentToDelete != null) {
+        AppDialog(
+            title = stringResource(R.string.delete_comment),
+            onDismissRequest = viewModel::dismissDeleteDialog,
+            content = { Text(stringResource(R.string.delete_comment_confirm)) },
+            buttons = {
+                TextButton(onClick = viewModel::dismissDeleteDialog) {
+                    Text(stringResource(R.string.cancel))
+                }
+                TextButton(
+                    onClick = viewModel::confirmDeleteComment,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(stringResource(R.string.delete))
+                }
+            }
+        )
     }
 
     if (viewerFileId != null) {

@@ -10,6 +10,7 @@ data class ChannelAdminPermissionsUiState(
     val canEditProfile: Boolean = false,
     val canManageAdmins: Boolean = false,
     val canPinMessages: Boolean = false,
+    val canDeleteComments: Boolean = false,
     val isSaving: Boolean = false,
     /** Свои разрешения администратор только смотрит: переключатели выключены. */
     val isReadOnly: Boolean = false

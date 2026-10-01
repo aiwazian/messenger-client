@@ -18,6 +18,7 @@ data class ChannelAdminResponseDto(
     @SerialName("canEditProfile") val canEditProfile: Boolean = false,
     @SerialName("canManageAdmins") val canManageAdmins: Boolean = false,
     @SerialName("canPinMessages") val canPinMessages: Boolean = false,
+    @SerialName("canDeleteComments") val canDeleteComments: Boolean = false,
     @SerialName("grantedAt") val grantedAt: String? = null
 )
 
@@ -42,7 +43,8 @@ data class UpsertChannelAdminRequestDto(
     @SerialName("canManageInviteLinks") val canManageInviteLinks: Boolean = false,
     @SerialName("canEditProfile") val canEditProfile: Boolean = false,
     @SerialName("canManageAdmins") val canManageAdmins: Boolean = false,
-    @SerialName("canPinMessages") val canPinMessages: Boolean = false
+    @SerialName("canPinMessages") val canPinMessages: Boolean = false,
+    @SerialName("canDeleteComments") val canDeleteComments: Boolean = false
 )
 
 /**
@@ -68,6 +70,7 @@ data class ChatAdminPermissionsResponseDto(
     @SerialName("canEditProfile") val canEditProfile: Boolean = false,
     @SerialName("canManageAdmins") val canManageAdmins: Boolean = false,
     @SerialName("canPinMessages") val canPinMessages: Boolean = false,
+    @SerialName("canDeleteComments") val canDeleteComments: Boolean = false,
     @SerialName("tag") val tag: String? = null
 )
 

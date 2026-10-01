@@ -191,6 +191,14 @@ interface MessageDao {
     suspend fun incrementCommentCount(messageId: Long)
 
     @Query(
+        "UPDATE message SET commentsCount = MAX(commentsCount - 1, 0) " +
+                "WHERE id = :messageId " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
+    )
+    suspend fun decrementCommentCount(messageId: Long)
+
+    @Query(
         "UPDATE message SET commentsCount = 0 " +
                 "WHERE chatId = :chatId " +
                 "AND ownerId = " +

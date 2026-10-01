@@ -108,10 +108,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                 onValueChange = viewModel::onChangeFirstName
             )
             
-            HorizontalDivider(
-                modifier = Modifier.padding(start = 16.dp),
-                thickness = 1.dp,
-            )
+            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
             
             FramelessTextBox(
                 placeholder = stringResource(R.string.last_name),

@@ -36,7 +36,8 @@ class ChannelAdminsRepository @Inject constructor(
                         canManageInviteLinks = dto.canManageInviteLinks,
                         canEditProfile = dto.canEditProfile,
                         canManageAdmins = dto.canManageAdmins,
-                        canPinMessages = dto.canPinMessages
+                        canPinMessages = dto.canPinMessages,
+                        canDeleteComments = dto.canDeleteComments
                     )
                 })
             } else {
@@ -79,7 +80,8 @@ class ChannelAdminsRepository @Inject constructor(
                         canManageInviteLinks = dto.canManageInviteLinks,
                         canEditProfile = dto.canEditProfile,
                         canManageAdmins = dto.canManageAdmins,
-                        canPinMessages = dto.canPinMessages
+                        canPinMessages = dto.canPinMessages,
+                        canDeleteComments = dto.canDeleteComments
                     )
                 )
             } else {
@@ -97,7 +99,8 @@ class ChannelAdminsRepository @Inject constructor(
         canManageInviteLinks: Boolean,
         canEditProfile: Boolean,
         canManageAdmins: Boolean,
-        canPinMessages: Boolean
+        canPinMessages: Boolean,
+        canDeleteComments: Boolean
     ): Result<Unit> {
         return try {
             val response = channelApi.upsertAdmin(
@@ -107,7 +110,8 @@ class ChannelAdminsRepository @Inject constructor(
                     canManageInviteLinks = canManageInviteLinks,
                     canEditProfile = canEditProfile,
                     canManageAdmins = canManageAdmins,
-                    canPinMessages = canPinMessages
+                    canPinMessages = canPinMessages,
+                    canDeleteComments = canDeleteComments
                 )
             )
             if (response.isSuccessful) {

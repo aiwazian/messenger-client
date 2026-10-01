@@ -251,9 +251,19 @@ fun AppNavDisplay(
                     entry<AppRoute.ChannelTransferOwnership> {
                         ChannelTransferOwnershipScreen(channelId = it.channelId)
                     }
-                    entry<AppRoute.ChannelTypeSettings> { ChannelTypeSettingsScreen(channelId = it.channelId) }
+                    entry<AppRoute.ChannelTypeSettings> {
+                        ChannelTypeSettingsScreen(
+                            channelId = it.channelId,
+                            channelType = it.channelType,
+                            noCopy = it.noCopy
+                        )
+                    }
                     entry<AppRoute.ChannelCommentsSettings> {
-                        ChannelCommentsSettingsScreen(channelId = it.channelId)
+                        ChannelCommentsSettingsScreen(
+                            channelId = it.channelId,
+                            commentsEnabled = it.commentsEnabled,
+                            commentsRestrictedToSubscribers = it.commentsRestrictedToSubscribers
+                        )
                     }
                     entry<AppRoute.PostComments> {
                         PostCommentsScreen(chatId = it.chatId, postId = it.postId)
@@ -273,7 +283,13 @@ fun AppNavDisplay(
                     entry<AppRoute.GroupTransferOwnership> {
                         GroupTransferOwnershipScreen(groupId = it.groupId)
                     }
-                    entry<AppRoute.GroupTypeSettings> { GroupTypeSettingsScreen(groupId = it.groupId) }
+                    entry<AppRoute.GroupTypeSettings> {
+                        GroupTypeSettingsScreen(
+                            groupId = it.groupId,
+                            groupType = it.groupType,
+                            noCopy = it.noCopy
+                        )
+                    }
                     entry<AppRoute.GroupInviteLinks> { GroupInviteLinksScreen(groupId = it.groupId) }
                     entry<AppRoute.CreateGroupInviteLink> { CreateGroupInviteLinkScreen(groupId = it.groupId) }
                     entry<AppRoute.GroupMembers> { GroupMembersScreen(groupId = it.groupId) }

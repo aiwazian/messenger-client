@@ -55,10 +55,13 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun GroupTypeSettingsScreen(
-    groupId: Long, viewModel: GroupTypeSettingsViewModel = hiltViewModel()
+    groupId: Long,
+    groupType: GroupType,
+    noCopy: Boolean,
+    viewModel: GroupTypeSettingsViewModel = hiltViewModel()
 ) {
     LaunchedEffect(groupId) {
-        viewModel.init(groupId)
+        viewModel.init(groupId, groupType, noCopy)
     }
     
     val context = LocalContext.current

@@ -11,6 +11,7 @@ import com.aiwazian.messenger.network.dto.CommentDto
 import com.aiwazian.messenger.network.dto.ConfirmCommentRequestDto
 import com.aiwazian.messenger.network.dto.CreateChannelRequestDto
 import com.aiwazian.messenger.network.dto.CreateCommentRequestDto
+import com.aiwazian.messenger.network.dto.EditCommentRequestDto
 import com.aiwazian.messenger.network.dto.CreateInviteLinkRequestDto
 import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
@@ -123,6 +124,23 @@ interface ChannelApi {
         @Body request: CreateCommentRequestDto,
         @Header("x-socket-id") socketId: String
     ): Response<CommentDto>
+
+    @PATCH("channels/{channelId}/posts/{postId}/comments/{commentId}")
+    suspend fun editComment(
+        @Path("channelId") channelId: Long,
+        @Path("postId") postId: Long,
+        @Path("commentId") commentId: Long,
+        @Body request: EditCommentRequestDto,
+        @Header("x-socket-id") socketId: String
+    ): Response<CommentDto>
+
+    @DELETE("channels/{channelId}/posts/{postId}/comments/{commentId}")
+    suspend fun deleteComment(
+        @Path("channelId") channelId: Long,
+        @Path("postId") postId: Long,
+        @Path("commentId") commentId: Long,
+        @Header("x-socket-id") socketId: String
+    ): Response<Unit>
 
     @POST("channels/{channelId}/posts/{postId}/comments/files/init")
     suspend fun initCommentFileUpload(

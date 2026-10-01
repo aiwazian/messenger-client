@@ -31,8 +31,22 @@ class ChannelRepository @Inject constructor(
         channelId: Long,
         postId: Long,
         text: String?,
-        stickerId: Long? = null
-    ): Result<Comment> = commentsRepository.sendComment(channelId, postId, text, stickerId)
+        stickerId: Long? = null,
+        replyToId: Long? = null
+    ): Result<Comment> = commentsRepository.sendComment(channelId, postId, text, stickerId, replyToId)
+
+    suspend fun editComment(
+        channelId: Long,
+        postId: Long,
+        commentId: Long,
+        text: String
+    ): Result<Comment> = commentsRepository.editComment(channelId, postId, commentId, text)
+
+    suspend fun deleteComment(
+        channelId: Long,
+        postId: Long,
+        commentId: Long
+    ): Result<Unit> = commentsRepository.deleteComment(channelId, postId, commentId)
 
     suspend fun initCommentFileUpload(
         channelId: Long,

@@ -132,7 +132,13 @@ fun ChannelSettingsScreen(
                             stringResource(R.string.private_channel)
                         },
                         onClick = {
-                            navBackStack.add(AppRoute.ChannelTypeSettings(channelId = uiState.channel.id))
+                            navBackStack.add(
+                                AppRoute.ChannelTypeSettings(
+                                    channelId = uiState.channel.id,
+                                    channelType = uiState.channel.channelType,
+                                    noCopy = uiState.channel.noCopy
+                                )
+                            )
                         })
                 }
 
@@ -141,7 +147,13 @@ fun ChannelSettingsScreen(
                         leadingIcon = Icons.Outlined.Comment,
                         headlineText = stringResource(R.string.comments),
                         onClick = {
-                            navBackStack.add(AppRoute.ChannelCommentsSettings(channelId = uiState.channel.id))
+                            navBackStack.add(
+                                AppRoute.ChannelCommentsSettings(
+                                    channelId = uiState.channel.id,
+                                    commentsEnabled = uiState.channel.commentsEnabled,
+                                    commentsRestrictedToSubscribers = uiState.channel.commentsRestrictedToSubscribers
+                                )
+                            )
                         }
                     )
                 }

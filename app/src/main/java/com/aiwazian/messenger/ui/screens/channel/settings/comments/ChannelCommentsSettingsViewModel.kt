@@ -36,7 +36,19 @@ class ChannelCommentsSettingsViewModel @Inject constructor(
     private val _uiEffect = MutableSharedFlow<ChannelCommentsSettingsEffect>()
     val uiEffect = _uiEffect.asSharedFlow()
 
-    fun init(channelId: Long) {
+    fun init(
+        channelId: Long,
+        initialCommentsEnabled: Boolean,
+        initialCommentsRestrictedToSubscribers: Boolean
+    ) {
+        _uiState.update {
+            it.copy(
+                channelId = channelId,
+                commentsEnabled = initialCommentsEnabled,
+                commentsRestrictedToSubscribers = initialCommentsRestrictedToSubscribers
+            )
+        }
+
         viewModelScope.launch {
             channelRepository.fetchById(channelId)
             channelRepository.getById(channelId).firstOrNull()?.let { loaded ->

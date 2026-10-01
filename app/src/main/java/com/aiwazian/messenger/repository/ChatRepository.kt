@@ -578,6 +578,10 @@ class ChatRepository @Inject constructor(
         messageDao.incrementCommentCount(messageId)
     }
 
+    suspend fun decrementCommentCount(messageId: Long) {
+        messageDao.decrementCommentCount(messageId)
+    }
+
     suspend fun clearCommentCounts(chatId: Long) {
         messageDao.clearCommentCounts(chatId)
     }

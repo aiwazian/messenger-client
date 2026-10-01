@@ -41,10 +41,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun ChannelCommentsSettingsScreen(
     channelId: Long,
+    commentsEnabled: Boolean,
+    commentsRestrictedToSubscribers: Boolean,
     viewModel: ChannelCommentsSettingsViewModel = hiltViewModel()
 ) {
     LaunchedEffect(channelId) {
-        viewModel.init(channelId)
+        viewModel.init(channelId, commentsEnabled, commentsRestrictedToSubscribers)
     }
 
     val context = LocalContext.current

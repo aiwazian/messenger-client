@@ -16,6 +16,9 @@ data class Comment(
     val messageType: MessageType = MessageType.TEXT,
     val senderRole: CommentAuthorRole = CommentAuthorRole.MEMBER,
     val senderName: String = "",
+    val isEdited: Boolean = false,
+    val editedAt: Long? = null,
+    val replyTo: MessageReplyPreview? = null,
     val sticker: MessageSticker? = null,
     val attachments: List<MessageAttachment> = emptyList()
 )

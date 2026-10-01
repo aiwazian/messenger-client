@@ -15,6 +15,7 @@ import com.aiwazian.messenger.network.api.ChannelApi
 import com.aiwazian.messenger.network.dto.AttachmentInputDto
 import com.aiwazian.messenger.network.dto.ConfirmCommentRequestDto
 import com.aiwazian.messenger.network.dto.CreateCommentRequestDto
+import com.aiwazian.messenger.network.dto.EditCommentRequestDto
 import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
@@ -47,7 +48,8 @@ class ChannelCommentsRepository @Inject constructor(
         channelId: Long,
         postId: Long,
         text: String?,
-        stickerId: Long? = null
+        stickerId: Long? = null,
+        replyToId: Long? = null
     ): Result<Comment> {
         return try {
             val response = channelApi.createPostComment(
@@ -55,7 +57,8 @@ class ChannelCommentsRepository @Inject constructor(
                 postId,
                 CreateCommentRequestDto(
                     text = text?.takeIf { it.isNotBlank() },
-                    stickerId = stickerId?.toString()
+                    stickerId = stickerId?.toString(),
+                    replyToId = replyToId?.toString()
                 ),
                 webSocketClient.socketId.orEmpty()
             )
@@ -67,6 +70,55 @@ class ChannelCommentsRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error sending comment", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun editComment(
+        channelId: Long,
+        postId: Long,
+        commentId: Long,
+        text: String
+    ): Result<Comment> {
+        return try {
+            val response = channelApi.editComment(
+                channelId,
+                postId,
+                commentId,
+                EditCommentRequestDto(text),
+                webSocketClient.socketId.orEmpty()
+            )
+            val body = response.body()
+            if (response.isSuccessful && body != null) {
+                Result.success(body.toDomain())
+            } else {
+                Result.failure(Exception("Edit comment failed: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error editing comment", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteComment(
+        channelId: Long,
+        postId: Long,
+        commentId: Long
+    ): Result<Unit> {
+        return try {
+            val response = channelApi.deleteComment(
+                channelId,
+                postId,
+                commentId,
+                webSocketClient.socketId.orEmpty()
+            )
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Delete comment failed: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting comment", e)
             Result.failure(e)
         }
     }

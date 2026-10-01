@@ -336,6 +336,8 @@
     <string name="manage_admins_description">Can add and remove administrators and change their permissions.</string>
     <string name="can_pin_messages">Pin messages</string>
     <string name="can_pin_messages_description">Can pin and unpin messages for everyone.</string>
+    <string name="can_delete_comments">Delete comments</string>
+    <string name="can_delete_comments_description">Can delete other users\' comments under channel posts.</string>
     <string name="pin_message">Pin</string>
     <string name="edit_pin">Edit pin</string>
     <string name="unpin_message">Unpin</string>
@@ -566,6 +568,9 @@
     <string name="comments_deleted">All comments deleted</string>
     <string name="subscribers_compact">%1$s subscribers</string>
     <string name="members_compact">%1$s members</string>
+    <string name="delete_comment">Delete comment</string>
+    <string name="delete_comment_confirm">The comment will be deleted for everyone. This action cannot be undone.</string>
+    <string name="failed_to_delete_comment">Failed to delete the comment</string>
     <plurals name="comments_count">
         <item quantity="zero">%1$d comments</item>
         <item quantity="one">%1$d comment</item>

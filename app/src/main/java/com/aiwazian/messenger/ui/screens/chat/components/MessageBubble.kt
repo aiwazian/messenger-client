@@ -61,7 +61,6 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -496,11 +495,13 @@ fun MessageBubble(
                         }
                     }
                     
-                    if (onCommentsClick != null && !isMediaOnly) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 8.dp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    if (onCommentsClick != null) {
+                        if (!isMediaOnly) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+                            )
+                        }
                         
                         Row(
                             modifier = Modifier
@@ -619,11 +620,10 @@ private fun formatStatusTime(timestamp: Long, todayVerb: String): String {
     }
 }
 
-@Preview(showBackground = true)
 @Composable
 private fun CommentCountBadge(
-    count: Int = 2,
-    onClick: () -> Unit = {}
+    count: Int,
+    onClick: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,

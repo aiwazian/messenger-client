@@ -100,6 +100,12 @@ class RealtimeEventSyncService @Inject constructor(
                 chatRepository.clearCommentCounts(payload.chatId)
             }
         }
+
+        webSocketClient.subscribeToEvent(WebSocketEvent.CommentDeleted) { payload ->
+            serviceScope.launch {
+                chatRepository.decrementCommentCount(payload.postId)
+            }
+        }
         
         webSocketClient.subscribeToEvent(WebSocketEvent.MessageEdit) { message ->
             serviceScope.launch {
