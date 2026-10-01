@@ -121,8 +121,13 @@ val LocalMediaOriginRegistry = staticCompositionLocalOf { GlobalMediaOriginRegis
  * Пересланные копии ссылаются на тот же файл, поэтому одного [uri] недостаточно:
  * без [messageId] две копии в одном чате делили бы одну запись реестра, и
  * переход возвращался бы в первую из них.
+ *
+ * [scope] отделяет миниатюры одного экрана от миниатюр другого: закреплённые
+ * сообщения рендерят те же вложения, что и чат, и без своего scope совпадали бы
+ * с ними по ключу, ловя shared-переход при открытии экрана.
  */
-fun chatMediaKey(messageId: Long, uri: Uri): String = "chat:$messageId:$uri"
+fun chatMediaKey(messageId: Long, uri: Uri, scope: String = "chat"): String =
+    "$scope:$messageId:$uri"
 
 /**
  * Ключ миниатюры в сетке шторки вложений.

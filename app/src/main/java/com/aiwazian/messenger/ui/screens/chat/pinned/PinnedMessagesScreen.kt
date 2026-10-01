@@ -406,7 +406,11 @@ fun PinnedMessagesScreen(
                 uri = uri,
                 isVideo = attachment.type == AttachmentType.VIDEO,
                 messageId = attachment.messageId,
-                originKey = chatMediaKey(attachment.messageId, uri)
+                originKey = chatMediaKey(
+                    attachment.messageId,
+                    uri,
+                    PINNED_MEDIA_KEY_SCOPE
+                )
             )
         }
         val viewerMedia = viewerEntries.map { it.second }
@@ -488,6 +492,7 @@ private fun PinnedMessagesPage(
                 is ChatItem.MessageItem -> MessageBubble(
                     modifier = Modifier.animateItem(),
                     item = item,
+                    mediaKeyScope = PINNED_MEDIA_KEY_SCOPE,
                     onFileAction = { file, action ->
                         if (action == FileAction.OPEN) {
                             onTappedMediaChanged(file)
@@ -646,3 +651,5 @@ private fun rememberChatListScrollState(listState: LazyListState): ChatListScrol
 
     return ChatListScrollState(isAtBottom, isScrollingUp)
 }
+
+private const val PINNED_MEDIA_KEY_SCOPE = "pinned"

@@ -140,6 +140,7 @@ fun MessageBubble(
     onReaderClick: ((MessageReadInfo) -> Unit)? = null,
     showContextMenu: Boolean = true,
     isPinned: Boolean = false,
+    mediaKeyScope: String = "chat",
     onCommentsClick: (() -> Unit)? = null
 ) {
     val message = item.message
@@ -378,7 +379,8 @@ fun MessageBubble(
                                                 cacheKey = "$mediaCacheKeyPrefix:${attachment.fileId}:$mediaUri",
                                                 transitionKey = chatMediaKey(
                                                     attachment.messageId,
-                                                    mediaUri
+                                                    mediaUri,
+                                                    mediaKeyScope
                                                 ),
                                                 onFileAction = onFileAction
                                             )
