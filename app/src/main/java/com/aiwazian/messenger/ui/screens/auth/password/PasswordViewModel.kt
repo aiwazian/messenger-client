@@ -18,6 +18,7 @@ import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
+import com.google.firebase.analytics.FirebaseAnalytics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +32,8 @@ import javax.inject.Inject
 class PasswordViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val deviceInfoProvider: DeviceInfoProvider,
-    private val vibrationManager: VibrationManager
+    private val vibrationManager: VibrationManager,
+    private val firebaseAnalytics: FirebaseAnalytics
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PasswordUiState())
     val uiState = _uiState.asStateFlow()
@@ -122,6 +124,7 @@ class PasswordViewModel @Inject constructor(
             authRepository.signIn(requestBody).onSuccess { data ->
                 SessionManager.setAuthorized(true)
                 SessionManager.saveSession(data.userId, data.token, data.createdAt)
+                logLogin()
                 _uiEffect.emit(PasswordUiEffect.NavigateToMainActivity)
             }.onError { error ->
                 when (error) {
@@ -155,5 +158,9 @@ class PasswordViewModel @Inject constructor(
             }
             _uiState.update { it.copy(isLoading = false) }
         }
+    }
+    
+    private fun logLogin() {
+        firebaseAnalytics.logEvent(FirebaseAnalytics.Event.LOGIN, null)
     }
 }
