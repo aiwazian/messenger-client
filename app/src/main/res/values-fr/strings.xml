@@ -581,4 +581,13 @@
         <item quantity="many">%1$d commentaires</item>
         <item quantity="other">%1$d commentaires</item>
     </plurals>
+    <string name="change_wallpaper">Modifier le fond de chat</string>
+    <string name="reset_wallpaper">Réinitialiser le fond de chat</string>
+    <string name="choose_wallpaper_from_gallery">Choisir un fond dans la galerie</string>
+    <string name="set_wallpaper_for_me">Définir pour moi</string>
+    <string name="set_wallpaper_for_everyone">Définir pour nous deux</string>
+    <string name="wallpaper">Fond de chat</string>
+    <string name="wallpaper_darkness">Assombrissement</string>
+    <string name="wallpaper_blur">Flou</string>
+    <string name="wallpaper_apply_failed">Échec de la définition du fond</string>
 </resources>

@@ -29,7 +29,7 @@ fun SystemMessageBubble(text: String, modifier: Modifier = Modifier) {
         Box(
             modifier = Modifier
                 .clip(MaterialTheme.shapes.extraLarge)
-                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.8f))
+                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
             Text(

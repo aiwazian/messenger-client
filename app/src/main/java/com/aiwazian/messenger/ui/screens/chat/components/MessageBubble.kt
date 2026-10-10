@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalFlexBoxApi
 import androidx.compose.foundation.layout.FlexAlignSelf
 import androidx.compose.foundation.layout.FlexBox
 import androidx.compose.foundation.layout.FlexDirection
@@ -110,6 +111,7 @@ private val BubbleHorizontalPadding = 8.dp
 
 private const val MEDIA_CACHE_KEY_PREFIX = "chat-media"
 
+@OptIn(ExperimentalFlexBoxApi::class)
 @Composable
 fun MessageBubble(
     modifier: Modifier = Modifier,
@@ -201,7 +203,9 @@ fun MessageBubble(
                     {
                         ReplyQuote(
                             preview = preview,
-                            modifier = Modifier.widthIn(max = 200.dp),
+                            modifier = Modifier
+                                .widthIn(max = 200.dp)
+                                .padding(start = 8.dp),
                             onClick = onReplyPreviewClick
                         )
                     }
@@ -633,7 +637,7 @@ private fun CommentCountBadge(
             .padding(4.dp)
             .clip(CircleShape)
             .clickable(onClick = onClick)
-            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.8f))
+            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
             .padding(8.dp)
     ) {
         Icon(

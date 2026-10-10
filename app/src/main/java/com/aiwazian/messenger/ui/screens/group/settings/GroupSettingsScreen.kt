@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PersonAddAlt1
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
@@ -30,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.WallpaperTarget
 import com.aiwazian.messenger.enums.GroupType
 import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
@@ -201,6 +203,14 @@ fun GroupSettingsScreen(
         
         if (uiState.isOwner) {
             SectionContainer {
+                SectionItem(
+                    leadingIcon = Icons.Outlined.Palette,
+                    headlineText = stringResource(R.string.appearance),
+                    onClick = {
+                        navBackStack.add(AppRoute.ChatAppearance(WallpaperTarget.Group(groupId = uiState.group.id)))
+                    }
+                )
+
                 SectionItem(
                     headlineText = stringResource(R.string.group_management),
                     onClick = {

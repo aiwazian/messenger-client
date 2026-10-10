@@ -86,6 +86,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.result.ResultEffect
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.MessageAttachment
+import com.aiwazian.messenger.domain.WallpaperTarget
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.FileAction
@@ -99,6 +100,7 @@ import com.aiwazian.messenger.ui.components.ShareBottomSheet
 import com.aiwazian.messenger.ui.components.ShareForwardOptions
 import com.aiwazian.messenger.ui.components.ShareItem
 import com.aiwazian.messenger.ui.components.TopBarScrim
+import com.aiwazian.messenger.ui.components.WallpaperImage
 import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
@@ -108,10 +110,12 @@ import com.aiwazian.messenger.ui.screens.chat.components.ChatInputSection
 import com.aiwazian.messenger.ui.screens.chat.components.ChatSearchNavigationButtons
 import com.aiwazian.messenger.ui.screens.chat.components.ChatSearchSummaryBar
 import com.aiwazian.messenger.ui.screens.chat.components.ChatTopBar
+import com.aiwazian.messenger.ui.screens.chat.components.ChatWallpaperSheet
 import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.EmojiPackBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
+import com.aiwazian.messenger.ui.screens.chat.components.MediaPickerBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.MessageSearchResultsList
 import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
@@ -121,10 +125,10 @@ import com.aiwazian.messenger.ui.screens.chat.components.PinnedMessageBar
 import com.aiwazian.messenger.ui.screens.chat.components.StickerPackBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.UnreadSeparatorItem
-import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessageOpenAction
-import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessageResult
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
 import com.aiwazian.messenger.ui.screens.chat.media.ShowInChatResult
+import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessageOpenAction
+import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessageResult
 import com.aiwazian.messenger.utils.ActiveChatTracker
 import com.aiwazian.messenger.utils.EmojiLink
 import com.aiwazian.messenger.utils.StickerLink
@@ -177,11 +181,21 @@ fun ChatScreen(
     val isChatMuted by notificationsViewModel.isMuted.collectAsState()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
-
+    
+    val chatWallpaper by remember(chatId) {
+        chatViewModel.observeChatWallpaper(chatId)
+    }.collectAsState(initial = null)
+    
+    val wallpaperTarget = when (ChatType.fromId(chatId)) {
+        ChatType.CHANNEL -> WallpaperTarget.Channel(chatId)
+        ChatType.GROUP -> WallpaperTarget.Group(chatId)
+        else -> WallpaperTarget.Chat(chatId)
+    }
+    
     val pinnedMessageIds = remember(uiState.pinnedMessages) {
         uiState.pinnedMessages.map { pin -> pin.messageId }.toSet()
     }
-
+    
     val density = LocalDensity.current
     val topBarHeightPx = remember { mutableIntStateOf(0) }
     val imeInsets = WindowInsets.ime
@@ -327,13 +341,13 @@ fun ChatScreen(
     LaunchedEffect(isAtBottom) {
         chatViewModel.onViewportAtBottomChanged(isAtBottom)
     }
-
+    
     val displayedPinIndex = remember { mutableIntStateOf(0) }
-
+    
     LaunchedEffect(uiState.pinnedMessages) {
         displayedPinIndex.intValue = 0
     }
-
+    
     val visibleMessageIds by remember {
         derivedStateOf {
             listState.layoutInfo.visibleItemsInfo.mapNotNull { info ->
@@ -343,19 +357,19 @@ fun ChatScreen(
             }.toSet()
         }
     }
-
+    
     LaunchedEffect(visibleMessageIds, uiState.pinnedMessages) {
         val pins = uiState.pinnedMessages
         if (pins.isEmpty()) return@LaunchedEffect
-
+        
         var index = displayedPinIndex.intValue.coerceIn(0, pins.lastIndex)
         var steps = 0
-
+        
         while (steps <= pins.size && pins[index].messageId in visibleMessageIds) {
             index = (index + 1) % pins.size
             steps++
         }
-
+        
         displayedPinIndex.intValue = index
     }
     
@@ -388,6 +402,7 @@ fun ChatScreen(
     var fileToCancelId by remember { mutableStateOf<Long?>(null) }
     var showCancelRecordingDialog by remember { mutableStateOf(false) }
     var showMusicPlayerSheet by remember { mutableStateOf(false) }
+    var showWallpaperPicker by remember { mutableStateOf(false) }
     
     LaunchedEffect(uiState.currentMusicFileId) {
         if (uiState.currentMusicFileId == null) showMusicPlayerSheet = false
@@ -490,11 +505,11 @@ fun ChatScreen(
     
     LaunchedEffect(stickersState.notice) {
         val notice = stickersState.notice ?: return@LaunchedEffect
-
+        
         val message = notice.message.asString(context)
-
+        
         stickersViewModel.consumeNotice()
-
+        
         snackbarJob?.cancel()
         snackbarJob = scope.launch {
             snackbarHostState.showSnackbar(
@@ -503,18 +518,18 @@ fun ChatScreen(
             )
         }
     }
-
+    
     ResultEffect<PinnedMessageResult> { result ->
         when (result.action) {
             PinnedMessageOpenAction.REPLY -> chatViewModel.startReply(result.message)
             PinnedMessageOpenAction.EDIT -> chatViewModel.startEditing(result.message)
         }
     }
-
+    
     ResultEffect<ShowInChatResult> { result ->
         chatViewModel.jumpToMessage(result.messageId)
     }
-
+    
     Scaffold(snackbarHost = {
         if (!uiState.showFullScreenViewer) {
             AppSnackbar(snackbarHostState)
@@ -599,7 +614,8 @@ fun ChatScreen(
                     if (currentVoiceMessageId != null) {
                         AudioMiniPlayer(
                             title = uiState.currentVoiceSenderName.orEmpty(),
-                            artist = uiState.currentVoiceSendTime?.toInstance()?.toMiniPlayerTime(),
+                            artist = uiState.currentVoiceSendTime?.toInstance()
+                                ?.toMiniPlayerTime(),
                             isPlaying = uiState.isVoicePlaying,
                             onTogglePlayPause = chatViewModel::toggleVoicePlayPause,
                             onClose = chatViewModel::stopVoice,
@@ -677,8 +693,20 @@ fun ChatScreen(
             topBarHeightPx.intValue =
                 with(density) { innerPadding.calculateTopPadding().roundToPx() }
         }
-
+        
         Box(modifier = Modifier.fillMaxSize()) {
+            chatWallpaper?.let { wallpaper ->
+                WallpaperImage(
+                    model = wallpaper.url,
+                    cacheKey = wallpaper.fileId,
+                    darkenPercent = wallpaper.darken,
+                    blurPercent = wallpaper.blur,
+                    offsetX = wallpaper.offsetX,
+                    offsetY = wallpaper.offsetY,
+                    modifier = Modifier.matchParentSize()
+                )
+            }
+            
             if (uiState.isMessageSearchActive && uiState.isMessageSearchListMode) {
                 MessageSearchResultsList(
                     uiState = uiState,
@@ -975,7 +1003,29 @@ fun ChatScreen(
             onDismiss = chatViewModel::dismissPinSheet
         )
     }
-
+    
+    if (uiState.showWallpaperSheet) {
+        ChatWallpaperSheet(
+            wallpaper = chatWallpaper,
+            onDismiss = chatViewModel::hideWallpaperSheet,
+            onSelectFromGallery = {
+                chatViewModel.hideWallpaperSheet()
+                showWallpaperPicker = true
+            },
+            onReset = {
+                chatViewModel.hideWallpaperSheet()
+                chatViewModel.resetChatWallpaper()
+            }
+        )
+    }
+    
+    if (showWallpaperPicker) {
+        MediaPickerBottomSheet(
+            onDismissRequest = { showWallpaperPicker = false },
+            wallpaperTarget = wallpaperTarget
+        )
+    }
+    
     if (uiState.isForwardSheetVisible) {
         val forwardingMessage = uiState.forwardingMessage
         ShareBottomSheet(

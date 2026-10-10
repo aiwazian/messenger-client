@@ -579,4 +579,13 @@
         <item quantity="many">%1$d comments</item>
         <item quantity="other">%1$d comments</item>
     </plurals>
+    <string name="change_wallpaper">Change wallpaper</string>
+    <string name="reset_wallpaper">Reset wallpaper</string>
+    <string name="choose_wallpaper_from_gallery">Choose wallpaper from gallery</string>
+    <string name="set_wallpaper_for_me">Set for me</string>
+    <string name="set_wallpaper_for_everyone">Set for both</string>
+    <string name="wallpaper">Wallpaper</string>
+    <string name="wallpaper_darkness">Darkening</string>
+    <string name="wallpaper_blur">Blur</string>
+    <string name="wallpaper_apply_failed">Failed to set wallpaper</string>
 </resources>

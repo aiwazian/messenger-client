@@ -28,6 +28,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.rounded.CropRotate
@@ -125,7 +126,9 @@ fun MediaPickerPreview(
     onMediaDrawingsChange: (DeviceMediaItem, MediaDrawRaster) -> Unit = { _, _ -> },
     drawColor: Color = Color.Red,
     onDrawColorChange: (Color) -> Unit = {},
-    onCurrentItemChange: (DeviceMediaItem?) -> Unit = {}
+    onCurrentItemChange: (DeviceMediaItem?) -> Unit = {},
+    isSelectionEnabled: Boolean = true,
+    onSend: (() -> Unit)? = null
 ) {
     val pagerState = rememberPagerState(
         initialPage = initialIndex.coerceIn(0, (media.size - 1).coerceAtLeast(0)),
@@ -354,7 +357,7 @@ fun MediaPickerPreview(
                                     ) {
                                         Text(text = stringResource(R.string.draw_clear_all))
                                     }
-                                } else if (currentItem != null) {
+                                } else if (currentItem != null && isSelectionEnabled) {
                                     IconButton(onClick = { onToggleSelection(currentItem) }) {
                                         MediaSelectionBadge(number = selectionNumber(currentItem))
                                     }
@@ -567,21 +570,47 @@ fun MediaPickerPreview(
                         enter = fadeIn(),
                         exit = fadeOut()
                     ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            MediaOverlayIconButton(
-                                icon = Icons.Outlined.Brush,
-                                onClick = { mode = PreviewMode.Draw },
-                                isActive = currentItem?.let { mediaDrawings(it)?.hasInk } == true
-                            )
-
-                            if (openTransform != null) {
+                        if (onSend != null) {
+                            Box(modifier = Modifier.fillMaxWidth()) {
                                 MediaOverlayIconButton(
-                                    icon = Icons.Rounded.CropRotate,
-                                    onClick = { mode = PreviewMode.Transform },
-                                    isActive = isTransformed)
+                                    icon = Icons.Outlined.Brush,
+                                    onClick = { mode = PreviewMode.Draw },
+                                    isActive = currentItem?.let { mediaDrawings(it)?.hasInk } == true,
+                                    modifier = Modifier.align(Alignment.CenterStart)
+                                )
+
+                                if (openTransform != null) {
+                                    MediaOverlayIconButton(
+                                        icon = Icons.Rounded.CropRotate,
+                                        onClick = { mode = PreviewMode.Transform },
+                                        isActive = isTransformed,
+                                        modifier = Modifier.align(Alignment.Center)
+                                    )
+                                }
+
+                                MediaOverlayIconButton(
+                                    icon = Icons.AutoMirrored.Rounded.Send,
+                                    onClick = onSend,
+                                    modifier = Modifier.align(Alignment.CenterEnd)
+                                )
+                            }
+                        } else {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                MediaOverlayIconButton(
+                                    icon = Icons.Outlined.Brush,
+                                    onClick = { mode = PreviewMode.Draw },
+                                    isActive = currentItem?.let { mediaDrawings(it)?.hasInk } == true
+                                )
+
+                                if (openTransform != null) {
+                                    MediaOverlayIconButton(
+                                        icon = Icons.Rounded.CropRotate,
+                                        onClick = { mode = PreviewMode.Transform },
+                                        isActive = isTransformed)
+                                }
                             }
                         }
                     }

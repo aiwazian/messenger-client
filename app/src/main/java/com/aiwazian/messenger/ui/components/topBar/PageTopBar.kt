@@ -41,7 +41,7 @@ fun PageTopBar(
             IconButton(onClick = {
                 if (onBackClick != null) {
                     onBackClick()
-                } else {
+                } else if (navBackStack.size > 1) {
                     navBackStack.removeLastOrNull()
                 }
             }) {

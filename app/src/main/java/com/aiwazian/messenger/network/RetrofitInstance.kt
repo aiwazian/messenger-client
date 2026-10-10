@@ -19,6 +19,7 @@ import com.aiwazian.messenger.network.api.SearchApi
 import com.aiwazian.messenger.network.api.SessionApi
 import com.aiwazian.messenger.network.api.StickerApi
 import com.aiwazian.messenger.network.api.UserApi
+import com.aiwazian.messenger.network.api.WallpaperApi
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -75,4 +76,6 @@ object RetrofitInstance {
     val notificationSettingsApi: NotificationSettingsApi by lazy {
         retrofit.create(NotificationSettingsApi::class.java)
     }
+
+    val wallpaperApi: WallpaperApi by lazy { retrofit.create(WallpaperApi::class.java) }
 }

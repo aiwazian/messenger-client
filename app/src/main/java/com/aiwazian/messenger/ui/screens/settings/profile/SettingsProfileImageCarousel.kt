@@ -31,7 +31,6 @@ import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -63,7 +62,6 @@ import com.aiwazian.messenger.ui.screens.chat.components.PhotoPickerBottomSheet
 import com.aiwazian.messenger.utils.media.EncodedVideo
 import com.aiwazian.messenger.utils.media.VideoExportTarget
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsProfileImageCarousel(
     avatars: List<Avatar>,
@@ -81,7 +79,7 @@ fun SettingsProfileImageCarousel(
             .fillMaxWidth()
             .padding(vertical = 10.dp),
         itemSpacing = 8.dp,
-        maxItemWidth = 300.dp,
+        preferredItemWidth = 300.dp,
         flingBehavior = CarouselDefaults.multiBrowseFlingBehavior(carouselState),
         contentPadding = PaddingValues(horizontal = 10.dp)
     ) { i ->
@@ -108,7 +106,7 @@ fun SettingsProfileImageCarousel(
                 } else {
                     val context = LocalContext.current
                     val model = remember(avatar.uri) { avatarImageRequest(context, avatar.uri) }
-
+                    
                     AsyncImage(
                         modifier = Modifier
                             .aspectRatio(1f)

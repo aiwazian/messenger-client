@@ -8,6 +8,7 @@ import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalFlexBoxApi
 import androidx.compose.foundation.layout.FlexAlignItems
 import androidx.compose.foundation.layout.FlexBox
 import androidx.compose.foundation.layout.FlexBoxScope
@@ -653,6 +654,7 @@ private fun UserProfile(
     }
 }
 
+@OptIn(ExperimentalFlexBoxApi::class)
 @Composable
 private fun ProfileActions(
     actions: List<ProfileActionData>,
@@ -679,6 +681,7 @@ private fun ProfileActions(
     }
 }
 
+@OptIn(ExperimentalFlexBoxApi::class)
 @Composable
 private fun FlexBoxScope.ProfileAction(
     onClick: () -> Unit,

@@ -13,6 +13,7 @@ import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.enums.ThemeOption
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -35,6 +36,7 @@ private object Keys {
     val KEYBOARD_HEIGHT = floatPreferencesKey("keyboard_height")
     val EQUALIZER_BAND_LEVELS = stringPreferencesKey("equalizer_band_levels")
     val DRAW_COLOR = longPreferencesKey("draw_color")
+    val CACHED_WALLPAPERS = stringPreferencesKey("cached_wallpapers")
 }
 
 @Singleton
@@ -95,6 +97,8 @@ class DataStoreManager @Inject constructor(
 
     suspend fun saveDrawColor(colorArgb: Long) = setValue(Keys.DRAW_COLOR, colorArgb)
 
+    suspend fun saveCachedWallpapers(json: String) = setValue(Keys.CACHED_WALLPAPERS, json)
+
     fun getPasscode() = getValue(Keys.PASSCODE, "")
     
     fun getIsLockApp() = getValue(Keys.IS_LOCK_APP, false)
@@ -133,6 +137,10 @@ class DataStoreManager @Inject constructor(
         }
 
     fun getDrawColor() = getValue(Keys.DRAW_COLOR, DEFAULT_DRAW_COLOR)
+
+    suspend fun getCachedWallpapers(): String? {
+        return context.dataStore.data.map { pref -> pref[Keys.CACHED_WALLPAPERS] }.first()
+    }
 
     suspend fun clear() {
         context.dataStore.edit { it.clear() }

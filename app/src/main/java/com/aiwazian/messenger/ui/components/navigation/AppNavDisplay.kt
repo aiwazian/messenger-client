@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
@@ -60,8 +61,10 @@ import com.aiwazian.messenger.ui.screens.main.MainScreen
 import com.aiwazian.messenger.ui.screens.newmessage.NewMessageScreen
 import com.aiwazian.messenger.ui.screens.profile.ProfileScreen
 import com.aiwazian.messenger.ui.screens.settings.SettingsScreen
+import com.aiwazian.messenger.ui.screens.settings.appearance.ChatAppearanceScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsAppearanceScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsDarkThemeScreen
+import com.aiwazian.messenger.ui.screens.wallpaper.WallpaperPreviewScreen
 import com.aiwazian.messenger.ui.screens.settings.data_storage.AutoDownloadMediaScreen
 import com.aiwazian.messenger.ui.screens.settings.data_storage.DataAndStorageScreen
 import com.aiwazian.messenger.ui.screens.settings.emoji.added.AddedEmojiPacksScreen
@@ -104,6 +107,7 @@ import com.aiwazian.messenger.ui.screens.settings.stickers.created.CreatedSticke
 import com.aiwazian.messenger.ui.screens.settings.stickers.created.StickerPackEditorScreen
 import com.aiwazian.messenger.ui.screens.settings.storage.StorageScreen
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
 
 @Composable
 fun AppNavDisplay(
@@ -111,11 +115,22 @@ fun AppNavDisplay(
     externalRouteFlow: Flow<AppRoute>? = null
 ) {
     val backStack = rememberNavBackStack(elements = startRoute)
+    val rootRoute = startRoute.first()
     
     LaunchedEffect(externalRouteFlow) {
         externalRouteFlow?.collect { route ->
             backStack.add(route)
         }
+    }
+    
+    LaunchedEffect(backStack) {
+        snapshotFlow { backStack.isEmpty() }
+            .filter { it }
+            .collect {
+                if (backStack.isEmpty()) {
+                    backStack.add(rootRoute)
+                }
+            }
     }
     
     SharedTransitionLayout {
@@ -124,7 +139,7 @@ fun AppNavDisplay(
             LocalSharedTransitionScope provides this
         ) {
             NavDisplay(
-                backStack = backStack,
+                backStack = backStack.ifEmpty { listOf(rootRoute) },
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background),
@@ -174,6 +189,10 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsLanguage> { SettingsLanguageScreen() }
                     entry<AppRoute.SettingsDarkTheme> { SettingsDarkThemeScreen() }
                     entry<AppRoute.SettingsChat> { SettingsAppearanceScreen() }
+                    entry<AppRoute.ChatAppearance> { ChatAppearanceScreen(target = it.target) }
+                    entry<AppRoute.WallpaperPreview> {
+                        WallpaperPreviewScreen(imagePath = it.imagePath, target = it.target)
+                    }
                     entry<AppRoute.SettingsNotifications> { NotificationSettingsScreen() }
                     entry<AppRoute.SettingsNotificationCategory> {
                         NotificationCategoryScreen(category = it.category)

@@ -13,12 +13,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.socket.ServerSyncService
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.navigation.AppNavDisplay
@@ -27,9 +30,12 @@ import com.aiwazian.messenger.ui.theme.ApplicationTheme
 import com.aiwazian.messenger.utils.InAppUpdateManager
 import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.ThemeManager
+import dagger.Lazy
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -40,6 +46,9 @@ class MainActivity : AppCompatActivity() {
     
     @Inject
     lateinit var serverSyncService: ServerSyncService
+
+    @Inject
+    lateinit var realtimeEventSyncService: Lazy<RealtimeEventSyncService>
     
     private var startRoute by mutableStateOf<AppRoute?>(null)
     private val externalRouteFlow = MutableSharedFlow<AppRoute>(extraBufferCapacity = 1)
@@ -47,7 +56,7 @@ class MainActivity : AppCompatActivity() {
     private var inAppUpdateManager: InAppUpdateManager? = null
     private var isUpdateReadyToInstall by mutableStateOf(false)
     
-    private var isAuthorized = false
+    private var isAuthorized by mutableStateOf<Boolean?>(null)
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,27 +65,34 @@ class MainActivity : AppCompatActivity() {
             restartApp()
         }
         
-        isAuthorized = runBlocking {
-            SessionManager.loadSession()
-            SessionManager.hasAnySession()
-        }
-        
         installSplashScreen().setKeepOnScreenCondition {
-            false
+            isAuthorized == null
         }
-        
+
         enableEdgeToEdge()
-        
-        if (isAuthorized) {
-            serverSyncService.start()
-            
-            inAppUpdateManager = InAppUpdateManager(this) {
-                isUpdateReadyToInstall = true
+
+        inAppUpdateManager = InAppUpdateManager(this) {
+            isUpdateReadyToInstall = true
+        }
+
+        lifecycleScope.launch {
+            SessionManager.loadSession()
+            val authorized = SessionManager.hasAnySession()
+
+            if (authorized) {
+                withContext(Dispatchers.Default) {
+                    realtimeEventSyncService.get()
+                }
+
+                serverSyncService.start()
+                inAppUpdateManager?.enableUpdateChecks()
+
+                if (savedInstanceState == null) {
+                    handleIntent(intent)
+                }
             }
-            
-            if (savedInstanceState == null) {
-                handleIntent(intent)
-            }
+
+            isAuthorized = authorized
         }
         
         setContent {
@@ -89,20 +105,26 @@ class MainActivity : AppCompatActivity() {
                 dynamicColor = isDynamicColorEnable,
                 appPrimaryColor = primaryColor.color
             ) {
-                if (isAuthorized) {
-                    val startRoutes = mutableListOf<AppRoute>(AppRoute.Main)
-                    
-                    startRoute?.let {
-                        startRoutes.add(it)
-                        startRoute = null
+                when (isAuthorized) {
+                    true -> {
+                        val startRoutes = mutableListOf<AppRoute>(AppRoute.Main)
+
+                        startRoute?.let {
+                            startRoutes.add(it)
+                        }
+
+                        LaunchedEffect(Unit) {
+                            startRoute = null
+                        }
+
+                        AppNavDisplay(
+                            *startRoutes.toTypedArray(),
+                            externalRouteFlow = externalRouteFlow
+                        )
                     }
-                    
-                    AppNavDisplay(
-                        *startRoutes.toTypedArray(),
-                        externalRouteFlow = externalRouteFlow
-                    )
-                } else {
-                    AppNavDisplay(AppRoute.Login)
+
+                    false -> AppNavDisplay(AppRoute.Login)
+                    null -> Unit
                 }
                 
                 if (isUpdateReadyToInstall) {
@@ -124,7 +146,7 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun handleIntent(intent: Intent, isNewIntent: Boolean = false) {
-        if (!isAuthorized) {
+        if (isAuthorized != true) {
             return
         }
         

@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -37,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.WallpaperTarget
 import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.enums.ThemeOption
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
@@ -49,13 +51,20 @@ import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.section.SectionToggleItem
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.screens.wallpaper.WallpaperViewModel
 
 @Composable
 fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
     val navBackStack = LocalNavBackStack.current
-    
+
     val primaryColor by viewModel.primaryColor.collectAsState()
     val isDynamicColorEnable by viewModel.dynamicColor.collectAsState()
+
+    val wallpaperViewModel: WallpaperViewModel = hiltViewModel()
+
+    LaunchedEffect(Unit) {
+        wallpaperViewModel.init(WallpaperTarget.Global)
+    }
     
     AppScaffold(
         topBar = {
@@ -148,5 +157,7 @@ fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
                     navBackStack.add(AppRoute.SettingsDarkTheme)
                 })
         }
+
+        WallpaperSection(wallpaperViewModel)
     }
 }
