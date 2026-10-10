@@ -19,6 +19,7 @@ import com.aiwazian.messenger.network.api.SearchApi
 import com.aiwazian.messenger.network.api.SessionApi
 import com.aiwazian.messenger.network.api.StickerApi
 import com.aiwazian.messenger.network.api.UserApi
+import com.aiwazian.messenger.network.api.WallpaperApi
 import com.aiwazian.messenger.utils.SessionManager
 import dagger.Module
 import dagger.Provides
@@ -108,7 +109,11 @@ object NetworkModule {
     @Singleton
     fun provideNotificationSettingsApi(): NotificationSettingsApi =
         RetrofitInstance.notificationSettingsApi
-    
+
+    @Provides
+    @Singleton
+    fun provideWallpaperApi(): WallpaperApi = RetrofitInstance.wallpaperApi
+
     @Provides
     @Singleton
     fun provideSessionManager(): SessionManager = SessionManager

@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
@@ -39,6 +40,7 @@ import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.ReplyDraftCache
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
+import com.aiwazian.messenger.repository.WallpaperRepository
 import com.aiwazian.messenger.repository.channel.ChannelAdminsRepository
 import com.aiwazian.messenger.repository.group.GroupAdminsRepository
 import com.aiwazian.messenger.socket.OnlineUsersTracker
@@ -129,6 +131,7 @@ class ChatViewModel @Inject constructor(
     private val realtimeEventSyncService: RealtimeEventSyncService,
     private val notificationHelper: NotificationHelper,
     private val messageSendQueue: MessageSendQueue,
+    private val wallpaperRepository: WallpaperRepository,
     private val sendStickerUseCase: SendStickerUseCase
 ) : ViewModel(), ChatInputActions {
 
@@ -212,11 +215,21 @@ class ChatViewModel @Inject constructor(
             mapOf("chatId" to chatId.toString())
         )
 
+        refreshChatWallpaper(chatId)
+
         loadDraft(chatId)
         loadChatInfo()
         observeRealtimeEvents()
         observeMessages()
         observePinnedMessages()
+    }
+
+    fun observeChatWallpaper(chatId: Long) = wallpaperRepository.observeChatWallpaper(chatId)
+
+    private fun refreshChatWallpaper(chatId: Long) {
+        viewModelScope.launch {
+            wallpaperRepository.refreshChatWallpaper(chatId)
+        }
     }
 
     private fun loadDraft(chatId: Long) {
@@ -577,6 +590,13 @@ class ChatViewModel @Inject constructor(
         val actions = mutableListOf<DropdownMenuAction>()
 
         if (type == ChatType.PRIVATE) {
+            actions.add(
+                DropdownMenuAction(
+                    Icons.Rounded.Wallpaper,
+                    UiText.StringResource(R.string.change_wallpaper),
+                    ::showWallpaperSheet
+                )
+            )
             actions.add(
                 DropdownMenuAction(
                     Icons.Rounded.DeleteOutline,
@@ -1671,6 +1691,15 @@ class ChatViewModel @Inject constructor(
     fun hideLeaveDialog() = _uiState.update { it.copy(showLeaveDialog = false) }
     fun setDeleteForRecipient(delete: Boolean) =
         _uiState.update { it.copy(deleteForRecipient = delete) }
+
+    fun showWallpaperSheet() = _uiState.update { it.copy(showWallpaperSheet = true) }
+    fun hideWallpaperSheet() = _uiState.update { it.copy(showWallpaperSheet = false) }
+
+    fun resetChatWallpaper() {
+        viewModelScope.launch {
+            wallpaperRepository.resetChatWallpaper(_uiState.value.chatId)
+        }
+    }
 
     fun onFileAction(message: Message, file: MessageAttachment, action: FileAction) {
         when (action) {

@@ -578,4 +578,13 @@
         <item quantity="many">%1$d commenti</item>
         <item quantity="other">%1$d commenti</item>
     </plurals>
+    <string name="change_wallpaper">Modifica sfondo chat</string>
+    <string name="reset_wallpaper">Ripristina sfondo chat</string>
+    <string name="choose_wallpaper_from_gallery">Scegli sfondo dalla galleria</string>
+    <string name="set_wallpaper_for_me">Imposta per me</string>
+    <string name="set_wallpaper_for_everyone">Imposta per entrambi</string>
+    <string name="wallpaper">Sfondo chat</string>
+    <string name="wallpaper_darkness">Scurimento</string>
+    <string name="wallpaper_blur">Sfocatura</string>
+    <string name="wallpaper_apply_failed">Impossibile impostare lo sfondo</string>
 </resources>

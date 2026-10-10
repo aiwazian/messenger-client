@@ -113,6 +113,7 @@ fun ReplyQuote(
             .graphicsLayer(scaleX = scale, scaleY = scale)
             .height(IntrinsicSize.Min)
             .clip(MaterialTheme.shapes.extraSmall)
+//            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             .then(
                 if (onClick != null) Modifier.combinedClickable(

@@ -601,4 +601,13 @@
         <item quantity="many">%1$d комментариев</item>
         <item quantity="other">%1$d комментариев</item>
     </plurals>
+    <string name="change_wallpaper">Изменить обои</string>
+    <string name="reset_wallpaper">Сбросить обои</string>
+    <string name="choose_wallpaper_from_gallery">Выбрать обои из галереи</string>
+    <string name="set_wallpaper_for_me">Установить у меня</string>
+    <string name="set_wallpaper_for_everyone">Установить у обоих</string>
+    <string name="wallpaper">Обои</string>
+    <string name="wallpaper_darkness">Затемнение</string>
+    <string name="wallpaper_blur">Размытие</string>
+    <string name="wallpaper_apply_failed">Не удалось установить обои</string>
 </resources>

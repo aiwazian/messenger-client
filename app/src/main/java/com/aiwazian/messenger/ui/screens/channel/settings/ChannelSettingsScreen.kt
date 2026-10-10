@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Campaign
 import androidx.compose.material.icons.outlined.Comment
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PersonAddAlt
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Check
@@ -31,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.WallpaperTarget
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
@@ -154,6 +156,14 @@ fun ChannelSettingsScreen(
                                     commentsRestrictedToSubscribers = uiState.channel.commentsRestrictedToSubscribers
                                 )
                             )
+                        }
+                    )
+
+                    SectionItem(
+                        leadingIcon = Icons.Outlined.Palette,
+                        headlineText = stringResource(R.string.appearance),
+                        onClick = {
+                            navBackStack.add(AppRoute.ChatAppearance(WallpaperTarget.Channel(channelId = uiState.channel.id)))
                         }
                     )
                 }

@@ -71,9 +71,19 @@ class MediaPickerViewModel @Inject constructor(
     fun loadMedia() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            
+
             val media = deviceMediaRepository.getMedia()
-            
+
+            _uiState.update { it.copy(media = media, isLoading = false) }
+        }
+    }
+
+    fun loadImages() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+
+            val media = deviceMediaRepository.getImages()
+
             _uiState.update { it.copy(media = media, isLoading = false) }
         }
     }
@@ -99,7 +109,7 @@ class MediaPickerViewModel @Inject constructor(
             } else {
                 state.selected + uri
             }
-            
+
             state.copy(selected = selected)
         }
     }

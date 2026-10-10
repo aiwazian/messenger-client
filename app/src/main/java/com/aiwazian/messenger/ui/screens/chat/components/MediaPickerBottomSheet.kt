@@ -108,29 +108,42 @@ import com.aiwazian.messenger.ui.components.hasMediaPermission
 import com.aiwazian.messenger.ui.components.mediaPermissions
 import com.aiwazian.messenger.ui.components.mediaTransitionBounds
 import com.aiwazian.messenger.ui.components.mediaTransitionVisibility
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
+import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.openAppSettings
 import com.aiwazian.messenger.ui.components.pickerMediaKey
+import com.aiwazian.messenger.domain.WallpaperTarget
 import com.aiwazian.messenger.ui.screens.chat.ChatEmojiViewModel
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
+import com.aiwazian.messenger.ui.screens.wallpaper.WallpaperViewModel
+import com.aiwazian.messenger.utils.media.MediaTransform
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MediaPickerBottomSheet(
-    chatId: Long,
-    replyTo: MessageReplyPreview?,
-    caption: String,
-    keyboardHeight: Dp,
-    onCaptionChange: (String) -> Unit,
+    chatId: Long = 0L,
+    replyTo: MessageReplyPreview? = null,
+    caption: String = "",
+    keyboardHeight: Dp = 0.dp,
+    onCaptionChange: (String) -> Unit = {},
     onDismissRequest: () -> Unit,
-    onFileSystemClick: () -> Unit,
-    onSent: () -> Unit,
-    onSend: (() -> Unit)? = null
+    onFileSystemClick: () -> Unit = {},
+    onSent: () -> Unit = {},
+    onSend: (() -> Unit)? = null,
+    wallpaperTarget: WallpaperTarget? = null
 ) {
     val viewModel: MediaPickerViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val coroutineScope = rememberCoroutineScope()
+    val navBackStack = LocalNavBackStack.current
+    val isWallpaperMode = wallpaperTarget != null
+    val wallpaperViewModel: WallpaperViewModel? = if (isWallpaperMode) {
+        hiltViewModel<WallpaperViewModel>()
+    } else {
+        null
+    }
     
     val emojiViewModel: ChatEmojiViewModel = hiltViewModel()
     val emojiState by emojiViewModel.uiState.collectAsStateWithLifecycle()
@@ -143,6 +156,7 @@ fun MediaPickerBottomSheet(
     var hasPermission by remember { mutableStateOf(context.hasMediaPermission()) }
     var wasAsked by remember { mutableStateOf(false) }
     var previewIndex by remember { mutableStateOf<Int?>(null) }
+    var wallpaperItem by remember { mutableStateOf<DeviceMediaItem?>(null) }
     var isResetDialogVisible by remember { mutableStateOf(false) }
     var isEmojiPanelVisible by remember { mutableStateOf(false) }
     var captionInputView by remember { mutableStateOf<EditText?>(null) }
@@ -189,9 +203,13 @@ fun MediaPickerBottomSheet(
     
     LaunchedEffect(Unit) {
         viewModel.reset()
-        
+
         if (hasPermission) {
-            viewModel.loadMedia()
+            if (isWallpaperMode) {
+                viewModel.loadImages()
+            } else {
+                viewModel.loadMedia()
+            }
         } else {
             permissionLauncher.launch(mediaPermissions())
         }
@@ -272,7 +290,10 @@ fun MediaPickerBottomSheet(
                         columns = GridCells.Fixed(PICKER_GRID_COLUMNS),
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
-                            start = 2.dp, top = 2.dp, end = 2.dp, bottom = 70.dp
+                            start = 2.dp,
+                            top = 2.dp,
+                            end = 2.dp,
+                            bottom = if (isWallpaperMode) 2.dp else 70.dp
                         ),
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -284,18 +305,26 @@ fun MediaPickerBottomSheet(
                                     .statusBarsPadding()
                             )
                         }
-                        
+
                         itemsIndexed(
                             items = uiState.media,
                             key = { _, item -> item.id }) { index, item ->
                             MediaGridItem(
                                 item = item,
-                                number = uiState.selected.indexOf(item.uri) + 1,
+                                number = if (isWallpaperMode) {
+                                    0
+                                } else {
+                                    uiState.selected.indexOf(item.uri) + 1
+                                },
                                 drawing = uiState.mediaDrawings[item.uri],
                                 onClick = { previewIndex = index },
-                                onToggleSelection = { viewModel.toggleSelection(item.uri) })
+                                onToggleSelection = if (isWallpaperMode) {
+                                    null
+                                } else {
+                                    { viewModel.toggleSelection(item.uri) }
+                                })
                         }
-                        
+
                         item(span = { GridItemSpan(maxLineSpan) }) {
                             Spacer(
                                 modifier = Modifier
@@ -306,85 +335,87 @@ fun MediaPickerBottomSheet(
                     }
                 }
             }
-            
-            MediaPickerToolbar(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) }
-                    .navigationBarsPadding()
-                    .imePadding()
-                    .padding(bottom = emojiPanelPadding)
-                    .padding(10.dp)
-            ) {
-                AnimatedContent(
-                    targetState = uiState.selected.isNotEmpty(),
-                    transitionSpec = { fadeIn() togetherWith fadeOut() },
-                    label = "media_picker_toolbar"
-                ) { hasSelection ->
-                    if (hasSelection) {
-                        CaptionRow(
-                            caption = caption,
-                            isEmojiPanelVisible = isEmojiPanelVisible,
-                            onCaptionChange = onCaptionChange,
-                            onResolveEmoji = customEmojiViewModel::resolveEmoji,
-                            onEmojiClick = {
-                                if (isEmojiPanelVisible) {
-                                    isEmojiPanelVisible = false
-                                    
-                                    captionInputView?.let { view -> focusMessageInput(view) }
-                                } else {
-                                    isEmojiPanelVisible = true
-                                    
-                                    captionInputView?.let { view -> hideKeyboardKeepFocus(view) }
-                                }
-                            },
-                            onInputViewReady = { view -> captionInputView = view },
-                            onSendClick = {
-                                if (onSend != null) {
-                                    onSend()
-                                } else {
-                                    viewModel.send(
-                                        chatId = chatId, replyTo = replyTo, caption = caption
-                                    )
-                                }
-                                onSent()
-                            })
-                    } else {
-                        SourceRow(onFileClick = onFileSystemClick)
+
+            if (!isWallpaperMode) {
+                MediaPickerToolbar(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) }
+                        .navigationBarsPadding()
+                        .imePadding()
+                        .padding(bottom = emojiPanelPadding)
+                        .padding(10.dp)
+                ) {
+                    AnimatedContent(
+                        targetState = uiState.selected.isNotEmpty(),
+                        transitionSpec = { fadeIn() togetherWith fadeOut() },
+                        label = "media_picker_toolbar"
+                    ) { hasSelection ->
+                        if (hasSelection) {
+                            CaptionRow(
+                                caption = caption,
+                                isEmojiPanelVisible = isEmojiPanelVisible,
+                                onCaptionChange = onCaptionChange,
+                                onResolveEmoji = customEmojiViewModel::resolveEmoji,
+                                onEmojiClick = {
+                                    if (isEmojiPanelVisible) {
+                                        isEmojiPanelVisible = false
+
+                                        captionInputView?.let { view -> focusMessageInput(view) }
+                                    } else {
+                                        isEmojiPanelVisible = true
+
+                                        captionInputView?.let { view -> hideKeyboardKeepFocus(view) }
+                                    }
+                                },
+                                onInputViewReady = { view -> captionInputView = view },
+                                onSendClick = {
+                                    if (onSend != null) {
+                                        onSend()
+                                    } else {
+                                        viewModel.send(
+                                            chatId = chatId, replyTo = replyTo, caption = caption
+                                        )
+                                    }
+                                    onSent()
+                                })
+                        } else {
+                            SourceRow(onFileClick = onFileSystemClick)
+                        }
                     }
                 }
-            }
-            
-            this@AppBottomSheet.AnimatedVisibility(
-                visible = isEmojiPanelVisible,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) },
-                enter = slideInVertically(
-                    animationSpec = tween(durationMillis = EMOJI_PANEL_ANIMATION_DURATION_MS)
-                ) { it },
-                exit = slideOutVertically(
-                    animationSpec = tween(durationMillis = EMOJI_PANEL_ANIMATION_DURATION_MS)
-                ) { it }
-            ) {
-                MediaPickerEmojiPanel(
-                    packs = emojiState.addedPacks,
-                    systemEmojis = emojiState.systemEmojis,
-                    height = emojiPanelHeight,
-                    bottomPadding = bottomPadding,
-                    onEmojiClick = { pack, emoji ->
-                        captionInputView?.let { view ->
-                            coroutineScope.launch {
-                                insertCustomEmoji(view, pack.id, emoji)
+
+                this@AppBottomSheet.AnimatedVisibility(
+                    visible = isEmojiPanelVisible,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) },
+                    enter = slideInVertically(
+                        animationSpec = tween(durationMillis = EMOJI_PANEL_ANIMATION_DURATION_MS)
+                    ) { it },
+                    exit = slideOutVertically(
+                        animationSpec = tween(durationMillis = EMOJI_PANEL_ANIMATION_DURATION_MS)
+                    ) { it }
+                ) {
+                    MediaPickerEmojiPanel(
+                        packs = emojiState.addedPacks,
+                        systemEmojis = emojiState.systemEmojis,
+                        height = emojiPanelHeight,
+                        bottomPadding = bottomPadding,
+                        onEmojiClick = { pack, emoji ->
+                            captionInputView?.let { view ->
+                                coroutineScope.launch {
+                                    insertCustomEmoji(view, pack.id, emoji)
+                                }
+                            }
+                        },
+                        onSystemEmojiClick = { emoji ->
+                            captionInputView?.let { view ->
+                                insertSystemEmoji(view, emoji)
                             }
                         }
-                    },
-                    onSystemEmojiClick = { emoji ->
-                        captionInputView?.let { view ->
-                            insertSystemEmoji(view, emoji)
-                        }
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -394,12 +425,42 @@ fun MediaPickerBottomSheet(
     if (index != null) {
         val drawColor by viewModel.drawColor.collectAsStateWithLifecycle()
 
+        val confirmWallpaper: () -> Unit = {
+            val item = wallpaperItem
+            val target = wallpaperTarget
+            val draftViewModel = wallpaperViewModel
+
+            if (item != null && target != null && draftViewModel != null) {
+                val transform = uiState.mediaTransforms[item.uri] ?: MediaTransform.None
+                val overlay = uiState.mediaDrawings[item.uri]?.bitmap
+
+                coroutineScope.launch {
+                    val draft = draftViewModel.prepareDraft(item.uri, transform, overlay)
+
+                    viewModel.reset()
+                    previewIndex = null
+                    onDismissRequest()
+
+                    if (draft != null) {
+                        navBackStack.add(
+                            AppRoute.WallpaperPreview(
+                                imagePath = draft.toString(),
+                                target = target
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
         MediaPickerPreview(
             media = uiState.media,
             initialIndex = index,
             selectionNumber = { item -> uiState.selected.indexOf(item.uri) + 1 },
             onToggleSelection = { item -> viewModel.toggleSelection(item.uri) },
             onDismiss = { previewIndex = null },
+            isSelectionEnabled = !isWallpaperMode,
+            onSend = if (isWallpaperMode) confirmWallpaper else null,
             openedVideo = uiState.openedVideo,
             videoQuality = { item -> uiState.videoQualities[item.uri] },
             onVideoQualityChange = { item, quality ->
@@ -415,7 +476,10 @@ fun MediaPickerBottomSheet(
             },
             drawColor = drawColor,
             onDrawColorChange = viewModel::setDrawColor,
-            onCurrentItemChange = viewModel::openMedia
+            onCurrentItemChange = { item ->
+                viewModel.openMedia(item)
+                wallpaperItem = item
+            }
         )
     }
     
@@ -525,7 +589,7 @@ private fun MediaGridItem(
     number: Int,
     drawing: MediaDrawRaster?,
     onClick: () -> Unit,
-    onToggleSelection: () -> Unit
+    onToggleSelection: (() -> Unit)? = null
 ) {
     val key = pickerMediaKey(item.uri)
     val isSelected = number > 0
@@ -576,16 +640,18 @@ private fun MediaGridItem(
             )
         }
 
-        MediaSelectionBadge(
-            number = number, modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(4.dp), onClick = onToggleSelection
-        )
+        if (onToggleSelection != null) {
+            MediaSelectionBadge(
+                number = number, modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp), onClick = onToggleSelection
+            )
+        }
     }
 }
 
 @Composable
-private fun SourceRow(onFileClick: () -> Unit) {
+private fun SourceRow(onFileClick: (() -> Unit)?) {
     Row(
         modifier = Modifier.padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -607,15 +673,17 @@ private fun SourceRow(onFileClick: () -> Unit) {
             Spacer(Modifier.width(6.dp))
             Text(text = stringResource(R.string.gallery))
         }
-        
-        TextButton(onClick = onFileClick, shape = CircleShape) {
-            Icon(
-                imageVector = Icons.Rounded.Storage,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(text = stringResource(R.string.media_picker_file))
+
+        if (onFileClick != null) {
+            TextButton(onClick = onFileClick, shape = CircleShape) {
+                Icon(
+                    imageVector = Icons.Rounded.Storage,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(text = stringResource(R.string.media_picker_file))
+            }
         }
     }
 }

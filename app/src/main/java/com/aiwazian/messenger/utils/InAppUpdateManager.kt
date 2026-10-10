@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
@@ -31,26 +32,19 @@ import com.google.android.play.core.install.model.UpdateAvailability
  * пользователем.
  */
 class InAppUpdateManager(
-    activity: ComponentActivity,
+    private val activity: ComponentActivity,
     private val onUpdateReadyToInstall: () -> Unit
 ) : DefaultLifecycleObserver {
     
     private val updateManager = AppUpdateManagerFactory.create(activity)
     
-    /*
-     * Окно Play предлагаем один раз за запуск: onResume срабатывает при каждом
-     * возврате в приложение, и без флага человек ловил бы диалог снова и снова
-     * сразу после того, как его закрыл.
-     */
     private var updateFlowStarted = false
+
+    private var checksEnabled = false
     
     private val updateLauncher = activity.registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
-        /*
-         * Отказ — штатный сценарий, а не ошибка: обновление необязательное,
-         * приложение продолжает работать на текущей версии.
-         */
         if (result.resultCode != Activity.RESULT_OK) {
             Log.i(TAG, "Update flow closed by user: ${result.resultCode}")
         }
@@ -73,13 +67,24 @@ class InAppUpdateManager(
     }
     
     override fun onResume(owner: LifecycleOwner) {
+        if (checksEnabled) {
+            checkForUpdate()
+        }
+    }
+
+    /**
+     * Starts update checks now and on every subsequent resume. Until called the
+     * manager stays passive.
+     */
+    fun enableUpdateChecks() {
+        checksEnabled = true
+        checkForUpdate()
+    }
+
+    private fun checkForUpdate() {
         updateManager.appUpdateInfo
             .addOnSuccessListener { info -> handleUpdateInfo(info) }
             .addOnFailureListener { error ->
-                /*
-                 * Вне Google Play (debug-сборка, установка из apk) сервис отвечает
-                 * ошибкой. Это норма и не повод ругаться — просто нет обновлений.
-                 */
                 Log.i(TAG, "Update check is not available", error)
             }
     }
@@ -94,11 +99,6 @@ class InAppUpdateManager(
     }
     
     private fun handleUpdateInfo(info: AppUpdateInfo) {
-        /*
-         * Загрузка могла завершиться, пока приложение было свёрнуто и никто не
-         * видел предложение перезапуститься, поэтому состояние перепроверяем при
-         * каждом возврате на экран.
-         */
         if (info.installStatus() == InstallStatus.DOWNLOADED) {
             onUpdateReadyToInstall()
             return
@@ -108,6 +108,10 @@ class InAppUpdateManager(
         
         val isUpdateAvailable = info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
         if (!isUpdateAvailable || !info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)) return
+        
+        if (!activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || activity.isFinishing) {
+            return
+        }
         
         updateFlowStarted = true
         

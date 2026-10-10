@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.components.navigation
 
 import androidx.navigation3.runtime.NavKey
+import com.aiwazian.messenger.domain.WallpaperTarget
 import com.aiwazian.messenger.enums.ChannelType
 import com.aiwazian.messenger.enums.ChatFolderCategory
 import com.aiwazian.messenger.enums.GroupType
@@ -57,6 +58,15 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data object SettingsChat : AppRoute
+
+    @Serializable
+    data class ChatAppearance(val target: WallpaperTarget) : AppRoute
+
+    @Serializable
+    data class WallpaperPreview(
+        val imagePath: String,
+        val target: WallpaperTarget
+    ) : AppRoute
     
     @Serializable
     data object SettingsPrivacy : AppRoute
