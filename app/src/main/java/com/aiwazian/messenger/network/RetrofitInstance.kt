@@ -36,6 +36,8 @@ object RetrofitInstance {
         "auth/password-reset/request",
         "auth/password-reset/verify",
         "auth/password-reset/confirm",
+        "auth/restore/authentication-options",
+        "auth/restore/authentication",
     )
     
     private val okHttpClient = OkHttpClient.Builder()

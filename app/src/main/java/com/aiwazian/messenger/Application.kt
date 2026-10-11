@@ -13,6 +13,7 @@ import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.utils.FailedSendRetrier
 import com.aiwazian.messenger.utils.PendingSendResumer
+import com.aiwazian.messenger.utils.RestoreCredentialManager
 import com.aiwazian.messenger.utils.SessionManager
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.yandex.mobile.ads.common.YandexAds
@@ -27,6 +28,9 @@ class Application : Application() {
     
     @Inject
     lateinit var authRepository: AuthRepository
+
+    @Inject
+    lateinit var restoreCredentialManager: RestoreCredentialManager
 
     @Inject
     lateinit var realtimeEventSyncService: Lazy<RealtimeEventSyncService>
@@ -44,7 +48,7 @@ class Application : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        SessionManager.init(authRepository)
+        SessionManager.init(authRepository, restoreCredentialManager)
 
         appScope.launch {
             realtimeEventSyncService.get()

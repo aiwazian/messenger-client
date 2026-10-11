@@ -37,6 +37,7 @@ object SessionManager {
     private var _isAuthorized = false
     private var sessionEndCallback: ((SessionEndResolution) -> Unit)? = null
     private var authRepository: AuthRepository? = null
+    private var restoreCredentialManager: RestoreCredentialManager? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -66,8 +67,9 @@ object SessionManager {
     var isInit = false
         private set
 
-    fun init(repository: AuthRepository) {
+    fun init(repository: AuthRepository, restoreManager: RestoreCredentialManager) {
         authRepository = repository
+        restoreCredentialManager = restoreManager
         isInit = true
     }
 
@@ -115,12 +117,17 @@ object SessionManager {
                 createdAt = createdAt
             )
         )
+
+        scope.launch {
+            restoreCredentialManager?.registerAfterSignIn()
+        }
     }
-    
+
     suspend fun logout() {
         _token.update { "" }
         _isAuthorized = false
         authRepository?.clearCurrentToken()
+        restoreCredentialManager?.clear()
     }
     
     suspend fun hasAnySession(): Boolean {
@@ -131,6 +138,10 @@ object SessionManager {
     suspend fun switchAccount(userId: Long) {
         authRepository?.switchAccount(userId)
         loadSession()
+
+        scope.launch {
+            restoreCredentialManager?.registerAfterSignIn()
+        }
     }
 
     /**
@@ -173,6 +184,7 @@ object SessionManager {
             if (nextAccount == null) {
                 _token.update { "" }
                 _isAuthorized = false
+                restoreCredentialManager?.clear()
                 return SessionEndResolution.NoAccountsLeft
             }
 
@@ -186,6 +198,7 @@ object SessionManager {
             if (getToken().isEmpty()) {
                 Log.e(TAG, "Не удалось переключиться на аккаунт ${nextAccount.userId}")
                 _isAuthorized = false
+                restoreCredentialManager?.clear()
                 return SessionEndResolution.NoAccountsLeft
             }
 
