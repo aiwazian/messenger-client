@@ -6,6 +6,25 @@ package com.aiwazian.messenger.network.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+
+@Serializable
+data class RestoreOptionsResponseDto(
+    @SerialName("options") val options: JsonObject
+)
+
+@Serializable
+data class RestoreRegistrationRequestDto(
+    @SerialName("registrationJson") val registrationJson: String
+)
+
+@Serializable
+data class RestoreAuthenticationRequestDto(
+    @SerialName("assertionJson") val assertionJson: String,
+    @SerialName("deviceModel") val deviceModel: String,
+    @SerialName("osVersion") val osVersion: String,
+    @SerialName("osName") val osName: String
+)
 
 @Serializable
 data class SignInResponseDto(

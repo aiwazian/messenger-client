@@ -7,6 +7,9 @@ package com.aiwazian.messenger.network.api
 import com.aiwazian.messenger.network.dto.LoginAvailableResponseDto
 import com.aiwazian.messenger.network.dto.RequestPasswordResetDto
 import com.aiwazian.messenger.network.dto.ResetPasswordRequestDto
+import com.aiwazian.messenger.network.dto.RestoreAuthenticationRequestDto
+import com.aiwazian.messenger.network.dto.RestoreOptionsResponseDto
+import com.aiwazian.messenger.network.dto.RestoreRegistrationRequestDto
 import com.aiwazian.messenger.network.dto.SignInRequestDto
 import com.aiwazian.messenger.network.dto.SignInResponseDto
 import com.aiwazian.messenger.network.dto.SignUpRequestDto
@@ -31,7 +34,19 @@ interface AuthApi {
 
     @POST("auth/logout")
     suspend fun logout(): Response<Unit>
-    
+
+    @GET("auth/restore/register-options")
+    suspend fun restoreRegistrationOptions(): Response<RestoreOptionsResponseDto>
+
+    @POST("auth/restore/register")
+    suspend fun registerRestoreCredential(@Body request: RestoreRegistrationRequestDto): Response<Unit>
+
+    @GET("auth/restore/authentication-options")
+    suspend fun restoreAuthenticationOptions(): Response<RestoreOptionsResponseDto>
+
+    @POST("auth/restore/authentication")
+    suspend fun restoreAuthentication(@Body request: RestoreAuthenticationRequestDto): Response<SignInResponseDto>
+
     @POST("auth/password-reset/request")
     suspend fun requestPasswordReset(@Body request: RequestPasswordResetDto): Response<Unit>
     

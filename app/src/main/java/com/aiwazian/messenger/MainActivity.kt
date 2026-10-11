@@ -28,6 +28,7 @@ import com.aiwazian.messenger.ui.components.navigation.AppNavDisplay
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.theme.ApplicationTheme
 import com.aiwazian.messenger.utils.InAppUpdateManager
+import com.aiwazian.messenger.utils.RestoreCredentialManager
 import com.aiwazian.messenger.utils.SessionManager
 import com.aiwazian.messenger.utils.ThemeManager
 import dagger.Lazy
@@ -46,6 +47,9 @@ class MainActivity : AppCompatActivity() {
     
     @Inject
     lateinit var serverSyncService: ServerSyncService
+
+    @Inject
+    lateinit var restoreCredentialManager: RestoreCredentialManager
 
     @Inject
     lateinit var realtimeEventSyncService: Lazy<RealtimeEventSyncService>
@@ -77,7 +81,20 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             SessionManager.loadSession()
-            val authorized = SessionManager.hasAnySession()
+            var authorized = SessionManager.hasAnySession()
+
+            if (!authorized) {
+                val restored = restoreCredentialManager.tryRestore()
+
+                if (restored != null) {
+                    SessionManager.saveSession(
+                        restored.userId,
+                        restored.token,
+                        restored.createdAt
+                    )
+                    authorized = true
+                }
+            }
 
             if (authorized) {
                 withContext(Dispatchers.Default) {

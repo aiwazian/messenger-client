@@ -105,6 +105,9 @@ dependencies {
     
     implementation(libs.androidx.datastore.preferences)
     
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    
     implementation(libs.androidx.biometric)
     
     implementation(libs.accompanist.systemuicontroller)

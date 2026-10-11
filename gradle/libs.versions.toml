@@ -8,6 +8,7 @@ biometric = "1.1.0"
 browser = "1.10.0"
 coil = "3.6.3"
 coreSplashscreen = "1.2.0"
+credentials = "1.7.0-alpha03"
 datastorePreferences = "1.2.1"
 exifinterface = "1.4.2"
 firebaseBom = "35.0.0"
@@ -53,6 +54,8 @@ androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "b
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
+androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
+androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", version.ref = "exifinterface" }
 androidx-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
