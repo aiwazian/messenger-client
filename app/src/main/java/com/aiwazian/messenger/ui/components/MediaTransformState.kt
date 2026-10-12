@@ -13,6 +13,8 @@ import androidx.compose.material.icons.rounded.Flip
 import androidx.compose.material.icons.rounded.Rotate90DegreesCcw
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -242,7 +244,11 @@ fun MediaFlipButton(
 ) {
     val scope = rememberCoroutineScope()
     
-    IconButton(onClick = { scope.launch { state.flip(onApplied) } }, modifier = modifier) {
+    IconButton(
+        onClick = { scope.launch { state.flip(onApplied) } },
+        modifier = modifier,
+        colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
+    ) {
         Icon(imageVector = Icons.Rounded.Flip, contentDescription = null)
     }
 }
@@ -256,7 +262,11 @@ fun MediaRotateButton(
 ) {
     val scope = rememberCoroutineScope()
     
-    IconButton(onClick = { scope.launch { state.rotate(onApplied) } }, modifier = modifier) {
+    IconButton(
+        onClick = { scope.launch { state.rotate(onApplied) } },
+        modifier = modifier,
+        colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
+    ) {
         Icon(imageVector = Icons.Rounded.Rotate90DegreesCcw, contentDescription = null)
     }
 }

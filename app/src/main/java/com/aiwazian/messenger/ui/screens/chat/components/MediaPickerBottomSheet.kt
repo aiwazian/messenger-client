@@ -95,6 +95,7 @@ import com.aiwazian.messenger.domain.CustomEmoji
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.domain.EmojiPack
 import com.aiwazian.messenger.domain.MessageReplyPreview
+import com.aiwazian.messenger.domain.WallpaperTarget
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.BottomBarScrim
@@ -112,7 +113,6 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.openAppSettings
 import com.aiwazian.messenger.ui.components.pickerMediaKey
-import com.aiwazian.messenger.domain.WallpaperTarget
 import com.aiwazian.messenger.ui.screens.chat.ChatEmojiViewModel
 import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import com.aiwazian.messenger.ui.screens.wallpaper.WallpaperViewModel
@@ -427,15 +427,13 @@ fun MediaPickerBottomSheet(
 
         val confirmWallpaper: () -> Unit = {
             val item = wallpaperItem
-            val target = wallpaperTarget
-            val draftViewModel = wallpaperViewModel
-
-            if (item != null && target != null && draftViewModel != null) {
+            
+            if (item != null && wallpaperTarget != null && wallpaperViewModel != null) {
                 val transform = uiState.mediaTransforms[item.uri] ?: MediaTransform.None
                 val overlay = uiState.mediaDrawings[item.uri]?.bitmap
 
                 coroutineScope.launch {
-                    val draft = draftViewModel.prepareDraft(item.uri, transform, overlay)
+                    val draft = wallpaperViewModel.prepareDraft(item.uri, transform, overlay)
 
                     viewModel.reset()
                     previewIndex = null
@@ -445,7 +443,7 @@ fun MediaPickerBottomSheet(
                         navBackStack.add(
                             AppRoute.WallpaperPreview(
                                 imagePath = draft.toString(),
-                                target = target
+                                target = wallpaperTarget
                             )
                         )
                     }

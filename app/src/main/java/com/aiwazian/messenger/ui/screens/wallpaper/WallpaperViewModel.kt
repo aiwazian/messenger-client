@@ -171,8 +171,8 @@ class WallpaperViewModel @Inject constructor(
             _currentWallpaper.value = wallpaper
         }
     }
-
-    private fun save(block: suspend (Uri, Int, Int, Float, Float) -> kotlin.Result<Unit>) {
+    
+    private fun save(block: suspend (Uri, Int, Int, Float, Float) -> Result<Unit>) {
         if (_uiState.value.isSaving) return
 
         val state = _uiState.value
