@@ -196,6 +196,7 @@
     <string name="unexpected_error">Erreur inattendue</string>
     <string name="username_taken">Nom d’utilisateur déjà pris</string>
     <string name="username_available">Nom d’utilisateur disponible</string>
+    <string name="username_not_allowed">Nom d’utilisateur non autorisé</string>
     <string name="authorization">Autorisation</string>
     <string name="group">Groupe</string>
     <string name="channel">Chaîne</string>

@@ -16,8 +16,12 @@ data class SearchResponseDto(
 
 @Serializable
 data class UsernameAvailableResponseDto(
-    @SerialName("available") val available: Boolean
-)
+    @SerialName("available") val available: Boolean,
+    @SerialName("reason") val reason: String? = null
+) {
+    val isBlocked: Boolean
+        get() = reason == "blocked"
+}
 
 @Serializable
 data class ResolveUsernameResponseDto(

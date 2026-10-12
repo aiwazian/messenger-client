@@ -202,6 +202,7 @@
     <string name="unexpected_error">Unexpected error</string>
     <string name="username_taken">Username taken</string>
     <string name="username_available">Username available</string>
+    <string name="username_not_allowed">Username is not allowed</string>
     <string name="authorization">Authorization</string>
     <string name="group">Group</string>
     <string name="channel">Channel</string>
