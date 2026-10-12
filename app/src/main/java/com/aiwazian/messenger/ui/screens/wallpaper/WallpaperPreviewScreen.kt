@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -105,7 +106,8 @@ fun WallpaperPreviewScreen(
             Column(
                 modifier = Modifier
                     .matchParentSize()
-                    .padding(10.dp),
+                    .padding(10.dp)
+                    .navigationBarsPadding(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Spacer(modifier = Modifier.weight(1f))
