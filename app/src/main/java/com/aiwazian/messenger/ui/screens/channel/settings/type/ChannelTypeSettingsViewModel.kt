@@ -151,8 +151,8 @@ class ChannelTypeSettingsViewModel @Inject constructor(
         checkLinkJob?.cancel()
         checkLinkJob = viewModelScope.launch {
             delay(500.milliseconds)
-            searchRepository.checkUsernameAvailable(filteredUsername).onSuccess { available ->
-                if (available) {
+            searchRepository.checkUsernameAvailable(filteredUsername).onSuccess { result ->
+                if (result.available) {
                     _uiState.update {
                         it.copy(
                             canSave = true,
@@ -165,7 +165,11 @@ class ChannelTypeSettingsViewModel @Inject constructor(
                         it.copy(
                             canSave = false,
                             isError = true,
-                            statusText = UiText.StringResource(R.string.username_taken)
+                            statusText = if (result.isBlocked) {
+                                UiText.StringResource(R.string.username_not_allowed)
+                            } else {
+                                UiText.StringResource(R.string.username_taken)
+                            }
                         )
                     }
                 }

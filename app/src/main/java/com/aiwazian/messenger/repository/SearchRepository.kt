@@ -9,18 +9,19 @@ import com.aiwazian.messenger.domain.Search
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.network.api.SearchApi
 import com.aiwazian.messenger.network.dto.ResolveUsernameResponseDto
+import com.aiwazian.messenger.network.dto.UsernameAvailableResponseDto
 import javax.inject.Inject
 
 class SearchRepository @Inject constructor(
     private val searchApi: SearchApi
 ) {
-    suspend fun checkUsernameAvailable(username: String): Result<Boolean> {
+    suspend fun checkUsernameAvailable(username: String): Result<UsernameAvailableResponseDto> {
         return try {
             val response = searchApi.checkUsernameAvailable(username)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (body != null) {
-                    Result.success(body.available)
+                    Result.success(body)
                 } else {
                     Result.failure(Exception("Empty body"))
                 }
