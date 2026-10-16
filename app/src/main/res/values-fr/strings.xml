@@ -157,6 +157,7 @@
     <string name="user_kicked">L\'utilisateur a été expulsé</string>
     <string name="user_unblocked">Utilisateur débloqué</string>
     <string name="unblock">Débloquer</string>
+    <string name="unblock_confirm_message">Êtes-vous sûr de vouloir débloquer %1$s \?</string>
     <string name="block">Bloc</string>
     <string name="failed_to_unblock_user">Échec du déblocage de l\'utilisateur</string>
     <plurals name="subscribers_count">
@@ -229,6 +230,8 @@
     <string name="delete_account_if_inactive_for">Autodestruction si inactif pendant…</string>
     <string name="automatic_media_download">Téléchargement automatique des médias</string>
     <string name="auto_download_media">Téléchargement automatique de médias</string>
+    <string name="auto_download_voice_hint">Les messages vocaux sont de petite taille et sont toujours téléchargés automatiquement.</string>
+    <string name="up_to_10_mb">Jusqu\'à 10 MB</string>
     <string name="you">Toi</string>
     <string name="personal_channel">Chaîne personnelle</string>
     <string name="hide_channel">Masquer la chaîne</string>
@@ -252,6 +255,7 @@
     <string name="edit_time_limit_error"><![CDATA[Impossible de modifier les messages datant de plus de 24 heures]]></string>
     <string name="too_many_requests">Trop de demandes. Veuillez réessayer plus tard.</string>
     <string name="blocked_users">Utilisateurs bloqués</string>
+    <string name="blocked_users_empty">Aucun utilisateur bloqué</string>
     <string name="join_requests">Demandes de participation</string>
     <string name="no_requests_to_join">Aucune demande d\'adhésion</string>
     <string name="pending_join_requests_description">Vos demandes pour rejoindre des chaînes et des groupes sont affichées ici.</string>
@@ -274,6 +278,8 @@
     <string name="password_reset_request_failed">Échec de l\'envoi du code de réinitialisation du mot de passe</string>
     <string name="remove_email">Supprimer l\'e-mail</string>
     <string name="change_email">Changer l\'e-mail</string>
+    <string name="remove_email_confirm_message">Êtes-vous sûr de vouloir désactiver l\'adresse e-mail \?</string>
+    <string name="email_security_description">L\'e-mail renforce la sécurité du compte et vous aide à retrouver l\'accès si vous oubliez votre mot de passe.</string>
     <string name="remove">Retirer</string>
     <string name="reply">Répondre</string>
     <string name="reply_to">Répondre à %1$s</string>

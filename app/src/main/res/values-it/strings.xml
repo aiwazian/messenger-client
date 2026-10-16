@@ -157,6 +157,7 @@
     <string name="user_kicked">L\'utente ha preso a calci</string>
     <string name="user_unblocked">Utente sbloccato</string>
     <string name="unblock">Sbloccare</string>
+    <string name="unblock_confirm_message">Sei sicuro di voler sbloccare %1$s\?</string>
     <string name="block">Bloccare</string>
     <string name="failed_to_unblock_user">Impossibile sbloccare l\'utente</string>
     <plurals name="subscribers_count">
@@ -229,6 +230,8 @@
     <string name="delete_account_if_inactive_for">Autodistruzione se inattivo per…</string>
     <string name="automatic_media_download">Download multimediale automatico</string>
     <string name="auto_download_media">Download automatico dei contenuti multimediali</string>
+    <string name="auto_download_voice_hint">I messaggi vocali hanno dimensioni ridotte e vengono sempre scaricati automaticamente.</string>
+    <string name="up_to_10_mb">Fino a 10 MB</string>
     <string name="you">Voi</string>
     <string name="personal_channel">Canale personale</string>
     <string name="hide_channel">Nascondi canale</string>
@@ -252,6 +255,7 @@
     <string name="edit_time_limit_error">Non è possibile modificare i messaggi più vecchi di 24 ore</string>
     <string name="too_many_requests">Troppe richieste. Per favore riprova più tardi.</string>
     <string name="blocked_users">Utenti bloccati</string>
+    <string name="blocked_users_empty">Nessun utente bloccato</string>
     <string name="join_requests">Partecipa alle richieste</string>
     <string name="no_requests_to_join">Nessuna richiesta di adesione</string>
     <string name="pending_join_requests_description">Le tue richieste di adesione a canali e gruppi vengono visualizzate qui.</string>
@@ -274,6 +278,8 @@
     <string name="password_reset_request_failed">Impossibile inviare il codice di reimpostazione della password</string>
     <string name="remove_email">Rimuovi e-mail</string>
     <string name="change_email">Cambia e-mail</string>
+    <string name="remove_email_confirm_message">Sei sicuro di voler disattivare l\'indirizzo e-mail\?</string>
+    <string name="email_security_description">L\'e-mail aumenta la sicurezza del tuo account e ti aiuta a recuperare l\'accesso se dimentichi la password.</string>
     <string name="remove">Rimuovere</string>
     <string name="reply">Rispondere</string>
     <string name="reply_to">Rispondi a %1$s</string>

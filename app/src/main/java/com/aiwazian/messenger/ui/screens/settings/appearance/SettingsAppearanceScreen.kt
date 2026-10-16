@@ -46,9 +46,9 @@ import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.section.SectionToggle
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.wallpaper.WallpaperViewModel
@@ -56,12 +56,12 @@ import com.aiwazian.messenger.ui.screens.wallpaper.WallpaperViewModel
 @Composable
 fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
     val navBackStack = LocalNavBackStack.current
-
+    
     val primaryColor by viewModel.primaryColor.collectAsState()
     val isDynamicColorEnable by viewModel.dynamicColor.collectAsState()
-
+    
     val wallpaperViewModel: WallpaperViewModel = hiltViewModel()
-
+    
     LaunchedEffect(Unit) {
         wallpaperViewModel.init(WallpaperTarget.Global)
     }
@@ -157,7 +157,7 @@ fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
                     navBackStack.add(AppRoute.SettingsDarkTheme)
                 })
         }
-
+        
         WallpaperSection(wallpaperViewModel)
     }
 }

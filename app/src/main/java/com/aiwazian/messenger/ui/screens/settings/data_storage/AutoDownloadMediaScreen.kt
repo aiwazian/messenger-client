@@ -47,7 +47,7 @@ fun AutoDownloadMediaScreen(viewModel: AutoDownloadMediaViewModel = hiltViewMode
             exit = fadeOut()
         ) {
             SectionContainer(footer = {
-                SectionDescription(text = "Голосовые сообщения имеют небольшой размер и всегда загружаются автоматически.")
+                SectionDescription(text = stringResource(R.string.auto_download_voice_hint))
             }) {
                 SectionToggle(
                     headlineText = stringResource(R.string.photos),
@@ -56,13 +56,13 @@ fun AutoDownloadMediaScreen(viewModel: AutoDownloadMediaViewModel = hiltViewMode
                 )
                 SectionToggle(
                     headlineText = stringResource(R.string.videos),
-                    supportingText = "До 10 МБ",
+                    supportingText = stringResource(R.string.up_to_10_mb),
                     isChecked = uiState.isVideoEnabled,
                     onCheckedChange = { viewModel.toggleAutoDownloadVideos(!uiState.isVideoEnabled) }
                 )
                 SectionToggle(
                     headlineText = stringResource(R.string.files),
-                    supportingText = "До 10 МБ",
+                    supportingText = stringResource(R.string.up_to_10_mb),
                     isChecked = uiState.isFileEnabled,
                     onCheckedChange = { viewModel.toggleAutoDownloadFiles(!uiState.isFileEnabled) }
                 )

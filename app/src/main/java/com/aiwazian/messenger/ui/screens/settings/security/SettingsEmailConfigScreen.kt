@@ -42,8 +42,8 @@ import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
-import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.LottieAnimation
 import kotlinx.coroutines.launch
@@ -87,7 +87,7 @@ fun SettingsEmailConfigScreen(viewModel: EmailConfigViewModel = hiltViewModel())
                 }
             }
         ) {
-            Text("Вы уверены, что хотите отключить электронный адрес?")
+            Text(stringResource(R.string.remove_email_confirm_message))
         }
     }
     
@@ -114,7 +114,7 @@ fun SettingsEmailConfigScreen(viewModel: EmailConfigViewModel = hiltViewModel())
             )
             
             Text(
-                text = "Почта повышает безопасность аккаунта и помогает вернуть доступ, если вы забудете пароль.",
+                text = stringResource(R.string.email_security_description),
                 fontSize = 14.sp,
                 lineHeight = 14.sp,
                 textAlign = TextAlign.Center,
