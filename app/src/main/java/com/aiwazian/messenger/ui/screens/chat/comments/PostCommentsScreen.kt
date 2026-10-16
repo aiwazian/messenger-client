@@ -76,6 +76,7 @@ import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import com.aiwazian.messenger.ui.screens.chat.components.ChatInputSection
 import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
+import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.JoinButton
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
@@ -393,6 +394,35 @@ fun PostCommentsScreen(
                 }
             }
         )
+    }
+
+    if (uiState.showInviteBottomSheet && uiState.inviteLinkInfo != null) {
+        val info = uiState.inviteLinkInfo!!
+
+        InviteLinkBottomSheet(
+            chatId = info.chatId,
+            name = info.name.orEmpty(),
+            description = info.description,
+            count = info.membersCount ?: 0,
+            requireApproval = info.requireApproval,
+            isLoading = uiState.isProcessingInvite,
+            onDismiss = viewModel::dismissInviteBottomSheet,
+            onJoin = viewModel::onSubscribeViaInviteLink
+        )
+    }
+
+    if (uiState.showBannedDialog) {
+        AppDialog(
+            title = stringResource(R.string.no_access),
+            onDismissRequest = viewModel::dismissBannedDialog,
+            buttons = {
+                TextButton(onClick = viewModel::dismissBannedDialog) {
+                    Text(stringResource(R.string.ok))
+                }
+            },
+            content = {
+                Text(stringResource(R.string.banned_message))
+            })
     }
 
     if (viewerFileId != null) {

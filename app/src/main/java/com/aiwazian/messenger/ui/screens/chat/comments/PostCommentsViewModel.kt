@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Comment
+import com.aiwazian.messenger.domain.InviteLinkInfo
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReplyPreview
@@ -37,6 +38,7 @@ import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.FileRepository
+import com.aiwazian.messenger.repository.InviteLinkRepository
 import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.repository.channel.ChannelAdminsRepository
@@ -49,11 +51,13 @@ import com.aiwazian.messenger.ui.screens.chat.ChatItem
 import com.aiwazian.messenger.ui.screens.chat.components.ChatInputActions
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.usecase.JoinChannelUseCase
+import com.aiwazian.messenger.usecase.JoinViaInviteLinkUseCase
 import com.aiwazian.messenger.utils.AttachmentOutbox
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DataStoreManager
 import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.FileHandler
+import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.UploadManager
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
@@ -88,6 +92,8 @@ class PostCommentsViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val searchRepository: SearchRepository,
     private val joinChannelUseCase: JoinChannelUseCase,
+    private val inviteLinkRepository: InviteLinkRepository,
+    private val joinViaInviteLinkUseCase: JoinViaInviteLinkUseCase,
     private val webSocketClient: WebSocketClient,
     private val attachmentOutbox: AttachmentOutbox,
     private val uploadManager: UploadManager,
@@ -662,9 +668,54 @@ class PostCommentsViewModel @Inject constructor(
     }
 
     fun onLinkClicked(url: String) {
-        val normalized = if (url.startsWith("http")) url else "https://$url"
+        val match = RegexPatterns.INVITE_LINK.find(url)
+        if (match == null) {
+            val normalized = if (url.startsWith("http")) url else "https://$url"
 
-        viewModelScope.launch { _uiEffect.emit(PostCommentsUiEffect.OpenUrl(normalized)) }
+            viewModelScope.launch { _uiEffect.emit(PostCommentsUiEffect.OpenUrl(normalized)) }
+            return
+        }
+
+        val code = match.groupValues[2]
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessingInvite = true) }
+            inviteLinkRepository.getInviteLinkInfo(code).onSuccess { linkInfo ->
+                _uiState.update { it.copy(isProcessingInvite = false) }
+                when {
+                    _uiState.value.chatId == linkInfo.chatId -> {
+                        _uiEffect.emit(
+                            PostCommentsUiEffect.ShowSnackbar(
+                                UiText.StringResource(R.string.you_are_already_in_this_chat)
+                            )
+                        )
+                        vibrationManager.vibrate(VibrationPattern.Error)
+                    }
+
+                    linkInfo.isJoined != null -> {
+                        _uiEffect.emit(PostCommentsUiEffect.NavigateToChat(linkInfo.chatId))
+                    }
+
+                    linkInfo.isBanned != null -> {
+                        _uiState.update { it.copy(showBannedDialog = true) }
+                        vibrationManager.vibrate(VibrationPattern.Error)
+                    }
+
+                    else -> _uiState.update {
+                        it.copy(
+                            inviteLinkInfo = linkInfo,
+                            inviteLinkCode = code,
+                            showInviteBottomSheet = true
+                        )
+                    }
+                }
+            }.onFailure {
+                _uiState.update { it.copy(isProcessingInvite = false) }
+                _uiEffect.emit(
+                    PostCommentsUiEffect.ShowSnackbar(UiText.StringResource(R.string.invalid_link))
+                )
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
     }
 
     fun onEmailClicked(email: String) {
@@ -682,12 +733,50 @@ class PostCommentsViewModel @Inject constructor(
                     _uiEffect.emit(
                         PostCommentsUiEffect.ShowSnackbar(UiText.StringResource(R.string.chat_not_found))
                     )
+                } else if (result.isBanned) {
+                    _uiState.update { it.copy(showBannedDialog = true) }
+                    vibrationManager.vibrate(VibrationPattern.Error)
                 } else {
                     _uiEffect.emit(PostCommentsUiEffect.NavigateToChat(result.chatId))
                 }
             }
         }
     }
+
+    fun onSubscribeViaInviteLink() {
+        val info = _uiState.value.inviteLinkInfo ?: return
+        val code = _uiState.value.inviteLinkCode ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessingInvite = true) }
+            joinViaInviteLinkUseCase(code, info.chatId).onSuccess {
+                dismissInviteBottomSheet()
+                if (info.requireApproval) {
+                    _uiEffect.emit(
+                        PostCommentsUiEffect.ShowSnackbar(UiText.DynamicString("Заявка отправлена"))
+                    )
+                } else {
+                    _uiEffect.emit(PostCommentsUiEffect.NavigateToChat(info.chatId))
+                }
+            }.onFailure {
+                _uiState.update { it.copy(isProcessingInvite = false) }
+                _uiEffect.emit(
+                    PostCommentsUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_join))
+                )
+                vibrationManager.vibrate(VibrationPattern.Error)
+            }
+        }
+    }
+
+    fun dismissInviteBottomSheet() = _uiState.update {
+        it.copy(
+            showInviteBottomSheet = false,
+            inviteLinkInfo = null,
+            inviteLinkCode = null,
+            isProcessingInvite = false
+        )
+    }
+
+    fun dismissBannedDialog() = _uiState.update { it.copy(showBannedDialog = false) }
 
     private fun Comment.toReplyPreview(): MessageReplyPreview = MessageReplyPreview(
         messageId = id,
