@@ -752,7 +752,9 @@ class PostCommentsViewModel @Inject constructor(
                 dismissInviteBottomSheet()
                 if (info.requireApproval) {
                     _uiEffect.emit(
-                        PostCommentsUiEffect.ShowSnackbar(UiText.DynamicString("Заявка отправлена"))
+                        PostCommentsUiEffect.ShowSnackbar(
+                            UiText.StringResource(R.string.join_request_sent)
+                        )
                     )
                 } else {
                     _uiEffect.emit(PostCommentsUiEffect.NavigateToChat(info.chatId))

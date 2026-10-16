@@ -260,6 +260,7 @@
     <string name="no_requests_to_join">No hay solicitudes para unirse</string>
     <string name="pending_join_requests_description">Sus solicitudes para unirse a canales y grupos se muestran aquí.</string>
     <string name="pending_join_requests_empty">No hay solicitudes pendientes para unirse.</string>
+    <string name="join_request_sent">Solicitud enviada</string>
     <string name="draft">Borrador</string>
     <string name="clear_drafts">Borrar borradores</string>
     <string name="clear_drafts_confirm_message">¿Estás seguro de que deseas eliminar todos los borradores de todos los chats\?</string>

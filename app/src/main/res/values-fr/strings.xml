@@ -260,6 +260,7 @@
     <string name="no_requests_to_join">Aucune demande d\'adhésion</string>
     <string name="pending_join_requests_description">Vos demandes pour rejoindre des chaînes et des groupes sont affichées ici.</string>
     <string name="pending_join_requests_empty">Il n’y a aucune demande d’adhésion en attente.</string>
+    <string name="join_request_sent">Demande envoyée</string>
     <string name="draft">Brouillon</string>
     <string name="clear_drafts">Effacer les brouillons</string>
     <string name="clear_drafts_confirm_message"><![CDATA[Êtes-vous sûr de vouloir supprimer tous les brouillons de toutes les discussions \?]]></string>

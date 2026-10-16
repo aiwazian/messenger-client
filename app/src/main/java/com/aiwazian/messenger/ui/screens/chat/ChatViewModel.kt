@@ -2107,7 +2107,7 @@ class ChatViewModel @Inject constructor(
             joinViaInviteLinkUseCase(code, info.chatId).onSuccess {
                 dismissInviteBottomSheet()
                 if (info.requireApproval) {
-                    _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Заявка отправлена")))
+                    _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.join_request_sent)))
                 } else {
                     _uiEffect.emit(ChatUiEffect.NavigateToChat(info.chatId))
                 }
