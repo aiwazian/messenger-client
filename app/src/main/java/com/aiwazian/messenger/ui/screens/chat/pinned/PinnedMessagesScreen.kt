@@ -169,6 +169,29 @@ fun PinnedMessagesScreen(
                     }
                 }
 
+                is PinnedMessagesUiEffect.OpenPhone -> {
+                    val dialIntent = Intent(
+                        Intent.ACTION_DIAL,
+                        "tel:${effect.phone}".toUri()
+                    )
+                    val chooser = Intent.createChooser(
+                        dialIntent,
+                        UiText.StringResource(R.string.open_phone_with).asString(context)
+                    )
+
+                    val launched = runCatching { context.startActivity(chooser) }.isSuccess
+                    if (!launched) {
+                        snackbarJob?.cancel()
+                        snackbarJob = scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = UiText.StringResource(R.string.no_phone_app)
+                                    .asString(context),
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                }
+
                 is PinnedMessagesUiEffect.NavigateToChat -> {
                     navBackStack.add(
                         AppRoute.Chat(
@@ -513,6 +536,7 @@ private fun PinnedMessagesPage(
                     onLinkClicked = viewModel::onLinkClicked,
                     onUsernameClicked = viewModel::onUsernameClicked,
                     onEmailClicked = viewModel::onEmailClicked,
+                    onPhoneClicked = viewModel::onPhoneClicked,
                     onSaveToDownloads = if (uiState.copyPolicy.canSaveMedia) {
                         {
                             viewModel.saveAttachmentsToDownloads(item.message)

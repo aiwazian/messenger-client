@@ -474,13 +474,36 @@ fun ChatScreen(
                         mailIntent,
                         UiText.StringResource(R.string.open_email_with).asString(context)
                     )
-                    
+
                     val launched = runCatching { context.startActivity(chooser) }.isSuccess
                     if (!launched) {
                         snackbarJob?.cancel()
                         snackbarJob = scope.launch {
                             snackbarHostState.showSnackbar(
                                 message = UiText.StringResource(R.string.no_email_app)
+                                    .asString(context),
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                }
+
+                is ChatUiEffect.OpenPhone -> {
+                    val dialIntent = Intent(
+                        Intent.ACTION_DIAL,
+                        "tel:${effect.phone}".toUri()
+                    )
+                    val chooser = Intent.createChooser(
+                        dialIntent,
+                        UiText.StringResource(R.string.open_phone_with).asString(context)
+                    )
+
+                    val launched = runCatching { context.startActivity(chooser) }.isSuccess
+                    if (!launched) {
+                        snackbarJob?.cancel()
+                        snackbarJob = scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = UiText.StringResource(R.string.no_phone_app)
                                     .asString(context),
                                 duration = SnackbarDuration.Short
                             )
@@ -800,6 +823,7 @@ fun ChatScreen(
                                     onLinkClicked = chatViewModel::onLinkClicked,
                                     onUsernameClicked = chatViewModel::onUsernameClicked,
                                     onEmailClicked = chatViewModel::onEmailClicked,
+                                    onPhoneClicked = chatViewModel::onPhoneClicked,
                                     onSaveToDownloads = if (copyPolicy.canSaveMedia) {
                                         {
                                             chatViewModel.saveAttachmentsToDownloads(

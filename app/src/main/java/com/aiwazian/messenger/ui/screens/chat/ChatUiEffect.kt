@@ -26,4 +26,7 @@ sealed interface ChatUiEffect {
     
     /** Открыть почтовый адрес в почтовом клиенте устройства. */
     data class OpenEmail(val email: String) : ChatUiEffect
+
+    /** Открыть номер телефона в меню выбора приложений устройства. */
+    data class OpenPhone(val phone: String) : ChatUiEffect
 }

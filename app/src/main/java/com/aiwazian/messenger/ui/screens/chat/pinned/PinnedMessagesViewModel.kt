@@ -776,6 +776,10 @@ class PinnedMessagesViewModel @Inject constructor(
         viewModelScope.launch { _uiEffect.emit(PinnedMessagesUiEffect.OpenEmail(email)) }
     }
 
+    fun onPhoneClicked(phone: String) {
+        viewModelScope.launch { _uiEffect.emit(PinnedMessagesUiEffect.OpenPhone(phone)) }
+    }
+
     fun onUsernameClicked(username: String) {
         viewModelScope.launch {
             searchRepository.resolveUsername(username.removePrefix("@")).onSuccess { result ->

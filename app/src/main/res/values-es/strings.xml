@@ -310,6 +310,8 @@
     <string name="unread_messages">Mensajes no leídos</string>
     <string name="open_email_with">abrir con</string>
     <string name="no_email_app">Sin aplicación de correo electrónico</string>
+    <string name="open_phone_with">abrir con</string>
+    <string name="no_phone_app">Sin aplicación de teléfono</string>
     <string name="no_copy">Restringir la copia</string>
     <string name="no_copy_channel_description">Los miembros no podrán copiar texto, reenviar mensajes ni guardar medios del canal.</string>
     <string name="no_copy_group_description">Los miembros no podrán copiar texto, reenviar mensajes ni guardar medios del grupo.</string>

@@ -131,6 +131,7 @@ fun MessageBubble(
     onLinkClicked: ((String) -> Unit)? = null,
     onUsernameClicked: ((String) -> Unit)? = null,
     onEmailClicked: ((String) -> Unit)? = null,
+    onPhoneClicked: ((String) -> Unit)? = null,
     onSaveToDownloads: (() -> Unit)? = null,
     onReplyPreviewClick: (() -> Unit)? = null,
     onForwardedFromClick: (() -> Unit)? = null,
@@ -486,7 +487,8 @@ fun MessageBubble(
                                     },
                                 onLinkClicked = handleLinkClicked,
                                 onUsernameClicked = onUsernameClicked,
-                                onEmailClicked = onEmailClicked
+                                onEmailClicked = onEmailClicked,
+                                onPhoneClicked = onPhoneClicked
                             )
                             MessageFooter(
                                 time = item.time,

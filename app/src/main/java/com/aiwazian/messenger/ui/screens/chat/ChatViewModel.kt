@@ -2079,6 +2079,10 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenEmail(email)) }
     }
 
+    fun onPhoneClicked(phone: String) {
+        viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenPhone(phone)) }
+    }
+
     fun onUsernameClicked(username: String) {
         viewModelScope.launch {
             searchRepository.resolveUsername(username.removePrefix("@")).onSuccess { result ->
