@@ -37,6 +37,7 @@ import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.FileRepository
+import com.aiwazian.messenger.repository.SearchRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.repository.channel.ChannelAdminsRepository
 import com.aiwazian.messenger.repository.EmojiRepository
@@ -85,6 +86,7 @@ class PostCommentsViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     private val fileRepository: FileRepository,
     private val userRepository: UserRepository,
+    private val searchRepository: SearchRepository,
     private val joinChannelUseCase: JoinChannelUseCase,
     private val webSocketClient: WebSocketClient,
     private val attachmentOutbox: AttachmentOutbox,
@@ -656,6 +658,34 @@ class PostCommentsViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiEffect.emit(PostCommentsUiEffect.ScrollToComment(commentId))
+        }
+    }
+
+    fun onLinkClicked(url: String) {
+        val normalized = if (url.startsWith("http")) url else "https://$url"
+
+        viewModelScope.launch { _uiEffect.emit(PostCommentsUiEffect.OpenUrl(normalized)) }
+    }
+
+    fun onEmailClicked(email: String) {
+        viewModelScope.launch { _uiEffect.emit(PostCommentsUiEffect.OpenEmail(email)) }
+    }
+
+    fun onPhoneClicked(phone: String) {
+        viewModelScope.launch { _uiEffect.emit(PostCommentsUiEffect.OpenPhone(phone)) }
+    }
+
+    fun onUsernameClicked(username: String) {
+        viewModelScope.launch {
+            searchRepository.resolveUsername(username.removePrefix("@")).onSuccess { result ->
+                if (result == null) {
+                    _uiEffect.emit(
+                        PostCommentsUiEffect.ShowSnackbar(UiText.StringResource(R.string.chat_not_found))
+                    )
+                } else {
+                    _uiEffect.emit(PostCommentsUiEffect.NavigateToChat(result.chatId))
+                }
+            }
         }
     }
 
