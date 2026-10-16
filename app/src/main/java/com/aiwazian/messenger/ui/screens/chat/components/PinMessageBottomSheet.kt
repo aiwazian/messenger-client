@@ -24,7 +24,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionRadioItem
+import com.aiwazian.messenger.ui.components.section.SectionRadio
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,14 +50,14 @@ fun PinMessageBottomSheet(
             )
             
             SectionContainer(contentPadding = PaddingValues.Zero) {
-                SectionRadioItem(
-                    text = stringResource(R.string.pin_scope_for_me_only),
+                SectionRadio(
+                    headlineText = stringResource(R.string.pin_scope_for_me_only),
                     selected = !forEveryone,
                     onClick = { onSelectScope(false) }
                 )
                 
-                SectionRadioItem(
-                    text = stringResource(pinScopeLabel(chatType)),
+                SectionRadio(
+                    headlineText = stringResource(pinScopeLabel(chatType)),
                     selected = forEveryone,
                     onClick = { onSelectScope(true) }
                 )

@@ -122,6 +122,7 @@
     <string name="files">File</string>
     <string name="audio">Audio</string>
     <string name="storage_usage">Utilizzo dello spazio di archiviazione</string>
+    <string name="media_stay_in_cloud">Tutti i file multimediali rimarranno nel cloud e potranno essere scaricati di nuovo quando vuoi.</string>
     <string name="group_name">Nome del gruppo</string>
     <string name="logout_confirm_message">Sei sicuro di voler uscire\?</string>
     <string name="delete_account_message">Tutto ciò che riguarda il tuo account verrà eliminato definitivamente.</string>
@@ -588,4 +589,20 @@
     <string name="wallpaper_darkness">Scurimento</string>
     <string name="wallpaper_blur">Sfocatura</string>
     <string name="wallpaper_apply_failed">Impossibile impostare lo sfondo</string>
+
+    <string name="add">Aggiungi</string>
+    <string name="add_account_hint">Accedi a un altro account senza uscire da quello attuale.</string>
+    <string name="clear_cache_hint">Libera spazio sul tuo dispositivo. I file rimarranno nel cloud.</string>
+    <string name="devices_description">Visualizza l\'elenco dei dispositivi su cui il tuo account %1$s è connesso.</string>
+    <string name="email_reset_hint">Con un indirizzo e-mail potrai reimpostare la password nel caso la dimentichi.</string>
+    <string name="clear_cache_confirm_message">Tutti i file multimediali rimarranno nel cloud. Potrai scaricarli di nuovo quando vuoi.</string>
+    <string name="clear_database_confirm_message">Eliminare tutti i messaggi dal database locale?</string>
+
+    <string name="profile_public_channels_hint">Nel profilo possono essere mostrati solo i tuoi canali pubblici.</string>
+    <string name="limitations">Limitazioni</string>
+    <string name="invite_link_limitations_description">Puoi limitare la data di scadenza del link o il numero di utilizzi.</string>
+    <string name="uses_limit">Numero di utilizzi</string>
+    <string name="expiration_date">Data di scadenza</string>
+    <string name="no_expiration">Senza scadenza</string>
+    <string name="reset_expiration_date">Reimposta la data di scadenza</string>
 </resources>

@@ -6,21 +6,17 @@ package com.aiwazian.messenger.ui.screens.settings.security.devices
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BackHand
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,9 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -59,7 +52,7 @@ import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -110,12 +103,14 @@ fun SettingsDevicesScreen(viewModel: DevicesViewModel = hiltViewModel()) {
                     SectionDescription(text = stringResource(R.string.terminate_all_other_sessions_description))
                 }
             }) {
-                DeviceCard(
-                    session = currentSession,
+                SectionButton(
+                    leadingIcon = Icons.Rounded.Android,
+                    headlineText = currentSession.deviceModel,
+                    supportingText = "${currentSession.osName} ${currentSession.osVersion}",
                     onClick = { viewModel.openSession(currentSession) }
                 )
                 AnimatedVisibility(otherSessions.isNotEmpty()) {
-                    SectionItem(
+                    SectionButton(
                         leadingIcon = Icons.Outlined.BackHand,
                         headlineText = stringResource(R.string.terminate_all_other_sessions),
                         contentColor = MaterialTheme.colorScheme.error,
@@ -132,8 +127,10 @@ fun SettingsDevicesScreen(viewModel: DevicesViewModel = hiltViewModel()) {
                 SectionDescription(text = stringResource(R.string.sessions_android_only_message))
             }) {
                 otherSessions.forEach { session ->
-                    DeviceCard(
-                        session = session,
+                    SectionButton(
+                        leadingIcon = Icons.Rounded.Android,
+                        headlineText = session.deviceModel,
+                        supportingText = "${session.osName} ${session.osVersion}",
                         onClick = { viewModel.openSession(session) }
                     )
                 }
@@ -241,48 +238,6 @@ private fun InfoRow(icon: ImageVector, value: String) {
             text = value,
             color = MaterialTheme.colorScheme.onSurface
         )
-    }
-}
-
-@Composable
-private fun DeviceCard(
-    session: Session,
-    onClick: () -> Unit
-) {
-    Card(
-        shape = RectangleShape,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
-        ),
-        onClick = onClick
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Rounded.Android, contentDescription = null)
-            }
-            Column(modifier = Modifier.padding(start = 16.dp)) {
-                Text(
-                    text = session.deviceModel,
-                    fontWeight = if (session.isCurrent) FontWeight.Bold else FontWeight.Normal
-                )
-                Text(
-                    text = "${session.osName} ${session.osVersion}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
     }
 }
 

@@ -28,7 +28,7 @@ import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -79,19 +79,19 @@ fun GroupManagementScreen(
         }
     ) {
         SectionContainer {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.transfer_ownership),
                 onClick = {
                     navBackStack.add(AppRoute.GroupTransferOwnership(groupId = groupId))
                 }
             )
             
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.clear_history),
                 onClick = viewModel::showClearHistoryDialog
             )
             
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.delete_group),
                 contentColor = MaterialTheme.colorScheme.error,
                 onClick = viewModel::showDeleteDialog

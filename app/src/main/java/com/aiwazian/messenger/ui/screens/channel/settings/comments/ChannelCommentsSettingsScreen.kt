@@ -32,8 +32,8 @@ import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.section.SectionToggleItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionToggle
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -112,8 +112,8 @@ fun ChannelCommentsSettingsScreen(
         modifier = Modifier.imePadding()
     ) {
         SectionContainer {
-            SectionToggleItem(
-                text = stringResource(R.string.enable_comments),
+            SectionToggle(
+                headlineText = stringResource(R.string.enable_comments),
                 isChecked = uiState.commentsEnabled,
                 enabled = !uiState.isChangingCommentsEnabled,
                 onCheckedChange = { viewModel.changeCommentsEnabled(!uiState.commentsEnabled) }
@@ -121,7 +121,7 @@ fun ChannelCommentsSettingsScreen(
         }
 
         SectionContainer {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.delete_all_comments),
                 contentColor = MaterialTheme.colorScheme.error,
                 onClick = { showDeleteAllDialog = true }
@@ -131,8 +131,8 @@ fun ChannelCommentsSettingsScreen(
         SectionContainer(header = {
             SectionHeader(title = stringResource(R.string.who_can_comment))
         }) {
-            SectionToggleItem(
-                text = stringResource(R.string.only_subscribers),
+            SectionToggle(
+                headlineText = stringResource(R.string.only_subscribers),
                 isChecked = uiState.commentsRestrictedToSubscribers,
                 enabled = !uiState.isChangingCommentsRestricted,
                 onCheckedChange = {

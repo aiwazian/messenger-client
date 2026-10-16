@@ -85,7 +85,7 @@ import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.utils.UiText
@@ -351,7 +351,7 @@ private fun SectionItemWithMenu(
     var expanded by remember { mutableStateOf(false) }
     
     Box {
-        SectionItem(
+        SectionButton(
             headlineText = headlineText,
             supportingText = supportingText,
             onLinkClicked = onLinkClicked,
@@ -645,7 +645,7 @@ private fun UserProfile(
             }
             
             if (user.dateOfBirth != null) {
-                SectionItem(
+                SectionButton(
                     headlineText = user.dateOfBirth.toInstance().toPrettyDateWithYear(),
                     supportingText = stringResource(R.string.date_of_birth)
                 )

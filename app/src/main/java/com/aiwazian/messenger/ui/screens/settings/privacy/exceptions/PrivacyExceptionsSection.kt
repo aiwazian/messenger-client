@@ -12,7 +12,7 @@ import com.aiwazian.messenger.enums.PrivacyExceptionKind
 import com.aiwazian.messenger.enums.PrivacyField
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 
 @Composable
 fun PrivacyExceptionsSection(
@@ -40,7 +40,7 @@ fun PrivacyExceptionsSection(
         SectionHeader(stringResource(R.string.add_exceptions))
     }) {
         items.forEach { (kind, label) ->
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(label),
                 trailingText = exceptions?.forKind(kind)?.size?.toString() ?: "0",
                 onClick = {

@@ -76,7 +76,7 @@ fun ChatCard(
     isOnline: Boolean = false,
     unreadMessageCount: Int = 0,
     onClickChat: () -> Unit = {},
-    onLongClickChat: () -> Unit = {}
+    onLongClickChat: (() -> Unit)? = null
 ) {
     val isSavedMessages = chat.id == myId
     
@@ -105,7 +105,7 @@ fun ChatCard(
             val lastMessage = chat.lastMessage
             
             val emojiSourceText = when {
-                !chat.draftText.isNullOrBlank() -> chat.draftText.orEmpty()
+                !chat.draftText.isNullOrBlank() -> chat.draftText
                 lastMessage == null -> ""
                 lastMessage.sticker != null -> ""
                 lastMessage.attachments.isNotEmpty() -> ""

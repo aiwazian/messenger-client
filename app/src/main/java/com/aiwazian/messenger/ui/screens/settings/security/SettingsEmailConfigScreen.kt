@@ -43,7 +43,7 @@ import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.LottieAnimation
 import kotlinx.coroutines.launch
@@ -124,7 +124,7 @@ fun SettingsEmailConfigScreen(viewModel: EmailConfigViewModel = hiltViewModel())
         
         SectionContainer {
             email?.let {
-                SectionItem(headlineText = it, trailingContent = {
+                SectionButton(headlineText = it, trailingContent = {
                     val clipboard = LocalClipboard.current
                     val scope = rememberCoroutineScope()
                     IconButton(
@@ -145,13 +145,13 @@ fun SettingsEmailConfigScreen(viewModel: EmailConfigViewModel = hiltViewModel())
                     }
                 })
             }
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.change_email),
                 onClick = viewModel::onChangeEmailClick
             )
         }
         SectionContainer {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.remove_email),
                 contentColor = MaterialTheme.colorScheme.error,
                 onClick = viewModel::onDisableEmailClick

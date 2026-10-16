@@ -126,6 +126,7 @@
     <string name="files">Файлы</string>
     <string name="audio">Аудио</string>
     <string name="storage_usage">Использование хранилища</string>
+    <string name="media_stay_in_cloud">Все медиа останутся в облаке, при необходимости Вы сможете загрузить их.</string>
     <string name="group_name">Название группы</string>
     <string name="logout_confirm_message">Вы точно хотите выйти?</string>
     <string name="delete_account_message">Все, что связано с вашей учетной записью, будет удалено без возможности восстановления.</string>
@@ -611,4 +612,20 @@
     <string name="wallpaper_darkness">Затемнение</string>
     <string name="wallpaper_blur">Размытие</string>
     <string name="wallpaper_apply_failed">Не удалось установить обои</string>
+
+    <string name="add">Добавить</string>
+    <string name="add_account_hint">Войдите в другой аккаунт, не выходя из текущего.</string>
+    <string name="clear_cache_hint">Освободите память устройства, файлы останутся в облаке.</string>
+    <string name="devices_description">Просмотреть список устройств, на которых Ваш аккаунт авторизован в %1$s.</string>
+    <string name="email_reset_hint">С помощью электронного адреса можно будет сбросить пароль в случае, если вы его забудете.</string>
+    <string name="clear_cache_confirm_message">Все медиа останутся в облаке. При необходимости вы сможете загрузить их снова.</string>
+    <string name="clear_database_confirm_message">Удалить все сообщения из локальной базы данных?</string>
+
+    <string name="profile_public_channels_hint">Для отображения в профиле доступны только ваши публичные каналы.</string>
+    <string name="limitations">Ограничения</string>
+    <string name="invite_link_limitations_description">Вы можете ограничить срок действия ссылки или количество её использований.</string>
+    <string name="uses_limit">Количество использований</string>
+    <string name="expiration_date">Срок действия</string>
+    <string name="no_expiration">Бессрочно</string>
+    <string name="reset_expiration_date">Сбросить срок действия</string>
 </resources>

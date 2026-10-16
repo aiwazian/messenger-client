@@ -47,7 +47,7 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -127,7 +127,7 @@ fun ChannelInviteLinksScreen(
         ) {
             item {
                 SectionContainer {
-                    SectionItem(
+                    SectionButton(
                         headlineText = stringResource(R.string.new_link),
                         leadingIcon = Icons.Rounded.AddLink,
                         contentColor = MaterialTheme.colorScheme.primary,
@@ -185,7 +185,7 @@ private fun InviteLinkItem(
     
     val supportingText = "Осталось $remainingUsesText • $expirationText"
     
-    SectionItem(
+    SectionButton(
         headlineText = "aiwazian.ru/" + link.code,
         supportingText = supportingText,
         trailingContent = {

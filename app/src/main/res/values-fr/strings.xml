@@ -122,6 +122,7 @@
     <string name="files">Dossiers</string>
     <string name="audio">Audio</string>
     <string name="storage_usage">Utilisation du stockage</string>
+    <string name="media_stay_in_cloud">Tous les médias resteront dans le cloud et pourront être retéléchargés si vous en avez besoin.</string>
     <string name="group_name">Nom du groupe</string>
     <string name="logout_confirm_message">Êtes-vous sûr de vouloir vous déconnecter?</string>
     <string name="delete_account_message">Tout ce qui concerne votre compte sera définitivement supprimé.</string>
@@ -591,4 +592,20 @@
     <string name="wallpaper_darkness">Assombrissement</string>
     <string name="wallpaper_blur">Flou</string>
     <string name="wallpaper_apply_failed">Échec de la définition du fond</string>
+
+    <string name="add">Ajouter</string>
+    <string name="add_account_hint">Connectez-vous à un autre compte sans vous déconnecter du compte actuel.</string>
+    <string name="clear_cache_hint">Libérez de l\'espace sur votre appareil. Les fichiers resteront dans le cloud.</string>
+    <string name="devices_description">Consultez la liste des appareils sur lesquels votre compte %1$s est connecté.</string>
+    <string name="email_reset_hint">Une adresse e-mail permettra de réinitialiser votre mot de passe en cas d\'oubli.</string>
+    <string name="clear_cache_confirm_message">Tous les médias resteront dans le cloud. Vous pourrez les retélécharger si besoin.</string>
+    <string name="clear_database_confirm_message">Supprimer tous les messages de la base de données locale ?</string>
+
+    <string name="profile_public_channels_hint">Seuls vos canaux publics peuvent être affichés sur votre profil.</string>
+    <string name="limitations">Limitations</string>
+    <string name="invite_link_limitations_description">Vous pouvez limiter la date d\'expiration du lien ou son nombre d\'utilisations.</string>
+    <string name="uses_limit">Nombre d\'utilisations</string>
+    <string name="expiration_date">Date d\'expiration</string>
+    <string name="no_expiration">Sans expiration</string>
+    <string name="reset_expiration_date">Réinitialiser la date d\'expiration</string>
 </resources>

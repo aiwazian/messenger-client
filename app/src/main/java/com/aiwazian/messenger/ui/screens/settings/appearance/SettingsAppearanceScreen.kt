@@ -48,8 +48,8 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.section.SectionToggleItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionToggle
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.wallpaper.WallpaperViewModel
 
@@ -81,8 +81,8 @@ fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
             SectionHeader(stringResource(R.string.color_theme))
         }) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                SectionToggleItem(
-                    text = stringResource(R.string.dynamic_color),
+                SectionToggle(
+                    headlineText = stringResource(R.string.dynamic_color),
                     isChecked = isDynamicColorEnable,
                     onCheckedChange = {
                         viewModel.setDynamicColor(!isDynamicColorEnable)
@@ -150,7 +150,7 @@ fun SettingsAppearanceScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
         }
         
         SectionContainer {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.dark_theme),
                 trailingText = theme,
                 onClick = {

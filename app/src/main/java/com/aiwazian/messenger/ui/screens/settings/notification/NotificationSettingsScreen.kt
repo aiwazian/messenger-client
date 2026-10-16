@@ -25,8 +25,8 @@ import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.section.SectionToggleItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionToggle
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
@@ -47,8 +47,8 @@ fun NotificationSettingsScreen(viewModel: NotificationSettingsViewModel = hiltVi
         )
     }) {
         SectionContainer {
-            SectionToggleItem(
-                text = stringResource(R.string.private_chats),
+            SectionToggle(
+                headlineText = stringResource(R.string.private_chats),
                 supportingText = pluralStringResource(
                     R.plurals.notification_exceptions_count,
                     uiState.privateChatExceptions,
@@ -63,8 +63,8 @@ fun NotificationSettingsScreen(viewModel: NotificationSettingsViewModel = hiltVi
                 },
                 onCheckedChange = viewModel::togglePrivateChats
             )
-            SectionToggleItem(
-                text = stringResource(R.string.groups),
+            SectionToggle(
+                headlineText = stringResource(R.string.groups),
                 supportingText = pluralStringResource(
                     R.plurals.notification_exceptions_count,
                     uiState.groupExceptions,
@@ -79,8 +79,8 @@ fun NotificationSettingsScreen(viewModel: NotificationSettingsViewModel = hiltVi
                 },
                 onCheckedChange = viewModel::toggleGroups
             )
-            SectionToggleItem(
-                text = stringResource(R.string.channels),
+            SectionToggle(
+                headlineText = stringResource(R.string.channels),
                 supportingText = pluralStringResource(
                     R.plurals.notification_exceptions_count,
                     uiState.channelExceptions,
@@ -98,7 +98,7 @@ fun NotificationSettingsScreen(viewModel: NotificationSettingsViewModel = hiltVi
         }
         
         SectionContainer {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.notification_reset),
                 supportingText = stringResource(R.string.notification_reset_description),
                 onClick = viewModel::showResetDialog

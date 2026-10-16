@@ -26,15 +26,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import com.aiwazian.messenger.ui.components.AnimatedStickerImage
-import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.EmojiPack
 import com.aiwazian.messenger.ui.app.AppDialog
@@ -50,8 +44,6 @@ fun EmojiPackCard(
     modifier: Modifier = Modifier,
     onShare: (() -> Unit)? = null
 ) {
-    val context = LocalContext.current
-    
     var isMenuExpanded by remember { mutableStateOf(false) }
     var isDeleteDialogVisible by remember { mutableStateOf(false) }
     

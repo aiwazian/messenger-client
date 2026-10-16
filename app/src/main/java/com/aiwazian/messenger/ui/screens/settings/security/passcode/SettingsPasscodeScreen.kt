@@ -45,8 +45,8 @@ import com.aiwazian.messenger.ui.components.NumberKeyboard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.section.SectionToggleItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionToggle
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsSecurityViewModel
 import com.aiwazian.messenger.utils.LottieAnimation
@@ -266,8 +266,8 @@ private fun SettingsPasscodeLockScreen(
             
             if (hasEnrolledFingerprints) {
                 SectionContainer {
-                    SectionToggleItem(
-                        text = stringResource(R.string.fingerprint_unlock),
+                    SectionToggle(
+                        headlineText = stringResource(R.string.fingerprint_unlock),
                         isChecked = fingerprintEnabled,
                         onCheckedChange = passcodeViewModel::toggleFingerprint
                     )
@@ -275,7 +275,7 @@ private fun SettingsPasscodeLockScreen(
             }
             
             SectionContainer {
-                SectionItem(
+                SectionButton(
                     headlineText = stringResource(R.string.change_passcode),
                     onClick = {
                         navBackStack.add(AppRoute.SettingsPasscodeChange)
@@ -283,7 +283,7 @@ private fun SettingsPasscodeLockScreen(
             }
             
             SectionContainer {
-                SectionItem(
+                SectionButton(
                     headlineText = stringResource(R.string.turn_passcode_off),
                     contentColor = MaterialTheme.colorScheme.error,
                     onClick = disablePasscodeDialog::show

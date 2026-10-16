@@ -27,6 +27,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,9 +45,9 @@ import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.SessionEndResolution
 import com.aiwazian.messenger.utils.SessionManager
@@ -63,7 +64,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
     val uiState by viewModel.uiState.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
-    
+    val scope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     LaunchedEffect(Unit) {
@@ -76,7 +77,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                 is SettingsPrivacySideEffect.ShowSnackbar -> {
                     snackbarJob?.cancel()
                     
-                    snackbarJob = launch {
+                    snackbarJob = scope.launch {
                         snackbarHostState.currentSnackbarData?.dismiss()
                         snackbarHostState.showSnackbar(
                             message = effect.message.asString(context),
@@ -101,7 +102,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
         AppSnackbar(snackbarHostState)
     }) {
         SectionContainer {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.blocked_users),
                 trailingText = uiState.blockedUsersCount.toString(),
                 onClick = {
@@ -113,7 +114,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
         SectionContainer(header = {
             SectionHeader(stringResource(R.string.confidentiality))
         }) {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.bio),
                 trailingText = if (uiState.privacy.bio == PrivacyLevel.EVERYBODY) {
                     stringResource(R.string.everybody)
@@ -124,7 +125,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                     navBackStack.add(AppRoute.SettingsBio(uiState.privacy.bio))
                 })
             
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.profile_photos),
                 trailingText = if (uiState.privacy.profilePhoto == PrivacyLevel.EVERYBODY) {
                     stringResource(R.string.everybody)
@@ -135,7 +136,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                     navBackStack.add(AppRoute.SettingsPhoto(uiState.privacy.profilePhoto))
                 })
             
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.last_seen),
                 trailingText = if (uiState.privacy.lastSeen == PrivacyLevel.EVERYBODY) {
                     stringResource(R.string.everybody)
@@ -146,7 +147,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                     navBackStack.add(AppRoute.SettingsLastSeen(uiState.privacy.lastSeen))
                 })
             
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.date_of_birth),
                 trailingText = if (uiState.privacy.dateOfBirth == PrivacyLevel.EVERYBODY) {
                     stringResource(R.string.everybody)
@@ -157,7 +158,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                     navBackStack.add(AppRoute.SettingsDateOfBirth(uiState.privacy.dateOfBirth))
                 })
             
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.invites),
                 trailingText = if (uiState.privacy.invites == PrivacyLevel.EVERYBODY) {
                     stringResource(R.string.everybody)
@@ -168,7 +169,7 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                     navBackStack.add(AppRoute.SettingsInvites(uiState.privacy.invites))
                 })
             
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.message_forwarding),
                 trailingText = if (uiState.privacy.forwardedProfile == PrivacyLevel.EVERYBODY) {
                     stringResource(R.string.everybody)
@@ -191,14 +192,13 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                 else -> UiText.DynamicString("")
             }.asString()
             
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.if_away_for),
                 trailingText = inactivityText,
                 onClick = viewModel::showInactivityBottomSheet
             )
-        }
-        SectionContainer {
-            SectionItem(
+            
+            SectionButton(
                 headlineText = stringResource(R.string.delete_account),
                 contentColor = MaterialTheme.colorScheme.error,
                 onClick = viewModel::onDeleteAccountClick
@@ -218,19 +218,19 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                     style = MaterialTheme.typography.titleMedium
                 )
                 Column {
-                    SectionItem(
+                    SectionButton(
                         headlineText = stringResource(R.string.inactive_1_month),
                         onClick = { viewModel.updateDeleteAfterDays(30) }
                     )
-                    SectionItem(
+                    SectionButton(
                         headlineText = stringResource(R.string.inactive_3_months),
                         onClick = { viewModel.updateDeleteAfterDays(90) }
                     )
-                    SectionItem(
+                    SectionButton(
                         headlineText = stringResource(R.string.inactive_6_months),
                         onClick = { viewModel.updateDeleteAfterDays(180) }
                     )
-                    SectionItem(
+                    SectionButton(
                         headlineText = stringResource(R.string.inactive_12_months),
                         onClick = { viewModel.updateDeleteAfterDays(365) }
                     )

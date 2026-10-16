@@ -122,6 +122,7 @@
     <string name="files">Archivos</string>
     <string name="audio">Audio</string>
     <string name="storage_usage">Uso de almacenamiento</string>
+    <string name="media_stay_in_cloud">Todos los archivos multimedia permanecerán en la nube y podrás volver a descargarlos si los necesitas de nuevo.</string>
     <string name="group_name">Nombre del grupo</string>
     <string name="logout_confirm_message">¿Está seguro de que desea cerrar sesión\?</string>
     <string name="delete_account_message">Todo lo relacionado con tu cuenta se eliminará permanentemente.</string>
@@ -592,4 +593,20 @@
     <string name="wallpaper_darkness">Oscurecimiento</string>
     <string name="wallpaper_blur">Desenfoque</string>
     <string name="wallpaper_apply_failed">No se pudo establecer el fondo</string>
+
+    <string name="add">Añadir</string>
+    <string name="add_account_hint">Inicia sesión en otra cuenta sin cerrar la actual.</string>
+    <string name="clear_cache_hint">Libera espacio en tu dispositivo. Los archivos permanecerán en la nube.</string>
+    <string name="devices_description">Consulta la lista de dispositivos en los que tu cuenta de %1$s ha iniciado sesión.</string>
+    <string name="email_reset_hint">Con una dirección de correo electrónico podrás restablecer la contraseña si la olvidas.</string>
+    <string name="clear_cache_confirm_message">Todos los archivos multimedia permanecerán en la nube. Podrás volver a descargarlos si lo necesitas.</string>
+    <string name="clear_database_confirm_message">¿Eliminar todos los mensajes de la base de datos local?</string>
+
+    <string name="profile_public_channels_hint">En tu perfil solo se pueden mostrar tus canales públicos.</string>
+    <string name="limitations">Limitaciones</string>
+    <string name="invite_link_limitations_description">Puedes limitar la fecha de caducidad del enlace o el número de usos.</string>
+    <string name="uses_limit">Número de usos</string>
+    <string name="expiration_date">Fecha de caducidad</string>
+    <string name="no_expiration">Sin caducidad</string>
+    <string name="reset_expiration_date">Restablecer fecha de caducidad</string>
 </resources>

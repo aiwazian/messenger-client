@@ -41,7 +41,7 @@ import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.Job
@@ -113,7 +113,7 @@ fun NotificationCategoryScreen(
                          * нет: пустой экран без неё оставляет пользователя ни с чем.
                          */
                         SectionContainer {
-                            SectionItem(
+                            SectionButton(
                                 headlineText = stringResource(R.string.notification_exception_add),
                                 leadingIcon = Icons.Outlined.Add,
                                 onClick = {
@@ -151,7 +151,7 @@ fun NotificationCategoryScreen(
                             }
                             
                             SectionContainer {
-                                SectionItem(
+                                SectionButton(
                                     headlineText = stringResource(R.string.delete_all_exceptions),
                                     contentColor = MaterialTheme.colorScheme.error,
                                     onClick = viewModel::showDeleteAllDialog
