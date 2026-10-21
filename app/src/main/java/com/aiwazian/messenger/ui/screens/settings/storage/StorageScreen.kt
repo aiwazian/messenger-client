@@ -36,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -117,9 +116,7 @@ fun StorageScreen(viewModel: StorageViewModel = hiltViewModel()) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        SectionContainer(footer = {
-            SectionDescription("Все медиа останутся в облаке, при необходимости Вы сможете загрузить их.")
-        }) {
+        SectionContainer {
             uiState.categories.forEachIndexed { index, category ->
                 StorageCategory(
                     text = stringResource(category.category.title),
@@ -131,53 +128,55 @@ fun StorageScreen(viewModel: StorageViewModel = hiltViewModel()) {
                     },
                 )
             }
-            
-            val selectedSize = uiState.selectedSize
-            val selectedSizeMb = selectedSize / (1024.0 * 1024.0)
-            val selectedSizeMbRounded = BigDecimal(selectedSizeMb).setScale(
-                2, RoundingMode.HALF_UP
-            ).toDouble()
-            
-            val hasSelection = uiState.selectedCategories.isNotEmpty()
-            
-            Button(
-                onClick = viewModel::showConfirmDialog,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp),
-                shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.buttonColors(
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
-                enabled = hasSelection
+        }
+        
+        val selectedSize = uiState.selectedSize
+        val selectedSizeMb = selectedSize / (1024.0 * 1024.0)
+        val selectedSizeMbRounded = BigDecimal(selectedSizeMb).setScale(
+            2, RoundingMode.HALF_UP
+        ).toDouble()
+        
+        val hasSelection = uiState.selectedCategories.isNotEmpty()
+        
+        Button(
+            onClick = viewModel::showConfirmDialog,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            shape = MaterialTheme.shapes.medium,
+            colors = ButtonDefaults.buttonColors(
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                containerColor = MaterialTheme.colorScheme.primary
+            ),
+            enabled = hasSelection
+        ) {
+            Row(
+                modifier = Modifier.padding(8.dp),
             ) {
-                Row(
-                    modifier = Modifier.padding(8.dp),
-                ) {
+                Text(
+                    text = "${stringResource(R.string.clear_cache)} (",
+                    fontSize = 16.sp,
+                    lineHeight = 18.sp
+                )
+                AnimatedContent(
+                    targetState = selectedSizeMbRounded, transitionSpec = {
+                        if (targetState > initialState) {
+                            slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
+                        } else {
+                            slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
+                        }
+                    }) { size ->
                     Text(
-                        text = "${stringResource(R.string.clear_cache)} (",
-                        fontSize = 16.sp,
-                        lineHeight = 18.sp
-                    )
-                    AnimatedContent(
-                        targetState = selectedSizeMbRounded, transitionSpec = {
-                            if (targetState > initialState) {
-                                slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
-                            } else {
-                                slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
-                            }
-                        }) { size ->
-                        Text(
-                            text = "$size", fontSize = 16.sp, lineHeight = 18.sp
-                        )
-                    }
-                    Text(
-                        text = "MB)", fontSize = 16.sp, lineHeight = 18.sp
+                        text = "$size", fontSize = 16.sp, lineHeight = 18.sp
                     )
                 }
+                Text(
+                    text = "MB)", fontSize = 16.sp, lineHeight = 18.sp
+                )
             }
         }
+        
+        SectionDescription(stringResource(R.string.media_stay_in_cloud))
     }
     
     if (uiState.showConfirmDialog) {
@@ -203,10 +202,13 @@ private fun StorageCategory(
     onClick: () -> Unit, selected: Boolean, color: Color, text: String, primaryText: String
 ) {
     TextButton(
-        shape = RectangleShape,
+        shape = MaterialTheme.shapes.extraSmall,
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
-        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
+        colors = ButtonDefaults.textButtonColors(
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        )
     ) {
         Row(
             modifier = Modifier
@@ -259,7 +261,7 @@ private fun ClearCacheConfirmationDialog(
         content = {
             Column {
                 Text(
-                    text = "Все медиа останутся в облаке. При необходимости вы сможете загрузить их снова.",
+                    text = stringResource(R.string.clear_cache_confirm_message),
                     lineHeight = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -288,7 +290,7 @@ private fun ClearDatabaseConfirmationDialog(
         onDismissRequest = onDismiss,
         content = {
             Text(
-                text = "Удалить все сообщения из локальной базы данных?",
+                text = stringResource(R.string.clear_database_confirm_message),
                 lineHeight = 16.sp
             )
         },

@@ -12,7 +12,9 @@ import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -21,6 +23,8 @@ import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.enums.ThemeOption
 import com.materialkolor.PaletteStyle
 import com.materialkolor.rememberDynamicColorScheme
+
+val LocalIsDarkTheme = staticCompositionLocalOf { false }
 
 @Composable
 fun ApplicationTheme(
@@ -68,6 +72,10 @@ fun ApplicationTheme(
     }
     
     MaterialExpressiveTheme(
-        motionScheme = MotionScheme.expressive(), colorScheme = colorScheme, content = content
+        motionScheme = MotionScheme.expressive(), colorScheme = colorScheme, content = {
+            CompositionLocalProvider(LocalIsDarkTheme provides isDark) {
+                content()
+            }
+        }
     )
 }

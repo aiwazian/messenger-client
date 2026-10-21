@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.chat.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,20 +33,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import com.aiwazian.messenger.ui.components.AnimatedStickerImage
-import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.EmojiPack
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
+import com.aiwazian.messenger.ui.components.AnimatedStickerImage
+import com.aiwazian.messenger.ui.components.isVideoMediaUrl
 import com.aiwazian.messenger.ui.screens.settings.emoji.EMOJI_CELL_MIN_SIZE
 import com.aiwazian.messenger.ui.screens.settings.emoji.EMOJI_GRID_MAX_HEIGHT
 import com.aiwazian.messenger.ui.screens.settings.emoji.EMOJI_GRID_SPACING
@@ -60,17 +57,16 @@ fun EmojiPackBottomSheet(
     onShare: () -> Unit,
     onCopyLink: () -> Unit
 ) {
-    val context = LocalContext.current
-    
     var isMenuExpanded by remember { mutableStateOf(false) }
     
-    AppBottomSheet(onDismissRequest = onDismiss) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 12.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    AppBottomSheet(onDismissRequest = onDismiss) { padding ->
+        Column(modifier = Modifier.padding(padding)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
             Text(
                 text = pack.name,
                 modifier = Modifier.weight(1f),
@@ -164,4 +160,5 @@ fun EmojiPackBottomSheet(
             )
         }
     }
+}
 }

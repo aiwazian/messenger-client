@@ -58,5 +58,6 @@ data class Message(
     val forwardedFrom: ForwardedFrom? = null,
     val isEdited: Boolean = false,
     val commentsCount: Int = 0,
-    val sticker: MessageSticker? = null
+    val sticker: MessageSticker? = null,
+    val contact: MessageContact? = null
 )

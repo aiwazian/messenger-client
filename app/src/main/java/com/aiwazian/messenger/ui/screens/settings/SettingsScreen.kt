@@ -31,7 +31,7 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -49,14 +49,14 @@ fun SettingsScreen() {
         SectionContainer(header = {
             SectionHeader(stringResource(R.string.account))
         }) {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.profile),
                 supportingText = stringResource(R.string.write_about_me),
                 onClick = {
                     navBackStack.add(AppRoute.SettingsProfile)
                 })
             
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.security),
                 supportingText = stringResource(R.string.protect_your_account),
                 onClick = {
@@ -69,56 +69,56 @@ fun SettingsScreen() {
             header = {
                 SectionHeader(stringResource(R.string.settings))
             }) {
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Outlined.ColorLens,
                 headlineText = stringResource(R.string.appearance),
                 onClick = {
                     navBackStack.add(AppRoute.SettingsChat)
                 })
             
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Outlined.EmojiEmotions,
                 headlineText = stringResource(R.string.stickers_and_emoji),
                 onClick = {
                     navBackStack.add(AppRoute.SettingsStickers)
                 })
             
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Rounded.NotificationsNone,
                 headlineText = stringResource(R.string.notifications),
                 onClick = {
                     navBackStack.add(AppRoute.SettingsNotifications)
                 })
             
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Outlined.Lock,
                 headlineText = stringResource(R.string.confidentiality),
                 onClick = {
                     navBackStack.add(AppRoute.SettingsPrivacy)
                 })
             
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Rounded.Outbox,
                 headlineText = stringResource(R.string.join_requests),
                 onClick = {
                     navBackStack.add(AppRoute.PendingJoinRequests)
                 })
             
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Rounded.FolderOpen,
                 headlineText = stringResource(R.string.chat_folders),
                 onClick = {
                     navBackStack.add(AppRoute.ChatFolders)
                 })
             
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Rounded.DataUsage,
                 headlineText = stringResource(R.string.data_and_storage),
                 onClick = {
                     navBackStack.add(AppRoute.SettingsDataAndStorage)
                 })
             
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Rounded.Language,
                 headlineText = stringResource(R.string.language),
                 onClick = {
@@ -146,14 +146,14 @@ fun SettingsScreen() {
                 .setTranslateLocale(LocalLocale.current.platformLocale)
                 .build()
             
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Rounded.Gavel,
                 headlineText = stringResource(R.string.terms_of_use),
                 onClick = {
                     intent.launchUrl(context, "https://aiwazian.ru/tos".toUri())
                 })
             
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Rounded.PrivacyTip,
                 headlineText = stringResource(R.string.privacy_policy),
                 onClick = {

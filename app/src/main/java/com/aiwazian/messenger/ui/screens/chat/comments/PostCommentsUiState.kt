@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.chat.comments
 
 import com.aiwazian.messenger.domain.Comment
+import com.aiwazian.messenger.domain.InviteLinkInfo
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
 import com.aiwazian.messenger.utils.DataStoreManager
@@ -27,7 +28,12 @@ data class PostCommentsUiState(
     val keyboardHeight: Float = DataStoreManager.DEFAULT_KEYBOARD_HEIGHT,
     val replyToMessage: MessageReplyPreview? = null,
     val editingCommentId: Long? = null,
-    val commentToDelete: Comment? = null
+    val commentToDelete: Comment? = null,
+    val isProcessingInvite: Boolean = false,
+    val inviteLinkInfo: InviteLinkInfo? = null,
+    val inviteLinkCode: String? = null,
+    val showInviteBottomSheet: Boolean = false,
+    val showBannedDialog: Boolean = false
 ) {
     val canComment: Boolean
         get() = commentsEnabled &&

@@ -272,16 +272,6 @@ internal fun zoomAnchoredOffset(
     offset: Offset, anchor: Offset, pan: Offset, scaleDelta: Float
 ): Offset = anchor - (anchor - offset) * scaleDelta + pan
 
-/**
- * Жесты зума, панорамирования и тапов.
- *
- * @param onDoubleTap вызывается раньше зума и получает точку двойного тапа. Если вернуть `true`,
- * жест считается обработанным и зум не переключается.
- * @param onLongPress вызывается после удержания одним пальцем. Пока параметр равен `null`,
- * удержание не отслеживается вовсе.
- * @param onLongPressFinished вызывается после удержания, когда палец отпустили либо жест
- * перехватил зум или панорамирование.
- */
 @Composable
 fun Modifier.zoomableGestures(
     state: ZoomableState,
@@ -324,7 +314,7 @@ fun Modifier.zoomableGestures(
                 onPress = {
                     try {
                         tryAwaitRelease()
-                    } catch (cancellation: CancellationException) {
+                    } catch (_: CancellationException) {
                         // Жест перехватил зум или панорамирование
                     } finally {
                         if (isLongPressActive) {

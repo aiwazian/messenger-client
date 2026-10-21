@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -69,7 +70,8 @@ fun StickerPickerBottomSheet(
         viewModel.load()
     }
     
-    AppBottomSheet(onDismissRequest = onDismissRequest) {
+    AppBottomSheet(onDismissRequest = onDismissRequest) { padding ->
+        Column(modifier = Modifier.padding(padding)) {
         when {
             isLoading && packs.isEmpty() -> Box(
                 modifier = Modifier
@@ -126,6 +128,7 @@ fun StickerPickerBottomSheet(
             }
         }
     }
+}
 }
 
 @Composable

@@ -454,9 +454,11 @@ internal suspend fun PagerState.settleAfterEdgePan() {
 private fun SpeedBottomSheet(
     currentSpeed: Float, onSpeedChange: (Float) -> Unit, onDismiss: () -> Unit
 ) {
-    AppBottomSheet(onDismissRequest = onDismiss) {
+    AppBottomSheet(onDismissRequest = onDismiss) { padding ->
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(padding),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {

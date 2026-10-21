@@ -9,11 +9,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -23,8 +20,9 @@ import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppBottomSheetFooterActions
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionRadioItem
+import com.aiwazian.messenger.ui.components.section.SectionRadio
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,9 +35,27 @@ fun PinMessageBottomSheet(
     onUnpin: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AppBottomSheet(onDismissRequest = onDismiss) {
+    AppBottomSheet(onDismissRequest = onDismiss, stickyFooter = {
+        AppBottomSheetFooterActions.Custom {
+            Column {
+                AppBottomSheetFooterActions.PrimaryButton(
+                    text = stringResource(R.string.pin_message),
+                    onClick = onConfirm
+                )
+                
+                if (isPinned) {
+                    AppBottomSheetFooterActions.PrimaryButton(
+                        text = stringResource(R.string.unpin_message),
+                        onClick = onUnpin
+                    )
+                }
+            }
+        }
+    }) { padding ->
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(padding),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
@@ -50,36 +66,17 @@ fun PinMessageBottomSheet(
             )
             
             SectionContainer(contentPadding = PaddingValues.Zero) {
-                SectionRadioItem(
-                    text = stringResource(R.string.pin_scope_for_me_only),
+                SectionRadio(
+                    headlineText = stringResource(R.string.pin_scope_for_me_only),
                     selected = !forEveryone,
                     onClick = { onSelectScope(false) }
                 )
                 
-                SectionRadioItem(
-                    text = stringResource(pinScopeLabel(chatType)),
+                SectionRadio(
+                    headlineText = stringResource(pinScopeLabel(chatType)),
                     selected = forEveryone,
                     onClick = { onSelectScope(true) }
                 )
-            }
-            
-            TextButton(
-                onClick = onConfirm,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = stringResource(R.string.pin_message))
-            }
-            
-            if (isPinned) {
-                TextButton(
-                    onClick = onUnpin,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                ) {
-                    Text(text = stringResource(R.string.unpin_message))
-                }
             }
         }
     }

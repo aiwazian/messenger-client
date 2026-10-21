@@ -11,13 +11,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/**
- * Границы видимого окна истории в локальной базе.
- *
- * @param fromId самый старый загруженный id.
- * @param toId самый новый загруженный id или Long.MAX_VALUE, если окно «живое» (прижато к концу чата).
- * @param includePending показывать ли локальные неотправленные сообщения (у них отрицательные id).
- */
 data class MessageWindowBounds(
     val fromId: Long = 0L,
     val toId: Long = Long.MAX_VALUE,
@@ -30,22 +23,11 @@ data class MessageWindowState(
     val hasMoreAfter: Boolean = false,
     val isLoadingBefore: Boolean = false,
     val isLoadingAfter: Boolean = false,
-    /** Идёт прыжок в другое место истории: обычную догрузку надо заблокировать. */
     val isRelocating: Boolean = false,
-    /** Окно прижато к концу чата: новые сообщения попадают в него автоматически. */
     val isAtLive: Boolean = true,
     val isInitialized: Boolean = false
 )
 
-/**
- * Скользящее окно сообщений одного чата.
- *
- * Отвечает только за то, КАКОЙ диапазон истории сейчас актуален, и за догрузку с сервера.
- * Отображаемые данные всегда берутся из Room по границам [MessageWindowState.bounds],
- * поэтому реалтайм-события, редактирование и удаление работают без участия пейджера.
- *
- * Все три сценария (ответ на сообщение, закреплённые, поиск) используют один и тот же [jumpTo].
- */
 class MessageWindowPager(
     private val chatRepository: ChatRepository,
     private val userId: Long,
@@ -59,15 +41,10 @@ class MessageWindowPager(
     
     private val mutex = Mutex()
     
-    /** id загруженных сообщений окна по возрастанию. Нужны только для курсоров и обрезки окна. */
     private val loadedIds = ArrayDeque<Long>()
     
     fun containsMessage(messageId: Long): Boolean = loadedIds.contains(messageId)
-    
-    /**
-     * Открытие чата и кнопка «в конец»: ОДИН запрос за последними pageSize сообщениями,
-     * без догрузки всего, что между текущим местом и концом истории.
-     */
+
     suspend fun openAtLatest(): Boolean = mutex.withLock { openAtLatestLocked() }
     
     private suspend fun openAtLatestLocked(): Boolean {
@@ -108,17 +85,7 @@ class MessageWindowPager(
         }
         return true
     }
-    
-    /**
-     * Открытие чата на первом непрочитанном сообщении.
-     *
-     * Якорь выбирает сервер (anchor=first_unread), потому что в локальном кэше
-     * лежит только окно истории и первое непрочитанное может быть вне кэша.
-     * В окно попадает и кусок уже прочитанной истории выше границы.
-     *
-     * @return id первого непрочитанного или null, если всё прочитано
-     *         (тогда окно открыто на конце чата).
-     */
+
     suspend fun openAtFirstUnread(): Long? = mutex.withLock {
         _state.update { it.copy(isRelocating = true) }
         
@@ -156,13 +123,7 @@ class MessageWindowPager(
         }
         firstUnreadId
     }
-    
-    /**
-     * Прыжок к произвольному сообщению: один запрос за окном вокруг него.
-     * Промежуточные сообщения НЕ грузятся, даже если цель на тысячу сообщений назад.
-     *
-     * @return false, если окно не удалось загрузить (нет сети или сообщение удалено).
-     */
+
     suspend fun jumpTo(messageId: Long): Boolean = mutex.withLock {
         if (loadedIds.contains(messageId)) return@withLock true
         
@@ -201,7 +162,6 @@ class MessageWindowPager(
         true
     }
     
-    /** Скролл вверх: догрузка страницы старше текущей верхней границы окна. */
     suspend fun loadBefore() {
         val snapshot = _state.value
         if (snapshot.isLoadingBefore || snapshot.isRelocating || !snapshot.hasMoreBefore) return
@@ -250,7 +210,6 @@ class MessageWindowPager(
         }
     }
     
-    /** Скролл вниз внутри истории (после прыжка): догрузка страницы новее окна. */
     suspend fun loadAfter() {
         val snapshot = _state.value
         if (snapshot.isLoadingAfter || snapshot.isRelocating || !snapshot.hasMoreAfter) return
@@ -305,7 +264,6 @@ class MessageWindowPager(
     
     private fun newestId(): Long = loadedIds.lastOrNull() ?: Long.MAX_VALUE
     
-    /** Обрезаем новый конец окна, чтобы список не рос бесконечно при скролле вверх. */
     private fun trimNewestIfNeeded(): Boolean {
         var trimmed = false
         while (loadedIds.size > maxWindowMessages) {
@@ -315,7 +273,6 @@ class MessageWindowPager(
         return trimmed
     }
     
-    /** То же самое для старого конца при скролле вниз. */
     private fun trimOldestIfNeeded(): Boolean {
         var trimmed = false
         while (loadedIds.size > maxWindowMessages) {

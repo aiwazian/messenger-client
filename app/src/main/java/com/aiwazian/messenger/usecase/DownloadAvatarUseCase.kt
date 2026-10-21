@@ -45,20 +45,10 @@ class DownloadAvatarUseCase @Inject constructor(
                         fileName = fileId
                     )
                 }.onSuccess {
-                    /*
-                     * Файл лёг на диск, и это единственное место, куда приходят аватарки
-                     * всех типов чатов. Значит здесь же удобно обновить иконку ярлыка,
-                     * если он закреплён на рабочем столе: аватарку могли поменять.
-                     */
                     shortcutManager.refreshPinnedChatShortcut(profileId)
                 }
             },
             onFailure = { error ->
-                /*
-                 * Аватарку заменили или удалили с другого устройства. Строку надо убрать
-                 * из Room, иначе экран будет бесконечно дёргать мёртвый fileId при каждом
-                 * открытии профиля. Остальные ошибки (нет сети, 5xx) кэш не трогают.
-                 */
                 if (error is AvatarNotFoundException) {
                     forgetAvatar(fileId)
                 }

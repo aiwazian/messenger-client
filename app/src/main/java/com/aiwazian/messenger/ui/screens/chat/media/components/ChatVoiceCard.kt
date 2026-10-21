@@ -6,7 +6,7 @@ package com.aiwazian.messenger.ui.screens.chat.media.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,23 +44,14 @@ import com.aiwazian.messenger.extensions.toShortDateIfNotToday
 import com.aiwazian.messenger.utils.AmplitudeExtractor
 import java.util.Locale
 
-/**
- * Голосовое в галерее чата.
- *
- * Сложена как документ рядом: кружок слева, две строки текста и полоска
- * загрузки под ними. В заголовке время отправки, а не имя файла: у записей
- * оно служебное и одинаковое у всего списка.
- *
- * @param author кто отправил: «Вы» или название чата. Карточка не решает это сама:
- * свой идентификатор и имя собеседника — знание экрана, а не строки списка.
- * @param onDurationResolved длина, считанная из скачанного файла.
- */
 @Composable
 fun ChatVoiceCard(
     voice: ChatMediaItem,
     author: String?,
     isPlaying: Boolean,
+    isSelected: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     onDurationResolved: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -68,10 +59,6 @@ fun ChatVoiceCard(
     val localUri = voice.localUri
     val isDownloading = voice.status == DownloadStatus.DOWNLOADING
     
-    /*
-     * Длина берётся из файла: сервер её не отдаёт. Считается только у того, что
-     * видно на экране, и один раз: дальше она приходит вместе с элементом из кэша.
-     */
     LaunchedEffect(localUri, voice.durationMs) {
         if (localUri == null || voice.durationMs != null) {
             return@LaunchedEffect
@@ -88,22 +75,29 @@ fun ChatVoiceCard(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
+        Box {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            SelectionCheckBadge(
+                visible = isSelected,
+                modifier = Modifier.align(Alignment.BottomEnd)
             )
         }
         
@@ -148,7 +142,6 @@ fun ChatVoiceCard(
             }
             
             if (isDownloading) {
-                /* До первого процента показываем бегущую: нуль неотличим от зависания. */
                 if (voice.progress == 0) {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 } else {
@@ -167,15 +160,6 @@ fun ChatVoiceCard(
     }
 }
 
-/**
- * Длина записи в виде «00:42» или «03:19:51».
- *
- * Часы появляются только когда они есть, но минуты и секунды всегда с ведущим
- * нулём: в столбце одинаковая ширина держит вторую строку от дрожания.
- *
- * Не [com.aiwazian.messenger.ui.components.formatDuration]: тот пишет часы без
- * ведущего нуля и даёт «3:19:51».
- */
 private fun formatVoiceDuration(durationMs: Int): String {
     val totalSeconds = durationMs / 1000
     val hours = totalSeconds / 3600

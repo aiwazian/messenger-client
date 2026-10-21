@@ -24,12 +24,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
-/**
- * Создание, чтение, обновление и удаление группы, а также её аватары.
- *
- * Участники живут в [GroupMembersRepository], а запрет копирования —
- * в [GroupContentProtectionRepository].
- */
 class GroupCrudRepository @Inject constructor(
     private val groupApi: GroupApi,
     private val groupDao: GroupDao,

@@ -4,25 +4,18 @@
 
 package com.aiwazian.messenger.domain
 
-/** Администратор канала. */
 data class ChannelAdmin(
     val userId: Long,
     val firstName: String,
     val lastName: String?,
     val username: String?,
-    /** Пригласительные ссылки: создание и удаление. */
     val canManageInviteLinks: Boolean,
-    /** Изменение профиля канала: название, описание и фотографии. */
     val canEditProfile: Boolean,
-    /** Управление администраторами: назначение, снятие и изменение их прав. */
     val canManageAdmins: Boolean,
-    /** Закрепление сообщений для всех подписчиков. */
     val canPinMessages: Boolean,
-    /** Удаление чужих комментариев под постами канала. */
     val canDeleteComments: Boolean = false
 )
 
-/** Администратор группы. Тег есть только в группах. */
 data class GroupAdmin(
     val userId: Long,
     val firstName: String,
@@ -30,19 +23,11 @@ data class GroupAdmin(
     val username: String?,
     val canManageInviteLinks: Boolean,
     val canEditProfile: Boolean,
-    /** Управление администраторами: назначение, снятие и изменение их прав. */
     val canManageAdmins: Boolean,
-    /** Закрепление сообщений для всех участников. */
     val canPinMessages: Boolean,
-    /** Тег участника: подпись рядом с именем отправителя. */
     val tag: String?
 )
 
-/**
- * Права текущего пользователя в канале или группе.
- *
- * У владельца всегда все права.
- */
 data class ChatAdminPermissions(
     val isOwner: Boolean = false,
     val isAdmin: Boolean = false,

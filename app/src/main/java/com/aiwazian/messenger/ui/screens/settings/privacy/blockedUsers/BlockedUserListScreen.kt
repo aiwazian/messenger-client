@@ -126,7 +126,7 @@ fun BlockedUserListScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Нет заблокированных пользователей",
+                            text = stringResource(R.string.blocked_users_empty),
                             modifier = Modifier.padding(top = 32.dp)
                         )
                     }
@@ -149,7 +149,10 @@ fun BlockedUserListScreen(
             },
             content = {
                 Text(
-                    text = "Вы уверены, что хотите разблокировать пользователя ${uiState.selectedUserToUnblock?.firstName}?",
+                    text = stringResource(
+                        R.string.unblock_confirm_message,
+                        uiState.selectedUserToUnblock?.firstName ?: ""
+                    ),
                     lineHeight = 18.sp
                 )
             }

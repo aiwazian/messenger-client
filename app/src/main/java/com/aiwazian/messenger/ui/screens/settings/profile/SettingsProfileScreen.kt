@@ -13,7 +13,6 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -40,10 +39,10 @@ import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import kotlinx.coroutines.Job
@@ -108,8 +107,6 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                 onValueChange = viewModel::onChangeFirstName
             )
             
-            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-            
             FramelessTextBox(
                 placeholder = stringResource(R.string.last_name),
                 value = uiState.user.lastName.orEmpty(),
@@ -131,7 +128,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
         SectionContainer(header = {
             SectionHeader(title = stringResource(R.string.username))
         }) {
-            SectionItem(
+            SectionButton(
                 headlineText = if (uiState.user.username != null) {
                     "@${uiState.user.username}"
                 } else {
@@ -143,7 +140,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
         }
         
         SectionContainer {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.date_of_birth),
                 trailingText = if (uiState.user.dateOfBirth != null) {
                     uiState.user.dateOfBirth!!.toInstance().toPrettyDateWithYear()
@@ -155,7 +152,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
             
             AnimatedContent(targetState = uiState.user.dateOfBirth) { dateOfBirth ->
                 if (dateOfBirth != null) {
-                    SectionItem(
+                    SectionButton(
                         headlineText = stringResource(R.string.remove_date_of_birth),
                         onClick = {
                             viewModel.onChangeDateOfBirth(null)
@@ -167,7 +164,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
         }
         
         SectionContainer {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.personal_channel),
                 supportingText = uiState.profileChannelName,
                 onClick = {

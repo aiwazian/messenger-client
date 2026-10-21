@@ -21,13 +21,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Разрешения одного администратора группы.
- *
- * Экран открывается и при назначении нового администратора, и при изменении прав существующего:
- * во втором случае текущие значения подтягиваются из списка администраторов.
- * Свои разрешения открываются только на просмотр.
- */
 @HiltViewModel
 class GroupAdminPermissionsViewModel @Inject constructor(
     private val groupAdminsRepository: GroupAdminsRepository,

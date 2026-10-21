@@ -10,5 +10,6 @@ import kotlinx.serialization.Serializable
 enum class MessageType {
     TEXT,
     STICKER,
+    CONTACT,
     SYSTEM;
 }

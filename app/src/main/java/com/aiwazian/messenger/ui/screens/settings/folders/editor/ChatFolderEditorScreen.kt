@@ -37,7 +37,7 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.settings.folders.FolderChatsSelection
@@ -104,7 +104,7 @@ fun ChatFolderEditorScreen(
         SectionContainer(header = {
             SectionHeader(stringResource(R.string.included_chats))
         }) {
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Rounded.Add,
                 headlineText = stringResource(R.string.add_chats),
                 onClick = {

@@ -29,7 +29,7 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionToggleItem
+import com.aiwazian.messenger.ui.components.section.SectionToggle
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import kotlinx.coroutines.Job
@@ -91,32 +91,32 @@ fun GroupAdminPermissionsScreen(
         SectionContainer(header = {
             SectionHeader(title = stringResource(R.string.admin_permissions))
         }) {
-            SectionToggleItem(
-                text = stringResource(R.string.invite_links),
+            SectionToggle(
+                headlineText = stringResource(R.string.invite_links),
                 supportingText = stringResource(R.string.permission_invite_links_description),
                 isChecked = uiState.canManageInviteLinks,
                 enabled = !uiState.isReadOnly,
                 onCheckedChange = viewModel::toggleManageInviteLinks
             )
             
-            SectionToggleItem(
-                text = stringResource(R.string.edit_group_profile),
+            SectionToggle(
+                headlineText = stringResource(R.string.edit_group_profile),
                 supportingText = stringResource(R.string.edit_group_profile_description),
                 isChecked = uiState.canEditProfile,
                 enabled = !uiState.isReadOnly,
                 onCheckedChange = viewModel::toggleEditProfile
             )
             
-            SectionToggleItem(
-                text = stringResource(R.string.manage_admins),
+            SectionToggle(
+                headlineText = stringResource(R.string.manage_admins),
                 supportingText = stringResource(R.string.manage_admins_description),
                 isChecked = uiState.canManageAdmins,
                 enabled = !uiState.isReadOnly,
                 onCheckedChange = viewModel::toggleManageAdmins
             )
 
-            SectionToggleItem(
-                text = stringResource(R.string.can_pin_messages),
+            SectionToggle(
+                headlineText = stringResource(R.string.can_pin_messages),
                 supportingText = stringResource(R.string.can_pin_messages_description),
                 isChecked = uiState.canPinMessages,
                 enabled = !uiState.isReadOnly,

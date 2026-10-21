@@ -40,7 +40,7 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileImageCarousel
@@ -126,7 +126,7 @@ fun GroupSettingsScreen(
         if (uiState.isOwner || uiState.canManageInviteLinks) {
             SectionContainer {
                 if (uiState.isOwner) {
-                    SectionItem(
+                    SectionButton(
                         leadingIcon = Icons.Outlined.Group,
                         headlineText = stringResource(R.string.group_type),
                         onClick = {
@@ -147,7 +147,7 @@ fun GroupSettingsScreen(
                 }
                 
                 if (uiState.canManageInviteLinks) {
-                    SectionItem(
+                    SectionButton(
                         leadingIcon = Icons.Rounded.Link,
                         headlineText = stringResource(R.string.invite_links),
                         onClick = {
@@ -161,7 +161,7 @@ fun GroupSettingsScreen(
         if (uiState.isOwner || uiState.canManageAdmins) {
             SectionContainer {
                 if (uiState.isOwner) {
-                    SectionItem(
+                    SectionButton(
                         leadingIcon = Icons.Rounded.PeopleOutline,
                         headlineText = stringResource(R.string.members),
                         trailingText = uiState.group.members.toString(),
@@ -171,7 +171,7 @@ fun GroupSettingsScreen(
                 }
                 
                 if (uiState.canManageAdmins) {
-                    SectionItem(
+                    SectionButton(
                         leadingIcon = Icons.Outlined.AdminPanelSettings,
                         headlineText = stringResource(R.string.administrators),
                         trailingText = uiState.adminsCount.toString(),
@@ -182,7 +182,7 @@ fun GroupSettingsScreen(
                 }
                 
                 if (uiState.isOwner) {
-                    SectionItem(
+                    SectionButton(
                         leadingIcon = Icons.Outlined.PersonAddAlt1,
                         headlineText = stringResource(R.string.join_requests),
                         trailingText = uiState.joinRequestsCount.toString(),
@@ -190,7 +190,7 @@ fun GroupSettingsScreen(
                             navBackStack.add(AppRoute.GroupJoinRequests(groupId = uiState.group.id))
                         }
                     )
-                    SectionItem(
+                    SectionButton(
                         leadingIcon = Icons.Rounded.Block,
                         headlineText = stringResource(R.string.removed_user),
                         trailingText = uiState.group.removedUsers.toString(),
@@ -203,7 +203,7 @@ fun GroupSettingsScreen(
         
         if (uiState.isOwner) {
             SectionContainer {
-                SectionItem(
+                SectionButton(
                     leadingIcon = Icons.Outlined.Palette,
                     headlineText = stringResource(R.string.appearance),
                     onClick = {
@@ -211,7 +211,7 @@ fun GroupSettingsScreen(
                     }
                 )
 
-                SectionItem(
+                SectionButton(
                     headlineText = stringResource(R.string.group_management),
                     onClick = {
                         navBackStack.add(AppRoute.GroupManagement(groupId = uiState.group.id))

@@ -14,7 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.screens.chat.components.MediaPickerBottomSheet
 import com.aiwazian.messenger.ui.screens.wallpaper.WallpaperViewModel
 
@@ -26,12 +26,12 @@ internal fun WallpaperSection(viewModel: WallpaperViewModel) {
     val uiState by viewModel.uiState.collectAsState()
 
     SectionContainer {
-        SectionItem(
+        SectionButton(
             headlineText = stringResource(R.string.change_wallpaper),
             onClick = { showPicker = true })
 
         if (wallpaper != null) {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.reset_wallpaper),
                 contentColor = MaterialTheme.colorScheme.error,
                 onClick = viewModel::resetWallpaper

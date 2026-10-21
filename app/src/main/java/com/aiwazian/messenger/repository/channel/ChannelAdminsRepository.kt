@@ -13,11 +13,6 @@ import com.aiwazian.messenger.network.api.ChannelApi
 import com.aiwazian.messenger.network.dto.UpsertChannelAdminRequestDto
 import javax.inject.Inject
 
-/**
- * Администраторы канала.
- *
- * В каналах тегов нет: это только групповая возможность.
- */
 class ChannelAdminsRepository @Inject constructor(
     private val channelApi: ChannelApi
 ) {
@@ -49,11 +44,6 @@ class ChannelAdminsRepository @Inject constructor(
         }
     }
     
-    /**
-     * Кого можно назначить администратором.
-     *
-     * Владельца сервер в списке не отдаёт: у него и так все права.
-     */
     suspend fun getAdminCandidates(channelId: Long): Result<List<User>> {
         return try {
             val response = channelApi.getAdminCandidates(channelId)

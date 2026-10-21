@@ -13,18 +13,6 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Hands an apk file over to the system installer.
- *
- * The installer draws the confirmation, the progress and the result of an
- * installation and asks for the "install unknown apps" permission when it is
- * missing, so the application does not need a screen of its own.
- *
- * Only files inside the application storage are accepted: a file in shared
- * storage can be replaced by another application between the moment it is
- * checked and the moment it is installed. The file is shared with the installer
- * through a [FileProvider] instead of a "file://" uri.
- */
 @Singleton
 class ApkInstaller @Inject constructor(
     @param:ApplicationContext private val context: Context

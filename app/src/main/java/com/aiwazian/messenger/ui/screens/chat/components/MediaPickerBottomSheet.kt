@@ -18,7 +18,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -39,7 +41,6 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -54,6 +55,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Keyboard
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Photo
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.ButtonDefaults
@@ -77,12 +79,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -92,11 +94,14 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.CustomEmoji
+import com.aiwazian.messenger.domain.DeviceContact
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.domain.EmojiPack
+import com.aiwazian.messenger.domain.MessageContact
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.domain.WallpaperTarget
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppBottomSheetFooterActions
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.CustomEmojiViewModel
@@ -129,6 +134,7 @@ fun MediaPickerBottomSheet(
     onCaptionChange: (String) -> Unit = {},
     onDismissRequest: () -> Unit,
     onFileSystemClick: () -> Unit = {},
+    onContactSend: ((MessageContact) -> Unit)? = null,
     onSent: () -> Unit = {},
     onSend: (() -> Unit)? = null,
     wallpaperTarget: WallpaperTarget? = null
@@ -161,6 +167,8 @@ fun MediaPickerBottomSheet(
     var isEmojiPanelVisible by remember { mutableStateOf(false) }
     var captionInputView by remember { mutableStateOf<EditText?>(null) }
     var measuredKeyboardHeight by remember { mutableStateOf(keyboardHeight) }
+    var isContactMode by remember { mutableStateOf(false) }
+    var selectedContact by remember { mutableStateOf<DeviceContact?>(null) }
     
     val imeInsets = WindowInsets.ime
     val imeHeight = with(density) {
@@ -203,7 +211,7 @@ fun MediaPickerBottomSheet(
     
     LaunchedEffect(Unit) {
         viewModel.reset()
-
+        
         if (hasPermission) {
             if (isWallpaperMode) {
                 viewModel.loadImages()
@@ -244,7 +252,6 @@ fun MediaPickerBottomSheet(
     }
     
     AppBottomSheet(
-        sheetState = sheetState,
         onDismissRequest = {
             if (uiState.selected.isEmpty()) {
                 onDismissRequest()
@@ -252,193 +259,229 @@ fun MediaPickerBottomSheet(
                 isResetDialogVisible = true
             }
         },
-        modifier = Modifier.imePadding(),
-        contentPadding = PaddingValues.Zero
-    ) {
-        Box(Modifier.fillMaxSize()) {
-            when {
-                !hasPermission -> {
-                    MediaPickerNotice(
-                        text = stringResource(R.string.media_picker_permission),
-                        actionText = stringResource(R.string.media_picker_permission_action),
-                        onActionClick = {
-                            if (context.canRequestMediaPermission(wasAsked)) {
-                                permissionLauncher.launch(mediaPermissions())
-                            } else {
-                                context.openAppSettings()
+        sheetState = sheetState,
+        stickyFooter = {
+            AppBottomSheetFooterActions.Custom {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 10.dp)
+                        .fillMaxWidth()
+                ) {
+                    if (!isWallpaperMode) {
+                        MediaPickerToolbar(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .imePadding()
+                                .navigationBarsPadding()
+                                .padding(bottom = emojiPanelPadding + 10.dp)
+                        ) {
+                            AnimatedContent(
+                                targetState = uiState.selected.isNotEmpty(),
+                                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                                label = "media_picker_toolbar"
+                            ) { hasSelection ->
+                                if (hasSelection) {
+                                    CaptionRow(
+                                        caption = caption,
+                                        isEmojiPanelVisible = isEmojiPanelVisible,
+                                        onCaptionChange = onCaptionChange,
+                                        onResolveEmoji = customEmojiViewModel::resolveEmoji,
+                                        onEmojiClick = {
+                                            if (isEmojiPanelVisible) {
+                                                isEmojiPanelVisible = false
+                                                
+                                                captionInputView?.let { view -> focusMessageInput(view) }
+                                            } else {
+                                                isEmojiPanelVisible = true
+                                                
+                                                captionInputView?.let { view ->
+                                                    hideKeyboardKeepFocus(
+                                                        view
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        onInputViewReady = { view -> captionInputView = view },
+                                        onSendClick = {
+                                            if (onSend != null) {
+                                                onSend()
+                                            } else {
+                                                viewModel.send(
+                                                    chatId = chatId,
+                                                    replyTo = replyTo,
+                                                    caption = caption
+                                                )
+                                            }
+                                            onSent()
+                                        })
+                                } else {
+                                    SourceRow(
+                                        isContactMode = isContactMode,
+                                        onGalleryClick = { isContactMode = false },
+                                        onFileClick = onFileSystemClick,
+                                        onContactClick = if (onContactSend != null) {
+                                            { isContactMode = true }
+                                        } else {
+                                            null
+                                        }
+                                    )
+                                }
                             }
-                        })
-                }
-                
-                uiState.isLoading && uiState.media.isEmpty() -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 32.dp, bottom = 104.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularWavyProgressIndicator()
+                        }
                     }
-                }
-                
-                uiState.media.isEmpty() -> {
-                    MediaPickerNotice(text = stringResource(R.string.media_picker_empty))
-                }
-                
-                else -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(PICKER_GRID_COLUMNS),
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(
-                            start = 2.dp,
-                            top = 2.dp,
-                            end = 2.dp,
-                            bottom = if (isWallpaperMode) 2.dp else 70.dp
-                        ),
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    AnimatedVisibility(
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        visible = isEmojiPanelVisible,
+                        enter = slideInVertically(
+                            animationSpec = tween(durationMillis = EMOJI_PANEL_ANIMATION_DURATION_MS)
+                        ) { it },
+                        exit = slideOutVertically(
+                            animationSpec = tween(durationMillis = EMOJI_PANEL_ANIMATION_DURATION_MS)
+                        ) { it }
                     ) {
-                        item(span = { GridItemSpan(maxLineSpan) }) {
-                            Spacer(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .statusBarsPadding()
-                            )
-                        }
-
-                        itemsIndexed(
-                            items = uiState.media,
-                            key = { _, item -> item.id }) { index, item ->
-                            MediaGridItem(
-                                item = item,
-                                number = if (isWallpaperMode) {
-                                    0
-                                } else {
-                                    uiState.selected.indexOf(item.uri) + 1
-                                },
-                                drawing = uiState.mediaDrawings[item.uri],
-                                onClick = { previewIndex = index },
-                                onToggleSelection = if (isWallpaperMode) {
-                                    null
-                                } else {
-                                    { viewModel.toggleSelection(item.uri) }
-                                })
-                        }
-
-                        item(span = { GridItemSpan(maxLineSpan) }) {
-                            Spacer(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .navigationBarsPadding()
-                            )
-                        }
+                        MediaPickerEmojiPanel(
+                            packs = emojiState.addedPacks,
+                            systemEmojis = emojiState.systemEmojis,
+                            height = emojiPanelHeight,
+                            bottomPadding = bottomPadding,
+                            onEmojiClick = { pack, emoji ->
+                                captionInputView?.let { view ->
+                                    coroutineScope.launch {
+                                        insertCustomEmoji(view, pack.id, emoji)
+                                    }
+                                }
+                            },
+                            onSystemEmojiClick = { emoji ->
+                                captionInputView?.let { view ->
+                                    insertSystemEmoji(view, emoji)
+                                }
+                            }
+                        )
                     }
                 }
             }
-
-            if (!isWallpaperMode) {
-                MediaPickerToolbar(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) }
-                        .navigationBarsPadding()
-                        .imePadding()
-                        .padding(bottom = emojiPanelPadding)
-                        .padding(10.dp)
-                ) {
-                    AnimatedContent(
-                        targetState = uiState.selected.isNotEmpty(),
-                        transitionSpec = { fadeIn() togetherWith fadeOut() },
-                        label = "media_picker_toolbar"
-                    ) { hasSelection ->
-                        if (hasSelection) {
-                            CaptionRow(
-                                caption = caption,
-                                isEmojiPanelVisible = isEmojiPanelVisible,
-                                onCaptionChange = onCaptionChange,
-                                onResolveEmoji = customEmojiViewModel::resolveEmoji,
-                                onEmojiClick = {
-                                    if (isEmojiPanelVisible) {
-                                        isEmojiPanelVisible = false
-
-                                        captionInputView?.let { view -> focusMessageInput(view) }
+        }
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            AnimatedContent(
+                targetState = isContactMode,
+                transitionSpec = {
+                    val direction = if (targetState) 1 else -1
+                    
+                    (slideInHorizontally { direction * it } + fadeIn()) togetherWith (slideOutHorizontally { -direction * it } + fadeOut())
+                },
+                modifier = Modifier.fillMaxSize(),
+                label = "media_picker_content_mode"
+            ) { isContacts ->
+                if (isContacts) {
+                    ContactPickerContent(
+                        onContactSelected = { contact -> selectedContact = contact })
+                } else {
+                    when {
+                        !hasPermission -> {
+                            MediaPickerNotice(
+                                text = stringResource(R.string.media_picker_permission),
+                                actionText = stringResource(R.string.media_picker_permission_action),
+                                onActionClick = {
+                                    if (context.canRequestMediaPermission(wasAsked)) {
+                                        permissionLauncher.launch(mediaPermissions())
                                     } else {
-                                        isEmojiPanelVisible = true
-
-                                        captionInputView?.let { view -> hideKeyboardKeepFocus(view) }
+                                        context.openAppSettings()
                                     }
-                                },
-                                onInputViewReady = { view -> captionInputView = view },
-                                onSendClick = {
-                                    if (onSend != null) {
-                                        onSend()
-                                    } else {
-                                        viewModel.send(
-                                            chatId = chatId, replyTo = replyTo, caption = caption
-                                        )
-                                    }
-                                    onSent()
                                 })
-                        } else {
-                            SourceRow(onFileClick = onFileSystemClick)
                         }
-                    }
-                }
-
-                this@AppBottomSheet.AnimatedVisibility(
-                    visible = isEmojiPanelVisible,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) },
-                    enter = slideInVertically(
-                        animationSpec = tween(durationMillis = EMOJI_PANEL_ANIMATION_DURATION_MS)
-                    ) { it },
-                    exit = slideOutVertically(
-                        animationSpec = tween(durationMillis = EMOJI_PANEL_ANIMATION_DURATION_MS)
-                    ) { it }
-                ) {
-                    MediaPickerEmojiPanel(
-                        packs = emojiState.addedPacks,
-                        systemEmojis = emojiState.systemEmojis,
-                        height = emojiPanelHeight,
-                        bottomPadding = bottomPadding,
-                        onEmojiClick = { pack, emoji ->
-                            captionInputView?.let { view ->
-                                coroutineScope.launch {
-                                    insertCustomEmoji(view, pack.id, emoji)
+                        
+                        uiState.isLoading && uiState.media.isEmpty() -> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 32.dp, bottom = 104.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularWavyProgressIndicator()
+                            }
+                        }
+                        
+                        uiState.media.isEmpty() -> {
+                            MediaPickerNotice(text = stringResource(R.string.media_picker_empty))
+                        }
+                        
+                        else -> {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(PICKER_GRID_COLUMNS),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(
+                                    start = 2.dp,
+                                    top = 2.dp,
+                                    end = 2.dp,
+                                    bottom = if (isWallpaperMode) 2.dp else 70.dp
+                                ),
+                                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                item(span = { GridItemSpan(maxLineSpan) }) {
+                                    Spacer(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .statusBarsPadding()
+                                    )
+                                }
+                                
+                                itemsIndexed(
+                                    items = uiState.media,
+                                    key = { _, item -> item.id }) { index, item ->
+                                    MediaGridItem(
+                                        item = item,
+                                        number = if (isWallpaperMode) {
+                                            0
+                                        } else {
+                                            uiState.selected.indexOf(item.uri) + 1
+                                        },
+                                        drawing = uiState.mediaDrawings[item.uri],
+                                        onClick = { previewIndex = index },
+                                        onToggleSelection = if (isWallpaperMode) {
+                                            null
+                                        } else {
+                                            { viewModel.toggleSelection(item.uri) }
+                                        })
+                                }
+                                
+                                item(span = { GridItemSpan(maxLineSpan) }) {
+                                    Spacer(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .navigationBarsPadding()
+                                    )
                                 }
                             }
-                        },
-                        onSystemEmojiClick = { emoji ->
-                            captionInputView?.let { view ->
-                                insertSystemEmoji(view, emoji)
-                            }
                         }
-                    )
+                    }
                 }
             }
         }
     }
     
     val index = previewIndex
-
+    
     if (index != null) {
         val drawColor by viewModel.drawColor.collectAsStateWithLifecycle()
-
+        
         val confirmWallpaper: () -> Unit = {
             val item = wallpaperItem
             
             if (item != null && wallpaperTarget != null && wallpaperViewModel != null) {
                 val transform = uiState.mediaTransforms[item.uri] ?: MediaTransform.None
                 val overlay = uiState.mediaDrawings[item.uri]?.bitmap
-
+                
                 coroutineScope.launch {
                     val draft = wallpaperViewModel.prepareDraft(item.uri, transform, overlay)
-
+                    
                     viewModel.reset()
                     previewIndex = null
                     onDismissRequest()
-
+                    
                     if (draft != null) {
                         navBackStack.add(
                             AppRoute.WallpaperPreview(
@@ -450,7 +493,7 @@ fun MediaPickerBottomSheet(
                 }
             }
         }
-
+        
         MediaPickerPreview(
             media = uiState.media,
             initialIndex = index,
@@ -492,6 +535,16 @@ fun MediaPickerBottomSheet(
                 isResetDialogVisible = false
                 viewModel.reset()
                 onDismissRequest()
+            })
+    }
+    
+    selectedContact?.let { contact ->
+        ContactSendBottomSheet(
+            contact = contact,
+            onDismiss = { selectedContact = null },
+            onSend = { messageContact ->
+                selectedContact = null
+                onContactSend?.invoke(messageContact)
             })
     }
 }
@@ -591,17 +644,17 @@ private fun MediaGridItem(
 ) {
     val key = pickerMediaKey(item.uri)
     val isSelected = number > 0
-
+    
     val fastSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
     val settleSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
-
+    
     val scale = remember { Animatable(if (isSelected) SELECTED_SCALE else 1f) }
-
+    
     LaunchedEffect(isSelected) {
         val target = if (isSelected) SELECTED_SCALE else 1f
-
+        
         if (scale.value == target) return@LaunchedEffect
-
+        
         if (isSelected) {
             scale.animateTo(SELECTED_OVERSHOOT_SCALE, fastSpec)
             scale.animateTo(target, settleSpec)
@@ -609,7 +662,7 @@ private fun MediaGridItem(
             scale.animateTo(target, fastSpec)
         }
     }
-
+    
     Box(
         modifier = Modifier
             .aspectRatio(1f)
@@ -637,7 +690,7 @@ private fun MediaGridItem(
                 modifier = Modifier.fillMaxSize()
             )
         }
-
+        
         if (onToggleSelection != null) {
             MediaSelectionBadge(
                 number = number, modifier = Modifier
@@ -649,18 +702,31 @@ private fun MediaGridItem(
 }
 
 @Composable
-private fun SourceRow(onFileClick: (() -> Unit)?) {
+private fun SourceRow(
+    isContactMode: Boolean,
+    onGalleryClick: () -> Unit,
+    onFileClick: (() -> Unit)?,
+    onContactClick: (() -> Unit)? = null
+) {
     Row(
         modifier = Modifier.padding(horizontal = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         TextButton(
-            onClick = {},
+            onClick = onGalleryClick,
             shape = CircleShape,
             colors = ButtonDefaults.textButtonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                containerColor = if (isContactMode) {
+                    Color.Transparent
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+                contentColor = if (isContactMode) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onPrimary
+                }
             )
         ) {
             Icon(
@@ -671,7 +737,7 @@ private fun SourceRow(onFileClick: (() -> Unit)?) {
             Spacer(Modifier.width(6.dp))
             Text(text = stringResource(R.string.gallery))
         }
-
+        
         if (onFileClick != null) {
             TextButton(onClick = onFileClick, shape = CircleShape) {
                 Icon(
@@ -681,6 +747,33 @@ private fun SourceRow(onFileClick: (() -> Unit)?) {
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(text = stringResource(R.string.media_picker_file))
+            }
+        }
+        
+        if (onContactClick != null) {
+            TextButton(
+                onClick = onContactClick,
+                shape = CircleShape,
+                colors = ButtonDefaults.textButtonColors(
+                    containerColor = if (isContactMode) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        Color.Transparent
+                    },
+                    contentColor = if (isContactMode) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Person,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(text = stringResource(R.string.contact_message))
             }
         }
     }

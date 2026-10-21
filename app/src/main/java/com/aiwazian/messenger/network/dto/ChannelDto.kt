@@ -44,23 +44,16 @@ data class UpdateChannelRequestDto(
     @SerialName("noCopy") val noCopy: Boolean? = null
 )
 
-/**
- * Тело запроса на включение или выключение запрета копирования.
- *
- * Используется и для каналов, и для групп.
- */
 @Serializable
 data class SetNoCopyRequestDto(
     @SerialName("noCopy") val noCopy: Boolean
 )
 
-/** Тело запроса на включение или выключение комментирования постов канала. */
 @Serializable
 data class SetCommentsEnabledRequestDto(
     @SerialName("commentsEnabled") val commentsEnabled: Boolean
 )
 
-/** true — комментировать посты могут только подписчики канала. */
 @Serializable
 data class SetCommentsRestrictedRequestDto(
     @SerialName("commentsRestrictedToSubscribers") val commentsRestrictedToSubscribers: Boolean

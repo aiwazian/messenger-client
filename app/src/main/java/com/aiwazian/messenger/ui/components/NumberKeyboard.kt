@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
@@ -58,7 +59,8 @@ fun NumberKeyboard(
     Column(
         modifier = Modifier
             .padding(keySpacing)
-            .then(modifier),
+            .then(modifier)
+            .clip(MaterialTheme.shapes.large),
         verticalArrangement = Arrangement.spacedBy(keySpacing),
     ) {
         rows.forEach { row ->
@@ -129,7 +131,6 @@ private fun DigitKey(
     }
 }
 
-/** Кнопка-ячейка клавиатуры: серый скруглённый прямоугольник во всю ячейку. */
 @Composable
 private fun KeyButton(
     modifier: Modifier = Modifier,
@@ -156,7 +157,7 @@ private fun KeyButton(
             onClick()
         },
         modifier = modifier,
-        shape = MaterialTheme.shapes.medium,
+        shape = MaterialTheme.shapes.small,
         colors = ButtonDefaults.textButtonColors(
             contentColor = MaterialTheme.colorScheme.onSurface,
             containerColor = MaterialTheme.colorScheme.surfaceContainer

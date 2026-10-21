@@ -37,21 +37,6 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
 
-/**
- * Пересобирает видео в MP4 меньшего разрешения перед отправкой.
- *
- * Метаданные снимать отдельно не нужно: дорожки кодируются заново, и в новый
- * контейнер попадает только то, что записал муксер. Геометка, модель камеры,
- * серийный номер и прочие атомы исходника до него не доходят.
- *
- * Заодно упрощается формат: MKV, AVI, HEVC, AV1 — всё уходит одинаковым H.264 в
- * MP4 с AAC. Так меньше вес и меньше поводов серверу и чужим клиентам не понять
- * файл.
- *
- * Сюда же уезжают поворот и отражение из предпросмотра: кадр всё равно
- * проходит через кодек, и отдельный проход ради поворота удвоил бы и время,
- * и потери качества.
- */
 @OptIn(UnstableApi::class)
 @Singleton
 class VideoCompressor @Inject constructor(
@@ -61,19 +46,7 @@ class VideoCompressor @Inject constructor(
     fun isCompressible(mimeType: String): Boolean {
         return mimeType.startsWith(VIDEO_MIME_PREFIX)
     }
-    
-    /**
-     * Сжимает [source] до ступени [quality] и кладёт результат в [directory],
-     * рядом с остальными копиями этой отправки.
-     *
-     * Возвращает null, если пересобрать не удалось или файл получился не меньше
-     * исходного: в обоих случаях вызывающему выгоднее отправить оригинал, чем
-     * копию тяжелее и хуже.
-     *
-     * @param transform куда повернуть и отразить кадр. Заметить размер повёрнутого
-     * видео отдельно не нужно: стороны читаются уже с готовой копии.
-     * @param overlay рисунок, накладываемый на кадр до поворота и отражения.
-     */
+
     suspend fun compress(
         source: Uri,
         directory: File,
@@ -88,7 +61,6 @@ class VideoCompressor @Inject constructor(
         
         val target = File(directory, mp4Name(name))
         
-        // Готовая копия прошлой попытки: кодировать те же минуты второй раз незачем.
         if (target.exists() && target.length() > 0) {
             return Uri.fromFile(target)
         }
@@ -115,12 +87,6 @@ class VideoCompressor @Inject constructor(
             return null
         }
         
-        /*
-         * Кодек иногда отдаёт файл тяжелее исходного: так бывает на коротком
-         * видео, которое и так снято с низким битрейтом. Отправлять такое
-         * вместо оригинала смысла нет. Но если кадр правили, оригинал уже не
-         * равноценен копии: откат отправил бы видео неповёрнутым.
-         */
         val sourceSize = metadata?.sizeBytes ?: 0L
         val isEdited = !transform.isIdentity || overlay != null
         
@@ -137,18 +103,7 @@ class VideoCompressor @Inject constructor(
         
         return Uri.fromFile(target)
     }
-    
-    /**
-     * Что сделать с кадром по пути в кодек.
-     *
-     * Отражение и поворот идут двумя отдельными эффектами, а не одной
-     * матрицей сразу: порядок важен — сначала отражение, потом поворот, именно
-     * так его описывает [MediaTransform], — а в списке эффектов он виден глазамии
-     * не зависит от того, в каком порядке перемножает свою матрицу media3.
-     *
-     * Масштаб стоит последним: ему важны стороны готового кадра, а не того, что
-     * пришло из файла.
-     */
+
     private fun videoEffects(
         presentation: Presentation?,
         transform: MediaTransform,
@@ -178,25 +133,10 @@ class VideoCompressor @Inject constructor(
         
         return effects
     }
-    
-    /**
-     * media3 принимает градусы против часовой, а [MediaTransform] считает их по
-     * часовой — как слой предпросмотра. Без этого “Готово” уносило бы кадр в
-     * другую сторону, и отправленное видео расходилось бы с предпросмотром.
-     */
+ 
     private fun counterClockwiseDegrees(clockwiseDegrees: Int): Float =
         (FULL_TURN - clockwiseDegrees).mod(FULL_TURN).toFloat()
-    
-    /**
-     * Во что масштабировать кадр.
-     *
-     * null означает «не масштабировать»: либо стороны неизвестны, либо кадр уже
-     * мельче ступени, и растягивать его нельзя. Дорожки при этом всё равно
-     * пересобираются, так что метаданные и сложный формат уходят и здесь.
-     *
-     * Поворот счёту не мешает: короткая сторона остаётся короткой, куда бы кадр
-     * ни лёг.
-     */
+
     private fun presentationFor(metadata: VideoMetadata?, quality: VideoQuality): Presentation? {
         val sourceShortSide = metadata?.shortSide ?: return null
         
@@ -206,14 +146,7 @@ class VideoCompressor @Inject constructor(
         
         return Presentation.createForShortSide(quality.shortSide)
     }
-    
-    /**
-     * Прогоняет видео через Transformer и ждёт результата.
-     *
-     * Transformer живёт на главном потоке: он привязывается к Looper того
-     * потока, где его создали, и туда же приносит колбэки. Сама работа идёт в
-     * кодеке, главный поток здесь только ждёт.
-     */
+
     private suspend fun export(
         source: Uri,
         target: File,
@@ -264,17 +197,12 @@ class VideoCompressor @Inject constructor(
             
             transformer.start(editedMediaItem, target.absolutePath)
             
-            /*
-             * Отмену приносит тот поток, который отменил отправку, а Transformer
-             * принимает вызовы только со своего, поэтому уносим её в главный.
-             */
             continuation.invokeOnCancellation {
                 Handler(Looper.getMainLooper()).post { transformer.cancel() }
             }
         }
     }
     
-    /** Имя копии: расширение всегда mp4, потому что контейнер теперь всегда MP4. */
     private fun mp4Name(name: String?): String {
         val base = name?.substringBeforeLast('.')?.takeIf { it.isNotBlank() } ?: DEFAULT_NAME
         

@@ -44,9 +44,6 @@ class UserRepository @Inject constructor(
                     
                     val avatars = user.avatars.map { it.toEntity(user.id) }
                     
-                    /*
-                     * Сервер отдал полный список: аватарки, которых в нём нет, уберёт сам DAO.
-                     */
                     if (avatars.isEmpty()) {
                         avatarDao.deleteAvatarsByUserId(user.id)
                     } else {
@@ -208,12 +205,6 @@ class UserRepository @Inject constructor(
             val currentAvatars = avatarDao.getAvatarsByUserId(user.id)
             val newSortOrder = (currentAvatars.maxOfOrNull { it.sortOrder } ?: 0) + 1
             
-            /*
-             * Здесь важно добавить к уже сохранённым: свежезагруженная аватарка пока
-             * есть только локально, поэтому сверка с серверным списком снесла бы её,
-             * а остальные — всё остальное. Поэтому пачка собирается из текущих строк
-             * плюс новая.
-             */
             val newAvatar = AvatarEntity(
                 fileId = fileId,
                 userId = user.id,

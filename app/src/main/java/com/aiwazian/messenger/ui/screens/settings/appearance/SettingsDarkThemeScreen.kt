@@ -15,7 +15,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ThemeOption
 import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionRadioItem
+import com.aiwazian.messenger.ui.components.section.SectionRadio
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.launch
 
@@ -56,8 +56,8 @@ fun SettingsDarkThemeScreen(viewModel: AppearanceViewModel = hiltViewModel()) {
         
         SectionContainer {
             themes.forEach { (name, theme) ->
-                SectionRadioItem(
-                    text = name,
+                SectionRadio(
+                    headlineText = name,
                     selectedOption == theme
                 ) {
                     scope.launch {

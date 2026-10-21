@@ -8,7 +8,7 @@ import android.graphics.BitmapFactory
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -70,7 +70,9 @@ fun ChatMusicCard(
     isPlaying: Boolean,
     positionMs: Int,
     durationMs: Int,
+    isSelected: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     onSeek: (Int) -> Unit,
     onMetadataResolved: (AudioTrackMetadata?) -> Unit,
     modifier: Modifier = Modifier
@@ -114,18 +116,19 @@ fun ChatMusicCard(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-            contentAlignment = Alignment.Center
-        ) {
+        Box {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
             if (coverBitmap != null) {
                 Image(
                     bitmap = coverBitmap!!,
@@ -185,6 +188,12 @@ fun ChatMusicCard(
                     )
                 }
             }
+            }
+
+            SelectionCheckBadge(
+                visible = isSelected,
+                modifier = Modifier.align(Alignment.BottomEnd)
+            )
         }
 
         Column(

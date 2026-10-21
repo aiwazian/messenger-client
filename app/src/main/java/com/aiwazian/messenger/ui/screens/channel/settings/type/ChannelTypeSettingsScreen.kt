@@ -46,8 +46,8 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionRadioItem
-import com.aiwazian.messenger.ui.components.section.SectionToggleItem
+import com.aiwazian.messenger.ui.components.section.SectionRadio
+import com.aiwazian.messenger.ui.components.section.SectionToggle
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import kotlinx.coroutines.Job
@@ -111,16 +111,16 @@ fun ChannelTypeSettingsScreen(
         modifier = Modifier.imePadding()
     ) {
         SectionContainer {
-            SectionRadioItem(
-                text = stringResource(R.string.private_channel),
+            SectionRadio(
+                headlineText = stringResource(R.string.private_channel),
                 selected = uiState.channelType == ChannelType.PRIVATE,
-                description = "На частные каналы можно подписаться только по ссылке-приглашению.",
+                supportingText = "На частные каналы можно подписаться только по ссылке-приглашению.",
                 onClick = { viewModel.changeChannelType(ChannelType.PRIVATE) }
             )
-            SectionRadioItem(
-                text = stringResource(R.string.public_channel),
+            SectionRadio(
+                headlineText = stringResource(R.string.public_channel),
                 selected = uiState.channelType == ChannelType.PUBLIC,
-                description = "Публичные каналы можно найти через поиск, подписаться на них может любой пользователь.",
+                supportingText = "Публичные каналы можно найти через поиск, подписаться на них может любой пользователь.",
                 onClick = { viewModel.changeChannelType(ChannelType.PUBLIC) }
             )
         }
@@ -166,8 +166,8 @@ fun ChannelTypeSettingsScreen(
         SectionContainer(footer = {
             SectionDescription(stringResource(R.string.no_copy_channel_description))
         }) {
-            SectionToggleItem(
-                text = stringResource(R.string.no_copy),
+            SectionToggle(
+                headlineText = stringResource(R.string.no_copy),
                 isChecked = uiState.noCopy,
                 enabled = uiState.canChangeNoCopy,
                 onCheckedChange = { viewModel.changeNoCopy(!uiState.noCopy) }

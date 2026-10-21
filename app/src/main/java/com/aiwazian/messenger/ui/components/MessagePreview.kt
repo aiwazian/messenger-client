@@ -19,6 +19,7 @@ import com.aiwazian.messenger.domain.AudioTrackMetadata
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
+import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.extensions.isMusicFile
 import com.aiwazian.messenger.utils.AudioMetadataCache
@@ -63,6 +64,12 @@ fun rememberMessagePreview(
                 withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                     append(stickerLabel)
                 }
+            }
+        }
+
+        message.messageType == MessageType.CONTACT -> buildAnnotatedString {
+            withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                append(stringResource(R.string.contact_message))
             }
         }
 

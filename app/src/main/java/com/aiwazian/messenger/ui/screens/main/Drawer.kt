@@ -2,12 +2,11 @@ package com.aiwazian.messenger.ui.screens.main
 
 import android.app.Activity
 import android.content.Intent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -16,16 +15,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DrawerState
@@ -35,9 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -61,9 +55,11 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.enums.ThemeOption
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppBottomSheetFooterActions
 import com.aiwazian.messenger.ui.components.ChatAvatar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.yandex.mobile.ads.common.AdTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -103,12 +99,6 @@ fun DrawerContent(
         20.dp
     } else {
         80.dp
-    }
-    
-    val maxAdHeight = if (screenHeight < 400.dp) {
-        100.dp
-    } else {
-        300.dp
     }
     
     ModalDrawerSheet(
@@ -197,7 +187,7 @@ fun DrawerContent(
         LaunchedEffect(Unit) {
             adBannerViewModel.ensureInitialLoad(adTheme)
         }
-
+        
         AndroidView(
             factory = { adBannerViewModel.bannerView },
             modifier = Modifier
@@ -247,16 +237,21 @@ private fun AccountSwitcherBottomSheet(
     onAddAccount: () -> Unit,
     onDismissRequest: () -> Unit
 ) {
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-    
     AppBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = sheetState
-    ) {
+        stickyFooter = {
+            AppBottomSheetFooterActions.PrimaryButton(
+                text = stringResource(R.string.add_account),
+                onClick = onAddAccount,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    ) { padding ->
         currentUser?.let { user ->
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(padding)
                     .padding(vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -276,14 +271,14 @@ private fun AccountSwitcherBottomSheet(
             }
         }
         
-        otherAccounts.forEach { account ->
-            AccountRow(
-                user = account,
-                onClick = { onAccountClick(account.id) }
-            )
+        SectionContainer(contentPadding = PaddingValues.Zero) {
+            otherAccounts.forEach { account ->
+                AccountRow(
+                    user = account,
+                    onClick = { onAccountClick(account.id) }
+                )
+            }
         }
-        
-        AddAccountRow(onClick = onAddAccount)
     }
 }
 
@@ -309,39 +304,6 @@ private fun AccountRow(
         )
         Text(
             text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-}
-
-@Composable
-private fun AddAccountRow(onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(onClick = onClick)
-            .padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Add,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
-        Text(
-            text = stringResource(R.string.add_account),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             color = MaterialTheme.colorScheme.onSurface

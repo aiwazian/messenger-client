@@ -46,7 +46,6 @@ class NotificationHelper @Inject constructor(
     companion object {
         private const val MAX_MESSAGES = 5
         
-        /** История показанных уведомлений по чатам: ключ — chatId. */
         private const val NOTIFICATIONS_PREFS = "NOTIFICATIONS"
         
         private const val CHAT_SHORTCUT_PREFIX = "chat_"
@@ -107,11 +106,7 @@ class NotificationHelper @Inject constructor(
         
         ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
     }
-    
-    /**
-     * @param sendTime когда сообщение было отправлено, а не когда пуш доехал. Уходит в
-     * setWhen и в MessagingStyle, чтобы часовой давности сообщение не выглядело свежим.
-     */
+   
     fun showMessageNotification(
         chatId: Long,
         title: String,
@@ -120,27 +115,14 @@ class NotificationHelper @Inject constructor(
         sendTime: Long = System.currentTimeMillis()
     ) {
         scope.launch {
-            /*
-             * Чат уже открыт на экране: пользователь читает эти сообщения прямо
-             * сейчас. Проверка стоит здесь, а не только в обработчике вебсокета,
-             * чтобы её не обходил пуш от Firebase, пришедший в момент, когда сокет
-             * переподключался.
-             */
             if (ActiveChatTracker.activeChatId.value == chatId) return@launch
             
-            /*
-             * Вторая линия обороны после серверного фильтра. Настройка могла не
-             * доехать до сервера, пуш мог уйти раньше её изменения, да и сама
-             * отправка не мгновенная — а пользователь ждёт тишины сразу после
-             * переключения тумблера.
-             */
             if (!notificationSettingsRepository.isEnabledFor(chatId)) return@launch
             
             val chatAvatar = chatAvatarIconLoader.resolveChatAvatar(chatId)
             
             val resolvedTitle = chatAvatar.chatName?.takeIf { it.isNotBlank() } ?: title
             
-            /* Чата ещё нет в базе — тогда в дело идёт аватарка из пуша. */
             val resolvedAvatarUri = chatAvatar.avatarUri ?: avatarUri
             
             val circularAvatar = chatAvatarIconLoader.loadCircleAvatar(resolvedAvatarUri)
@@ -210,17 +192,7 @@ class NotificationHelper @Inject constructor(
             listOf("$CHAT_SHORTCUT_PREFIX$chatId")
         )
     }
-    
-    /**
-     * Убрать все уведомления и ярлыки чатов — при смене аккаунта или выходе.
-     *
-     * Шторка и ярлыки живут вне процесса и ничего не знают про аккаунты: без
-     * этой чистки новый аккаунт видел бы чужие сообщения, а нажатие вело бы в чат,
-     * которого у него нет.
-     *
-     * Удаляются только ярлыки чатов, а не все динамические: остальные к аккаунту не
-     * привязаны, и терять их незачем.
-     */
+
     fun clearAllNotifications() {
         val prefs = context.getSharedPreferences(NOTIFICATIONS_PREFS, Context.MODE_PRIVATE)
         val chatShortcutIds = prefs.all.keys.map { "$CHAT_SHORTCUT_PREFIX$it" }

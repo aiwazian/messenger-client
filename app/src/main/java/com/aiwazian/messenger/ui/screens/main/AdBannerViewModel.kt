@@ -44,8 +44,8 @@ class AdBannerViewModel @Inject constructor(
 
         override fun onAdClicked() {}
 
-        override fun onImpression(data: ImpressionData?) {
-            Log.d(LOG_TAG, "Impression: ${data?.rawData}")
+        override fun onImpression(impressionData: ImpressionData?) {
+            Log.d(LOG_TAG, "Impression: ${impressionData?.rawData}")
             scheduleReload(IMPRESSION_RELOAD_DELAY)
         }
     }

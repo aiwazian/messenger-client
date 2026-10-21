@@ -22,16 +22,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Одно исключение целиком: переключить уведомления или снять исключение.
- *
- * Экран один и тот же для уже существующего исключения и для ещё не созданного:
- * различает их только hasException, а запрос на создание и на изменение на сервере
- * и так один.
- *
- * На сервер ничего не уходит, пока не нажата галочка в шапке: иначе уйти
- * с экрана, ничего не изменив, было бы невозможно.
- */
 @HiltViewModel
 class NotificationExceptionViewModel @Inject constructor(
     private val notificationSettingsRepository: NotificationSettingsRepository,
@@ -49,17 +39,10 @@ class NotificationExceptionViewModel @Inject constructor(
     
     private var observeJob: Job? = null
     
-    /** Что сейчас записано на сервере: с этим сверяется положение переключателя. */
     private var savedEnabled = true
     
-    /** Несохранённый выбор пользователя: живёт только до нажатия галочки. */
     private var pendingEnabled: Boolean? = null
     
-    /**
-     * Чат известен только в рантайме, поэтому приходит сюда, а не в конструктор.
-     * Повторный вызов с тем же чатом ничего не пересобирает и не теряет несохранённый
-     * выбор.
-     */
     fun init(chatId: Long) {
         if (this.chatId == chatId) {
             return
@@ -74,15 +57,7 @@ class NotificationExceptionViewModel @Inject constructor(
             notificationSettingsRepository.refreshChatExceptions()
         }
     }
-    
-    /**
-     * Положение переключателя берётся из исключения, а если его ещё нет — из самого
-     * чата: там уже посчитана настройка категории, и экран открывается с тем
-     * состоянием, которое для этого чата действует на самом деле.
-     *
-     * Пока переключатель не трогали, экран следует за кэшем; после — показывает
-     * выбор пользователя, иначе обновление списка вернуло бы тумблер обратно.
-     */
+
     private fun observeChat(chatId: Long) {
         observeJob?.cancel()
         
@@ -109,7 +84,6 @@ class NotificationExceptionViewModel @Inject constructor(
         }
     }
     
-    /** Переключатель меняет только экран: на сервер выбор уедет по галочке. */
     fun toggleNotifications() {
         val enabled = !_uiState.value.notificationsEnabled
         
@@ -117,14 +91,7 @@ class NotificationExceptionViewModel @Inject constructor(
         
         _uiState.update { it.copy(notificationsEnabled = enabled) }
     }
-    
-    /**
-     * Галочка в шапке — единственное место, откуда изменения уходят на сервер.
-     *
-     * Исключения ещё нет — создаём его, даже если переключатель не трогали: за этим
-     * экран и открывали из списка чатов. Существующее и нетронутое сохранять нечего,
-     * просто уходим назад.
-     */
+
     fun save() {
         val chatId = chatId ?: return
         val state = _uiState.value
@@ -149,14 +116,7 @@ class NotificationExceptionViewModel @Inject constructor(
             }
         }
     }
-    
-    /**
-     * Исключение снято — уходим назад. Список исключений читает тот же кэш
-     * репозитория и обновится сам, возвращать результат не нужно.
-     *
-     * Удаление галочки не ждёт: это отдельное действие со своим подтверждением
-     * в виде ухода с экрана.
-     */
+
     fun removeException() {
         val chatId = chatId ?: return
         

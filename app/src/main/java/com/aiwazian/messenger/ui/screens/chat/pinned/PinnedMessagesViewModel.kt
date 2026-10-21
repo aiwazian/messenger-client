@@ -28,6 +28,7 @@ import com.aiwazian.messenger.playback.MusicTrack
 import com.aiwazian.messenger.playback.VoicePlayerManager
 import com.aiwazian.messenger.playback.VoiceQueueItem
 import com.aiwazian.messenger.repository.ChannelRepository
+import com.aiwazian.messenger.repository.ChatPinnedMessagesRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.EmojiRepository
 import com.aiwazian.messenger.repository.FileRepository
@@ -63,6 +64,7 @@ import javax.inject.Inject
 class PinnedMessagesViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val chatRepository: ChatRepository,
+    private val pinnedMessagesRepository: ChatPinnedMessagesRepository,
     private val fileRepository: FileRepository,
     private val channelRepository: ChannelRepository,
     private val groupRepository: GroupRepository,
@@ -113,11 +115,11 @@ class PinnedMessagesViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            chatRepository.refreshPinnedMessages(chatId)
+            pinnedMessagesRepository.refreshPinnedMessages(chatId)
         }
 
         viewModelScope.launch {
-            chatRepository.observePinnedMessages(chatId).collect { pins ->
+            pinnedMessagesRepository.observePinnedMessages(chatId).collect { pins ->
                 rebuildItems(pins)
             }
         }
@@ -227,6 +229,12 @@ class PinnedMessagesViewModel @Inject constructor(
                 .toSet(),
             canPinForEveryone = state.myPermissions.canPinMessages,
             onCopyText = ::copyToClipboard,
+            onCopyContactPhone = ::copyContactPhone,
+            onCallContact = { phone ->
+                viewModelScope.launch {
+                    _uiEffect.emit(PinnedMessagesUiEffect.OpenPhone(phone))
+                }
+            },
             onEditMessage = { message -> openInChat(message, PinnedMessageOpenAction.EDIT) },
             onDeleteMessage = ::showDeleteMessageDialog,
             onRetrySendMessage = {},
@@ -415,7 +423,7 @@ class PinnedMessagesViewModel @Inject constructor(
 
     private fun pinMessage(message: Message, forEveryone: Boolean) {
         viewModelScope.launch {
-            chatRepository.pinMessage(chatId, message.id, forEveryone)
+            pinnedMessagesRepository.pinMessage(chatId, message.id, forEveryone)
                 .onSuccess {
                     _uiEffect.emit(
                         PinnedMessagesUiEffect.ShowSnackbar(UiText.StringResource(R.string.message_pinned))
@@ -431,7 +439,7 @@ class PinnedMessagesViewModel @Inject constructor(
 
     private fun unpinMessage(message: Message, includeShared: Boolean) {
         viewModelScope.launch {
-            chatRepository.unpinMessage(chatId, message.id, includeShared)
+            pinnedMessagesRepository.unpinMessage(chatId, message.id, includeShared)
                 .onSuccess {
                     _uiEffect.emit(
                         PinnedMessagesUiEffect.ShowSnackbar(UiText.StringResource(R.string.message_unpinned))
@@ -767,13 +775,30 @@ class PinnedMessagesViewModel @Inject constructor(
         }
     }
 
+    fun copyContactPhone(message: Message) {
+        val phone = message.contact?.firstPhone ?: return
+
+        viewModelScope.launch {
+            clipboardService.copy(phone)
+        }
+    }
+
+    fun copyContactValue(value: String) {
+        clipboardService.copy(value)
+    }
+
     fun onLinkClicked(url: String) {
         val normalized = if (url.startsWith("http")) url else "https://$url"
+
         viewModelScope.launch { _uiEffect.emit(PinnedMessagesUiEffect.OpenUrl(normalized)) }
     }
 
     fun onEmailClicked(email: String) {
         viewModelScope.launch { _uiEffect.emit(PinnedMessagesUiEffect.OpenEmail(email)) }
+    }
+
+    fun onPhoneClicked(phone: String) {
+        viewModelScope.launch { _uiEffect.emit(PinnedMessagesUiEffect.OpenPhone(phone)) }
     }
 
     fun onUsernameClicked(username: String) {

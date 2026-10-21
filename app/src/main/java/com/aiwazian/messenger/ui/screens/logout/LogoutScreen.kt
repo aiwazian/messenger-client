@@ -28,7 +28,7 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.flow.collectLatest
 
@@ -63,24 +63,24 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
         SectionContainer(header = {
             SectionHeader(title = stringResource(R.string.alternative_options))
         }) {
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Outlined.PersonAdd,
                 headlineText = stringResource(R.string.add_account),
-                supportingText = "Войдите в другой аккаунт, не выходя из текущего.",
+                supportingText = stringResource(R.string.add_account_hint),
                 onClick = {
                     navBackStack.add(AppRoute.Login)
                 })
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Rounded.DeleteOutline,
                 headlineText = stringResource(R.string.clear_cache),
-                supportingText = "Освободите память устройства, файлы останутся в облаке.",
+                supportingText = stringResource(R.string.clear_cache_hint),
                 onClick = {
                     navBackStack.add(AppRoute.SettingsStorage)
                 })
         }
         
         SectionContainer {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.logout),
                 contentColor = MaterialTheme.colorScheme.error,
                 onClick = viewModel::showLogoutDialog

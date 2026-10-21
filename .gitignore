@@ -29,3 +29,6 @@ captures/
 
 # Additional files
 *.log
+
+# Agent plugin artifacts
+.mimosa/

@@ -262,8 +262,9 @@ private fun Content(drawerState: DrawerState, viewModel: MainViewModel) {
         if (uiState.showNotificationBottomSheet) {
             val context = LocalContext.current
             val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-            AppBottomSheet(onDismissRequest = viewModel::hideNotificationSheet, sheetState = sheetState) {
+            AppBottomSheet(onDismissRequest = viewModel::hideNotificationSheet, sheetState = sheetState) { padding ->
                 Column(
+                    modifier = Modifier.padding(padding),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
