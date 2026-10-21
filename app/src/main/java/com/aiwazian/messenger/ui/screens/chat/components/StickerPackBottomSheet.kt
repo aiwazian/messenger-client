@@ -53,7 +53,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -67,6 +66,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Sticker
 import com.aiwazian.messenger.domain.StickerPack
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppBottomSheetFooterActions
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.AnimatedStickerImage
@@ -95,7 +95,19 @@ fun StickerPackBottomSheet(
     var focusedBounds by remember { mutableStateOf(Rect.Zero) }
     var isMenuExpanded by remember { mutableStateOf(false) }
     
-    AppBottomSheet(onDismissRequest = onDismiss) {
+    AppBottomSheet(onDismissRequest = onDismiss, stickyFooter = {
+        if (pack.isInstalled) {
+            AppBottomSheetFooterActions.DestructiveButton(
+                text = stringResource(R.string.sticker_pack_remove_stickers),
+                onClick = onUninstall,
+            )
+        } else {
+            AppBottomSheetFooterActions.PrimaryButton(
+                text = stringResource(R.string.sticker_pack_add_stickers),
+                onClick = onInstall
+            )
+        }
+    }) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -172,29 +184,6 @@ fun StickerPackBottomSheet(
                     })
             }
         }
-        
-        TextButton(
-            onClick = if (pack.isInstalled) onUninstall else onInstall,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            colors = ButtonDefaults.textButtonColors(
-                contentColor = if (pack.isInstalled) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.primary
-                },
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
-        ) {
-            Text(
-                text = if (pack.isInstalled) {
-                    stringResource(R.string.sticker_pack_remove_stickers)
-                } else {
-                    stringResource(R.string.sticker_pack_add_stickers)
-                }
-            )
-        }
     }
     
     focusedSticker?.let { sticker ->
@@ -215,8 +204,6 @@ private fun StickerGridCell(
     isHidden: Boolean,
     onClick: (Rect) -> Unit
 ) {
-    val context = LocalContext.current
-    
     var bounds by remember { mutableStateOf(Rect.Zero) }
     
     val interactionSource = remember { MutableInteractionSource() }
@@ -250,7 +237,6 @@ private fun StickerFocusOverlay(
     onClose: () -> Unit,
     onSend: () -> Unit
 ) {
-    val context = LocalContext.current
     val density = LocalDensity.current
     
     val progress = remember { Animatable(0f) }

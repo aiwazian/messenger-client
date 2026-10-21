@@ -17,6 +17,7 @@
     <string name="security">Sicurezza</string>
     <string name="delete_account">Elimina account</string>
     <string name="delete_account_confirm">Sei sicuro di voler eliminare il tuo account\?</string>
+    <string name="delete_anyway">Elimina comunque</string>
     <string name="yes">Sì</string>
     <string name="no">No</string>
     <string name="devices">Dispositivi</string>
@@ -67,6 +68,11 @@
     <string name="add_chats">Aggiungi chat</string>
     <string name="enter_password">Inserisci la password</string>
     <string name="passcode_lock_description">Quando viene impostato un codice, appare un\'icona di lucchetto sopra la tua chat list. Tocca per bloccare la tua app.</string>
+    <string name="passcode_create_title">Crea codice</string>
+    <string name="passcode_change_title">Inserisci il nuovo codice</string>
+    <string name="passcode_enter_digits_description">Inserisci le 4 cifre che vuoi utilizzare per sbloccare l\'app.</string>
+    <string name="passcode_lock_hint">Per bloccare e sbloccare l\'app, tocca l\'icona del lucchetto sopra la tua chat list.</string>
+    <string name="passcode_disable_confirm_message">Sei sicuro di voler disattivare il codice\?</string>
     <string name="cancel">Cancella</string>
     <string name="terminate">Terminare</string>
     <string name="terminate_session">Terminate session</string>
@@ -137,6 +143,7 @@
     <string name="new_link">Nuovo collegamento</string>
     <string name="send">Inviare</string>
     <string name="subscribe">Iscriviti</string>
+    <string name="request_to_join">Richiedi di partecipare</string>
     <string name="group_type">Tipo di gruppo</string>
     <string name="delete_account_after_twenty_four_hours">La cancellazione dell\'account sarà disponibile 24 ore dopo l\'inizio della sessione corrente.</string>
     <string name="change_password_session_age">La modifica della password del tuo account sarà disponibile 24 ore dall\'inizio della sessione corrente</string>
@@ -387,11 +394,14 @@
     <string name="last_seen_time">Ultimo accesso alle %1$s</string>
     <string name="last_seen_yesterday_time">Ultimo accesso ieri alle %1$s</string>
     <string name="last_seen_date_time">Ultimo accesso il %1$s alle %2$s</string>
+    <string name="mini_player_yesterday_at">Ieri alle %1$s</string>
+    <string name="mini_player_date_at">%1$s alle %2$s</string>
     <string name="chat_media">Media</string>
     <string name="chat_media_tab">Media</string>
     <string name="chat_files_tab">File</string>
     <string name="chat_media_music_tab">Musica</string>
     <string name="chat_voices_tab">Vocali</string>
+    <string name="chat_contacts_tab">Contatti</string>
     <string name="chat_attachments_empty">Ancora nessun allegato in questa chat</string>
     <string name="chat_media_load_error">Impossibile caricare gli allegati</string>
 
@@ -416,6 +426,11 @@
         <item quantity="one">%1$d messaggio vocale</item>
         <item quantity="other">%1$d messaggi vocali</item>
         <item quantity="many">%1$d messaggi vocali</item>
+    </plurals>
+    <plurals name="chat_media_contacts_count">
+        <item quantity="one">%1$d contatto</item>
+        <item quantity="other">%1$d contatti</item>
+        <item quantity="many">%1$d contatti</item>
     </plurals>
     <plurals name="chat_media_music_count">
         <item quantity="one">%1$d file audio</item>
@@ -452,6 +467,9 @@
     <string name="media_picker_permission">Consenti l\'accesso a foto e video</string>
     <string name="media_picker_permission_action">Consenti</string>
     <string name="media_picker_empty">Nessuna foto o video</string>
+    <string name="contact_picker_permission">Consenti l\'accesso ai contatti</string>
+    <string name="contact_picker_permission_action">Consenti</string>
+    <string name="contact_picker_empty">Nessun contatto trovato</string>
     <string name="media_picker_reset_title">Azzera selezione</string>
     <string name="media_picker_reset_message">Chiudere il menu degli allegati?</string>
     <string name="media_picker_reset_action">Azzera</string>
@@ -515,6 +533,18 @@
     <string name="sticker_pack_installed">Il pacchetto %1$s è stato aggiunto ai tuoi sticker</string>
     <string name="sticker_pack_uninstalled">Il pacchetto %1$s è stato rimosso dai tuoi sticker</string>
     <string name="sticker_message">Sticker</string>
+    <string name="contact_message">Contatto</string>
+    <string name="contact_call">Chiama</string>
+    <string name="send_contact">Invia contatto</string>
+    <string name="view_contact">Visualizza contatto</string>
+    <string name="add_contact">Aggiungi contatto</string>
+    <string name="contact_phone">Telefono</string>
+    <string name="contact_email">E-mail</string>
+    <string name="contact_website">Sito web</string>
+    <string name="contact_address">Indirizzo</string>
+    <string name="contact_organization">Lavoro</string>
+    <string name="contact_job_title">Posizione</string>
+    <string name="contact_birthday">Compleanno</string>
     <string name="emoji">Emoji</string>
     <string name="emoji_packs_created">Creati</string>
     <string name="emoji_packs_added">Aggiunti</string>

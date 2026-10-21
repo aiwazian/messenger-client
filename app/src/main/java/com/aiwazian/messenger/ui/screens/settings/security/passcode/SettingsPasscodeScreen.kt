@@ -44,8 +44,8 @@ import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.NumberKeyboard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
-import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionToggle
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.settings.security.SettingsSecurityViewModel
@@ -105,12 +105,12 @@ fun SettingsPasscodeCreateScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = "Создание код-пароля",
+                        text = stringResource(R.string.passcode_create_title),
                         fontSize = 24.sp
                     )
                     
                     Text(
-                        text = "Введите 4 цифры, которые хотите использовать для разблокировки приложения.",
+                        text = stringResource(R.string.passcode_enter_digits_description),
                         textAlign = TextAlign.Center,
                         fontSize = 14.sp,
                         lineHeight = 16.sp
@@ -169,12 +169,12 @@ fun SettingsPasscodeChangeScreen(passcodeViewModel: PasscodeViewModel = hiltView
                 ) {
                     
                     Text(
-                        text = "Введите новый код-пароль",
+                        text = stringResource(R.string.passcode_change_title),
                         fontSize = 24.sp
                     )
                     
                     Text(
-                        text = "Введите 4 цифры, которые хотите использовать для разблокировки приложения.",
+                        text = stringResource(R.string.passcode_enter_digits_description),
                         textAlign = TextAlign.Center,
                         fontSize = 14.sp,
                         lineHeight = 16.sp
@@ -256,7 +256,7 @@ private fun SettingsPasscodeLockScreen(
                 )
                 
                 Text(
-                    text = "Для блокировки и разблокировки приложения нажмите на значок замка над списком чатов.",
+                    text = stringResource(R.string.passcode_lock_hint),
                     fontSize = 14.sp,
                     lineHeight = 14.sp,
                     textAlign = TextAlign.Center,
@@ -264,25 +264,19 @@ private fun SettingsPasscodeLockScreen(
                 )
             }
             
-            if (hasEnrolledFingerprints) {
-                SectionContainer {
+            SectionContainer {
+                if (hasEnrolledFingerprints) {
                     SectionToggle(
                         headlineText = stringResource(R.string.fingerprint_unlock),
                         isChecked = fingerprintEnabled,
                         onCheckedChange = passcodeViewModel::toggleFingerprint
                     )
                 }
-            }
-            
-            SectionContainer {
                 SectionButton(
                     headlineText = stringResource(R.string.change_passcode),
                     onClick = {
                         navBackStack.add(AppRoute.SettingsPasscodeChange)
                     })
-            }
-            
-            SectionContainer {
                 SectionButton(
                     headlineText = stringResource(R.string.turn_passcode_off),
                     contentColor = MaterialTheme.colorScheme.error,
@@ -315,7 +309,7 @@ private fun DisablePasscodeDialog(
         onDismissRequest = onDismiss,
         content = {
             Text(
-                text = "Вы точно хотите отключить пароль?",
+                text = stringResource(R.string.passcode_disable_confirm_message),
             )
         },
         buttons = {

@@ -13,12 +13,6 @@ import com.aiwazian.messenger.network.api.GroupApi
 import com.aiwazian.messenger.network.dto.UpsertGroupAdminRequestDto
 import javax.inject.Inject
 
-/**
- * Администраторы группы и теги участников.
- *
- * Список администраторов сервер отдаёт владельцу и админам с правом управления
- * администраторами, теги — любому участнику.
- */
 class GroupAdminsRepository @Inject constructor(
     private val groupApi: GroupApi
 ) {
@@ -50,11 +44,6 @@ class GroupAdminsRepository @Inject constructor(
         }
     }
     
-    /**
-     * Кого можно назначить администратором.
-     *
-     * Владельца сервер в списке не отдаёт: у него и так все права.
-     */
     suspend fun getAdminCandidates(groupId: Long): Result<List<User>> {
         return try {
             val response = groupApi.getAdminCandidates(groupId)
@@ -69,11 +58,6 @@ class GroupAdminsRepository @Inject constructor(
         }
     }
     
-    /**
-     * Теги участников группы.
-     *
-     * Отдаётся готовой картой id → тег: экран чата кэширует её рядом с именами.
-     */
     suspend fun getMemberTags(groupId: Long): Result<Map<Long, String>> {
         return try {
             val response = groupApi.getMemberTags(groupId)
@@ -119,7 +103,6 @@ class GroupAdminsRepository @Inject constructor(
         }
     }
     
-    /** Назначает администратора или перезаписывает его права и тег. */
     suspend fun upsertAdmin(
         groupId: Long,
         userId: Long,

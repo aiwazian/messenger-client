@@ -129,15 +129,6 @@ internal fun VideoQualitySlider(
     }
 }
 
-/**
- * Ставит детей серединами на равные доли ширины.
- *
- * Обычный Row с SpaceBetween расставил бы их краями к краям, и «360p» ушла бы
- * правее своего деления на половину своей ширины, а «1080p» — левее.
- *
- * Крайние всё же загоняются в границы: без этого половина первой подписи
- * уезжала бы за край экрана.
- */
 @Composable
 private fun StopsRow(
     modifier: Modifier = Modifier,
@@ -170,5 +161,4 @@ private val THUMB_SIZE = 15.dp
 private val TRACK_HEIGHT = 4.dp
 private val TICK_SIZE = 8.dp
 
-/** На столько трек уже самого слайдера: половина бегунка с каждой стороны. */
 private val TRACK_INSET = THUMB_SIZE / 2

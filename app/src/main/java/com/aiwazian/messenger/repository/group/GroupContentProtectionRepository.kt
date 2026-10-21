@@ -12,23 +12,11 @@ import com.aiwazian.messenger.network.api.GroupApi
 import com.aiwazian.messenger.network.dto.SetNoCopyRequestDto
 import javax.inject.Inject
 
-/**
- * Защита контента группы: запрет копирования текста, пересылки и сохранения медиа.
- *
- * Сервер разрешает менять флаг только владельцу группы, поэтому для остальных
- * участников вызов вернёт ошибку.
- */
 class GroupContentProtectionRepository @Inject constructor(
     private val groupApi: GroupApi,
     private val groupDao: GroupDao
 ) {
     
-    /**
-     * Меняет запрет копирования у группы.
-     *
-     * @param group текущее состояние группы, нужно для обновления кэша без потери
-     * остальных полей.
-     */
     suspend fun setNoCopy(group: Group, noCopy: Boolean): Result<Unit> {
         return try {
             val response = groupApi.setNoCopy(group.id, SetNoCopyRequestDto(noCopy))

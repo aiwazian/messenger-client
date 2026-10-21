@@ -4,6 +4,7 @@ import com.aiwazian.messenger.database.entity.MessageEntity
 import com.aiwazian.messenger.domain.ForwardedFrom
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
+import com.aiwazian.messenger.domain.MessageContact
 import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.domain.MessageSticker
@@ -11,6 +12,7 @@ import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ForwardSourceAccess
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.network.dto.MessageAttachmentDto
+import com.aiwazian.messenger.network.dto.MessageContactDto
 import com.aiwazian.messenger.network.dto.MessageDto
 import com.aiwazian.messenger.network.dto.MessageReplyPreviewDto
 import com.aiwazian.messenger.network.dto.MessageStickerDto
@@ -40,7 +42,8 @@ fun MessageDto.toDomain(): Message = Message(
             access = forwardedFromAccess ?: ForwardSourceAccess.UNAVAILABLE
         )
     },
-    sticker = sticker?.toDomain()
+    sticker = sticker?.toDomain(),
+    contact = contact?.toDomain()
 )
 
 fun MessageStickerDto.toDomain() = MessageSticker(
@@ -48,6 +51,17 @@ fun MessageStickerDto.toDomain() = MessageSticker(
     packId = packId.toLongOrNull() ?: 0L,
     fileId = fileId,
     emojis = emojis
+)
+
+fun MessageContactDto.toDomain() = MessageContact(
+    name = name,
+    phones = phones,
+    emails = emails,
+    urls = urls,
+    addresses = addresses,
+    organization = organization,
+    jobTitle = jobTitle,
+    birthday = birthday
 )
 
 fun MessageReplyPreviewDto.toDomain() = MessageReplyPreview(
@@ -125,7 +139,8 @@ fun MessageEntity.toDomain(attachments: List<MessageAttachment> = emptyList()) =
             fileId = stickerFileId.orEmpty(),
             emojis = stickerEmojis?.split(",")?.filter { it.isNotBlank() }.orEmpty()
         )
-    }
+    },
+    contact = contact
 )
 
 fun Message.toEntity() = MessageEntity(
@@ -160,7 +175,8 @@ fun Message.toEntity() = MessageEntity(
     stickerFileId = sticker?.fileId,
     stickerEmojis = sticker?.emojis
         ?.takeIf { it.isNotEmpty() }
-        ?.joinToString(",")
+        ?.joinToString(","),
+    contact = contact
 )
 
 private fun String?.toAttachmentTypes(): List<AttachmentType> = this

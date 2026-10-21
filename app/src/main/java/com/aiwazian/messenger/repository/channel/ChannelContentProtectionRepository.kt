@@ -12,23 +12,11 @@ import com.aiwazian.messenger.network.api.ChannelApi
 import com.aiwazian.messenger.network.dto.SetNoCopyRequestDto
 import javax.inject.Inject
 
-/**
- * Защита контента канала: запрет копирования текста, пересылки и сохранения медиа.
- *
- * Сервер разрешает менять флаг только владельцу канала, поэтому для остальных
- * участников вызов вернёт ошибку.
- */
 class ChannelContentProtectionRepository @Inject constructor(
     private val channelApi: ChannelApi,
     private val channelDao: ChannelDao
 ) {
     
-    /**
-     * Меняет запрет копирования у канала.
-     *
-     * @param channel текущее состояние канала, нужно для обновления кэша без потери
-     * остальных полей.
-     */
     suspend fun setNoCopy(channel: Channel, noCopy: Boolean): Result<Unit> {
         return try {
             val response = channelApi.setNoCopy(channel.id, SetNoCopyRequestDto(noCopy))

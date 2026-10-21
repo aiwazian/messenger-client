@@ -8,9 +8,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Comment
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Campaign
-import androidx.compose.material.icons.outlined.Comment
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PersonAddAlt
 import androidx.compose.material.icons.rounded.Block
@@ -146,7 +146,7 @@ fun ChannelSettingsScreen(
 
                 if (uiState.isOwner) {
                     SectionButton(
-                        leadingIcon = Icons.Outlined.Comment,
+                        leadingIcon = Icons.AutoMirrored.Outlined.Comment,
                         headlineText = stringResource(R.string.comments),
                         onClick = {
                             navBackStack.add(

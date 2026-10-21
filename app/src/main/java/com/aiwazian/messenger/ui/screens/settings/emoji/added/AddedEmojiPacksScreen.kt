@@ -2,6 +2,7 @@ package com.aiwazian.messenger.ui.screens.settings.emoji.added
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -195,7 +196,8 @@ fun AddedEmojiPacksScreen(viewModel: AddedEmojiPacksViewModel = hiltViewModel())
     val pack = openedPack
     
     if (pack != null) {
-        AppBottomSheet(onDismissRequest = viewModel::close) {
+        AppBottomSheet(onDismissRequest = viewModel::close) { padding ->
+            Column(modifier = Modifier.padding(padding)) {
             Text(
                 text = pack.name,
                 modifier = Modifier.padding(
@@ -231,6 +233,7 @@ fun AddedEmojiPacksScreen(viewModel: AddedEmojiPacksViewModel = hiltViewModel())
             }
         }
     }
+}
 }
 
 @Composable

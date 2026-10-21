@@ -1,9 +1,6 @@
 package com.aiwazian.messenger.ui.screens.chat
 
-import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.BackHandler
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -17,11 +14,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
@@ -30,33 +25,24 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.plus
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -83,63 +69,33 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.navigation3.runtime.result.ResultEffect
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.WallpaperTarget
-import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
-import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toMiniPlayerTime
-import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.SecureScreenEffect
-import com.aiwazian.messenger.ui.components.ShareBottomSheet
-import com.aiwazian.messenger.ui.components.ShareForwardOptions
-import com.aiwazian.messenger.ui.components.ShareItem
 import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.WallpaperImage
-import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.screens.chat.components.AudioMiniPlayer
-import com.aiwazian.messenger.ui.screens.chat.components.ChatDialogs
 import com.aiwazian.messenger.ui.screens.chat.components.ChatInputSection
 import com.aiwazian.messenger.ui.screens.chat.components.ChatSearchNavigationButtons
 import com.aiwazian.messenger.ui.screens.chat.components.ChatSearchSummaryBar
 import com.aiwazian.messenger.ui.screens.chat.components.ChatTopBar
-import com.aiwazian.messenger.ui.screens.chat.components.ChatWallpaperSheet
-import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
-import com.aiwazian.messenger.ui.screens.chat.components.EmojiPackBottomSheet
-import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
-import com.aiwazian.messenger.ui.screens.chat.components.MediaPickerBottomSheet
-import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.MessageSearchResultsList
-import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
-import com.aiwazian.messenger.ui.screens.chat.components.MusicPlayerSheet
-import com.aiwazian.messenger.ui.screens.chat.components.PinMessageBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.PinnedMessageBar
-import com.aiwazian.messenger.ui.screens.chat.components.StickerPackBottomSheet
-import com.aiwazian.messenger.ui.screens.chat.components.SystemMessageBubble
-import com.aiwazian.messenger.ui.screens.chat.components.UnreadSeparatorItem
-import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
-import com.aiwazian.messenger.ui.screens.chat.media.ShowInChatResult
-import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessageOpenAction
-import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessageResult
 import com.aiwazian.messenger.utils.ActiveChatTracker
-import com.aiwazian.messenger.utils.EmojiLink
-import com.aiwazian.messenger.utils.StickerLink
-import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import java.util.Locale
 
 @OptIn(FlowPreview::class)
 @Composable
@@ -403,6 +359,7 @@ fun ChatScreen(
     var showCancelRecordingDialog by remember { mutableStateOf(false) }
     var showMusicPlayerSheet by remember { mutableStateOf(false) }
     var showWallpaperPicker by remember { mutableStateOf(false) }
+    var viewingContact by remember { mutableStateOf<Message?>(null) }
     
     LaunchedEffect(uiState.currentMusicFileId) {
         if (uiState.currentMusicFileId == null) showMusicPlayerSheet = false
@@ -410,7 +367,6 @@ fun ChatScreen(
     
     var tappedMedia by remember { mutableStateOf<MessageAttachment?>(null) }
     val scope = rememberCoroutineScope()
-    var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     val onBackClick: () -> Unit = {
         when {
@@ -425,133 +381,17 @@ fun ChatScreen(
         else chatViewModel.stopMessageSearch()
     }
     
-    LaunchedEffect(Unit) {
-        chatViewModel.uiEffect.collect { effect ->
-            when (effect) {
-                is ChatUiEffect.NavigateBack -> navBackStack.removeLastOrNull()
-                is ChatUiEffect.NavigateToMain -> {
-                    navBackStack.clear()
-                    navBackStack.add(AppRoute.Main)
-                }
-                
-                is ChatUiEffect.ScrollToBottom -> {
-                    listState.animateScrollToItem(BOTTOM_ITEM_INDEX)
-                }
-                
-                is ChatUiEffect.ShowSnackbar -> {
-                    snackbarJob?.cancel()
-                    snackbarJob = scope.launch {
-                        snackbarHostState.showSnackbar(
-                            message = effect.message.asString(context),
-                            duration = SnackbarDuration.Short
-                        )
-                    }
-                }
-                
-                is ChatUiEffect.NavigateToChat -> {
-                    navBackStack.add(
-                        AppRoute.Chat(
-                            chatId = effect.chatId,
-                            scrollToMessageId = effect.scrollToMessageId
-                        )
-                    )
-                }
-                
-                is ChatUiEffect.OpenUrl -> {
-                    CustomTabsIntent.Builder()
-                        .setShowTitle(true)
-                        .setTranslateLocale(Locale.getDefault())
-                        .build()
-                        .launchUrl(context, effect.url.toUri())
-                }
-                
-                is ChatUiEffect.OpenEmail -> {
-                    val mailIntent = Intent(
-                        Intent.ACTION_SENDTO,
-                        "mailto:${Uri.encode(effect.email)}".toUri()
-                    )
-                    val chooser = Intent.createChooser(
-                        mailIntent,
-                        UiText.StringResource(R.string.open_email_with).asString(context)
-                    )
-
-                    val launched = runCatching { context.startActivity(chooser) }.isSuccess
-                    if (!launched) {
-                        snackbarJob?.cancel()
-                        snackbarJob = scope.launch {
-                            snackbarHostState.showSnackbar(
-                                message = UiText.StringResource(R.string.no_email_app)
-                                    .asString(context),
-                                duration = SnackbarDuration.Short
-                            )
-                        }
-                    }
-                }
-
-                is ChatUiEffect.OpenPhone -> {
-                    val dialIntent = Intent(
-                        Intent.ACTION_DIAL,
-                        "tel:${effect.phone}".toUri()
-                    )
-                    val chooser = Intent.createChooser(
-                        dialIntent,
-                        UiText.StringResource(R.string.open_phone_with).asString(context)
-                    )
-
-                    val launched = runCatching { context.startActivity(chooser) }.isSuccess
-                    if (!launched) {
-                        snackbarJob?.cancel()
-                        snackbarJob = scope.launch {
-                            snackbarHostState.showSnackbar(
-                                message = UiText.StringResource(R.string.no_phone_app)
-                                    .asString(context),
-                                duration = SnackbarDuration.Short
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    LaunchedEffect(Unit) {
-        notificationsViewModel.snackbar.collect { message ->
-            snackbarJob?.cancel()
-            snackbarJob = scope.launch {
-                snackbarHostState.showSnackbar(
-                    message = message.asString(context),
-                    duration = SnackbarDuration.Short
-                )
-            }
-        }
-    }
-    
-    LaunchedEffect(stickersState.notice) {
-        val notice = stickersState.notice ?: return@LaunchedEffect
-        
-        val message = notice.message.asString(context)
-        
-        stickersViewModel.consumeNotice()
-        
-        snackbarJob?.cancel()
-        snackbarJob = scope.launch {
-            snackbarHostState.showSnackbar(
-                message = message,
-                duration = SnackbarDuration.Short
-            )
-        }
-    }
-    
-    ResultEffect<PinnedMessageResult> { result ->
-        when (result.action) {
-            PinnedMessageOpenAction.REPLY -> chatViewModel.startReply(result.message)
-            PinnedMessageOpenAction.EDIT -> chatViewModel.startEditing(result.message)
-        }
-    }
-    
-    ResultEffect<ShowInChatResult> { result ->
-        chatViewModel.jumpToMessage(result.messageId)
-    }
+    ChatScreenEffects(
+        viewModel = chatViewModel,
+        notificationsViewModel = notificationsViewModel,
+        stickersNotice = stickersState.notice,
+        onConsumeStickersNotice = stickersViewModel::consumeNotice,
+        navBackStack = navBackStack,
+        listState = listState,
+        snackbarHostState = snackbarHostState,
+        scope = scope,
+        context = context
+    )
     
     Scaffold(snackbarHost = {
         if (!uiState.showFullScreenViewer) {
@@ -576,16 +416,14 @@ fun ChatScreen(
                 onToggleNotifications = notificationsViewModel::toggle,
                 onBackClick = onBackClick
             )
-            val topBarOverlayModifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Horizontal)
-                        .asPaddingValues()
-                        .plus(PaddingValues(horizontal = 4.dp))
-                )
             Column(
-                modifier = topBarOverlayModifier
+                modifier = Modifier
                     .fillMaxWidth()
+                    .padding(
+                        TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Horizontal)
+                            .asPaddingValues()
+                            .plus(PaddingValues(horizontal = 4.dp))
+                    )
                     .clip(RoundedCornerShape(24.dp))
                     .background(MaterialTheme.colorScheme.surfaceContainer)
             ) {
@@ -666,7 +504,8 @@ fun ChatScreen(
                 ChatInputSection(
                     uiState = uiState,
                     actions = chatViewModel,
-                    modifier = bottomBarModifier
+                    modifier = bottomBarModifier,
+                    onContactSend = chatViewModel::sendContact
                 )
             }
         }
@@ -746,160 +585,24 @@ fun ChatScreen(
                             end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
                         )
                 ) {
-                    LazyColumn(
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                        state = listState,
-                        reverseLayout = true,
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                        overscrollEffect = rememberOverscrollEffect()
-                    ) {
-                        item(key = "chat_footer") {
-                            Column {
-                                if (uiState.isLoadingNewer) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(8.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularWavyProgressIndicator()
-                                    }
-                                }
-                                Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
-                            }
-                        }
-                        
-                        items(
-                            items = uiState.chatItems, key = { item ->
-                                when (item) {
-                                    is ChatItem.DateSeparator -> "date_${item.text}"
-                                    is ChatItem.UnreadSeparator -> "unread_separator"
-                                    is ChatItem.SystemMessage -> "sys_${item.sendTime}"
-                                    is ChatItem.MessageItem -> "msg_${item.message.id}"
-                                }
-                            }) { item ->
-                            when (item) {
-                                is ChatItem.DateSeparator -> DateSeparatorItem(
-                                    item.text, Modifier.animateItem()
-                                )
-                                
-                                is ChatItem.UnreadSeparator -> UnreadSeparatorItem(
-                                    Modifier.animateItem()
-                                )
-                                
-                                is ChatItem.SystemMessage -> SystemMessageBubble(
-                                    item.text.asString(), Modifier.animateItem()
-                                )
-                                
-                                is ChatItem.MessageItem -> MessageBubble(
-                                    modifier = Modifier.animateItem(),
-                                    item = item,
-                                    onFileAction = { file, action ->
-                                        if (action == FileAction.CANCEL) {
-                                            fileToCancelId =
-                                                item.message.id
-                                        } else {
-                                            if (action == FileAction.OPEN) {
-                                                tappedMedia = file
-                                            }
-                                            chatViewModel.onFileAction(
-                                                item.message,
-                                                file,
-                                                action
-                                            )
-                                        }
-                                    },
-                                    currentPlayingVoiceFileId = uiState.currentPlayingVoiceFileId,
-                                    isVoicePlaying = uiState.isVoicePlaying,
-                                    voicePositionMs = uiState.voicePositionMs,
-                                    voiceDurationMs = uiState.voiceDurationMs,
-                                    onVoiceSeek = chatViewModel::onVoiceSeek,
-                                    audioMetadata = uiState.audioMetadata,
-                                    currentMusicFileId = uiState.currentMusicFileId,
-                                    isMusicPlaying = uiState.isMusicPlaying,
-                                    musicPositionMs = uiState.musicPositionMs,
-                                    musicDurationMs = uiState.musicDurationMs,
-                                    onMusicSeek = chatViewModel::onMusicSeek,
-                                    onLinkClicked = chatViewModel::onLinkClicked,
-                                    onUsernameClicked = chatViewModel::onUsernameClicked,
-                                    onEmailClicked = chatViewModel::onEmailClicked,
-                                    onPhoneClicked = chatViewModel::onPhoneClicked,
-                                    onSaveToDownloads = if (copyPolicy.canSaveMedia) {
-                                        {
-                                            chatViewModel.saveAttachmentsToDownloads(
-                                                item.message
-                                            )
-                                        }
-                                    } else null,
-                                    onReplyPreviewClick = {
-                                        chatViewModel.onReplyPreviewClicked(item.message)
-                                    },
-                                    onForwardedFromClick = {
-                                        chatViewModel.onForwardedFromClicked(item.message)
-                                    },
-                                    onSwipeThresholdReached = chatViewModel::vibrateTactile,
-                                    onSwipeToReply = {
-                                        chatViewModel.startReply(item.message)
-                                    },
-                                    readerAvatars = readerAvatars,
-                                    onReadersRequested = readersViewModel::onReadersRequested,
-                                    onSenderNameClick = if (item.chatType == ChatType.GROUP) {
-                                        {
-                                            navBackStack.add(
-                                                AppRoute.Profile(
-                                                    profileId = item.message.senderId,
-                                                    profileName = item.senderName
-                                                )
-                                            )
-                                        }
-                                    } else null,
-                                    onCommentsClick = if (
-                                        item.chatType == ChatType.CHANNEL &&
-                                        (uiState.commentsEnabled || item.message.commentsCount > 0)
-                                    ) {
-                                        {
-                                            navBackStack.add(
-                                                AppRoute.PostComments(
-                                                    chatId = uiState.chatId,
-                                                    postId = item.message.id
-                                                )
-                                            )
-                                        }
-                                    } else null,
-                                    onReaderClick = { reader ->
-                                        val readerName = listOf(
-                                            reader.firstName,
-                                            reader.lastName.orEmpty()
-                                        ).filter { it.isNotBlank() }.joinToString(" ")
-                                        navBackStack.add(
-                                            AppRoute.Profile(
-                                                profileId = reader.userId,
-                                                profileName = readerName.ifBlank { null },
-                                                avatarUri = readerAvatars[reader.userId]?.toString()
-                                            )
-                                        )
-                                    },
-                                    isPinned = item.message.id in pinnedMessageIds
-                                )
-                            }
-                        }
-                        
-                        item(key = "chat_header") {
-                            Column {
-                                if (uiState.isLoadingOlder) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(8.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        CircularWavyProgressIndicator()
-                                    }
-                                }
-                                Spacer(Modifier.height(innerPadding.calculateTopPadding()))
-                            }
-                        }
-                    }
+                    ChatMessagesList(
+                        uiState = uiState,
+                        chatViewModel = chatViewModel,
+                        readersViewModel = readersViewModel,
+                        readerAvatars = readerAvatars,
+                        listState = listState,
+                        innerPadding = innerPadding,
+                        pinnedMessageIds = pinnedMessageIds,
+                        copyPolicy = copyPolicy,
+                        onFileCancel = { fileToCancelId = it },
+                        onMediaOpen = { tappedMedia = it },
+                        onContactClick = { viewingContact = it },
+                        modifier = Modifier
+                            .padding(
+                                start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                                end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
+                            )
+                    )
                 }
             }
             
@@ -916,54 +619,6 @@ fun ChatScreen(
             BottomBarScrim(height = innerPadding.calculateBottomPadding())
         }
         
-        ChatDialogs(uiState = uiState, chatViewModel = chatViewModel)
-        
-        if (fileToCancelId != null) {
-            AppDialog(
-                title = stringResource(R.string.cancel_sending),
-                onDismissRequest = { fileToCancelId = null },
-                content = { Text(stringResource(R.string.cancel_upload_confirm)) },
-                buttons = {
-                    TextButton(onClick = {
-                        fileToCancelId = null
-                    }) {
-                        Text(stringResource(R.string.no))
-                    }
-                    TextButton(
-                        onClick = {
-                            fileToCancelId?.let {
-                                chatViewModel.cancelUpload(it)
-                            }
-                            fileToCancelId = null
-                        },
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text(stringResource(R.string.yes))
-                    }
-                })
-        }
-        
-        if (showCancelRecordingDialog) {
-            AppDialog(
-                title = stringResource(R.string.cancel_voice_recording),
-                onDismissRequest = { showCancelRecordingDialog = false },
-                content = { Text(stringResource(R.string.cancel_voice_recording_confirm)) },
-                buttons = {
-                    TextButton(onClick = { showCancelRecordingDialog = false }) {
-                        Text(stringResource(R.string.continue_recording))
-                    }
-                    TextButton(
-                        onClick = {
-                            chatViewModel.cancelRecording()
-                            showCancelRecordingDialog = false
-                        },
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text(stringResource(R.string.reset))
-                    }
-                })
-        }
-        
         if (uiState.showInviteBottomSheet && uiState.inviteLinkInfo != null) {
             val info = uiState.inviteLinkInfo!!
             InviteLinkBottomSheet(
@@ -978,239 +633,29 @@ fun ChatScreen(
             )
         }
         
-        if (uiState.showMicrophonePermissionSheet) {
-            MicrophonePermissionBottomSheet(
-                onDismiss = chatViewModel::dismissMicrophonePermissionSheet
-            )
-        }
-        
-        if (uiState.showBannedDialog) {
-            AppDialog(
-                title = stringResource(R.string.no_access),
-                onDismissRequest = chatViewModel::dismissBannedDialog,
-                buttons = {
-                    TextButton(onClick = chatViewModel::dismissBannedDialog) {
-                        Text(stringResource(R.string.ok))
-                    }
-                },
-                content = {
-                    Text(stringResource(R.string.banned_message))
-                })
-        }
-        
-        if (uiState.showBlockDialog) {
-            AppDialog(
-                title = stringResource(R.string.unblock),
-                onDismissRequest = chatViewModel::dismissBlockDialog,
-                buttons = {
-                    TextButton(onClick = chatViewModel::dismissBlockDialog) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                    TextButton(onClick = chatViewModel::unblockUser) {
-                        Text(stringResource(R.string.yes))
-                    }
-                },
-                content = {
-                    Text("Вы уверены что хотите разблокировать этого пользователя?")
-                })
-        }
-    }
-    
-    uiState.pinSheetMessage?.let { sheetMessage ->
-        PinMessageBottomSheet(
-            chatType = ChatType.fromId(uiState.chatId),
-            forEveryone = uiState.pinForEveryone,
-            isPinned = sheetMessage.id in pinnedMessageIds,
-            onSelectScope = chatViewModel::selectPinScope,
-            onConfirm = chatViewModel::confirmPin,
-            onUnpin = chatViewModel::confirmUnpin,
-            onDismiss = chatViewModel::dismissPinSheet
-        )
-    }
-    
-    if (uiState.showWallpaperSheet) {
-        ChatWallpaperSheet(
-            wallpaper = chatWallpaper,
-            onDismiss = chatViewModel::hideWallpaperSheet,
-            onSelectFromGallery = {
-                chatViewModel.hideWallpaperSheet()
-                showWallpaperPicker = true
-            },
-            onReset = {
-                chatViewModel.hideWallpaperSheet()
-                chatViewModel.resetChatWallpaper()
-            }
-        )
-    }
-    
-    if (showWallpaperPicker) {
-        MediaPickerBottomSheet(
-            onDismissRequest = { showWallpaperPicker = false },
-            wallpaperTarget = wallpaperTarget
-        )
-    }
-    
-    if (uiState.isForwardSheetVisible) {
-        val forwardingMessage = uiState.forwardingMessage
-        ShareBottomSheet(
-            items = uiState.forwardCandidates.map { chat ->
-                ShareItem(
-                    id = chat.id,
-                    name = chat.chatName,
-                    isSelected = chat.id in uiState.selectedForwardChatIds,
-                    avatarUri = chat.avatarUri,
-                    isSavedMessages = chat.id == uiState.myId
-                )
-            },
-            onItemClick = chatViewModel::toggleForwardTarget,
-            onSendClick = chatViewModel::confirmForward,
-            onDismiss = chatViewModel::dismissForwardSheet,
-            forwardOptions = if (forwardingMessage != null && uiState.sharingLink == null) {
-                ShareForwardOptions(
-                    hasAttachments = forwardingMessage.attachments.isNotEmpty(),
-                    hideAuthor = uiState.forwardHideAuthor,
-                    hideCaption = uiState.forwardHideCaption,
-                    onHideAuthorClick = chatViewModel::toggleForwardHideAuthor,
-                    onHideCaptionClick = chatViewModel::toggleForwardHideCaption
-                )
-            } else {
-                null
-            }
-        )
-    }
-    
-    stickersState.openedPack?.let { pack ->
-        StickerPackBottomSheet(
-            pack = pack,
-            onDismiss = stickersViewModel::closePack,
-            onSendSticker = { sticker ->
-                stickersViewModel.closePack()
-                stickersViewModel.sendSticker(uiState.chatId, sticker.id)
-            },
-            onInstall = stickersViewModel::installOpenedPack,
-            onUninstall = stickersViewModel::uninstallOpenedPack,
-            onShare = {
-                stickersViewModel.closePack()
-                chatViewModel.startShareLink(StickerLink.build(pack.username))
-            },
-            onCopyLink = {
-                stickersViewModel.closePack()
-                chatViewModel.copyLink(StickerLink.build(pack.username))
-            })
-    }
-    
-    emojiState.openedPack?.let { pack ->
-        EmojiPackBottomSheet(
-            pack = pack,
-            onDismiss = emojiViewModel::closePack,
-            onInstall = emojiViewModel::installOpenedPack,
-            onUninstall = emojiViewModel::uninstallOpenedPack,
-            onShare = {
-                emojiViewModel.closePack()
-                chatViewModel.startShareLink(EmojiLink.build(pack.username))
-            },
-            onCopyLink = {
-                emojiViewModel.closePack()
-                chatViewModel.copyLink(EmojiLink.build(pack.username))
-            })
-    }
-    
-    if (uiState.showFullScreenViewer) {
-        val downloadedMedia = remember(uiState.chatItems) {
-            uiState.chatItems
-                .asReversed()
-                .filterIsInstance<ChatItem.MessageItem>()
-                .flatMap { it.message.attachments }
-                .filter { attachment ->
-                    attachment.localUri != null && (
-                            attachment.type == AttachmentType.IMAGE ||
-                                    attachment.type == AttachmentType.VIDEO ||
-                                    attachment.type == AttachmentType.GIF
-                            )
-                }
-        }
-        
-        val tapped = tappedMedia
-        val viewerAttachments = when {
-            tapped == null -> downloadedMedia
-            downloadedMedia.any {
-                it.messageId == tapped.messageId && it.fileId == tapped.fileId
-            } -> downloadedMedia
-            
-            tapped.localUri != null -> listOf(tapped)
-            else -> downloadedMedia
-        }
-        
-        val viewerEntries = viewerAttachments.mapNotNull { attachment ->
-            val uri = attachment.localUri ?: return@mapNotNull null
-            attachment to ViewerMediaItem(
-                uri = uri,
-                isVideo = attachment.type == AttachmentType.VIDEO,
-                messageId = attachment.messageId,
-                originKey = chatMediaKey(attachment.messageId, uri)
-            )
-        }
-        val viewerMedia = viewerEntries.map { it.second }
-        val viewerInitialPage = viewerEntries
-            .indexOfFirst { (attachment, _) ->
-                tapped != null &&
-                        attachment.messageId == tapped.messageId &&
-                        attachment.fileId == tapped.fileId
-            }
-            .coerceAtLeast(0)
-        
-        FullScreenViewer(
-            media = viewerMedia,
-            initialPage = viewerInitialPage,
-            isVideoLooping = uiState.isVideoLooping,
-            videoPlaybackSpeed = uiState.videoPlaybackSpeed,
-            canDownloadMedia = uiState.canDownloadMedia && copyPolicy.canSaveMedia,
-            onVideoLoopingChange = chatViewModel::setVideoLooping,
-            onVideoPlaybackSpeedChange = chatViewModel::setVideoPlaybackSpeed,
-            onSaveToGallery = chatViewModel::saveToGallery,
-            onShowInChat = { messageId -> chatViewModel.jumpToMessage(messageId) },
-            onDismiss = chatViewModel::clearMediaUrl
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .navigationBarsPadding()
-                .padding(bottom = 16.dp),
-            contentAlignment = Alignment.BottomCenter,
-        ) {
-            AppSnackbar(snackbarHostState)
-        }
-    }
-    
-    if (showMusicPlayerSheet && uiState.currentMusicFileId != null) {
-        val musicMetadata = uiState.audioMetadata[uiState.currentMusicFileId]
-        MusicPlayerSheet(
-            title = uiState.currentMusicTitle,
-            artist = uiState.currentMusicArtist,
-            cover = musicMetadata?.cover,
-            isPlaying = uiState.isMusicPlaying,
-            positionMs = uiState.musicPositionMs,
-            durationMs = if (uiState.musicDurationMs > 0) {
-                uiState.musicDurationMs
-            } else {
-                musicMetadata?.durationMs ?: 0
-            },
-            repeatMode = uiState.musicRepeatMode,
-            onSeek = chatViewModel::seekMusicTo,
-            onTogglePlayPause = chatViewModel::toggleMusicPlayPause,
-            onToggleRepeat = chatViewModel::toggleMusicRepeat,
-            onPrevious = chatViewModel::playPreviousMusicTrack,
-            onNext = chatViewModel::playNextMusicTrack,
-            onShare = chatViewModel::shareCurrentMusicTrack,
-            onOpenEqualizer = if (uiState.equalizerInfo != null) {
-                {
-                    showMusicPlayerSheet = false
-                    navBackStack.add(AppRoute.Equalizer)
-                }
-            } else {
-                null
-            },
-            onDismiss = { showMusicPlayerSheet = false }
+        ChatScreenOverlays(
+            uiState = uiState,
+            chatViewModel = chatViewModel,
+            stickersViewModel = stickersViewModel,
+            emojiViewModel = emojiViewModel,
+            stickersState = stickersState,
+            emojiState = emojiState,
+            chatWallpaper = chatWallpaper,
+            wallpaperTarget = wallpaperTarget,
+            snackbarHostState = snackbarHostState,
+            navBackStack = navBackStack,
+            viewingContact = viewingContact,
+            tappedMedia = tappedMedia,
+            fileToCancelId = fileToCancelId,
+            showCancelRecordingDialog = showCancelRecordingDialog,
+            showWallpaperPicker = showWallpaperPicker,
+            showMusicPlayerSheet = showMusicPlayerSheet,
+            pinnedMessageIds = pinnedMessageIds,
+            onFileToCancelIdChange = { fileToCancelId = it },
+            onDismissCancelRecordingDialog = { showCancelRecordingDialog = false },
+            onShowWallpaperPicker = { showWallpaperPicker = true },
+            onDismissMusicPlayerSheet = { showMusicPlayerSheet = false },
+            onDismissContactView = { viewingContact = null }
         )
     }
 }

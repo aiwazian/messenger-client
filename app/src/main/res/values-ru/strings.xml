@@ -21,6 +21,7 @@
     <string name="security">Безопасность</string>
     <string name="delete_account">Удалить аккаунт</string>
     <string name="delete_account_confirm">Вы уверены, что хотите удалить аккаунт?</string>
+    <string name="delete_anyway">Все равно удалить</string>
     <string name="yes">Да</string>
     <string name="no">Нет</string>
     <string name="devices">Устройства</string>
@@ -70,6 +71,11 @@
     <string name="add_chats">Добавить чаты</string>
     <string name="enter_password">Введите пароль</string>
     <string name="passcode_lock_description">После установки кода-пароля над списком чатов появится значок замка для блокировки и разблокировки приложения.</string>
+    <string name="passcode_create_title">Создание код-пароля</string>
+    <string name="passcode_change_title">Введите новый код-пароль</string>
+    <string name="passcode_enter_digits_description">Введите 4 цифры, которые хотите использовать для разблокировки приложения.</string>
+    <string name="passcode_lock_hint">Для блокировки и разблокировки приложения нажмите на значок замка над списком чатов.</string>
+    <string name="passcode_disable_confirm_message">Вы точно хотите отключить пароль?</string>
     <string name="cancel">Отмена</string>
     <string name="terminate">Завершить</string>
     <string name="terminate_session">Завершить сеанс</string>
@@ -141,6 +147,7 @@
     <string name="new_link">Новая ссылка</string>
     <string name="send">Отправить</string>
     <string name="subscribe">Подписаться</string>
+    <string name="request_to_join">Подать заявку</string>
     <string name="group_type">Тип группы</string>
     <string name="delete_account_after_twenty_four_hours">Удаление аккаунта будет доступно через 24 часа с начала текущей сессии.</string>
     <string name="change_password_session_age">Смена пароля учётной записи будет доступна через 24 часа с начала текущей сессии</string>
@@ -394,11 +401,14 @@
     <string name="last_seen_time">В сети в %1$s</string>
     <string name="last_seen_yesterday_time">В сети вчера в %1$s</string>
     <string name="last_seen_date_time">В сети %1$s в %2$s</string>
+    <string name="mini_player_yesterday_at">вчера в %1$s</string>
+    <string name="mini_player_date_at">%1$s в %2$s</string>
     <string name="chat_media">Медиа</string>
     <string name="chat_media_tab">Медиа</string>
     <string name="chat_files_tab">Файлы</string>
     <string name="chat_media_music_tab">Музыка</string>
     <string name="chat_voices_tab">Голосовые</string>
+    <string name="chat_contacts_tab">Контакты</string>
     <string name="chat_attachments_empty">В этом чате пока нет вложений</string>
     <string name="chat_media_load_error">Не удалось загрузить вложения</string>
 
@@ -428,6 +438,12 @@
         <item quantity="few">%1$d голосовых сообщения</item>
         <item quantity="many">%1$d голосовых сообщений</item>
         <item quantity="other">%1$d голосовых сообщений</item>
+    </plurals>
+    <plurals name="chat_media_contacts_count">
+        <item quantity="one">%1$d контакт</item>
+        <item quantity="few">%1$d контакта</item>
+        <item quantity="many">%1$d контактов</item>
+        <item quantity="other">%1$d контактов</item>
     </plurals>
     <plurals name="chat_media_music_count">
         <item quantity="one">%1$d файл с музыкой</item>
@@ -467,6 +483,9 @@
     <string name="media_picker_permission">Разрешите доступ к фото и видео</string>
     <string name="media_picker_permission_action">Разрешить</string>
     <string name="media_picker_empty">Нет фото и видео</string>
+    <string name="contact_picker_permission">Разрешите доступ к контактам</string>
+    <string name="contact_picker_permission_action">Разрешить</string>
+    <string name="contact_picker_empty">Контакты не найдены</string>
     <string name="media_picker_reset_title">Сбросить выбор</string>
     <string name="media_picker_reset_message">Закрыть меню вложений?</string>
     <string name="media_picker_reset_action">Сбросить</string>
@@ -534,6 +553,18 @@
     <string name="sticker_pack_installed">Набор %1$s добавлен в ваши стикеры</string>
     <string name="sticker_pack_uninstalled">Набор %1$s удален из ваших стикеров</string>
     <string name="sticker_message">Стикер</string>
+    <string name="contact_message">Контакт</string>
+    <string name="contact_call">Позвонить</string>
+    <string name="send_contact">Отправить контакт</string>
+    <string name="view_contact">Просмотр контакта</string>
+    <string name="add_contact">Добавить контакт</string>
+    <string name="contact_phone">Телефон</string>
+    <string name="contact_email">Почта</string>
+    <string name="contact_website">Сайт</string>
+    <string name="contact_address">Адрес</string>
+    <string name="contact_organization">Работа</string>
+    <string name="contact_job_title">Должность</string>
+    <string name="contact_birthday">День рождения</string>
 
     <string name="emoji">Эмодзи</string>
     <string name="emoji_packs_created">Созданные</string>

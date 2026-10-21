@@ -26,18 +26,7 @@ sealed interface ChatItem {
         val chatType: ChatType,
         val isHighlighted: Boolean = false,
         val readInfo: List<MessageReadInfo>? = null,
-        /**
-         * Доступен ли ответ на это сообщение.
-         *
-         * Тем же флагом включается свайп влево по сообщению: свайп — это просто
-         * второй способ вызвать «Ответить».
-         */
         val canReply: Boolean = false,
-        /**
-         * Тег отправителя: подпись рядом с его именем.
-         *
-         * Есть только в группах и только у тех, кому владелец его выдал.
-         */
         val senderTag: String? = null
     ) : ChatItem
 }

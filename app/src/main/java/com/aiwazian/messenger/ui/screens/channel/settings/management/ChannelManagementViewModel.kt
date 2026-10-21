@@ -57,16 +57,7 @@ class ChannelManagementViewModel @Inject constructor(
     fun vibrate() {
         vibrationManager.vibrate(VibrationPattern.Error)
     }
-    
-    /**
-     * Очистка всей истории канала.
-     *
-     * Сообщения удаляются сразу у всех подписчиков: сервер разрешает это
-     * только владельцу и сам разбрасывает остальным событие об очистке.
-     *
-     * Канал при этом остаётся на месте, поэтому, в отличие от удаления, на
-     * главный экран не уводим — только закрываем диалог.
-     */
+
     fun clearHistory() {
         viewModelScope.launch {
             val channelId = _uiState.value.channelId

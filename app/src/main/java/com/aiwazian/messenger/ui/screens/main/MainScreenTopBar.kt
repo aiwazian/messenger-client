@@ -57,6 +57,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ConnectionState
+import com.aiwazian.messenger.ui.animations.expressiveScaleIn
+import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.AnimatedDotsText
@@ -115,7 +117,7 @@ fun DefaultTopBar(
             },
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = {
-                AnimatedContent(searchBarState.currentValue) {
+                AnimatedContent(targetState = searchBarState.currentValue) {
                     if (it == SearchBarValue.Collapsed) {
                         IconButton(onClick = {
                             scope.launch {
@@ -143,15 +145,19 @@ fun DefaultTopBar(
                 }
             },
             trailingIcon = {
-                AnimatedContent(searchBarState.currentValue) {
-                    if (it == SearchBarValue.Collapsed) {
-                        if (passcodeEnabled) {
-                            IconButton(onClick = onLockClick) {
-                                Icon(
-                                    imageVector = Icons.Rounded.LockOpen,
-                                    contentDescription = "Lock"
-                                )
-                            }
+                AnimatedContent(
+                    targetState = searchBarState.currentValue,
+                    transitionSpec = {
+                        expressiveScaleIn togetherWith expressiveScaleOut
+                    },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (it == SearchBarValue.Collapsed && passcodeEnabled) {
+                        IconButton(onClick = onLockClick) {
+                            Icon(
+                                imageVector = Icons.Rounded.LockOpen,
+                                contentDescription = "Lock"
+                            )
                         }
                     } else if (textFieldState.text.isNotEmpty()) {
                         IconButton(onClick = {

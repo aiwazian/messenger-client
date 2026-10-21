@@ -21,17 +21,6 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Отправка без экрана — для тех, кто закрывается сразу после нажатия
- * «Отправить».
- *
- * Системное «Поделиться» и шторка в профиле исчезают быстрее, чем успевает
- * уйти запрос, и ждать результат там просто некому. Сами повторы живут в
- * скоупе приложения внутри use case — см. [SendMessageUseCase] и
- * [SendMessageWithFilesUseCase], — поэтому очередь нужна не для того, чтобы
- * отправка выжила, а чтобы у неё был владелец: локальный id для отмены и
- * защита от повторного нажатия.
- */
 @Singleton
 class MessageSendQueue @Inject constructor(
     @param:ApplicationScope private val appScope: CoroutineScope,
@@ -43,14 +32,8 @@ class MessageSendQueue @Inject constructor(
     
     private val jobs = ConcurrentHashMap<Long, Job>()
     
-    /** Идёт ли отправка прямо сейчас: чтобы повторное нажатие не удвоило её. */
     fun isPending(tempId: Long): Boolean = jobs[tempId]?.isActive == true
-    
-    /**
-     * Текстовое сообщение.
-     *
-     * @return локальный id, по которому отправку можно отменить.
-     */
+
     fun enqueueText(
         chatId: Long,
         text: String,
@@ -68,16 +51,7 @@ class MessageSendQueue @Inject constructor(
         
         return tempId
     }
-    
-    /**
-     * Файлы, фото, видео и голосовые.
-     *
-     * @param videoQualities ступени сжатия видео, выбранные в предпросмотре, по
-     * исходным ссылкам. Чего в карте нет, уходит со ступенью по умолчанию.
-     * @param mediaTransforms повороты и отражения, выбранные там же. Нетронутые
-     * кадры в карте не лежат.
-     * @param mediaDrawings рисунки поверх кадра по исходным ссылкам.
-     */
+
     fun enqueueFiles(
         chatId: Long,
         uris: List<Uri>,
@@ -103,16 +77,10 @@ class MessageSendQueue @Inject constructor(
         
         return tempId
     }
-    
-    /**
-     * Останавливает отправку и убирает за ней: пока запись о начатой отправке
-     * лежит на диске, [PendingSendResumer] поднимет её при следующем запуске.
-     */
+
     fun cancel(tempId: Long) {
         jobs.remove(tempId)?.cancel()
         
-        // Отмена ожидания больше ничего не останавливает: сама отправка живёт в
-        // скоупе приложения, и прервать её может только сам use case.
         sendMessageUseCase.cancel(tempId)
         sendMessageWithFilesUseCase.cancel(tempId)
         

@@ -27,14 +27,8 @@ class NotificationSettingsViewModel @Inject constructor(
     private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
-    /** Диалог подтверждения сброса — чисто экранное состояние, в базе ему делать нечего. */
     private val resetDialogVisible = MutableStateFlow(false)
     
-    /**
-     * Состояние читается из Room и кэша исключений, а не хранится в экране: так
-     * переключатель сам подхватывает и событие с другого устройства, и откат при
-     * ошибке запроса, а счётчик исключений — их удаление на экране категории.
-     */
     val uiState: StateFlow<NotificationSettingsUiState> = combine(
         notificationSettingsRepository.observe(),
         notificationSettingsRepository.observeChatExceptions(),
@@ -74,10 +68,6 @@ class NotificationSettingsViewModel @Inject constructor(
         resetDialogVisible.value = false
     }
     
-    /**
-     * Сброс: сервер снимает все исключения, а категории возвращаются к «всё
-     * включено». Экран перерисуется сам: состояние он читает из репозитория.
-     */
     fun resetSettings() {
         viewModelScope.launch {
             hideResetDialog()
@@ -89,10 +79,6 @@ class NotificationSettingsViewModel @Inject constructor(
         }
     }
     
-    /**
-     * Каждое переключение сразу уходит на сервер — кнопки «Сохранить» здесь нет.
-     * О неудаче говорит вибрация и вернувшийся в исходное положение переключатель.
-     */
     private fun update(transform: (NotificationSettings) -> NotificationSettings) {
         viewModelScope.launch {
             notificationSettingsRepository.update(transform(uiState.value.settings)).onFailure { e ->

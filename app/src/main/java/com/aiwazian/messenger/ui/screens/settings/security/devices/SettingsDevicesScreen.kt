@@ -5,15 +5,15 @@
 package com.aiwazian.messenger.ui.screens.settings.security.devices
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BackHand
-import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material3.ButtonDefaults
@@ -30,10 +30,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,14 +45,15 @@ import com.aiwazian.messenger.domain.Session
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateTime
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppBottomSheetFooterActions
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.CountdownTextButton
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -62,7 +63,7 @@ fun SettingsDevicesScreen(viewModel: DevicesViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    
+    val scope = rememberCoroutineScope()
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
     
     LaunchedEffect(Unit) {
@@ -70,8 +71,7 @@ fun SettingsDevicesScreen(viewModel: DevicesViewModel = hiltViewModel()) {
             when (effect) {
                 is DevicesSideEffect.ShowSnackbar -> {
                     snackbarJob?.cancel()
-                    
-                    snackbarJob = launch {
+                    snackbarJob = scope.launch {
                         snackbarHostState.currentSnackbarData?.dismiss()
                         snackbarHostState.showSnackbar(
                             message = effect.message.asString(context),
@@ -174,71 +174,49 @@ private fun SessionInfoBottomSheet(
     onDismissRequest: () -> Unit,
     onTerminateClick: () -> Unit
 ) {
-    AppBottomSheet(onDismissRequest = onDismissRequest) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+    AppBottomSheet(onDismissRequest = onDismissRequest, stickyFooter = {
+        AppBottomSheetFooterActions.Custom {
+            if (!session.isCurrent) {
+                AppBottomSheetFooterActions.DestructiveButton(
+                    text = stringResource(R.string.terminate_session),
+                    onClick = onTerminateClick
+                )
+            }
+        }
+    }) { padding ->
+        Column(modifier = Modifier.padding(padding)) {
+            Icon(
+                Icons.Rounded.Android,
+                null,
+                modifier = Modifier
+                    .size(48.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
+            
             Text(
                 text = session.deviceModel,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
             
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                InfoRow(
-                    icon = Icons.Outlined.PhoneAndroid,
-                    value = "${session.osName} ${session.osVersion}"
-                )
-                InfoRow(
-                    icon = Icons.Outlined.DateRange,
-                    value = session.createdAt.toInstance().toPrettyDateTime()
-                )
-            }
+            Spacer(modifier = Modifier.height(20.dp))
             
-            if (!session.isCurrent) {
-                TextButton(
-                    onClick = onTerminateClick,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text(
-                        text = stringResource(R.string.terminate_session),
-                        modifier = Modifier.padding(4.dp),
-                        fontSize = 16.sp
-                    )
-                }
-            }
+            SectionContainer(contentPadding = PaddingValues.Zero) {
+                SectionButton(
+                    headlineText = "${session.osName} ${session.osVersion}",
+                    leadingIcon = Icons.Outlined.PhoneAndroid,
+                    onClick = null
+                )
+                SectionButton(
+                    headlineText = session.createdAt.toInstance().toPrettyDateTime(),
+                    leadingIcon = Icons.Outlined.CalendarToday,
+                onClick = null
+            )
         }
     }
 }
-
-@Composable
-private fun InfoRow(icon: ImageVector, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(20.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
 }
 
 @Composable

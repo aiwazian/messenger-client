@@ -7,6 +7,7 @@ package com.aiwazian.messenger.ui.screens.settings.security
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
@@ -39,13 +40,14 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppBottomSheetFooterActions
 import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
-import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.LottieAnimation
 import kotlinx.coroutines.Job
@@ -106,7 +108,10 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
     ) {
         SectionContainer(footer = {
             SectionDescription(
-                text = stringResource(R.string.devices_description, stringResource(R.string.app_name))
+                text = stringResource(
+                    R.string.devices_description,
+                    stringResource(R.string.app_name)
+                )
             )
         }) {
             SectionButton(
@@ -157,8 +162,19 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
         }
         
         if (uiState.showPasscodeBottomSheet) {
-            AppBottomSheet(onDismissRequest = viewModel::hideBottomSheet) {
+            AppBottomSheet(
+                onDismissRequest = viewModel::hideBottomSheet,
+                stickyFooter = {
+                    AppBottomSheetFooterActions.PrimaryButton(
+                        text = stringResource(R.string.enable_passcode),
+                        onClick = {
+                            viewModel.hideBottomSheet()
+                            navBackStack.add(AppRoute.SettingsPasscode)
+                        }
+                    )
+                }) { padding ->
                 Column(
+                    modifier = Modifier.padding(padding),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
@@ -173,23 +189,14 @@ fun SettingsSecurityScreen(viewModel: SettingsSecurityViewModel = hiltViewModel(
                         isPlaying = true
                     )
                     Text(stringResource(R.string.passcode_lock_description))
-                    TextButton(
-                        onClick = {
-                            viewModel.hideBottomSheet()
-                            navBackStack.add(AppRoute.SettingsPasscode)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Text(stringResource(R.string.enable_passcode))
-                    }
                 }
             }
         }
         
         if (uiState.showEmailBottomSheet) {
-            AppBottomSheet(onDismissRequest = viewModel::hideEmailBottomSheet) {
+            AppBottomSheet(onDismissRequest = viewModel::hideEmailBottomSheet) { padding ->
                 Column(
+                    modifier = Modifier.padding(padding),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {

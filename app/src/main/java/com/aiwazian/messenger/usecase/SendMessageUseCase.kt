@@ -22,23 +22,6 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Отправка текстового сообщения.
- *
- * Попыток столько, сколько понадобится: раньше любая сетевая ошибка сразу
- * переводила сообщение в статус «ошибка», и повтор оставался ручным.
- *
- * Цикл живёт в скоупе приложения, поэтому уход с экрана и сворачивание его не
- * обрывают: вызывающая сторона лишь ждёт результат. Остановить отправку можно
- * через [cancel] либо [com.aiwazian.messenger.utils.MessageSendQueue.cancel], а
- * ещё её останавливает исчезновение самого сообщения: «Отменить отправку»
- * удаляет его из чата, и повторять после этого нечего.
- *
- * Смерть процесса цикл не переживает, и записи на диске здесь больше нет: текст
- * целиком лежит в самом сообщении, поэтому оборванную отправку поднимает
- * [com.aiwazian.messenger.utils.FailedSendRetrier] при следующем открытии чата.
- * Файлы так не восстановить, им запись нужна — см. [SendMessageWithFilesUseCase].
- */
 @Singleton
 class SendMessageUseCase @Inject constructor(
     @param:ApplicationScope private val appScope: CoroutineScope,
@@ -66,18 +49,10 @@ class SendMessageUseCase @Inject constructor(
         return sending.await()
     }
     
-    /** Останавливает отправку, которая продолжается в скоупе приложения. */
     fun cancel(tempId: Long) {
         running.remove(tempId)?.cancel()
     }
-    
-    /**
-     * Идёт ли отправка прямо сейчас.
-     *
-     * Нужно тем, кто досылает зависшие сообщения со стороны: сообщение может
-     * долго висеть «отправляется» с работающим циклом повторов внутри, и
-     * повторная постановка в очередь только оборвала бы его на полпути.
-     */
+
     fun isRunning(tempId: Long): Boolean = running[tempId]?.isActive == true
     
     private suspend fun send(
@@ -123,11 +98,7 @@ class SendMessageUseCase @Inject constructor(
         
         return result
     }
-    
-    /**
-     * Сбой чтения базы считаем за «сообщение на месте»: оборвать из-за него
-     * живую отправку хуже, чем сделать лишнюю попытку.
-     */
+
     private suspend fun isCancelled(tempId: Long): Boolean = try {
         messageDao.getMessageById(tempId) == null
     } catch (e: Exception) {

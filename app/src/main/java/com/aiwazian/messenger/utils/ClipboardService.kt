@@ -7,6 +7,8 @@ package com.aiwazian.messenger.utils
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.os.Build
+import android.widget.Toast
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -19,7 +21,9 @@ class ClipboardService @Inject constructor(
     private val clipboardManager = context.getSystemService(ClipboardManager::class.java)
     
     fun copy(text: String) {
-        val clipData = ClipData.newPlainText("label", text)
-        clipboardManager.setPrimaryClip(clipData)
+        clipboardManager.setPrimaryClip(ClipData.newPlainText("label", text))
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+            Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
+        }
     }
 }

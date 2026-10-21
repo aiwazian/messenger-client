@@ -82,7 +82,7 @@ fun EmptySearchResultsPlaceholder() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Ничего не найдено",
+            text = stringResource(R.string.chat_search_no_results),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

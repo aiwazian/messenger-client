@@ -4,20 +4,33 @@
 
 package com.aiwazian.messenger.ui.screens.chat.media
 
+import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.plus
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -27,7 +40,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Forward
+import androidx.compose.material.icons.outlined.RemoveRedEye
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -35,11 +55,14 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.pluralStringResource
@@ -51,18 +74,26 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.result.LocalResultEventBus
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.AudioTrackMetadata
+import com.aiwazian.messenger.domain.ChatContactItem
 import com.aiwazian.messenger.domain.ChatMediaCounts
 import com.aiwazian.messenger.domain.ChatMediaItem
 import com.aiwazian.messenger.enums.AttachmentType
+import com.aiwazian.messenger.ui.animations.expressiveScaleIn
+import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppPrimaryScrollableTabRow
 import com.aiwazian.messenger.ui.app.AppTab
 import com.aiwazian.messenger.ui.components.BottomBarScrim
+import com.aiwazian.messenger.ui.components.ShareBottomSheet
+import com.aiwazian.messenger.ui.components.ShareForwardOptions
+import com.aiwazian.messenger.ui.components.ShareItem
 import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.chatMediaKey
-import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.topBar.PageTopBar
+import com.aiwazian.messenger.ui.screens.chat.components.ContactViewBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
+import com.aiwazian.messenger.ui.screens.chat.media.components.ChatContactCard
 import com.aiwazian.messenger.ui.screens.chat.media.components.ChatFileCard
 import com.aiwazian.messenger.ui.screens.chat.media.components.ChatMediaCell
 import com.aiwazian.messenger.ui.screens.chat.media.components.ChatMusicCard
@@ -78,7 +109,8 @@ private enum class ChatMediaTab(@param:StringRes val titleRes: Int) {
     MEDIA(R.string.chat_media_tab),
     FILES(R.string.chat_files_tab),
     MUSIC(R.string.chat_media_music_tab),
-    VOICES(R.string.chat_voices_tab)
+    VOICES(R.string.chat_voices_tab),
+    CONTACTS(R.string.chat_contacts_tab)
 }
 
 @Composable
@@ -96,23 +128,28 @@ fun ChatMediaScreen(
         uiState.media.isEmpty(),
         uiState.files.isEmpty(),
         uiState.music.isEmpty(),
-        uiState.voices.isEmpty()
+        uiState.voices.isEmpty(),
+        uiState.contacts.isEmpty()
     ) {
         buildList {
             if (uiState.media.isNotEmpty()) {
                 add(ChatMediaTab.MEDIA)
             }
-
+            
             if (uiState.files.isNotEmpty()) {
                 add(ChatMediaTab.FILES)
             }
-
+            
             if (uiState.music.isNotEmpty()) {
                 add(ChatMediaTab.MUSIC)
             }
-
+            
             if (uiState.voices.isNotEmpty()) {
                 add(ChatMediaTab.VOICES)
+            }
+            
+            if (uiState.contacts.isNotEmpty()) {
+                add(ChatMediaTab.CONTACTS)
             }
         }
     }
@@ -123,6 +160,21 @@ fun ChatMediaScreen(
     
     val resolvedChatName = chatName?.takeIf { it.isNotBlank() }
     val counts = uiState.counts
+    
+    val selectionCount = uiState.selectedAttachmentIds.size + uiState.selectedContactMessageIds.size
+    val hasSelection = selectionCount > 0
+    val selectedMessageId: Long? = when {
+        uiState.selectedContactMessageIds.size == 1 -> uiState.selectedContactMessageIds.first()
+        
+        uiState.selectedAttachmentIds.size == 1 -> (uiState.media + uiState.files + uiState.music + uiState.voices)
+            .firstOrNull { it.id == uiState.selectedAttachmentIds.first() }?.messageId
+        
+        else -> null
+    }
+    
+    BackHandler(enabled = hasSelection) {
+        viewModel.clearSelection()
+    }
     
     Scaffold(
         topBar = {
@@ -155,13 +207,39 @@ fun ChatMediaScreen(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
                 
-                if (tabs.isNotEmpty()) {
-                    AppPrimaryScrollableTabRow(selectedTabIndex = pagerState.currentPage) {
-                        tabs.forEachIndexed { index, tab ->
-                            AppTab(
-                                selected = pagerState.currentPage == index,
-                                text = stringResource(tab.titleRes),
-                                onClick = { scope.launch { pagerState.animateScrollToPage(index) } })
+                AnimatedContent(
+                    targetState = hasSelection,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    label = "chat_media_selection_bar"
+                ) { selecting ->
+                    if (selecting) {
+                        ChatMediaSelectionBar(
+                            count = selectionCount,
+                            canForward = uiState.canForward,
+                            isEyeEnabled = selectedMessageId != null,
+                            onClearSelection = viewModel::clearSelection,
+                            onShowInChat = {
+                                selectedMessageId?.let { messageId ->
+                                    resultBus.sendResult(ShowInChatResult(messageId))
+                                    navBackStack.removeLastOrNull()
+                                }
+                            },
+                            onForwardClick = viewModel::startForwardSelection,
+                            modifier = Modifier.padding(
+                                TopAppBarDefaults.windowInsets.only(WindowInsetsSides.Horizontal)
+                                    .asPaddingValues()
+                                    .plus(PaddingValues(horizontal = 4.dp))
+                                    .plus(PaddingValues(bottom = 4.dp))
+                            )
+                        )
+                    } else if (tabs.isNotEmpty()) {
+                        AppPrimaryScrollableTabRow(selectedTabIndex = pagerState.currentPage) {
+                            tabs.forEachIndexed { index, tab ->
+                                AppTab(
+                                    selected = pagerState.currentPage == index,
+                                    text = stringResource(tab.titleRes),
+                                    onClick = { scope.launch { pagerState.animateScrollToPage(index) } })
+                            }
                         }
                     }
                 }
@@ -173,7 +251,7 @@ fun ChatMediaScreen(
             ) {
                 val isLoading =
                     uiState.isMediaLoading || uiState.isFilesLoading || uiState.isMusicLoading ||
-                            uiState.isVoicesLoading
+                            uiState.isVoicesLoading || uiState.isContactsLoading
                 
                 if (isLoading && tabs.isEmpty()) {
                     LoadingState()
@@ -202,7 +280,9 @@ fun ChatMediaScreen(
                     when (tabs.getOrNull(page)) {
                         ChatMediaTab.MEDIA -> MediaTab(
                             items = uiState.media,
+                            selectedIds = uiState.selectedAttachmentIds,
                             onItemClick = viewModel::onMediaClick,
+                            onToggleSelection = viewModel::toggleAttachmentSelection,
                             onVisibleItems = viewModel::onMediaVisible,
                             onLoadMore = viewModel::loadMoreMedia,
                             contentPadding = PaddingValues(
@@ -215,19 +295,23 @@ fun ChatMediaScreen(
                         
                         ChatMediaTab.FILES -> FilesTab(
                             items = uiState.files,
+                            selectedIds = uiState.selectedAttachmentIds,
                             onItemClick = viewModel::onFileClick,
+                            onToggleSelection = viewModel::toggleAttachmentSelection,
                             onLoadMore = viewModel::loadMoreFiles,
                             contentPadding = innerPadding
                         )
-
+                        
                         ChatMediaTab.MUSIC -> MusicTab(
                             items = uiState.music,
+                            selectedIds = uiState.selectedAttachmentIds,
                             musicMetadata = uiState.musicMetadata,
                             currentFileId = uiState.musicPlayingFileId,
                             isPlaying = uiState.isMusicPlaying,
                             positionMs = uiState.musicPositionMs,
                             durationMs = uiState.musicDurationMs,
                             onItemClick = viewModel::onMusicClick,
+                            onToggleSelection = viewModel::toggleAttachmentSelection,
                             onSeek = viewModel::onMusicSeek,
                             onMetadataResolved = viewModel::onMusicMetadataResolved,
                             onLoadMore = viewModel::loadMoreMusic,
@@ -236,14 +320,25 @@ fun ChatMediaScreen(
                         
                         ChatMediaTab.VOICES -> VoicesTab(
                             items = uiState.voices,
+                            selectedIds = uiState.selectedAttachmentIds,
                             chatName = resolvedChatName,
                             myId = uiState.myId,
                             playingFileId = uiState.playingFileId,
                             isPlaying = uiState.isVoicePlaying,
                             onItemClick = viewModel::onVoiceClick,
+                            onToggleSelection = viewModel::toggleAttachmentSelection,
                             onVisibleItems = viewModel::onVoicesVisible,
                             onDurationResolved = viewModel::onVoiceDurationResolved,
                             onLoadMore = viewModel::loadMoreVoices,
+                            contentPadding = innerPadding
+                        )
+                        
+                        ChatMediaTab.CONTACTS -> ContactsTab(
+                            items = uiState.contacts,
+                            selectedMessageIds = uiState.selectedContactMessageIds,
+                            onCopyValue = viewModel::onCopyContactValue,
+                            onToggleSelection = viewModel::toggleContactSelection,
+                            onLoadMore = viewModel::loadMoreContacts,
                             contentPadding = innerPadding
                         )
                         
@@ -288,6 +383,30 @@ fun ChatMediaScreen(
             onDismiss = viewModel::onViewerDismiss
         )
     }
+    
+    if (uiState.isForwardSheetVisible) {
+        ShareBottomSheet(
+            items = uiState.forwardCandidates.map { chat ->
+                ShareItem(
+                    id = chat.id,
+                    name = chat.chatName,
+                    isSelected = chat.id in uiState.selectedForwardChatIds,
+                    avatarUri = chat.avatarUri,
+                    isSavedMessages = chat.id == uiState.myId
+                )
+            },
+            onItemClick = viewModel::toggleForwardTarget,
+            onSendClick = viewModel::confirmForward,
+            onDismiss = viewModel::dismissForwardSheet,
+            forwardOptions = ShareForwardOptions(
+                hasAttachments = uiState.selectedAttachmentIds.isNotEmpty(),
+                hideAuthor = uiState.forwardHideAuthor,
+                hideCaption = uiState.forwardHideCaption,
+                onHideAuthorClick = viewModel::toggleForwardHideAuthor,
+                onHideCaptionClick = viewModel::toggleForwardHideCaption
+            )
+        )
+    }
 }
 
 @Composable
@@ -298,23 +417,29 @@ private fun tabCountsText(tab: ChatMediaTab?, counts: ChatMediaCounts?): String?
     
     return when (tab) {
         ChatMediaTab.MEDIA -> mediaCountsText(counts)
-
+        
         ChatMediaTab.FILES -> pluralStringResource(
             R.plurals.chat_media_files_count,
             counts.files,
             counts.files
         )
-
+        
         ChatMediaTab.MUSIC -> pluralStringResource(
             R.plurals.chat_media_music_count,
             counts.music,
             counts.music
         )
-
+        
         ChatMediaTab.VOICES -> pluralStringResource(
             R.plurals.chat_media_voices_count,
             counts.voices,
             counts.voices
+        )
+        
+        ChatMediaTab.CONTACTS -> pluralStringResource(
+            R.plurals.chat_media_contacts_count,
+            counts.contacts,
+            counts.contacts
         )
     }
 }
@@ -341,7 +466,9 @@ private fun mediaCountsText(counts: ChatMediaCounts): String? {
 @Composable
 private fun MediaTab(
     items: List<ChatMediaItem>,
+    selectedIds: Set<Int>,
     onItemClick: (ChatMediaItem) -> Unit,
+    onToggleSelection: (ChatMediaItem) -> Unit,
     onVisibleItems: (List<ChatMediaItem>) -> Unit,
     onLoadMore: () -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero
@@ -373,7 +500,13 @@ private fun MediaTab(
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         items(items = items, key = { it.id }) { item ->
-            ChatMediaCell(item = item, onClick = { onItemClick(item) })
+            ChatMediaCell(
+                item = item,
+                isSelected = item.id in selectedIds,
+                onClick = {
+                    if (selectedIds.isNotEmpty()) onToggleSelection(item) else onItemClick(item)
+                },
+                onLongClick = { onToggleSelection(item) })
         }
     }
 }
@@ -381,7 +514,9 @@ private fun MediaTab(
 @Composable
 private fun FilesTab(
     items: List<ChatMediaItem>,
+    selectedIds: Set<Int>,
     onItemClick: (ChatMediaItem) -> Unit,
+    onToggleSelection: (ChatMediaItem) -> Unit,
     onLoadMore: () -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero
 ) {
@@ -403,7 +538,13 @@ private fun FilesTab(
         contentPadding = contentPadding
     ) {
         items(items = items, key = { it.id }) { item ->
-            ChatFileCard(file = item, onClick = { onItemClick(item) })
+            ChatFileCard(
+                file = item,
+                isSelected = item.id in selectedIds,
+                onClick = {
+                    if (selectedIds.isNotEmpty()) onToggleSelection(item) else onItemClick(item)
+                },
+                onLongClick = { onToggleSelection(item) })
         }
     }
 }
@@ -411,19 +552,21 @@ private fun FilesTab(
 @Composable
 private fun MusicTab(
     items: List<ChatMediaItem>,
+    selectedIds: Set<Int>,
     musicMetadata: Map<String, AudioTrackMetadata>,
     currentFileId: String?,
     isPlaying: Boolean,
     positionMs: Int,
     durationMs: Int,
     onItemClick: (ChatMediaItem) -> Unit,
+    onToggleSelection: (ChatMediaItem) -> Unit,
     onSeek: (ChatMediaItem, Int) -> Unit,
     onMetadataResolved: (ChatMediaItem, AudioTrackMetadata?) -> Unit,
     onLoadMore: () -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero
 ) {
     val listState = rememberLazyListState()
-
+    
     LaunchedEffect(listState, items) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
             .distinctUntilChanged()
@@ -433,7 +576,7 @@ private fun MusicTab(
                 }
             }
     }
-
+    
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
@@ -447,7 +590,11 @@ private fun MusicTab(
                 isPlaying = isPlaying,
                 positionMs = positionMs,
                 durationMs = durationMs,
-                onClick = { onItemClick(item) },
+                isSelected = item.id in selectedIds,
+                onClick = {
+                    if (selectedIds.isNotEmpty()) onToggleSelection(item) else onItemClick(item)
+                },
+                onLongClick = { onToggleSelection(item) },
                 onSeek = { onSeek(item, it) },
                 onMetadataResolved = { onMetadataResolved(item, it) }
             )
@@ -458,11 +605,13 @@ private fun MusicTab(
 @Composable
 private fun VoicesTab(
     items: List<ChatMediaItem>,
+    selectedIds: Set<Int>,
     chatName: String?,
     myId: Long,
     playingFileId: String?,
     isPlaying: Boolean,
     onItemClick: (ChatMediaItem) -> Unit,
+    onToggleSelection: (ChatMediaItem) -> Unit,
     onVisibleItems: (List<ChatMediaItem>) -> Unit,
     onDurationResolved: (ChatMediaItem, Int) -> Unit,
     onLoadMore: () -> Unit,
@@ -497,8 +646,144 @@ private fun VoicesTab(
                 voice = item,
                 author = if (item.senderId == myId) youLabel else chatName,
                 isPlaying = isPlaying && playingFileId == item.fileId,
-                onClick = { onItemClick(item) },
+                isSelected = item.id in selectedIds,
+                onClick = {
+                    if (selectedIds.isNotEmpty()) onToggleSelection(item) else onItemClick(item)
+                },
+                onLongClick = { onToggleSelection(item) },
                 onDurationResolved = { durationMs -> onDurationResolved(item, durationMs) })
+        }
+    }
+}
+
+@Composable
+private fun ContactsTab(
+    items: List<ChatContactItem>,
+    selectedMessageIds: Set<Long>,
+    onCopyValue: (String) -> Unit,
+    onToggleSelection: (ChatContactItem) -> Unit,
+    onLoadMore: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues.Zero
+) {
+    val listState = rememberLazyListState()
+    var viewingContact by remember { mutableStateOf<ChatContactItem?>(null) }
+    
+    LaunchedEffect(listState, items) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .distinctUntilChanged()
+            .collect { lastVisible ->
+                if (lastVisible != null && lastVisible >= items.lastIndex - PREFETCH_DISTANCE) {
+                    onLoadMore()
+                }
+            }
+    }
+    
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = contentPadding
+    ) {
+        items(items = items, key = { it.messageId }) { contact ->
+            ChatContactCard(
+                contact = contact,
+                isSelected = contact.messageId in selectedMessageIds,
+                onClick = {
+                    if (selectedMessageIds.isNotEmpty()) {
+                        onToggleSelection(contact)
+                    } else {
+                        viewingContact = contact
+                    }
+                },
+                onLongClick = { onToggleSelection(contact) })
+        }
+    }
+    
+    viewingContact?.let { item ->
+        ContactViewBottomSheet(
+            contact = item.contact,
+            onCopyValue = onCopyValue,
+            onDismiss = { viewingContact = null })
+    }
+}
+
+@Composable
+private fun ChatMediaSelectionBar(
+    count: Int,
+    canForward: Boolean,
+    isEyeEnabled: Boolean,
+    onClearSelection: () -> Unit,
+    onShowInChat: () -> Unit,
+    onForwardClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainer),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onClearSelection) {
+                Icon(
+                    imageVector = Icons.Rounded.Close,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            AnimatedContent(
+                modifier = Modifier.padding(start = 10.dp, end = 18.dp),
+                targetState = count,
+                transitionSpec = {
+                    if (targetState > initialState) {
+                        slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
+                    } else {
+                        slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
+                    }
+                },
+                label = "chat_media_selection_count"
+            ) { value ->
+                Text(text = "$value")
+            }
+        }
+        
+        Row(
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainer),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AnimatedContent(
+                targetState = count,
+                transitionSpec = {
+                    expressiveScaleIn togetherWith expressiveScaleOut
+                },
+                contentAlignment = Alignment.Center
+            ) { count ->
+                if (count == 1) {
+                    IconButton(onClick = onShowInChat, enabled = isEyeEnabled) {
+                        Icon(
+                            imageVector = Icons.Outlined.RemoveRedEye,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            
+            if (canForward) {
+                IconButton(onClick = onForwardClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.Forward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }

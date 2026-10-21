@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import androidx.compose.animation.core.animate
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Reply
 import androidx.compose.material3.Icon
@@ -76,10 +78,7 @@ fun SwipeToReplyBox(
     
     Box(modifier = modifier.fillMaxWidth()) {
         if (enabled) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.Reply,
-                contentDescription = stringResource(R.string.reply),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            Box(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .padding(end = SwipeToReplyDefaults.IconPadding)
@@ -90,7 +89,19 @@ fun SwipeToReplyBox(
                         translationX = (1f - progress) * iconTravelPx
                         scaleX = progress
                         scaleY = progress
-                    })
+                    }
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f),
+                        shape = CircleShape
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.Reply,
+                    contentDescription = stringResource(R.string.reply),
+                    modifier = Modifier.padding(2.dp),
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
         
         Box(

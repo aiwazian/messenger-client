@@ -58,15 +58,6 @@ class GroupManagementViewModel @Inject constructor(
         vibrationManager.vibrate(VibrationPattern.Error)
     }
     
-    /**
-     * Очистка всей истории группы.
-     *
-     * Сообщения удаляются сразу у всех участников: сервер разрешает это
-     * только владельцу и сам разбрасывает остальным событие об очистке.
-     *
-     * Группа при этом остаётся на месте, поэтому, в отличие от удаления, на
-     * главный экран не уводим — только закрываем диалог.
-     */
     fun clearHistory() {
         viewModelScope.launch {
             val groupId = _uiState.value.groupId

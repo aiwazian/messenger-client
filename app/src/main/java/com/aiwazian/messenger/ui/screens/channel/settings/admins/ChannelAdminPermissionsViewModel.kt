@@ -21,12 +21,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Разрешения одного администратора канала. Тегов в каналах нет.
- *
- * Свои разрешения открываются только на просмотр: менять их может владелец или другой
- * администратор с правом на управление администраторами.
- */
 @HiltViewModel
 class ChannelAdminPermissionsViewModel @Inject constructor(
     private val channelAdminsRepository: ChannelAdminsRepository,
@@ -79,7 +73,6 @@ class ChannelAdminPermissionsViewModel @Inject constructor(
         _uiState.update { it.copy(canEditProfile = !it.canEditProfile) }
     }
 
-    /** Право на управление администраторами выдаёт только владелец: это проверяет сервер. */
     fun toggleManageAdmins() {
         if (_uiState.value.isReadOnly) return
         _uiState.update { it.copy(canManageAdmins = !it.canManageAdmins) }

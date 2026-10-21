@@ -14,15 +14,18 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 
-private val ExpressiveSpatialSpec: SpringSpec<Float> = spring(
+private val ExpressiveSpatialSpec = spring<Float>(
     dampingRatio = Spring.DampingRatioMediumBouncy,
     stiffness = Spring.StiffnessMediumLow
 )
 
-/** Пружинистое появление: масштаб от 0.5 + проявление. */
+private val ExpressiveExitSpec = spring<Float>(
+    dampingRatio = Spring.DampingRatioNoBouncy,
+    stiffness = Spring.StiffnessMedium
+)
+
 val expressiveScaleIn: EnterTransition =
     scaleIn(initialScale = 0.5f, animationSpec = ExpressiveSpatialSpec) + fadeIn()
 
-/** Исчезновение: масштаб до 0.5 + затухание. */
 val expressiveScaleOut: ExitTransition =
-    scaleOut(targetScale = 0.5f) + fadeOut()
+    scaleOut(targetScale = 0.5f, animationSpec = ExpressiveExitSpec) + fadeOut()

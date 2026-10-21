@@ -287,7 +287,9 @@ fun ChatTopBar(
         }, actions = {
             AnimatedContent(
                 targetState = isSearchActive,
-                transitionSpec = { expressiveScaleIn togetherWith expressiveScaleOut }) { isSearchActive ->
+                transitionSpec = { expressiveScaleIn togetherWith expressiveScaleOut },
+                contentAlignment = Alignment.Center
+            ) { isSearchActive ->
                 if (isSearchActive) return@AnimatedContent
                 
                 topBarActions.forEachIndexed { index, action ->

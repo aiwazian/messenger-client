@@ -42,22 +42,11 @@ class MainViewModel @Inject constructor(
     
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState = _uiState.asStateFlow()
-    
-    /**
-     * Само соединение поднимает ServerSyncService: список чатов может и не открыться,
-     * когда приложение запускают сразу в чат. Здесь состояние нужно только для того,
-     * чтобы показать его в шапке.
-     */
+
     val socketState = webSocketClient.connectionState
     
     init {
         viewModelScope.launch {
-            /*
-             * Колокольчик в списке чатов считается на лету из настроек категорий и
-             * исключений: переключение категории на экране настроек должно сразу
-             * гасить или возвращать звук у всех её чатов, кроме исключений, без
-             * похода на сервер. Исключение по чату сильнее его категории.
-             */
             combine(
                 chatRepository.getAllChats(),
                 chatFolderRepository.getFolders(),
@@ -186,11 +175,6 @@ class MainViewModel @Inject constructor(
         return listOf(allChatsPage) + folderPages
     }
     
-    /**
-     * Бейдж у названия папки считает непрочитанные чаты, а не сообщения. Пересчёт
-     * идёт на каждой эмиссии потока чатов, поэтому прочтение чата, ручная пометка
-     * прочитанным/непрочитанным и новое сообщение сразу меняют число.
-     */
     private fun List<Chat>.countUnread(): Int {
         return this.count { it.isUnread }
     }
@@ -299,12 +283,6 @@ class MainViewModel @Inject constructor(
         }
     }
     
-    /**
-     * «Прочитать все» из меню таба папки.
-     *
-     * На сервер уходят только те чаты папки, которые сейчас не прочитаны:
-     * одним запросом на пачку, а не по запросу на каждый чат.
-     */
     fun markFolderChatsRead(folderId: Int) {
         val page = _uiState.value.folderPages.find { it.id == folderId } ?: return
         val unreadIds = page.chats.filter { it.isUnread }.map { it.id }

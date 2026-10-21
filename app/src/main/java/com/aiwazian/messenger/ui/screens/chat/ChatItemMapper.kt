@@ -5,6 +5,7 @@ import android.webkit.MimeTypeMap
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Forward
 import androidx.compose.material.icons.automirrored.outlined.Reply
+import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.ContentCopy
@@ -46,6 +47,8 @@ class ChatItemMapper(
     private val sharedPinnedMessageIds: Set<Long> = emptySet(),
     private val canPinForEveryone: Boolean = false,
     private val onCopyText: (Message) -> Unit,
+    private val onCopyContactPhone: (Message) -> Unit,
+    private val onCallContact: (String) -> Unit,
     private val onEditMessage: (Message) -> Unit,
     private val onDeleteMessage: (Message) -> Unit,
     private val onRetrySendMessage: (Message) -> Unit,
@@ -282,6 +285,28 @@ class ChatItemMapper(
                     UiText.StringResource(R.string.reply),
                     onClick = { onReplyMessage(message) })
             )
+        }
+
+        if (message.messageType == MessageType.CONTACT) {
+            val phone = message.contact?.firstPhone
+
+            if (phone != null && copyPolicy.canCopyText()) {
+                actions.add(
+                    DropdownMenuAction(
+                        Icons.Rounded.ContentCopy,
+                        UiText.StringResource(R.string.copy),
+                        onClick = { onCopyContactPhone(message) })
+                )
+            }
+
+            if (phone != null && isSent) {
+                actions.add(
+                    DropdownMenuAction(
+                        Icons.Outlined.Call,
+                        UiText.StringResource(R.string.contact_call),
+                        onClick = { onCallContact(phone) })
+                )
+            }
         }
         
         if (isSent && copyPolicy.canForward()) {

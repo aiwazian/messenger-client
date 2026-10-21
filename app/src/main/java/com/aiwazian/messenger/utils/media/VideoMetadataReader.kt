@@ -15,27 +15,16 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Что известно о видео до сжатия. */
 data class VideoMetadata(
-    /** Ширина кадра с учётом поворота, в пикселях. */
     val width: Int,
-    /** Высота кадра с учётом поворота, в пикселях. */
     val height: Int,
     val durationMs: Long,
     val sizeBytes: Long
 ) {
-    /** Меньшая сторона кадра: по ней считаются доступные ступени сжатия. */
     val shortSide: Int
         get() = minOf(width, height)
 }
 
-/**
- * Читает стороны кадра, длительность и вес видео.
- *
- * Отдельно от DeviceMediaRepository, потому что видео приходит не только из
- * галереи: то же самое нужно знать про файл из системного выбора и про то, что
- * прилетело через «Поделиться», а MediaStore о них ничего не расскажет.
- */
 @Singleton
 class VideoMetadataReader @Inject constructor(
     @param:ApplicationContext private val context: Context

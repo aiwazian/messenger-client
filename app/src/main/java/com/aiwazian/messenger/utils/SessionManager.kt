@@ -17,11 +17,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/**
- * Итог завершения текущей сессии: либо на устройстве остался ещё один аккаунт и
- * приложение продолжает работу под ним, либо аккаунтов больше нет и нужен экран
- * авторизации.
- */
 sealed interface SessionEndResolution {
     data class SwitchedToAccount(val userId: Long) : SessionEndResolution
     data object NoAccountsLeft : SessionEndResolution
@@ -41,26 +36,12 @@ object SessionManager {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    /**
-     * Сессия может отвалиться сразу в нескольких местах: параллельные запросы
-     * получают 401 одновременно с событием сокета. Разбор должен произойти один
-     * раз, иначе будет удалено несколько аккаунтов подряд.
-     */
     private val resolutionMutex = Mutex()
     private var isResolvingSessionEnd = false
 
-    /**
-     * Один и тот же мёртвый токен приходит из разных источников: интерцептор,
-     * сокет, повторные попытки переподключения. Без этой отметки каждый повтор
-     * удалял бы ещё один аккаунт.
-     */
     @Volatile
     private var lastInvalidatedToken: String? = null
 
-    /**
-     * Явный выход сам решает, куда идти дальше, поэтому 401 от запроса logout не
-     * должен запускать второй разбор.
-     */
     @Volatile
     private var suppressUnauthorizedHandling = false
 

@@ -29,6 +29,7 @@ fun SectionToggle(
     leadingIcon: ImageVector? = null,
     enabled: Boolean = true,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val leading: (@Composable () -> Unit)? = if (leadingIcon != null) {
         {
@@ -41,7 +42,7 @@ fun SectionToggle(
     } else {
         null
     }
-
+    
     SectionItem(
         headlineContent = {
             Text(
@@ -62,7 +63,7 @@ fun SectionToggle(
                             .height(32.dp)
                     )
                 }
-
+                
                 Switch(
                     enabled = enabled,
                     checked = isChecked,
@@ -75,6 +76,7 @@ fun SectionToggle(
             }
         },
         enabled = enabled,
-        onClick = { if (enabled) (onClick ?: onCheckedChange)() }
+        onClick = { if (enabled) (onClick ?: onCheckedChange)() },
+        onLongClick = onLongClick
     )
 }

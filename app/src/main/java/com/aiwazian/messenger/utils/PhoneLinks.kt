@@ -4,6 +4,8 @@
 
 package com.aiwazian.messenger.utils
 
+import android.content.Context
+import android.telephony.TelephonyManager
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import java.util.Locale
 
@@ -21,6 +23,18 @@ object PhoneLinks {
         return Locale.getDefault().country.ifEmpty { DEFAULT_REGION }
     }
 
+    fun deviceRegion(context: Context): String {
+        val telephonyManager = context.getSystemService(TelephonyManager::class.java)
+
+        val network = telephonyManager?.networkCountryIso
+        val sim = telephonyManager?.simCountryIso
+
+        return sequenceOf(network, sim, Locale.getDefault().country)
+            .firstOrNull { !it.isNullOrBlank() }
+            ?.uppercase()
+            ?: DEFAULT_REGION
+    }
+
     fun findInText(text: String, region: String = currentDeviceRegion()): List<PhoneMatch> {
         return phoneNumberUtil
             .findNumbers(text, region, PhoneNumberUtil.Leniency.VALID, Long.MAX_VALUE)
@@ -36,5 +50,31 @@ object PhoneLinks {
                 )
             }
             .toList()
+    }
+
+    fun formatE164(raw: String, region: String = currentDeviceRegion()): String {
+        return format(raw, region, PhoneNumberUtil.PhoneNumberFormat.E164)
+    }
+
+    fun formatInternational(raw: String, region: String = currentDeviceRegion()): String {
+        return format(raw, region, PhoneNumberUtil.PhoneNumberFormat.INTERNATIONAL)
+    }
+
+    private fun format(
+        raw: String,
+        region: String,
+        format: PhoneNumberUtil.PhoneNumberFormat
+    ): String {
+        return try {
+            val number = phoneNumberUtil.parse(raw, region)
+
+            if (phoneNumberUtil.isValidNumber(number)) {
+                phoneNumberUtil.format(number, format)
+            } else {
+                raw
+            }
+        } catch (_: Exception) {
+            raw
+        }
     }
 }

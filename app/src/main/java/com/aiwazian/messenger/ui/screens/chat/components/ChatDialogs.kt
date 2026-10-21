@@ -36,6 +36,13 @@ import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 import com.aiwazian.messenger.ui.screens.chat.ChatViewModel
+import com.aiwazian.messenger.ui.screens.chat.hideDeleteChatDialog
+import com.aiwazian.messenger.ui.screens.chat.hideDeleteMessageDialog
+import com.aiwazian.messenger.ui.screens.chat.hideLeaveDialog
+import com.aiwazian.messenger.ui.screens.chat.onDeleteChatConfirmed
+import com.aiwazian.messenger.ui.screens.chat.onDeleteMessageConfirmed
+import com.aiwazian.messenger.ui.screens.chat.onLeaveClicked
+import com.aiwazian.messenger.ui.screens.chat.setDeleteForRecipient
 
 @Composable
 fun ChatDialogs(

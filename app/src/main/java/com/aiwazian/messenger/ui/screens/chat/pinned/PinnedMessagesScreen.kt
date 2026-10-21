@@ -72,9 +72,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.result.LocalResultEventBus
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.MessageAttachment
+import com.aiwazian.messenger.domain.MessageContact
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.FileAction
+import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.ui.app.AppPrimaryScrollableTabRow
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.app.AppTab
@@ -91,6 +93,7 @@ import com.aiwazian.messenger.ui.screens.chat.ChatItem
 import com.aiwazian.messenger.ui.screens.chat.MessageReadersViewModel
 import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.DeleteMessageDialog
+import com.aiwazian.messenger.ui.screens.chat.components.ContactViewBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.PinMessageBottomSheet
@@ -472,6 +475,7 @@ private fun PinnedMessagesPage(
     contentPadding: PaddingValues
 ) {
     val navBackStack = LocalNavBackStack.current
+    var viewingContact by remember { mutableStateOf<MessageContact?>(null) }
 
     if (isLoading && items.isEmpty()) {
         Box(
@@ -548,6 +552,11 @@ private fun PinnedMessagesPage(
                     onForwardedFromClick = {
                         viewModel.onForwardedFromClicked(item.message)
                     },
+                    onContactClick = if (item.message.messageType == MessageType.CONTACT) {
+                        { viewingContact = item.message.contact }
+                    } else {
+                        null
+                    },
                     readerAvatars = readerAvatars,
                     onReadersRequested = onReadersRequested,
                     onSenderNameClick = if (item.chatType == ChatType.GROUP) {
@@ -577,6 +586,13 @@ private fun PinnedMessagesPage(
                 )
             }
         }
+    }
+
+    viewingContact?.let { contact ->
+        ContactViewBottomSheet(
+            contact = contact,
+            onCopyValue = viewModel::copyContactValue,
+            onDismiss = { viewingContact = null })
     }
 }
 

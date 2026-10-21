@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.settings.privacy
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -39,6 +40,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.PrivacyLevel
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppBottomSheetFooterActions
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
@@ -207,17 +209,21 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
     }
     
     if (uiState.showInactivityBottomSheet) {
-        AppBottomSheet(onDismissRequest = viewModel::hideInactivityBottomSheet) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+        AppBottomSheet(
+            onDismissRequest = viewModel::hideInactivityBottomSheet,
+            stickyFooter = {
+                AppBottomSheetFooterActions.PrimaryButton(
+                    text = stringResource(R.string.cancel),
+                    onClick = viewModel::hideInactivityBottomSheet
+                )
+            }) { padding ->
+            Column(modifier = Modifier.padding(padding)) {
                 Text(
                     text = stringResource(R.string.delete_account_if_inactive_for),
                     modifier = Modifier.padding(horizontal = 16.dp),
                     style = MaterialTheme.typography.titleMedium
                 )
-                Column {
+                SectionContainer(contentPadding = PaddingValues.Zero) {
                     SectionButton(
                         headlineText = stringResource(R.string.inactive_1_month),
                         onClick = { viewModel.updateDeleteAfterDays(30) }
@@ -235,45 +241,43 @@ fun SettingsPrivacyScreen(viewModel: SettingsPrivacyViewModel = hiltViewModel())
                         onClick = { viewModel.updateDeleteAfterDays(365) }
                     )
                 }
-                TextButton(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = viewModel::hideInactivityBottomSheet,
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Text(stringResource(R.string.cancel))
-                }
             }
         }
     }
     
     if (uiState.showDeleteBottomSheet) {
-        AppBottomSheet(onDismissRequest = viewModel::hideDeleteBottomSheet) {
-            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.WarningAmber,
-                        contentDescription = null,
-                        modifier = Modifier.size(30.dp)
-                    )
-                    Text(
-                        text = stringResource(R.string.delete_account_message), lineHeight = 18.sp
+        AppBottomSheet(
+            onDismissRequest = viewModel::hideDeleteBottomSheet,
+            stickyFooter = {
+                AppBottomSheetFooterActions.Custom {
+                    CountdownTextButton(
+                        text = stringResource(R.string.delete_anyway),
+                        seconds = 15,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
+                        shape = MaterialTheme.shapes.medium,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        onClickWhileRunning = viewModel::vibrate,
+                        onClickAfterFinish = {
+                            viewModel.hideDeleteBottomSheet()
+                            viewModel.showDeleteDialog()
+                        }
                     )
                 }
-                
-                CountdownTextButton(
-                    text = "Все равно удалить",
-                    seconds = 15,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                    onClickWhileRunning = viewModel::vibrate,
-                    onClickAfterFinish = {
-                        viewModel.hideDeleteBottomSheet()
-                        viewModel.showDeleteDialog()
-                    }
+            }) { padding ->
+            Row(
+                modifier = Modifier.padding(padding),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.WarningAmber,
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp)
+                )
+                Text(
+                    text = stringResource(R.string.delete_account_message), lineHeight = 18.sp
                 )
             }
         }

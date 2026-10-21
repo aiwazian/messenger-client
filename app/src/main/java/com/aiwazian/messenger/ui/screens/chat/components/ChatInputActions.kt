@@ -6,13 +6,6 @@ package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.net.Uri
 import com.aiwazian.messenger.domain.MessageReplyPreview
-
-/**
- * Действия над полем ввода сообщений, которые нужны [ChatInputSection].
- *
- * Реализуется ChatViewModel для чатов и PostCommentsViewModel для комментариев
- * под постами канала.
- */
 interface ChatInputActions {
     fun onKeyboardHeightChanged(height: Float)
 

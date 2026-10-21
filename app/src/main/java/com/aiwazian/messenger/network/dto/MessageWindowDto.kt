@@ -7,10 +7,6 @@ package com.aiwazian.messenger.network.dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/**
- * Ответ GET /chats/{chatId}/messages/window.
- * messages всегда отсортированы от старых к новым.
- */
 @Serializable
 data class MessagesWindowDto(
     @SerialName("messages") val messages: List<MessageDto> = emptyList(),

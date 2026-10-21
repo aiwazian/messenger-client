@@ -19,18 +19,6 @@ import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 
-/**
- * Необязательное обновление через Google Play (flexible in-app update).
- *
- * Взят именно FLEXIBLE, а не IMMEDIATE: Play показывает своё окно с предложением
- * обновиться, его можно закрыть и продолжить пользоваться текущей версией, а сама
- * загрузка идёт фоном и ничего не блокирует. IMMEDIATE закрыл бы приложение
- * экраном обновления и не дал бы его пропустить.
- *
- * Установка скачанного пакета требует перезапуска, поэтому класс не делает этого
- * сам: он только сообщает через [onUpdateReadyToInstall], а решение остаётся за
- * пользователем.
- */
 class InAppUpdateManager(
     private val activity: ComponentActivity,
     private val onUpdateReadyToInstall: () -> Unit
@@ -72,10 +60,6 @@ class InAppUpdateManager(
         }
     }
 
-    /**
-     * Starts update checks now and on every subsequent resume. Until called the
-     * manager stays passive.
-     */
     fun enableUpdateChecks() {
         checksEnabled = true
         checkForUpdate()
@@ -93,7 +77,6 @@ class InAppUpdateManager(
         updateManager.unregisterListener(installListener)
     }
     
-    /** Перезапуск и установка скачанного пакета — только по кнопке пользователя. */
     fun completeUpdate() {
         updateManager.completeUpdate()
     }
