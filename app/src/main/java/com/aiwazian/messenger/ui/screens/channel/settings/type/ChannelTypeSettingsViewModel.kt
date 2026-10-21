@@ -39,7 +39,6 @@ class ChannelTypeSettingsViewModel @Inject constructor(
     
     private var checkLinkJob: Job? = null
     
-    /** Последнее загруженное состояние канала, нужно для обновления локального кэша. */
     private var channel: Channel? = null
     
     private val _uiState = MutableStateFlow(ChannelTypeSettingsUiState())
@@ -85,13 +84,7 @@ class ChannelTypeSettingsViewModel @Inject constructor(
             )
         }
     }
-    
-    /**
-     * Переключает запрет копирования.
-     *
-     * Изменение применяется сразу, без кнопки сохранения. При ошибке сервера
-     * (например, если пользователь не владелец) переключатель возвращается назад.
-     */
+ 
     fun changeNoCopy(noCopy: Boolean) {
         val channel = channel ?: return
         val previous = _uiState.value.noCopy

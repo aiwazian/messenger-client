@@ -15,7 +15,7 @@ import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
@@ -30,13 +30,13 @@ fun NewMessageScreen() {
         },
     ) {
         SectionContainer {
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Outlined.Group,
                 headlineText = stringResource(R.string.create_group),
                 onClick = {
                     navBackStack.add(AppRoute.CreateGroup)
                 })
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Outlined.Campaign,
                 headlineText = stringResource(R.string.create_channel),
                 onClick = {

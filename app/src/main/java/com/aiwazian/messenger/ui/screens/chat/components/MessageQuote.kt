@@ -56,6 +56,11 @@ import kotlin.time.Duration.Companion.seconds
 fun replyPreviewText(preview: MessageReplyPreview): String {
     val text = preview.text
     val type = preview.attachmentTypes.firstOrNull()
+    
+    if (preview.messageType == MessageType.CONTACT) {
+        return stringResource(R.string.contact_message)
+    }
+    
     val isSticker = preview.messageType == MessageType.STICKER ||
             (text.isNullOrBlank() && type == null && preview.senderId != null)
     
@@ -67,14 +72,14 @@ fun replyPreviewText(preview: MessageReplyPreview): String {
     }
     
     if (!text.isNullOrBlank()) return text
-
+    
     if (type == null) return ""
-
+    
     val extension = preview.attachmentExtensions.firstOrNull()
     if (extension?.isMusicFile() == true) {
         return stringResource(R.string.music_message)
     }
-
+    
     return stringResource(
         when (type) {
             AttachmentType.IMAGE -> R.string.attachment_photo
@@ -113,7 +118,6 @@ fun ReplyQuote(
             .graphicsLayer(scaleX = scale, scaleY = scale)
             .height(IntrinsicSize.Min)
             .clip(MaterialTheme.shapes.extraSmall)
-//            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
             .then(
                 if (onClick != null) Modifier.combinedClickable(

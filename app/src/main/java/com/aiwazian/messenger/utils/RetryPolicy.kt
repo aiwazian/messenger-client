@@ -12,17 +12,6 @@ import kotlinx.coroutines.isActive
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-/**
- * Повторы без ограничения количества попыток.
- *
- * Раньше отправка сдавалась после трёх попыток и оставляла сообщение в статусе
- * «ошибка», а повтор нажимал пользователь. Теперь неудачная попытка только
- * откладывает следующую: задержка растёт с [INITIAL_DELAY] до [MAX_DELAY], чтобы
- * при долгом отсутствии сети не отправлять запрос каждую секунду.
- *
- * Отмена скоупа — единственный способ остановить цикл, поэтому вызывать это
- * стоит из скоупа приложения, а не экрана.
- */
 object RetryPolicy {
     
     val INITIAL_DELAY = 1.seconds
@@ -30,15 +19,7 @@ object RetryPolicy {
     
     private const val FACTOR = 2.0
     private const val TAG = "RetryPolicy"
-    
-    /**
-     * Выполняет [block], пока тот не вернёт успех.
-     *
-     * @param operation имя операции для логов.
-     * @param isPermanent отказы, которые повтор не изменит. По умолчанию таких
-     * нет: вызывающая сторона сама решает, что бессмысленно повторять.
-     * @return успех либо безнадёжный отказ.
-     */
+
     suspend fun <T> retryForever(
         operation: String,
         isPermanent: (Throwable) -> Boolean = { false },

@@ -10,12 +10,6 @@ sealed interface ChatUiEffect {
     data object NavigateBack : ChatUiEffect
     data object NavigateToMain : ChatUiEffect
     
-    /**
-     * Переход в другой чат.
-     *
-     * scrollToMessageId — если надо сразу прыгнуть к конкретному сообщению
-     * (клик по ответу на сообщение из другого чата).
-     */
     data class NavigateToChat(
         val chatId: Long,
         val scrollToMessageId: Long? = null
@@ -24,6 +18,7 @@ sealed interface ChatUiEffect {
     data class ScrollToBottom(val index: Int) : ChatUiEffect
     data class OpenUrl(val url: String) : ChatUiEffect
     
-    /** Открыть почтовый адрес в почтовом клиенте устройства. */
     data class OpenEmail(val email: String) : ChatUiEffect
+
+    data class OpenPhone(val phone: String) : ChatUiEffect
 }

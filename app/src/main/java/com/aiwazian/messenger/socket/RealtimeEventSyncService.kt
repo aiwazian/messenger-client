@@ -7,6 +7,7 @@ import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.push.NotificationHelper
 import com.aiwazian.messenger.repository.ChatFolderRepository
+import com.aiwazian.messenger.repository.ChatPinnedMessagesRepository
 import com.aiwazian.messenger.repository.ChatRepository
 import com.aiwazian.messenger.repository.ReadReceiptApplier
 import com.aiwazian.messenger.repository.UserRepository
@@ -29,6 +30,7 @@ class RealtimeEventSyncService @Inject constructor(
     @param:ApplicationContext private val context: Context,
     webSocketClient: WebSocketClient,
     private val chatRepository: ChatRepository,
+    private val pinnedMessagesRepository: ChatPinnedMessagesRepository,
     private val chatFolderRepository: ChatFolderRepository,
     private val userRepository: UserRepository,
     private val onlineUsersTracker: OnlineUsersTracker,
@@ -119,13 +121,13 @@ class RealtimeEventSyncService @Inject constructor(
 
         webSocketClient.subscribeToEvent(WebSocketEvent.MessagePin) { payload ->
             serviceScope.launch {
-                chatRepository.applyRemotePin(payload)
+                pinnedMessagesRepository.applyRemotePin(payload)
             }
         }
 
         webSocketClient.subscribeToEvent(WebSocketEvent.MessageUnpin) { payload ->
             serviceScope.launch {
-                chatRepository.applyRemoteUnpin(payload)
+                pinnedMessagesRepository.applyRemoteUnpin(payload)
             }
         }
         

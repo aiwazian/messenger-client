@@ -4,6 +4,9 @@
 
 package com.aiwazian.messenger.ui.screens.chat.comments
 
+import android.content.Intent
+import android.net.Uri
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,6 +59,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiwazian.messenger.R
@@ -72,11 +76,14 @@ import com.aiwazian.messenger.ui.screens.chat.MediaPickerViewModel
 import com.aiwazian.messenger.ui.screens.chat.components.ChatInputSection
 import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
+import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.JoinButton
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.ViewerMediaItem
+import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @Composable
 fun PostCommentsScreen(
@@ -121,6 +128,64 @@ fun PostCommentsScreen(
                     if (index >= 0) {
                         scope.launch { listState.animateScrollToItem(index) }
                     }
+                }
+
+                is PostCommentsUiEffect.OpenUrl -> {
+                    CustomTabsIntent.Builder()
+                        .setShowTitle(true)
+                        .setTranslateLocale(Locale.getDefault())
+                        .build()
+                        .launchUrl(context, effect.url.toUri())
+                }
+
+                is PostCommentsUiEffect.OpenEmail -> {
+                    val mailIntent = Intent(
+                        Intent.ACTION_SENDTO,
+                        "mailto:${Uri.encode(effect.email)}".toUri()
+                    )
+                    val chooser = Intent.createChooser(
+                        mailIntent,
+                        UiText.StringResource(R.string.open_email_with).asString(context)
+                    )
+
+                    val launched = runCatching { context.startActivity(chooser) }.isSuccess
+                    if (!launched) {
+                        snackbarJob?.cancel()
+                        snackbarJob = scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = UiText.StringResource(R.string.no_email_app)
+                                    .asString(context),
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                }
+
+                is PostCommentsUiEffect.OpenPhone -> {
+                    val dialIntent = Intent(
+                        Intent.ACTION_DIAL,
+                        "tel:${effect.phone}".toUri()
+                    )
+                    val chooser = Intent.createChooser(
+                        dialIntent,
+                        UiText.StringResource(R.string.open_phone_with).asString(context)
+                    )
+
+                    val launched = runCatching { context.startActivity(chooser) }.isSuccess
+                    if (!launched) {
+                        snackbarJob?.cancel()
+                        snackbarJob = scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = UiText.StringResource(R.string.no_phone_app)
+                                    .asString(context),
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                }
+
+                is PostCommentsUiEffect.NavigateToChat -> {
+                    navBackStack.add(AppRoute.Chat(chatId = effect.chatId))
                 }
             }
         }
@@ -287,7 +352,11 @@ fun PostCommentsScreen(
                             onSwipeThresholdReached = viewModel::vibrateTactile,
                             onSwipeToReply = {
                                 viewModel.startReply(item.message.id)
-                            }
+                            },
+                            onLinkClicked = viewModel::onLinkClicked,
+                            onUsernameClicked = viewModel::onUsernameClicked,
+                            onEmailClicked = viewModel::onEmailClicked,
+                            onPhoneClicked = viewModel::onPhoneClicked
                         )
 
                         else -> Unit
@@ -325,6 +394,35 @@ fun PostCommentsScreen(
                 }
             }
         )
+    }
+
+    if (uiState.showInviteBottomSheet && uiState.inviteLinkInfo != null) {
+        val info = uiState.inviteLinkInfo!!
+
+        InviteLinkBottomSheet(
+            chatId = info.chatId,
+            name = info.name.orEmpty(),
+            description = info.description,
+            count = info.membersCount ?: 0,
+            requireApproval = info.requireApproval,
+            isLoading = uiState.isProcessingInvite,
+            onDismiss = viewModel::dismissInviteBottomSheet,
+            onJoin = viewModel::onSubscribeViaInviteLink
+        )
+    }
+
+    if (uiState.showBannedDialog) {
+        AppDialog(
+            title = stringResource(R.string.no_access),
+            onDismissRequest = viewModel::dismissBannedDialog,
+            buttons = {
+                TextButton(onClick = viewModel::dismissBannedDialog) {
+                    Text(stringResource(R.string.ok))
+                }
+            },
+            content = {
+                Text(stringResource(R.string.banned_message))
+            })
     }
 
     if (viewerFileId != null) {

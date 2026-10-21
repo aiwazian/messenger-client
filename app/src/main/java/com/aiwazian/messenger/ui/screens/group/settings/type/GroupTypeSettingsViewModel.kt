@@ -39,7 +39,6 @@ class GroupTypeSettingsViewModel @Inject constructor(
     
     private var checkLinkJob: Job? = null
     
-    /** Последнее загруженное состояние группы, нужно для обновления локального кэша. */
     private var group: Group? = null
     
     private val _uiState = MutableStateFlow(GroupTypeSettingsUiState())
@@ -84,13 +83,7 @@ class GroupTypeSettingsViewModel @Inject constructor(
             )
         }
     }
-    
-    /**
-     * Переключает запрет копирования.
-     *
-     * Изменение применяется сразу, без кнопки сохранения. При ошибке сервера
-     * (например, если пользователь не владелец) переключатель возвращается назад.
-     */
+  
     fun changeNoCopy(noCopy: Boolean) {
         val group = group ?: return
         val previous = _uiState.value.noCopy

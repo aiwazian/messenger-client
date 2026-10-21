@@ -26,8 +26,8 @@ import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -93,25 +93,19 @@ fun DataAndStorageScreen(
         }
     ) {
         SectionContainer {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.storage_usage),
                 onClick = {
                     navBackStack.add(AppRoute.SettingsStorage)
                 }
             )
-        }
-        
-        SectionContainer {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.automatic_media_download),
                 onClick = {
                     navBackStack.add(AppRoute.SettingsAutoDownloadMedia)
                 }
             )
-        }
-        
-        SectionContainer {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.clear_drafts),
                 onClick = viewModel::showClearDraftsDialog
             )

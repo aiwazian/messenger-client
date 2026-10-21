@@ -38,6 +38,18 @@ data class MessageStickerDto(
 )
 
 @Serializable
+data class MessageContactDto(
+    @SerialName("name") val name: String,
+    @SerialName("phones") val phones: List<String> = emptyList(),
+    @SerialName("emails") val emails: List<String> = emptyList(),
+    @SerialName("urls") val urls: List<String> = emptyList(),
+    @SerialName("addresses") val addresses: List<String> = emptyList(),
+    @SerialName("organization") val organization: String? = null,
+    @SerialName("jobTitle") val jobTitle: String? = null,
+    @SerialName("birthday") val birthday: String? = null
+)
+
+@Serializable
 data class MessageReplyPreviewDto(
     @SerialName("id") val id: Long,
     @SerialName("senderId") val senderId: Long? = null,
@@ -65,6 +77,7 @@ data class MessageDto(
     @SerialName("systemEventType") val systemEventType: SystemMessageEventType? = null,
     @SerialName("attachments") val attachments: List<MessageAttachmentDto> = emptyList(),
     @SerialName("sticker") val sticker: MessageStickerDto? = null,
+    @SerialName("contact") val contact: MessageContactDto? = null,
     @SerialName("readInfo") val readInfo: List<MessageReadInfoDto>? = null,
     @SerialName("replyToId") val replyToId: Long? = null,
     @SerialName("replyToChatId") val replyToChatId: Long? = null,
@@ -84,6 +97,18 @@ data class TextMessageRequestDto(
 data class StickerMessageRequestDto(
     @SerialName("stickerId") val stickerId: String,
     @SerialName("replyToId") val replyToId: String? = null
+)
+
+@Serializable
+data class ContactMessageRequestDto(
+    @SerialName("name") val name: String,
+    @SerialName("phones") val phones: List<String>,
+    @SerialName("emails") val emails: List<String> = emptyList(),
+    @SerialName("urls") val urls: List<String> = emptyList(),
+    @SerialName("addresses") val addresses: List<String> = emptyList(),
+    @SerialName("organization") val organization: String? = null,
+    @SerialName("jobTitle") val jobTitle: String? = null,
+    @SerialName("birthday") val birthday: String? = null
 )
 
 @Serializable
@@ -126,7 +151,8 @@ data class FileConfirmRequestDto(
 data class ForwardMessageRequestDto(
     @SerialName("targetChatIds") val targetChatIds: List<String>,
     @SerialName("hideAuthor") val hideAuthor: Boolean = false,
-    @SerialName("hideCaption") val hideCaption: Boolean = false
+    @SerialName("hideCaption") val hideCaption: Boolean = false,
+    @SerialName("fileIds") val fileIds: List<String> = emptyList()
 )
 
 @Serializable

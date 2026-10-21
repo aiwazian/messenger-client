@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.settings.folders
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,7 +42,6 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.domain.ChatFolder
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
@@ -51,7 +49,7 @@ import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.LottieAnimation
 
@@ -96,25 +94,33 @@ fun ChatFoldersScreen(viewModel: ChatFoldersViewModel = hiltViewModel()) {
         }
         
         SectionContainer {
-            SectionItem(
+            SectionButton(
                 leadingIcon = Icons.Rounded.Add,
                 headlineText = stringResource(R.string.create_new_folder),
                 contentColor = MaterialTheme.colorScheme.primary,
                 onClick = {
                     navBackStack.add(AppRoute.ChatFolderEditor())
                 })
-            
-            ListItem(
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                content = { Text(stringResource(R.string.all_chats)) })
+
+            SectionButton(
+                headlineText = stringResource(R.string.all_chats),
+                onClick = null
+            )
             
             uiState.folders.forEach { folder ->
-                ChatFolderRow(
-                    folder = folder,
-                    onEditClick = {
+                SectionButton(
+                    headlineText = folder.name,
+                    onClick = {
                         navBackStack.add(AppRoute.ChatFolderEditor(folder.id))
                     },
-                    onDeleteClick = { viewModel.requestFolderDeletion(folder) })
+                    trailingContent = {
+                        FolderActionsMenu(
+                            onEditClick = {
+                                navBackStack.add(AppRoute.ChatFolderEditor(folder.id))
+                            },
+                            onDeleteClick = { viewModel.requestFolderDeletion(folder) }
+                        )
+                    })
             }
         }
     }
@@ -142,52 +148,44 @@ fun ChatFoldersScreen(viewModel: ChatFoldersViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun ChatFolderRow(
-    folder: ChatFolder, onEditClick: () -> Unit, onDeleteClick: () -> Unit
-) {
+private fun FolderActionsMenu(onEditClick: () -> Unit, onDeleteClick: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    
-    ListItem(
-        modifier = Modifier.clickable(onClick = onEditClick),
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        content = { Text(folder.name) },
-        trailingContent = {
-            Box {
-                IconButton(onClick = { expanded = true }) {
-                    Icon(imageVector = Icons.Rounded.MoreVert, contentDescription = null)
-                }
-                
-                AppDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    AppDropdownMenuItem(
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.Edit,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        },
-                        text = stringResource(R.string.edit_folder),
-                        onClick = {
-                            expanded = false
-                            onEditClick()
-                        })
-                    
-                    AppDropdownMenuItem(
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.DeleteOutline,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        },
-                        text = stringResource(R.string.delete),
-                        onClick = {
-                            expanded = false
-                            onDeleteClick()
-                        },
-                        contentColor = MaterialTheme.colorScheme.error
+
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Icon(imageVector = Icons.Rounded.MoreVert, contentDescription = null)
+        }
+
+        AppDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            AppDropdownMenuItem(
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Rounded.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
                     )
-                }
-            }
-        })
+                },
+                text = stringResource(R.string.edit_folder),
+                onClick = {
+                    expanded = false
+                    onEditClick()
+                })
+
+            AppDropdownMenuItem(
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Rounded.DeleteOutline,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
+                text = stringResource(R.string.delete),
+                onClick = {
+                    expanded = false
+                    onDeleteClick()
+                },
+                contentColor = MaterialTheme.colorScheme.error
+            )
+        }
+    }
 }

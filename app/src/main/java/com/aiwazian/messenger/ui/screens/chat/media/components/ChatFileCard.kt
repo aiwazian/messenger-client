@@ -6,7 +6,7 @@ package com.aiwazian.messenger.ui.screens.chat.media.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,45 +39,43 @@ import com.aiwazian.messenger.extensions.getFileIcon
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
 
-/**
- * Документ в галерее чата.
- *
- * Сверху название, под ним — размер и дата отправки. Стрелка загрузки
- * стоит рядом с размером, а не отдельной кнопкой справа: качать и
- * открывать — одно и то же нажатие по карточке, и вторая цель только
- * сбивала бы с толку.
- *
- * Полоска прогресса лежит под текстом и появляется только на время
- * загрузки: пустая линейка в полном списке читается как разделитель.
- */
 @Composable
 fun ChatFileCard(
     file: ChatMediaItem,
+    isSelected: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isDownloaded = file.localUri != null
     val isDownloading = file.status == DownloadStatus.DOWNLOADING
-    
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = file.extension.getFileIcon(),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
+        Box {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = file.extension.getFileIcon(),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            SelectionCheckBadge(
+                visible = isSelected,
+                modifier = Modifier.align(Alignment.BottomEnd)
             )
         }
         
@@ -122,7 +120,6 @@ fun ChatFileCard(
             }
             
             if (isDownloading) {
-                /* До первого процента показываем бегущую: нуль неотличим от зависания. */
                 if (file.progress == 0) {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 } else {

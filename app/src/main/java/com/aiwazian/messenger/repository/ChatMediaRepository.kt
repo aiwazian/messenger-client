@@ -11,12 +11,16 @@ import com.aiwazian.messenger.database.entity.ChatMediaCountsEntity
 import com.aiwazian.messenger.database.entity.ChatMediaEntity
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.database.entity.VoiceDurationEntity
+import com.aiwazian.messenger.domain.ChatContactItem
+import com.aiwazian.messenger.domain.ChatContactsPage
 import com.aiwazian.messenger.domain.ChatMediaCounts
 import com.aiwazian.messenger.domain.ChatMediaItem
 import com.aiwazian.messenger.domain.ChatMediaPage
+import com.aiwazian.messenger.domain.MessageContact
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.network.api.ChatMediaApi
+import com.aiwazian.messenger.network.dto.ChatContactItemDto
 import com.aiwazian.messenger.network.dto.ChatMediaItemDto
 import com.aiwazian.messenger.network.dto.ChatMediaResponseDto
 import retrofit2.Response
@@ -91,6 +95,33 @@ class ChatMediaRepository @Inject constructor(
         chatMediaDao.saveWindow(chatId, VOICE_TYPES, it)
     }
 
+    suspend fun getContacts(
+        chatId: Long,
+        cursorId: Int? = null,
+        limit: Int = PAGE_SIZE
+    ): Result<ChatContactsPage> {
+        return try {
+            val response = chatMediaApi.getChatContacts(chatId, cursorId, limit)
+            val body = response.body()
+
+            if (!response.isSuccessful || body == null) {
+                return Result.failure(
+                    Exception("Failed to load chat contacts: ${response.code()}")
+                )
+            }
+
+            Result.success(
+                ChatContactsPage(
+                    items = body.items.map { it.toDomain() },
+                    nextCursorId = body.nextCursorId
+                )
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load chat contacts", e)
+            Result.failure(e)
+        }
+    }
+
     suspend fun getCachedCounts(chatId: Long): ChatMediaCounts? {
         return try {
             chatMediaDao.getCounts(chatId)?.let { counts ->
@@ -99,7 +130,8 @@ class ChatMediaRepository @Inject constructor(
                     videos = counts.videos,
                     files = counts.files,
                     music = counts.music,
-                    voices = counts.voices
+                    voices = counts.voices,
+                    contacts = counts.contacts
                 )
             }
         } catch (e: Exception) {
@@ -126,7 +158,8 @@ class ChatMediaRepository @Inject constructor(
                     videos = body.videos,
                     files = body.files,
                     music = body.music,
-                    voices = body.voices
+                    voices = body.voices,
+                    contacts = body.contacts
                 )
             )
 
@@ -136,7 +169,8 @@ class ChatMediaRepository @Inject constructor(
                     videos = body.videos,
                     files = body.files,
                     music = body.music,
-                    voices = body.voices
+                    voices = body.voices,
+                    contacts = body.contacts
                 )
             )
         } catch (e: Exception) {
@@ -235,6 +269,23 @@ class ChatMediaRepository @Inject constructor(
 
         return chatMediaDao.getVoiceDurations(fileIds).associate { it.fileId to it.durationMs }
     }
+
+    private fun ChatContactItemDto.toDomain() = ChatContactItem(
+        contactId = contactId,
+        messageId = messageId,
+        senderId = senderId,
+        sendTime = sendTime,
+        contact = MessageContact(
+            name = name,
+            phones = phones,
+            emails = emails,
+            urls = urls,
+            addresses = addresses,
+            organization = organization,
+            jobTitle = jobTitle,
+            birthday = birthday
+        )
+    )
 
     private fun ChatMediaItemDto.toEntity(chatId: Long) = ChatMediaEntity(
         id = id,

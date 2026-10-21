@@ -8,9 +8,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Comment
 import androidx.compose.material.icons.outlined.AdminPanelSettings
 import androidx.compose.material.icons.outlined.Campaign
-import androidx.compose.material.icons.outlined.Comment
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.PersonAddAlt
 import androidx.compose.material.icons.rounded.Block
@@ -41,7 +41,7 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.settings.profile.SettingsProfileImageCarousel
@@ -125,7 +125,7 @@ fun ChannelSettingsScreen(
         if (uiState.isOwner || uiState.canManageInviteLinks) {
             SectionContainer {
                 if (uiState.isOwner) {
-                    SectionItem(
+                    SectionButton(
                         leadingIcon = Icons.Outlined.Campaign,
                         headlineText = stringResource(R.string.channel_type),
                         trailingText = if (uiState.channel.channelType == ChannelType.PUBLIC) {
@@ -145,8 +145,8 @@ fun ChannelSettingsScreen(
                 }
 
                 if (uiState.isOwner) {
-                    SectionItem(
-                        leadingIcon = Icons.Outlined.Comment,
+                    SectionButton(
+                        leadingIcon = Icons.AutoMirrored.Outlined.Comment,
                         headlineText = stringResource(R.string.comments),
                         onClick = {
                             navBackStack.add(
@@ -159,7 +159,7 @@ fun ChannelSettingsScreen(
                         }
                     )
 
-                    SectionItem(
+                    SectionButton(
                         leadingIcon = Icons.Outlined.Palette,
                         headlineText = stringResource(R.string.appearance),
                         onClick = {
@@ -169,7 +169,7 @@ fun ChannelSettingsScreen(
                 }
                 
                 if (uiState.canManageInviteLinks) {
-                    SectionItem(
+                    SectionButton(
                         leadingIcon = Icons.Rounded.Link,
                         headlineText = stringResource(R.string.invite_links),
                         onClick = {
@@ -183,7 +183,7 @@ fun ChannelSettingsScreen(
         if (uiState.isOwner || uiState.canManageAdmins) {
             SectionContainer {
                 if (uiState.isOwner) {
-                    SectionItem(
+                    SectionButton(
                         leadingIcon = Icons.Rounded.PeopleOutline,
                         headlineText = stringResource(R.string.subscribers),
                         trailingText = uiState.channel.subscribers.toString(),
@@ -193,7 +193,7 @@ fun ChannelSettingsScreen(
                 }
                 
                 if (uiState.canManageAdmins) {
-                    SectionItem(
+                    SectionButton(
                         leadingIcon = Icons.Outlined.AdminPanelSettings,
                         headlineText = stringResource(R.string.administrators),
                         trailingText = uiState.adminsCount.toString(),
@@ -204,7 +204,7 @@ fun ChannelSettingsScreen(
                 }
                 
                 if (uiState.isOwner) {
-                    SectionItem(
+                    SectionButton(
                         leadingIcon = Icons.Outlined.PersonAddAlt,
                         headlineText = stringResource(R.string.join_requests),
                         trailingText = uiState.joinRequestsCount.toString(),
@@ -212,7 +212,7 @@ fun ChannelSettingsScreen(
                             navBackStack.add(AppRoute.ChannelJoinRequests(channelId = uiState.channel.id))
                         }
                     )
-                    SectionItem(
+                    SectionButton(
                         leadingIcon = Icons.Rounded.Block,
                         headlineText = stringResource(R.string.removed_user),
                         trailingText = uiState.channel.removedUsers.toString(),
@@ -225,7 +225,7 @@ fun ChannelSettingsScreen(
         
         if (uiState.isOwner) {
             SectionContainer {
-                SectionItem(
+                SectionButton(
                     headlineText = stringResource(R.string.channel_management),
                     onClick = {
                         navBackStack.add(AppRoute.ChannelManagement(channelId = uiState.channel.id))

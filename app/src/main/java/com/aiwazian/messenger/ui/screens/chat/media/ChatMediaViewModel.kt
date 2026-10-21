@@ -8,24 +8,31 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.AudioTrackMetadata
+import com.aiwazian.messenger.domain.ChatContactItem
+import com.aiwazian.messenger.domain.ChatContactsPage
 import com.aiwazian.messenger.domain.ChatMediaItem
 import com.aiwazian.messenger.domain.ChatMediaPage
 import com.aiwazian.messenger.domain.DownloadItem
+import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.playback.MusicPlayerManager
 import com.aiwazian.messenger.playback.MusicTrack
 import com.aiwazian.messenger.playback.VoicePlayerManager
 import com.aiwazian.messenger.playback.VoiceQueueItem
+import com.aiwazian.messenger.repository.ChannelRepository
 import com.aiwazian.messenger.repository.ChatMediaRepository
 import com.aiwazian.messenger.repository.ChatRepository
+import com.aiwazian.messenger.repository.GroupRepository
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.AudioMetadataCache
+import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.DataStoreManager
 import com.aiwazian.messenger.utils.DownloaderManager
 import com.aiwazian.messenger.utils.FileHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -36,11 +43,14 @@ class ChatMediaViewModel @Inject constructor(
     private val chatMediaRepository: ChatMediaRepository,
     private val chatRepository: ChatRepository,
     private val userRepository: UserRepository,
+    private val channelRepository: ChannelRepository,
+    private val groupRepository: GroupRepository,
     private val voicePlayerManager: VoicePlayerManager,
     private val musicPlayerManager: MusicPlayerManager,
     private val downloaderManager: DownloaderManager,
     private val fileHandler: FileHandler,
-    private val dataStoreManager: DataStoreManager
+    private val dataStoreManager: DataStoreManager,
+    private val clipboardService: ClipboardService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatMediaUiState())
@@ -53,14 +63,17 @@ class ChatMediaViewModel @Inject constructor(
     private var filesCursor: Int? = null
     private var musicCursor: Int? = null
     private var voicesCursor: Int? = null
+    private var contactsCursor: Int? = null
     private var hasMoreMedia = true
     private var hasMoreFiles = true
     private var hasMoreMusic = true
     private var hasMoreVoices = true
+    private var hasMoreContacts = true
     private var isLoadingMoreMedia = false
     private var isLoadingMoreFiles = false
     private var isLoadingMoreMusic = false
     private var isLoadingMoreVoices = false
+    private var isLoadingMoreContacts = false
 
     private val autoRequested = mutableSetOf<String>()
     private val pendingMusicStartPositions = mutableMapOf<String, Int>()
@@ -79,14 +92,50 @@ class ChatMediaViewModel @Inject constructor(
         musicPlayerManager.connect()
 
         loadMe()
+        loadForwardPolicy()
         loadMedia()
         loadFiles()
         loadMusic()
         loadVoices()
+        loadContacts()
         loadCounts()
         observeDownloads()
         observePlayback()
         observeSettings()
+    }
+
+    private fun loadForwardPolicy() {
+        viewModelScope.launch {
+            val myId = userRepository.getMe().firstOrNull()?.id ?: return@launch
+            val chatId = this@ChatMediaViewModel.chatId
+
+            when (ChatType.fromId(chatId)) {
+                ChatType.PRIVATE -> {
+                    if (chatId == myId) {
+                        _uiState.update { it.copy(canForward = true) }
+                        return@launch
+                    }
+
+                    userRepository.getById(chatId).collectLatest { user ->
+                        _uiState.update { it.copy(canForward = user.canForwardAndCopy) }
+                    }
+                }
+
+                ChatType.CHANNEL -> viewModelScope.launch {
+                    channelRepository.getByIdOrNull(chatId).firstOrNull()?.let { channel ->
+                        _uiState.update { it.copy(canForward = !channel.noCopy) }
+                    }
+                }
+
+                ChatType.GROUP -> viewModelScope.launch {
+                    groupRepository.getById(chatId).collectLatest { group ->
+                        _uiState.update { it.copy(canForward = !group.noCopy) }
+                    }
+                }
+
+                ChatType.UNKNOWN -> _uiState.update { it.copy(canForward = false) }
+            }
+        }
     }
 
     private fun loadMe() {
@@ -160,6 +209,20 @@ class ChatMediaViewModel @Inject constructor(
                 }
 
             voicesCursor = _uiState.value.voices.lastOrNull()?.id
+        }
+    }
+
+    private fun loadContacts() {
+        viewModelScope.launch {
+            chatMediaRepository.getContacts(chatId)
+                .onSuccess { page ->
+                    _uiState.update { it.applyContacts(page, reset = true) }
+                    contactsCursor = page.nextCursorId
+                    hasMoreContacts = page.nextCursorId != null
+                }
+                .onFailure {
+                    _uiState.update { it.copy(isContactsLoading = false, hasError = true) }
+                }
         }
     }
 
@@ -256,6 +319,27 @@ class ChatMediaViewModel @Inject constructor(
                 }
 
             isLoadingMoreVoices = false
+        }
+    }
+
+    fun loadMoreContacts() {
+        val cursor = contactsCursor
+
+        if (isLoadingMoreContacts || !hasMoreContacts || cursor == null) {
+            return
+        }
+
+        isLoadingMoreContacts = true
+
+        viewModelScope.launch {
+            chatMediaRepository.getContacts(chatId, cursorId = cursor)
+                .onSuccess { page ->
+                    _uiState.update { it.applyContacts(page, reset = false) }
+                    contactsCursor = page.nextCursorId
+                    hasMoreContacts = page.nextCursorId != null
+                }
+
+            isLoadingMoreContacts = false
         }
     }
 
@@ -567,4 +651,167 @@ class ChatMediaViewModel @Inject constructor(
         isVoicesLoading = false,
         hasError = false
     )
+
+    private fun ChatMediaUiState.applyContacts(page: ChatContactsPage, reset: Boolean) = copy(
+        contacts = if (reset) page.items else contacts + page.items,
+        isContactsLoading = false,
+        hasError = false
+    )
+
+    fun onCopyContactValue(value: String) {
+        clipboardService.copy(value)
+    }
+
+    fun toggleAttachmentSelection(item: ChatMediaItem) {
+        _uiState.update { state ->
+            val selected = state.selectedAttachmentIds
+
+            state.copy(
+                selectedAttachmentIds = if (item.id in selected) {
+                    selected - item.id
+                } else {
+                    selected + item.id
+                }
+            )
+        }
+    }
+
+    fun toggleContactSelection(item: ChatContactItem) {
+        _uiState.update { state ->
+            val selected = state.selectedContactMessageIds
+
+            state.copy(
+                selectedContactMessageIds = if (item.messageId in selected) {
+                    selected - item.messageId
+                } else {
+                    selected + item.messageId
+                }
+            )
+        }
+    }
+
+    fun clearSelection() {
+        _uiState.update {
+            it.copy(selectedAttachmentIds = emptySet(), selectedContactMessageIds = emptySet())
+        }
+    }
+
+    fun startForwardSelection() {
+        val state = _uiState.value
+
+        if (!state.canForward || selectedCount() == 0) return
+
+        viewModelScope.launch {
+            val myId = state.myId
+            val candidates = chatRepository.getAllChats().firstOrNull().orEmpty().filter { chat ->
+                when (ChatType.fromId(chat.id)) {
+                    ChatType.CHANNEL ->
+                        channelRepository.getByIdOrNull(chat.id).firstOrNull()?.ownerId == myId
+
+                    ChatType.UNKNOWN -> false
+                    else -> true
+                }
+            }
+
+            _uiState.update {
+                it.copy(
+                    isForwardSheetVisible = true,
+                    forwardCandidates = candidates,
+                    selectedForwardChatIds = emptySet(),
+                    isForwarding = false,
+                    forwardHideAuthor = false,
+                    forwardHideCaption = false
+                )
+            }
+        }
+    }
+
+    fun toggleForwardTarget(chatId: Long) {
+        _uiState.update { state ->
+            val selected = state.selectedForwardChatIds
+
+            state.copy(
+                selectedForwardChatIds = if (chatId in selected) selected - chatId else selected + chatId
+            )
+        }
+    }
+
+    fun dismissForwardSheet() {
+        _uiState.update {
+            it.copy(
+                isForwardSheetVisible = false,
+                forwardCandidates = emptyList(),
+                selectedForwardChatIds = emptySet(),
+                isForwarding = false,
+                forwardHideAuthor = false,
+                forwardHideCaption = false
+            )
+        }
+    }
+
+    fun toggleForwardHideAuthor() {
+        _uiState.update { it.copy(forwardHideAuthor = !it.forwardHideAuthor) }
+    }
+
+    fun toggleForwardHideCaption() {
+        _uiState.update { state ->
+            val hideCaption = !state.forwardHideCaption
+
+            state.copy(
+                forwardHideCaption = hideCaption,
+                forwardHideAuthor = if (hideCaption) true else state.forwardHideAuthor
+            )
+        }
+    }
+
+    fun confirmForward() {
+        val state = _uiState.value
+        val targets = state.selectedForwardChatIds.toList()
+
+        if (targets.isEmpty() || state.isForwarding) return
+
+        val selectedAttachments = (state.media + state.files + state.music + state.voices)
+            .filter { it.id in state.selectedAttachmentIds }
+        val attachmentsByMessage = selectedAttachments.groupBy { it.messageId }
+
+        _uiState.update { it.copy(isForwarding = true) }
+
+        viewModelScope.launch {
+            var hasFailure = false
+
+            attachmentsByMessage.forEach { (messageId, items) ->
+                chatRepository.forwardMessage(
+                    sourceChatId = chatId,
+                    messageId = messageId,
+                    targetChatIds = targets,
+                    hideAuthor = state.forwardHideAuthor,
+                    hideCaption = state.forwardHideCaption,
+                    fileIds = items.map { it.fileId }
+                ).onFailure { hasFailure = true }
+            }
+
+            state.selectedContactMessageIds.forEach { messageId ->
+                chatRepository.forwardMessage(
+                    sourceChatId = chatId,
+                    messageId = messageId,
+                    targetChatIds = targets,
+                    hideAuthor = state.forwardHideAuthor,
+                    hideCaption = false
+                ).onFailure { hasFailure = true }
+            }
+
+            if (hasFailure) {
+                _uiState.update { it.copy(isForwarding = false) }
+            } else {
+                dismissForwardSheet()
+                clearSelection()
+            }
+        }
+    }
+
+    private fun selectedCount(): Int {
+        val state = _uiState.value
+
+        return state.selectedAttachmentIds.size + state.selectedContactMessageIds.size
+    }
 }

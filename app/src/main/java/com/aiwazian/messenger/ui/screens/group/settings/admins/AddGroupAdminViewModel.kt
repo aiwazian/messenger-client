@@ -15,11 +15,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Выбор участника группы, которого назначат администратором.
- *
- * Сервер отдаёт список без владельца: у него и так все права.
- */
 @HiltViewModel
 class AddGroupAdminViewModel @Inject constructor(
     private val groupAdminsRepository: GroupAdminsRepository

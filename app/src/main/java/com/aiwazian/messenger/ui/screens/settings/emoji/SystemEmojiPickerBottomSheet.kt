@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,7 +19,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Backspace
+import androidx.compose.material.icons.automirrored.outlined.Backspace
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -71,10 +72,10 @@ fun SystemEmojiPickerBottomSheet(
         viewModel.load()
     }
     
-    AppBottomSheet(onDismissRequest = onDismissRequest) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            val symbols = EmojiInput.format(selectedEmojis)
-            
+    AppBottomSheet(onDismissRequest = onDismissRequest) { padding ->
+        val symbols = EmojiInput.format(selectedEmojis)
+        
+        Column(modifier = Modifier.padding(padding)) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -99,7 +100,7 @@ fun SystemEmojiPickerBottomSheet(
                     enabled = symbols.isNotEmpty()
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Backspace,
+                        imageVector = Icons.AutoMirrored.Outlined.Backspace,
                         contentDescription = null
                     )
                 }

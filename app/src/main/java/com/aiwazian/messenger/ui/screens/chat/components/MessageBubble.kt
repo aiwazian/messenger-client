@@ -131,9 +131,11 @@ fun MessageBubble(
     onLinkClicked: ((String) -> Unit)? = null,
     onUsernameClicked: ((String) -> Unit)? = null,
     onEmailClicked: ((String) -> Unit)? = null,
+    onPhoneClicked: ((String) -> Unit)? = null,
     onSaveToDownloads: (() -> Unit)? = null,
     onReplyPreviewClick: (() -> Unit)? = null,
     onForwardedFromClick: (() -> Unit)? = null,
+    onContactClick: (() -> Unit)? = null,
     onSwipeThresholdReached: (() -> Unit)? = null,
     onSwipeToReply: (() -> Unit)? = null,
     readerAvatars: Map<Long, Uri?> = emptyMap(),
@@ -350,7 +352,33 @@ fun MessageBubble(
                             onClick = onReplyPreviewClick
                         )
                     }
-                    
+
+                    if (message.messageType == MessageType.CONTACT) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            MessageContact(
+                                message = message,
+                                isMine = item.isMine,
+                                onViewClick = { onContactClick?.invoke() },
+                                modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp)
+                            )
+
+                            Box(
+                                modifier = Modifier.align(Alignment.End)
+                            ) {
+                                MessageFooter(
+                                    time = item.time,
+                                    isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    status = message.status,
+                                    isEdited = message.isEdited,
+                                    isPinned = isPinned
+                                )
+                            }
+                        }
+                    }
+
                     if (mediaAttachments.isNotEmpty()) {
                         val mediaSizes = mediaAttachments.map { attachment ->
                             val frameWidth = attachment.width ?: 0
@@ -451,7 +479,10 @@ fun MessageBubble(
                             }
                         }
                         
-                        if (message.text.isNullOrBlank() && mediaAttachments.isEmpty()) {
+                        if (message.text.isNullOrBlank() &&
+                            mediaAttachments.isEmpty() &&
+                            message.messageType != MessageType.CONTACT
+                        ) {
                             MessageFooter(
                                 time = item.time,
                                 isRead = if (item.isMine && !isSavedMessages) item.isRead else null,
@@ -486,7 +517,8 @@ fun MessageBubble(
                                     },
                                 onLinkClicked = handleLinkClicked,
                                 onUsernameClicked = onUsernameClicked,
-                                onEmailClicked = onEmailClicked
+                                onEmailClicked = onEmailClicked,
+                                onPhoneClicked = onPhoneClicked
                             )
                             MessageFooter(
                                 time = item.time,
@@ -608,338 +640,6 @@ fun MessageBubble(
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-private fun formatStatusTime(timestamp: Long, todayVerb: String): String {
-    val instant = timestamp.toInstance()
-    val date = instant.atZone(ZoneId.systemDefault())
-    val today = LocalDate.now()
-    val time = instant.toPrettyTime()
-    
-    return when (date.toLocalDate()) {
-        today -> "$todayVerb в $time"
-        today.minusDays(1) -> "вчера в $time"
-        else -> date.format(DateTimeFormatter.ofPattern("d MMMM")) + " в " + time
-    }
-}
-
-@Composable
-private fun CommentCountBadge(
-    count: Int,
-    onClick: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .padding(4.dp)
-            .clip(CircleShape)
-            .clickable(onClick = onClick)
-            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
-            .padding(8.dp)
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.ChatBubble,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(18.dp)
-        )
-        
-        if (count > 0) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = compactCount(count),
-                fontSize = 11.sp,
-                lineHeight = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-private fun buildDropdownActions(
-    item: ChatItem.MessageItem,
-    isSavedMessages: Boolean,
-    onSaveToDownloads: (() -> Unit)? = null,
-    onReadCountClick: () -> Unit = {}
-): List<DropdownMenuAction> {
-    val actions = mutableListOf<DropdownMenuAction>()
-    
-    if (item.message.editedAt != null) {
-        actions.add(
-            DropdownMenuAction(
-                icon = Icons.Rounded.EditCalendar,
-                text = UiText.DynamicString(
-                    formatStatusTime(item.message.editedAt, todayVerb = "Изменено")
-                ),
-                onClick = null
-            )
-        )
-    }
-    
-    if (item.isMine && !isSavedMessages) {
-        val readInfo = item.readInfo
-        
-        if (item.chatType == ChatType.PRIVATE) {
-            val readAt = readInfo?.maxOfOrNull { it.readAt }
-            
-            if (readAt != null) {
-                actions.add(
-                    DropdownMenuAction(
-                        icon = Icons.Rounded.DoneAll,
-                        text = UiText.DynamicString(
-                            formatStatusTime(readAt, todayVerb = "Прочитано")
-                        ),
-                        onClick = null
-                    )
-                )
-            }
-        } else if (item.chatType == ChatType.GROUP && !readInfo.isNullOrEmpty()) {
-            val count = readInfo.size
-            val word = when {
-                count % 10 == 1 && count % 100 != 11 -> "просмотр"
-                count % 10 in 2..4 && count % 100 !in 12..14 -> "просмотра"
-                else -> "просмотров"
-            }
-            actions.add(
-                DropdownMenuAction(
-                    icon = Icons.Rounded.DoneAll,
-                    text = UiText.DynamicString("$count $word"),
-                    onClick = onReadCountClick
-                )
-            )
-        }
-    }
-    
-    val hasDownloadedAttachment = item.message.attachments.any { attachment ->
-        attachment.localUri != null &&
-                (attachment.status == DownloadStatus.COMPLETED || attachment.status == DownloadStatus.UPLOADED)
-    }
-    if (hasDownloadedAttachment && onSaveToDownloads != null) {
-        actions.add(
-            DropdownMenuAction(
-                icon = Icons.Rounded.SaveAlt,
-                text = UiText.StringResource(R.string.save_to_downloads),
-                onClick = onSaveToDownloads
-            )
-        )
-    }
-    
-    actions.addAll(item.dropdownActions)
-    return actions
-}
-
-private fun DownloadStatus.isTransferring(): Boolean {
-    return this == DownloadStatus.UPLOADING ||
-            this == DownloadStatus.DOWNLOADING ||
-            this == DownloadStatus.PAUSED
-}
-
-private fun DownloadStatus.toFileAction(): FileAction {
-    return if (this == DownloadStatus.UPLOADING) FileAction.CANCEL else FileAction.DOWNLOAD
-}
-
-@Composable
-private fun MediaPlaceholder(
-    attachment: MessageAttachment,
-    onFileAction: (MessageAttachment, FileAction) -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-            .clickable { onFileAction(attachment, attachment.status.toFileAction()) },
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = attachment.size.formatFileSize(),
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(4.dp),
-            fontSize = 12.sp,
-            lineHeight = 12.sp
-        )
-        
-        MediaStatusIndicator(attachment.status)
-    }
-}
-
-@Composable
-private fun MediaThumbnail(
-    attachment: MessageAttachment,
-    mediaUri: Uri,
-    cacheKey: String,
-    transitionKey: String,
-    onFileAction: (MessageAttachment, FileAction) -> Unit
-) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        if (attachment.type == AttachmentType.VIDEO) {
-            VideoThumbnail(
-                videoUri = mediaUri,
-                cacheKey = cacheKey,
-                transitionKey = transitionKey
-            ) {
-                onFileAction(attachment, FileAction.OPEN)
-            }
-        } else {
-            ImageThumbnail(
-                imageUri = mediaUri,
-                cacheKey = cacheKey,
-                transitionKey = transitionKey,
-                isGif = attachment.type == AttachmentType.GIF
-            ) {
-                onFileAction(attachment, FileAction.OPEN)
-            }
-        }
-        
-        if (attachment.status.isTransferring()) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.35f))
-                    .clickable { onFileAction(attachment, attachment.status.toFileAction()) },
-                contentAlignment = Alignment.Center
-            ) {
-                MediaStatusIndicator(attachment.status)
-            }
-        }
-    }
-}
-
-@Composable
-private fun MediaStatusIndicator(status: DownloadStatus) {
-    when (status) {
-        DownloadStatus.DOWNLOADING -> {
-            CircularWavyProgressIndicator()
-            Icon(Icons.Rounded.Pause, null)
-        }
-        
-        DownloadStatus.UPLOADING -> {
-            CircularWavyProgressIndicator()
-            Icon(Icons.Rounded.Close, null)
-        }
-        
-        DownloadStatus.PAUSED -> {
-            Icon(Icons.Rounded.Downloading, null)
-        }
-        
-        else -> {
-            Icon(Icons.Rounded.Download, null)
-        }
-    }
-}
-
-@Composable
-private fun VideoThumbnail(
-    videoUri: Uri,
-    cacheKey: String,
-    transitionKey: String,
-    onClick: () -> Unit
-) {
-    val context = LocalContext.current
-    val decoderFactory = remember { VideoFrameDecoder.Factory() }
-    
-    val request = remember(context, videoUri, cacheKey, decoderFactory) {
-        ImageRequest.Builder(context)
-            .data(videoUri)
-            .decoderFactory(decoderFactory)
-            .videoFrameMillis(0)
-            .memoryCacheKey(cacheKey)
-            .placeholderMemoryCacheKey(cacheKey)
-            .build()
-    }
-    
-    val duration by produceState(0L, videoUri) {
-        value = withContext(Dispatchers.IO) { videoUri.getDuration(context) }
-    }
-    
-    Box(
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .mediaTransitionOrigin(transitionKey)
-    ) {
-        AsyncImage(
-            model = request,
-            contentDescription = "Thumbnail of the video",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .sharedElement(key = transitionKey)
-                .fillMaxSize()
-                .clip(MaterialTheme.shapes.extraSmall)
-        )
-        if (duration > 0) {
-            Box(
-                modifier = Modifier
-                    .padding(start = 4.dp, top = 4.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
-            ) {
-                Text(
-                    text = formatDuration(duration),
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(vertical = 2.dp, horizontal = 4.dp),
-                    fontSize = 12.sp,
-                    lineHeight = 12.sp
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ImageThumbnail(
-    imageUri: Uri,
-    cacheKey: String,
-    transitionKey: String,
-    isGif: Boolean,
-    onClick: () -> Unit
-) {
-    val context = LocalContext.current
-    val decoderFactory = remember { GifDecoder.Factory() }
-    
-    val request = remember(context, imageUri, cacheKey, decoderFactory) {
-        ImageRequest.Builder(context)
-            .data(imageUri)
-            .decoderFactory(decoderFactory)
-            .memoryCacheKey(cacheKey)
-            .placeholderMemoryCacheKey(cacheKey)
-            .build()
-    }
-    
-    Box(
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .mediaTransitionOrigin(transitionKey)
-    ) {
-        AsyncImage(
-            model = request,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .sharedElement(key = transitionKey)
-                .fillMaxSize()
-                .clip(MaterialTheme.shapes.extraSmall)
-        )
-        if (isGif) {
-            Box(
-                modifier = Modifier
-                    .padding(start = 4.dp, top = 4.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
-            ) {
-                Text(
-                    text = stringResource(R.string.gif).uppercase(),
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(vertical = 2.dp, horizontal = 4.dp),
-                    fontSize = 12.sp,
-                    lineHeight = 12.sp
-                )
             }
         }
     }

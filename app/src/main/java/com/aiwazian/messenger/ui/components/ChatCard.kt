@@ -57,6 +57,7 @@ import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AppPrimaryColor
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
+import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.extensions.isMusicFile
 import com.aiwazian.messenger.extensions.sharedBounds
@@ -76,7 +77,7 @@ fun ChatCard(
     isOnline: Boolean = false,
     unreadMessageCount: Int = 0,
     onClickChat: () -> Unit = {},
-    onLongClickChat: () -> Unit = {}
+    onLongClickChat: (() -> Unit)? = null
 ) {
     val isSavedMessages = chat.id == myId
     
@@ -105,7 +106,7 @@ fun ChatCard(
             val lastMessage = chat.lastMessage
             
             val emojiSourceText = when {
-                !chat.draftText.isNullOrBlank() -> chat.draftText.orEmpty()
+                !chat.draftText.isNullOrBlank() -> chat.draftText
                 lastMessage == null -> ""
                 lastMessage.sticker != null -> ""
                 lastMessage.attachments.isNotEmpty() -> ""
@@ -132,14 +133,20 @@ fun ChatCard(
                 if (sticker != null) {
                     val emoji = sticker.emojis.firstOrNull()
                     val stickerLabel = stringResource(R.string.sticker_message)
-                    
+
                     text = buildAnnotatedString {
                         if (!emoji.isNullOrBlank()) {
                             append("$emoji ")
                         }
-                        
+
                         withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                             append(stickerLabel)
+                        }
+                    }
+                } else if (chat.lastMessage.messageType == MessageType.CONTACT) {
+                    text = buildAnnotatedString {
+                        withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            append(stringResource(R.string.contact_message))
                         }
                     }
                 } else if (chat.lastMessage.attachments.isNotEmpty()) {

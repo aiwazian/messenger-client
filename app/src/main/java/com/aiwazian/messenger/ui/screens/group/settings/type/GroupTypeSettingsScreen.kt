@@ -46,8 +46,8 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionRadioItem
-import com.aiwazian.messenger.ui.components.section.SectionToggleItem
+import com.aiwazian.messenger.ui.components.section.SectionRadio
+import com.aiwazian.messenger.ui.components.section.SectionToggle
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import kotlinx.coroutines.Job
@@ -108,15 +108,15 @@ fun GroupTypeSettingsScreen(
         }, modifier = Modifier.imePadding()
     ) {
         SectionContainer {
-            SectionRadioItem(
-                text = stringResource(R.string.private_group),
+            SectionRadio(
+                headlineText = stringResource(R.string.private_group),
                 selected = uiState.groupType == GroupType.PRIVATE,
-                description = "В частные группы можно вступить только по ссылке-приглашению.",
+                supportingText = "В частные группы можно вступить только по ссылке-приглашению.",
                 onClick = { viewModel.changeGroupType(GroupType.PRIVATE) })
-            SectionRadioItem(
-                text = stringResource(R.string.public_group),
+            SectionRadio(
+                headlineText = stringResource(R.string.public_group),
                 selected = uiState.groupType == GroupType.PUBLIC,
-                description = "Публичные группы можно найти через поиск.",
+                supportingText = "Публичные группы можно найти через поиск.",
                 onClick = { viewModel.changeGroupType(GroupType.PUBLIC) })
         }
         
@@ -157,8 +157,8 @@ fun GroupTypeSettingsScreen(
         SectionContainer(footer = {
             SectionDescription(stringResource(R.string.no_copy_group_description))
         }) {
-            SectionToggleItem(
-                text = stringResource(R.string.no_copy),
+            SectionToggle(
+                headlineText = stringResource(R.string.no_copy),
                 isChecked = uiState.noCopy,
                 enabled = uiState.canChangeNoCopy,
                 onCheckedChange = { viewModel.changeNoCopy(!uiState.noCopy) })

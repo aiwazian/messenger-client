@@ -48,7 +48,6 @@ import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
 
-/** Скругление, с которым содержимое садится обратно в миниатюру. */
 private val MEDIA_ORIGIN_CORNER_RADIUS = 4.dp
 
 private val OPEN_SPEC: AnimationSpec<Float> =
@@ -57,20 +56,6 @@ private val OPEN_SPEC: AnimationSpec<Float> =
 private val CLOSE_SPEC: AnimationSpec<Float> =
     tween(durationMillis = 220, easing = FastOutSlowInEasing)
 
-/**
- * Экранные границы миниатюр, из которых открывается полноэкранный просмотр.
- *
- * Границы хранятся в координатах экрана, а не окна, потому что миниатюра и
- * просмотрщик могут жить в разных окнах: сетка шторки вложений лежит в окне
- * шторки, а её предпросмотр — в своём собственном.
- *
- * Миниатюра забывается, как только уходит из композиции. Именно так переход
- * узнаёт, что возвращаться некуда: улетевшего за пределы экрана элемента списка
- * больше нет.
- *
- * Здесь же отмечается, какие миниатюры сейчас прятать: пока содержимое поднято
- * на весь экран, второй его копии в списке быть не должно.
- */
 @Stable
 class MediaOriginRegistry {
     
@@ -88,12 +73,6 @@ class MediaOriginRegistry {
     
     fun boundsOf(key: String?): Rect? = key?.let { bounds[it] }
     
-    /**
-     * Просит спрятать миниатюру [key] до парного [show].
-     *
-     * Счётчик, а не флаг: одно и то же вложение может встретиться в переписке
-     * дважды, и вернуть миниатюру вправе только последний отпустивший.
-     */
     internal fun hide(key: String) {
         hidden[key] = (hidden[key] ?: 0) + 1
     }
@@ -115,42 +94,15 @@ private val GlobalMediaOriginRegistry = MediaOriginRegistry()
 
 val LocalMediaOriginRegistry = staticCompositionLocalOf { GlobalMediaOriginRegistry }
 
-/**
- * Ключ миниатюры вложения в переписке.
- *
- * Пересланные копии ссылаются на тот же файл, поэтому одного [uri] недостаточно:
- * без [messageId] две копии в одном чате делили бы одну запись реестра, и
- * переход возвращался бы в первую из них.
- *
- * [scope] отделяет миниатюры одного экрана от миниатюр другого: закреплённые
- * сообщения рендерят те же вложения, что и чат, и без своего scope совпадали бы
- * с ними по ключу, ловя shared-переход при открытии экрана.
- */
 fun chatMediaKey(messageId: Long, uri: Uri, scope: String = "chat"): String =
     "$scope:$messageId:$uri"
 
-/**
- * Ключ миниатюры в сетке шторки вложений.
- *
- * Приставка нужна, чтобы одно и то же изображение в переписке и в галерее не
- * занимало одну запись: иначе закрытая шторка забрала бы с собой границы
- * миниатюры сообщения.
- */
 fun pickerMediaKey(uri: Uri): String = "picker:$uri"
 
-/**
- * Запоминает, где на экране лежит миниатюра [key], и прячет её на время просмотра.
- *
- * Годится там, где миниатюра и есть весь элемент. Когда прятать нужно больше,
- * чем измерять, — например, всю ячейку сетки, а границы брать по уменьшенной
- * рамке внутри неё — берутся отдельные [mediaTransitionBounds] и
- * [mediaTransitionVisibility].
- */
 @Composable
 fun Modifier.mediaTransitionOrigin(key: String): Modifier =
     this.mediaTransitionBounds(key).mediaTransitionVisibility(key)
 
-/** Запоминает, где на экране лежит миниатюра [key], пока она видна. */
 @Composable
 fun Modifier.mediaTransitionBounds(key: String): Modifier {
     val registry = LocalMediaOriginRegistry.current
@@ -165,13 +117,6 @@ fun Modifier.mediaTransitionBounds(key: String): Modifier {
     }
 }
 
-/**
- * Прячет содержимое, пока медиа [key] показывают во весь экран.
- *
- * Пропускается только отрисовка. Разметка остаётся на месте: спрятанная
- * миниатюра обязана и дальше сообщать свои границы, иначе возвращаться будет
- * некуда, и содержимое уедет за край экрана вместо неё.
- */
 @Composable
 fun Modifier.mediaTransitionVisibility(key: String): Modifier {
     val registry = LocalMediaOriginRegistry.current
@@ -186,12 +131,6 @@ fun Modifier.mediaTransitionVisibility(key: String): Modifier {
 internal fun LayoutCoordinates.boundsOnScreen(view: View): Rect =
     boundsInWindow().translate(view.windowOffsetOnScreen())
 
-/**
- * Где начинается окно [this] на экране.
- *
- * Разница между положением одной и той же точки в окне и на экране и есть
- * сдвиг самого окна.
- */
 private fun View.windowOffsetOnScreen(): Offset {
     val onScreen = IntArray(2)
     val inWindow = IntArray(2)
@@ -204,39 +143,10 @@ private fun View.windowOffsetOnScreen(): Offset {
     )
 }
 
-/**
- * Куда и в каком виде рисуется содержимое просмотрщика прямо сейчас.
- *
- * [rect] задаёт положение и размер содержимого, [clip] — окно, сквозь которое его
- * видно. Обычно это один и тот же прямоугольник, и расходятся они только в
- * раскрытом состоянии, где обрезать нечего.
- */
 internal data class MediaHeroFrame(
     val rect: Rect, val clip: Rect, val scale: Float, val cornerRadius: Float, val alpha: Float
 )
 
-/**
- * Переход содержимого между миниатюрой и полным экраном.
- *
- * Содержимое всегда занимает весь просмотрщик, а к миниатюре его приводят
- * масштаб, сдвиг и обрезка. Поэтому одна и та же анимация работает и с фото,
- * и с видео, и с гифкой, и переживает зум: зум живёт внутри содержимого и
- * уезжает в миниатюру вместе с ним, без сброса.
- *
- * Считается всё от рамки самого содержимого, а не от границ просмотрщика.
- * Пустые поля сверху и снизу ничего не рисуют, зато растягивают путь обрезки:
- * пока прямоугольник едет от полного экрана, высота падает в разы быстрее
- * ширины, и квадратный кадр остаётся квадратом почти до самого конца, а потом
- * рывком поджимается в вытянутую миниатюру. От рамки содержимого обрезка идёт
- * вровень с уменьшением и сходит на нет ровно в конце.
- *
- * Вертикальный свайп сюда же и передаётся: [dragOffsetY] входит в границы
- * открытого состояния, и отпущенное на полпути содержимое уменьшается именно
- * оттуда, где его оставил палец, а не прыгает сначала в центр.
- *
- * Когда миниатюры на экране нет, возвращаться некуда, и содержимое просто
- * уезжает за край экрана и тает вместе с фоном.
- */
 @Stable
 class MediaHeroState internal constructor(
     private val registry: MediaOriginRegistry,
@@ -262,35 +172,15 @@ class MediaHeroState internal constructor(
     var isClosing by mutableStateOf(false)
         private set
     
-    /** Просмотрщик стоит на месте: ни открывается, ни закрывается. */
     val isSettled: Boolean
         get() = !isOpening && !isClosing
-    
-    /**
-     * Просмотрщик разметил себя и знает, куда рисовать содержимое.
-     *
-     * До этого момента прятать миниатюру рано: предпросмотр галереи живёт в
-     * своём окне, и опустевшая ячейка успела бы мигнуть раньше первого кадра
-     * перехода.
-     */
+
     internal val isReady: Boolean
         get() = !container.isEmpty
     
-    /** Насколько фон просмотрщика уже проявился: от нуля до единицы. */
     val backgroundFraction: Float
         get() = expansion.value * (1f - exit.value)
     
-    /**
-     * Сообщает собственные пропорции того, что показано сейчас.
-     *
-     * Единица измерения неважна, берётся только отношение сторон, поэтому годится
-     * и размер картинки, и размер кадра видео.
-     *
-     * Нулевой размер означает «неизвестно»: тогда рамкой содержимого считается
-     * весь просмотрщик. Так же сообщают и про увеличенное содержимое — оно выходит
-     * за свою рамку, и обрезать по ней значило бы срезать полкадра в первый же
-     * момент закрытия.
-     */
     fun updateContentSize(size: Size) {
         contentSize = if (size.isUsable()) size else Size.Zero
     }
@@ -323,13 +213,7 @@ class MediaHeroState internal constructor(
         expansion.animateTo(1f, OPEN_SPEC)
         isOpening = false
     }
-    
-    /**
-     * Закрывает просмотрщик и сообщает об этом владельцу, когда анимация доиграла.
-     *
-     * До этого момента просмотрщик обязан оставаться в композиции, иначе
-     * анимировать будет нечего.
-     */
+
     fun dismiss() {
         if (isClosing) {
             return
@@ -351,11 +235,6 @@ class MediaHeroState internal constructor(
     internal fun frame(size: Size): MediaHeroFrame {
         val full = Rect(Offset.Zero, size)
         
-        /*
-         * Границы просмотрщика приходят только после разметки. До этого считать
-         * нечего, а показать содержимое во весь экран — значит мигнуть им до того,
-         * как оно выедет из миниатюры.
-         */
         if (container.isEmpty || size.width <= 0f || size.height <= 0f) {
             return MediaHeroFrame(
                 rect = full, clip = full, scale = 1f, cornerRadius = 0f, alpha = 0f
@@ -368,10 +247,6 @@ class MediaHeroState internal constructor(
         val origin = origin
         
         if (origin == null) {
-            /*
-             * Уезжаем в ту же сторону, куда тянул палец, и вниз во всех остальных
-             * случаях: разворот содержимого посреди жеста выглядит рывком.
-             */
             val travel = if (dragOffsetY < 0f) {
                 -(size.height + dragOffsetY)
             } else {
@@ -395,31 +270,13 @@ class MediaHeroState internal constructor(
         
         return MediaHeroFrame(
             rect = rect,
-            /*
-             * Раскрытое содержимое не обрезается вовсе: своей рамкой оно срезало бы
-             * и соседние страницы листалки, которые заезжают сбоку со своими
-             * пропорциями.
-             */
             clip = if (progress >= 1f) viewport else rect,
-            /*
-             * Больший из двух масштабов закрывает всю область обрезки, а лишнее
-             * срезается — тот же эффект, что у Crop в миниатюре. Считается он от
-             * рамки содержимого, поэтому в раскрытом состоянии равен единице.
-             */
             scale = max(rect.width / content.width, rect.height / content.height),
             cornerRadius = lerp(cornerRadiusPx, 0f, progress),
             alpha = 1f
         )
     }
     
-    /**
-     * Рамка, которую содержимое занимает внутри просмотрщика размером [size].
-     *
-     * Просмотрщики рисуют с ContentScale.Fit, поэтому содержимое сохраняет свои
-     * пропорции и одна из сторон оказывается короче просмотрщика. Пока пропорции
-     * неизвестны, рамкой считается весь просмотрщик: это размер содержимого,
-     * которое заняло бы его целиком.
-     */
     private fun contentRect(size: Size): Rect {
         val content = contentSize
         
@@ -443,20 +300,6 @@ class MediaHeroState internal constructor(
     }
 }
 
-/**
- * Создаёт переход и сразу разворачивает содержимое из миниатюры [originKey].
- *
- * Пока просмотрщик на экране, миниатюра [originKey] спрятана: иначе рядом с
- * поднятым содержимым остаётся его копия, и переход выглядит подменой, а не
- * переносом. Возвращается миниатюра только вместе с уходом просмотрщика из
- * композиции, то есть уже после доигравшей анимации.
- *
- * @param originKey миниатюра того, что показано сейчас, а не того, с чего начали:
- * после перелистывания возвращаться надо в соседнюю миниатюру, а предыдущая
- * должна снова проявиться.
- * @param dragOffsetY текущее смещение от вертикального свайпа.
- * @param onDismissed вызывается, когда просмотрщик уже можно убирать с экрана.
- */
 @Composable
 fun rememberMediaHeroState(
     originKey: String?, dragOffsetY: Float, onDismissed: () -> Unit
@@ -490,7 +333,6 @@ fun rememberMediaHeroState(
     return state
 }
 
-/** Область, относительно которой считаются границы перехода. */
 @Composable
 fun Modifier.mediaHeroContainer(state: MediaHeroState): Modifier {
     val view = LocalView.current
@@ -500,12 +342,6 @@ fun Modifier.mediaHeroContainer(state: MediaHeroState): Modifier {
     }
 }
 
-/**
- * Рисует содержимое там и таким, как требует текущий кадр перехода.
- *
- * Обрезка стоит снаружи преобразования, иначе она масштабировалась бы вместе с
- * содержимым и ничего не обрезала.
- */
 fun Modifier.mediaHeroContent(state: MediaHeroState): Modifier = this
     .drawWithContent {
         val frame = state.frame(size)
@@ -522,12 +358,6 @@ fun Modifier.mediaHeroContent(state: MediaHeroState): Modifier = this
         alpha = frame.alpha
     }
 
-/**
- * Заливает фон просмотрщика, гася его вместе с переходом.
- *
- * @param alpha непрозрачность, которую задаёт сам просмотрщик: обычно она уже
- * учитывает вертикальный свайп.
- */
 fun Modifier.mediaHeroBackground(
     state: MediaHeroState, color: Color, alpha: () -> Float
 ): Modifier = this.drawBehind {

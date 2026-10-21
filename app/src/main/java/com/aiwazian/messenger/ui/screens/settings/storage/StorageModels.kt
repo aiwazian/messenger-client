@@ -58,16 +58,6 @@ data class CategoryStats(
     val isSelected: Boolean = false
 )
 
-/**
- * Итог очистки кэша.
- *
- * Считать освобождённое приходится по факту удаления, а не по сумме
- * размеров из базы: запись о файле могла разойтись с диском, а сам файл
- * может и не дать себя удалить.
- *
- * @param freedBytes сколько байт исчезло с диска.
- * @param failedCount сколько файлов удалить не удалось.
- */
 data class CacheClearResult(
     val freedBytes: Long = 0,
     val failedCount: Int = 0

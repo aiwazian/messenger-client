@@ -37,7 +37,7 @@ import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -79,7 +79,7 @@ fun SelectChannelScreen(viewModel: SelectChannelViewModel = hiltViewModel()) {
     ) {
         AnimatedVisibility(uiState.selectedChannelId != null) {
             SectionContainer {
-                SectionItem(
+                SectionButton(
                     headlineText = stringResource(R.string.hide_channel),
                     onClick = viewModel::removeProfileChannel,
                     contentColor = MaterialTheme.colorScheme.error
@@ -88,7 +88,7 @@ fun SelectChannelScreen(viewModel: SelectChannelViewModel = hiltViewModel()) {
         }
         
         SectionContainer(footer = {
-            SectionDescription(text = "Для отображения в профиле доступны только ваши публичные каналы.")
+            SectionDescription(text = stringResource(R.string.profile_public_channels_hint))
         }) {
             uiState.channels.forEach { channel ->
                 ProfileCard(

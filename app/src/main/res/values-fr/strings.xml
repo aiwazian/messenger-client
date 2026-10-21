@@ -17,6 +17,7 @@
     <string name="security">Sécurité</string>
     <string name="delete_account">Supprimer le compte</string>
     <string name="delete_account_confirm">Êtes-vous sûr de vouloir supprimer votre compte \?</string>
+    <string name="delete_anyway">Supprimer quand même</string>
     <string name="yes">Oui</string>
     <string name="no">Non</string>
     <string name="devices">Dispositifs</string>
@@ -67,6 +68,11 @@
     <string name="add_chats">Ajouter des discussions</string>
     <string name="enter_password">Saisissez le mot de passe</string>
     <string name="passcode_lock_description">Lorsqu’un code d’accès est défini, une icône de cadenas apparaît au-dessus de votre liste de chat. Appuyez dessus pour verrouiller votre application.</string>
+    <string name="passcode_create_title">Créer un code d’accès</string>
+    <string name="passcode_change_title">Saisissez le nouveau code d’accès</string>
+    <string name="passcode_enter_digits_description">Saisissez les 4 chiffres que vous souhaitez utiliser pour déverrouiller l’application.</string>
+    <string name="passcode_lock_hint">Pour verrouiller et déverrouiller l’application, appuyez sur l’icône de cadenas au-dessus de votre liste de chat.</string>
+    <string name="passcode_disable_confirm_message">Êtes-vous sûr de vouloir désactiver le code d’accès \?</string>
     <string name="cancel">Annuler</string>
     <string name="terminate">Terminer</string>
     <string name="terminate_session">Terminer la session</string>
@@ -122,6 +128,7 @@
     <string name="files">Dossiers</string>
     <string name="audio">Audio</string>
     <string name="storage_usage">Utilisation du stockage</string>
+    <string name="media_stay_in_cloud">Tous les médias resteront dans le cloud et pourront être retéléchargés si vous en avez besoin.</string>
     <string name="group_name">Nom du groupe</string>
     <string name="logout_confirm_message">Êtes-vous sûr de vouloir vous déconnecter?</string>
     <string name="delete_account_message">Tout ce qui concerne votre compte sera définitivement supprimé.</string>
@@ -136,6 +143,7 @@
     <string name="new_link">Nouveau lien</string>
     <string name="send">Envoyer</string>
     <string name="subscribe">S\'abonner</string>
+    <string name="request_to_join">Demander à rejoindre</string>
     <string name="group_type">Type de groupe</string>
     <string name="delete_account_after_twenty_four_hours">La suppression du compte sera disponible 24 heures après le début de la session en cours.</string>
     <string name="change_password_session_age">La modification du mot de passe de votre compte sera disponible 24 heures à compter du début de la session en cours</string>
@@ -156,6 +164,7 @@
     <string name="user_kicked">L\'utilisateur a été expulsé</string>
     <string name="user_unblocked">Utilisateur débloqué</string>
     <string name="unblock">Débloquer</string>
+    <string name="unblock_confirm_message">Êtes-vous sûr de vouloir débloquer %1$s \?</string>
     <string name="block">Bloc</string>
     <string name="failed_to_unblock_user">Échec du déblocage de l\'utilisateur</string>
     <plurals name="subscribers_count">
@@ -228,6 +237,8 @@
     <string name="delete_account_if_inactive_for">Autodestruction si inactif pendant…</string>
     <string name="automatic_media_download">Téléchargement automatique des médias</string>
     <string name="auto_download_media">Téléchargement automatique de médias</string>
+    <string name="auto_download_voice_hint">Les messages vocaux sont de petite taille et sont toujours téléchargés automatiquement.</string>
+    <string name="up_to_10_mb">Jusqu\'à 10 MB</string>
     <string name="you">Toi</string>
     <string name="personal_channel">Chaîne personnelle</string>
     <string name="hide_channel">Masquer la chaîne</string>
@@ -251,10 +262,12 @@
     <string name="edit_time_limit_error"><![CDATA[Impossible de modifier les messages datant de plus de 24 heures]]></string>
     <string name="too_many_requests">Trop de demandes. Veuillez réessayer plus tard.</string>
     <string name="blocked_users">Utilisateurs bloqués</string>
+    <string name="blocked_users_empty">Aucun utilisateur bloqué</string>
     <string name="join_requests">Demandes de participation</string>
     <string name="no_requests_to_join">Aucune demande d\'adhésion</string>
     <string name="pending_join_requests_description">Vos demandes pour rejoindre des chaînes et des groupes sont affichées ici.</string>
     <string name="pending_join_requests_empty">Il n’y a aucune demande d’adhésion en attente.</string>
+    <string name="join_request_sent">Demande envoyée</string>
     <string name="draft">Brouillon</string>
     <string name="clear_drafts">Effacer les brouillons</string>
     <string name="clear_drafts_confirm_message"><![CDATA[Êtes-vous sûr de vouloir supprimer tous les brouillons de toutes les discussions \?]]></string>
@@ -273,6 +286,8 @@
     <string name="password_reset_request_failed">Échec de l\'envoi du code de réinitialisation du mot de passe</string>
     <string name="remove_email">Supprimer l\'e-mail</string>
     <string name="change_email">Changer l\'e-mail</string>
+    <string name="remove_email_confirm_message">Êtes-vous sûr de vouloir désactiver l\'adresse e-mail \?</string>
+    <string name="email_security_description">L\'e-mail renforce la sécurité du compte et vous aide à retrouver l\'accès si vous oubliez votre mot de passe.</string>
     <string name="remove">Retirer</string>
     <string name="reply">Répondre</string>
     <string name="reply_to">Répondre à %1$s</string>
@@ -303,6 +318,8 @@
     <string name="unread_messages">Messages non lus</string>
     <string name="open_email_with">Ouvrir avec</string>
     <string name="no_email_app">Pas d\'application de messagerie</string>
+    <string name="open_phone_with">Ouvrir avec</string>
+    <string name="no_phone_app">Pas d\'application de téléphone</string>
     <string name="no_copy">Restreindre la copie</string>
     <string name="no_copy_channel_description">Les membres ne pourront pas copier de texte, transférer des messages ou enregistrer des médias à partir de la chaîne.</string>
     <string name="no_copy_group_description">Les membres ne pourront pas copier de texte, transférer des messages ou enregistrer des médias du groupe.</string>
@@ -377,11 +394,14 @@
     <string name="last_seen_time">Vu à %1$s</string>
     <string name="last_seen_yesterday_time">Vu hier à %1$s</string>
     <string name="last_seen_date_time">Vu le %1$s à %2$s</string>
+    <string name="mini_player_yesterday_at">Hier à %1$s</string>
+    <string name="mini_player_date_at">%1$s à %2$s</string>
     <string name="chat_media">Médias</string>
     <string name="chat_media_tab">Médias</string>
     <string name="chat_files_tab">Fichiers</string>
     <string name="chat_media_music_tab">Musique</string>
     <string name="chat_voices_tab">Vocaux</string>
+    <string name="chat_contacts_tab">Contacts</string>
     <string name="chat_attachments_empty">Pas encore de pièces jointes dans cette discussion</string>
     <string name="chat_media_load_error">Impossible de charger les pièces jointes</string>
 
@@ -406,6 +426,11 @@
         <item quantity="one">%1$d message vocal</item>
         <item quantity="other">%1$d messages vocaux</item>
         <item quantity="many">%1$d messages vocaux</item>
+    </plurals>
+    <plurals name="chat_media_contacts_count">
+        <item quantity="one">%1$d contact</item>
+        <item quantity="other">%1$d contacts</item>
+        <item quantity="many">%1$d contacts</item>
     </plurals>
     <plurals name="chat_media_music_count">
         <item quantity="one">%1$d fichier audio</item>
@@ -443,6 +468,9 @@
     <string name="media_picker_permission">Autorisez l\'accès aux photos et vidéos</string>
     <string name="media_picker_permission_action">Autoriser</string>
     <string name="media_picker_empty">Aucune photo ni vidéo</string>
+    <string name="contact_picker_permission">Autorisez l\'accès aux contacts</string>
+    <string name="contact_picker_permission_action">Autoriser</string>
+    <string name="contact_picker_empty">Aucun contact trouvé</string>
     <string name="media_picker_reset_title">Réinitialiser la sélection</string>
     <string name="media_picker_reset_message">Fermer le menu des pièces jointes ?</string>
     <string name="media_picker_reset_action">Réinitialiser</string>
@@ -508,6 +536,18 @@
     <string name="sticker_pack_installed">Le pack %1$s a été ajouté à vos stickers</string>
     <string name="sticker_pack_uninstalled">Le pack %1$s a été retiré de vos stickers</string>
     <string name="sticker_message">Sticker</string>
+    <string name="contact_message">Contact</string>
+    <string name="contact_call">Appeler</string>
+    <string name="send_contact">Envoyer le contact</string>
+    <string name="view_contact">Voir le contact</string>
+    <string name="add_contact">Ajouter le contact</string>
+    <string name="contact_phone">Téléphone</string>
+    <string name="contact_email">E-mail</string>
+    <string name="contact_website">Site web</string>
+    <string name="contact_address">Adresse</string>
+    <string name="contact_organization">Travail</string>
+    <string name="contact_job_title">Poste</string>
+    <string name="contact_birthday">Anniversaire</string>
     <string name="emoji">Emoji</string>
     <string name="emoji_packs_created">Creati</string>
     <string name="emoji_packs_added">Aggiunti</string>
@@ -591,4 +631,20 @@
     <string name="wallpaper_darkness">Assombrissement</string>
     <string name="wallpaper_blur">Flou</string>
     <string name="wallpaper_apply_failed">Échec de la définition du fond</string>
+
+    <string name="add">Ajouter</string>
+    <string name="add_account_hint">Connectez-vous à un autre compte sans vous déconnecter du compte actuel.</string>
+    <string name="clear_cache_hint">Libérez de l\'espace sur votre appareil. Les fichiers resteront dans le cloud.</string>
+    <string name="devices_description">Consultez la liste des appareils sur lesquels votre compte %1$s est connecté.</string>
+    <string name="email_reset_hint">Une adresse e-mail permettra de réinitialiser votre mot de passe en cas d\'oubli.</string>
+    <string name="clear_cache_confirm_message">Tous les médias resteront dans le cloud. Vous pourrez les retélécharger si besoin.</string>
+    <string name="clear_database_confirm_message">Supprimer tous les messages de la base de données locale ?</string>
+
+    <string name="profile_public_channels_hint">Seuls vos canaux publics peuvent être affichés sur votre profil.</string>
+    <string name="limitations">Limitations</string>
+    <string name="invite_link_limitations_description">Vous pouvez limiter la date d\'expiration du lien ou son nombre d\'utilisations.</string>
+    <string name="uses_limit">Nombre d\'utilisations</string>
+    <string name="expiration_date">Date d\'expiration</string>
+    <string name="no_expiration">Sans expiration</string>
+    <string name="reset_expiration_date">Réinitialiser la date d\'expiration</string>
 </resources>

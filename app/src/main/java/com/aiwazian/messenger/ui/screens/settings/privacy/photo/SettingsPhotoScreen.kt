@@ -21,7 +21,7 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionRadioItem
+import com.aiwazian.messenger.ui.components.section.SectionRadio
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.enums.PrivacyField
@@ -81,14 +81,14 @@ fun SettingsPhotoScreen(
         SectionContainer(header = {
             SectionHeader(stringResource(R.string.who_can_see_my_profile_photo))
         }) {
-            SectionRadioItem(
-                text = stringResource(R.string.everybody),
+            SectionRadio(
+                headlineText = stringResource(R.string.everybody),
                 selected = currentValue == PrivacyLevel.EVERYBODY,
                 onClick = {
                     settingsPhotoViewModel.selectValue(PrivacyLevel.EVERYBODY)
                 })
-            SectionRadioItem(
-                text = stringResource(R.string.nobody),
+            SectionRadio(
+                headlineText = stringResource(R.string.nobody),
                 selected = currentValue == PrivacyLevel.NOBODY,
                 onClick = {
                     settingsPhotoViewModel.selectValue(PrivacyLevel.NOBODY)

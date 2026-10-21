@@ -39,11 +39,6 @@ class NotificationCategoryViewModel @Inject constructor(
     private var category: ChatFolderCategory? = null
     private var observeJob: Job? = null
     
-    /**
-     * Экран открыт для конкретной категории, а она известна только в рантайме,
-     * поэтому приходит сюда, а не через конструктор. Повторный вызов с той же
-     * категорией (пересоздание экрана) ничего не пересобирает.
-     */
     fun init(category: ChatFolderCategory) {
         if (this.category == category) return
         this.category = category
@@ -54,11 +49,6 @@ class NotificationCategoryViewModel @Inject constructor(
         }
     }
     
-    /**
-     * Список строится из общего кэша исключений и списка чатов: имя и аватар берём
-     * из чата, а само исключение — из кэша. Пересобирается сам, когда исключение
-     * убрали здесь или на другом устройстве.
-     */
     private fun observeExceptions(category: ChatFolderCategory) {
         observeJob?.cancel()
         observeJob = viewModelScope.launch {
@@ -90,7 +80,6 @@ class NotificationCategoryViewModel @Inject constructor(
         _uiState.update { it.copy(showDeleteAllDialog = false) }
     }
     
-    /** Удалить все исключения этой категории; чужие категории не трогаются. */
     fun removeAllExceptions() {
         val category = category ?: return
         

@@ -66,6 +66,7 @@ sealed interface PinnedMessagesUiEffect {
     data class ShowSnackbar(val message: UiText) : PinnedMessagesUiEffect
     data class OpenUrl(val url: String) : PinnedMessagesUiEffect
     data class OpenEmail(val email: String) : PinnedMessagesUiEffect
+    data class OpenPhone(val phone: String) : PinnedMessagesUiEffect
     data class NavigateToChat(
         val chatId: Long,
         val scrollToMessageId: Long? = null

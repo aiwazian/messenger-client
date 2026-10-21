@@ -41,8 +41,8 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionItem
-import com.aiwazian.messenger.ui.components.section.SectionToggleItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionToggle
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import kotlinx.coroutines.Job
@@ -134,36 +134,36 @@ fun CreateGroupInviteLinkScreen(
             AppSnackbar(snackbarHostState)
         }) {
         SectionContainer(
-            header = { SectionHeader(title = "Ограничения") },
-            footer = { SectionDescription(text = "Вы можете ограничить срок действия ссылки или количество её использований.") }) {
+            header = { SectionHeader(title = stringResource(R.string.limitations)) },
+            footer = { SectionDescription(text = stringResource(R.string.invite_link_limitations_description)) }) {
             
             if (!uiState.requireApproval) {
                 FramelessTextBox(
                     value = uiState.maxUses,
                     onValueChange = viewModel::onMaxUsesChange,
-                    placeholder = "Количество использований",
+                    placeholder = stringResource(R.string.uses_limit),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
             }
             
-            SectionItem(
-                headlineText = "Срок действия",
+            SectionButton(
+                headlineText = stringResource(R.string.expiration_date),
                 trailingText = uiState.expirationDate?.toInstance()?.toPrettyDateWithYear()
-                    ?: "Бессрочно",
+                    ?: stringResource(R.string.no_expiration),
                 onClick = viewModel::showDatePicker
             )
             
             AnimatedContent(targetState = uiState.expirationDate) { date ->
                 if (date != null) {
-                    SectionItem(
-                        headlineText = "Сбросить срок действия",
+                    SectionButton(
+                        headlineText = stringResource(R.string.reset_expiration_date),
                         contentColor = MaterialTheme.colorScheme.error,
                         onClick = { viewModel.onExpirationDateChange(null) })
                 }
             }
             
-            SectionToggleItem(
-                text = "Заявки на вступление",
+            SectionToggle(
+                headlineText = stringResource(R.string.join_requests),
                 isChecked = uiState.requireApproval,
                 onCheckedChange = { viewModel.onRequireApprovalChange(!uiState.requireApproval) }
             )

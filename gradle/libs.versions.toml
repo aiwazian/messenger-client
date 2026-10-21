@@ -9,16 +9,16 @@ browser = "1.10.0"
 coil = "3.6.3"
 coreSplashscreen = "1.2.0"
 credentials = "1.7.0-alpha03"
-datastorePreferences = "1.2.1"
+datastorePreferences = "1.3.0"
 exifinterface = "1.4.2"
-firebaseBom = "35.0.0"
+firebaseBom = "35.1.0"
 foundation = "1.12.1"
 googleServices = "4.5.0"
 hiltAndroid = "2.60.1"
 hiltCompiler = "2.60.1"
 hiltNavigationCompose = "1.4.0"
 ketch = "2.0.6"
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 coreKtx = "1.19.1"
 kotlinxSerializationJson = "1.11.0"
 lifecycleRuntimeKtx = "2.11.0"
@@ -39,11 +39,12 @@ retrofit = "3.0.0"
 retrofit2KotlinxSerializationConverter = "1.0.0"
 room = "3.0.3"
 graphicsShapes = "1.1.0"
-material3 = "1.5.0-beta01"
+material3 = "1.5.0-beta02"
 socketio = "2.1.2"
-serialization = "2.4.20"
+serialization = "2.4.21"
 hilt = "2.60.1"
 ksp = "2.3.10"
+libphonenumber = "9.0.41"
 
 [libraries]
 androidx-animation = { module = "androidx.compose.animation:animation", version.ref = "animation" }
@@ -95,6 +96,7 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltCompiler" }
+libphonenumber = { module = "com.googlecode.libphonenumber:libphonenumber", version.ref = "libphonenumber" }
 ketch = { module = "com.github.khushpanchal:Ketch", version.ref = "ketch" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 

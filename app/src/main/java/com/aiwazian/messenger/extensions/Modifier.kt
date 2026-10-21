@@ -16,16 +16,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.aiwazian.messenger.ui.components.navigation.LocalSharedTransitionScope
 
-/**
- * Применяет анимацию shared element к composable.
- *
- * Оба composable, которые должны быть «shared», обязаны использовать одинаковый [key].
- * Используй [sharedElement] когда контент на обоих экранах визуально идентичен
- * (например, одна и та же картинка).
- *
- * @param key уникальный ключ, связывающий элементы на двух экранах
- * @param zIndexInOverlay z-порядок элемента в оверлее во время перехода
- */
 @Composable
 fun Modifier.sharedElement(
     key: Any,
@@ -44,19 +34,6 @@ fun Modifier.sharedElement(
     }
 }
 
-/**
- * Применяет анимацию shared bounds к composable.
- *
- * Оба composable, которые должны делить bounds, обязаны использовать одинаковый [key].
- * Используй [sharedBounds] когда контент на экранах визуально разный, но занимает одну область
- * (например, карточка → полноэкранный экран / container transform).
- *
- * @param key уникальный ключ, связывающий области на двух экранах
- * @param enter анимация появления контента нового экрана внутри shared bounds
- * @param exit анимация исчезновения контента старого экрана внутри shared bounds
- * @param zIndexInOverlay z-порядок элемента в оверлее во время перехода
- * @param resizeMode режим изменения размера во время анимации
- */
 @Composable
 fun Modifier.sharedBounds(
     key: Any,

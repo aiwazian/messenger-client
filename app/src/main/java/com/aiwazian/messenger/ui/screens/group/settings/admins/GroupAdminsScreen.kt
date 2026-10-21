@@ -44,7 +44,7 @@ import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -96,7 +96,7 @@ fun GroupAdminsScreen(
                 .padding(innerPadding)
         ) {
             SectionContainer {
-                SectionItem(
+                SectionButton(
                     leadingIcon = Icons.Rounded.PersonAdd,
                     headlineText = stringResource(R.string.add_administrator),
                     onClick = { navBackStack.add(AppRoute.AddGroupAdmin(groupId)) }
@@ -105,7 +105,7 @@ fun GroupAdminsScreen(
             
             SectionContainer {
                 if (uiState.admins.isEmpty()) {
-                    SectionItem(headlineText = stringResource(R.string.no_administrators))
+                    SectionButton(headlineText = stringResource(R.string.no_administrators))
                 } else {
                     LazyColumn {
                         items(uiState.admins) { admin ->

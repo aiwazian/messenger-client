@@ -2,6 +2,7 @@ package com.aiwazian.messenger.network.api
 
 import com.aiwazian.messenger.network.dto.ChatReadStateDto
 import com.aiwazian.messenger.network.dto.ClearHistoryRequestDto
+import com.aiwazian.messenger.network.dto.ContactMessageRequestDto
 import com.aiwazian.messenger.network.dto.DeleteMessageRequestDto
 import com.aiwazian.messenger.network.dto.EditMessageRequestDto
 import com.aiwazian.messenger.network.dto.FileConfirmRequestDto
@@ -65,6 +66,13 @@ interface MessageApi {
     suspend fun sendStickerMessage(
         @Path("chatId") chatId: Long,
         @Body request: StickerMessageRequestDto,
+        @Header("x-socket-id") socketId: String
+    ): Response<MessageDto>
+
+    @POST("chats/{chatId}/messages/contacts")
+    suspend fun sendContactMessage(
+        @Path("chatId") chatId: Long,
+        @Body request: ContactMessageRequestDto,
         @Header("x-socket-id") socketId: String
     ): Response<MessageDto>
     

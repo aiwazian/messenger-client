@@ -17,6 +17,7 @@
     <string name="security">Security</string>
     <string name="delete_account">Delete Account</string>
     <string name="delete_account_confirm">Are you sure you want to delete your account?</string>
+    <string name="delete_anyway">Delete anyway</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="devices">Devices</string>
@@ -67,6 +68,11 @@
     <string name="add_chats">Add Chats</string>
     <string name="enter_password">Enter password</string>
     <string name="passcode_lock_description">When a passcode is set, a lock icon appears above your chat list. Tap it to lock your app.</string>
+    <string name="passcode_create_title">Create Passcode</string>
+    <string name="passcode_change_title">Enter New Passcode</string>
+    <string name="passcode_enter_digits_description">Enter the 4 digits you want to use to unlock the app.</string>
+    <string name="passcode_lock_hint">To lock and unlock the app, tap the lock icon above your chat list.</string>
+    <string name="passcode_disable_confirm_message">Are you sure you want to turn off the passcode?</string>
     <string name="cancel">Cancel</string>
     <string name="terminate">Terminate</string>
     <string name="terminate_session">Terminate session</string>
@@ -122,6 +128,7 @@
     <string name="files">Files</string>
     <string name="audio">Audio</string>
     <string name="storage_usage">Storage Usage</string>
+    <string name="media_stay_in_cloud">All media will stay in the cloud and can be re-downloaded if needed.</string>
     <string name="group_name">Group name</string>
     <string name="logout_confirm_message">Are you sure you want to log out?</string>
     <string name="delete_account_message">Everything related to your account will be permanently deleted.</string>
@@ -136,6 +143,7 @@
     <string name="new_link">New Link</string>
     <string name="send">Send</string>
     <string name="subscribe">Subscribe</string>
+    <string name="request_to_join">Request to join</string>
     <string name="group_type">Group Type</string>
     <string name="delete_account_after_twenty_four_hours">Account deletion will be available 24 hours after the start of the current session.</string>
     <string name="change_password_session_age">Password change will be available 24 hours after the start of the current session</string>
@@ -156,6 +164,7 @@
     <string name="user_kicked">User kicked</string>
     <string name="user_unblocked">User unblocked</string>
     <string name="unblock">Unblock</string>
+    <string name="unblock_confirm_message">Are you sure you want to unblock %1$s?</string>
     <string name="block">Block</string>
     <string name="failed_to_unblock_user">Failed to unblock user</string>
     <plurals name="subscribers_count">
@@ -234,6 +243,8 @@
     <string name="delete_account_if_inactive_for">Self-Destruct if inactive for…</string>
     <string name="automatic_media_download">Automatic media download</string>
     <string name="auto_download_media">Auto Download Media</string>
+    <string name="auto_download_voice_hint">Voice messages are small in size and are always downloaded automatically.</string>
+    <string name="up_to_10_mb">Up to 10 MB</string>
     <string name="you">You</string>
     <string name="personal_channel">Personal channel</string>
     <string name="hide_channel">Hide channel</string>
@@ -257,10 +268,12 @@
     <string name="edit_time_limit_error">Cannot edit messages older than 24 hours</string>
     <string name="too_many_requests">Too many requests. Please try again later.</string>
     <string name="blocked_users">Blocked Users</string>
+    <string name="blocked_users_empty">No blocked users</string>
     <string name="join_requests">Join Requests</string>
     <string name="no_requests_to_join">No requests to join</string>
     <string name="pending_join_requests_description">Your requests to join channels and groups are displayed here.</string>
     <string name="pending_join_requests_empty">There are no pending requests to join.</string>
+    <string name="join_request_sent">Request sent</string>
     <string name="draft">Draft</string>
     <string name="clear_drafts">Clear Drafts</string>
     <string name="clear_drafts_confirm_message">Are you sure you want to delete all drafts from all chats?</string>
@@ -279,6 +292,8 @@
     <string name="password_reset_request_failed">Failed to send password reset code</string>
     <string name="remove_email">Remove Email</string>
     <string name="change_email">Change Email</string>
+    <string name="remove_email_confirm_message">Are you sure you want to remove your email?</string>
+    <string name="email_security_description">Email improves your account security and helps you regain access if you forget your password.</string>
     <string name="remove">Remove</string>
     <string name="reply">Reply</string>
     <string name="reply_to">Reply to %1$s</string>
@@ -309,6 +324,8 @@
     <string name="unread_messages">Unread messages</string>
     <string name="open_email_with">Open with</string>
     <string name="no_email_app">No email app</string>
+    <string name="open_phone_with">Open with</string>
+    <string name="no_phone_app">No phone app</string>
     <string name="no_copy">Restrict copying</string>
     <string name="no_copy_channel_description">Members, won\'t be able to copy text, forward messages, or save media from the channel.</string>
     <string name="no_copy_group_description">Members, won\'t be able to copy text, forward messages, or save media from the group.</string>
@@ -382,11 +399,14 @@
     <string name="last_seen_time">Last seen at %1$s</string>
     <string name="last_seen_yesterday_time">Last seen yesterday at %1$s</string>
     <string name="last_seen_date_time">Last seen %1$s at %2$s</string>
+    <string name="mini_player_yesterday_at">Yesterday at %1$s</string>
+    <string name="mini_player_date_at">%1$s at %2$s</string>
     <string name="chat_media">Media</string>
     <string name="chat_media_tab">Media</string>
     <string name="chat_files_tab">Files</string>
     <string name="chat_media_music_tab">Music</string>
     <string name="chat_voices_tab">Voice</string>
+    <string name="chat_contacts_tab">Contacts</string>
     <string name="chat_attachments_empty">No attachments in this chat yet</string>
     <string name="chat_media_load_error">Couldn\'t load attachments</string>
 
@@ -408,6 +428,10 @@
     <plurals name="chat_media_voices_count">
         <item quantity="one">%1$d voice message</item>
         <item quantity="other">%1$d voice messages</item>
+    </plurals>
+    <plurals name="chat_media_contacts_count">
+        <item quantity="one">%1$d contact</item>
+        <item quantity="other">%1$d contacts</item>
     </plurals>
     <plurals name="chat_media_music_count">
         <item quantity="one">%1$d music file</item>
@@ -443,6 +467,9 @@
     <string name="media_picker_permission">Allow access to photos and videos</string>
     <string name="media_picker_permission_action">Allow</string>
     <string name="media_picker_empty">No photos or videos</string>
+    <string name="contact_picker_permission">Allow access to contacts</string>
+    <string name="contact_picker_permission_action">Allow</string>
+    <string name="contact_picker_empty">No contacts found</string>
     <string name="media_picker_reset_title">Reset selection</string>
     <string name="media_picker_reset_message">Close the attachment menu?</string>
     <string name="media_picker_reset_action">Reset</string>
@@ -506,6 +533,18 @@
     <string name="sticker_pack_installed">Pack %1$s added to your stickers</string>
     <string name="sticker_pack_uninstalled">Pack %1$s removed from your stickers</string>
     <string name="sticker_message">Sticker</string>
+    <string name="contact_message">Contact</string>
+    <string name="contact_call">Call</string>
+    <string name="send_contact">Send contact</string>
+    <string name="view_contact">View contact</string>
+    <string name="add_contact">Add contact</string>
+    <string name="contact_phone">Phone</string>
+    <string name="contact_email">Email</string>
+    <string name="contact_website">Website</string>
+    <string name="contact_address">Address</string>
+    <string name="contact_organization">Work</string>
+    <string name="contact_job_title">Job title</string>
+    <string name="contact_birthday">Birthday</string>
     <string name="emoji">Emoji</string>
     <string name="emoji_packs_created">Created</string>
     <string name="emoji_packs_added">Added</string>
@@ -589,4 +628,20 @@
     <string name="wallpaper_darkness">Darkening</string>
     <string name="wallpaper_blur">Blur</string>
     <string name="wallpaper_apply_failed">Failed to set wallpaper</string>
+
+    <string name="add">Add</string>
+    <string name="add_account_hint">Log in to another account without logging out of the current one.</string>
+    <string name="clear_cache_hint">Free up space on your device. Files will stay in the cloud.</string>
+    <string name="devices_description">View the list of devices where your %1$s account is logged in.</string>
+    <string name="email_reset_hint">An email address can be used to reset your password if you forget it.</string>
+    <string name="clear_cache_confirm_message">All media will stay in the cloud. You can download them again if needed.</string>
+    <string name="clear_database_confirm_message">Delete all messages from the local database?</string>
+
+    <string name="profile_public_channels_hint">Only your public channels can be displayed in your profile.</string>
+    <string name="limitations">Limitations</string>
+    <string name="invite_link_limitations_description">You can limit the link\'s expiration date or the number of times it can be used.</string>
+    <string name="uses_limit">Number of uses</string>
+    <string name="expiration_date">Expiration date</string>
+    <string name="no_expiration">Never</string>
+    <string name="reset_expiration_date">Reset expiration date</string>
 </resources>

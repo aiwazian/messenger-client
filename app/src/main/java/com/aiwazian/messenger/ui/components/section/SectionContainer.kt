@@ -15,6 +15,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -38,10 +39,13 @@ fun SectionContainer(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large,
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                ),
-                content = content
-            )
+                    containerColor = Color.Transparent
+                )
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    content()
+                }
+            }
             footer?.invoke()
         }
     }

@@ -11,7 +11,6 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.net.Uri
 import android.util.Log
-import com.aiwazian.messenger.utils.AmplitudeExtractor.AMPLITUDES_COUNT
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.nio.ByteOrder
@@ -20,14 +19,6 @@ import java.nio.ShortBuffer
 import kotlin.math.min
 import kotlin.math.sqrt
 
-/**
- * Decodes an audio file into a fixed number of amplitudes (RMS per bucket),
- * normalized to the maximum. Values are in the 0f..1f range and the result
- * always contains [AMPLITUDES_COUNT] entries.
- *
- * The PCM stream is never accumulated in memory: decoding only keeps a
- * per-chunk sum of squares, so memory usage does not grow with recording length.
- */
 object AmplitudeExtractor {
 
     private const val TAG = "AmplitudeExtractor"

@@ -21,5 +21,7 @@ data class ChatMediaCountsEntity(
     val music: Int,
     val voices: Int,
     @ColumnInfo(defaultValue = "0")
+    val contacts: Int = 0,
+    @ColumnInfo(defaultValue = "0")
     val ownerId: Long = 0
 )

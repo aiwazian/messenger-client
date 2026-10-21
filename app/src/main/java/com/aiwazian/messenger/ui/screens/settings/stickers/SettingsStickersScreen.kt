@@ -13,7 +13,7 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
@@ -26,13 +26,13 @@ fun SettingsStickersScreen() {
         SectionContainer(header = {
             SectionHeader(stringResource(R.string.sticker_packs))
         }) {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.sticker_packs_created),
                 onClick = {
                     navBackStack.add(AppRoute.CreatedStickerPacks)
                 })
             
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.sticker_packs_added),
                 onClick = {
                     navBackStack.add(AppRoute.AddedStickerPacks)
@@ -42,13 +42,13 @@ fun SettingsStickersScreen() {
         SectionContainer(header = {
             SectionHeader(stringResource(R.string.emoji))
         }) {
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.emoji_packs_created),
                 onClick = {
                     navBackStack.add(AppRoute.CreatedEmojiPacks)
                 })
             
-            SectionItem(
+            SectionButton(
                 headlineText = stringResource(R.string.emoji_packs_added),
                 onClick = {
                     navBackStack.add(AppRoute.AddedEmojiPacks)

@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppBottomSheetFooterActions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,8 +52,22 @@ fun MicrophonePermissionBottomSheet(
     val context = LocalContext.current
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     
-    AppBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    AppBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        stickyFooter = {
+            AppBottomSheetFooterActions.PrimaryButton(
+                text = stringResource(R.string.open_settings),
+                onClick = {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                    }
+                    context.startActivity(intent)
+                }
+            )
+        }) { padding ->
         Column(
+            modifier = Modifier.padding(padding),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -71,14 +86,6 @@ fun MicrophonePermissionBottomSheet(
                 )
             }
             Text(stringResource(R.string.provide_mic_permission))
-            TextButton(modifier = Modifier.fillMaxWidth(), onClick = {
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = Uri.fromParts("package", context.packageName, null)
-                }
-                context.startActivity(intent)
-            }, shape = MaterialTheme.shapes.medium) {
-                Text(stringResource(R.string.open_settings))
-            }
         }
     }
 }
@@ -100,16 +107,40 @@ fun InviteLinkBottomSheet(
     val countText = pluralStringResource(R.plurals.subscribers_count, count, count)
     
     val buttonText = if (requireApproval) {
-        "ПОДАТЬ ЗАЯВКУ"
+        stringResource(R.string.request_to_join).uppercase()
     } else if (chatType == ChatType.CHANNEL) {
         stringResource(R.string.subscribe).uppercase()
     } else {
         stringResource(R.string.join).uppercase()
     }
     
-    AppBottomSheet(onDismissRequest = onDismiss) {
+    AppBottomSheet(
+        onDismissRequest = onDismiss,
+        stickyFooter = {
+            AppBottomSheetFooterActions.Custom {
+                TextButton(
+                    onClick = onJoin,
+                    enabled = !isLoading,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    if (isLoading) {
+                        CircularWavyProgressIndicator(modifier = Modifier.padding(4.dp))
+                    } else {
+                        Text(
+                            text = buttonText, fontSize = 16.sp, fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }) { padding ->
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(padding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -135,26 +166,6 @@ fun InviteLinkBottomSheet(
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            TextButton(
-                onClick = onJoin,
-                enabled = !isLoading,
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                if (isLoading) {
-                    CircularWavyProgressIndicator(modifier = Modifier.padding(4.dp))
-                } else {
-                    Text(
-                        text = buttonText, fontSize = 16.sp, fontWeight = FontWeight.Bold
-                    )
-                }
-            }
         }
     }
 }

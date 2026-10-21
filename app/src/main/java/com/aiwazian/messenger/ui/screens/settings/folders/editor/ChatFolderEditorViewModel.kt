@@ -47,10 +47,6 @@ class ChatFolderEditorViewModel @Inject constructor(
         }
     }
     
-    /**
-     * Содержимое папки читается ровно один раз: дальше состояние принадлежит
-     * экрану, иначе обновление из Room затирало бы несохранённые правки.
-     */
     fun loadFolder(folderId: Int?) {
         if (isFolderLoaded) {
             return
@@ -78,12 +74,10 @@ class ChatFolderEditorViewModel @Inject constructor(
         }
     }
     
-    /** Лишние символы отсекаются прямо на вводе: длиннее вкладка не помещается. */
     fun onNameChange(name: String) {
         _uiState.update { it.copy(name = name.take(MAX_FOLDER_NAME_LENGTH)) }
     }
     
-    /** Результат экрана выбора чатов: список приходит целиком и заменяет прежний. */
     fun applySelection(selection: FolderChatsSelection) {
         _uiState.update { state ->
             state.copy(
@@ -128,7 +122,6 @@ class ChatFolderEditorViewModel @Inject constructor(
         }
     }
     
-    /** Папки открывают из списка, но на холодном старте Room может быть ещё пуст. */
     private suspend fun loadFromCacheOrNetwork(folderId: Int): ChatFolder? {
         chatFolderRepository.getFolder(folderId)?.let { return it }
         chatFolderRepository.refreshFolders()

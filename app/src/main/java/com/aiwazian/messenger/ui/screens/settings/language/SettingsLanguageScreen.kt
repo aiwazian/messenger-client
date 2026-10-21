@@ -14,7 +14,7 @@ import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.AppLanguage
 import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionRadioItem
+import com.aiwazian.messenger.ui.components.section.SectionRadio
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 
 @Composable
@@ -30,10 +30,10 @@ fun SettingsLanguageScreen(languageViewModel: LanguageViewModel = hiltViewModel(
     ) {
         SectionContainer {
             AppLanguage.entries.forEach { language ->
-                SectionRadioItem(
-                    text = language.nativeName,
+                SectionRadio(
+                    headlineText = language.nativeName,
                     selected = currentLanguage == language,
-                    description = language.displayName,
+                    supportingText = language.displayName,
                     onClick = {
                         languageViewModel.selectLanguage(language)
                     })

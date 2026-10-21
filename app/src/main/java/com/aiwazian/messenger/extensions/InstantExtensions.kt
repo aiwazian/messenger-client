@@ -4,6 +4,9 @@
 
 package com.aiwazian.messenger.extensions
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.aiwazian.messenger.R
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -44,6 +47,7 @@ fun Instant.toShortDateIfNotToday(
     return dateTime.format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
 }
 
+@Composable
 fun Instant.toMiniPlayerTime(
     now: Instant = Instant.now(),
     zoneId: ZoneId = ZoneId.systemDefault()
@@ -56,8 +60,12 @@ fun Instant.toMiniPlayerTime(
 
     return when (messageDate) {
         today -> time
-        today.minusDays(1) -> "вчера в $time"
-        else -> "${dateTime.format(DateTimeFormatter.ofPattern("d MMM", locale))} в $time"
+        today.minusDays(1) -> stringResource(R.string.mini_player_yesterday_at, time)
+        else -> stringResource(
+            R.string.mini_player_date_at,
+            dateTime.format(DateTimeFormatter.ofPattern("d MMM", locale)),
+            time
+        )
     }
 }
 

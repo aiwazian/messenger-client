@@ -4,6 +4,7 @@ import androidx.room3.ColumnInfo
 import androidx.room3.Entity
 import androidx.room3.Index
 import androidx.room3.PrimaryKey
+import com.aiwazian.messenger.domain.MessageContact
 import com.aiwazian.messenger.enums.MessageStatus
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.enums.SystemMessageEventType
@@ -41,5 +42,6 @@ data class MessageEntity(
     val stickerId: Long? = null,
     val stickerPackId: Long? = null,
     val stickerFileId: String? = null,
-    val stickerEmojis: String? = null
+    val stickerEmojis: String? = null,
+    val contact: MessageContact? = null
 )

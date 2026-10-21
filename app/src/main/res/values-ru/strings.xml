@@ -21,6 +21,7 @@
     <string name="security">Безопасность</string>
     <string name="delete_account">Удалить аккаунт</string>
     <string name="delete_account_confirm">Вы уверены, что хотите удалить аккаунт?</string>
+    <string name="delete_anyway">Все равно удалить</string>
     <string name="yes">Да</string>
     <string name="no">Нет</string>
     <string name="devices">Устройства</string>
@@ -70,6 +71,11 @@
     <string name="add_chats">Добавить чаты</string>
     <string name="enter_password">Введите пароль</string>
     <string name="passcode_lock_description">После установки кода-пароля над списком чатов появится значок замка для блокировки и разблокировки приложения.</string>
+    <string name="passcode_create_title">Создание код-пароля</string>
+    <string name="passcode_change_title">Введите новый код-пароль</string>
+    <string name="passcode_enter_digits_description">Введите 4 цифры, которые хотите использовать для разблокировки приложения.</string>
+    <string name="passcode_lock_hint">Для блокировки и разблокировки приложения нажмите на значок замка над списком чатов.</string>
+    <string name="passcode_disable_confirm_message">Вы точно хотите отключить пароль?</string>
     <string name="cancel">Отмена</string>
     <string name="terminate">Завершить</string>
     <string name="terminate_session">Завершить сеанс</string>
@@ -126,6 +132,7 @@
     <string name="files">Файлы</string>
     <string name="audio">Аудио</string>
     <string name="storage_usage">Использование хранилища</string>
+    <string name="media_stay_in_cloud">Все медиа останутся в облаке, при необходимости Вы сможете загрузить их.</string>
     <string name="group_name">Название группы</string>
     <string name="logout_confirm_message">Вы точно хотите выйти?</string>
     <string name="delete_account_message">Все, что связано с вашей учетной записью, будет удалено без возможности восстановления.</string>
@@ -140,6 +147,7 @@
     <string name="new_link">Новая ссылка</string>
     <string name="send">Отправить</string>
     <string name="subscribe">Подписаться</string>
+    <string name="request_to_join">Подать заявку</string>
     <string name="group_type">Тип группы</string>
     <string name="delete_account_after_twenty_four_hours">Удаление аккаунта будет доступно через 24 часа с начала текущей сессии.</string>
     <string name="change_password_session_age">Смена пароля учётной записи будет доступна через 24 часа с начала текущей сессии</string>
@@ -160,6 +168,7 @@
     <string name="user_kicked">Пользователь выгнан</string>
     <string name="user_unblocked">Пользователь разблокирован</string>
     <string name="unblock">Разблокировать</string>
+    <string name="unblock_confirm_message">Вы уверены, что хотите разблокировать пользователя %1$s?</string>
     <string name="block">Блокировать</string>
     <string name="failed_to_unblock_user">Не удалось разблокировать пользователя</string>
     <plurals name="subscribers_count">
@@ -234,6 +243,8 @@
     <string name="delete_account_if_inactive_for">Удаление аккаунта при неактивности…</string>
     <string name="automatic_media_download">Автозагрузка медиа</string>
     <string name="auto_download_media">Загружать автоматически</string>
+    <string name="auto_download_voice_hint">Голосовые сообщения имеют небольшой размер и всегда загружаются автоматически.</string>
+    <string name="up_to_10_mb">До 10 МБ</string>
     <string name="you">Вы</string>
     <string name="personal_channel">Личный канал</string>
     <string name="hide_channel">Скрыть канал</string>
@@ -257,10 +268,12 @@
     <string name="edit_time_limit_error">Невозможно изменить сообщение старше 24 часов</string>
     <string name="too_many_requests">Слишком много запросов. Пожалуйста, повторите попытку позже.</string>
     <string name="blocked_users">Заблокированные пользователи</string>
+    <string name="blocked_users_empty">Нет заблокированных пользователей</string>
     <string name="join_requests">Заявки на вступление</string>
     <string name="no_requests_to_join">Нет заявок на вступление</string>
     <string name="pending_join_requests_description">Здесь отображаются ваши заявки на вступление в каналы и группы.</string>
     <string name="pending_join_requests_empty">Отправленных заявок на вступление нет.</string>
+    <string name="join_request_sent">Заявка отправлена</string>
     <string name="draft">Черновик</string>
     <string name="clear_drafts">Очистить черновики</string>
     <string name="clear_drafts_confirm_message">Вы уверены, что хотите удалить все черновики во всех чатах?</string>
@@ -279,6 +292,8 @@
     <string name="password_reset_request_failed">Не удалось отправить код сброса пароля.</string>
     <string name="remove_email">Удалить электронную почту</string>
     <string name="change_email">Изменить адрес электронной почты</string>
+    <string name="remove_email_confirm_message">Вы уверены, что хотите отключить электронный адрес?</string>
+    <string name="email_security_description">Почта повышает безопасность аккаунта и помогает вернуть доступ, если вы забудете пароль.</string>
     <string name="remove">Удалить</string>
     <string name="reply">Ответить</string>
     <string name="reply_to">Ответ %1$s</string>
@@ -309,6 +324,8 @@
     <string name="unread_messages">Непрочитанные сообщения</string>
     <string name="open_email_with">Открыть с помощью</string>
     <string name="no_email_app">Нет почтового приложения</string>
+    <string name="open_phone_with">Открыть с помощью</string>
+    <string name="no_phone_app">Нет приложения для звонков</string>
     <string name="no_copy">Запрет копирования</string>
     <string name="no_copy_channel_description">Участники не смогут копировать текст, пересылать сообщения и сохранять медиа из канала.</string>
     <string name="no_copy_group_description">Участники, включая владельца, не смогут копировать текст, пересылать сообщения и сохранять медиа из группы.</string>
@@ -384,11 +401,14 @@
     <string name="last_seen_time">В сети в %1$s</string>
     <string name="last_seen_yesterday_time">В сети вчера в %1$s</string>
     <string name="last_seen_date_time">В сети %1$s в %2$s</string>
+    <string name="mini_player_yesterday_at">вчера в %1$s</string>
+    <string name="mini_player_date_at">%1$s в %2$s</string>
     <string name="chat_media">Медиа</string>
     <string name="chat_media_tab">Медиа</string>
     <string name="chat_files_tab">Файлы</string>
     <string name="chat_media_music_tab">Музыка</string>
     <string name="chat_voices_tab">Голосовые</string>
+    <string name="chat_contacts_tab">Контакты</string>
     <string name="chat_attachments_empty">В этом чате пока нет вложений</string>
     <string name="chat_media_load_error">Не удалось загрузить вложения</string>
 
@@ -418,6 +438,12 @@
         <item quantity="few">%1$d голосовых сообщения</item>
         <item quantity="many">%1$d голосовых сообщений</item>
         <item quantity="other">%1$d голосовых сообщений</item>
+    </plurals>
+    <plurals name="chat_media_contacts_count">
+        <item quantity="one">%1$d контакт</item>
+        <item quantity="few">%1$d контакта</item>
+        <item quantity="many">%1$d контактов</item>
+        <item quantity="other">%1$d контактов</item>
     </plurals>
     <plurals name="chat_media_music_count">
         <item quantity="one">%1$d файл с музыкой</item>
@@ -457,6 +483,9 @@
     <string name="media_picker_permission">Разрешите доступ к фото и видео</string>
     <string name="media_picker_permission_action">Разрешить</string>
     <string name="media_picker_empty">Нет фото и видео</string>
+    <string name="contact_picker_permission">Разрешите доступ к контактам</string>
+    <string name="contact_picker_permission_action">Разрешить</string>
+    <string name="contact_picker_empty">Контакты не найдены</string>
     <string name="media_picker_reset_title">Сбросить выбор</string>
     <string name="media_picker_reset_message">Закрыть меню вложений?</string>
     <string name="media_picker_reset_action">Сбросить</string>
@@ -524,6 +553,18 @@
     <string name="sticker_pack_installed">Набор %1$s добавлен в ваши стикеры</string>
     <string name="sticker_pack_uninstalled">Набор %1$s удален из ваших стикеров</string>
     <string name="sticker_message">Стикер</string>
+    <string name="contact_message">Контакт</string>
+    <string name="contact_call">Позвонить</string>
+    <string name="send_contact">Отправить контакт</string>
+    <string name="view_contact">Просмотр контакта</string>
+    <string name="add_contact">Добавить контакт</string>
+    <string name="contact_phone">Телефон</string>
+    <string name="contact_email">Почта</string>
+    <string name="contact_website">Сайт</string>
+    <string name="contact_address">Адрес</string>
+    <string name="contact_organization">Работа</string>
+    <string name="contact_job_title">Должность</string>
+    <string name="contact_birthday">День рождения</string>
 
     <string name="emoji">Эмодзи</string>
     <string name="emoji_packs_created">Созданные</string>
@@ -611,4 +652,20 @@
     <string name="wallpaper_darkness">Затемнение</string>
     <string name="wallpaper_blur">Размытие</string>
     <string name="wallpaper_apply_failed">Не удалось установить обои</string>
+
+    <string name="add">Добавить</string>
+    <string name="add_account_hint">Войдите в другой аккаунт, не выходя из текущего.</string>
+    <string name="clear_cache_hint">Освободите память устройства, файлы останутся в облаке.</string>
+    <string name="devices_description">Просмотреть список устройств, на которых Ваш аккаунт авторизован в %1$s.</string>
+    <string name="email_reset_hint">С помощью электронного адреса можно будет сбросить пароль в случае, если вы его забудете.</string>
+    <string name="clear_cache_confirm_message">Все медиа останутся в облаке. При необходимости вы сможете загрузить их снова.</string>
+    <string name="clear_database_confirm_message">Удалить все сообщения из локальной базы данных?</string>
+
+    <string name="profile_public_channels_hint">Для отображения в профиле доступны только ваши публичные каналы.</string>
+    <string name="limitations">Ограничения</string>
+    <string name="invite_link_limitations_description">Вы можете ограничить срок действия ссылки или количество её использований.</string>
+    <string name="uses_limit">Количество использований</string>
+    <string name="expiration_date">Срок действия</string>
+    <string name="no_expiration">Бессрочно</string>
+    <string name="reset_expiration_date">Сбросить срок действия</string>
 </resources>

@@ -54,15 +54,7 @@ class GetShareTargetsUseCase @Inject constructor(
         
         return targets
     }
-    
-    /**
-     * Писать в канал пока может только владелец, поэтому каналы, на которые
-     * пользователь просто подписан, в списке не нужны: сообщение туда всё равно
-     * не уйдёт.
-     *
-     * Личные чаты и группы доступны всем участникам, а чат неизвестного типа
-     * лучше не показывать вовсе.
-     */
+
     private suspend fun canWriteTo(chat: Chat, myId: Long): Boolean {
         return when (ChatType.fromId(chat.id)) {
             ChatType.CHANNEL -> {

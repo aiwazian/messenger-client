@@ -44,7 +44,7 @@ import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
-import com.aiwazian.messenger.ui.components.section.SectionItem
+import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.DialogController
 import kotlinx.coroutines.Job
@@ -106,7 +106,7 @@ fun GroupMembersScreen(
                 .padding(innerPadding)
         ) {
             SectionContainer {
-                SectionItem(
+                SectionButton(
                     leadingIcon = Icons.Rounded.PersonAdd,
                     headlineText = stringResource(R.string.add_member),
                     onClick = { navBackStack.add(AppRoute.AddMember(groupId)) }

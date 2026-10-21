@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.repository.AuthRepository
+import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,8 +22,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class EmailConfigViewModel @Inject constructor(
-    private val vibrationManager: VibrationManager,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val clipboardService: ClipboardService,
+    private val vibrationManager: VibrationManager
 ) : ViewModel() {
     
     private val _email = MutableStateFlow<String?>(null)
@@ -50,6 +52,10 @@ class EmailConfigViewModel @Inject constructor(
         viewModelScope.launch {
             _sideEffect.emit(EmailConfigSideEffect.NavigateToChangeEmail)
         }
+    }
+
+    fun copyEmail() {
+        _email.value?.let { email -> clipboardService.copy(email) }
     }
     
     fun onDisableEmailClick() {

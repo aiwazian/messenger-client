@@ -24,12 +24,6 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
-/**
- * Создание, чтение, обновление и удаление канала, а также его аватары.
- *
- * Работа с участниками вынесена в [ChannelMembersRepository], а запрет копирования
- * в [ChannelContentProtectionRepository].
- */
 class ChannelCrudRepository @Inject constructor(
     private val channelApi: ChannelApi,
     private val channelDao: ChannelDao,
@@ -76,10 +70,6 @@ class ChannelCrudRepository @Inject constructor(
                     
                     val avatars = dto.avatars.map { it.toChannelEntity(channel.id) }
                     
-                    /*
-                     * Сервер отдал полный список аватарок: пропавшие уберёт сам DAO, а
-                     * пустой список — это «аватарок больше нет» и требует явной чистки.
-                     */
                     if (avatars.isEmpty()) {
                         avatarDao.deleteAvatarsByChannelId(channel.id)
                     } else {
@@ -213,7 +203,6 @@ class ChannelCrudRepository @Inject constructor(
                     Result.failure(Exception("Empty body"))
                 }
             } else if (response.code() == 404 || response.code() == 410) {
-                /* Файла больше нет: DownloadAvatarUseCase уберёт аватарку из Room. */
                 Result.failure(AvatarNotFoundException(fileId))
             } else {
                 Result.failure(Exception("Unsuccessful request: ${response.errorBody()}"))

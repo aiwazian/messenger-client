@@ -36,5 +36,6 @@ data class ChatMediaCounts(
     val videos: Int = 0,
     val files: Int = 0,
     val music: Int = 0,
-    val voices: Int = 0
+    val voices: Int = 0,
+    val contacts: Int = 0
 )

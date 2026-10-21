@@ -19,26 +19,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Subject
 import androidx.compose.material.icons.outlined.CommentsDisabled
 import androidx.compose.material.icons.outlined.PersonOff
 import androidx.compose.material.icons.outlined.PersonOutline
-import androidx.compose.material.icons.outlined.Subject
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
@@ -70,13 +65,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppBottomSheetFooterActions
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.utils.UiText
@@ -111,7 +106,7 @@ fun ShareBottomSheet(
     var searchQuery by remember { mutableStateOf("") }
     val hasSelected = remember(items) { items.any { it.isSelected } }
     var forwardMenuExpanded by remember { mutableStateOf(false) }
-
+    
     val visibleItems = remember(items, searchQuery, context) {
         val ordered = items.sortedByDescending { it.isSavedMessages }
         val query = searchQuery.trim()
@@ -124,156 +119,150 @@ fun ShareBottomSheet(
     
     AppBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState
-    ) {
-        Box(modifier = Modifier.fillMaxHeight()) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                val interactionSource = remember { MutableInteractionSource() }
-                
-                LaunchedEffect(interactionSource) {
-                    interactionSource.interactions.collect { interaction ->
-                        if (interaction is PressInteraction.Release) {
-                            sheetState.expand()
-                        }
-                    }
-                }
-                
-                TextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text(stringResource(R.string.search)) },
-                    leadingIcon = { Icon(Icons.Rounded.Search, null) },
-                    trailingIcon = {
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = searchQuery.isNotEmpty(),
-                            enter = expressiveScaleIn,
-                            exit = expressiveScaleOut
+        sheetState = sheetState,
+        stickyFooter = {
+            AppBottomSheetFooterActions.Custom {
+                if (hasSelected) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .imePadding()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceContainer)
+                                .combinedClickable(
+                                    onClick = onSendClick,
+                                    onLongClick = if (forwardOptions != null) {
+                                        { forwardMenuExpanded = true }
+                                    } else {
+                                        null
+                                    }
+                                )
+                                .heightIn(min = 40.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Rounded.Close, null)
+                            Text(
+                                text = stringResource(R.string.send),
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                            
+                            forwardOptions?.let { options ->
+                                AppDropdownMenu(
+                                    expanded = forwardMenuExpanded,
+                                    onDismissRequest = { forwardMenuExpanded = false },
+                                    popupPositionProvider = MenuDefaults.rememberDropdownMenuPopupPositionProvider(
+                                        MenuAnchorPosition.Above
+                                    )
+                                ) {
+                                    AppDropdownMenuItem(
+                                        text = stringResource(
+                                            if (options.hideAuthor) {
+                                                R.string.show_sender_name
+                                            } else {
+                                                R.string.hide_sender_name
+                                            }
+                                        ),
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = if (options.hideAuthor) {
+                                                    Icons.Outlined.PersonOutline
+                                                } else {
+                                                    Icons.Outlined.PersonOff
+                                                },
+                                                contentDescription = null
+                                            )
+                                        },
+                                        onClick = options.onHideAuthorClick
+                                    )
+                                    
+                                    if (options.hasAttachments) {
+                                        AppDropdownMenuItem(
+                                            text = stringResource(
+                                                if (options.hideCaption) {
+                                                    R.string.show_caption
+                                                } else {
+                                                    R.string.hide_caption
+                                                }
+                                            ),
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = if (options.hideCaption) {
+                                                        Icons.AutoMirrored.Outlined.Subject
+                                                    } else {
+                                                        Icons.Outlined.CommentsDisabled
+                                                    },
+                                                    contentDescription = null
+                                                )
+                                            },
+                                            onClick = options.onHideCaptionClick
+                                        )
+                                    }
+                                }
                             }
-                        }
-                    },
-                    singleLine = true,
-                    shape = CircleShape,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding(),
-                    interactionSource = interactionSource
-                )
-                
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(80.dp),
-                    state = rememberLazyGridState(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentPadding = PaddingValues(bottom = 80.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(visibleItems, key = { it.id }) { item ->
-                        ShareChatCard(item) {
-                            onItemClick(item.id)
                         }
                     }
                 }
             }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier.padding(padding),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            val interactionSource = remember { MutableInteractionSource() }
             
-            if (hasSelected) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .imePadding()
-                        .align(Alignment.BottomCenter)
-                        .offset { IntOffset(x = 0, y = -sheetState.requireOffset().toInt()) }
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainer)
-                            .combinedClickable(
-                                onClick = onSendClick,
-                                onLongClick = if (forwardOptions != null) {
-                                    { forwardMenuExpanded = true }
-                                } else {
-                                    null
-                                }
-                            )
-                            .heightIn(min = 40.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(R.string.send),
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.labelLarge
-                        )
+            LaunchedEffect(interactionSource) {
+                interactionSource.interactions.collect { interaction ->
+                    if (interaction is PressInteraction.Release) {
+                        sheetState.expand()
                     }
-                    
-                    forwardOptions?.let { options ->
-                        AppDropdownMenu(
-                            expanded = forwardMenuExpanded,
-                            onDismissRequest = { forwardMenuExpanded = false },
-                            popupPositionProvider = MenuDefaults.rememberDropdownMenuPopupPositionProvider(
-                                MenuAnchorPosition.Above
-                            )
-                        ) {
-                            AppDropdownMenuItem(
-                                text = stringResource(
-                                    if (options.hideAuthor) {
-                                        R.string.show_sender_name
-                                    } else {
-                                        R.string.hide_sender_name
-                                    }
-                                ),
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = if (options.hideAuthor) {
-                                            Icons.Outlined.PersonOutline
-                                        } else {
-                                            Icons.Outlined.PersonOff
-                                        },
-                                        contentDescription = null
-                                    )
-                                },
-                                onClick = options.onHideAuthorClick
-                            )
-
-                            if (options.hasAttachments) {
-                                AppDropdownMenuItem(
-                                    text = stringResource(
-                                        if (options.hideCaption) {
-                                            R.string.show_caption
-                                        } else {
-                                            R.string.hide_caption
-                                        }
-                                    ),
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = if (options.hideCaption) {
-                                                Icons.Outlined.Subject
-                                            } else {
-                                                Icons.Outlined.CommentsDisabled
-                                            },
-                                            contentDescription = null
-                                        )
-                                    },
-                                    onClick = options.onHideCaptionClick
-                                )
-                            }
+                }
+            }
+            
+            TextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text(stringResource(R.string.search)) },
+                leadingIcon = { Icon(Icons.Rounded.Search, null) },
+                trailingIcon = {
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = searchQuery.isNotEmpty(),
+                        enter = expressiveScaleIn,
+                        exit = expressiveScaleOut
+                    ) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Rounded.Close, null)
                         }
+                    }
+                },
+                singleLine = true,
+                shape = CircleShape,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                interactionSource = interactionSource
+            )
+            
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(80.dp),
+                state = rememberLazyGridState(),
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(bottom = 80.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(visibleItems, key = { it.id }) { item ->
+                    ShareChatCard(item) {
+                        onItemClick(item.id)
                     }
                 }
             }
