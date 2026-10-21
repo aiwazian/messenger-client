@@ -477,7 +477,7 @@ fun MediaPickerBottomSheet(
                 
                 coroutineScope.launch {
                     val draft = wallpaperViewModel.prepareDraft(item.uri, transform, overlay)
-                    
+
                     viewModel.reset()
                     previewIndex = null
                     onDismissRequest()
