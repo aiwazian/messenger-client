@@ -644,4 +644,14 @@
     <string name="expiration_date">Expiration date</string>
     <string name="no_expiration">Never</string>
     <string name="reset_expiration_date">Reset expiration date</string>
+    <string name="view_once_media_timer">View once</string>
+    <string name="view_once_never">Never</string>
+    <string name="view_once_seconds">%1$d sec.</string>
+    <string name="view_once_one_view">One view</string>
+    <string name="view_once_hint_one_view">The media will disappear after viewing</string>
+    <string name="view_once_hint_never">The media will stay in the chat</string>
+    <plurals name="view_once_hint_timed">
+        <item quantity="one">The media will disappear %1$d second after opening</item>
+        <item quantity="other">The media will disappear %1$d seconds after opening</item>
+    </plurals>
 </resources>

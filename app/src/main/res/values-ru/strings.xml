@@ -668,4 +668,16 @@
     <string name="expiration_date">Срок действия</string>
     <string name="no_expiration">Бессрочно</string>
     <string name="reset_expiration_date">Сбросить срок действия</string>
+    <string name="view_once_media_timer">Просмотр один раз</string>
+    <string name="view_once_never">Никогда</string>
+    <string name="view_once_seconds">%1$d сек.</string>
+    <string name="view_once_one_view">Один просмотр</string>
+    <string name="view_once_hint_one_view">Медиа исчезнет после просмотра</string>
+    <string name="view_once_hint_never">Медиа останется в чате</string>
+    <plurals name="view_once_hint_timed">
+        <item quantity="one">Медиа исчезнет через %1$d секунду после открытия</item>
+        <item quantity="few">Медиа исчезнет через %1$d секунды после открытия</item>
+        <item quantity="many">Медиа исчезнет через %1$d секунд после открытия</item>
+        <item quantity="other">Медиа исчезнет через %1$d секунды после открытия</item>
+    </plurals>
 </resources>

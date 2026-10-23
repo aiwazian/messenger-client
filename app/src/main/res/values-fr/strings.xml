@@ -647,4 +647,14 @@
     <string name="expiration_date">Date d\'expiration</string>
     <string name="no_expiration">Sans expiration</string>
     <string name="reset_expiration_date">Réinitialiser la date d\'expiration</string>
+    <string name="view_once_media_timer">Voir une fois</string>
+    <string name="view_once_never">Jamais</string>
+    <string name="view_once_seconds">%1$d s</string>
+    <string name="view_once_one_view">Une vue</string>
+    <string name="view_once_hint_one_view">Le média disparaîtra après consultation</string>
+    <string name="view_once_hint_never">Le média restera dans le chat</string>
+    <plurals name="view_once_hint_timed">
+        <item quantity="one">Le média disparaîtra %1$d seconde après ouverture</item>
+        <item quantity="other">Le média disparaîtra %1$d secondes après ouverture</item>
+    </plurals>
 </resources>

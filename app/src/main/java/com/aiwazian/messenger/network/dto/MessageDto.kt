@@ -27,6 +27,8 @@ data class MessageAttachmentDto(
     @SerialName("sortOrder") val sortOrder: Int = 0,
     @SerialName("width") val width: Int? = null,
     @SerialName("height") val height: Int? = null,
+    @SerialName("viewOnce") val viewOnce: Boolean = false,
+    @SerialName("viewOnceSeconds") val viewOnceSeconds: Int? = null,
 )
 
 @Serializable
@@ -137,7 +139,9 @@ data class FileInitResponseDto(
 @Serializable
 data class AttachmentInputDto(
     @SerialName("fileId") val fileId: String,
-    @SerialName("type") val type: AttachmentType
+    @SerialName("type") val type: AttachmentType,
+    @SerialName("viewOnce") val viewOnce: Boolean = false,
+    @SerialName("viewOnceSeconds") val viewOnceSeconds: Int? = null
 )
 
 @Serializable

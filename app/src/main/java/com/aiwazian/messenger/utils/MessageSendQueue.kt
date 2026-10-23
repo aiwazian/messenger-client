@@ -9,6 +9,7 @@ import android.net.Uri
 import android.util.Log
 import com.aiwazian.messenger.di.ApplicationScope
 import com.aiwazian.messenger.domain.MessageReplyPreview
+import com.aiwazian.messenger.domain.ViewOnceOption
 import com.aiwazian.messenger.usecase.SendMessageUseCase
 import com.aiwazian.messenger.usecase.SendMessageWithFilesUseCase
 import com.aiwazian.messenger.utils.media.MediaTransform
@@ -60,7 +61,8 @@ class MessageSendQueue @Inject constructor(
         replyTo: MessageReplyPreview? = null,
         videoQualities: Map<Uri, VideoQuality> = emptyMap(),
         mediaTransforms: Map<Uri, MediaTransform> = emptyMap(),
-        mediaDrawings: Map<Uri, Bitmap> = emptyMap()
+        mediaDrawings: Map<Uri, Bitmap> = emptyMap(),
+        viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap()
     ): Long {
         enqueue(tempId) {
             sendMessageWithFilesUseCase(
@@ -71,7 +73,8 @@ class MessageSendQueue @Inject constructor(
                 replyTo = replyTo,
                 videoQualities = videoQualities,
                 mediaTransforms = mediaTransforms,
-                mediaDrawings = mediaDrawings
+                mediaDrawings = mediaDrawings,
+                viewOnceOptions = viewOnceOptions
             )
         }
         

@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.domain.DeviceMediaItem
 import com.aiwazian.messenger.domain.MessageReplyPreview
+import com.aiwazian.messenger.domain.ViewOnceOption
 import com.aiwazian.messenger.repository.DeviceMediaRepository
 import com.aiwazian.messenger.ui.components.MediaDrawRaster
 import com.aiwazian.messenger.utils.DataStoreManager
@@ -33,6 +34,7 @@ data class MediaPickerUiState(
     val videoQualities: Map<Uri, VideoQuality> = emptyMap(),
     val mediaTransforms: Map<Uri, MediaTransform> = emptyMap(),
     val mediaDrawings: Map<Uri, MediaDrawRaster> = emptyMap(),
+    val viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap(),
     val openedVideo: VideoMetadata? = null
 )
 
@@ -97,6 +99,7 @@ class MediaPickerViewModel @Inject constructor(
                 videoQualities = emptyMap(),
                 mediaTransforms = emptyMap(),
                 mediaDrawings = emptyMap(),
+                viewOnceOptions = emptyMap(),
                 openedVideo = null
             )
         }
@@ -161,6 +164,18 @@ class MediaPickerViewModel @Inject constructor(
             state.copy(mediaDrawings = drawings)
         }
     }
+
+    fun setViewOnceOption(uri: Uri, option: ViewOnceOption?) {
+        _uiState.update { state ->
+            val options = if (option == null) {
+                state.viewOnceOptions - uri
+            } else {
+                state.viewOnceOptions + (uri to option)
+            }
+
+            state.copy(viewOnceOptions = options)
+        }
+    }
     
     fun send(chatId: Long, replyTo: MessageReplyPreview?, caption: String) {
         val selected = _uiState.value.selected
@@ -176,7 +191,8 @@ class MediaPickerViewModel @Inject constructor(
                 selected = emptyList(),
                 videoQualities = emptyMap(),
                 mediaTransforms = emptyMap(),
-                mediaDrawings = emptyMap()
+                mediaDrawings = emptyMap(),
+                viewOnceOptions = emptyMap()
             )
         }
     }
@@ -197,7 +213,8 @@ class MediaPickerViewModel @Inject constructor(
             replyTo = replyTo,
             videoQualities = _uiState.value.videoQualities,
             mediaTransforms = _uiState.value.mediaTransforms,
-            mediaDrawings = mediaDrawings
+            mediaDrawings = mediaDrawings,
+            viewOnceOptions = _uiState.value.viewOnceOptions.filterKeys { it in uris }
         )
     }
 

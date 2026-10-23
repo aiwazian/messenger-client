@@ -16,6 +16,7 @@ import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.domain.SendCancelledException
+import com.aiwazian.messenger.domain.ViewOnceOption
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.DownloadStatus
@@ -74,7 +75,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         replyTo: MessageReplyPreview? = null,
         videoQualities: Map<Uri, VideoQuality> = emptyMap(),
         mediaTransforms: Map<Uri, MediaTransform> = emptyMap(),
-        mediaDrawings: Map<Uri, Bitmap> = emptyMap()
+        mediaDrawings: Map<Uri, Bitmap> = emptyMap(),
+        viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap()
     ): Result<Message> {
         val chunks = chunkByMediaLimit(uris)
         
@@ -88,7 +90,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                     replyTo,
                     videoQualities,
                     mediaTransforms,
-                    mediaDrawings
+                    mediaDrawings,
+                    viewOnceOptions
                 )
             } else {
                 sendInChunks(
@@ -99,7 +102,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                     replyTo,
                     videoQualities,
                     mediaTransforms,
-                    mediaDrawings
+                    mediaDrawings,
+                    viewOnceOptions
                 )
             }
         }
@@ -123,7 +127,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         replyTo: MessageReplyPreview?,
         videoQualities: Map<Uri, VideoQuality>,
         mediaTransforms: Map<Uri, MediaTransform>,
-        mediaDrawings: Map<Uri, Bitmap>
+        mediaDrawings: Map<Uri, Bitmap>,
+        viewOnceOptions: Map<Uri, ViewOnceOption>
     ): Result<Message> {
         var firstResult: Result<Message>? = null
         
@@ -137,7 +142,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 if (index == 0) replyTo else null,
                 videoQualities,
                 mediaTransforms,
-                mediaDrawings
+                mediaDrawings,
+                viewOnceOptions
             )
             
             if (index == 0) firstResult = result
@@ -186,7 +192,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         replyTo: MessageReplyPreview?,
         videoQualities: Map<Uri, VideoQuality>,
         mediaTransforms: Map<Uri, MediaTransform>,
-        mediaDrawings: Map<Uri, Bitmap>
+        mediaDrawings: Map<Uri, Bitmap>,
+        viewOnceOptions: Map<Uri, ViewOnceOption>
     ): Result<Message> {
         val myId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
@@ -194,6 +201,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
         val attachments = uris.mapIndexed { index, uri ->
             val fileName = fileNameOf(uri)
             val mimeType = uri.getFileType(context)
+            val viewOnceOption = viewOnceOptions[uri]
             
             val attachmentType = when {
                 mimeType.startsWith("image/") -> AttachmentType.IMAGE
@@ -217,7 +225,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 type = attachmentType,
                 sortOrder = index,
                 width = frame?.width,
-                height = frame?.height
+                height = frame?.height,
+                viewOnce = viewOnceOption != null,
+                viewOnceSeconds = viewOnceOption?.seconds
             )
         }
         
@@ -248,12 +258,22 @@ class SendMessageWithFilesUseCase @Inject constructor(
             )
         }
         
+        val sourceViewOnceOptions = sourceUris.mapIndexedNotNull { index, uri ->
+            viewOnceOptions[uris[index]]?.let { uri to it }
+        }
+        
         pendingSendStore.remember(
             tempId = tempId,
             chatId = chatId,
             uris = sourceUris,
             text = text,
-            replyTo = replyTo
+            replyTo = replyTo,
+            viewOnceUris = sourceViewOnceOptions.map { it.first.toString() }.toSet(),
+            viewOnceSeconds = sourceViewOnceOptions
+                .mapNotNull { (uri, option) ->
+                    option.seconds?.let { uri.toString() to it }
+                }
+                .toMap()
         )
         
         val sourceFrames = sourceUris.map { uri ->
@@ -271,6 +291,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
         attachments.forEachIndexed { index, attachment ->
             val sourceUri = sourceUris[index]
             val frame = sourceFrames[index]
+            val viewOnceOption = viewOnceOptions[uris[index]]
             
             val fileName = fileNameOf(sourceUri)
             val mimeType = sourceUri.getFileType(context)
@@ -344,7 +365,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
             uploadResults.add(
                 AttachmentInputDto(
                     fileId = uploadedFileId,
-                    type = attachment.type
+                    type = attachment.type,
+                    viewOnce = viewOnceOption != null,
+                    viewOnceSeconds = viewOnceOption?.seconds
                 )
             )
         }

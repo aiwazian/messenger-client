@@ -18,6 +18,8 @@ import com.aiwazian.messenger.network.dto.MessagesWindowDto
 import com.aiwazian.messenger.network.dto.PinMessageRequestDto
 import com.aiwazian.messenger.network.dto.StickerMessageRequestDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
+import com.aiwazian.messenger.network.dto.ViewOnceFileIdsDto
+import com.aiwazian.messenger.network.dto.ViewOnceViewedDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -95,6 +97,18 @@ interface MessageApi {
         @Path("messageId") messageId: Long,
         @Path("fileId") fileId: String
     ): Response<FileDownloadResponseDto>
+
+    @GET("chats/{chatId}/messages/view-once")
+    suspend fun getActiveViewOnceFileIds(
+        @Path("chatId") chatId: Long
+    ): Response<ViewOnceFileIdsDto>
+
+    @POST("chats/{chatId}/messages/{messageId}/attachments/{fileId}/view")
+    suspend fun markViewOnceViewed(
+        @Path("chatId") chatId: Long,
+        @Path("messageId") messageId: Long,
+        @Path("fileId") fileId: String
+    ): Response<ViewOnceViewedDto>
     
     @POST("chats/{chatId}/messages/{messageId}/forward")
     suspend fun forwardMessage(

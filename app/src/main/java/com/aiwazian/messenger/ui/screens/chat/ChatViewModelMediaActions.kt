@@ -86,7 +86,7 @@ internal fun ChatViewModel.saveAttachmentsToDownloads(message: Message) {
     if (!copyPolicy.canSaveMedia) return
     viewModelScope.launch {
         val downloaded =
-            message.attachments.filter { it.localUri != null && (it.status == DownloadStatus.COMPLETED || it.status == DownloadStatus.UPLOADED) }
+            message.attachments.filter { it.localUri != null && !it.viewOnce && (it.status == DownloadStatus.COMPLETED || it.status == DownloadStatus.UPLOADED) }
         if (downloaded.isEmpty()) return@launch
 
         var successCount = 0

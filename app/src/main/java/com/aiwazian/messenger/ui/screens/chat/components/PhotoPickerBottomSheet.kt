@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -93,96 +92,102 @@ fun PhotoPickerBottomSheet(
     }
     
     AppBottomSheet(onDismissRequest = onDismissRequest) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
+        Column {
             when {
-            !hasPermission -> {
-                MediaPickerNotice(
-                    text = stringResource(R.string.media_picker_permission),
-                    actionText = stringResource(R.string.media_picker_permission_action),
-                    onActionClick = { permissionLauncher.launch(mediaPermissions()) }
+                !hasPermission -> {
+                    MediaPickerNotice(
+                        text = stringResource(R.string.media_picker_permission),
+                        modifier = Modifier.padding(padding),
+                        actionText = stringResource(R.string.media_picker_permission_action),
+                        onActionClick = { permissionLauncher.launch(mediaPermissions()) }
+                    )
+                }
+                
+                isLoading && photos.isEmpty() -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(padding),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularWavyProgressIndicator()
+                    }
+                }
+                
+                photos.isEmpty() -> {
+                    MediaPickerNotice(
+                        text = stringResource(R.string.media_picker_empty),
+                        modifier = Modifier.padding(padding)
+                    )
+                }
+                
+                else -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(PICKER_GRID_COLUMNS),
+                        contentPadding = PaddingValues(
+                            start = CELL_SPACING,
+                            end = CELL_SPACING,
+                            bottom = padding.calculateBottomPadding()
+                        ),
+                        horizontalArrangement = Arrangement.spacedBy(CELL_SPACING),
+                        verticalArrangement = Arrangement.spacedBy(CELL_SPACING)
+                    ) {
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            Spacer(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .statusBarsPadding()
+                            )
+                        }
+                        
+                        items(photos, key = { it.id }) { photo ->
+                            PickerMediaCell(photo = photo, onClick = { pickedMedia = photo })
+                        }
+                        
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            Spacer(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .navigationBarsPadding()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        
+        val picked = pickedMedia
+        
+        if (picked != null) {
+            if (picked.isVideo) {
+                VideoPickerCropDialog(
+                    uri = picked.uri,
+                    maskShape = maskShape,
+                    exportTarget = videoExportTarget,
+                    onConfirm = { videoUri ->
+                        pickedMedia = null
+                        
+                        onVideoPicked(videoUri)
+                        onDismissRequest()
+                    },
+                    onDismiss = { pickedMedia = null }
+                )
+            } else {
+                MediaPickerCropDialog(
+                    uri = picked.uri,
+                    maskShape = maskShape,
+                    onConfirm = { cropped ->
+                        pickedMedia = null
+                        
+                        onPhotoPicked(cropped)
+                        onDismissRequest()
+                    },
+                    onDismiss = { pickedMedia = null },
+                    clipsToMask = clipsToMask
                 )
             }
-            
-            isLoading && photos.isEmpty() -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularWavyProgressIndicator()
-                }
-            }
-            
-            photos.isEmpty() -> {
-                MediaPickerNotice(text = stringResource(R.string.media_picker_empty))
-            }
-            
-            else -> {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(PICKER_GRID_COLUMNS),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .heightIn(max = GRID_MAX_HEIGHT),
-                    horizontalArrangement = Arrangement.spacedBy(CELL_SPACING),
-                    verticalArrangement = Arrangement.spacedBy(CELL_SPACING)
-                ) {
-                    item(span = { GridItemSpan(maxLineSpan) }) {
-                        Spacer(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .statusBarsPadding()
-                        )
-                    }
-                    
-                    items(photos, key = { it.id }) { photo ->
-                        PickerMediaCell(photo = photo, onClick = { pickedMedia = photo })
-                    }
-                    
-                    item(span = { GridItemSpan(maxLineSpan) }) {
-                        Spacer(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .navigationBarsPadding()
-                        )
-                    }
-                }
-            }
         }
     }
-    
-    val picked = pickedMedia
-    
-    if (picked != null) {
-        if (picked.isVideo) {
-            VideoPickerCropDialog(
-                uri = picked.uri,
-                maskShape = maskShape,
-                exportTarget = videoExportTarget,
-                onConfirm = { videoUri ->
-                    pickedMedia = null
-                    
-                    onVideoPicked(videoUri)
-                    onDismissRequest()
-                },
-                onDismiss = { pickedMedia = null }
-            )
-        } else {
-            MediaPickerCropDialog(
-                uri = picked.uri,
-                maskShape = maskShape,
-                onConfirm = { cropped ->
-                    pickedMedia = null
-                    
-                    onPhotoPicked(cropped)
-                    onDismissRequest()
-                },
-                onDismiss = { pickedMedia = null },
-                clipsToMask = clipsToMask
-            )
-        }
-    }
-}
 }
 
 @Composable
@@ -219,5 +224,4 @@ class PhotoPickerViewModel @Inject constructor(
     }
 }
 
-private val GRID_MAX_HEIGHT = 420.dp
 private val CELL_SPACING = 2.dp

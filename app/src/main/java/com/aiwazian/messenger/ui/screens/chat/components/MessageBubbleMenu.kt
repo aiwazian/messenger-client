@@ -141,7 +141,8 @@ internal fun buildDropdownActions(
     }
 
     val hasDownloadedAttachment = item.message.attachments.any { attachment ->
-        attachment.localUri != null &&
+        !attachment.viewOnce &&
+                attachment.localUri != null &&
                 (attachment.status == DownloadStatus.COMPLETED || attachment.status == DownloadStatus.UPLOADED)
     }
     if (hasDownloadedAttachment && onSaveToDownloads != null) {

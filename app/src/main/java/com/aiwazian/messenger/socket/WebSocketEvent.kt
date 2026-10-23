@@ -20,6 +20,7 @@ import com.aiwazian.messenger.domain.NotificationSettings
 import com.aiwazian.messenger.domain.PinChatPayload
 import com.aiwazian.messenger.domain.PresencePayload
 import com.aiwazian.messenger.domain.ReadMessagePayload
+import com.aiwazian.messenger.domain.ViewOnceAttachmentDeletedPayload
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.network.dto.ChatFolderDto
 import com.aiwazian.messenger.network.dto.ChatResponseDto
@@ -70,6 +71,14 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
         override val eventName = "message:delete"
         override val deserializer = DeleteMessagePayload.serializer()
         override val mapper: (DeleteMessagePayload) -> DeleteMessagePayload = { it }
+    }
+
+    data object ViewOnceAttachmentDeleted :
+        WebSocketEvent<ViewOnceAttachmentDeletedPayload, ViewOnceAttachmentDeletedPayload> {
+        override val eventName = "message:attachment_deleted"
+        override val deserializer = ViewOnceAttachmentDeletedPayload.serializer()
+        override val mapper: (ViewOnceAttachmentDeletedPayload) -> ViewOnceAttachmentDeletedPayload =
+            { it }
     }
 
     /** Новый комментарий под постом канала. */

@@ -172,6 +172,12 @@ class ChatItemMapper(
         chatType: ChatType
     ): DropdownMenuAction? {
         if (!isSent) return null
+        if (message.attachments.any { it.viewOnce } &&
+            message.id !in pinnedByMeMessageIds &&
+            message.id !in sharedPinnedMessageIds
+        ) {
+            return null
+        }
         
         val canPin = when (chatType) {
             ChatType.PRIVATE -> true
@@ -309,7 +315,7 @@ class ChatItemMapper(
             }
         }
         
-        if (isSent && copyPolicy.canForward()) {
+        if (isSent && copyPolicy.canForward() && message.attachments.none { it.viewOnce }) {
             actions.add(
                 DropdownMenuAction(
                     Icons.AutoMirrored.Outlined.Forward,

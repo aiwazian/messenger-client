@@ -7,9 +7,13 @@ package com.aiwazian.messenger.ui.screens.chat.components
 import android.app.Activity
 import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,13 +24,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.RemoveRedEye
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.MoreVert
@@ -36,6 +43,7 @@ import androidx.compose.material.icons.rounded.SaveAlt
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -43,12 +51,17 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberSliderState
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -56,6 +69,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +79,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -75,6 +90,7 @@ import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.PlayerSpeedBadge
+import com.aiwazian.messenger.ui.components.SecureScreenEffect
 import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.animatedBackgroundAlpha
 import com.aiwazian.messenger.ui.components.animatedOffsetY
@@ -84,20 +100,27 @@ import com.aiwazian.messenger.ui.components.mediaHeroContainer
 import com.aiwazian.messenger.ui.components.mediaHeroContent
 import com.aiwazian.messenger.ui.components.rememberDismissDragState
 import com.aiwazian.messenger.ui.components.rememberMediaHeroState
+import com.aiwazian.messenger.ui.screens.chat.viewOnceMediaKey
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 data class ViewerMediaItem(
     val uri: Uri,
     val isVideo: Boolean,
     val messageId: Long,
+    val fileId: String = "",
+    val viewOnce: Boolean = false,
+    val viewOnceSeconds: Int? = null,
+    val isSender: Boolean = false,
     /** Ключ миниатюры-источника для обратной анимации. */
     val originKey: String
 )
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun FullScreenViewer(
     media: List<ViewerMediaItem>,
@@ -105,6 +128,9 @@ fun FullScreenViewer(
     isVideoLooping: Boolean,
     videoPlaybackSpeed: Float = 1.0f,
     canDownloadMedia: Boolean,
+    viewOnceDeadlines: Map<String, Long> = emptyMap(),
+    deletedViewOnceFileIds: Set<String> = emptySet(),
+    onViewOnceViewed: suspend (ViewerMediaItem) -> Boolean = { true },
     onVideoLoopingChange: (Boolean) -> Unit,
     onVideoPlaybackSpeedChange: (Float) -> Unit = {},
     onSaveToGallery: (Uri) -> Unit,
@@ -153,8 +179,99 @@ fun FullScreenViewer(
     
     BackHandler { hero.dismiss() }
     
+    SecureScreenEffect(enabled = media.any { it.viewOnce })
+    
+    val currentViewerItem = media.getOrNull(pagerState.currentPage)
+    val currentViewerKey = currentViewerItem?.let { viewOnceMediaKey(it.messageId, it.fileId) }
+    val currentViewerDeadline = currentViewerKey?.let { viewOnceDeadlines[it] }
+    val displayedOneViewKeys = remember { mutableSetOf<String>() }
+    val completedOneViewKeys = remember { mutableSetOf<String>() }
+    var countdownNow by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    
+    LaunchedEffect(currentViewerKey, currentViewerDeadline) {
+        val item = currentViewerItem ?: return@LaunchedEffect
+        val key = currentViewerKey ?: return@LaunchedEffect
+        
+        if (!item.viewOnce || item.isSender) return@LaunchedEffect
+        
+        val isOneView = item.viewOnceSeconds == null
+        
+        if (isOneView) {
+            displayedOneViewKeys.add(key)
+            
+            if (key in completedOneViewKeys) return@LaunchedEffect
+        }
+        
+        if (viewOnceDeadlines[key] != null) return@LaunchedEffect
+        
+        while (true) {
+            if (onViewOnceViewed(item)) {
+                if (isOneView) {
+                    completedOneViewKeys.add(key)
+                }
+                break
+            }
+            
+            delay(2.seconds)
+        }
+    }
+    
+    val timedViewerItems = media.filter { it.viewOnce && it.viewOnceSeconds != null }
+    val earliestTimedDeadline =
+        timedViewerItems.filterNot { it.isSender }
+            .mapNotNull { item -> viewOnceDeadlines[viewOnceMediaKey(item.messageId, item.fileId)] }
+            .minOrNull()
+    
+    LaunchedEffect(earliestTimedDeadline) {
+        val deadline = earliestTimedDeadline ?: return@LaunchedEffect
+        
+        while (true) {
+            countdownNow = System.currentTimeMillis()
+            
+            if (countdownNow >= deadline) break
+            
+            delay(100.milliseconds)
+        }
+        
+        hero.dismiss()
+    }
+    
+    LaunchedEffect(deletedViewOnceFileIds, media) {
+        val deletedTimedMedia = timedViewerItems.any { it.fileId in deletedViewOnceFileIds }
+        val deletedUnopenedOneViewMedia = media.any { item ->
+            item.viewOnce && item.viewOnceSeconds == null && !item.isSender && item.fileId in deletedViewOnceFileIds && viewOnceMediaKey(
+                item.messageId,
+                item.fileId
+            ) !in displayedOneViewKeys
+        }
+        
+        if (deletedTimedMedia || deletedUnopenedOneViewMedia) {
+            hero.dismiss()
+        }
+    }
+    
+    val countdownProgress = currentViewerDeadline?.let { deadline ->
+        if (!currentViewerItem.viewOnce || currentViewerItem.isSender) return@let null
+        
+        val seconds = currentViewerItem.viewOnceSeconds ?: return@let null
+        if (seconds <= 0) return@let null
+        
+        ((deadline - countdownNow).coerceAtLeast(0L).toFloat() / (seconds * 1000f)).coerceIn(0f, 1f)
+    }
+    
+    val viewOnceTooltipState = rememberTooltipState()
+    val viewOnceTooltipScope = rememberCoroutineScope()
+    
+    LaunchedEffect(viewOnceTooltipState.isVisible) {
+        if (viewOnceTooltipState.isVisible) {
+            delay(5.seconds)
+            viewOnceTooltipState.dismiss()
+        }
+    }
+    
     LaunchedEffect(pagerState.currentPage) {
         isVideoPlaying = false
+        viewOnceTooltipState.dismiss()
     }
     
     LaunchedEffect(
@@ -188,8 +305,7 @@ fun FullScreenViewer(
                             lastInteractionTime = System.currentTimeMillis()
                         }
                     }
-                },
-            topBar = {
+                }, topBar = {
                 AnimatedVisibility(
                     visible = isChromeVisible,
                     modifier = Modifier.fillMaxWidth(),
@@ -199,7 +315,7 @@ fun FullScreenViewer(
                     val currentItem = media.getOrNull(pagerState.currentPage)
                     val isCurrentVideo = currentItem?.isVideo == true
                     val showMoreActionsButton =
-                        currentItem != null && (canDownloadMedia || onShowInChat != null)
+                        currentItem != null && !currentItem.viewOnce && (canDownloadMedia || onShowInChat != null)
                     
                     LaunchedEffect(isCurrentVideo) {
                         if (!isCurrentVideo) {
@@ -214,76 +330,92 @@ fun FullScreenViewer(
                     }
                     
                     TopAppBar(
-                        title = {}, navigationIcon = {
-                            IconButton(
-                                onClick = hero::dismiss,
-                                colors = IconButtonDefaults.iconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        title = {},
+                        navigationIcon = {
+                            Box(
+                                modifier = Modifier.background(
+                                    color = MaterialTheme.colorScheme.surfaceContainer,
+                                    shape = CircleShape
                                 )
                             ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack, null
-                                )
+                                IconButton(onClick = hero::dismiss) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack, null
+                                    )
+                                }
                             }
-                        }, actions = {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                AnimatedVisibility(
-                                    visible = isCurrentVideo,
-                                    enter = expressiveScaleIn,
-                                    exit = expressiveScaleOut
-                                ) {
-                                    IconButton(
-                                        onClick = { showVideoSettings = true },
-                                        colors = IconButtonDefaults.iconButtonColors(
-                                            containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                        )
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Settings,
-                                            contentDescription = stringResource(R.string.video_settings)
-                                        )
-                                    }
-                                    AppDropdownMenu(
-                                        expanded = showVideoSettings,
-                                        onDismissRequest = { showVideoSettings = false }) {
-                                        AppDropdownMenuItem(
-                                            text = stringResource(R.string.speed),
-                                            onClick = {
-                                                showVideoSettings = false
-                                                showSpeedBottomSheet = true
-                                            },
-                                            leadingIcon = {
-                                                Icon(
-                                                    imageVector = Icons.Rounded.Speed,
-                                                    contentDescription = null
-                                                )
-                                            },
-                                            trailingIcon = {
-                                                Text(
-                                                    text = String.format(
-                                                        Locale.ROOT, "%.1f", videoPlaybackSpeed
-                                                    ) + 'x',
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            })
-                                        AppDropdownMenuItem(
-                                            text = stringResource(R.string.loop),
-                                            onClick = {
-                                                onVideoLoopingChange(!isVideoLooping)
-                                                showVideoSettings = false
-                                            },
-                                            leadingIcon = {
-                                                Icon(
-                                                    imageVector = Icons.Rounded.Repeat,
-                                                    contentDescription = null
-                                                )
-                                            },
-                                            contentColor = if (isVideoLooping) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface
-                                            }
-                                        )
+                        },
+                        actions = {
+                            Row(
+                                modifier = Modifier.background(
+                                    color = MaterialTheme.colorScheme.surfaceContainer,
+                                    shape = CircleShape
+                                ),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                AnimatedContent(
+                                    targetState = isCurrentVideo,
+                                    transitionSpec = {
+                                        expressiveScaleIn togetherWith expressiveScaleOut
+                                    },
+                                    contentAlignment = Alignment.Center
+                                ) { isVideo ->
+                                    if (isVideo) {
+                                        IconButton(
+                                            onClick = { showVideoSettings = true }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Settings,
+                                                contentDescription = stringResource(R.string.video_settings)
+                                            )
+                                        }
+                                        AppDropdownMenu(
+                                            expanded = showVideoSettings,
+                                            onDismissRequest = {
+                                                showVideoSettings =
+                                                    false
+                                            }) {
+                                            AppDropdownMenuItem(
+                                                text = stringResource(R.string.speed),
+                                                onClick = {
+                                                    showVideoSettings = false
+                                                    showSpeedBottomSheet = true
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.Speed,
+                                                        contentDescription = null
+                                                    )
+                                                },
+                                                trailingIcon = {
+                                                    Text(
+                                                        text = String.format(
+                                                            Locale.ROOT,
+                                                            "%.1f",
+                                                            videoPlaybackSpeed
+                                                        ) + 'x',
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                })
+                                            AppDropdownMenuItem(
+                                                text = stringResource(R.string.loop),
+                                                onClick = {
+                                                    onVideoLoopingChange(!isVideoLooping)
+                                                    showVideoSettings = false
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.Repeat,
+                                                        contentDescription = null
+                                                    )
+                                                },
+                                                contentColor = if (isVideoLooping) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurface
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                                 
@@ -293,10 +425,7 @@ fun FullScreenViewer(
                                     exit = expressiveScaleOut
                                 ) {
                                     IconButton(
-                                        onClick = { showMoreActions = true },
-                                        colors = IconButtonDefaults.iconButtonColors(
-                                            containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                        )
+                                        onClick = { showMoreActions = true }
                                     ) {
                                         Icon(
                                             imageVector = Icons.Rounded.MoreVert,
@@ -305,8 +434,10 @@ fun FullScreenViewer(
                                     }
                                     AppDropdownMenu(
                                         expanded = showMoreActions,
-                                        onDismissRequest = { showMoreActions = false }) {
-                                        if (canDownloadMedia && currentItem != null) {
+                                        onDismissRequest = {
+                                            showMoreActions = false
+                                        }) {
+                                        if (canDownloadMedia && currentItem != null && !currentItem.viewOnce) {
                                             AppDropdownMenuItem(
                                                 text = stringResource(R.string.save_to_gallery),
                                                 onClick = {
@@ -320,13 +451,15 @@ fun FullScreenViewer(
                                                     )
                                                 })
                                         }
-                                        if (onShowInChat != null && currentItem != null) {
+                                        if (onShowInChat != null && currentItem != null && !currentItem.viewOnce) {
                                             AppDropdownMenuItem(
                                                 text = stringResource(R.string.show_in_chat),
                                                 onClick = {
                                                     showMoreActions = false
                                                     hero.dismiss()
-                                                    onShowInChat.invoke(currentItem.messageId)
+                                                    onShowInChat.invoke(
+                                                        currentItem.messageId
+                                                    )
                                                 },
                                                 leadingIcon = {
                                                     Icon(
@@ -337,14 +470,64 @@ fun FullScreenViewer(
                                         }
                                     }
                                 }
+                                
+                                AnimatedVisibility(
+                                    visible = currentItem?.viewOnce == true,
+                                    enter = expressiveScaleIn,
+                                    exit = expressiveScaleOut
+                                ) {
+                                    TooltipBox(
+                                        positionProvider = rememberTooltipPositionProvider(
+                                            TooltipAnchorPosition.Below
+                                        ), tooltip = {
+                                            PlainTooltip(
+                                                modifier = Modifier.padding(horizontal = 8.dp),
+                                                shape = MaterialTheme.shapes.medium
+                                            ) {
+                                                Text(
+                                                    text = stringResource(R.string.view_once_hint_one_view),
+                                                    lineHeight = 12.sp
+                                                )
+                                            }
+                                        }, state = viewOnceTooltipState, enableUserInput = false
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            if (countdownProgress != null) {
+                                                CircularProgressIndicator(
+                                                    progress = { countdownProgress },
+                                                    modifier = Modifier.size(44.dp),
+                                                    strokeWidth = 2.dp,
+                                                    trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                        alpha = 0.3f
+                                                    )
+                                                )
+                                            }
+                                            
+                                            IconButton(
+                                                onClick = {
+                                                    if (currentItem?.viewOnceSeconds == null) {
+                                                        viewOnceTooltipScope.launch {
+                                                            viewOnceTooltipState.show()
+                                                        }
+                                                    }
+                                                }, colors = IconButtonDefaults.iconButtonColors(
+                                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                                )
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.LocalFireDepartment,
+                                                    contentDescription = stringResource(R.string.view_once_media_timer)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                     )
                 }
-            },
-            containerColor = Color.Transparent,
-            contentWindowInsets = WindowInsets(0, 0, 0, 0)
+            }, containerColor = Color.Transparent, contentWindowInsets = WindowInsets(0, 0, 0, 0)
         ) { innerPadding ->
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 if (media.isEmpty()) {
@@ -366,8 +549,7 @@ fun FullScreenViewer(
                     
                     if (item == null) {
                         Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
+                            modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
                         ) {
                             CircularWavyProgressIndicator()
                         }
@@ -466,6 +648,7 @@ private fun SpeedBottomSheet(
                 text = "${String.format(Locale.ROOT, "%.1f", currentSpeed)}x",
                 style = MaterialTheme.typography.bodyLarge
             )
+            
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -479,8 +662,7 @@ private fun SpeedBottomSheet(
                 }
                 
                 val sliderState = rememberSliderState(
-                    value = currentSpeed,
-                    trackRange = MIN_PLAYBACK_SPEED..MAX_PLAYBACK_SPEED
+                    value = currentSpeed, trackRange = MIN_PLAYBACK_SPEED..MAX_PLAYBACK_SPEED
                 )
                 
                 LaunchedEffect(currentSpeed) {
@@ -488,9 +670,7 @@ private fun SpeedBottomSheet(
                 }
                 
                 Slider(
-                    state = sliderState,
-                    modifier = Modifier.weight(1f),
-                    onValueChange = {
+                    state = sliderState, modifier = Modifier.weight(1f), onValueChange = {
                         onSpeedChange((it * 10f).roundToInt() / 10f)
                     })
                 IconButton(onClick = {
@@ -500,6 +680,7 @@ private fun SpeedBottomSheet(
                     Icon(Icons.Rounded.Add, contentDescription = "Increase speed")
                 }
             }
+            
             Row(
                 modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly
             ) {
@@ -508,8 +689,7 @@ private fun SpeedBottomSheet(
                     OutlinedButton(
                         onClick = {
                             onSpeedChange(value)
-                        },
-                        shapes = ButtonDefaults.shapes()
+                        }, shapes = ButtonDefaults.shapes()
                     ) {
                         Text(value.toString())
                     }

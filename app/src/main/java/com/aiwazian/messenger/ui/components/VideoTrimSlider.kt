@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.components
 
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.RangeSliderState
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,27 +51,27 @@ fun VideoTrimSlider(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-
+    
     var previousRange by remember(videoUri) { mutableStateOf(state.startValue..state.endValue) }
     var initializedUri by remember { mutableStateOf<Uri?>(null) }
-
+    
     LaunchedEffect(videoUri, durationMs) {
         if (durationMs <= 0L || initializedUri == videoUri) {
             return@LaunchedEffect
         }
-
+        
         val maxGap = minOf(maxRangeMs, durationMs).toFloat() / durationMs
-
+        
         state.startValue = 0f
         state.endValue = maxGap
         previousRange = 0f..maxGap
         initializedUri = videoUri
     }
-
+    
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val frameCount = (maxWidth / FRAME_TILE_WIDTH).toInt().coerceIn(1, MAX_FRAME_COUNT)
         val decoderFactory = remember { VideoFrameDecoder.Factory() }
-
+        
         val frameRequests = remember(videoUri, frameCount, context) {
             List(frameCount) { index ->
                 ImageRequest.Builder(context)
@@ -79,20 +81,20 @@ fun VideoTrimSlider(
                     .build()
             }
         }
-
+        
         RangeSlider(
             state = state,
             onValueChange = { raw ->
                 if (durationMs <= 0L) {
                     previousRange = raw
-
+                    
                     return@RangeSlider
                 }
-
+                
                 val minGap = minOf(minRangeMs, durationMs).toFloat() / durationMs
                 val maxGap = minOf(maxRangeMs, durationMs).toFloat() / durationMs
                 val endUnchanged = raw.endInclusive == previousRange.endInclusive
-
+                
                 val clamped = if (endUnchanged) {
                     coerceTrimStart(
                         start = raw.start,
@@ -108,16 +110,17 @@ fun VideoTrimSlider(
                         maxGap = maxGap
                     )
                 }
-
+                
                 state.startValue = clamped.start
                 state.endValue = clamped.endInclusive
                 previousRange = clamped
             },
             onValueChangeFinished = onRangeChangeFinished,
+            startThumb = { SliderDefaults.Thumb(interactionSource = remember { MutableInteractionSource() }) },
             track = { rangeState ->
                 val startFraction = positionFraction(rangeState.startValue, rangeState.trackRange)
                 val endFraction = positionFraction(rangeState.endValue, rangeState.trackRange)
-
+                
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -137,7 +140,7 @@ fun VideoTrimSlider(
                             )
                         }
                     }
-
+                    
                     Box(
                         modifier = Modifier
                             .align(Alignment.CenterStart)
@@ -145,7 +148,7 @@ fun VideoTrimSlider(
                             .fillMaxHeight()
                             .background(Color.Black.copy(alpha = 0.4f))
                     )
-
+                    
                     Box(
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
@@ -167,7 +170,7 @@ private fun coerceTrimStart(
 ): Float {
     val lower = (fixedEnd - maxGap).coerceAtLeast(0f)
     val upper = (fixedEnd - minGap).coerceAtLeast(0f)
-
+    
     return start.coerceIn(lower, upper)
 }
 
@@ -179,7 +182,7 @@ private fun coerceTrimEnd(
 ): Float {
     val lower = (fixedStart + minGap).coerceAtMost(1f)
     val upper = (fixedStart + maxGap).coerceAtMost(1f)
-
+    
     return end.coerceIn(lower, upper)
 }
 
@@ -189,6 +192,6 @@ private fun positionFraction(
 ): Float {
     val delta = trackRange.endInclusive - trackRange.start
     val rawFraction = if (delta == 0f) 0f else (value - trackRange.start) / delta
-
+    
     return rawFraction.coerceIn(0f, 1f)
 }

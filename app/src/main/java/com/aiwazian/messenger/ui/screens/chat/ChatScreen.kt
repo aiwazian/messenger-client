@@ -642,10 +642,8 @@ fun ChatScreen(
             emojiState = emojiState,
             chatWallpaper = chatWallpaper,
             wallpaperTarget = wallpaperTarget,
-            snackbarHostState = snackbarHostState,
             navBackStack = navBackStack,
             viewingContact = viewingContact,
-            tappedMedia = tappedMedia,
             fileToCancelId = fileToCancelId,
             showCancelRecordingDialog = showCancelRecordingDialog,
             showWallpaperPicker = showWallpaperPicker,
@@ -658,6 +656,13 @@ fun ChatScreen(
             onDismissContactView = { viewingContact = null }
         )
     }
+
+    ChatMediaViewer(
+        uiState = uiState,
+        chatViewModel = chatViewModel,
+        snackbarHostState = snackbarHostState,
+        tappedMedia = tappedMedia
+    )
 }
 
 private const val PREFETCH_THRESHOLD = 10

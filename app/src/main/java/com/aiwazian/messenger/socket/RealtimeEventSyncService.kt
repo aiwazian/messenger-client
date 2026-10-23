@@ -91,6 +91,16 @@ class RealtimeEventSyncService @Inject constructor(
             }
         }
 
+        webSocketClient.subscribeToEvent(WebSocketEvent.ViewOnceAttachmentDeleted) { payload ->
+            serviceScope.launch {
+                chatRepository.deleteLocalAttachment(
+                    messageId = payload.messageId,
+                    fileId = payload.fileId,
+                    messageDeleted = payload.messageDeleted
+                )
+            }
+        }
+
         webSocketClient.subscribeToEvent(WebSocketEvent.NewComment) { payload ->
             serviceScope.launch {
                 chatRepository.incrementCommentCount(payload.postId)

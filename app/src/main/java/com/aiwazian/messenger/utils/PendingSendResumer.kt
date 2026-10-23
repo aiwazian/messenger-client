@@ -44,7 +44,8 @@ class PendingSendResumer @Inject constructor(
                             uris = send.uris,
                             text = send.text,
                             tempId = send.tempId,
-                            replyTo = send.replyTo
+                            replyTo = send.replyTo,
+                            viewOnceOptions = send.viewOnceOptions
                         )
                         
                         resumed.add(send)

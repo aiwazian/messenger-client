@@ -9,6 +9,7 @@ import android.util.Log
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChatDao
+import com.aiwazian.messenger.database.dao.ChatMediaDao
 import com.aiwazian.messenger.database.dao.DraftDao
 import com.aiwazian.messenger.database.dao.MessageDao
 import com.aiwazian.messenger.database.dao.MessagePinDao
@@ -44,12 +45,16 @@ import com.aiwazian.messenger.network.dto.MarkReadRequestDto
 import com.aiwazian.messenger.network.dto.PinChatsRequestDto
 import com.aiwazian.messenger.network.dto.PinMessageRequestDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
+import com.aiwazian.messenger.network.dto.ViewOnceViewedDto
 import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.socket.WebSocketClient
 import com.aiwazian.messenger.ui.screens.chat.paging.MessageWindowBounds
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
@@ -58,6 +63,8 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 class ChatRepository @Inject constructor(
@@ -66,6 +73,7 @@ class ChatRepository @Inject constructor(
     private val messageDao: MessageDao,
     private val messagePinDao: MessagePinDao,
     private val attachmentDao: AttachmentDao,
+    private val chatMediaDao: ChatMediaDao,
     private val readInfoCache: MessageReadInfoCache,
     private val fileRepository: FileRepository,
     private val chatDao: ChatDao,
@@ -763,6 +771,149 @@ class ChatRepository @Inject constructor(
         messagePinDao.deleteByMessageId(messageId)
         readInfoCache.forget(messageId)
     }
+
+    private val protectedViewerFiles = ConcurrentHashMap<String, Int>()
+    private val pendingViewerFileDeletions = ConcurrentHashMap<String, String>()
+    private val viewerFileLock = Any()
+    private val _viewOnceAttachmentDeletions = MutableSharedFlow<String>(extraBufferCapacity = 64)
+    val viewOnceAttachmentDeletions: SharedFlow<String> = _viewOnceAttachmentDeletions.asSharedFlow()
+
+    fun protectViewerFiles(fileIds: Collection<String>) {
+        synchronized(viewerFileLock) {
+            fileIds.forEach { fileId ->
+                protectedViewerFiles.merge(fileId, 1, Int::plus)
+            }
+        }
+    }
+
+    suspend fun releaseViewerFiles(fileIds: Collection<String>) {
+        fileIds.forEach { fileId ->
+            val path = synchronized(viewerFileLock) {
+                val remaining = (protectedViewerFiles[fileId] ?: 0) - 1
+
+                if (remaining > 0) {
+                    protectedViewerFiles[fileId] = remaining
+                    null
+                } else {
+                    protectedViewerFiles.remove(fileId)
+                    pendingViewerFileDeletions.remove(fileId)
+                }
+            }
+
+            if (path == null) return@forEach
+
+            path.takeIf { it.isNotBlank() }?.let { runCatching { File(it).delete() } }
+            fileRepository.deleteFile(fileId)
+        }
+    }
+
+    suspend fun deleteLocalAttachment(
+        messageId: Long,
+        fileId: String,
+        messageDeleted: Boolean
+    ) {
+        _viewOnceAttachmentDeletions.emit(fileId)
+
+        val file = fileRepository.getById(fileId)
+
+        attachmentDao.deleteAttachment(messageId, fileId)
+
+        if (messageDeleted || attachmentDao.getAttachmentsByMessageId(messageId).isEmpty()) {
+            messageDao.deleteMessageById(messageId)
+            messagePinDao.deleteByMessageId(messageId)
+            readInfoCache.forget(messageId)
+        }
+
+        if (attachmentDao.countByFileId(fileId) > 0) return
+
+        chatMediaDao.deleteByFileId(fileId)
+
+        val keepForViewer = synchronized(viewerFileLock) {
+            if ((protectedViewerFiles[fileId] ?: 0) <= 0) {
+                false
+            } else {
+                pendingViewerFileDeletions.putIfAbsent(fileId, file?.path.orEmpty())
+                true
+            }
+        }
+
+        if (!keepForViewer) {
+            file?.path?.let { runCatching { File(it).delete() } }
+        }
+
+        fileRepository.deleteFile(fileId)
+    }
+
+    suspend fun markViewOnceViewed(
+        chatId: Long,
+        messageId: Long,
+        fileId: String
+    ): Result<ViewOnceViewedDto?> {
+        return try {
+            val response = messageApi.markViewOnceViewed(chatId, messageId, fileId)
+            val body = response.body()
+
+            if (response.isSuccessful && body != null) {
+                Result.success(body)
+            } else if (response.code() == 404) {
+                Result.success(null)
+            } else {
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error marking view-once media as viewed", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun reconcileViewOnceAttachments(chatId: Long) {
+        val myId = userRepository.getMe().firstOrNull()?.id ?: return
+
+        if (ChatType.fromId(chatId) != ChatType.PRIVATE || chatId == myId) return
+
+        val localAttachments = try {
+            attachmentDao.getConfirmedViewOnceAttachmentsForPrivateChat(myId, chatId)
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error loading local view-once media", e)
+            return
+        }
+
+        if (localAttachments.isEmpty()) return
+
+        val requestStartedAt = System.currentTimeMillis()
+
+        val activeFileIds = try {
+            val response = messageApi.getActiveViewOnceFileIds(chatId)
+
+            if (!response.isSuccessful) return
+
+            response.body()?.fileIds?.toSet() ?: return
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error loading active view-once media", e)
+            return
+        }
+
+        localAttachments.forEach { record ->
+            val attachment = record.attachment
+
+            if (record.messageSendTime > requestStartedAt - RECONCILE_SEND_GRACE_MS) {
+                return@forEach
+            }
+
+            if (!serverFileIdPattern.matches(attachment.fileId)) return@forEach
+            if (attachment.fileId in activeFileIds) return@forEach
+
+            try {
+                deleteLocalAttachment(
+                    messageId = attachment.messageId,
+                    fileId = attachment.fileId,
+                    messageDeleted = false
+                )
+            } catch (e: Exception) {
+                Log.e("ChatRepository", "Error deleting stale view-once media", e)
+            }
+        }
+    }
     
     suspend fun editMessage(
         chatId: Long,
@@ -915,5 +1066,12 @@ class ChatRepository @Inject constructor(
     
     fun getDraftFlow(userId: Long, chatId: Long): Flow<String?> {
         return draftDao.getDraftFlow(userId, chatId).map { it?.text }
+    }
+
+    private companion object {
+        val serverFileIdPattern = Regex(
+            "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        )
+        const val RECONCILE_SEND_GRACE_MS = 30_000L
     }
 }

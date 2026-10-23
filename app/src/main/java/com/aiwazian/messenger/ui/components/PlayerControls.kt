@@ -153,23 +153,41 @@ fun PlayerBottomControls(
             if (onDrawClick != null || onTransformClick != null || onQualityClick != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (onDrawClick != null) {
-                        MediaOverlayIconButton(
-                            icon = Icons.Outlined.Brush,
-                            onClick = onDrawClick,
-                            isActive = isDrawn
-                        )
+                        IconButton(onClick = onDrawClick) {
+                            Icon(
+                                imageVector = Icons.Outlined.Brush,
+                                contentDescription = null,
+                                tint = if (isDrawn) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+                        }
                     }
-
+                    
                     if (onTransformClick != null) {
-                        MediaOverlayIconButton(
-                            icon = Icons.Rounded.CropRotate,
-                            onClick = onTransformClick,
-                            isActive = isTransformed
-                        )
+                        IconButton(onClick = onTransformClick) {
+                            Icon(
+                                imageVector = Icons.Rounded.CropRotate,
+                                contentDescription = null,
+                                tint = if (isTransformed) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+                        }
                     }
-
+                    
                     if (onQualityClick != null) {
-                        MediaOverlayIconButton(icon = qualityIcon, onClick = onQualityClick)
+                        IconButton(onClick = onQualityClick) {
+                            Icon(
+                                imageVector = qualityIcon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             }

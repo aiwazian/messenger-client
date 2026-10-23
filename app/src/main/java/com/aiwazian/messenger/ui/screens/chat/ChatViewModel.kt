@@ -173,6 +173,22 @@ class ChatViewModel @Inject constructor(
         loadSettings()
         playbackConnector.observe()
         setupSocketConnectionObserver()
+        observeViewOnceDeletions()
+    }
+
+    private fun observeViewOnceDeletions() {
+        viewModelScope.launch {
+            chatRepository.viewOnceAttachmentDeletions.collect { fileId ->
+                _uiState.update { state ->
+                    state.copy(
+                        viewOnceDeadlines = state.viewOnceDeadlines.filterKeys { key ->
+                            key.substringAfterLast(':') != fileId
+                        },
+                        deletedViewOnceFileIds = state.deletedViewOnceFileIds + fileId
+                    )
+                }
+            }
+        }
     }
 
     fun init(chatId: Long, chatName: String? = null, avatarUri: Uri? = null) {
@@ -201,6 +217,9 @@ class ChatViewModel @Inject constructor(
         observeRealtimeEvents()
         observeMessages()
         observePinnedMessages()
+        viewModelScope.launch {
+            chatRepository.reconcileViewOnceAttachments(chatId)
+        }
     }
 
     fun observeChatWallpaper(chatId: Long) = wallpaperRepository.observeChatWallpaper(chatId)
@@ -266,6 +285,16 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             webSocketClient.connectionState.collect { state ->
                 _uiState.update { it.copy(isConnected = state == ConnectionState.CONNECTED) }
+
+                if (state == ConnectionState.CONNECTED) {
+                    val chatId = _uiState.value.chatId
+
+                    if (chatId > 0) {
+                        launch {
+                            chatRepository.reconcileViewOnceAttachments(chatId)
+                        }
+                    }
+                }
             }
         }
     }
@@ -589,7 +618,45 @@ class ChatViewModel @Inject constructor(
     fun setVideoPlaybackSpeed(speed: Float) =
         viewModelScope.launch { dataStoreManager.saveVideoPlaybackSpeed(speed) }
 
-    fun clearMediaUrl() = _uiState.update { it.copy(showFullScreenViewer = false) }
+    internal suspend fun markViewOnceViewed(chatId: Long, messageId: Long, fileId: String): Boolean {
+        val key = viewOnceMediaKey(messageId, fileId)
+        
+        if (uiState.value.viewOnceDeadlines.containsKey(key)) return true
+        
+        return chatRepository.markViewOnceViewed(chatId, messageId, fileId)
+            .fold(
+                onSuccess = { response ->
+                    if (response == null) {
+                        chatRepository.deleteLocalAttachment(
+                            messageId = messageId,
+                            fileId = fileId,
+                            messageDeleted = false
+                        )
+                        return@fold true
+                    }
+
+                    val deleteAt = response.deleteAt ?: return@fold true
+
+                    _uiState.update {
+                        it.copy(viewOnceDeadlines = it.viewOnceDeadlines + (key to deleteAt))
+                    }
+                    true
+                },
+                onFailure = { false }
+            )
+    }
+
+    internal fun protectViewerMedia(fileIds: Collection<String>) {
+        chatRepository.protectViewerFiles(fileIds)
+    }
+
+    internal fun releaseViewerMedia(fileIds: Collection<String>) {
+        viewModelScope.launch { chatRepository.releaseViewerFiles(fileIds) }
+    }
+    
+    fun clearMediaUrl() {
+        _uiState.update { it.copy(showFullScreenViewer = false, deletedViewOnceFileIds = emptySet()) }
+    }
 
     fun dismissBannedDialog() = _uiState.update { it.copy(showBannedDialog = false) }
 

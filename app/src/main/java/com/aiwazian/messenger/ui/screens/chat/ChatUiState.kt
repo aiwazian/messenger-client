@@ -54,6 +54,8 @@ data class ChatUiState(
     val mediaItems: List<MessageAttachment> = emptyList(),
     val initialMediaIndex: Int = 0,
     val showFullScreenViewer: Boolean = false,
+    val viewOnceDeadlines: Map<String, Long> = emptyMap(),
+    val deletedViewOnceFileIds: Set<String> = emptySet(),
     val isVideoLooping: Boolean = false,
     val videoPlaybackSpeed: Float = 1.0f,
     val canDownloadMedia: Boolean = true,
@@ -143,3 +145,5 @@ data class MessageSearchSender(
     val name: String,
     val avatarUri: Uri? = null
 )
+
+fun viewOnceMediaKey(messageId: Long, fileId: String): String = "$messageId:$fileId"
