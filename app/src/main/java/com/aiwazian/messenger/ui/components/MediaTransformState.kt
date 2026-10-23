@@ -161,11 +161,15 @@ fun rememberMediaTransformState(
     key: Any? = Unit
 ): MediaTransformState = remember(key) { MediaTransformState(initial, bakesContent) }
 
-fun Modifier.mediaTransform(state: MediaTransformState, contentSize: Size): Modifier =
+fun Modifier.mediaTransform(
+    state: MediaTransformState,
+    contentSize: Size,
+    containerSize: Size? = null
+): Modifier =
     this.graphicsLayer {
         val degrees = state.contentRotation
-        val fit = fitScaleWhileRotating(size, contentSize, degrees)
-        
+        val fit = fitScaleWhileRotating(containerSize ?: size, contentSize, degrees)
+
         rotationZ = degrees
         scaleX = fit * state.contentScaleX
         scaleY = fit
