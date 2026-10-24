@@ -62,7 +62,8 @@ class MessageSendQueue @Inject constructor(
         videoQualities: Map<Uri, VideoQuality> = emptyMap(),
         mediaTransforms: Map<Uri, MediaTransform> = emptyMap(),
         mediaDrawings: Map<Uri, Bitmap> = emptyMap(),
-        viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap()
+        viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap(),
+        spoilerUris: Set<Uri> = emptySet()
     ): Long {
         enqueue(tempId) {
             sendMessageWithFilesUseCase(
@@ -74,7 +75,8 @@ class MessageSendQueue @Inject constructor(
                 videoQualities = videoQualities,
                 mediaTransforms = mediaTransforms,
                 mediaDrawings = mediaDrawings,
-                viewOnceOptions = viewOnceOptions
+                viewOnceOptions = viewOnceOptions,
+                spoilerUris = spoilerUris
             )
         }
         

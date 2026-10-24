@@ -24,7 +24,8 @@ fun AttachmentEntity.toDomain(file: FileEntity) = MessageAttachment(
     width = file.width,
     height = file.height,
     viewOnce = viewOnce,
-    viewOnceSeconds = viewOnceSeconds
+    viewOnceSeconds = viewOnceSeconds,
+    spoiler = spoiler
 )
 
 fun AttachmentWithFile.toDomain() = attachment.toDomain(file)
@@ -35,5 +36,6 @@ fun MessageAttachment.toEntity(file: FileEntity) = AttachmentEntity(
     type = type,
     sortOrder = sortOrder,
     viewOnce = viewOnce,
-    viewOnceSeconds = viewOnceSeconds
+    viewOnceSeconds = viewOnceSeconds,
+    spoiler = spoiler
 )

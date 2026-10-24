@@ -35,6 +35,7 @@ data class MediaPickerUiState(
     val mediaTransforms: Map<Uri, MediaTransform> = emptyMap(),
     val mediaDrawings: Map<Uri, MediaDrawRaster> = emptyMap(),
     val viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap(),
+    val spoilerUris: Set<Uri> = emptySet(),
     val openedVideo: VideoMetadata? = null
 )
 
@@ -100,6 +101,7 @@ class MediaPickerViewModel @Inject constructor(
                 mediaTransforms = emptyMap(),
                 mediaDrawings = emptyMap(),
                 viewOnceOptions = emptyMap(),
+                spoilerUris = emptySet(),
                 openedVideo = null
             )
         }
@@ -176,6 +178,18 @@ class MediaPickerViewModel @Inject constructor(
             state.copy(viewOnceOptions = options)
         }
     }
+
+    fun setSpoiler(uri: Uri, spoiler: Boolean) {
+        _uiState.update { state ->
+            val spoilers = if (spoiler) {
+                state.spoilerUris + uri
+            } else {
+                state.spoilerUris - uri
+            }
+
+            state.copy(spoilerUris = spoilers)
+        }
+    }
     
     fun send(chatId: Long, replyTo: MessageReplyPreview?, caption: String) {
         val selected = _uiState.value.selected
@@ -192,7 +206,8 @@ class MediaPickerViewModel @Inject constructor(
                 videoQualities = emptyMap(),
                 mediaTransforms = emptyMap(),
                 mediaDrawings = emptyMap(),
-                viewOnceOptions = emptyMap()
+                viewOnceOptions = emptyMap(),
+                spoilerUris = emptySet()
             )
         }
     }
@@ -214,7 +229,8 @@ class MediaPickerViewModel @Inject constructor(
             videoQualities = _uiState.value.videoQualities,
             mediaTransforms = _uiState.value.mediaTransforms,
             mediaDrawings = mediaDrawings,
-            viewOnceOptions = _uiState.value.viewOnceOptions.filterKeys { it in uris }
+            viewOnceOptions = _uiState.value.viewOnceOptions.filterKeys { it in uris },
+            spoilerUris = _uiState.value.spoilerUris.filter { it in uris }.toSet()
         )
     }
 

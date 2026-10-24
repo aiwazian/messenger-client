@@ -97,7 +97,8 @@ fun MessageAttachmentDto.toDomain(messageId: Long) = MessageAttachment(
     width = width,
     height = height,
     viewOnce = viewOnce,
-    viewOnceSeconds = viewOnceSeconds
+    viewOnceSeconds = viewOnceSeconds,
+    spoiler = spoiler
 )
 
 fun MessageEntity.toDomain(attachments: List<MessageAttachment> = emptyList()) = Message(

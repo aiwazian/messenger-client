@@ -43,5 +43,7 @@ data class AttachmentEntity(
     val sortOrder: Int,
     @ColumnInfo(defaultValue = "0")
     val viewOnce: Boolean = false,
-    val viewOnceSeconds: Int? = null
+    val viewOnceSeconds: Int? = null,
+    @ColumnInfo(defaultValue = "0")
+    val spoiler: Boolean = false
 )

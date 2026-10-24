@@ -19,6 +19,7 @@ data class ChatMediaItemDto(
     @SerialName("size") val size: Long = 0,
     @SerialName("mimeType") val mimeType: String = "",
     @SerialName("type") val type: AttachmentType = AttachmentType.FILE,
+    @SerialName("spoiler") val spoiler: Boolean = false,
     @SerialName("sendTime") val sendTime: Long = 0
 )
 

@@ -662,6 +662,9 @@
     <string name="view_once_hint_one_view">Le média disparaîtra après consultation</string>
     <string name="view_once_hint_never">Le média restera dans le chat</string>
     <string name="view_once_hint_timer">Choisissez au bout de combien de temps après ouverture le média disparaîtra</string>
+    <string name="spoiler">Spoiler</string>
+    <string name="spoiler_media_enabled">Le média sera masqué sous un spoiler</string>
+    <string name="spoiler_media_disabled">Le média ne sera pas masqué sous un spoiler</string>
     <plurals name="view_once_hint_timed">
         <item quantity="one">Le média disparaîtra %1$d seconde après ouverture</item>
         <item quantity="other">Le média disparaîtra %1$d secondes après ouverture</item>

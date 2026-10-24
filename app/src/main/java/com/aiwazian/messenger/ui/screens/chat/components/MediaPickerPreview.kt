@@ -39,6 +39,8 @@ import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.rounded.BlurOff
+import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CropRotate
 import androidx.compose.material.icons.rounded.Hd
@@ -151,8 +153,11 @@ fun MediaPickerPreview(
     onCurrentItemChange: (DeviceMediaItem?) -> Unit = {},
     isSelectionEnabled: Boolean = true,
     allowViewOnce: Boolean = false,
+    allowSpoiler: Boolean = false,
     viewOnceOption: (DeviceMediaItem) -> ViewOnceOption? = { null },
     onViewOnceOptionChange: (DeviceMediaItem, ViewOnceOption?) -> Unit = { _, _ -> },
+    isSpoiler: (DeviceMediaItem) -> Boolean = { false },
+    onSpoilerChange: (DeviceMediaItem, Boolean) -> Unit = { _, _ -> },
     onSend: (() -> Unit)? = null
 ) {
     val pagerState = rememberPagerState(
@@ -395,6 +400,31 @@ fun MediaPickerPreview(
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
+                                                AnimatedContent(
+                                                    targetState = allowSpoiler &&
+                                                            currentItem != null &&
+                                                            isSelectionEnabled &&
+                                                            !currentItem.isGif &&
+                                                            selectionNumber(currentItem) > 0 &&
+                                                            viewOnceOption(currentItem) == null,
+                                                    transitionSpec = {
+                                                        expressiveScaleIn togetherWith expressiveScaleOut
+                                                    },
+                                                    contentAlignment = Alignment.Center
+                                                ) { showSpoiler ->
+                                                    if (showSpoiler && currentItem != null) {
+                                                        SpoilerButton(
+                                                            isSpoiler = isSpoiler(currentItem),
+                                                            onSpoilerChange = { spoiler ->
+                                                                onSpoilerChange(
+                                                                    currentItem,
+                                                                    spoiler
+                                                                )
+                                                            }
+                                                        )
+                                                    }
+                                                }
+                                                
                                                 AnimatedContent(
                                                     targetState = allowViewOnce &&
                                                             currentItem != null &&
@@ -726,13 +756,61 @@ fun MediaPickerPreview(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+private fun SpoilerButton(
+    isSpoiler: Boolean,
+    onSpoilerChange: (Boolean) -> Unit
+) {
+    var tooltipText by remember { mutableStateOf("") }
+    val tooltipState = rememberTooltipState(isPersistent = true)
+    val scope = rememberCoroutineScope()
+    val enabledText = stringResource(R.string.spoiler_media_enabled)
+    val disabledText = stringResource(R.string.spoiler_media_disabled)
+    val description = stringResource(R.string.spoiler)
+    
+    LaunchedEffect(tooltipState.isVisible) {
+        if (tooltipState.isVisible) {
+            delay(5.seconds)
+            tooltipState.dismiss()
+        }
+    }
+    
+    TooltipBox(
+        positionProvider = rememberTooltipPositionProvider(TooltipAnchorPosition.Below),
+        tooltip = {
+            PlainTooltip(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text(text = tooltipText, lineHeight = 12.sp)
+            }
+        },
+        state = tooltipState,
+        enableUserInput = false
+    ) {
+        IconButton(onClick = {
+            val spoiler = !isSpoiler
+            
+            onSpoilerChange(spoiler)
+            tooltipText = if (spoiler) enabledText else disabledText
+            scope.launch { tooltipState.show() }
+        }) {
+            Icon(
+                imageVector = if (isSpoiler) Icons.Rounded.BlurOff else Icons.Rounded.BlurOn,
+                contentDescription = description
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 private fun ViewOnceTimerButton(
     option: ViewOnceOption?,
     onOptionChange: (ViewOnceOption?) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     var tooltipText by remember { mutableStateOf("") }
-    val tooltipState = rememberTooltipState()
+    val tooltipState = rememberTooltipState(isPersistent = true)
     val scope = rememberCoroutineScope()
     val options = listOf(
         null,

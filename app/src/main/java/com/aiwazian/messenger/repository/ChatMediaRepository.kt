@@ -297,7 +297,8 @@ class ChatMediaRepository @Inject constructor(
         size = size,
         mimeType = mimeType,
         type = type,
-        sendTime = sendTime
+        sendTime = sendTime,
+        spoiler = spoiler
     )
 
     private fun ChatMediaItemDto.toDomain(cached: FileEntity?, durationMs: Int?) = ChatMediaItem(
@@ -312,7 +313,8 @@ class ChatMediaRepository @Inject constructor(
         senderId = senderId,
         status = cached?.status ?: DownloadStatus.IDLE,
         localUri = cached.localUri(),
-        durationMs = durationMs
+        durationMs = durationMs,
+        spoiler = spoiler
     )
 
     private fun ChatMediaEntity.toDomain(cached: FileEntity?, durationMs: Int?) = ChatMediaItem(
@@ -327,7 +329,8 @@ class ChatMediaRepository @Inject constructor(
         senderId = senderId,
         status = cached?.status ?: DownloadStatus.IDLE,
         localUri = cached.localUri(),
-        durationMs = durationMs
+        durationMs = durationMs,
+        spoiler = spoiler
     )
 
     private fun FileEntity?.localUri() = this?.path

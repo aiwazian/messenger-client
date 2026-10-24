@@ -27,5 +27,7 @@ data class ChatMediaEntity(
     val type: AttachmentType,
     val sendTime: Long,
     @ColumnInfo(defaultValue = "0")
-    val ownerId: Long = 0
+    val ownerId: Long = 0,
+    @ColumnInfo(defaultValue = "0")
+    val spoiler: Boolean = false
 )

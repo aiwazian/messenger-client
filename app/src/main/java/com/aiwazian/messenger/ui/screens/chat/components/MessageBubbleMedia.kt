@@ -90,43 +90,46 @@ internal fun MediaThumbnail(
     onFileAction: (MessageAttachment, FileAction) -> Unit
 ) {
     val canBlur = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    val concealViewOnce = attachment.viewOnce && !canBlur
+    val isConcealed = attachment.viewOnce || attachment.spoiler
+    val concealMedia = isConcealed && !canBlur
     
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .blur(if (attachment.viewOnce && canBlur) 18.dp else 0.dp)
-    ) {
-        if (concealViewOnce) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .clickable { onFileAction(attachment, FileAction.OPEN) },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.VisibilityOff,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        } else if (attachment.type == AttachmentType.VIDEO) {
-            VideoThumbnail(
-                videoUri = mediaUri,
-                cacheKey = cacheKey,
-                transitionKey = transitionKey
-            ) {
-                onFileAction(attachment, FileAction.OPEN)
-            }
-        } else {
-            ImageThumbnail(
-                imageUri = mediaUri,
-                cacheKey = cacheKey,
-                transitionKey = transitionKey,
-                isGif = attachment.type == AttachmentType.GIF
-            ) {
-                onFileAction(attachment, FileAction.OPEN)
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(if (isConcealed && canBlur) 18.dp else 0.dp)
+        ) {
+            if (concealMedia) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { onFileAction(attachment, FileAction.OPEN) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.VisibilityOff,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else if (attachment.type == AttachmentType.VIDEO) {
+                VideoThumbnail(
+                    videoUri = mediaUri,
+                    cacheKey = cacheKey,
+                    transitionKey = transitionKey
+                ) {
+                    onFileAction(attachment, FileAction.OPEN)
+                }
+            } else {
+                ImageThumbnail(
+                    imageUri = mediaUri,
+                    cacheKey = cacheKey,
+                    transitionKey = transitionKey,
+                    isGif = attachment.type == AttachmentType.GIF
+                ) {
+                    onFileAction(attachment, FileAction.OPEN)
+                }
             }
         }
 

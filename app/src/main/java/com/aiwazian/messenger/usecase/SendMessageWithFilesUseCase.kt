@@ -76,7 +76,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         videoQualities: Map<Uri, VideoQuality> = emptyMap(),
         mediaTransforms: Map<Uri, MediaTransform> = emptyMap(),
         mediaDrawings: Map<Uri, Bitmap> = emptyMap(),
-        viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap()
+        viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap(),
+        spoilerUris: Set<Uri> = emptySet()
     ): Result<Message> {
         val chunks = chunkByMediaLimit(uris)
         
@@ -91,7 +92,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                     videoQualities,
                     mediaTransforms,
                     mediaDrawings,
-                    viewOnceOptions
+                    viewOnceOptions,
+                    spoilerUris
                 )
             } else {
                 sendInChunks(
@@ -103,7 +105,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                     videoQualities,
                     mediaTransforms,
                     mediaDrawings,
-                    viewOnceOptions
+                    viewOnceOptions,
+                    spoilerUris
                 )
             }
         }
@@ -128,7 +131,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         videoQualities: Map<Uri, VideoQuality>,
         mediaTransforms: Map<Uri, MediaTransform>,
         mediaDrawings: Map<Uri, Bitmap>,
-        viewOnceOptions: Map<Uri, ViewOnceOption>
+        viewOnceOptions: Map<Uri, ViewOnceOption>,
+        spoilerUris: Set<Uri>
     ): Result<Message> {
         var firstResult: Result<Message>? = null
         
@@ -143,7 +147,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 videoQualities,
                 mediaTransforms,
                 mediaDrawings,
-                viewOnceOptions
+                viewOnceOptions,
+                spoilerUris
             )
             
             if (index == 0) firstResult = result
@@ -193,7 +198,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         videoQualities: Map<Uri, VideoQuality>,
         mediaTransforms: Map<Uri, MediaTransform>,
         mediaDrawings: Map<Uri, Bitmap>,
-        viewOnceOptions: Map<Uri, ViewOnceOption>
+        viewOnceOptions: Map<Uri, ViewOnceOption>,
+        spoilerUris: Set<Uri>
     ): Result<Message> {
         val myId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
@@ -227,7 +233,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 width = frame?.width,
                 height = frame?.height,
                 viewOnce = viewOnceOption != null,
-                viewOnceSeconds = viewOnceOption?.seconds
+                viewOnceSeconds = viewOnceOption?.seconds,
+                spoiler = spoilerUris.contains(uri) && viewOnceOption == null
             )
         }
         
@@ -262,6 +269,10 @@ class SendMessageWithFilesUseCase @Inject constructor(
             viewOnceOptions[uris[index]]?.let { uri to it }
         }
         
+        val sourceSpoilerUris = sourceUris.mapIndexedNotNull { index, uri ->
+            uri.takeIf { spoilerUris.contains(uris[index]) && viewOnceOptions[uris[index]] == null }
+        }
+        
         pendingSendStore.remember(
             tempId = tempId,
             chatId = chatId,
@@ -273,7 +284,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 .mapNotNull { (uri, option) ->
                     option.seconds?.let { uri.toString() to it }
                 }
-                .toMap()
+                .toMap(),
+            spoilerUris = sourceSpoilerUris.map { it.toString() }.toSet()
         )
         
         val sourceFrames = sourceUris.map { uri ->
@@ -367,7 +379,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                     fileId = uploadedFileId,
                     type = attachment.type,
                     viewOnce = viewOnceOption != null,
-                    viewOnceSeconds = viewOnceOption?.seconds
+                    viewOnceSeconds = viewOnceOption?.seconds,
+                    spoiler = spoilerUris.contains(uris[index]) && viewOnceOption == null
                 )
             )
         }

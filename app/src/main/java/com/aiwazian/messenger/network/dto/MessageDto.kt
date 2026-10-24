@@ -29,6 +29,7 @@ data class MessageAttachmentDto(
     @SerialName("height") val height: Int? = null,
     @SerialName("viewOnce") val viewOnce: Boolean = false,
     @SerialName("viewOnceSeconds") val viewOnceSeconds: Int? = null,
+    @SerialName("spoiler") val spoiler: Boolean = false,
 )
 
 @Serializable
@@ -141,7 +142,8 @@ data class AttachmentInputDto(
     @SerialName("fileId") val fileId: String,
     @SerialName("type") val type: AttachmentType,
     @SerialName("viewOnce") val viewOnce: Boolean = false,
-    @SerialName("viewOnceSeconds") val viewOnceSeconds: Int? = null
+    @SerialName("viewOnceSeconds") val viewOnceSeconds: Int? = null,
+    @SerialName("spoiler") val spoiler: Boolean = false
 )
 
 @Serializable

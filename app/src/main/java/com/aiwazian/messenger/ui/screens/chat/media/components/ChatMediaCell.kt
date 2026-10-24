@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.chat.media.components
 
+import android.os.Build
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -95,29 +98,47 @@ fun ChatMediaCell(
                 return@Box
             }
 
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(localUri)
-                    .apply {
-                        when (item.type) {
-                            AttachmentType.VIDEO -> {
-                                decoderFactory(VideoFrameDecoder.Factory())
-                                videoFrameMillis(0)
+            val canBlur = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
+            if (item.spoiler && !canBlur) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.VisibilityOff,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(localUri)
+                        .apply {
+                            when (item.type) {
+                                AttachmentType.VIDEO -> {
+                                    decoderFactory(VideoFrameDecoder.Factory())
+                                    videoFrameMillis(0)
+                                }
+
+                                AttachmentType.GIF -> decoderFactory(GifDecoder.Factory())
+
+                                else -> {}
                             }
-
-                            AttachmentType.GIF -> decoderFactory(GifDecoder.Factory())
-
-                            else -> {}
                         }
-                    }
-                    .crossfade(true)
-                    .build(),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .mediaTransitionOrigin(chatMediaKey(item.messageId, localUri))
-            )
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .blur(if (item.spoiler) 18.dp else 0.dp)
+                        .mediaTransitionOrigin(chatMediaKey(item.messageId, localUri))
+                )
+            }
 
             if (item.type == AttachmentType.VIDEO) {
                 Box(

@@ -138,6 +138,7 @@ fun MediaPickerBottomSheet(
     onSent: () -> Unit = {},
     onSend: (() -> Unit)? = null,
     allowViewOnce: Boolean = false,
+    allowSpoiler: Boolean = false,
     wallpaperTarget: WallpaperTarget? = null
 ) {
     val viewModel: MediaPickerViewModel = hiltViewModel()
@@ -524,9 +525,14 @@ fun MediaPickerBottomSheet(
                 viewModel.setMediaDrawings(item.uri, raster)
             },
             allowViewOnce = allowViewOnce && !isWallpaperMode,
+            allowSpoiler = allowSpoiler && !isWallpaperMode,
             viewOnceOption = { item -> uiState.viewOnceOptions[item.uri] },
             onViewOnceOptionChange = { item, option ->
                 viewModel.setViewOnceOption(item.uri, option)
+            },
+            isSpoiler = { item -> item.uri in uiState.spoilerUris },
+            onSpoilerChange = { item, spoiler ->
+                viewModel.setSpoiler(item.uri, spoiler)
             },
             drawColor = drawColor,
             onDrawColorChange = viewModel::setDrawColor,

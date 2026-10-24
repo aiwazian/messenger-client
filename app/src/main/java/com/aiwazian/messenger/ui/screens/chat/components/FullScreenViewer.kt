@@ -258,7 +258,7 @@ fun FullScreenViewer(
         ((deadline - countdownNow).coerceAtLeast(0L).toFloat() / (seconds * 1000f)).coerceIn(0f, 1f)
     }
     
-    val viewOnceTooltipState = rememberTooltipState()
+    val viewOnceTooltipState = rememberTooltipState(isPersistent = true)
     val viewOnceTooltipScope = rememberCoroutineScope()
     
     LaunchedEffect(viewOnceTooltipState.isVisible) {
