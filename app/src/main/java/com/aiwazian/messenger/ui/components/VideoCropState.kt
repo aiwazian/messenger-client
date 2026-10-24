@@ -18,6 +18,7 @@ import androidx.compose.ui.geometry.Offset
 import com.aiwazian.messenger.utils.media.VideoCropRect
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlin.math.max
 import kotlin.math.min
 
 @Stable
@@ -36,6 +37,9 @@ class VideoCropState internal constructor() {
         private set
 
     var fitScale by mutableFloatStateOf(0f)
+        private set
+
+    var baseFitScale by mutableFloatStateOf(0f)
         private set
 
     internal var scale by mutableFloatStateOf(1f)
@@ -142,6 +146,11 @@ class VideoCropState internal constructor() {
         }
 
         fitScale = min(viewportWidth / displayWidth, viewportHeight / displayHeight)
+
+        baseFitScale = max(
+            min(viewportWidth / sourceWidth, viewportHeight / sourceHeight),
+            min(viewportWidth / sourceHeight, viewportHeight / sourceWidth)
+        )
 
         val shortSide = min(displayWidth * fitScale, displayHeight * fitScale)
 

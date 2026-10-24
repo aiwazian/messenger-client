@@ -25,22 +25,18 @@ interface NotificationSettingsApi {
     @PATCH("users/me/notifications")
     suspend fun updateNotificationSettings(@Body request: UpdateNotificationSettingsRequestDto): Response<NotificationSettingsResponseDto>
 
-    /** Все исключения сразу: для экрана со списком чатов. */
     @GET("users/me/notifications/chats")
     suspend fun getChatNotificationSettings(): Response<List<ChatNotificationSettingDto>>
 
-    /** Добавляет чат в исключения или меняет уже сохранённое. */
     @PUT("users/me/notifications/chats/{chatId}")
     suspend fun setChatNotificationSetting(
         @Path("chatId") chatId: Long,
         @Body request: UpdateChatNotificationSettingRequestDto
     ): Response<ChatNotificationSettingDto>
 
-    /** Убирает исключение: чат снова следует настройке своей категории. */
     @DELETE("users/me/notifications/chats/{chatId}")
     suspend fun deleteChatNotificationSetting(@Path("chatId") chatId: Long): Response<Unit>
 
-    /** Убирает все исключения разом; category сужает удаление до одной категории. */
     @DELETE("users/me/notifications/chats")
     suspend fun deleteAllChatNotificationSettings(
         @Query("category") category: String? = null

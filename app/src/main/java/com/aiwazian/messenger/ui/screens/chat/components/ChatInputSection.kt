@@ -922,6 +922,10 @@ private fun InputMessage(
             chatId = uiState.chatId,
             replyTo = uiState.replyToMessage,
             caption = uiState.messageText,
+            allowViewOnce = uiState.chatId != uiState.myId &&
+                    ChatType.fromId(uiState.chatId) == ChatType.PRIVATE &&
+                    uiState.myId > 0,
+            allowSpoiler = true,
             keyboardHeight = keyboardHeight,
             onCaptionChange = actions::changeText,
             onDismissRequest = attachmentModal::hide,

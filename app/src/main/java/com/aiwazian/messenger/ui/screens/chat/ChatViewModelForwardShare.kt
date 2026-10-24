@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 
 internal fun ChatViewModel.startForward(message: Message) {
     if (!copyPolicy.canForward()) return
+    if (message.attachments.any { it.viewOnce }) return
     if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
 
     viewModelScope.launch {

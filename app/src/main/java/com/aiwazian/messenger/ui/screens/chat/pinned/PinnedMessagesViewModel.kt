@@ -477,6 +477,7 @@ class PinnedMessagesViewModel @Inject constructor(
 
     fun startForward(message: Message) {
         if (!_uiState.value.copyPolicy.canForward()) return
+        if (message.attachments.any { it.viewOnce }) return
         if (message.id <= 0 || message.messageType == MessageType.SYSTEM) return
 
         viewModelScope.launch {

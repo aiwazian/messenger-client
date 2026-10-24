@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.chat
 
 import android.util.Log
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.enums.AttachmentType
@@ -241,7 +242,7 @@ internal fun ChatViewModel.jumpToMessage(messageId: Long, returnToMessageId: Lon
             if (!loaded) {
                 _uiEffect.emit(
                     ChatUiEffect.ShowSnackbar(
-                        UiText.DynamicString("Не удалось перейти к сообщению")
+                        UiText.StringResource(R.string.jump_to_message_failed)
                     )
                 )
                 vibrationManager.vibrate(VibrationPattern.Error)

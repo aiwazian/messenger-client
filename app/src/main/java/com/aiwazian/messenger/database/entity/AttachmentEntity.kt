@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.database.entity
 
+import androidx.room3.ColumnInfo
 import androidx.room3.Entity
 import androidx.room3.ForeignKey
 import androidx.room3.Index
@@ -39,5 +40,10 @@ data class AttachmentEntity(
     val fileId: String,
     val messageId: Long,
     val type: AttachmentType,
-    val sortOrder: Int
+    val sortOrder: Int,
+    @ColumnInfo(defaultValue = "0")
+    val viewOnce: Boolean = false,
+    val viewOnceSeconds: Int? = null,
+    @ColumnInfo(defaultValue = "0")
+    val spoiler: Boolean = false
 )

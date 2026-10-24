@@ -16,6 +16,7 @@ import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.domain.SendCancelledException
+import com.aiwazian.messenger.domain.ViewOnceOption
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.DownloadStatus
@@ -74,7 +75,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
         replyTo: MessageReplyPreview? = null,
         videoQualities: Map<Uri, VideoQuality> = emptyMap(),
         mediaTransforms: Map<Uri, MediaTransform> = emptyMap(),
-        mediaDrawings: Map<Uri, Bitmap> = emptyMap()
+        mediaDrawings: Map<Uri, Bitmap> = emptyMap(),
+        viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap(),
+        spoilerUris: Set<Uri> = emptySet()
     ): Result<Message> {
         val chunks = chunkByMediaLimit(uris)
         
@@ -88,7 +91,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
                     replyTo,
                     videoQualities,
                     mediaTransforms,
-                    mediaDrawings
+                    mediaDrawings,
+                    viewOnceOptions,
+                    spoilerUris
                 )
             } else {
                 sendInChunks(
@@ -99,7 +104,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
                     replyTo,
                     videoQualities,
                     mediaTransforms,
-                    mediaDrawings
+                    mediaDrawings,
+                    viewOnceOptions,
+                    spoilerUris
                 )
             }
         }
@@ -123,7 +130,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
         replyTo: MessageReplyPreview?,
         videoQualities: Map<Uri, VideoQuality>,
         mediaTransforms: Map<Uri, MediaTransform>,
-        mediaDrawings: Map<Uri, Bitmap>
+        mediaDrawings: Map<Uri, Bitmap>,
+        viewOnceOptions: Map<Uri, ViewOnceOption>,
+        spoilerUris: Set<Uri>
     ): Result<Message> {
         var firstResult: Result<Message>? = null
         
@@ -137,7 +146,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 if (index == 0) replyTo else null,
                 videoQualities,
                 mediaTransforms,
-                mediaDrawings
+                mediaDrawings,
+                viewOnceOptions,
+                spoilerUris
             )
             
             if (index == 0) firstResult = result
@@ -186,7 +197,9 @@ class SendMessageWithFilesUseCase @Inject constructor(
         replyTo: MessageReplyPreview?,
         videoQualities: Map<Uri, VideoQuality>,
         mediaTransforms: Map<Uri, MediaTransform>,
-        mediaDrawings: Map<Uri, Bitmap>
+        mediaDrawings: Map<Uri, Bitmap>,
+        viewOnceOptions: Map<Uri, ViewOnceOption>,
+        spoilerUris: Set<Uri>
     ): Result<Message> {
         val myId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
@@ -194,6 +207,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
         val attachments = uris.mapIndexed { index, uri ->
             val fileName = fileNameOf(uri)
             val mimeType = uri.getFileType(context)
+            val viewOnceOption = viewOnceOptions[uri]
             
             val attachmentType = when {
                 mimeType.startsWith("image/") -> AttachmentType.IMAGE
@@ -217,7 +231,10 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 type = attachmentType,
                 sortOrder = index,
                 width = frame?.width,
-                height = frame?.height
+                height = frame?.height,
+                viewOnce = viewOnceOption != null,
+                viewOnceSeconds = viewOnceOption?.seconds,
+                spoiler = spoilerUris.contains(uri) && viewOnceOption == null
             )
         }
         
@@ -248,12 +265,27 @@ class SendMessageWithFilesUseCase @Inject constructor(
             )
         }
         
+        val sourceViewOnceOptions = sourceUris.mapIndexedNotNull { index, uri ->
+            viewOnceOptions[uris[index]]?.let { uri to it }
+        }
+        
+        val sourceSpoilerUris = sourceUris.mapIndexedNotNull { index, uri ->
+            uri.takeIf { spoilerUris.contains(uris[index]) && viewOnceOptions[uris[index]] == null }
+        }
+        
         pendingSendStore.remember(
             tempId = tempId,
             chatId = chatId,
             uris = sourceUris,
             text = text,
-            replyTo = replyTo
+            replyTo = replyTo,
+            viewOnceUris = sourceViewOnceOptions.map { it.first.toString() }.toSet(),
+            viewOnceSeconds = sourceViewOnceOptions
+                .mapNotNull { (uri, option) ->
+                    option.seconds?.let { uri.toString() to it }
+                }
+                .toMap(),
+            spoilerUris = sourceSpoilerUris.map { it.toString() }.toSet()
         )
         
         val sourceFrames = sourceUris.map { uri ->
@@ -271,6 +303,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
         attachments.forEachIndexed { index, attachment ->
             val sourceUri = sourceUris[index]
             val frame = sourceFrames[index]
+            val viewOnceOption = viewOnceOptions[uris[index]]
             
             val fileName = fileNameOf(sourceUri)
             val mimeType = sourceUri.getFileType(context)
@@ -344,7 +377,10 @@ class SendMessageWithFilesUseCase @Inject constructor(
             uploadResults.add(
                 AttachmentInputDto(
                     fileId = uploadedFileId,
-                    type = attachment.type
+                    type = attachment.type,
+                    viewOnce = viewOnceOption != null,
+                    viewOnceSeconds = viewOnceOption?.seconds,
+                    spoiler = spoilerUris.contains(uris[index]) && viewOnceOption == null
                 )
             )
         }

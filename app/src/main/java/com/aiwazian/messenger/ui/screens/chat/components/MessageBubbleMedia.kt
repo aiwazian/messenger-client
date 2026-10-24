@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import android.net.Uri
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Downloading
@@ -27,6 +29,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -86,23 +89,47 @@ internal fun MediaThumbnail(
     transitionKey: String,
     onFileAction: (MessageAttachment, FileAction) -> Unit
 ) {
+    val canBlur = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val isConcealed = attachment.viewOnce || attachment.spoiler
+    val concealMedia = isConcealed && !canBlur
+    
     Box(modifier = Modifier.fillMaxSize()) {
-        if (attachment.type == AttachmentType.VIDEO) {
-            VideoThumbnail(
-                videoUri = mediaUri,
-                cacheKey = cacheKey,
-                transitionKey = transitionKey
-            ) {
-                onFileAction(attachment, FileAction.OPEN)
-            }
-        } else {
-            ImageThumbnail(
-                imageUri = mediaUri,
-                cacheKey = cacheKey,
-                transitionKey = transitionKey,
-                isGif = attachment.type == AttachmentType.GIF
-            ) {
-                onFileAction(attachment, FileAction.OPEN)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(if (isConcealed && canBlur) 18.dp else 0.dp)
+        ) {
+            if (concealMedia) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable { onFileAction(attachment, FileAction.OPEN) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.VisibilityOff,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else if (attachment.type == AttachmentType.VIDEO) {
+                VideoThumbnail(
+                    videoUri = mediaUri,
+                    cacheKey = cacheKey,
+                    transitionKey = transitionKey
+                ) {
+                    onFileAction(attachment, FileAction.OPEN)
+                }
+            } else {
+                ImageThumbnail(
+                    imageUri = mediaUri,
+                    cacheKey = cacheKey,
+                    transitionKey = transitionKey,
+                    isGif = attachment.type == AttachmentType.GIF
+                ) {
+                    onFileAction(attachment, FileAction.OPEN)
+                }
             }
         }
 

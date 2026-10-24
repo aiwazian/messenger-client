@@ -268,4 +268,13 @@ interface ChatMediaDao {
 
     @Query("SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1")
     suspend fun getCurrentOwnerId(): Long?
+
+    @Query(
+        """
+        DELETE FROM chat_media
+        WHERE fileId = :fileId
+            AND ownerId = (SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)
+        """
+    )
+    suspend fun deleteByFileId(fileId: String)
 }

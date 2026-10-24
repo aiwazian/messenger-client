@@ -79,7 +79,7 @@ fun SettingsBioScreen(
             )
         }) {
         SectionContainer(header = {
-            SectionHeader("Кто видит мой раздел \"О себе\"?")
+            SectionHeader(stringResource(R.string.who_can_see_my_bio))
         }) {
             SectionRadio(
                 headlineText = stringResource(R.string.everybody),

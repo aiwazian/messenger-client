@@ -137,6 +137,8 @@ fun MediaPickerBottomSheet(
     onContactSend: ((MessageContact) -> Unit)? = null,
     onSent: () -> Unit = {},
     onSend: (() -> Unit)? = null,
+    allowViewOnce: Boolean = false,
+    allowSpoiler: Boolean = false,
     wallpaperTarget: WallpaperTarget? = null
 ) {
     val viewModel: MediaPickerViewModel = hiltViewModel()
@@ -273,7 +275,7 @@ fun MediaPickerBottomSheet(
                                 .align(Alignment.BottomCenter)
                                 .imePadding()
                                 .navigationBarsPadding()
-                                .padding(bottom = emojiPanelPadding + 10.dp)
+                                .padding(top = 10.dp, bottom = emojiPanelPadding + 10.dp)
                         ) {
                             AnimatedContent(
                                 targetState = uiState.selected.isNotEmpty(),
@@ -290,7 +292,11 @@ fun MediaPickerBottomSheet(
                                             if (isEmojiPanelVisible) {
                                                 isEmojiPanelVisible = false
                                                 
-                                                captionInputView?.let { view -> focusMessageInput(view) }
+                                                captionInputView?.let { view ->
+                                                    focusMessageInput(
+                                                        view
+                                                    )
+                                                }
                                             } else {
                                                 isEmojiPanelVisible = true
                                                 
@@ -361,28 +367,30 @@ fun MediaPickerBottomSheet(
                 }
             }
         }
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
+    ) { padding ->
+        Box {
             AnimatedContent(
                 targetState = isContactMode,
+                modifier = Modifier.fillMaxWidth(),
                 transitionSpec = {
                     val direction = if (targetState) 1 else -1
                     
                     (slideInHorizontally { direction * it } + fadeIn()) togetherWith (slideOutHorizontally { -direction * it } + fadeOut())
                 },
-                modifier = Modifier.fillMaxSize(),
-                label = "media_picker_content_mode"
+                label = "media_picker_content_mode",
+                contentAlignment = Alignment.TopCenter
             ) { isContacts ->
                 if (isContacts) {
                     ContactPickerContent(
-                        onContactSelected = { contact -> selectedContact = contact })
+                        onContactSelected = { contact -> selectedContact = contact },
+                        contentPadding = padding
+                    )
                 } else {
                     when {
                         !hasPermission -> {
                             MediaPickerNotice(
                                 text = stringResource(R.string.media_picker_permission),
+                                modifier = Modifier.padding(padding),
                                 actionText = stringResource(R.string.media_picker_permission_action),
                                 onActionClick = {
                                     if (context.canRequestMediaPermission(wasAsked)) {
@@ -397,7 +405,7 @@ fun MediaPickerBottomSheet(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(top = 32.dp, bottom = 104.dp),
+                                    .padding(padding),
                                 contentAlignment = Alignment.Center
                             ) {
                                 CircularWavyProgressIndicator()
@@ -405,18 +413,19 @@ fun MediaPickerBottomSheet(
                         }
                         
                         uiState.media.isEmpty() -> {
-                            MediaPickerNotice(text = stringResource(R.string.media_picker_empty))
+                            MediaPickerNotice(
+                                text = stringResource(R.string.media_picker_empty),
+                                modifier = Modifier.padding(padding)
+                            )
                         }
                         
                         else -> {
                             LazyVerticalGrid(
                                 columns = GridCells.Fixed(PICKER_GRID_COLUMNS),
-                                modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(
                                     start = 2.dp,
-                                    top = 2.dp,
                                     end = 2.dp,
-                                    bottom = if (isWallpaperMode) 2.dp else 70.dp
+                                    bottom = padding.calculateBottomPadding()
                                 ),
                                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                                 verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -477,7 +486,7 @@ fun MediaPickerBottomSheet(
                 
                 coroutineScope.launch {
                     val draft = wallpaperViewModel.prepareDraft(item.uri, transform, overlay)
-
+                    
                     viewModel.reset()
                     previewIndex = null
                     onDismissRequest()
@@ -514,6 +523,16 @@ fun MediaPickerBottomSheet(
             mediaDrawings = { item -> uiState.mediaDrawings[item.uri] },
             onMediaDrawingsChange = { item, raster ->
                 viewModel.setMediaDrawings(item.uri, raster)
+            },
+            allowViewOnce = allowViewOnce && !isWallpaperMode,
+            allowSpoiler = allowSpoiler && !isWallpaperMode,
+            viewOnceOption = { item -> uiState.viewOnceOptions[item.uri] },
+            onViewOnceOptionChange = { item, option ->
+                viewModel.setViewOnceOption(item.uri, option)
+            },
+            isSpoiler = { item -> item.uri in uiState.spoilerUris },
+            onSpoilerChange = { item, spoiler ->
+                viewModel.setSpoiler(item.uri, spoiler)
             },
             drawColor = drawColor,
             onDrawColorChange = viewModel::setDrawColor,

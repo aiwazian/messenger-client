@@ -21,7 +21,8 @@ data class ChatMediaItem(
     val status: DownloadStatus = DownloadStatus.IDLE,
     val progress: Int = 0,
     val localUri: Uri? = null,
-    val durationMs: Int? = null
+    val durationMs: Int? = null,
+    val spoiler: Boolean = false
 ) {
     val extension: String get() = name.substringAfterLast('.', "")
 }

@@ -36,6 +36,7 @@
     <string name="passcode_lock">Код-пароль</string>
     <string name="bio">О себе</string>
     <string name="username">Имя пользователя</string>
+    <string name="set_username">Задать имя пользователя</string>
     <string name="share">Поделиться</string>
     <string name="cloud_password">Облачный пароль</string>
     <string name="on">Вкл.</string>
@@ -44,6 +45,7 @@
     <string name="nobody">Никто</string>
     <string name="last_seen">Время захода</string>
     <string name="who_can_see_my_last_seen">Кто видит время моего последнего захода?</string>
+    <string name="who_can_see_my_bio">Кто видит мой раздел \"О себе\"?</string>
     <string name="online">В сети</string>
     <string name="last_seen_recently">В сети недавно</string>
     <string name="this_device">Это устройство</string>
@@ -55,6 +57,7 @@
     <string name="clear_cache">Очистить кэш</string>
     <string name="add_account">Добавить аккаунт</string>
     <string name="date_of_birth">Дата рождения</string>
+    <string name="specify">Указать</string>
     <string name="connecting">Соединение</string>
     <string name="invites">Приглашения</string>
     <string name="dynamic_color">Динамические цвета</string>
@@ -169,6 +172,8 @@
     <string name="user_unblocked">Пользователь разблокирован</string>
     <string name="unblock">Разблокировать</string>
     <string name="unblock_confirm_message">Вы уверены, что хотите разблокировать пользователя %1$s?</string>
+    <string name="unblock_this_user_confirm_message">Вы уверены, что хотите разблокировать этого пользователя?</string>
+    <string name="block_this_user_confirm_message">Вы уверены, что хотите заблокировать этого пользователя?</string>
     <string name="block">Блокировать</string>
     <string name="failed_to_unblock_user">Не удалось разблокировать пользователя</string>
     <plurals name="subscribers_count">
@@ -197,6 +202,8 @@
     <string name="error_searching_for_chat">Ошибка при поиске чата</string>
     <string name="profile_photos">Фотографии профиля</string>
     <string name="who_can_see_my_profile_photo">Кто видит моё фото профиля?</string>
+    <string name="who_can_see_my_date_of_birth">Кто видит дату моего рождения?</string>
+    <string name="who_can_add_me_to_groups">Кто может добавлять меня в группы?</string>
     <string name="add_photo">Добавить фото</string>
     <string name="failed_to_connect">Ошибка соединения</string>
     <string name="enter_login">Введите логин</string>
@@ -368,6 +375,7 @@
     <string name="message_unpinned">Сообщение откреплено</string>
     <string name="pin_message_failed">Не удалось закрепить сообщение</string>
     <string name="unpin_message_failed">Не удалось открепить сообщение</string>
+    <string name="jump_to_message_failed">Не удалось перейти к сообщению</string>
     <string name="pinned_message">Закрепленное сообщение</string>
     <string name="pinned_tab_for_everyone">Для всех</string>
     <string name="pinned_tab_for_me">Для меня</string>
@@ -668,4 +676,20 @@
     <string name="expiration_date">Срок действия</string>
     <string name="no_expiration">Бессрочно</string>
     <string name="reset_expiration_date">Сбросить срок действия</string>
+    <string name="view_once_media_timer">Просмотр один раз</string>
+    <string name="view_once_never">Никогда</string>
+    <string name="view_once_seconds">%1$d сек.</string>
+    <string name="view_once_one_view">Один просмотр</string>
+    <string name="view_once_hint_one_view">Медиа исчезнет после просмотра</string>
+    <string name="view_once_hint_never">Медиа останется в чате</string>
+    <string name="view_once_hint_timer">Выберите, через какое время после открытия медиафайл исчезнет</string>
+    <string name="spoiler">Спойлер</string>
+    <string name="spoiler_media_enabled">Медиа будет скрыто под спойлером</string>
+    <string name="spoiler_media_disabled">Медиа не будет скрыто под спойлером</string>
+    <plurals name="view_once_hint_timed">
+        <item quantity="one">Медиа исчезнет через %1$d секунду после открытия</item>
+        <item quantity="few">Медиа исчезнет через %1$d секунды после открытия</item>
+        <item quantity="many">Медиа исчезнет через %1$d секунд после открытия</item>
+        <item quantity="other">Медиа исчезнет через %1$d секунды после открытия</item>
+    </plurals>
 </resources>
