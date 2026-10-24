@@ -682,6 +682,7 @@
     <string name="view_once_one_view">Один просмотр</string>
     <string name="view_once_hint_one_view">Медиа исчезнет после просмотра</string>
     <string name="view_once_hint_never">Медиа останется в чате</string>
+    <string name="view_once_hint_timer">Выберите, через какое время после открытия медиафайл исчезнет</string>
     <plurals name="view_once_hint_timed">
         <item quantity="one">Медиа исчезнет через %1$d секунду после открытия</item>
         <item quantity="few">Медиа исчезнет через %1$d секунды после открытия</item>

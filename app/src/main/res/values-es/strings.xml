@@ -662,6 +662,7 @@
     <string name="view_once_one_view">Una vista</string>
     <string name="view_once_hint_one_view">El contenido multimedia desaparecerá después de verlo</string>
     <string name="view_once_hint_never">El contenido multimedia permanecerá en el chat</string>
+    <string name="view_once_hint_timer">Elige cuánto tiempo después de abrirse desaparecerá el contenido multimedia</string>
     <plurals name="view_once_hint_timed">
         <item quantity="one">El contenido multimedia desaparecerá %1$d segundo después de abrirlo</item>
         <item quantity="other">El contenido multimedia desaparecerá %1$d segundos después de abrirlo</item>

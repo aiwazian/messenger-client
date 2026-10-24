@@ -658,6 +658,7 @@
     <string name="view_once_one_view">One view</string>
     <string name="view_once_hint_one_view">The media will disappear after viewing</string>
     <string name="view_once_hint_never">The media will stay in the chat</string>
+    <string name="view_once_hint_timer">Choose how long after opening the media will disappear</string>
     <plurals name="view_once_hint_timed">
         <item quantity="one">The media will disappear %1$d second after opening</item>
         <item quantity="other">The media will disappear %1$d seconds after opening</item>

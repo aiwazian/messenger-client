@@ -18,13 +18,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -40,10 +44,12 @@ import androidx.compose.material.icons.rounded.CropRotate
 import androidx.compose.material.icons.rounded.Hd
 import androidx.compose.material.icons.rounded.Sd
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuGroupShapes
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -85,8 +91,8 @@ import com.aiwazian.messenger.domain.ViewOnceOption
 import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
-import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
+import com.aiwazian.messenger.ui.app.AppDropdownMenuPopup
 import com.aiwazian.messenger.ui.components.ColorPickerDialog
 import com.aiwazian.messenger.ui.components.MediaDrawControls
 import com.aiwazian.messenger.ui.components.MediaDrawLayer
@@ -332,27 +338,20 @@ fun MediaPickerPreview(
                         TopAppBar(
                             title = {
                                 if (mode != PreviewMode.Draw && frame != null && estimate != null) {
-                                    MediaOverlayControl {
-                                        AnimatedContent(
-                                            targetState = frame,
-                                            transitionSpec = {
-                                                slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
-                                            }
-                                        ) { frame ->
-                                            Text(
-                                                text = "${frame.width} × ${frame.height}, ~${estimate.formatFileSize()}",
-                                                style = MaterialTheme.typography.titleMedium
-                                            )
+                                    AnimatedContent(
+                                        targetState = frame,
+                                        transitionSpec = {
+                                            slideInVertically { -it } + fadeIn() togetherWith slideOutVertically { it } + fadeOut()
                                         }
+                                    ) { frame ->
+                                        Text(
+                                            text = "${frame.width} × ${frame.height}, ~${estimate.formatFileSize()}",
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
                                     }
                                 }
                             }, navigationIcon = {
-                                Box(
-                                    modifier = Modifier.background(
-                                        color = MaterialTheme.colorScheme.surfaceContainer,
-                                        shape = CircleShape
-                                    )
-                                ) {
+                                MediaOverlayControl {
                                     if (mode == PreviewMode.Draw) {
                                         IconButton(
                                             onClick = { drawSession?.undo() },
@@ -375,58 +374,61 @@ fun MediaPickerPreview(
                                     }
                                 }
                             }, actions = {
-                                AnimatedContent(
-                                    targetState = mode, modifier = Modifier.background(
-                                        color = MaterialTheme.colorScheme.surfaceContainer,
-                                        shape = CircleShape
-                                    )
-                                ) { mode ->
-                                    if (mode == PreviewMode.Draw) {
-                                        Box {
-                                            TextButton(
-                                                onClick = { drawSession?.clearAll() },
-                                                enabled = drawSession?.hasInk == true,
-                                                modifier = Modifier.padding(horizontal = 4.dp),
-                                                colors = ButtonDefaults.textButtonColors(
-                                                    contentColor = MaterialTheme.colorScheme.onSurface
-                                                )
-                                            ) {
-                                                Text(text = stringResource(R.string.draw_clear_all))
-                                            }
-                                        }
-                                    } else {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            AnimatedContent(
-                                                targetState = allowViewOnce &&
-                                                        currentItem != null &&
-                                                        isSelectionEnabled &&
-                                                        !currentItem.isGif &&
-                                                        selectionNumber(currentItem) > 0,
-                                                transitionSpec = {
-                                                    expressiveScaleIn togetherWith expressiveScaleOut
-                                                },
-                                                contentAlignment = Alignment.Center
-                                            ) { showTimer ->
-                                                if (showTimer && currentItem != null) {
-                                                    ViewOnceTimerButton(
-                                                        option = viewOnceOption(currentItem),
-                                                        onOptionChange = { option ->
-                                                            onViewOnceOptionChange(
-                                                                currentItem,
-                                                                option
-                                                            )
-                                                        }
+                                MediaOverlayControl {
+                                    AnimatedContent(
+                                        targetState = mode
+                                    ) { mode ->
+                                        if (mode == PreviewMode.Draw) {
+                                            Box {
+                                                TextButton(
+                                                    onClick = { drawSession?.clearAll() },
+                                                    enabled = drawSession?.hasInk == true,
+                                                    modifier = Modifier.padding(horizontal = 4.dp),
+                                                    colors = ButtonDefaults.textButtonColors(
+                                                        contentColor = MaterialTheme.colorScheme.onSurface
                                                     )
+                                                ) {
+                                                    Text(text = stringResource(R.string.draw_clear_all))
                                                 }
                                             }
-                                            
-                                            if (currentItem != null && isSelectionEnabled) {
-                                                IconButton(onClick = { onToggleSelection(currentItem) }) {
-                                                    MediaSelectionBadge(
-                                                        number = selectionNumber(currentItem)
-                                                    )
+                                        } else {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                AnimatedContent(
+                                                    targetState = allowViewOnce &&
+                                                            currentItem != null &&
+                                                            isSelectionEnabled &&
+                                                            !currentItem.isGif &&
+                                                            selectionNumber(currentItem) > 0,
+                                                    transitionSpec = {
+                                                        expressiveScaleIn togetherWith expressiveScaleOut
+                                                    },
+                                                    contentAlignment = Alignment.Center
+                                                ) { showTimer ->
+                                                    if (showTimer && currentItem != null) {
+                                                        ViewOnceTimerButton(
+                                                            option = viewOnceOption(currentItem),
+                                                            onOptionChange = { option ->
+                                                                onViewOnceOptionChange(
+                                                                    currentItem,
+                                                                    option
+                                                                )
+                                                            }
+                                                        )
+                                                    }
+                                                }
+                                                
+                                                if (currentItem != null && isSelectionEnabled) {
+                                                    IconButton(onClick = {
+                                                        onToggleSelection(
+                                                            currentItem
+                                                        )
+                                                    }) {
+                                                        MediaSelectionBadge(
+                                                            number = selectionNumber(currentItem)
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -774,50 +776,82 @@ private fun ViewOnceTimerButton(
         }
     }
     
-    AppDropdownMenu(
+    AppDropdownMenuPopup(
         expanded = expanded,
-        onDismissRequest = { expanded = false }
+        onDismissRequest = { expanded = false },
+        modifier = Modifier.widthIn(max = 220.dp)
     ) {
-        options.forEach { candidate ->
-            val candidateSeconds = candidate?.seconds
-            val isSelected = if (candidate == null) {
-                option == null
-            } else {
-                option != null && candidateSeconds == option.seconds
-            }
-            val hint = when {
-                candidate == null -> stringResource(R.string.view_once_hint_never)
-                candidateSeconds == null -> stringResource(R.string.view_once_hint_one_view)
-                else -> pluralStringResource(
-                    R.plurals.view_once_hint_timed,
-                    candidateSeconds,
-                    candidateSeconds
+        DropdownMenuGroup(
+            shapes = MenuGroupShapes(
+                MaterialTheme.shapes.medium,
+                MaterialTheme.shapes.medium
+            ),
+            contentPadding = PaddingValues.Zero
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.view_once_hint_timer),
+                    fontSize = 12.sp,
+                    lineHeight = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            
-            AppDropdownMenuItem(
-                text = when {
-                    candidate == null -> stringResource(R.string.view_once_never)
-                    candidateSeconds == null -> stringResource(R.string.view_once_one_view)
-                    else -> stringResource(R.string.view_once_seconds, candidateSeconds)
-                },
-                trailingIcon = if (isSelected) {
-                    {
-                        Icon(
-                            imageVector = Icons.Rounded.Check,
-                            contentDescription = null
-                        )
-                    }
+        }
+        
+        Spacer(Modifier.height(4.dp))
+        
+        DropdownMenuGroup(
+            shapes = MenuGroupShapes(
+                MaterialTheme.shapes.medium,
+                MaterialTheme.shapes.medium
+            ),
+            contentPadding = PaddingValues.Zero
+        ) {
+            options.forEach { candidate ->
+                val candidateSeconds = candidate?.seconds
+                val isSelected = if (candidate == null) {
+                    option == null
                 } else {
-                    null
-                },
-                onClick = {
-                    onOptionChange(candidate)
-                    expanded = false
-                    tooltipText = hint
-                    scope.launch { tooltipState.show() }
+                    option != null && candidateSeconds == option.seconds
                 }
-            )
+                val hint = when {
+                    candidate == null -> stringResource(R.string.view_once_hint_never)
+                    candidateSeconds == null -> stringResource(R.string.view_once_hint_one_view)
+                    else -> pluralStringResource(
+                        R.plurals.view_once_hint_timed,
+                        candidateSeconds,
+                        candidateSeconds
+                    )
+                }
+                
+                AppDropdownMenuItem(
+                    text = when {
+                        candidate == null -> stringResource(R.string.view_once_never)
+                        candidateSeconds == null -> stringResource(R.string.view_once_one_view)
+                        else -> stringResource(R.string.view_once_seconds, candidateSeconds)
+                    },
+                    trailingIcon = if (isSelected) {
+                        {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = null
+                            )
+                        }
+                    } else {
+                        null
+                    },
+                    onClick = {
+                        onOptionChange(candidate)
+                        expanded = false
+                        tooltipText = hint
+                        scope.launch { tooltipState.show() }
+                    }
+                )
+            }
         }
     }
 }

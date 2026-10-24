@@ -11,7 +11,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -419,105 +418,113 @@ fun FullScreenViewer(
                                     }
                                 }
                                 
-                                AnimatedVisibility(
-                                    visible = showMoreActionsButton,
-                                    enter = expressiveScaleIn,
-                                    exit = expressiveScaleOut
-                                ) {
-                                    IconButton(
-                                        onClick = { showMoreActions = true }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.MoreVert,
-                                            contentDescription = stringResource(R.string.actions)
-                                        )
-                                    }
-                                    AppDropdownMenu(
-                                        expanded = showMoreActions,
-                                        onDismissRequest = {
-                                            showMoreActions = false
-                                        }) {
-                                        if (canDownloadMedia && currentItem != null && !currentItem.viewOnce) {
-                                            AppDropdownMenuItem(
-                                                text = stringResource(R.string.save_to_gallery),
-                                                onClick = {
-                                                    onSaveToGallery(currentItem.uri)
-                                                    showMoreActions = false
-                                                },
-                                                leadingIcon = {
-                                                    Icon(
-                                                        imageVector = Icons.Rounded.SaveAlt,
-                                                        contentDescription = null
-                                                    )
-                                                })
+                                AnimatedContent(
+                                    targetState = showMoreActionsButton,
+                                    transitionSpec = {
+                                        expressiveScaleIn togetherWith expressiveScaleOut
+                                    },
+                                    contentAlignment = Alignment.Center
+                                ) { show ->
+                                    if (show) {
+                                        IconButton(
+                                            onClick = { showMoreActions = true }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.MoreVert,
+                                                contentDescription = stringResource(R.string.actions)
+                                            )
                                         }
-                                        if (onShowInChat != null && currentItem != null && !currentItem.viewOnce) {
-                                            AppDropdownMenuItem(
-                                                text = stringResource(R.string.show_in_chat),
-                                                onClick = {
-                                                    showMoreActions = false
-                                                    hero.dismiss()
-                                                    onShowInChat.invoke(
-                                                        currentItem.messageId
-                                                    )
-                                                },
-                                                leadingIcon = {
-                                                    Icon(
-                                                        imageVector = Icons.Outlined.RemoveRedEye,
-                                                        contentDescription = null
-                                                    )
-                                                })
+                                        AppDropdownMenu(
+                                            expanded = showMoreActions,
+                                            onDismissRequest = {
+                                                showMoreActions = false
+                                            }) {
+                                            if (canDownloadMedia && currentItem != null && !currentItem.viewOnce) {
+                                                AppDropdownMenuItem(
+                                                    text = stringResource(R.string.save_to_gallery),
+                                                    onClick = {
+                                                        onSaveToGallery(currentItem.uri)
+                                                        showMoreActions = false
+                                                    },
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            imageVector = Icons.Rounded.SaveAlt,
+                                                            contentDescription = null
+                                                        )
+                                                    })
+                                            }
+                                            if (onShowInChat != null && currentItem != null && !currentItem.viewOnce) {
+                                                AppDropdownMenuItem(
+                                                    text = stringResource(R.string.show_in_chat),
+                                                    onClick = {
+                                                        showMoreActions = false
+                                                        hero.dismiss()
+                                                        onShowInChat.invoke(
+                                                            currentItem.messageId
+                                                        )
+                                                    },
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            imageVector = Icons.Outlined.RemoveRedEye,
+                                                            contentDescription = null
+                                                        )
+                                                    })
+                                            }
                                         }
                                     }
                                 }
                                 
-                                AnimatedVisibility(
-                                    visible = currentItem?.viewOnce == true,
-                                    enter = expressiveScaleIn,
-                                    exit = expressiveScaleOut
-                                ) {
-                                    TooltipBox(
-                                        positionProvider = rememberTooltipPositionProvider(
-                                            TooltipAnchorPosition.Below
-                                        ), tooltip = {
-                                            PlainTooltip(
-                                                modifier = Modifier.padding(horizontal = 8.dp),
-                                                shape = MaterialTheme.shapes.medium
-                                            ) {
-                                                Text(
-                                                    text = stringResource(R.string.view_once_hint_one_view),
-                                                    lineHeight = 12.sp
-                                                )
-                                            }
-                                        }, state = viewOnceTooltipState, enableUserInput = false
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            if (countdownProgress != null) {
-                                                CircularProgressIndicator(
-                                                    progress = { countdownProgress },
-                                                    modifier = Modifier.size(44.dp),
-                                                    strokeWidth = 2.dp,
-                                                    trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                                                        alpha = 0.3f
+                                AnimatedContent(
+                                    targetState = currentItem?.viewOnce == true,
+                                    transitionSpec = {
+                                        expressiveScaleIn togetherWith expressiveScaleOut
+                                    },
+                                    contentAlignment = Alignment.Center
+                                ) { isViewOnce ->
+                                    if (isViewOnce) {
+                                        TooltipBox(
+                                            positionProvider = rememberTooltipPositionProvider(
+                                                TooltipAnchorPosition.Below
+                                            ), tooltip = {
+                                                PlainTooltip(
+                                                    modifier = Modifier.padding(horizontal = 8.dp),
+                                                    shape = MaterialTheme.shapes.medium
+                                                ) {
+                                                    Text(
+                                                        text = stringResource(R.string.view_once_hint_one_view),
+                                                        lineHeight = 12.sp
                                                     )
-                                                )
-                                            }
-                                            
-                                            IconButton(
-                                                onClick = {
-                                                    if (currentItem?.viewOnceSeconds == null) {
-                                                        viewOnceTooltipScope.launch {
-                                                            viewOnceTooltipState.show()
+                                                }
+                                            }, state = viewOnceTooltipState, enableUserInput = false
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                if (countdownProgress != null) {
+                                                    CircularProgressIndicator(
+                                                        progress = { countdownProgress },
+                                                        modifier = Modifier.size(44.dp),
+                                                        strokeWidth = 2.dp,
+                                                        trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                            alpha = 0.3f
+                                                        )
+                                                    )
+                                                }
+                                                
+                                                IconButton(
+                                                    onClick = {
+                                                        if (currentItem?.viewOnceSeconds == null) {
+                                                            viewOnceTooltipScope.launch {
+                                                                viewOnceTooltipState.show()
+                                                            }
                                                         }
-                                                    }
-                                                }, colors = IconButtonDefaults.iconButtonColors(
-                                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                                )
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Outlined.LocalFireDepartment,
-                                                    contentDescription = stringResource(R.string.view_once_media_timer)
-                                                )
+                                                    }, colors = IconButtonDefaults.iconButtonColors(
+                                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                                    )
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Outlined.LocalFireDepartment,
+                                                        contentDescription = stringResource(R.string.view_once_media_timer)
+                                                    )
+                                                }
                                             }
                                         }
                                     }
