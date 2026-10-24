@@ -132,7 +132,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                 headlineText = if (uiState.user.username != null) {
                     "@${uiState.user.username}"
                 } else {
-                    "Задать имя пользователя"
+                    stringResource(R.string.set_username)
                 }, onClick = {
                     viewModel.save()
                     navBackStack.add(AppRoute.SettingsUsername(uiState.user.username))
@@ -145,7 +145,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                 trailingText = if (uiState.user.dateOfBirth != null) {
                     uiState.user.dateOfBirth!!.toInstance().toPrettyDateWithYear()
                 } else {
-                    "Указать"
+                    stringResource(R.string.specify)
                 },
                 onClick = viewModel::showDatePicker
             )

@@ -32,6 +32,7 @@
     <string name="passcode_lock">Verrouillage par code d’accès</string>
     <string name="bio">Biographie</string>
     <string name="username">Nom d’utilisateur</string>
+    <string name="set_username">Définir le nom d\'utilisateur</string>
     <string name="share">Partager</string>
     <string name="copy_link">Copier le lien</string>
     <string name="cloud_password">Mot de passe cloud</string>
@@ -41,6 +42,7 @@
     <string name="nobody">Personne</string>
     <string name="last_seen">Dernière apparition</string>
     <string name="who_can_see_my_last_seen"><![CDATA[Qui peut voir ma dernière fois vue \?]]></string>
+    <string name="who_can_see_my_bio">Qui peut voir ma biographie ?</string>
     <string name="online">En ligne</string>
     <string name="last_seen_recently">En ligne récemment</string>
     <string name="this_device">Cet appareil</string>
@@ -52,6 +54,7 @@
     <string name="clear_cache">Effacer le cache</string>
     <string name="add_account">Ajouter un compte</string>
     <string name="date_of_birth">Date de naissance</string>
+    <string name="specify">Indiquer</string>
     <string name="connecting">Connexion</string>
     <string name="invites">Invitations</string>
     <string name="dynamic_color">Couleur dynamique</string>
@@ -165,6 +168,8 @@
     <string name="user_unblocked">Utilisateur débloqué</string>
     <string name="unblock">Débloquer</string>
     <string name="unblock_confirm_message">Êtes-vous sûr de vouloir débloquer %1$s \?</string>
+    <string name="unblock_this_user_confirm_message">Êtes-vous sûr de vouloir débloquer cet utilisateur \?</string>
+    <string name="block_this_user_confirm_message">Êtes-vous sûr de vouloir bloquer cet utilisateur \?</string>
     <string name="block">Bloc</string>
     <string name="failed_to_unblock_user">Échec du déblocage de l\'utilisateur</string>
     <plurals name="subscribers_count">
@@ -191,6 +196,8 @@
     <string name="error_searching_for_chat">Erreur recherche de chat</string>
     <string name="profile_photos">Photos de profil</string>
     <string name="who_can_see_my_profile_photo">Qui peut voir ma photo de profil ?</string>
+    <string name="who_can_see_my_date_of_birth">Qui peut voir ma date de naissance ?</string>
+    <string name="who_can_add_me_to_groups">Qui peut m\'ajouter à des groupes ?</string>
     <string name="add_photo">Ajouter une photo</string>
     <string name="failed_to_connect">Échec de connexion</string>
     <string name="enter_login">Entrer la connexion</string>
@@ -362,6 +369,7 @@
     <string name="message_unpinned">Message désépinglé</string>
     <string name="pin_message_failed">Impossible d\'épingler le message</string>
     <string name="unpin_message_failed">Impossible de désépingler le message</string>
+    <string name="jump_to_message_failed">Impossible d\'accéder au message</string>
     <string name="pinned_message">Message épinglé</string>
     <string name="pinned_tab_for_everyone">Pour tous</string>
     <string name="pinned_tab_for_me">Pour moi</string>

@@ -334,7 +334,12 @@ fun ProfileScreen(
                 }
             },
             content = {
-                Text(if (uiState.isBlockedStateForDialog) "Вы уверены что хотите разблокировать этого пользователя?" else "Вы уверены что хотите заблокировать этого пользователя?")
+                Text(
+                    stringResource(
+                        if (uiState.isBlockedStateForDialog) R.string.unblock_this_user_confirm_message
+                        else R.string.block_this_user_confirm_message
+                    )
+                )
             }
         )
     }

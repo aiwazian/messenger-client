@@ -79,7 +79,7 @@ fun SettingsInvitesScreen(
             )
         }) {
         SectionContainer(header = {
-            SectionHeader("Кто может добавлять меня в группы?")
+            SectionHeader(stringResource(R.string.who_can_add_me_to_groups))
         }) {
             SectionRadio(
                 headlineText = stringResource(R.string.everybody),

@@ -152,7 +152,7 @@ internal fun ChatScreenOverlays(
                 }
             },
             content = {
-                Text("Вы уверены что хотите разблокировать этого пользователя?")
+                Text(stringResource(R.string.unblock_this_user_confirm_message))
             })
     }
     
