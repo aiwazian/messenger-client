@@ -653,7 +653,7 @@ class ChatViewModel @Inject constructor(
     internal fun releaseViewerMedia(fileIds: Collection<String>) {
         viewModelScope.launch { chatRepository.releaseViewerFiles(fileIds) }
     }
-    
+
     fun clearMediaUrl() {
         _uiState.update { it.copy(showFullScreenViewer = false, deletedViewOnceFileIds = emptySet()) }
     }

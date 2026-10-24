@@ -155,7 +155,7 @@ fun PhotoPickerBottomSheet(
                 }
             }
         }
-        
+
         val picked = pickedMedia
         
         if (picked != null) {
