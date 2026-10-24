@@ -32,6 +32,7 @@
     <string name="passcode_lock">Blocco tramite codice</string>
     <string name="bio">Biografia</string>
     <string name="username">Nome utente</string>
+    <string name="set_username">Imposta nome utente</string>
     <string name="share">Condividi</string>
     <string name="copy_link">Copia link</string>
     <string name="cloud_password">Cloud Password</string>
@@ -41,6 +42,7 @@
     <string name="nobody">Nessuno</string>
     <string name="last_seen">Ultima volta visti</string>
     <string name="who_can_see_my_last_seen">Chi può vedere il mio ultimo accesso\?</string>
+    <string name="who_can_see_my_bio">Chi può vedere la mia biografia\?</string>
     <string name="online">In linea</string>
     <string name="last_seen_recently">In linea di recente</string>
     <string name="this_device">Questo dispositivo</string>
@@ -52,6 +54,7 @@
     <string name="clear_cache">Svuota la cache</string>
     <string name="add_account">Aggiungi account</string>
     <string name="date_of_birth">Data di nascita</string>
+    <string name="specify">Indicare</string>
     <string name="connecting">Collegamento</string>
     <string name="invites">Inviti</string>
     <string name="dynamic_color">Colore dinamico</string>
@@ -165,6 +168,8 @@
     <string name="user_unblocked">Utente sbloccato</string>
     <string name="unblock">Sbloccare</string>
     <string name="unblock_confirm_message">Sei sicuro di voler sbloccare %1$s\?</string>
+    <string name="unblock_this_user_confirm_message">Sei sicuro di voler sbloccare questo utente\?</string>
+    <string name="block_this_user_confirm_message">Sei sicuro di voler bloccare questo utente\?</string>
     <string name="block">Bloccare</string>
     <string name="failed_to_unblock_user">Impossibile sbloccare l\'utente</string>
     <plurals name="subscribers_count">
@@ -191,6 +196,8 @@
     <string name="error_searching_for_chat">Errore nella ricerca della chat</string>
     <string name="profile_photos">Foto profilo</string>
     <string name="who_can_see_my_profile_photo">Chi può vedere la mia foto profilo?</string>
+    <string name="who_can_see_my_date_of_birth">Chi può vedere la mia data di nascita?</string>
+    <string name="who_can_add_me_to_groups">Chi può aggiungermi ai gruppi?</string>
     <string name="add_photo">Aggiungi foto</string>
     <string name="failed_to_connect">Non è riuscito a collegare</string>
     <string name="enter_login">Inserisci il login</string>
@@ -362,6 +369,7 @@
     <string name="message_unpinned">Messaggio sbloccato</string>
     <string name="pin_message_failed">Impossibile fissare il messaggio</string>
     <string name="unpin_message_failed">Impossibile sbloccare il messaggio</string>
+    <string name="jump_to_message_failed">Impossibile passare al messaggio</string>
     <string name="pinned_message">Messaggio fissato in alto</string>
     <string name="pinned_tab_for_everyone">Per tutti</string>
     <string name="pinned_tab_for_me">Per me</string>
@@ -644,4 +652,18 @@
     <string name="expiration_date">Data di scadenza</string>
     <string name="no_expiration">Senza scadenza</string>
     <string name="reset_expiration_date">Reimposta la data di scadenza</string>
+    <string name="view_once_media_timer">Visualizza una volta</string>
+    <string name="view_once_never">Mai</string>
+    <string name="view_once_seconds">%1$d s</string>
+    <string name="view_once_one_view">Una visualizzazione</string>
+    <string name="view_once_hint_one_view">Il media sparirà dopo la visualizzazione</string>
+    <string name="view_once_hint_never">Il media resterà nella chat</string>
+    <string name="view_once_hint_timer">Scegli dopo quanto tempo dall\'apertura il media sparirà</string>
+    <string name="spoiler">Spoiler</string>
+    <string name="spoiler_media_enabled">Il media sarà nascosto sotto uno spoiler</string>
+    <string name="spoiler_media_disabled">Il media non sarà nascosto sotto uno spoiler</string>
+    <plurals name="view_once_hint_timed">
+        <item quantity="one">Il media sparirà %1$d secondo dopo l\'apertura</item>
+        <item quantity="other">Il media sparirà %1$d secondi dopo l\'apertura</item>
+    </plurals>
 </resources>

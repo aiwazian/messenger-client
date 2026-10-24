@@ -32,6 +32,7 @@
     <string name="passcode_lock">Passcode Lock</string>
     <string name="bio">Bio</string>
     <string name="username">Username</string>
+    <string name="set_username">Set username</string>
     <string name="share">Share</string>
     <string name="copy_link">Copy link</string>
     <string name="cloud_password">Cloud Password</string>
@@ -41,6 +42,7 @@
     <string name="nobody">Nobody</string>
     <string name="last_seen">Last Seen</string>
     <string name="who_can_see_my_last_seen">Who can see my last seen time?</string>
+    <string name="who_can_see_my_bio">Who can see my bio?</string>
     <string name="online">Online</string>
     <string name="last_seen_recently">Online recently</string>
     <string name="this_device">This device</string>
@@ -52,6 +54,7 @@
     <string name="clear_cache">Clear Cache</string>
     <string name="add_account">Add Account</string>
     <string name="date_of_birth">Date of Birth</string>
+    <string name="specify">Specify</string>
     <string name="connecting">Connecting</string>
     <string name="invites">Invites</string>
     <string name="dynamic_color">Dynamic color</string>
@@ -165,6 +168,8 @@
     <string name="user_unblocked">User unblocked</string>
     <string name="unblock">Unblock</string>
     <string name="unblock_confirm_message">Are you sure you want to unblock %1$s?</string>
+    <string name="unblock_this_user_confirm_message">Are you sure you want to unblock this user?</string>
+    <string name="block_this_user_confirm_message">Are you sure you want to block this user?</string>
     <string name="block">Block</string>
     <string name="failed_to_unblock_user">Failed to unblock user</string>
     <plurals name="subscribers_count">
@@ -197,6 +202,8 @@
     <string name="error_searching_for_chat">Error searching for chat</string>
     <string name="profile_photos">Profile Photos</string>
     <string name="who_can_see_my_profile_photo">Who can see my profile photo?</string>
+    <string name="who_can_see_my_date_of_birth">Who can see my date of birth?</string>
+    <string name="who_can_add_me_to_groups">Who can add me to groups?</string>
     <string name="add_photo">Add Photo</string>
     <string name="failed_to_connect">Failed to connect</string>
     <string name="enter_login">Enter login</string>
@@ -368,6 +375,7 @@
     <string name="message_unpinned">Message unpinned</string>
     <string name="pin_message_failed">Failed to pin message</string>
     <string name="unpin_message_failed">Failed to unpin message</string>
+    <string name="jump_to_message_failed">Failed to jump to message</string>
     <string name="pinned_message">Pinned message</string>
     <string name="pinned_tab_for_everyone">For everyone</string>
     <string name="pinned_tab_for_me">For me</string>
@@ -644,4 +652,18 @@
     <string name="expiration_date">Expiration date</string>
     <string name="no_expiration">Never</string>
     <string name="reset_expiration_date">Reset expiration date</string>
+    <string name="view_once_media_timer">View once</string>
+    <string name="view_once_never">Never</string>
+    <string name="view_once_seconds">%1$d sec.</string>
+    <string name="view_once_one_view">One view</string>
+    <string name="view_once_hint_one_view">The media will disappear after viewing</string>
+    <string name="view_once_hint_never">The media will stay in the chat</string>
+    <string name="view_once_hint_timer">Choose how long after opening the media will disappear</string>
+    <string name="spoiler">Spoiler</string>
+    <string name="spoiler_media_enabled">The media will be hidden under a spoiler</string>
+    <string name="spoiler_media_disabled">The media will not be hidden under a spoiler</string>
+    <plurals name="view_once_hint_timed">
+        <item quantity="one">The media will disappear %1$d second after opening</item>
+        <item quantity="other">The media will disappear %1$d seconds after opening</item>
+    </plurals>
 </resources>

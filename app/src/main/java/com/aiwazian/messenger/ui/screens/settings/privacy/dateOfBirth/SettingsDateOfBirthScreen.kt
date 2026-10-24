@@ -80,7 +80,7 @@ fun SettingsDateOfBirthScreen(
             )
         }) {
         SectionContainer(header = {
-            SectionHeader("Кто видит дату моего рождения?")
+            SectionHeader(stringResource(R.string.who_can_see_my_date_of_birth))
         }) {
             SectionRadio(
                 headlineText = stringResource(R.string.everybody),

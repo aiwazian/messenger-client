@@ -14,7 +14,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -44,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -69,7 +71,7 @@ import com.aiwazian.messenger.ui.screens.chat.DeviceContactsViewModel
 @Composable
 fun ContactPickerContent(
     onContactSelected: (DeviceContact) -> Unit,
-    modifier: Modifier = Modifier
+    contentPadding: PaddingValues = PaddingValues.Zero
 ) {
     val viewModel: DeviceContactsViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -97,11 +99,15 @@ fun ContactPickerContent(
         }
     }
     
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(contentAlignment = Alignment.TopCenter) {
         when {
             !hasPermission -> {
                 MediaPickerNotice(
                     text = stringResource(R.string.contact_picker_permission),
+                    modifier = Modifier.padding(
+                        top = contentPadding.calculateTopPadding(),
+                        bottom = contentPadding.calculateBottomPadding()
+                    ),
                     actionText = stringResource(R.string.contact_picker_permission_action),
                     onActionClick = {
                         if (context.canRequestContactsPermission(wasAsked)) {
@@ -114,7 +120,9 @@ fun ContactPickerContent(
             
             uiState.isLoading && uiState.contacts.isEmpty() -> {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(contentPadding),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularWavyProgressIndicator()
@@ -122,18 +130,19 @@ fun ContactPickerContent(
             }
             
             uiState.contacts.isEmpty() -> {
-                MediaPickerNotice(text = stringResource(R.string.contact_picker_empty))
+                MediaPickerNotice(
+                    text = stringResource(R.string.contact_picker_empty),
+                    modifier = Modifier.padding(contentPadding)
+                )
             }
             
             else -> {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     contentPadding = PaddingValues(
-                        start = 10.dp,
-                        top = 10.dp,
-                        end = 10.dp,
-                        bottom = CONTACT_LIST_BOTTOM_PADDING
+                        start = contentPadding.calculateStartPadding(LocalLayoutDirection.current),
+                        end = contentPadding.calculateEndPadding(LocalLayoutDirection.current),
+                        bottom = contentPadding.calculateBottomPadding()
                     )
                 ) {
                     item {
@@ -387,5 +396,3 @@ private fun Context.canRequestContactsPermission(wasAsked: Boolean): Boolean {
         Manifest.permission.READ_CONTACTS
     )
 }
-
-private val CONTACT_LIST_BOTTOM_PADDING = 70.dp

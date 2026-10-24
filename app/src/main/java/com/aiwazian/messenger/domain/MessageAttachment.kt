@@ -20,5 +20,8 @@ data class MessageAttachment(
     val type: AttachmentType,
     val sortOrder: Int,
     val width: Int? = null,
-    val height: Int? = null
+    val height: Int? = null,
+    val viewOnce: Boolean = false,
+    val viewOnceSeconds: Int? = null,
+    val spoiler: Boolean = false
 )

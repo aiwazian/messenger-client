@@ -119,89 +119,85 @@ fun ShareBottomSheet(
     
     AppBottomSheet(
         onDismissRequest = onDismiss,
+        modifier = Modifier.imePadding(),
         sheetState = sheetState,
         stickyFooter = {
             AppBottomSheetFooterActions.Custom {
                 if (hasSelected) {
-                    Box(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .imePadding()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceContainer)
-                                .combinedClickable(
-                                    onClick = onSendClick,
-                                    onLongClick = if (forwardOptions != null) {
-                                        { forwardMenuExpanded = true }
-                                    } else {
-                                        null
-                                    }
-                                )
-                                .heightIn(min = 40.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(R.string.send),
-                                color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.labelLarge
+                            .padding(10.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainer)
+                            .combinedClickable(
+                                onClick = onSendClick,
+                                onLongClick = if (forwardOptions != null) {
+                                    { forwardMenuExpanded = true }
+                                } else {
+                                    null
+                                }
                             )
-                            
-                            forwardOptions?.let { options ->
-                                AppDropdownMenu(
-                                    expanded = forwardMenuExpanded,
-                                    onDismissRequest = { forwardMenuExpanded = false },
-                                    popupPositionProvider = MenuDefaults.rememberDropdownMenuPopupPositionProvider(
-                                        MenuAnchorPosition.Above
-                                    )
-                                ) {
+                            .heightIn(min = 40.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.send),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        
+                        forwardOptions?.let { options ->
+                            AppDropdownMenu(
+                                expanded = forwardMenuExpanded,
+                                onDismissRequest = { forwardMenuExpanded = false },
+                                popupPositionProvider = MenuDefaults.rememberDropdownMenuPopupPositionProvider(
+                                    MenuAnchorPosition.Above
+                                )
+                            ) {
+                                AppDropdownMenuItem(
+                                    text = stringResource(
+                                        if (options.hideAuthor) {
+                                            R.string.show_sender_name
+                                        } else {
+                                            R.string.hide_sender_name
+                                        }
+                                    ),
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = if (options.hideAuthor) {
+                                                Icons.Outlined.PersonOutline
+                                            } else {
+                                                Icons.Outlined.PersonOff
+                                            },
+                                            contentDescription = null
+                                        )
+                                    },
+                                    onClick = options.onHideAuthorClick
+                                )
+                                
+                                if (options.hasAttachments) {
                                     AppDropdownMenuItem(
                                         text = stringResource(
-                                            if (options.hideAuthor) {
-                                                R.string.show_sender_name
+                                            if (options.hideCaption) {
+                                                R.string.show_caption
                                             } else {
-                                                R.string.hide_sender_name
+                                                R.string.hide_caption
                                             }
                                         ),
                                         leadingIcon = {
                                             Icon(
-                                                imageVector = if (options.hideAuthor) {
-                                                    Icons.Outlined.PersonOutline
+                                                imageVector = if (options.hideCaption) {
+                                                    Icons.AutoMirrored.Outlined.Subject
                                                 } else {
-                                                    Icons.Outlined.PersonOff
+                                                    Icons.Outlined.CommentsDisabled
                                                 },
                                                 contentDescription = null
                                             )
                                         },
-                                        onClick = options.onHideAuthorClick
+                                        onClick = options.onHideCaptionClick
                                     )
-                                    
-                                    if (options.hasAttachments) {
-                                        AppDropdownMenuItem(
-                                            text = stringResource(
-                                                if (options.hideCaption) {
-                                                    R.string.show_caption
-                                                } else {
-                                                    R.string.hide_caption
-                                                }
-                                            ),
-                                            leadingIcon = {
-                                                Icon(
-                                                    imageVector = if (options.hideCaption) {
-                                                        Icons.AutoMirrored.Outlined.Subject
-                                                    } else {
-                                                        Icons.Outlined.CommentsDisabled
-                                                    },
-                                                    contentDescription = null
-                                                )
-                                            },
-                                            onClick = options.onHideCaptionClick
-                                        )
-                                    }
                                 }
                             }
                         }
@@ -256,7 +252,7 @@ fun ShareBottomSheet(
                 columns = GridCells.Adaptive(80.dp),
                 state = rememberLazyGridState(),
                 modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(bottom = 80.dp),
+                contentPadding = PaddingValues(bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {

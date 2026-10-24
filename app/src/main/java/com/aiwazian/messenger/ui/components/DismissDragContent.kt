@@ -22,13 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlin.math.abs
 
-/** Как далеко надо увести содержимое, чтобы оно закрылось, в пикселях. */
 const val DISMISS_DRAG_THRESHOLD = 300f
 
-/** Прозрачность фона, пока содержимое смотрят обычно, без свайпа. */
 const val DISMISS_BACKGROUND_MAX_ALPHA = 1f
 
-/** Прозрачность фона у порога закрытия: ниже она уже не опускается. */
 const val DISMISS_BACKGROUND_MIN_ALPHA = 0.2f
 
 @Stable

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.ButtonDefaults
@@ -75,15 +76,17 @@ fun AppBottomSheet(
         contentWindowInsets = { WindowInsets() }) {
         Box(modifier = Modifier.fillMaxWidth()) {
             val stickyHeight = with(density) { stickyContentHeight.toDp() }
-            val navBarHeight =
-                with(density) { WindowInsets.navigationBars.getBottom(density).toDp() }
             val statusBarHeight = with(density) { WindowInsets.statusBars.getTop(density).toDp() }
+            val bottomBarHeight = with(density) { WindowInsets.navigationBars.getBottom(density).toDp() }
+            val bottomPadding = if (stickyFooter == null) {
+                stickyHeight + bottomBarHeight + 10.dp
+            } else stickyHeight
             
             val contentPadding = PaddingValues(
                 start = 10.dp,
                 top = statusBarHeight,
                 end = 10.dp,
-                bottom = (stickyHeight + navBarHeight).coerceAtLeast(10.dp)
+                bottom = bottomPadding.coerceAtLeast(10.dp)
             )
             
             Column {
@@ -95,6 +98,15 @@ fun AppBottomSheet(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .onSizeChanged { stickyContentHeight = it.height }
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                )
+                            )
+                        )
+                        .navigationBarsPadding()
                         .fillMaxWidth()
                         .stickyBarTranslation(
                             sheetState = sheetState,
@@ -102,19 +114,7 @@ fun AppBottomSheet(
                             sheetHeight = sheetHeight,
                             collapseZonePx = collapseZonePx
                         )) {
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                                    )
-                                )
-                            )
-                    ) {
-                        stickyFooter()
-                    }
+                    stickyFooter()
                 }
             }
         }

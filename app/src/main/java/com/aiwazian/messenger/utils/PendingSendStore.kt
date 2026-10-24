@@ -9,6 +9,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
 import com.aiwazian.messenger.domain.MessageReplyPreview
+import com.aiwazian.messenger.domain.ViewOnceOption
 import com.aiwazian.messenger.enums.AttachmentType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +25,9 @@ data class PendingSend(
     val chatId: Long,
     val text: String?,
     val uris: List<Uri>,
-    val replyTo: MessageReplyPreview?
+    val replyTo: MessageReplyPreview?,
+    val viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap(),
+    val spoilerUris: Set<Uri> = emptySet()
 )
 
 @Singleton
@@ -39,7 +42,10 @@ class PendingSendStore @Inject constructor(
         chatId: Long,
         uris: List<Uri>,
         text: String?,
-        replyTo: MessageReplyPreview?
+        replyTo: MessageReplyPreview?,
+        viewOnceUris: Set<String> = emptySet(),
+        viewOnceSeconds: Map<String, Int> = emptyMap(),
+        spoilerUris: Set<String> = emptySet()
     ) = withContext(Dispatchers.IO) {
         val directory = File(context.filesDir, DIRECTORY_NAME)
         directory.mkdirs()
@@ -49,6 +55,9 @@ class PendingSendStore @Inject constructor(
             chatId = chatId,
             text = text,
             uris = uris.map { it.toString() },
+            viewOnceUris = viewOnceUris,
+            viewOnceSeconds = viewOnceSeconds,
+            spoilerUris = spoilerUris,
             replyTo = replyTo?.let { reply ->
                 ReplyRecord(
                     messageId = reply.messageId,
@@ -99,6 +108,10 @@ class PendingSendStore @Inject constructor(
                     chatId = record.chatId,
                     text = record.text,
                     uris = record.uris.map { it.toUri() },
+                    viewOnceOptions = record.uris
+                        .filter { it in record.viewOnceUris }
+                        .associate { it.toUri() to ViewOnceOption(record.viewOnceSeconds[it]) },
+                    spoilerUris = record.spoilerUris.map { it.toUri() }.toSet(),
                     replyTo = record.replyTo?.let { reply ->
                         MessageReplyPreview(
                             messageId = reply.messageId,
@@ -130,6 +143,9 @@ class PendingSendStore @Inject constructor(
         val chatId: Long,
         val text: String? = null,
         val uris: List<String> = emptyList(),
+        val viewOnceUris: Set<String> = emptySet(),
+        val viewOnceSeconds: Map<String, Int> = emptyMap(),
+        val spoilerUris: Set<String> = emptySet(),
         val replyTo: ReplyRecord? = null
     )
     

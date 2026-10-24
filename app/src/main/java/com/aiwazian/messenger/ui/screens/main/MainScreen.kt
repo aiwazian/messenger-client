@@ -91,6 +91,7 @@ import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppBottomSheetFooterActions
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
@@ -161,7 +162,9 @@ private fun Content(drawerState: DrawerState, viewModel: MainViewModel) {
     }
     
     Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
-        AnimatedContent(targetState = hasSelection, transitionSpec = { fadeIn() togetherWith fadeOut() }) { selected ->
+        AnimatedContent(
+            targetState = hasSelection,
+            transitionSpec = { fadeIn() togetherWith fadeOut() }) { selected ->
             if (!selected) {
                 Column {
                     DefaultTopBar(
@@ -174,8 +177,20 @@ private fun Content(drawerState: DrawerState, viewModel: MainViewModel) {
                         ChatFolderTabs(
                             pages = uiState.folderPages,
                             selectedIndex = pagerState.currentPage,
-                            onTabClick = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
-                            onEditFolder = { folderId -> navBackStack.add(AppRoute.ChatFolderEditor(folderId)) },
+                            onTabClick = { index ->
+                                scope.launch {
+                                    pagerState.animateScrollToPage(
+                                        index
+                                    )
+                                }
+                            },
+                            onEditFolder = { folderId ->
+                                navBackStack.add(
+                                    AppRoute.ChatFolderEditor(
+                                        folderId
+                                    )
+                                )
+                            },
                             onEditFolders = { navBackStack.add(AppRoute.ChatFolders) },
                             onDeleteFolder = viewModel::requestFolderDeletion,
                             onMarkFolderRead = viewModel::markFolderChatsRead
@@ -196,20 +211,34 @@ private fun Content(drawerState: DrawerState, viewModel: MainViewModel) {
             }
         }
     }, floatingActionButton = {
-        AnimatedVisibility(visible = !hasSelection, enter = expressiveScaleIn, exit = expressiveScaleOut) {
-            FloatingActionButton(shape = CircleShape, onClick = { navBackStack.add(AppRoute.NewMessage) }) {
+        AnimatedVisibility(
+            visible = !hasSelection,
+            enter = expressiveScaleIn,
+            exit = expressiveScaleOut
+        ) {
+            FloatingActionButton(
+                shape = CircleShape,
+                onClick = { navBackStack.add(AppRoute.NewMessage) }) {
                 Icon(imageVector = Icons.Rounded.Create, contentDescription = null)
             }
         }
     }) { innerPadding ->
         val openChat: (Chat, String) -> Unit = { chat, chatName ->
-            navBackStack.add(AppRoute.Chat(chatId = chat.id, chatName = chatName, avatarUri = chat.avatarUri?.toString()))
+            navBackStack.add(
+                AppRoute.Chat(
+                    chatId = chat.id,
+                    chatName = chatName,
+                    avatarUri = chat.avatarUri?.toString()
+                )
+            )
         }
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.padding(
-                start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
-                end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
-            )) {
+            Column(
+                modifier = Modifier.padding(
+                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                    end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
+                )
+            ) {
                 if (uiState.chats.isEmpty()) {
                     Column(
                         modifier = Modifier
@@ -239,9 +268,14 @@ private fun Content(drawerState: DrawerState, viewModel: MainViewModel) {
                     )
                 } else {
                     LaunchedEffect(pagerState.currentPage, uiState.folderPages) {
-                        uiState.folderPages.getOrNull(pagerState.currentPage)?.let { viewModel.setActiveFolder(it.id) }
+                        uiState.folderPages.getOrNull(pagerState.currentPage)
+                            ?.let { viewModel.setActiveFolder(it.id) }
                     }
-                    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize(), userScrollEnabled = !hasSelection) { page ->
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        userScrollEnabled = !hasSelection
+                    ) { page ->
                         ChatList(
                             chats = uiState.folderPages[page].chats,
                             myId = uiState.me.id,
@@ -262,15 +296,37 @@ private fun Content(drawerState: DrawerState, viewModel: MainViewModel) {
         if (uiState.showNotificationBottomSheet) {
             val context = LocalContext.current
             val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-            AppBottomSheet(onDismissRequest = viewModel::hideNotificationSheet, sheetState = sheetState) { padding ->
+            AppBottomSheet(
+                onDismissRequest = viewModel::hideNotificationSheet,
+                sheetState = sheetState,
+                stickyFooter = {
+                    AppBottomSheetFooterActions.PrimaryButton(
+                        text = stringResource(R.string.open_settings),
+                        onClick = {
+                            val intent =
+                                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                    putExtra(
+                                        Settings.EXTRA_APP_PACKAGE,
+                                        context.packageName
+                                    )
+                                }
+                            context.startActivity(
+                                intent
+                            )
+                        })
+                }) { padding ->
                 Column(
-                    modifier = Modifier.padding(padding),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(padding),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(modifier = Modifier
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)) {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary)
+                    ) {
                         Icon(
                             Icons.Rounded.NotificationsNone,
                             null,
@@ -281,14 +337,6 @@ private fun Content(drawerState: DrawerState, viewModel: MainViewModel) {
                         )
                     }
                     Text(stringResource(R.string.notification_exception_receive))
-                    TextButton(modifier = Modifier.fillMaxWidth(), onClick = {
-                        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                        }
-                        context.startActivity(intent)
-                    }, shape = MaterialTheme.shapes.medium) {
-                        Text(stringResource(R.string.open_settings))
-                    }
                 }
             }
         }
@@ -333,9 +381,11 @@ private fun ChatFolderTabs(
                 targetValue = if (index == selectedIndex) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Box(modifier = Modifier
-                .padding(vertical = 4.dp)
-                .zIndex(1f), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 4.dp)
+                    .zIndex(1f), contentAlignment = Alignment.Center
+            ) {
                 Box(
                     modifier = Modifier
                         .graphicsLayer(scaleX = scale, scaleY = scale)
@@ -359,9 +409,15 @@ private fun ChatFolderTabs(
                             text = page.name.asString(), color = accentColor, fontSize = 14.sp,
                             lineHeight = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
-                        AnimatedVisibility(visible = page.unreadChatCount > 0, enter = expressiveScaleIn, exit = expressiveScaleOut) {
+                        AnimatedVisibility(
+                            visible = page.unreadChatCount > 0,
+                            enter = expressiveScaleIn,
+                            exit = expressiveScaleOut
+                        ) {
                             val containerColor by animateColorAsState(
-                                targetValue = if (selectedIndex == index) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                targetValue = if (selectedIndex == index) MaterialTheme.colorScheme.primary.copy(
+                                    alpha = 0.8f
+                                )
                                 else Color(0xFFC6C6C6)
                             )
                             Badge(containerColor = containerColor) {
@@ -419,7 +475,8 @@ private fun ChatList(
         items(chats) { chat ->
             val chatName = chat.chatName.asString()
             val isSelected = chat.id in selectedChatIds
-            val isOnline = ChatType.fromId(chat.id) == ChatType.PRIVATE && chat.id != myId && chat.id in onlineUserIds
+            val isOnline =
+                ChatType.fromId(chat.id) == ChatType.PRIVATE && chat.id != myId && chat.id in onlineUserIds
             ChatCard(
                 modifier = Modifier.animateItem(), chat = chat, myId = myId,
                 isSelected = isSelected, isOnline = isOnline,
