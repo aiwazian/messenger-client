@@ -7,7 +7,6 @@ package com.aiwazian.messenger.ui.app
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.material3.DropdownMenuPopupPositionProvider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorPosition
@@ -23,7 +22,7 @@ import androidx.compose.ui.window.PopupProperties
 fun AppDropdownMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
-    properties: PopupProperties = PopupProperties(focusable = true),
+    properties: PopupProperties = PopupProperties(focusable = false),
     popupPositionProvider: DropdownMenuPopupPositionProvider = MenuDefaults.rememberDropdownMenuPopupPositionProvider(
         MenuAnchorPosition.Below
     ),
@@ -31,7 +30,7 @@ fun AppDropdownMenu(
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
     content: @Composable (ColumnScope.() -> Unit)
 ) {
-    DropdownMenuPopup(
+    AppDropdownMenuPopup(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
         popupPositionProvider = popupPositionProvider,
