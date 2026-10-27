@@ -11,7 +11,6 @@ import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.domain.MessageSearchHit
 import com.aiwazian.messenger.domain.PinnedMessage
-import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.playback.MusicRepeatMode
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.chat.paging.ScrollTarget
