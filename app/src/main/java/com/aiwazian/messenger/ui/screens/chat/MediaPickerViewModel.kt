@@ -191,15 +191,15 @@ class MediaPickerViewModel @Inject constructor(
         }
     }
     
-    fun send(chatId: Long, replyTo: MessageReplyPreview?, caption: String) {
+    fun send(chatId: Long, replyTo: MessageReplyPreview?, caption: String, silent: Boolean = false) {
         val selected = _uiState.value.selected
-        
+
         if (selected.isEmpty()) {
             return
         }
-        
-        sendUris(chatId = chatId, uris = selected, caption = caption, replyTo = replyTo)
-        
+
+        sendUris(chatId = chatId, uris = selected, caption = caption, replyTo = replyTo, silent = silent)
+
         _uiState.update {
             it.copy(
                 selected = emptyList(),
@@ -211,16 +211,22 @@ class MediaPickerViewModel @Inject constructor(
             )
         }
     }
-    
-    fun sendUris(chatId: Long, uris: List<Uri>, caption: String, replyTo: MessageReplyPreview?) {
+
+    fun sendUris(
+        chatId: Long,
+        uris: List<Uri>,
+        caption: String,
+        replyTo: MessageReplyPreview?,
+        silent: Boolean = false
+    ) {
         if (uris.isEmpty()) {
             return
         }
-        
+
         val mediaDrawings = _uiState.value.mediaDrawings
             .filterKeys { uri -> uri in uris }
             .mapValues { (_, raster) -> raster.bitmap }
-        
+
         messageSendQueue.enqueueFiles(
             chatId = chatId,
             uris = uris,
@@ -230,7 +236,8 @@ class MediaPickerViewModel @Inject constructor(
             mediaTransforms = _uiState.value.mediaTransforms,
             mediaDrawings = mediaDrawings,
             viewOnceOptions = _uiState.value.viewOnceOptions.filterKeys { it in uris },
-            spoilerUris = _uiState.value.spoilerUris.filter { it in uris }.toSet()
+            spoilerUris = _uiState.value.spoilerUris.filter { it in uris }.toSet(),
+            silent = silent
         )
     }
 

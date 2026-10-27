@@ -136,9 +136,10 @@ fun MediaPickerBottomSheet(
     onFileSystemClick: () -> Unit = {},
     onContactSend: ((MessageContact) -> Unit)? = null,
     onSent: () -> Unit = {},
-    onSend: (() -> Unit)? = null,
+    onSend: ((Boolean) -> Unit)? = null,
     allowViewOnce: Boolean = false,
     allowSpoiler: Boolean = false,
+    silentSendEnabled: Boolean = true,
     wallpaperTarget: WallpaperTarget? = null
 ) {
     val viewModel: MediaPickerViewModel = hiltViewModel()
@@ -308,18 +309,20 @@ fun MediaPickerBottomSheet(
                                             }
                                         },
                                         onInputViewReady = { view -> captionInputView = view },
-                                        onSendClick = {
+                                        onSendClick = { silent ->
                                             if (onSend != null) {
-                                                onSend()
+                                                onSend(silent)
                                             } else {
                                                 viewModel.send(
                                                     chatId = chatId,
                                                     replyTo = replyTo,
-                                                    caption = caption
+                                                    caption = caption,
+                                                    silent = silent
                                                 )
                                             }
                                             onSent()
-                                        })
+                                        },
+                                        silentSendEnabled = silentSendEnabled)
                                 } else {
                                     SourceRow(
                                         isContactMode = isContactMode,
@@ -806,7 +809,8 @@ private fun CaptionRow(
     onResolveEmoji: suspend (Long) -> CustomEmoji?,
     onEmojiClick: () -> Unit,
     onInputViewReady: (EditText) -> Unit,
-    onSendClick: () -> Unit
+    onSendClick: (Boolean) -> Unit,
+    silentSendEnabled: Boolean
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom
@@ -844,7 +848,11 @@ private fun CaptionRow(
             onViewReady = onInputViewReady
         )
         
-        IconButton(onClick = onSendClick) {
+        SendMessageOptionsButton(
+            onClick = { onSendClick(false) },
+            onSendSilently = { onSendClick(true) },
+            optionsEnabled = silentSendEnabled
+        ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.Send,
                 contentDescription = null,

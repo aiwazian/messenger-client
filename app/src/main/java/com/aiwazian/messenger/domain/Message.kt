@@ -59,5 +59,6 @@ data class Message(
     val isEdited: Boolean = false,
     val commentsCount: Int = 0,
     val sticker: MessageSticker? = null,
-    val contact: MessageContact? = null
+    val contact: MessageContact? = null,
+    val silent: Boolean = false
 )

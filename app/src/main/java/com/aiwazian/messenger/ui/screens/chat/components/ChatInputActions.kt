@@ -13,6 +13,8 @@ interface ChatInputActions {
 
     fun onSendMessageClicked()
 
+    fun onSendWithoutSoundClicked()
+
     fun onJoinClicked()
 
     fun sendFiles(uris: List<Uri>)

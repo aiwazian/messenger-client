@@ -67,7 +67,7 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         CustomEmojiEntity::class,
         MessagePinEntity::class
     ],
-    version = 68,
+    version = 69,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 38, to = 39),
@@ -99,6 +99,7 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         AutoMigration(from = 65, to = 66),
         AutoMigration(from = 66, to = 67),
         AutoMigration(from = 67, to = 68),
+        AutoMigration(from = 68, to = 69),
     ]
 )
 @ColumnTypeConverters(Converters::class)

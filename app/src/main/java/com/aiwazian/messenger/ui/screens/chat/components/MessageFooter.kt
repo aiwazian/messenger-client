@@ -16,6 +16,7 @@ import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.Error
+import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,7 +38,8 @@ fun MessageFooter(
     modifier: Modifier = Modifier,
     status: MessageStatus = MessageStatus.SENT,
     isEdited: Boolean = false,
-    isPinned: Boolean = false
+    isPinned: Boolean = false,
+    silent: Boolean = false
 ) {
     Row(
         modifier = modifier,
@@ -51,6 +53,15 @@ fun MessageFooter(
                 modifier = Modifier
                     .rotate(45f)
                     .size(10.dp),
+                tint = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        if (silent) {
+            Icon(
+                imageVector = Icons.Rounded.NotificationsOff,
+                contentDescription = null,
+                modifier = Modifier.size(10.dp),
                 tint = MaterialTheme.colorScheme.onSurface
             )
         }

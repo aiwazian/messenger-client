@@ -149,6 +149,7 @@
     <string name="inactive_links">Неактивные ссылки</string>
     <string name="new_link">Новая ссылка</string>
     <string name="send">Отправить</string>
+    <string name="send_without_sound">Отправить без звука</string>
     <string name="subscribe">Подписаться</string>
     <string name="request_to_join">Подать заявку</string>
     <string name="group_type">Тип группы</string>

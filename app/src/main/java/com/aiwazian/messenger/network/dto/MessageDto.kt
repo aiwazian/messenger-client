@@ -87,13 +87,15 @@ data class MessageDto(
     @SerialName("replyTo") val replyTo: MessageReplyPreviewDto? = null,
     @SerialName("forwardedFromChatId") val forwardedFromChatId: Long? = null,
     @SerialName("forwardedFromName") val forwardedFromName: String? = null,
-    @SerialName("forwardedFromAccess") val forwardedFromAccess: ForwardSourceAccess? = null
+    @SerialName("forwardedFromAccess") val forwardedFromAccess: ForwardSourceAccess? = null,
+    @SerialName("silent") val silent: Boolean = false
 )
 
 @Serializable
 data class TextMessageRequestDto(
     @SerialName("text") val text: String,
-    @SerialName("replyToId") val replyToId: String? = null
+    @SerialName("replyToId") val replyToId: String? = null,
+    @SerialName("silent") val silent: Boolean = false
 )
 
 @Serializable
@@ -150,7 +152,8 @@ data class AttachmentInputDto(
 data class FileConfirmRequestDto(
     @SerialName("attachments") val attachments: List<AttachmentInputDto>,
     @SerialName("text") val text: String? = null,
-    @SerialName("replyToId") val replyToId: String? = null
+    @SerialName("replyToId") val replyToId: String? = null,
+    @SerialName("silent") val silent: Boolean = false
 )
 
 @Serializable

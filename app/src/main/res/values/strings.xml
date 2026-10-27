@@ -145,6 +145,7 @@
     <string name="inactive_links">Inactive Links</string>
     <string name="new_link">New Link</string>
     <string name="send">Send</string>
+    <string name="send_without_sound">Send without sound</string>
     <string name="subscribe">Subscribe</string>
     <string name="request_to_join">Request to join</string>
     <string name="group_type">Group Type</string>

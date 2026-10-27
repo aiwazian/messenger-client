@@ -374,11 +374,12 @@ class ChatRepository @Inject constructor(
         chatId: Long,
         message: String,
         tempId: Long = -System.currentTimeMillis(),
-        replyTo: MessageReplyPreview? = null
+        replyTo: MessageReplyPreview? = null,
+        silent: Boolean = false
     ): Result<Message> {
         val senderId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
-        
+
         val localMessage = Message(
             id = tempId,
             senderId = senderId,
@@ -390,15 +391,17 @@ class ChatRepository @Inject constructor(
             messageType = MessageType.TEXT,
             systemMessageEventType = null,
             attachments = emptyList(),
-            replyTo = replyTo
+            replyTo = replyTo,
+            silent = silent
         )
-        
+
         saveLocalMessage(localMessage)
-        
+
         return try {
             val request = TextMessageRequestDto(
                 text = message,
-                replyToId = replyTo?.messageId?.toString()
+                replyToId = replyTo?.messageId?.toString(),
+                silent = silent
             )
             val response = messageApi.sendTextMessage(chatId, request, socket.socketId.orEmpty())
             if (response.isSuccessful) {
@@ -516,13 +519,15 @@ class ChatRepository @Inject constructor(
         chatId: Long,
         attachments: List<AttachmentInputDto>,
         text: String? = null,
-        replyToId: Long? = null
+        replyToId: Long? = null,
+        silent: Boolean = false
     ): Result<Message> {
         return try {
             val dto = FileConfirmRequestDto(
                 attachments = attachments,
                 text = text,
-                replyToId = replyToId?.toString()
+                replyToId = replyToId?.toString(),
+                silent = silent
             )
             val response = messageApi.confirmFileUpload(chatId, dto, socket.socketId.orEmpty())
             if (response.isSuccessful) {

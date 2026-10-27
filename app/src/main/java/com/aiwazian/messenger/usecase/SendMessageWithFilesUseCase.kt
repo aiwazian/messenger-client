@@ -77,10 +77,11 @@ class SendMessageWithFilesUseCase @Inject constructor(
         mediaTransforms: Map<Uri, MediaTransform> = emptyMap(),
         mediaDrawings: Map<Uri, Bitmap> = emptyMap(),
         viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap(),
-        spoilerUris: Set<Uri> = emptySet()
+        spoilerUris: Set<Uri> = emptySet(),
+        silent: Boolean = false
     ): Result<Message> {
         val chunks = chunkByMediaLimit(uris)
-        
+
         val sending = appScope.async(start = CoroutineStart.LAZY) {
             if (chunks.size == 1) {
                 send(
@@ -93,7 +94,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                     mediaTransforms,
                     mediaDrawings,
                     viewOnceOptions,
-                    spoilerUris
+                    spoilerUris,
+                    silent
                 )
             } else {
                 sendInChunks(
@@ -106,7 +108,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                     mediaTransforms,
                     mediaDrawings,
                     viewOnceOptions,
-                    spoilerUris
+                    spoilerUris,
+                    silent
                 )
             }
         }
@@ -132,10 +135,11 @@ class SendMessageWithFilesUseCase @Inject constructor(
         mediaTransforms: Map<Uri, MediaTransform>,
         mediaDrawings: Map<Uri, Bitmap>,
         viewOnceOptions: Map<Uri, ViewOnceOption>,
-        spoilerUris: Set<Uri>
+        spoilerUris: Set<Uri>,
+        silent: Boolean
     ): Result<Message> {
         var firstResult: Result<Message>? = null
-        
+
         chunks.forEachIndexed { index, chunk ->
             val chunkTempId = if (index == 0) tempId else -System.currentTimeMillis()
             val result = send(
@@ -148,7 +152,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 mediaTransforms,
                 mediaDrawings,
                 viewOnceOptions,
-                spoilerUris
+                spoilerUris,
+                silent
             )
             
             if (index == 0) firstResult = result
@@ -199,7 +204,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         mediaTransforms: Map<Uri, MediaTransform>,
         mediaDrawings: Map<Uri, Bitmap>,
         viewOnceOptions: Map<Uri, ViewOnceOption>,
-        spoilerUris: Set<Uri>
+        spoilerUris: Set<Uri>,
+        silent: Boolean
     ): Result<Message> {
         val myId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
@@ -249,7 +255,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
             messageType = MessageType.TEXT,
             systemMessageEventType = null,
             attachments = attachments,
-            replyTo = replyTo
+            replyTo = replyTo,
+            silent = silent
         )
         
         chatRepository.saveLocalMessage(tempMessage)
@@ -279,6 +286,7 @@ class SendMessageWithFilesUseCase @Inject constructor(
             uris = sourceUris,
             text = text,
             replyTo = replyTo,
+            silent = silent,
             viewOnceUris = sourceViewOnceOptions.map { it.first.toString() }.toSet(),
             viewOnceSeconds = sourceViewOnceOptions
                 .mapNotNull { (uri, option) ->
@@ -397,7 +405,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 chatId,
                 uploadResults,
                 text,
-                replyTo?.messageId
+                replyTo?.messageId,
+                silent
             )
             
             if (attempt.isFailure) {
