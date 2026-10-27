@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.app
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
@@ -17,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -44,15 +46,16 @@ fun AppDropdownMenuPopup(
         MenuAnchorPosition.Below
     ),
     properties: PopupProperties = PopupProperties(focusable = false),
+    scrimColor: Color? = null,
     content: @Composable (ColumnScope.() -> Unit)
 ) {
     val currentDismissRequest by rememberUpdatedState(onDismissRequest)
-    
+
     BackHandler(enabled = expanded && !properties.focusable) {
         currentDismissRequest()
     }
-    
-    if (expanded && !properties.focusable) {
+
+    if (expanded && (scrimColor != null || !properties.focusable)) {
         Popup(
             popupPositionProvider = TopLeftPositionProvider,
             properties = PopupProperties(focusable = false, clippingEnabled = false)
@@ -60,6 +63,7 @@ fun AppDropdownMenuPopup(
             Box(
                 Modifier
                     .fillMaxSize()
+                    .background(scrimColor ?: Color.Transparent)
                     .pointerInput(Unit) { detectTapGestures { currentDismissRequest() } }
             )
         }

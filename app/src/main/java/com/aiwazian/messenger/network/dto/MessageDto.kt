@@ -87,8 +87,7 @@ data class MessageDto(
     @SerialName("replyTo") val replyTo: MessageReplyPreviewDto? = null,
     @SerialName("forwardedFromChatId") val forwardedFromChatId: Long? = null,
     @SerialName("forwardedFromName") val forwardedFromName: String? = null,
-    @SerialName("forwardedFromAccess") val forwardedFromAccess: ForwardSourceAccess? = null,
-    @SerialName("silent") val silent: Boolean = false
+    @SerialName("forwardedFromAccess") val forwardedFromAccess: ForwardSourceAccess? = null
 )
 
 @Serializable

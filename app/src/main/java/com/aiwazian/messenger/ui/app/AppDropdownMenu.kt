@@ -28,6 +28,7 @@ fun AppDropdownMenu(
     ),
     shape: Shape = MaterialTheme.shapes.medium,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    scrimColor: Color? = null,
     content: @Composable (ColumnScope.() -> Unit)
 ) {
     AppDropdownMenuPopup(
@@ -35,6 +36,7 @@ fun AppDropdownMenu(
         onDismissRequest = onDismissRequest,
         popupPositionProvider = popupPositionProvider,
         properties = properties,
+        scrimColor = scrimColor,
     ) {
         Column(
             modifier = Modifier

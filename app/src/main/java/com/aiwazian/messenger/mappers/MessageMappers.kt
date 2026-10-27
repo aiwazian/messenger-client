@@ -43,8 +43,7 @@ fun MessageDto.toDomain(): Message = Message(
         )
     },
     sticker = sticker?.toDomain(),
-    contact = contact?.toDomain(),
-    silent = silent
+    contact = contact?.toDomain()
 )
 
 fun MessageStickerDto.toDomain() = MessageSticker(

@@ -68,8 +68,7 @@ class RealtimeEventSyncService @Inject constructor(
                         title,
                         body,
                         chat?.avatarUri,
-                        message.sendTime,
-                        message.silent
+                        message.sendTime
                     )
                 }
             }

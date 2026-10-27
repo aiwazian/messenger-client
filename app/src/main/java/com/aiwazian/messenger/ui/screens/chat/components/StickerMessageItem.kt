@@ -21,7 +21,6 @@ import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.DoneAll
 import androidx.compose.material.icons.rounded.Error
-import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -58,7 +57,6 @@ fun StickerMessageItem(
     onStickerClick: () -> Unit,
     modifier: Modifier = Modifier,
     isPinned: Boolean = false,
-    silent: Boolean = false,
     trailingContent: (@Composable () -> Unit)? = null,
     replyContent: (@Composable () -> Unit)? = null
 ) {
@@ -109,8 +107,7 @@ fun StickerMessageItem(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(4.dp),
-                    isPinned = isPinned,
-                    silent = silent
+                    isPinned = isPinned
                 )
             }
 
@@ -139,8 +136,7 @@ fun StickerMessageFooter(
     isRead: Boolean?,
     status: MessageStatus,
     modifier: Modifier = Modifier,
-    isPinned: Boolean = false,
-    silent: Boolean = false
+    isPinned: Boolean = false
 ) {
     Row(
         modifier = modifier
@@ -156,15 +152,6 @@ fun StickerMessageFooter(
                 modifier = Modifier
                     .rotate(45f)
                     .size(10.dp),
-                tint = Color.White
-            )
-        }
-
-        if (silent) {
-            Icon(
-                imageVector = Icons.Rounded.NotificationsOff,
-                contentDescription = null,
-                modifier = Modifier.size(10.dp),
                 tint = Color.White
             )
         }

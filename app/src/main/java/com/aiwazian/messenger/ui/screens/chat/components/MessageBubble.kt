@@ -191,7 +191,6 @@ fun MessageBubble(
                     messageSticker?.let { stickersViewModel.openPack(it.packId) }
                 },
                 isPinned = isPinned,
-                silent = message.silent,
                 trailingContent = if (onCommentsClick != null) {
                     {
                         CommentCountBadge(
@@ -374,8 +373,7 @@ fun MessageBubble(
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                     status = message.status,
                                     isEdited = message.isEdited,
-                                    isPinned = isPinned,
-                                    silent = message.silent
+                                    isPinned = isPinned
                                 )
                             }
                         }
@@ -430,8 +428,7 @@ fun MessageBubble(
                                     modifier = Modifier
                                         .align(Alignment.BottomEnd)
                                         .padding(4.dp),
-                                    isPinned = isPinned,
-                                    silent = message.silent
+                                    isPinned = isPinned
                                 )
                             }
                         }
@@ -494,8 +491,7 @@ fun MessageBubble(
                                     .padding(horizontal = 8.dp, vertical = 4.dp),
                                 status = message.status,
                                 isEdited = message.isEdited,
-                                isPinned = isPinned,
-                                silent = message.silent
+                                isPinned = isPinned
                             )
                         }
                     }
@@ -532,8 +528,7 @@ fun MessageBubble(
                                 },
                                 status = message.status,
                                 isEdited = message.isEdited,
-                                isPinned = isPinned,
-                                silent = message.silent
+                                isPinned = isPinned
                             )
                         }
                     }

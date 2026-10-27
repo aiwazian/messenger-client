@@ -26,8 +26,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.window.PopupProperties
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
@@ -69,9 +71,11 @@ fun SendMessageOptionsButton(
         AppDropdownMenu(
             expanded = optionsExpanded,
             onDismissRequest = { optionsExpanded = false },
+            properties = PopupProperties(focusable = false, clippingEnabled = false),
             popupPositionProvider = MenuDefaults.rememberDropdownMenuPopupPositionProvider(
                 MenuAnchorPosition.Above
-            )
+            ),
+            scrimColor = Color.Black.copy(alpha = 0.1f)
         ) {
             AppDropdownMenuItem(
                 text = stringResource(R.string.send_without_sound),
