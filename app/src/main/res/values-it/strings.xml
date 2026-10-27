@@ -168,6 +168,7 @@
     <string name="user_kicked">L\'utente ha preso a calci</string>
     <string name="user_unblocked">Utente sbloccato</string>
     <string name="unblock">Sbloccare</string>
+    <string name="sending_messages_restricted">L\'invio dei messaggi è limitato</string>
     <string name="unblock_confirm_message">Sei sicuro di voler sbloccare %1$s\?</string>
     <string name="unblock_this_user_confirm_message">Sei sicuro di voler sbloccare questo utente\?</string>
     <string name="block_this_user_confirm_message">Sei sicuro di voler bloccare questo utente\?</string>

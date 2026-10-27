@@ -321,7 +321,7 @@ fun ChatInputSection(
                         when (state) {
                             "blocked" -> {
                                 Text(
-                                    text = "Отправка сообщений ограничена",
+                                    text = stringResource(R.string.sending_messages_restricted),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(16.dp),

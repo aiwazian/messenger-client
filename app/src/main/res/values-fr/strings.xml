@@ -168,6 +168,7 @@
     <string name="user_kicked">L\'utilisateur a été expulsé</string>
     <string name="user_unblocked">Utilisateur débloqué</string>
     <string name="unblock">Débloquer</string>
+    <string name="sending_messages_restricted">L\'envoi de messages est restreint</string>
     <string name="unblock_confirm_message">Êtes-vous sûr de vouloir débloquer %1$s \?</string>
     <string name="unblock_this_user_confirm_message">Êtes-vous sûr de vouloir débloquer cet utilisateur \?</string>
     <string name="block_this_user_confirm_message">Êtes-vous sûr de vouloir bloquer cet utilisateur \?</string>

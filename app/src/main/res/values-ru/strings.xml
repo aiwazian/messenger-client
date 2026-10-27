@@ -172,6 +172,7 @@
     <string name="user_kicked">Пользователь выгнан</string>
     <string name="user_unblocked">Пользователь разблокирован</string>
     <string name="unblock">Разблокировать</string>
+    <string name="sending_messages_restricted">Отправка сообщений ограничена</string>
     <string name="unblock_confirm_message">Вы уверены, что хотите разблокировать пользователя %1$s?</string>
     <string name="unblock_this_user_confirm_message">Вы уверены, что хотите разблокировать этого пользователя?</string>
     <string name="block_this_user_confirm_message">Вы уверены, что хотите заблокировать этого пользователя?</string>

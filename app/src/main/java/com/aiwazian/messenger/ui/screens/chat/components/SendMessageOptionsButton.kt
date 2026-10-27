@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -76,7 +77,7 @@ fun SendMessageOptionsButton(
                 text = stringResource(R.string.send_without_sound),
                 leadingIcon = {
                     Icon(
-                        imageVector = Icons.Rounded.NotificationsOff,
+                        imageVector = Icons.Outlined.NotificationsOff,
                         contentDescription = null
                     )
                 },
