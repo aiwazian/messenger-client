@@ -9,13 +9,16 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
@@ -34,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -75,7 +79,14 @@ fun SystemEmojiPickerBottomSheet(
     AppBottomSheet(onDismissRequest = onDismissRequest) { padding ->
         val symbols = EmojiInput.format(selectedEmojis)
         
-        Column(modifier = Modifier.padding(padding)) {
+        Column(
+            modifier = Modifier.padding(
+                start = padding.calculateStartPadding(LocalLayoutDirection.current),
+                top = padding.calculateTopPadding(),
+                end = padding.calculateEndPadding(LocalLayoutDirection.current),
+                bottom = 0.dp
+            )
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -120,9 +131,6 @@ fun SystemEmojiPickerBottomSheet(
             } else {
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = EMOJI_CELL_MIN_SIZE),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = EMOJI_GRID_MAX_HEIGHT),
                     horizontalArrangement = Arrangement.spacedBy(EMOJI_GRID_SPACING),
                     verticalArrangement = Arrangement.spacedBy(EMOJI_GRID_SPACING)
                 ) {
@@ -141,6 +149,10 @@ fun SystemEmojiPickerBottomSheet(
                                     onEmojiSelected(emoji)
                                 }
                             })
+                    }
+                    
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Spacer(modifier = Modifier.heightIn(padding.calculateBottomPadding()))
                     }
                 }
             }
