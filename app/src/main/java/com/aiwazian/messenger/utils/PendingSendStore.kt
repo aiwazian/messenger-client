@@ -131,7 +131,6 @@ class PendingSendStore @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
-                // Битую запись держать незачем: поднимать из неё нечего.
                 Log.e(TAG, "Unable to read ${file.name}", e)
                 file.delete()
                 null

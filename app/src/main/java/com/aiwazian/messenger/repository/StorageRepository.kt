@@ -75,19 +75,12 @@ class StorageRepository @Inject constructor(
                         fileEntity.name.substringAfterLast('.', "")
                     ),
                     localUri = fileEntity.path!!,
-                    messageId = 0, // Не используется для удаления
-                    chatId = 0 // Не используется для удаления
+                    messageId = 0,
+                    chatId = 0
                 )
             }
         }
     
-    /**
-     * Удаляет файлы с диска и записи о них из базы.
-     *
-     * @return сколько реально освободилось и сколько файлов отказались
-     * удаляться — без этого вызывающая сторона не отличит успешную
-     * очистку от полного отказа.
-     */
     suspend fun clearFiles(files: List<StorageFile>): CacheClearResult =
         withContext(Dispatchers.IO) {
             var freedBytes = 0L
@@ -97,15 +90,9 @@ class StorageRepository @Inject constructor(
                 val file = File(storageFile.localUri)
                 val exists = file.exists()
                 
-                // Размер спрашиваем у файла, а не у записи в базе: размер в базе
-                // — это то, что обещал сервер при загрузке, а на диске может лежать
-                // недокачанный файл.
                 val size = if (exists) file.length() else 0L
                 
                 if (exists && !file.delete()) {
-                    // Файл на месте, и удалить его не дали. Запись оставляем: без неё
-                    // файл остался бы на диске навсегда — его больше не нашла бы ни
-                    // очистка, ни подсчёт размеров.
                     failedCount++
                     return@forEach
                 }

@@ -42,11 +42,6 @@ class VideoMetadataReader @Inject constructor(
                 return@withContext null
             }
             
-            /*
-             * Портретное видео лежит в контейнере горизонтальным кадром и
-             * флагом поворота. Без обмена сторон короткая сторона нашлась бы по
-             * 1920, и слайдер предложил бы разрешения выше настоящего.
-             */
             val rotation = retriever.readInt(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
             val isSwapped = rotation == ROTATION_QUARTER || rotation == ROTATION_THREE_QUARTERS
             

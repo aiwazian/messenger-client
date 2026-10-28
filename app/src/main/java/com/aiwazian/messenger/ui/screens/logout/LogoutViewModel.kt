@@ -34,10 +34,6 @@ class LogoutViewModel @Inject constructor() : ViewModel() {
         _uiState.update { it.copy(isLogoutDialogVisible = false) }
     }
     
-    /**
-     * Выход касается только текущего аккаунта: если на устройстве есть другой
-     * аккаунт, приложение переключается на него вместо экрана авторизации.
-     */
     fun logout() {
         viewModelScope.launch {
             val resolution = SessionManager.endCurrentSessionAndResolve(revokeOnServer = true)

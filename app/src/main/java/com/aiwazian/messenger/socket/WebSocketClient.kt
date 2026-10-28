@@ -38,13 +38,7 @@ class WebSocketClient @Inject constructor(
         private const val TAG = "WebSocketClient"
         private const val MAX_RECONNECT_DELAY_MS = 10000L
         private const val RECONNECTION_DELAY_MS = 1000L
-        private const val DELAY_UI_UPDATE_MS = 3000L
         
-        /**
-         * Сервер присылает это событие и когда отказывает в авторизации при
-         * подключении, и когда гасит уже живущую сессию. Для клиента оба случая
-         * значат одно: текущий токен мёртв.
-         */
         private const val EVENT_UNAUTHORIZED = "Unauthorized"
         
         private val defaultJson = Json {
@@ -66,12 +60,6 @@ class WebSocketClient @Inject constructor(
     var socketId: String? = null
     
     init {
-        /*
-         * Клиент живёт в синглтоне и переживает перезапуск активити, поэтому без
-         * этого после смены аккаунта сокет оставался бы подключённым с токеном
-         * прошлой сессии: HTTP-запросы шли бы от нового аккаунта, а события
-         * приходили бы для старого.
-         */
         scope.launch {
             sessionManager.token.drop(1).distinctUntilChanged().collect { token ->
                 if (socket == null) return@collect

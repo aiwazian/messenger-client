@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -56,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -145,11 +145,15 @@ fun ShareSendBar(
         }
     }
     
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp)
+                .padding(bottom = 10.dp)
                 .clip(INPUT_SHAPE)
                 .background(MaterialTheme.colorScheme.surfaceContainer),
             verticalAlignment = Alignment.Bottom
@@ -274,10 +278,10 @@ private fun ShareSendOptionsButton(
         AppDropdownMenuPopup(
             expanded = optionsExpanded,
             onDismissRequest = { optionsExpanded = false },
-            modifier = Modifier.widthIn(max = DROPDOWN_MENU_MAX_WIDTH),
             popupPositionProvider = MenuDefaults.rememberDropdownMenuPopupPositionProvider(
                 MenuAnchorPosition.Above
             ),
+            scrimColor = Color.Black.copy(alpha = 0.1f),
             properties = PopupProperties(focusable = false, clippingEnabled = false)
         ) {
             if (forwardOptions != null) {
@@ -311,4 +315,3 @@ private val INPUT_SHAPE = RoundedCornerShape(24.dp)
 private val EMOJI_PANEL_SHAPE = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
 private val EMOJI_PANEL_MIN_HEIGHT = 280.dp
 private val KEYBOARD_VISIBILITY_THRESHOLD: Dp = 100.dp
-private val DROPDOWN_MENU_MAX_WIDTH = 240.dp

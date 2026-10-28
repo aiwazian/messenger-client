@@ -23,12 +23,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Уведомления одного чата: пункт в меню «три точки» и колокольчик рядом с названием.
- *
- * Живёт отдельно от ChatViewModel: тот ведает всем содержимым чата, а здесь одна
- * настройка, которая тем же способом понадобится будущему экрану исключений.
- */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ChatNotificationsViewModel @Inject constructor(
@@ -37,7 +31,6 @@ class ChatNotificationsViewModel @Inject constructor(
     
     private val chatId = MutableStateFlow<Long?>(null)
     
-    /** Итоговое состояние чата: сюда смотрят и колокольчик, и надпись в меню. */
     val isMuted: StateFlow<Boolean> = chatId
         .filterNotNull()
         .flatMapLatest { notificationSettingsRepository.observeChatMuted(it) }
@@ -45,19 +38,12 @@ class ChatNotificationsViewModel @Inject constructor(
     
     private val _snackbar = Channel<UiText>(Channel.BUFFERED)
     
-    /** Подтверждение внизу экрана: что именно произошло с уведомлениями. */
     val snackbar: Flow<UiText> = _snackbar.receiveAsFlow()
     
     fun bind(chatId: Long) {
         this.chatId.value = chatId
     }
     
-    /**
-     * Переключить уведомления по чату: запрос уходит сразу, без диалогов и подтверждений.
-     *
-     * Snackbar показывается только после успешного ответа: обещать тишину, которой
-     * не случилось, хуже, чем промолчать.
-     */
     fun toggle() {
         val id = chatId.value ?: return
         val enabled = isMuted.value
@@ -75,7 +61,6 @@ class ChatNotificationsViewModel @Inject constructor(
     }
     
     private companion object {
-        /** Сколько держать подписку на Room после ухода экрана в фон. */
         const val SUBSCRIPTION_TIMEOUT = 5_000L
     }
 }

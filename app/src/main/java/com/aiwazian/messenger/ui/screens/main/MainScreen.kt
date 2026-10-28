@@ -430,7 +430,11 @@ private fun ChatFolderTabs(
                         }
                     }
                 }
-                AppDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                AppDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    scrimColor = Color.Black.copy(alpha = 0.1f)
+                ) {
                     AppDropdownMenuItem(
                         leadingIcon = { Icon(Icons.Rounded.Edit, null) },
                         text = stringResource(if (isAllChats) R.string.edit_folders else R.string.edit_folder),

@@ -44,9 +44,6 @@ data class ProfileUiState(
     val showShareBottomSheet: Boolean = false
 ) {
     
-    /**
-     * Есть ли у текущего пользователя хотя бы одно право, дающее доступ к экрану настроек чата.
-     */
     val canOpenChatSettings: Boolean
         get() = permissions.isOwner || permissions.canEditProfile || permissions.canManageInviteLinks
 }

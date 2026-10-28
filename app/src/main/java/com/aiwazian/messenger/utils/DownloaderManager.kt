@@ -52,23 +52,8 @@ class DownloaderManager @Inject constructor(
     
     private val _activeDownloads = MutableStateFlow<List<DownloadItem>>(emptyList())
     
-    /**
-     * Текущая очередь скачивания со свежим прогрессом.
-     *
-     * Раньше прогресс жил только внутри менеджера, и экран мог узнать только
-     * итог из Room: полоску загрузки заполнить было нечем.
-     */
     val activeDownloads: StateFlow<List<DownloadItem>> = _activeDownloads.asStateFlow()
     
-    /**
-     * Ставит файл в очередь скачивания.
-     *
-     * Постановка и наблюдение за прогрессом живут в скоупе приложения: экран
-     * чата закрывается в ту же секунду, а вместе с viewModelScope раньше
-     * умирало и обновление статуса — файл навсегда оставался «скачивается».
-     * Список правится только на главном потоке, поэтому здесь тот же
-     * диспетчер, что и у наблюдателя.
-     */
     suspend fun download(
         url: String,
         fileName: String,
@@ -200,7 +185,6 @@ class DownloaderManager @Inject constructor(
         fileRepository.updateFileStatus(fileId, DownloadStatus.CANCELLED)
     }
     
-    /** Копия списка, а не сам список: иначе подписчики увидят его мутации без события. */
     private fun publish() {
         _activeDownloads.value = _downloads.toList()
     }

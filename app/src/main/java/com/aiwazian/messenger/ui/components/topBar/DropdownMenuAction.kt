@@ -12,9 +12,5 @@ data class DropdownMenuAction(
     val text: UiText,
     val onClick: (() -> Unit)? = null,
     val isDestructive: Boolean = false,
-    /**
-     * Не действие, а пояснение к меню: выносится в отдельную группу под
-     * остальными пунктами (например, «Копирование и пересылка запрещены»).
-     */
     val isNotice: Boolean = false
 )
