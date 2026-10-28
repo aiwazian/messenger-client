@@ -200,7 +200,9 @@ fun CreatedEmojiPacksScreen(viewModel: CreatedEmojiPacksViewModel = hiltViewMode
             items = uiState.shareTargets,
             onItemClick = viewModel::toggleShareTarget,
             onSendClick = viewModel::sendShare,
-            onDismiss = viewModel::dismissShare
+            onDismiss = viewModel::dismissShare,
+            text = uiState.shareText,
+            onTextChange = viewModel::changeShareText
         )
     }
 }

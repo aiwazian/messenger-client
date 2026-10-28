@@ -32,6 +32,7 @@ internal fun ChatViewModel.startForward(message: Message) {
                 forwardCandidates = candidates,
                 selectedForwardChatIds = emptySet(),
                 isForwarding = false,
+                forwardText = "",
                 forwardHideAuthor = false,
                 forwardHideCaption = false,
                 isForwardSheetVisible = true
@@ -53,6 +54,7 @@ internal fun ChatViewModel.startShareLink(link: String) {
                 forwardCandidates = candidates,
                 selectedForwardChatIds = emptySet(),
                 isForwarding = false,
+                forwardText = "",
                 forwardHideAuthor = false,
                 forwardHideCaption = false,
                 isForwardSheetVisible = true
@@ -101,11 +103,16 @@ internal fun ChatViewModel.dismissForwardSheet() {
             forwardCandidates = emptyList(),
             selectedForwardChatIds = emptySet(),
             isForwarding = false,
+            forwardText = "",
             forwardHideAuthor = false,
             forwardHideCaption = false,
             sharingLink = null
         )
     }
+}
+
+internal fun ChatViewModel.changeForwardText(text: String) {
+    _uiState.update { it.copy(forwardText = text) }
 }
 
 internal fun ChatViewModel.toggleForwardHideAuthor() {
@@ -122,7 +129,7 @@ internal fun ChatViewModel.toggleForwardHideCaption() {
     }
 }
 
-internal fun ChatViewModel.confirmForward() {
+internal fun ChatViewModel.confirmForward(silent: Boolean = false) {
     val link = _uiState.value.sharingLink
 
     if (link != null) {
@@ -136,15 +143,41 @@ internal fun ChatViewModel.confirmForward() {
     val targets = state.selectedForwardChatIds.toList()
     if (targets.isEmpty() || state.isForwarding) return
 
+    val text = state.forwardText.trim()
+
     _uiState.update { it.copy(isForwarding = true) }
 
     viewModelScope.launch {
+        if (text.isNotEmpty()) {
+            var textSendFailed = false
+
+            targets.forEachIndexed { index, targetChatId ->
+                chatRepository.sendMessage(
+                    chatId = targetChatId,
+                    message = text,
+                    tempId = -System.currentTimeMillis() - index,
+                    silent = silent
+                ).onFailure { textSendFailed = true }
+            }
+
+            if (textSendFailed) {
+                _uiState.update { it.copy(isForwarding = false) }
+                _uiEffect.emit(
+                    ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.forward_failed))
+                )
+                return@launch
+            }
+
+            _uiState.update { it.copy(forwardText = "") }
+        }
+
         chatRepository.forwardMessage(
             sourceChatId = state.chatId,
             messageId = message.id,
             targetChatIds = targets,
             hideAuthor = state.forwardHideAuthor,
-            hideCaption = state.forwardHideCaption
+            hideCaption = state.forwardHideCaption,
+            silent = silent
         )
             .onSuccess {
                 dismissForwardSheet()

@@ -553,7 +553,8 @@ class ChatRepository @Inject constructor(
         targetChatIds: List<Long>,
         hideAuthor: Boolean = false,
         hideCaption: Boolean = false,
-        fileIds: List<String> = emptyList()
+        fileIds: List<String> = emptyList(),
+        silent: Boolean = false
     ): Result<List<Message>> {
         if (targetChatIds.isEmpty()) return Result.success(emptyList())
         return try {
@@ -561,7 +562,8 @@ class ChatRepository @Inject constructor(
                 targetChatIds = targetChatIds.map { it.toString() },
                 hideAuthor = hideAuthor,
                 hideCaption = hideCaption,
-                fileIds = fileIds
+                fileIds = fileIds,
+                silent = silent
             )
             val response = messageApi.forwardMessage(
                 sourceChatId,

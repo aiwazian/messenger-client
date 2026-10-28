@@ -197,7 +197,11 @@ class ProfileViewModel @Inject constructor(
         }
     }
     
-    fun sendShare() {
+    fun changeShareText(text: String) {
+        _uiState.update { it.copy(shareText = text) }
+    }
+    
+    fun sendShare(silent: Boolean = false) {
         val state = _uiState.value
         val text = state.shareText
         val chatIds = state.selectedShareChatIds
@@ -205,7 +209,7 @@ class ProfileViewModel @Inject constructor(
         if (text.isBlank() || chatIds.isEmpty()) return
         
         chatIds.forEach { chatId ->
-            messageSendQueue.enqueueText(chatId = chatId, text = text)
+            messageSendQueue.enqueueText(chatId = chatId, text = text, silent = silent)
         }
         
         dismissShareBottomSheet()

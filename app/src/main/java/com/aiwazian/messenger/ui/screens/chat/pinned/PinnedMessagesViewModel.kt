@@ -489,6 +489,7 @@ class PinnedMessagesViewModel @Inject constructor(
                     forwardCandidates = candidates,
                     selectedForwardChatIds = emptySet(),
                     isForwarding = false,
+                    forwardText = "",
                     forwardHideAuthor = false,
                     forwardHideCaption = false,
                     isForwardSheetVisible = true
@@ -527,10 +528,15 @@ class PinnedMessagesViewModel @Inject constructor(
                 forwardCandidates = emptyList(),
                 selectedForwardChatIds = emptySet(),
                 isForwarding = false,
+                forwardText = "",
                 forwardHideAuthor = false,
                 forwardHideCaption = false
             )
         }
+    }
+
+    fun changeForwardText(text: String) {
+        _uiState.update { it.copy(forwardText = text) }
     }
 
     fun toggleForwardHideAuthor() {
@@ -547,22 +553,48 @@ class PinnedMessagesViewModel @Inject constructor(
         }
     }
 
-    fun confirmForward() {
+    fun confirmForward(silent: Boolean = false) {
         val state = _uiState.value
         val message = state.forwardingMessage ?: return
         if (!state.copyPolicy.canForward()) return
         val targets = state.selectedForwardChatIds.toList()
         if (targets.isEmpty() || state.isForwarding) return
 
+        val text = state.forwardText.trim()
+
         _uiState.update { it.copy(isForwarding = true) }
 
         viewModelScope.launch {
+            if (text.isNotEmpty()) {
+                var textSendFailed = false
+
+                targets.forEachIndexed { index, targetChatId ->
+                    chatRepository.sendMessage(
+                        chatId = targetChatId,
+                        message = text,
+                        tempId = -System.currentTimeMillis() - index,
+                        silent = silent
+                    ).onFailure { textSendFailed = true }
+                }
+
+                if (textSendFailed) {
+                    _uiState.update { it.copy(isForwarding = false) }
+                    _uiEffect.emit(
+                        PinnedMessagesUiEffect.ShowSnackbar(UiText.StringResource(R.string.forward_failed))
+                    )
+                    return@launch
+                }
+
+                _uiState.update { it.copy(forwardText = "") }
+            }
+
             chatRepository.forwardMessage(
                 sourceChatId = chatId,
                 messageId = message.id,
                 targetChatIds = targets,
                 hideAuthor = state.forwardHideAuthor,
-                hideCaption = state.forwardHideCaption
+                hideCaption = state.forwardHideCaption,
+                silent = silent
             )
                 .onSuccess {
                     dismissForwardSheet()

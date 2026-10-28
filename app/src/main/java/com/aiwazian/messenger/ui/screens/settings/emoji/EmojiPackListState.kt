@@ -10,7 +10,8 @@ data class EmojiPackListUiState(
     val isLoading: Boolean = false,
     val sharingPack: EmojiPack? = null,
     val shareTargets: List<ShareItem> = emptyList(),
-    val selectedShareChatIds: Set<Long> = emptySet()
+    val selectedShareChatIds: Set<Long> = emptySet(),
+    val shareText: String = ""
 ) {
     val visiblePacks: List<EmojiPack>
         get() {

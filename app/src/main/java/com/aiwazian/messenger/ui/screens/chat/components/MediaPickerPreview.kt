@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -46,12 +45,10 @@ import androidx.compose.material.icons.rounded.CropRotate
 import androidx.compose.material.icons.rounded.Hd
 import androidx.compose.material.icons.rounded.Sd
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuGroupShapes
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -93,6 +90,7 @@ import com.aiwazian.messenger.domain.ViewOnceOption
 import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
+import com.aiwazian.messenger.ui.app.AppDropdownMenuGroup
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppDropdownMenuPopup
 import com.aiwazian.messenger.ui.components.ColorPickerDialog
@@ -859,13 +857,7 @@ private fun ViewOnceTimerButton(
         onDismissRequest = { expanded = false },
         modifier = Modifier.widthIn(max = 220.dp)
     ) {
-        DropdownMenuGroup(
-            shapes = MenuGroupShapes(
-                MaterialTheme.shapes.medium,
-                MaterialTheme.shapes.medium
-            ),
-            contentPadding = PaddingValues.Zero
-        ) {
+        AppDropdownMenuGroup {
             Row(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -882,13 +874,7 @@ private fun ViewOnceTimerButton(
         
         Spacer(Modifier.height(4.dp))
         
-        DropdownMenuGroup(
-            shapes = MenuGroupShapes(
-                MaterialTheme.shapes.medium,
-                MaterialTheme.shapes.medium
-            ),
-            contentPadding = PaddingValues.Zero
-        ) {
+        AppDropdownMenuGroup {
             options.forEach { candidate ->
                 val candidateSeconds = candidate?.seconds
                 val isSelected = if (candidate == null) {

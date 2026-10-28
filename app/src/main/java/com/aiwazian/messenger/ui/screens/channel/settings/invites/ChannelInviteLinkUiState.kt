@@ -16,5 +16,6 @@ data class ChannelInviteLinkUiState(
     val expandedMenuId: Long? = null,
     val availableChats: List<ShareItem> = emptyList(),
     val selectedChatIds: Set<Long> = emptySet(),
-    val linkToShare: String? = null
+    val linkToShare: String? = null,
+    val shareText: String = ""
 )

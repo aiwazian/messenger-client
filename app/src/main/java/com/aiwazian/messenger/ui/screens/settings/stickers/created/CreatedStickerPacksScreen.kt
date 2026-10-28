@@ -212,7 +212,9 @@ fun CreatedStickerPacksScreen(viewModel: CreatedStickerPacksViewModel = hiltView
             items = uiState.shareTargets,
             onItemClick = viewModel::toggleShareTarget,
             onSendClick = viewModel::sendShare,
-            onDismiss = viewModel::dismissShare
+            onDismiss = viewModel::dismissShare,
+            text = uiState.shareText,
+            onTextChange = viewModel::changeShareText
         )
     }
 }

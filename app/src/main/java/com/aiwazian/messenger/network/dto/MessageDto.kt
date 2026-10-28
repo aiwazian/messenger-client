@@ -160,7 +160,8 @@ data class ForwardMessageRequestDto(
     @SerialName("targetChatIds") val targetChatIds: List<String>,
     @SerialName("hideAuthor") val hideAuthor: Boolean = false,
     @SerialName("hideCaption") val hideCaption: Boolean = false,
-    @SerialName("fileIds") val fileIds: List<String> = emptyList()
+    @SerialName("fileIds") val fileIds: List<String> = emptyList(),
+    @SerialName("silent") val silent: Boolean = false
 )
 
 @Serializable

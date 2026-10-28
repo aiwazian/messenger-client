@@ -40,7 +40,7 @@ class ShareViewModel @Inject constructor(
         if (isInitialized) return
         isInitialized = true
         
-        _uiState.update { it.copy(sharedText = sharedText, sharedFiles = sharedFiles) }
+        _uiState.update { it.copy(messageText = sharedText, sharedFiles = sharedFiles) }
         loadTargets()
     }
     
@@ -49,6 +49,10 @@ class ShareViewModel @Inject constructor(
             val targets = getShareTargetsUseCase(_uiState.value.selectedChatIds)
             _uiState.update { it.copy(targets = targets) }
         }
+    }
+    
+    fun changeText(text: String) {
+        _uiState.update { it.copy(messageText = text) }
     }
     
     fun toggleChatSelection(chatId: Long) {
@@ -72,9 +76,9 @@ class ShareViewModel @Inject constructor(
      * Отправка уходит в [MessageSendQueue], а не в viewModelScope: окно закроется
      * сразу, и вместе с ним умер бы каждый незаконченный запрос.
      */
-    fun send() {
+    fun send(silent: Boolean = false) {
         val state = _uiState.value
-        val text = state.sharedText
+        val text = state.messageText
         val files = state.sharedFiles
         val chatIds = state.selectedChatIds
         
@@ -95,14 +99,15 @@ class ShareViewModel @Inject constructor(
             
             chatIds.forEach { chatId ->
                 if (cachedFiles.isEmpty()) {
-                    messageSendQueue.enqueueText(chatId = chatId, text = text)
+                    messageSendQueue.enqueueText(chatId = chatId, text = text, silent = silent)
                 } else {
                     // Подпись из системного шара уезжает вместе с файлами одним
                     // сообщением, а не отдельно.
                     messageSendQueue.enqueueFiles(
                         chatId = chatId,
                         uris = cachedFiles,
-                        text = text.ifBlank { null }
+                        text = text.ifBlank { null },
+                        silent = silent
                     )
                 }
             }

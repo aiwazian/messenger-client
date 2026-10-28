@@ -373,6 +373,18 @@ fun PinnedMessagesScreen(
 
     if (uiState.isForwardSheetVisible) {
         val forwardingMessage = uiState.forwardingMessage
+        val forwardOptions = if (forwardingMessage != null) {
+            ShareForwardOptions(
+                hasAttachments = forwardingMessage.attachments.isNotEmpty(),
+                hideAuthor = uiState.forwardHideAuthor,
+                hideCaption = uiState.forwardHideCaption,
+                onHideAuthorClick = viewModel::toggleForwardHideAuthor,
+                onHideCaptionClick = viewModel::toggleForwardHideCaption
+            )
+        } else {
+            null
+        }
+
         ShareBottomSheet(
             items = uiState.forwardCandidates.map { chat ->
                 ShareItem(
@@ -386,17 +398,10 @@ fun PinnedMessagesScreen(
             onItemClick = viewModel::toggleForwardTarget,
             onSendClick = viewModel::confirmForward,
             onDismiss = viewModel::dismissForwardSheet,
-            forwardOptions = if (forwardingMessage != null) {
-                ShareForwardOptions(
-                    hasAttachments = forwardingMessage.attachments.isNotEmpty(),
-                    hideAuthor = uiState.forwardHideAuthor,
-                    hideCaption = uiState.forwardHideCaption,
-                    onHideAuthorClick = viewModel::toggleForwardHideAuthor,
-                    onHideCaptionClick = viewModel::toggleForwardHideCaption
-                )
-            } else {
-                null
-            }
+            text = uiState.forwardText,
+            onTextChange = viewModel::changeForwardText,
+            enabled = !uiState.isForwarding,
+            forwardOptions = forwardOptions
         )
     }
 

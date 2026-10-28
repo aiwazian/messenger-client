@@ -398,6 +398,9 @@ fun ChatMediaScreen(
             onItemClick = viewModel::toggleForwardTarget,
             onSendClick = viewModel::confirmForward,
             onDismiss = viewModel::dismissForwardSheet,
+            text = uiState.forwardText,
+            onTextChange = viewModel::changeForwardText,
+            enabled = !uiState.isForwarding,
             forwardOptions = ShareForwardOptions(
                 hasAttachments = uiState.selectedAttachmentIds.isNotEmpty(),
                 hideAuthor = uiState.forwardHideAuthor,

@@ -263,6 +263,7 @@ fun MediaPickerBottomSheet(
             }
         },
         sheetState = sheetState,
+        sheetGesturesEnabled = !isEmojiPanelVisible,
         stickyFooter = {
             AppBottomSheetFooterActions.Custom {
                 Box(

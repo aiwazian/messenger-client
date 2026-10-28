@@ -315,7 +315,9 @@ fun ProfileScreen(
             items = uiState.shareTargets,
             onItemClick = viewModel::toggleShareTarget,
             onSendClick = viewModel::sendShare,
-            onDismiss = viewModel::dismissShareBottomSheet
+            onDismiss = viewModel::dismissShareBottomSheet,
+            text = uiState.shareText,
+            onTextChange = viewModel::changeShareText
         )
     }
     

@@ -10,7 +10,8 @@ data class StickerPackListUiState(
     val isLoading: Boolean = false,
     val sharingPack: StickerPack? = null,
     val shareTargets: List<ShareItem> = emptyList(),
-    val selectedShareChatIds: Set<Long> = emptySet()
+    val selectedShareChatIds: Set<Long> = emptySet(),
+    val shareText: String = ""
 ) {
     val visiblePacks: List<StickerPack>
         get() {

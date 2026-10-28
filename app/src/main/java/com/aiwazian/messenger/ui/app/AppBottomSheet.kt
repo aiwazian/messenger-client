@@ -48,6 +48,7 @@ fun AppBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     sheetState: SheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden),
+    sheetGesturesEnabled: Boolean = true,
     stickyFooter: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.(PaddingValues) -> Unit
 ) {
@@ -61,6 +62,7 @@ fun AppBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
+        sheetGesturesEnabled = sheetGesturesEnabled,
         dragHandle = null,
         modifier = modifier.then(
             if (stickyFooter != null) {
