@@ -37,6 +37,8 @@ private object Keys {
     val EQUALIZER_BAND_LEVELS = stringPreferencesKey("equalizer_band_levels")
     val DRAW_COLOR = longPreferencesKey("draw_color")
     val CACHED_WALLPAPERS = stringPreferencesKey("cached_wallpapers")
+    val PAUSE_MUSIC_ON_RECORD = booleanPreferencesKey("pause_music_on_record")
+    val PAUSE_MUSIC_ON_MEDIA = booleanPreferencesKey("pause_music_on_media")
 }
 
 @Singleton
@@ -99,6 +101,12 @@ class DataStoreManager @Inject constructor(
 
     suspend fun saveCachedWallpapers(json: String) = setValue(Keys.CACHED_WALLPAPERS, json)
 
+    suspend fun savePauseMusicOnRecord(enabled: Boolean) =
+        setValue(Keys.PAUSE_MUSIC_ON_RECORD, enabled)
+
+    suspend fun savePauseMusicOnMedia(enabled: Boolean) =
+        setValue(Keys.PAUSE_MUSIC_ON_MEDIA, enabled)
+
     fun getPasscode() = getValue(Keys.PASSCODE, "")
     
     fun getIsLockApp() = getValue(Keys.IS_LOCK_APP, false)
@@ -137,6 +145,10 @@ class DataStoreManager @Inject constructor(
         }
 
     fun getDrawColor() = getValue(Keys.DRAW_COLOR, DEFAULT_DRAW_COLOR)
+
+    fun getPauseMusicOnRecord() = getValue(Keys.PAUSE_MUSIC_ON_RECORD, true)
+
+    fun getPauseMusicOnMedia() = getValue(Keys.PAUSE_MUSIC_ON_MEDIA, true)
 
     suspend fun getCachedWallpapers(): String? {
         return context.dataStore.data.map { pref -> pref[Keys.CACHED_WALLPAPERS] }.first()

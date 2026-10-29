@@ -671,4 +671,9 @@
         <item quantity="one">Le média disparaîtra %1$d seconde après ouverture</item>
         <item quantity="other">Le média disparaîtra %1$d secondes après ouverture</item>
     </plurals>
+    <string name="chat_settings">Paramètres des discussions</string>
+    <string name="pause_music_on_record">Mettre la musique en pause pendant l\'enregistrement</string>
+    <string name="pause_music_on_record_description">Arrêter la musique pendant l\'enregistrement d\'un message vocal</string>
+    <string name="pause_music_on_media">Mettre la musique en pause à la lecture d\'un média</string>
+    <string name="pause_music_on_media_description">Arrêter la musique pendant la lecture d\'un média</string>
 </resources>

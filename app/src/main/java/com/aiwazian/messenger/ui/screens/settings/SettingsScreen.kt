@@ -10,6 +10,8 @@ import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.outlined.ColorLens
 import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.SettingsSuggest
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.Gavel
@@ -74,6 +76,13 @@ fun SettingsScreen() {
                 headlineText = stringResource(R.string.appearance),
                 onClick = {
                     navBackStack.add(AppRoute.SettingsChat)
+                })
+
+            SectionButton(
+                leadingIcon = Icons.Rounded.ChatBubbleOutline,
+                headlineText = stringResource(R.string.chat_settings),
+                onClick = {
+                    navBackStack.add(AppRoute.SettingsChats)
                 })
             
             SectionButton(

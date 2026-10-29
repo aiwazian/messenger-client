@@ -34,6 +34,7 @@ import androidx.media3.ui.compose.material3.Player as Media3Player
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.aiwazian.messenger.playback.musicAutoPauseController
 import com.aiwazian.messenger.ui.components.PlayerBottomControls
 import com.aiwazian.messenger.ui.components.PlayerCenterControls
 
@@ -62,6 +63,7 @@ fun VideoPlayerItem(
     onContentSizeChanged: (Size) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val musicAutoPauseController = remember(context) { context.musicAutoPauseController() }
 
     val player = remember {
         ExoPlayer.Builder(context)
@@ -112,10 +114,16 @@ fun VideoPlayerItem(
     val currentOnShowUiRequest by rememberUpdatedState(onShowUiRequest)
     val currentOnPlayerReady by rememberUpdatedState(onPlayerReady)
     val currentOnContentSizeChanged by rememberUpdatedState(onContentSizeChanged)
+    val currentMusicAutoPauseController by rememberUpdatedState(musicAutoPauseController)
 
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(playing: Boolean) {
+                if (playing) {
+                    currentMusicAutoPauseController.onMediaPlaybackStarted()
+                } else {
+                    currentMusicAutoPauseController.onMediaPlaybackStopped()
+                }
                 currentOnPlayingChanged(playing)
             }
 
@@ -138,6 +146,7 @@ fun VideoPlayerItem(
         currentOnContentSizeChanged(player.videoSize.toContentSize())
 
         onDispose {
+            currentMusicAutoPauseController.onMediaPlaybackStopped()
             currentOnPlayerReady(null)
             player.removeListener(listener)
             player.release()

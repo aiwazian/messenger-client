@@ -694,4 +694,9 @@
         <item quantity="many">Медиа исчезнет через %1$d секунд после открытия</item>
         <item quantity="other">Медиа исчезнет через %1$d секунды после открытия</item>
     </plurals>
+    <string name="chat_settings">Настройки чатов</string>
+    <string name="pause_music_on_record">Пауза музыки при записи</string>
+    <string name="pause_music_on_record_description">Останавливать музыку на время записи голосового сообщения</string>
+    <string name="pause_music_on_media">Пауза музыки при запуске медиа</string>
+    <string name="pause_music_on_media_description">Останавливать музыку на время воспроизведения медиа</string>
 </resources>

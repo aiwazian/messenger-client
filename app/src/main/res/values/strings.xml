@@ -668,4 +668,9 @@
         <item quantity="one">The media will disappear %1$d second after opening</item>
         <item quantity="other">The media will disappear %1$d seconds after opening</item>
     </plurals>
+    <string name="chat_settings">Chat settings</string>
+    <string name="pause_music_on_record">Pause music while recording</string>
+    <string name="pause_music_on_record_description">Stop music while recording a voice message</string>
+    <string name="pause_music_on_media">Pause music when media starts</string>
+    <string name="pause_music_on_media_description">Stop music while media is playing</string>
 </resources>

@@ -15,6 +15,7 @@ import com.aiwazian.messenger.domain.MessageContact
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
+import com.aiwazian.messenger.playback.MusicAutoPauseController
 import com.aiwazian.messenger.playback.MusicPlayerManager
 import com.aiwazian.messenger.playback.VoicePlayerManager
 import com.aiwazian.messenger.repository.ChatPinnedMessagesRepository
@@ -103,6 +104,7 @@ class ChatViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
     private val voicePlayerManager: VoicePlayerManager,
     private val musicPlayerManager: MusicPlayerManager,
+    private val musicAutoPauseController: MusicAutoPauseController,
     private val equalizerManager: EqualizerManager,
     internal val onlineUsersTracker: OnlineUsersTracker,
     internal val realtimeEventSyncService: RealtimeEventSyncService,
@@ -424,6 +426,7 @@ class ChatViewModel @Inject constructor(
         if (_uiState.value.isRecording) return
         val file = audioRecorderManager.startRecording()
         if (file != null) {
+            musicAutoPauseController.onRecordingStarted()
             _uiState.update {
                 it.copy(
                     isRecording = true,
@@ -463,6 +466,7 @@ class ChatViewModel @Inject constructor(
     override fun stopRecordingAndSend() {
         if (!_uiState.value.isRecording) return
         val file = audioRecorderManager.stopRecording()
+        musicAutoPauseController.onRecordingStopped()
         recordingTimerJob?.cancel()
         _uiState.update {
             it.copy(
@@ -477,6 +481,7 @@ class ChatViewModel @Inject constructor(
     override fun cancelRecording() {
         if (!_uiState.value.isRecording) return
         audioRecorderManager.cancelRecording()
+        musicAutoPauseController.onRecordingStopped()
         recordingTimerJob?.cancel()
         _uiState.update {
             it.copy(

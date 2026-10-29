@@ -64,6 +64,7 @@ import com.aiwazian.messenger.ui.screens.settings.SettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.ChatAppearanceScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsAppearanceScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsDarkThemeScreen
+import com.aiwazian.messenger.ui.screens.settings.chats.ChatSettingsScreen
 import com.aiwazian.messenger.ui.screens.wallpaper.WallpaperPreviewScreen
 import com.aiwazian.messenger.ui.screens.settings.data_storage.AutoDownloadMediaScreen
 import com.aiwazian.messenger.ui.screens.settings.data_storage.DataAndStorageScreen
@@ -189,6 +190,7 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsLanguage> { SettingsLanguageScreen() }
                     entry<AppRoute.SettingsDarkTheme> { SettingsDarkThemeScreen() }
                     entry<AppRoute.SettingsChat> { SettingsAppearanceScreen() }
+                    entry<AppRoute.SettingsChats> { ChatSettingsScreen() }
                     entry<AppRoute.ChatAppearance> { ChatAppearanceScreen(target = it.target) }
                     entry<AppRoute.WallpaperPreview> {
                         WallpaperPreviewScreen(imagePath = it.imagePath, target = it.target)

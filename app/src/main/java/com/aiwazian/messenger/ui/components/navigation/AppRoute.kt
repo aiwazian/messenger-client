@@ -60,6 +60,9 @@ sealed interface AppRoute : NavKey {
     data object SettingsChat : AppRoute
 
     @Serializable
+    data object SettingsChats : AppRoute
+
+    @Serializable
     data class ChatAppearance(val target: WallpaperTarget) : AppRoute
 
     @Serializable
