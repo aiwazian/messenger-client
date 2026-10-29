@@ -679,4 +679,7 @@
     <string name="pause_music_on_media_description">Detener la música mientras se reproduce contenido multimedia</string>
     <string name="raise_to_listen">Acercar para escuchar</string>
     <string name="raise_to_listen_description">Cambiar al altavoz superior cuando acercas el teléfono a la oreja</string>
+    <string name="kick_subscriber_confirmation">¿Estás seguro de que deseas eliminar a este usuario del canal?</string>
+    <string name="block_subscriber_confirmation">¿Estás seguro de que deseas bloquear a este suscriptor?</string>
+    <string name="failed_to_load_list">No se pudo cargar la lista</string>
 </resources>

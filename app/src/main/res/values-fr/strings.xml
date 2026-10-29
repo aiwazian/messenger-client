@@ -678,4 +678,7 @@
     <string name="pause_music_on_media_description">Arrêter la musique pendant la lecture d\'un média</string>
     <string name="raise_to_listen">Approcher pour écouter</string>
     <string name="raise_to_listen_description">Passer au haut-parleur supérieur lorsque vous approchez le téléphone de votre oreille</string>
+    <string name="kick_subscriber_confirmation">Êtes-vous sûr de vouloir supprimer cet utilisateur du canal ?</string>
+    <string name="block_subscriber_confirmation">Êtes-vous sûr de vouloir bloquer cet abonné ?</string>
+    <string name="failed_to_load_list">Échec du chargement de la liste</string>
 </resources>

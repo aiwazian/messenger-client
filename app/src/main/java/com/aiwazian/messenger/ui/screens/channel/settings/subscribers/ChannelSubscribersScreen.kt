@@ -164,7 +164,7 @@ fun ChannelSubscribersScreen(
                     }
                 },
                 content = {
-                    Text("Вы уверены, что хотите выгнать пользователя из канала?")
+                    Text(stringResource(R.string.kick_subscriber_confirmation))
                 }
             )
         }
@@ -188,7 +188,7 @@ fun ChannelSubscribersScreen(
                 }
             },
             content = {
-                Text("Вы точно хотите заблокировать подписчика?")
+                Text(stringResource(R.string.block_subscriber_confirmation))
             }
         )
     }

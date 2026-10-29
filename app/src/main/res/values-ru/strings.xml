@@ -701,4 +701,7 @@
     <string name="pause_music_on_media_description">Останавливать музыку на время воспроизведения медиа</string>
     <string name="raise_to_listen">Поднести и слушать</string>
     <string name="raise_to_listen_description">Переключаться на верхний динамик, когда вы подносите телефон к уху</string>
+    <string name="kick_subscriber_confirmation">Вы уверены, что хотите выгнать пользователя из канала?</string>
+    <string name="block_subscriber_confirmation">Вы точно хотите заблокировать подписчика?</string>
+    <string name="failed_to_load_list">Не удалось загрузить список</string>
 </resources>

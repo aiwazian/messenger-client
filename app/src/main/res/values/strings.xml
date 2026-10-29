@@ -675,4 +675,7 @@
     <string name="pause_music_on_media_description">Stop music while media is playing</string>
     <string name="raise_to_listen">Raise to listen</string>
     <string name="raise_to_listen_description">Switch to the top speaker when you hold the phone to your ear</string>
+    <string name="kick_subscriber_confirmation">Are you sure you want to remove this user from the channel?</string>
+    <string name="block_subscriber_confirmation">Are you sure you want to block this subscriber?</string>
+    <string name="failed_to_load_list">Failed to load list</string>
 </resources>

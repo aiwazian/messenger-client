@@ -43,6 +43,7 @@ import coil3.request.ImageRequest
 import coil3.video.VideoFrameDecoder
 import coil3.video.videoFrameMillis
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.components.PhotoSpoilerEffect
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.DownloadStatus
@@ -131,6 +132,14 @@ internal fun MediaThumbnail(
                     onFileAction(attachment, FileAction.OPEN)
                 }
             }
+        }
+
+        if (isConcealed) {
+            PhotoSpoilerEffect(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { onFileAction(attachment, FileAction.OPEN) }
+            )
         }
 
         if (attachment.status.isTransferring()) {

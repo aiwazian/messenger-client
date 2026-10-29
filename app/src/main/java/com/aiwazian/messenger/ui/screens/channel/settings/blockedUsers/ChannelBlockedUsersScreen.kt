@@ -138,7 +138,7 @@ fun ChannelBlockedUsersScreen(
                     }
                 },
                 content = {
-                    Text("Вы точно хотите разблокировать пользователя?")
+                    Text(stringResource(R.string.unblock_this_user_confirm_message))
                 }
             )
         }
