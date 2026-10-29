@@ -112,7 +112,8 @@ class NotificationHelper @Inject constructor(
         title: String,
         body: String,
         avatarUri: Uri? = null,
-        sendTime: Long = System.currentTimeMillis()
+        sendTime: Long = System.currentTimeMillis(),
+        silent: Boolean = false
     ) {
         scope.launch {
             if (ActiveChatTracker.activeChatId.value == chatId) return@launch
@@ -168,6 +169,7 @@ class NotificationHelper @Inject constructor(
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
                 .setOnlyAlertOnce(false)
+                .setSilent(silent)
                 .setShortcutId("$CHAT_SHORTCUT_PREFIX$chatId")
                 .setWhen(sendTime)
                 .setShowWhen(true)

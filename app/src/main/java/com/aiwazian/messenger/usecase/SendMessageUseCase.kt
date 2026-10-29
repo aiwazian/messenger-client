@@ -34,12 +34,13 @@ class SendMessageUseCase @Inject constructor(
         chatId: Long,
         message: String,
         tempId: Long? = null,
-        replyTo: MessageReplyPreview? = null
+        replyTo: MessageReplyPreview? = null,
+        silent: Boolean = false
     ): Result<Message> {
         val localId = tempId ?: -System.currentTimeMillis()
-        
+
         val sending = appScope.async(start = CoroutineStart.LAZY) {
-            send(chatId, message, localId, replyTo)
+            send(chatId, message, localId, replyTo, silent)
         }
         
         running.put(localId, sending)?.cancel()
@@ -59,7 +60,8 @@ class SendMessageUseCase @Inject constructor(
         chatId: Long,
         message: String,
         localId: Long,
-        replyTo: MessageReplyPreview?
+        replyTo: MessageReplyPreview?,
+        silent: Boolean
     ): Result<Message> {
         var attempted = false
         
@@ -73,7 +75,7 @@ class SendMessageUseCase @Inject constructor(
             
             attempted = true
             
-            val attempt = chatRepository.sendMessage(chatId, message, localId, replyTo)
+            val attempt = chatRepository.sendMessage(chatId, message, localId, replyTo, silent)
             
             if (attempt.isFailure) {
                 chatRepository.updateMessageStatus(localId, MessageStatus.SENDING)

@@ -16,10 +16,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.aiwazian.messenger.R
 
-/**
- * Полоса «Unread messages» на всю ширину, а не пилюля как у даты: это граница,
- * и её надо заметить сразу при открытии чата.
- */
 @Composable
 fun UnreadSeparatorItem(modifier: Modifier = Modifier) {
     Text(

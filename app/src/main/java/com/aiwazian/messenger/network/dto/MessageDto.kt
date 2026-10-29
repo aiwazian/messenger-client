@@ -93,7 +93,8 @@ data class MessageDto(
 @Serializable
 data class TextMessageRequestDto(
     @SerialName("text") val text: String,
-    @SerialName("replyToId") val replyToId: String? = null
+    @SerialName("replyToId") val replyToId: String? = null,
+    @SerialName("silent") val silent: Boolean = false
 )
 
 @Serializable
@@ -150,7 +151,8 @@ data class AttachmentInputDto(
 data class FileConfirmRequestDto(
     @SerialName("attachments") val attachments: List<AttachmentInputDto>,
     @SerialName("text") val text: String? = null,
-    @SerialName("replyToId") val replyToId: String? = null
+    @SerialName("replyToId") val replyToId: String? = null,
+    @SerialName("silent") val silent: Boolean = false
 )
 
 @Serializable
@@ -158,7 +160,8 @@ data class ForwardMessageRequestDto(
     @SerialName("targetChatIds") val targetChatIds: List<String>,
     @SerialName("hideAuthor") val hideAuthor: Boolean = false,
     @SerialName("hideCaption") val hideCaption: Boolean = false,
-    @SerialName("fileIds") val fileIds: List<String> = emptyList()
+    @SerialName("fileIds") val fileIds: List<String> = emptyList(),
+    @SerialName("silent") val silent: Boolean = false
 )
 
 @Serializable

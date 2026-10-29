@@ -39,6 +39,7 @@ data class MessageEntity(
     @ColumnInfo(defaultValue = "0") val ownerId: Long = 0,
     @ColumnInfo(defaultValue = "0") val isEdited: Boolean = false,
     @ColumnInfo(defaultValue = "0") val commentsCount: Int = 0,
+    @ColumnInfo(defaultValue = "0") val silent: Boolean = false,
     val stickerId: Long? = null,
     val stickerPackId: Long? = null,
     val stickerFileId: String? = null,

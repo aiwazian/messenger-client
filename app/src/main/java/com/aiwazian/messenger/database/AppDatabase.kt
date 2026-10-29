@@ -41,6 +41,7 @@ import com.aiwazian.messenger.database.entity.StickerEntity
 import com.aiwazian.messenger.database.entity.StickerPackEntity
 import com.aiwazian.messenger.database.entity.UserEntity
 import com.aiwazian.messenger.database.entity.VoiceDurationEntity
+import com.aiwazian.messenger.database.migration.DeleteMessageSilentColumn
 import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
 
 @Database(
@@ -67,7 +68,7 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         CustomEmojiEntity::class,
         MessagePinEntity::class
     ],
-    version = 68,
+    version = 71,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 38, to = 39),
@@ -99,6 +100,9 @@ import com.aiwazian.messenger.database.migration.RenameFcmTokenToInstallationId
         AutoMigration(from = 65, to = 66),
         AutoMigration(from = 66, to = 67),
         AutoMigration(from = 67, to = 68),
+        AutoMigration(from = 68, to = 69),
+        AutoMigration(from = 69, to = 70, spec = DeleteMessageSilentColumn::class),
+        AutoMigration(from = 70, to = 71),
     ]
 )
 @ColumnTypeConverters(Converters::class)

@@ -159,14 +159,15 @@ class MainActivity : AppCompatActivity() {
     
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        handleIntent(intent, isNewIntent = true)
-    }
-    
-    private fun handleIntent(intent: Intent, isNewIntent: Boolean = false) {
+
         if (isAuthorized != true) {
             return
         }
-        
+
+        handleIntent(intent, isNewIntent = true)
+    }
+
+    private fun handleIntent(intent: Intent, isNewIntent: Boolean = false) {
         val chatId = resolveChatId(intent) ?: return
         
         if (isNewIntent) {

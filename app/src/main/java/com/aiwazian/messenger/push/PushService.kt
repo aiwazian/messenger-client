@@ -45,12 +45,13 @@ class PushService : FirebaseMessagingService() {
         }
         
         val sendTime = data["sendTime"]?.toLongOrNull() ?: System.currentTimeMillis()
-        
+
         notificationHelper.showMessageNotification(
             chatId = chatId,
             title = title,
             body = body,
-            sendTime = sendTime
+            sendTime = sendTime,
+            silent = data["silent"] == "true"
         )
     }
     

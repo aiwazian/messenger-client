@@ -8,7 +8,6 @@ import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.domain.ChatFolder
 import com.aiwazian.messenger.domain.ChatFolderDeletedPayload
 import com.aiwazian.messenger.domain.ChatUnreadPayload
-import com.aiwazian.messenger.domain.Comment
 import com.aiwazian.messenger.domain.CommentDeletedPayload
 import com.aiwazian.messenger.domain.CommentsClearedPayload
 import com.aiwazian.messenger.domain.DeleteChatPayload
@@ -16,7 +15,6 @@ import com.aiwazian.messenger.domain.DeleteMessagePayload
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessagePinPayload
 import com.aiwazian.messenger.domain.NewCommentPayload
-import com.aiwazian.messenger.domain.NotificationSettings
 import com.aiwazian.messenger.domain.PinChatPayload
 import com.aiwazian.messenger.domain.PresencePayload
 import com.aiwazian.messenger.domain.ReadMessagePayload
@@ -28,7 +26,6 @@ import com.aiwazian.messenger.network.dto.CommentsClearedPayloadDto
 import com.aiwazian.messenger.network.dto.DeleteCommentPayloadDto
 import com.aiwazian.messenger.network.dto.MessageDto
 import com.aiwazian.messenger.network.dto.NewCommentPayloadDto
-import com.aiwazian.messenger.network.dto.NotificationSettingsResponseDto
 import kotlinx.serialization.DeserializationStrategy
 
 sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
@@ -47,20 +44,13 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
         override val deserializer = MessageDto.serializer()
         override val mapper: (MessageDto) -> Message = MessageDto::toDomain
     }
-
-    /**
-     * Сообщение закрепили.
-     *
-     * forEveryone = false: событие приходит только в другие сессии этого же
-     * аккаунта; forEveryone = true: во все сессии всех участников чата.
-     */
+    
     data object MessagePin : WebSocketEvent<MessagePinPayload, MessagePinPayload> {
         override val eventName = "message:pin"
         override val deserializer = MessagePinPayload.serializer()
         override val mapper: (MessagePinPayload) -> MessagePinPayload = { it }
     }
-
-    /** Сообщение открепили; таргетинг тот же, что у message:pin. */
+    
     data object MessageUnpin : WebSocketEvent<MessagePinPayload, MessagePinPayload> {
         override val eventName = "message:unpin"
         override val deserializer = MessagePinPayload.serializer()
@@ -72,7 +62,7 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
         override val deserializer = DeleteMessagePayload.serializer()
         override val mapper: (DeleteMessagePayload) -> DeleteMessagePayload = { it }
     }
-
+    
     data object ViewOnceAttachmentDeleted :
         WebSocketEvent<ViewOnceAttachmentDeletedPayload, ViewOnceAttachmentDeletedPayload> {
         override val eventName = "message:attachment_deleted"
@@ -80,14 +70,15 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
         override val mapper: (ViewOnceAttachmentDeletedPayload) -> ViewOnceAttachmentDeletedPayload =
             { it }
     }
-
+    
     /** Новый комментарий под постом канала. */
     data object NewComment : WebSocketEvent<NewCommentPayloadDto, NewCommentPayload> {
         override val eventName = "comment:new"
         override val deserializer = NewCommentPayloadDto.serializer()
-        override val mapper: (NewCommentPayloadDto) -> NewCommentPayload = NewCommentPayload::fromDto
+        override val mapper: (NewCommentPayloadDto) -> NewCommentPayload =
+            NewCommentPayload::fromDto
     }
-
+    
     /** Все комментарии канала удалены владельцем. */
     data object CommentsCleared :
         WebSocketEvent<CommentsClearedPayloadDto, CommentsClearedPayload> {
@@ -96,14 +87,15 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
         override val mapper: (CommentsClearedPayloadDto) -> CommentsClearedPayload =
             CommentsClearedPayload::fromDto
     }
-
+    
     /** Комментарий под постом канала отредактирован. */
     data object CommentEdited : WebSocketEvent<NewCommentPayloadDto, NewCommentPayload> {
         override val eventName = "comment:edit"
         override val deserializer = NewCommentPayloadDto.serializer()
-        override val mapper: (NewCommentPayloadDto) -> NewCommentPayload = NewCommentPayload::fromDto
+        override val mapper: (NewCommentPayloadDto) -> NewCommentPayload =
+            NewCommentPayload::fromDto
     }
-
+    
     /** Комментарий под постом канала удалён. */
     data object CommentDeleted :
         WebSocketEvent<DeleteCommentPayloadDto, CommentDeletedPayload> {
@@ -184,18 +176,5 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
         override val eventName = "chat_folder:deleted"
         override val deserializer = ChatFolderDeletedPayload.serializer()
         override val mapper: (ChatFolderDeletedPayload) -> ChatFolderDeletedPayload = { it }
-    }
-    
-    /**
-     * Настройки уведомлений поменялись в другой сессии этого же аккаунта.
-     *
-     * Событие приходит всем устройствам, кроме того, где переключатель трогали.
-     */
-    data object NotificationSettingsUpdate :
-        WebSocketEvent<NotificationSettingsResponseDto, NotificationSettings> {
-        override val eventName = "settings:notifications"
-        override val deserializer = NotificationSettingsResponseDto.serializer()
-        override val mapper: (NotificationSettingsResponseDto) -> NotificationSettings =
-            NotificationSettingsResponseDto::toDomain
     }
 }

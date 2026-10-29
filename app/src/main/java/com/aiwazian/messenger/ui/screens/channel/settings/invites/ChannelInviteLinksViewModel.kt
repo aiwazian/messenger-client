@@ -153,20 +153,33 @@ class ChannelInviteLinksViewModel @Inject constructor(
         }
     }
     
-    fun sendLink() {
-        val link = _uiState.value.linkToShare ?: return
-        val chatIds = _uiState.value.selectedChatIds
+    fun changeShareText(text: String) {
+        _uiState.update { it.copy(shareText = text) }
+    }
+    
+    fun sendLink(silent: Boolean = false) {
+        val state = _uiState.value
+        val link = state.linkToShare ?: return
+        val chatIds = state.selectedChatIds
         if (chatIds.isEmpty()) return
+        
+        val text = state.shareText.trim()
         
         viewModelScope.launch {
             chatIds.forEach { chatId ->
-                sendMessageUseCase(chatId, link)
+                if (text.isEmpty()) {
+                    sendMessageUseCase(chatId, link, silent = silent)
+                } else {
+                    sendMessageUseCase(chatId, text, silent = silent)
+                    sendMessageUseCase(chatId, link, silent = silent)
+                }
             }
             val count = chatIds.size
             _uiState.update {
                 it.copy(
                     showShareSheet = false,
                     linkToShare = null,
+                    shareText = "",
                     selectedChatIds = emptySet()
                 )
             }
@@ -179,6 +192,7 @@ class ChannelInviteLinksViewModel @Inject constructor(
             it.copy(
                 showShareSheet = false,
                 linkToShare = null,
+                shareText = "",
                 selectedChatIds = emptySet(),
                 availableChats = it.availableChats.map { chat -> chat.copy(isSelected = false) }
             )

@@ -104,7 +104,9 @@ fun ChannelInviteLinksScreen(
             items = uiState.availableChats,
             onItemClick = viewModel::toggleChatSelection,
             onSendClick = viewModel::sendLink,
-            onDismiss = viewModel::hideShareSheet
+            onDismiss = viewModel::hideShareSheet,
+            text = uiState.shareText,
+            onTextChange = viewModel::changeShareText
         )
     }
     

@@ -48,6 +48,11 @@ fun ShareScreen(
         items = uiState.targets,
         onItemClick = viewModel::toggleChatSelection,
         onSendClick = viewModel::send,
-        onDismiss = onClose
+        onDismiss = onClose,
+        text = uiState.messageText,
+        onTextChange = viewModel::changeText,
+        hasFiles = uiState.sharedFiles.isNotEmpty(),
+        enabled = (uiState.messageText.isNotBlank() || uiState.sharedFiles.isNotEmpty()) &&
+                !uiState.isSending
     )
 }

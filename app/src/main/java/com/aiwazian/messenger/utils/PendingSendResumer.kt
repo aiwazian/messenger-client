@@ -46,18 +46,20 @@ class PendingSendResumer @Inject constructor(
                             tempId = send.tempId,
                             replyTo = send.replyTo,
                             viewOnceOptions = send.viewOnceOptions,
-                            spoilerUris = send.spoilerUris
+                            spoilerUris = send.spoilerUris,
+                            silent = send.silent
                         )
-                        
+
                         resumed.add(send)
                     }
-                    
+
                     !send.text.isNullOrBlank() -> {
                         messageSendQueue.enqueueText(
                             chatId = send.chatId,
                             text = send.text,
                             tempId = send.tempId,
-                            replyTo = send.replyTo
+                            replyTo = send.replyTo,
+                            silent = send.silent
                         )
                         
                         resumed.add(send)

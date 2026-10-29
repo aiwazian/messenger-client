@@ -5,24 +5,22 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuGroupShapes
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.aiwazian.messenger.ui.app.AppDropdownMenuGroup
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppDropdownMenuPopup
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
@@ -36,21 +34,13 @@ fun MessageDropdownMenu(
     val (notices, menuActions) = actions.partition { it.isNotice }
     val (nonClickable, clickable) = menuActions.partition { it.onClick == null }
     
-    val groupShapes = MenuGroupShapes(
-        MaterialTheme.shapes.medium,
-        MaterialTheme.shapes.medium
-    )
-    
     AppDropdownMenuPopup(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
         modifier = Modifier.widthIn(max = 240.dp)
     ) {
         if (nonClickable.isNotEmpty() || clickable.isNotEmpty()) {
-            DropdownMenuGroup(
-                shapes = groupShapes,
-                contentPadding = PaddingValues.Zero
-            ) {
+            AppDropdownMenuGroup {
                 nonClickable.forEach { action ->
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
@@ -100,10 +90,7 @@ fun MessageDropdownMenu(
         if (notices.isNotEmpty()) {
             Spacer(Modifier.height(4.dp))
             
-            DropdownMenuGroup(
-                shapes = groupShapes,
-                contentPadding = PaddingValues.Zero
-            ) {
+            AppDropdownMenuGroup {
                 notices.forEach { notice ->
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),

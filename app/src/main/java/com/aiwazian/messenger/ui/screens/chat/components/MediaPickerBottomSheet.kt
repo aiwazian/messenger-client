@@ -12,7 +12,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -29,6 +28,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -136,9 +136,10 @@ fun MediaPickerBottomSheet(
     onFileSystemClick: () -> Unit = {},
     onContactSend: ((MessageContact) -> Unit)? = null,
     onSent: () -> Unit = {},
-    onSend: (() -> Unit)? = null,
+    onSend: ((Boolean) -> Unit)? = null,
     allowViewOnce: Boolean = false,
     allowSpoiler: Boolean = false,
+    silentSendEnabled: Boolean = true,
     wallpaperTarget: WallpaperTarget? = null
 ) {
     val viewModel: MediaPickerViewModel = hiltViewModel()
@@ -181,17 +182,8 @@ fun MediaPickerBottomSheet(
     }
     
     val isKeyboardVisible = imeHeight > KEYBOARD_VISIBILITY_THRESHOLD
-    val emojiPanelHeight = measuredKeyboardHeight.coerceAtLeast(EMOJI_PANEL_MIN_HEIGHT)
-    
-    val emojiPanelPadding by animateDpAsState(
-        targetValue = if (isEmojiPanelVisible) {
-            (emojiPanelHeight - bottomPadding).coerceAtLeast(0.dp)
-        } else {
-            0.dp
-        },
-        animationSpec = tween(durationMillis = EMOJI_PANEL_ANIMATION_DURATION_MS),
-        label = "media_picker_emoji_panel_padding"
-    )
+    val emojiPanelHeight = (measuredKeyboardHeight - bottomPadding)
+        .coerceAtLeast(EMOJI_PANEL_MIN_HEIGHT)
     
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -262,20 +254,20 @@ fun MediaPickerBottomSheet(
             }
         },
         sheetState = sheetState,
+        sheetGesturesEnabled = !isEmojiPanelVisible,
         stickyFooter = {
             AppBottomSheetFooterActions.Custom {
-                Box(
+                Column(
                     modifier = Modifier
                         .padding(horizontal = 10.dp)
-                        .fillMaxWidth()
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     if (!isWallpaperMode) {
                         MediaPickerToolbar(
                             modifier = Modifier
-                                .align(Alignment.BottomCenter)
                                 .imePadding()
-                                .navigationBarsPadding()
-                                .padding(top = 10.dp, bottom = emojiPanelPadding + 10.dp)
+                                .padding(top = 10.dp, bottom = 10.dp)
                         ) {
                             AnimatedContent(
                                 targetState = uiState.selected.isNotEmpty(),
@@ -308,18 +300,20 @@ fun MediaPickerBottomSheet(
                                             }
                                         },
                                         onInputViewReady = { view -> captionInputView = view },
-                                        onSendClick = {
+                                        onSendClick = { silent ->
                                             if (onSend != null) {
-                                                onSend()
+                                                onSend(silent)
                                             } else {
                                                 viewModel.send(
                                                     chatId = chatId,
                                                     replyTo = replyTo,
-                                                    caption = caption
+                                                    caption = caption,
+                                                    silent = silent
                                                 )
                                             }
                                             onSent()
-                                        })
+                                        },
+                                        silentSendEnabled = silentSendEnabled)
                                 } else {
                                     SourceRow(
                                         isContactMode = isContactMode,
@@ -335,15 +329,15 @@ fun MediaPickerBottomSheet(
                             }
                         }
                     }
+                    
                     AnimatedVisibility(
-                        modifier = Modifier.align(Alignment.BottomCenter),
                         visible = isEmojiPanelVisible,
                         enter = slideInVertically(
                             animationSpec = tween(durationMillis = EMOJI_PANEL_ANIMATION_DURATION_MS)
-                        ) { it },
+                        ) { it } + fadeIn(),
                         exit = slideOutVertically(
                             animationSpec = tween(durationMillis = EMOJI_PANEL_ANIMATION_DURATION_MS)
-                        ) { it }
+                        ) { it } + fadeOut()
                     ) {
                         MediaPickerEmojiPanel(
                             packs = emojiState.addedPacks,
@@ -806,7 +800,8 @@ private fun CaptionRow(
     onResolveEmoji: suspend (Long) -> CustomEmoji?,
     onEmojiClick: () -> Unit,
     onInputViewReady: (EditText) -> Unit,
-    onSendClick: () -> Unit
+    onSendClick: (Boolean) -> Unit,
+    silentSendEnabled: Boolean
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom
@@ -844,7 +839,11 @@ private fun CaptionRow(
             onViewReady = onInputViewReady
         )
         
-        IconButton(onClick = onSendClick) {
+        SendMessageOptionsButton(
+            onClick = { onSendClick(false) },
+            onSendSilently = { onSendClick(true) },
+            optionsEnabled = silentSendEnabled
+        ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.Send,
                 contentDescription = null,

@@ -331,6 +331,19 @@ class ChatViewModel @Inject constructor(
         onSendMessageInternal(text, replyTo)
     }
 
+    override fun onSendWithoutSoundClicked() {
+        val editingId = _uiState.value.editingMessageId
+        if (editingId != null) return
+
+        val text = _uiState.value.messageText.trim()
+        if (text.isEmpty()) return
+
+        val replyTo = _uiState.value.replyToMessage
+        changeText("")
+        clearReply()
+        onSendMessageInternal(text, replyTo, silent = true)
+    }
+
     override fun sendFiles(uris: List<Uri>) {
         val tempId = -System.currentTimeMillis()
         val replyTo = _uiState.value.replyToMessage

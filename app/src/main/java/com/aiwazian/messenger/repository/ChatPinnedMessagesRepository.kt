@@ -90,14 +90,6 @@ class ChatPinnedMessagesRepository @Inject constructor(
         }
     }
 
-    /**
-     * Открепление сообщения.
-     *
-     * Сервер снимает личное закрепление всегда, а общее — когда открепляющий
-     * вправе: в личном чате или с правом закрепления. includeShared удаляет
-     * локальную строку общего закрепления сразу: свой сокет исключён из
-     * рассылки и события о снятии не получит.
-     */
     suspend fun unpinMessage(
         chatId: Long,
         messageId: Long,
@@ -134,7 +126,6 @@ class ChatPinnedMessagesRepository @Inject constructor(
         }
     }
 
-    /** Свежие закрепления с сервера вместо локального кэша: вызывается при открытии чата. */
     suspend fun refreshPinnedMessages(chatId: Long) {
         try {
             val response = messageApi.getPinnedMessages(chatId)

@@ -143,7 +143,8 @@ fun MessageEntity.toDomain(attachments: List<MessageAttachment> = emptyList()) =
             emojis = stickerEmojis?.split(",")?.filter { it.isNotBlank() }.orEmpty()
         )
     },
-    contact = contact
+    contact = contact,
+    silent = silent
 )
 
 fun Message.toEntity() = MessageEntity(
@@ -179,7 +180,8 @@ fun Message.toEntity() = MessageEntity(
     stickerEmojis = sticker?.emojis
         ?.takeIf { it.isNotEmpty() }
         ?.joinToString(","),
-    contact = contact
+    contact = contact,
+    silent = silent
 )
 
 private fun String?.toAttachmentTypes(): List<AttachmentType> = this

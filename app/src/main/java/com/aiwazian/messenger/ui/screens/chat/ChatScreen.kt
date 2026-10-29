@@ -433,7 +433,7 @@ fun ChatScreen(
                     transitionSpec = { fadeIn() togetherWith fadeOut() },
                     contentAlignment = Alignment.TopCenter
                 ) { pins ->
-                    if (pins.isNotEmpty()) {
+                    if (pins.isNotEmpty() && !uiState.isMessageSearchActive) {
                         val displayed =
                             pins.getOrNull(displayedPinIndex.intValue) ?: pins.first()
                         

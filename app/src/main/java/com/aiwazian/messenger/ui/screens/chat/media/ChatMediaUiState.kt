@@ -28,6 +28,7 @@ data class ChatMediaUiState(
     val forwardCandidates: List<Chat> = emptyList(),
     val selectedForwardChatIds: Set<Long> = emptySet(),
     val isForwarding: Boolean = false,
+    val forwardText: String = "",
     val forwardHideAuthor: Boolean = false,
     val forwardHideCaption: Boolean = false,
     val hasError: Boolean = false,

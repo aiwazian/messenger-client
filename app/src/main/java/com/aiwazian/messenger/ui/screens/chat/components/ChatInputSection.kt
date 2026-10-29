@@ -132,7 +132,8 @@ fun ChatInputSection(
     modifier: Modifier = Modifier,
     alwaysShowInput: Boolean = false,
     isVoiceEnabled: Boolean = true,
-    onMediaSheetSend: (() -> Unit)? = null,
+    sendOptionsEnabled: Boolean = true,
+    onMediaSheetSend: ((Boolean) -> Unit)? = null,
     onContactSend: ((MessageContact) -> Unit)? = null
 ) {
     val density = LocalDensity.current
@@ -260,6 +261,7 @@ fun ChatInputSection(
                                 uiState = uiState,
                                 actions = actions,
                                 isVoiceEnabled = isVoiceEnabled,
+                                sendOptionsEnabled = sendOptionsEnabled,
                                 onMediaSheetSend = onMediaSheetSend,
                                 onContactSend = onContactSend,
                                 isStickerPanelVisible = isStickersVisible,
@@ -287,6 +289,7 @@ fun ChatInputSection(
                                 uiState = uiState,
                                 actions = actions,
                                 isVoiceEnabled = isVoiceEnabled,
+                                sendOptionsEnabled = sendOptionsEnabled,
                                 onMediaSheetSend = onMediaSheetSend,
                                 onContactSend = onContactSend,
                                 isStickerPanelVisible = isStickersVisible,
@@ -318,7 +321,7 @@ fun ChatInputSection(
                         when (state) {
                             "blocked" -> {
                                 Text(
-                                    text = "Отправка сообщений ограничена",
+                                    text = stringResource(R.string.sending_messages_restricted),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(16.dp),
@@ -365,6 +368,7 @@ fun ChatInputSection(
                                     uiState = uiState,
                                     actions = actions,
                                     isVoiceEnabled = isVoiceEnabled,
+                                    sendOptionsEnabled = sendOptionsEnabled,
                                     onMediaSheetSend = onMediaSheetSend,
                                     onContactSend = onContactSend,
                                     isStickerPanelVisible = isStickersVisible,
@@ -487,7 +491,8 @@ private fun InputMessage(
     uiState: ChatUiState,
     actions: ChatInputActions,
     isVoiceEnabled: Boolean,
-    onMediaSheetSend: (() -> Unit)?,
+    sendOptionsEnabled: Boolean,
+    onMediaSheetSend: ((Boolean) -> Unit)?,
     onContactSend: ((MessageContact) -> Unit)?,
     isStickerPanelVisible: Boolean,
     isKeyboardVisible: Boolean,
@@ -893,7 +898,11 @@ private fun InputMessage(
                         }
                     }
                 } else {
-                    IconButton(onClick = actions::onSendMessageClicked) {
+                    SendMessageOptionsButton(
+                        onClick = actions::onSendMessageClicked,
+                        onSendSilently = actions::onSendWithoutSoundClicked,
+                        optionsEnabled = sendOptionsEnabled && uiState.editingMessageId == null
+                    ) {
                         AnimatedContent(
                             targetState = uiState.editingMessageId != null,
                             transitionSpec = { expressiveScaleIn togetherWith expressiveScaleOut }) { isEditing ->
@@ -941,6 +950,7 @@ private fun InputMessage(
                 actions.changeText("")
                 actions.cancelReply()
             },
+            silentSendEnabled = sendOptionsEnabled,
             onSend = onMediaSheetSend)
     }
 }

@@ -74,8 +74,7 @@ fun EmojiInputPanel(
     packs: List<EmojiPack>,
     systemEmojis: List<String>,
     onEmojiClick: (EmojiPack, CustomEmoji) -> Unit,
-    onSystemEmojiClick: (String) -> Unit,
-    modifier: Modifier = Modifier
+    onSystemEmojiClick: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val gridState = rememberLazyGridState()
@@ -113,7 +112,7 @@ fun EmojiInputPanel(
     val selectedPackIndex = (pendingPackIndex ?: visiblePackIndex).coerceAtLeast(0)
     
     Box(
-        modifier = modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
         if (sections.isNotEmpty()) {
             PrimaryScrollableTabRow(

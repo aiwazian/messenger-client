@@ -11,7 +11,6 @@ import com.aiwazian.messenger.domain.MessageReadInfo
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.domain.MessageSearchHit
 import com.aiwazian.messenger.domain.PinnedMessage
-import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.playback.MusicRepeatMode
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.chat.paging.ScrollTarget
@@ -100,6 +99,7 @@ data class ChatUiState(
     val forwardCandidates: List<Chat> = emptyList(),
     val selectedForwardChatIds: Set<Long> = emptySet(),
     val isForwarding: Boolean = false,
+    val forwardText: String = "",
     val forwardHideAuthor: Boolean = false,
     val forwardHideCaption: Boolean = false,
     val sharingLink: String? = null,

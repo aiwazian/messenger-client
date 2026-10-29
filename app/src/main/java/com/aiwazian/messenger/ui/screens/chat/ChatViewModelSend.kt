@@ -84,7 +84,8 @@ private fun ChatViewModel.isInCurrentChat(preview: MessageReplyPreview): Boolean
 
 internal fun ChatViewModel.onSendMessageInternal(
     text: String,
-    replyTo: MessageReplyPreview? = null
+    replyTo: MessageReplyPreview? = null,
+    silent: Boolean = false
 ) {
     val tempId = -System.currentTimeMillis()
     val job = viewModelScope.launch {
@@ -94,7 +95,8 @@ internal fun ChatViewModel.onSendMessageInternal(
                 _uiState.value.chatId,
                 message = text,
                 tempId = tempId,
-                replyTo = replyTo
+                replyTo = replyTo,
+                silent = silent
             )
             requestScrollTo(messageId = null, highlight = false, animate = true)
         } catch (e: Exception) {
@@ -130,7 +132,7 @@ internal fun ChatViewModel.retrySendMessage(message: Message) {
 
         message.text?.let { text ->
             chatRepository.deleteLocalMessage(message.id)
-            onSendMessageInternal(text, message.replyTo)
+            onSendMessageInternal(text, message.replyTo, silent = message.silent)
         }
     }
 }

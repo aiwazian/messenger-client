@@ -719,6 +719,7 @@ class ChatMediaViewModel @Inject constructor(
                     forwardCandidates = candidates,
                     selectedForwardChatIds = emptySet(),
                     isForwarding = false,
+                    forwardText = "",
                     forwardHideAuthor = false,
                     forwardHideCaption = false
                 )
@@ -749,6 +750,10 @@ class ChatMediaViewModel @Inject constructor(
         }
     }
 
+    fun changeForwardText(text: String) {
+        _uiState.update { it.copy(forwardText = text) }
+    }
+
     fun toggleForwardHideAuthor() {
         _uiState.update { it.copy(forwardHideAuthor = !it.forwardHideAuthor) }
     }
@@ -764,7 +769,7 @@ class ChatMediaViewModel @Inject constructor(
         }
     }
 
-    fun confirmForward() {
+    fun confirmForward(silent: Boolean = false) {
         val state = _uiState.value
         val targets = state.selectedForwardChatIds.toList()
 
@@ -773,11 +778,23 @@ class ChatMediaViewModel @Inject constructor(
         val selectedAttachments = (state.media + state.files + state.music + state.voices)
             .filter { it.id in state.selectedAttachmentIds }
         val attachmentsByMessage = selectedAttachments.groupBy { it.messageId }
+        val text = state.forwardText.trim()
 
         _uiState.update { it.copy(isForwarding = true) }
 
         viewModelScope.launch {
             var hasFailure = false
+
+            if (text.isNotEmpty()) {
+                targets.forEachIndexed { index, targetChatId ->
+                    chatRepository.sendMessage(
+                        chatId = targetChatId,
+                        message = text,
+                        tempId = -System.currentTimeMillis() - index,
+                        silent = silent
+                    ).onFailure { hasFailure = true }
+                }
+            }
 
             attachmentsByMessage.forEach { (messageId, items) ->
                 chatRepository.forwardMessage(
@@ -786,7 +803,8 @@ class ChatMediaViewModel @Inject constructor(
                     targetChatIds = targets,
                     hideAuthor = state.forwardHideAuthor,
                     hideCaption = state.forwardHideCaption,
-                    fileIds = items.map { it.fileId }
+                    fileIds = items.map { it.fileId },
+                    silent = silent
                 ).onFailure { hasFailure = true }
             }
 
@@ -796,13 +814,15 @@ class ChatMediaViewModel @Inject constructor(
                     messageId = messageId,
                     targetChatIds = targets,
                     hideAuthor = state.forwardHideAuthor,
-                    hideCaption = false
+                    hideCaption = false,
+                    silent = silent
                 ).onFailure { hasFailure = true }
             }
 
             if (hasFailure) {
                 _uiState.update { it.copy(isForwarding = false) }
             } else {
+                _uiState.update { it.copy(forwardText = "") }
                 dismissForwardSheet()
                 clearSelection()
             }

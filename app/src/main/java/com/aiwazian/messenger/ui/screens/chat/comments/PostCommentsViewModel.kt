@@ -365,6 +365,9 @@ class PostCommentsViewModel @Inject constructor(
         }
     }
 
+    override fun onSendWithoutSoundClicked() {
+    }
+
     override fun changeText(text: String) {
         _uiState.update { it.copy(commentText = text) }
     }

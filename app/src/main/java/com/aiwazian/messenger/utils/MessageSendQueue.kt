@@ -39,17 +39,19 @@ class MessageSendQueue @Inject constructor(
         chatId: Long,
         text: String,
         tempId: Long = nextTempId(),
-        replyTo: MessageReplyPreview? = null
+        replyTo: MessageReplyPreview? = null,
+        silent: Boolean = false
     ): Long {
         enqueue(tempId) {
             sendMessageUseCase(
                 chatId = chatId,
                 message = text,
                 tempId = tempId,
-                replyTo = replyTo
+                replyTo = replyTo,
+                silent = silent
             )
         }
-        
+
         return tempId
     }
 
@@ -63,7 +65,8 @@ class MessageSendQueue @Inject constructor(
         mediaTransforms: Map<Uri, MediaTransform> = emptyMap(),
         mediaDrawings: Map<Uri, Bitmap> = emptyMap(),
         viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap(),
-        spoilerUris: Set<Uri> = emptySet()
+        spoilerUris: Set<Uri> = emptySet(),
+        silent: Boolean = false
     ): Long {
         enqueue(tempId) {
             sendMessageWithFilesUseCase(
@@ -76,10 +79,11 @@ class MessageSendQueue @Inject constructor(
                 mediaTransforms = mediaTransforms,
                 mediaDrawings = mediaDrawings,
                 viewOnceOptions = viewOnceOptions,
-                spoilerUris = spoilerUris
+                spoilerUris = spoilerUris,
+                silent = silent
             )
         }
-        
+
         return tempId
     }
 

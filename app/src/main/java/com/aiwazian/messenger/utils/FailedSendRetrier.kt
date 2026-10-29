@@ -68,7 +68,8 @@ class FailedSendRetrier @Inject constructor(
                 chatId = message.chatId,
                 text = text,
                 tempId = message.id,
-                replyTo = message.toDomain().replyTo
+                replyTo = message.toDomain().replyTo,
+                silent = message.silent
             )
         }
     }

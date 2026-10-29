@@ -83,7 +83,11 @@ class CreatedEmojiPacksViewModel @Inject constructor(
         }
     }
     
-    fun sendShare() {
+    fun changeShareText(text: String) {
+        _uiState.update { it.copy(shareText = text) }
+    }
+    
+    fun sendShare(silent: Boolean = false) {
         val state = _uiState.value
         val pack = state.sharingPack ?: return
         val targets = state.selectedShareChatIds
@@ -92,13 +96,18 @@ class CreatedEmojiPacksViewModel @Inject constructor(
             return
         }
         
+        val text = state.shareText.trim()
+        
         dismissShare()
         
         viewModelScope.launch {
             val link = EmojiLink.build(pack.username)
             
             targets.forEach { chatId ->
-                sendMessageUseCase(chatId = chatId, message = link)
+                if (text.isNotEmpty()) {
+                    sendMessageUseCase(chatId = chatId, message = text, silent = silent)
+                }
+                sendMessageUseCase(chatId = chatId, message = link, silent = silent)
             }
         }
     }
@@ -108,7 +117,8 @@ class CreatedEmojiPacksViewModel @Inject constructor(
             it.copy(
                 sharingPack = null,
                 shareTargets = emptyList(),
-                selectedShareChatIds = emptySet()
+                selectedShareChatIds = emptySet(),
+                shareText = ""
             )
         }
     }

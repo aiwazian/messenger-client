@@ -5,7 +5,6 @@
 package com.aiwazian.messenger.repository.channel
 
 import android.util.Log
-import android.net.Uri
 import com.aiwazian.messenger.database.dao.ChannelDao
 import com.aiwazian.messenger.domain.Channel
 import com.aiwazian.messenger.domain.Comment
@@ -16,7 +15,6 @@ import com.aiwazian.messenger.network.dto.AttachmentInputDto
 import com.aiwazian.messenger.network.dto.ConfirmCommentRequestDto
 import com.aiwazian.messenger.network.dto.CreateCommentRequestDto
 import com.aiwazian.messenger.network.dto.EditCommentRequestDto
-import com.aiwazian.messenger.network.dto.FileDownloadResponseDto
 import com.aiwazian.messenger.network.dto.FileInitRequestDto
 import com.aiwazian.messenger.network.dto.FileInitResponseDto
 import com.aiwazian.messenger.network.dto.SetCommentsEnabledRequestDto
@@ -29,7 +27,7 @@ class ChannelCommentsRepository @Inject constructor(
     private val channelDao: ChannelDao,
     private val webSocketClient: WebSocketClient
 ) {
-
+    
     suspend fun getComments(channelId: Long, postId: Long): Result<List<Comment>> {
         return try {
             val response = channelApi.getPostComments(channelId, postId)
@@ -43,7 +41,7 @@ class ChannelCommentsRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun sendComment(
         channelId: Long,
         postId: Long,
@@ -73,7 +71,7 @@ class ChannelCommentsRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun editComment(
         channelId: Long,
         postId: Long,
@@ -99,7 +97,7 @@ class ChannelCommentsRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun deleteComment(
         channelId: Long,
         postId: Long,
@@ -122,7 +120,7 @@ class ChannelCommentsRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun initFileUpload(
         channelId: Long,
         postId: Long,
@@ -137,7 +135,7 @@ class ChannelCommentsRepository @Inject constructor(
             null
         }
     }
-
+    
     suspend fun confirmFiles(
         channelId: Long,
         postId: Long,
@@ -148,7 +146,9 @@ class ChannelCommentsRepository @Inject constructor(
             val response = channelApi.confirmCommentFiles(
                 channelId,
                 postId,
-                ConfirmCommentRequestDto(attachments = attachments, text = text?.takeIf { it.isNotBlank() }),
+                ConfirmCommentRequestDto(
+                    attachments = attachments,
+                    text = text?.takeIf { it.isNotBlank() }),
                 webSocketClient.socketId.orEmpty()
             )
             val body = response.body()
@@ -162,7 +162,7 @@ class ChannelCommentsRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun getFileDownloadUrl(
         channelId: Long,
         postId: Long,
@@ -170,7 +170,8 @@ class ChannelCommentsRepository @Inject constructor(
         fileId: String
     ): Result<String> {
         return try {
-            val response = channelApi.getCommentFileDownloadUrl(channelId, postId, commentId, fileId)
+            val response =
+                channelApi.getCommentFileDownloadUrl(channelId, postId, commentId, fileId)
             val body = response.body()
             if (response.isSuccessful && body != null) {
                 Result.success(body.downloadUrl)
@@ -182,13 +183,7 @@ class ChannelCommentsRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
-    /**
-     * Меняет комментирование постов канала.
-     *
-     * @param channel текущее состояние канала, нужно для обновления кэша без потери
-     * остальных полей.
-     */
+    
     suspend fun setCommentsEnabled(channel: Channel, enabled: Boolean): Result<Unit> {
         return try {
             val response =
@@ -204,7 +199,7 @@ class ChannelCommentsRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun setCommentsRestrictedToSubscribers(
         channel: Channel,
         restricted: Boolean
@@ -227,7 +222,7 @@ class ChannelCommentsRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     suspend fun deleteAllComments(channelId: Long): Result<Unit> {
         return try {
             val response = channelApi.deleteAllComments(channelId)
@@ -241,7 +236,7 @@ class ChannelCommentsRepository @Inject constructor(
             Result.failure(e)
         }
     }
-
+    
     private companion object {
         const val TAG = "ChannelCommentsRepository"
     }

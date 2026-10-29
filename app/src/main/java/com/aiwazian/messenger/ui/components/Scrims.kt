@@ -20,7 +20,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.zIndex
 
 @Composable
-fun BoxScope.TopBarScrim(height: Dp) {
+fun BoxScope.TopBarScrim(
+    height: Dp,
+    color: Color = MaterialTheme.colorScheme.surface
+) {
     Box(
         modifier = Modifier
             .align(Alignment.TopStart)
@@ -29,9 +32,9 @@ fun BoxScope.TopBarScrim(height: Dp) {
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                        color.copy(alpha = 0.9f),
+                        color.copy(alpha = 0.7f),
+                        color.copy(alpha = 0.5f),
                         Color.Transparent
                     )
                 )

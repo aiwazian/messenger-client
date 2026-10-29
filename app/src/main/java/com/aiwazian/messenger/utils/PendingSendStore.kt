@@ -27,7 +27,8 @@ data class PendingSend(
     val uris: List<Uri>,
     val replyTo: MessageReplyPreview?,
     val viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap(),
-    val spoilerUris: Set<Uri> = emptySet()
+    val spoilerUris: Set<Uri> = emptySet(),
+    val silent: Boolean = false
 )
 
 @Singleton
@@ -45,11 +46,12 @@ class PendingSendStore @Inject constructor(
         replyTo: MessageReplyPreview?,
         viewOnceUris: Set<String> = emptySet(),
         viewOnceSeconds: Map<String, Int> = emptyMap(),
-        spoilerUris: Set<String> = emptySet()
+        spoilerUris: Set<String> = emptySet(),
+        silent: Boolean = false
     ) = withContext(Dispatchers.IO) {
         val directory = File(context.filesDir, DIRECTORY_NAME)
         directory.mkdirs()
-        
+
         val record = Record(
             tempId = tempId,
             chatId = chatId,
@@ -58,6 +60,7 @@ class PendingSendStore @Inject constructor(
             viewOnceUris = viewOnceUris,
             viewOnceSeconds = viewOnceSeconds,
             spoilerUris = spoilerUris,
+            silent = silent,
             replyTo = replyTo?.let { reply ->
                 ReplyRecord(
                     messageId = reply.messageId,
@@ -112,6 +115,7 @@ class PendingSendStore @Inject constructor(
                         .filter { it in record.viewOnceUris }
                         .associate { it.toUri() to ViewOnceOption(record.viewOnceSeconds[it]) },
                     spoilerUris = record.spoilerUris.map { it.toUri() }.toSet(),
+                    silent = record.silent,
                     replyTo = record.replyTo?.let { reply ->
                         MessageReplyPreview(
                             messageId = reply.messageId,
@@ -127,7 +131,6 @@ class PendingSendStore @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
-                // Битую запись держать незачем: поднимать из неё нечего.
                 Log.e(TAG, "Unable to read ${file.name}", e)
                 file.delete()
                 null
@@ -146,6 +149,7 @@ class PendingSendStore @Inject constructor(
         val viewOnceUris: Set<String> = emptySet(),
         val viewOnceSeconds: Map<String, Int> = emptyMap(),
         val spoilerUris: Set<String> = emptySet(),
+        val silent: Boolean = false,
         val replyTo: ReplyRecord? = null
     )
     

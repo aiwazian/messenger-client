@@ -11,16 +11,13 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -44,8 +41,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorPosition
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -72,8 +67,8 @@ import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppBottomSheet
 import com.aiwazian.messenger.ui.app.AppBottomSheetFooterActions
-import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
+import com.aiwazian.messenger.ui.screens.share.ShareSendBar
 import com.aiwazian.messenger.utils.UiText
 
 data class ShareItem(
@@ -97,15 +92,18 @@ data class ShareForwardOptions(
 fun ShareBottomSheet(
     items: List<ShareItem>,
     onItemClick: (Long) -> Unit,
-    onSendClick: () -> Unit,
+    onSendClick: (Boolean) -> Unit,
     onDismiss: () -> Unit,
+    text: String = "",
+    onTextChange: (String) -> Unit = {},
+    hasFiles: Boolean = false,
+    enabled: Boolean = true,
     forwardOptions: ShareForwardOptions? = null
 ) {
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     val hasSelected = remember(items) { items.any { it.isSelected } }
-    var forwardMenuExpanded by remember { mutableStateOf(false) }
     
     val visibleItems = remember(items, searchQuery, context) {
         val ordered = items.sortedByDescending { it.isSavedMessages }
@@ -117,94 +115,28 @@ fun ShareBottomSheet(
         }
     }
     
+    val stickyFooter: (@Composable () -> Unit)? = if (hasSelected) {
+        {
+            AppBottomSheetFooterActions.Custom {
+                ShareSendBar(
+                    text = text,
+                    onTextChange = onTextChange,
+                    onSendClick = onSendClick,
+                    hasFiles = hasFiles,
+                    enabled = enabled,
+                    forwardOptions = forwardOptions
+                )
+            }
+        }
+    } else {
+        null
+    }
+    
     AppBottomSheet(
         onDismissRequest = onDismiss,
         modifier = Modifier.imePadding(),
         sheetState = sheetState,
-        stickyFooter = {
-            AppBottomSheetFooterActions.Custom {
-                if (hasSelected) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(10.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainer)
-                            .combinedClickable(
-                                onClick = onSendClick,
-                                onLongClick = if (forwardOptions != null) {
-                                    { forwardMenuExpanded = true }
-                                } else {
-                                    null
-                                }
-                            )
-                            .heightIn(min = 40.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(R.string.send),
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                        
-                        forwardOptions?.let { options ->
-                            AppDropdownMenu(
-                                expanded = forwardMenuExpanded,
-                                onDismissRequest = { forwardMenuExpanded = false },
-                                popupPositionProvider = MenuDefaults.rememberDropdownMenuPopupPositionProvider(
-                                    MenuAnchorPosition.Above
-                                )
-                            ) {
-                                AppDropdownMenuItem(
-                                    text = stringResource(
-                                        if (options.hideAuthor) {
-                                            R.string.show_sender_name
-                                        } else {
-                                            R.string.hide_sender_name
-                                        }
-                                    ),
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = if (options.hideAuthor) {
-                                                Icons.Outlined.PersonOutline
-                                            } else {
-                                                Icons.Outlined.PersonOff
-                                            },
-                                            contentDescription = null
-                                        )
-                                    },
-                                    onClick = options.onHideAuthorClick
-                                )
-                                
-                                if (options.hasAttachments) {
-                                    AppDropdownMenuItem(
-                                        text = stringResource(
-                                            if (options.hideCaption) {
-                                                R.string.show_caption
-                                            } else {
-                                                R.string.hide_caption
-                                            }
-                                        ),
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = if (options.hideCaption) {
-                                                    Icons.AutoMirrored.Outlined.Subject
-                                                } else {
-                                                    Icons.Outlined.CommentsDisabled
-                                                },
-                                                contentDescription = null
-                                            )
-                                        },
-                                        onClick = options.onHideCaptionClick
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        stickyFooter = stickyFooter
     ) { padding ->
         Column(
             modifier = Modifier.padding(padding),
@@ -263,6 +195,53 @@ fun ShareBottomSheet(
                 }
             }
         }
+    }
+}
+
+@Composable
+internal fun ShareForwardMenuItems(options: ShareForwardOptions) {
+    AppDropdownMenuItem(
+        text = stringResource(
+            if (options.hideAuthor) {
+                R.string.show_sender_name
+            } else {
+                R.string.hide_sender_name
+            }
+        ),
+        leadingIcon = {
+            Icon(
+                imageVector = if (options.hideAuthor) {
+                    Icons.Outlined.PersonOutline
+                } else {
+                    Icons.Outlined.PersonOff
+                },
+                contentDescription = null
+            )
+        },
+        onClick = options.onHideAuthorClick
+    )
+    
+    if (options.hasAttachments) {
+        AppDropdownMenuItem(
+            text = stringResource(
+                if (options.hideCaption) {
+                    R.string.show_caption
+                } else {
+                    R.string.hide_caption
+                }
+            ),
+            leadingIcon = {
+                Icon(
+                    imageVector = if (options.hideCaption) {
+                        Icons.AutoMirrored.Outlined.Subject
+                    } else {
+                        Icons.Outlined.CommentsDisabled
+                    },
+                    contentDescription = null
+                )
+            },
+            onClick = options.onHideCaptionClick
+        )
     }
 }
 

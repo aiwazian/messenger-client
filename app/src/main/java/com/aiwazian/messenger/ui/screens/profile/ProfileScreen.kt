@@ -4,6 +4,7 @@
 
 package com.aiwazian.messenger.ui.screens.profile
 
+import android.app.Activity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +45,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -54,8 +56,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -66,6 +70,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Chat
@@ -84,8 +89,8 @@ import com.aiwazian.messenger.ui.components.ShareBottomSheet
 import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
-import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.utils.UiText
@@ -181,7 +186,22 @@ fun ProfileScreen(
     }
     
     val scrollState = rememberScrollState()
-    
+    val hasAvatars = uiState.avatars.isNotEmpty()
+    val view = LocalView.current
+    val isLightSurface = MaterialTheme.colorScheme.surface.luminance() > 0.5f
+
+    DisposableEffect(view, hasAvatars, isLightSurface) {
+        val window = (view.context as Activity).window
+            ?: return@DisposableEffect onDispose { }
+        val insetsController = WindowCompat.getInsetsController(window, view)
+
+        insetsController.isAppearanceLightStatusBars = !hasAvatars && isLightSurface
+
+        onDispose {
+            insetsController.isAppearanceLightStatusBars = isLightSurface
+        }
+    }
+
     Scaffold(snackbarHost = {
         AppSnackbar(snackbarHostState)
     }, topBar = {
@@ -190,6 +210,7 @@ fun ProfileScreen(
             title = uiState.title.asString(),
             subTitle = uiState.subTitle.asString(),
             actions = uiState.actions,
+            hasAvatar = hasAvatars,
         )
     }) { innerPadding ->
         Box {
@@ -264,7 +285,14 @@ fun ProfileScreen(
                 }
             }
             
-            TopBarScrim(height = innerPadding.calculateTopPadding() + 10.dp)
+            TopBarScrim(
+                height = innerPadding.calculateTopPadding() + 10.dp,
+                color = if (hasAvatars) {
+                    Color.Black
+                } else {
+                    MaterialTheme.colorScheme.surface
+                }
+            )
             
             BottomBarScrim(height = innerPadding.calculateBottomPadding())
         }
@@ -287,7 +315,9 @@ fun ProfileScreen(
             items = uiState.shareTargets,
             onItemClick = viewModel::toggleShareTarget,
             onSendClick = viewModel::sendShare,
-            onDismiss = viewModel::dismissShareBottomSheet
+            onDismiss = viewModel::dismissShareBottomSheet,
+            text = uiState.shareText,
+            onTextChange = viewModel::changeShareText
         )
     }
     
@@ -315,7 +345,7 @@ fun ProfileScreen(
                 }
             },
             content = {
-                Text("Вас заблокировал администратор этого чата")
+                Text(stringResource(R.string.banned_message))
             })
     }
     
@@ -650,9 +680,12 @@ private fun UserProfile(
             }
             
             if (user.dateOfBirth != null) {
+                val dateOfBirthText = user.dateOfBirth.toInstance().toPrettyDateWithYear()
+
                 SectionButton(
-                    headlineText = user.dateOfBirth.toInstance().toPrettyDateWithYear(),
-                    supportingText = stringResource(R.string.date_of_birth)
+                    headlineText = dateOfBirthText,
+                    supportingText = stringResource(R.string.date_of_birth),
+                    onLongClick = { onCopyClick(dateOfBirthText) }
                 )
             }
         }
@@ -720,6 +753,7 @@ private fun TopBar(
     title: String,
     subTitle: String,
     actions: List<TopBarAction>,
+    hasAvatar: Boolean,
 ) {
     val navBackStack = LocalNavBackStack.current
     
@@ -779,9 +813,21 @@ private fun TopBar(
             }
         }, colors = TopAppBarDefaults.topAppBarColors(
             containerColor = Color.Transparent,
-            navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-            actionIconContentColor = MaterialTheme.colorScheme.onSurface,
-            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            navigationIconContentColor = if (hasAvatar) {
+                Color.White
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            actionIconContentColor = if (hasAvatar) {
+                Color.White
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            titleContentColor = if (hasAvatar) {
+                Color.White
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
         )
     )
 }

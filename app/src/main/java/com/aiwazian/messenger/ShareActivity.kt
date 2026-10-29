@@ -77,12 +77,11 @@ class ShareActivity : AppCompatActivity() {
         }
     }
     
-    private fun extractSharedText(intent: Intent): String? {
-        if (intent.action != Intent.ACTION_SEND) {
-            return null
-        }
+    private fun extractSharedText(intent: Intent): String? = when (intent.action) {
+        Intent.ACTION_SEND, Intent.ACTION_SEND_MULTIPLE ->
+            intent.getStringExtra(Intent.EXTRA_TEXT)
         
-        return intent.getStringExtra(Intent.EXTRA_TEXT)
+        else -> null
     }
     
     @Suppress("DEPRECATION")

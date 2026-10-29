@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.List
-import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -16,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,18 +35,8 @@ fun PinnedMessageBar(
             .padding(start = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = Icons.Outlined.PushPin,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .padding(end = 10.dp)
-                .rotate(45f)
-                .size(18.dp)
-        )
-
         val preview = rememberMessagePreview(message = message)
-
+        
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
@@ -59,7 +46,7 @@ fun PinnedMessageBar(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-
+            
             Text(
                 text = preview.text,
                 inlineContent = preview.inlineContent,
@@ -69,7 +56,7 @@ fun PinnedMessageBar(
                 overflow = TextOverflow.Ellipsis
             )
         }
-
+        
         IconButton(onClick = onListClick) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.List,

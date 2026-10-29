@@ -145,6 +145,7 @@
     <string name="inactive_links">Inactive Links</string>
     <string name="new_link">New Link</string>
     <string name="send">Send</string>
+    <string name="send_without_sound">Send without sound</string>
     <string name="subscribe">Subscribe</string>
     <string name="request_to_join">Request to join</string>
     <string name="group_type">Group Type</string>
@@ -167,6 +168,7 @@
     <string name="user_kicked">User kicked</string>
     <string name="user_unblocked">User unblocked</string>
     <string name="unblock">Unblock</string>
+    <string name="sending_messages_restricted">Sending messages is restricted</string>
     <string name="unblock_confirm_message">Are you sure you want to unblock %1$s?</string>
     <string name="unblock_this_user_confirm_message">Are you sure you want to unblock this user?</string>
     <string name="block_this_user_confirm_message">Are you sure you want to block this user?</string>

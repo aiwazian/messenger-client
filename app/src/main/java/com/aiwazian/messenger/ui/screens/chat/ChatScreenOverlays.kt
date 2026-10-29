@@ -202,6 +202,18 @@ internal fun ChatScreenOverlays(
     
     if (uiState.isForwardSheetVisible) {
         val forwardingMessage = uiState.forwardingMessage
+        val forwardOptions = if (forwardingMessage != null && uiState.sharingLink == null) {
+            ShareForwardOptions(
+                hasAttachments = forwardingMessage.attachments.isNotEmpty(),
+                hideAuthor = uiState.forwardHideAuthor,
+                hideCaption = uiState.forwardHideCaption,
+                onHideAuthorClick = chatViewModel::toggleForwardHideAuthor,
+                onHideCaptionClick = chatViewModel::toggleForwardHideCaption
+            )
+        } else {
+            null
+        }
+
         ShareBottomSheet(
             items = uiState.forwardCandidates.map { chat ->
                 ShareItem(
@@ -215,17 +227,10 @@ internal fun ChatScreenOverlays(
             onItemClick = chatViewModel::toggleForwardTarget,
             onSendClick = chatViewModel::confirmForward,
             onDismiss = chatViewModel::dismissForwardSheet,
-            forwardOptions = if (forwardingMessage != null && uiState.sharingLink == null) {
-                ShareForwardOptions(
-                    hasAttachments = forwardingMessage.attachments.isNotEmpty(),
-                    hideAuthor = uiState.forwardHideAuthor,
-                    hideCaption = uiState.forwardHideCaption,
-                    onHideAuthorClick = chatViewModel::toggleForwardHideAuthor,
-                    onHideCaptionClick = chatViewModel::toggleForwardHideCaption
-                )
-            } else {
-                null
-            }
+            text = uiState.forwardText,
+            onTextChange = chatViewModel::changeForwardText,
+            enabled = !uiState.isForwarding,
+            forwardOptions = forwardOptions
         )
     }
     

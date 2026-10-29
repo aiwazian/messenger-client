@@ -38,10 +38,6 @@ interface AccountDao {
     @Query("UPDATE account SET isCurrent = FALSE")
     suspend fun resetCurrent()
     
-    /**
-     * Сбрасывает кеш уже отправленного FID у всех аккаунтов. Нужен при переключении:
-     * сервер оставляет FID только у активной сессии, и кеш обязан это повторить.
-     */
     @Query("UPDATE account SET installationId = NULL")
     suspend fun clearInstallationIds()
     

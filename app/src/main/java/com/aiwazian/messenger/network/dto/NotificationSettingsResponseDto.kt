@@ -7,11 +7,6 @@ package com.aiwazian.messenger.network.dto
 import com.aiwazian.messenger.domain.NotificationSettings
 import kotlinx.serialization.Serializable
 
-/**
- * Ответ сервера и пейлоад события settings:notifications — формат у них общий.
- *
- * Значения по умолчанию стоят на случай, если сервер пришлёт частичный объект.
- */
 @Serializable
 data class NotificationSettingsResponseDto(
     val privateChats: Boolean = true,

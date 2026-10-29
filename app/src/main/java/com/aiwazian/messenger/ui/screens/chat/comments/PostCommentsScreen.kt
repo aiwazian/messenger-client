@@ -281,7 +281,8 @@ fun PostCommentsScreen(
                         modifier = bottomBarModifier,
                         alwaysShowInput = true,
                         isVoiceEnabled = false,
-                        onMediaSheetSend = {
+                        sendOptionsEnabled = false,
+                        onMediaSheetSend = { _ ->
                             val picker = mediaPickerViewModel.uiState.value
                             viewModel.sendCommentFiles(
                                 uris = picker.selected,
