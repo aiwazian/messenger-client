@@ -47,6 +47,15 @@ fun ChatSettingsScreen(viewModel: ChatSettingsViewModel = hiltViewModel()) {
                     viewModel.togglePauseMusicOnMedia(!uiState.pauseMusicOnMedia)
                 }
             )
+
+            SectionToggle(
+                headlineText = stringResource(R.string.raise_to_listen),
+                supportingText = stringResource(R.string.raise_to_listen_description),
+                isChecked = uiState.raiseToListen,
+                onCheckedChange = {
+                    viewModel.toggleRaiseToListen(!uiState.raiseToListen)
+                }
+            )
         }
     }
 }

@@ -673,4 +673,6 @@
     <string name="pause_music_on_record_description">Interrompi la musica durante la registrazione di un messaggio vocale</string>
     <string name="pause_music_on_media">Metti in pausa la musica all\'avvio dei media</string>
     <string name="pause_music_on_media_description">Interrompi la musica durante la riproduzione dei media</string>
+    <string name="raise_to_listen">Avvicina per ascoltare</string>
+    <string name="raise_to_listen_description">Passa all\'altoparlante superiore quando avvicini il telefono all\'orecchio</string>
 </resources>

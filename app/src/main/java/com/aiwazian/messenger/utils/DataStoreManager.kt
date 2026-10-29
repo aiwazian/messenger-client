@@ -39,6 +39,7 @@ private object Keys {
     val CACHED_WALLPAPERS = stringPreferencesKey("cached_wallpapers")
     val PAUSE_MUSIC_ON_RECORD = booleanPreferencesKey("pause_music_on_record")
     val PAUSE_MUSIC_ON_MEDIA = booleanPreferencesKey("pause_music_on_media")
+    val RAISE_TO_LISTEN = booleanPreferencesKey("raise_to_listen")
 }
 
 @Singleton
@@ -107,6 +108,9 @@ class DataStoreManager @Inject constructor(
     suspend fun savePauseMusicOnMedia(enabled: Boolean) =
         setValue(Keys.PAUSE_MUSIC_ON_MEDIA, enabled)
 
+    suspend fun saveRaiseToListen(enabled: Boolean) =
+        setValue(Keys.RAISE_TO_LISTEN, enabled)
+
     fun getPasscode() = getValue(Keys.PASSCODE, "")
     
     fun getIsLockApp() = getValue(Keys.IS_LOCK_APP, false)
@@ -149,6 +153,8 @@ class DataStoreManager @Inject constructor(
     fun getPauseMusicOnRecord() = getValue(Keys.PAUSE_MUSIC_ON_RECORD, true)
 
     fun getPauseMusicOnMedia() = getValue(Keys.PAUSE_MUSIC_ON_MEDIA, true)
+
+    fun getRaiseToListen() = getValue(Keys.RAISE_TO_LISTEN, true)
 
     suspend fun getCachedWallpapers(): String? {
         return context.dataStore.data.map { pref -> pref[Keys.CACHED_WALLPAPERS] }.first()

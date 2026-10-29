@@ -61,6 +61,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -68,6 +69,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.media.AudioManager
+import android.os.PowerManager
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Message
@@ -663,6 +671,85 @@ fun ChatScreen(
         snackbarHostState = snackbarHostState,
         tappedMedia = tappedMedia
     )
+
+    RaiseToListenHandler(
+        isVoicePlaying = uiState.isVoicePlaying,
+        raiseToListenEnabled = uiState.raiseToListen
+    )
+}
+
+@Suppress("DEPRECATION")
+@Composable
+fun RaiseToListenHandler(
+    isVoicePlaying: Boolean,
+    raiseToListenEnabled: Boolean
+) {
+    val context = LocalContext.current
+    var isNearEar by remember { mutableStateOf(false) }
+
+    DisposableEffect(isVoicePlaying, raiseToListenEnabled) {
+        if (!isVoicePlaying || !raiseToListenEnabled) {
+            isNearEar = false
+            return@DisposableEffect onDispose {}
+        }
+
+        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+        val proximitySensor = sensorManager?.getDefaultSensor(Sensor.TYPE_PROXIMITY)
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+
+        val wakeLock = powerManager?.newWakeLock(
+            PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK,
+            "Messenger:RaiseToListenWakeLock"
+        )
+
+        val originalMode = audioManager?.mode ?: AudioManager.MODE_NORMAL
+        val originalSpeakerphone = audioManager?.isSpeakerphoneOn ?: true
+
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                if (event.sensor.type == Sensor.TYPE_PROXIMITY) {
+                    val distance = event.values[0]
+                    val maxRange = proximitySensor?.maximumRange ?: 5f
+                    val near = distance < maxRange && distance < 4.0f
+                    if (near != isNearEar) {
+                        isNearEar = near
+                        if (near) {
+                            audioManager?.mode = AudioManager.MODE_IN_COMMUNICATION
+                            audioManager?.isSpeakerphoneOn = false
+                            runCatching { wakeLock?.acquire(10 * 60 * 1000L) }
+                        } else {
+                            audioManager?.mode = AudioManager.MODE_NORMAL
+                            audioManager?.isSpeakerphoneOn = true
+                            runCatching { wakeLock?.release() }
+                        }
+                    }
+                }
+            }
+
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+
+        if (proximitySensor != null) {
+            sensorManager.registerListener(listener, proximitySensor, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+
+        onDispose {
+            sensorManager?.unregisterListener(listener)
+            runCatching { wakeLock?.release() }
+            audioManager?.mode = originalMode
+            audioManager?.isSpeakerphoneOn = originalSpeakerphone
+            isNearEar = false
+        }
+    }
+
+    if (isNearEar && isVoicePlaying && raiseToListenEnabled) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        )
+    }
 }
 
 private const val PREFETCH_THRESHOLD = 10

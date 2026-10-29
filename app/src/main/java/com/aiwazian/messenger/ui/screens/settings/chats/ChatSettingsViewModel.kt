@@ -17,7 +17,8 @@ import javax.inject.Inject
 
 data class ChatSettingsUiState(
     val pauseMusicOnRecord: Boolean = true,
-    val pauseMusicOnMedia: Boolean = true
+    val pauseMusicOnMedia: Boolean = true,
+    val raiseToListen: Boolean = true
 )
 
 @HiltViewModel
@@ -39,6 +40,11 @@ class ChatSettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(pauseMusicOnMedia = enabled) }
             }
         }
+        viewModelScope.launch {
+            dataStoreManager.getRaiseToListen().collectLatest { enabled ->
+                _uiState.update { it.copy(raiseToListen = enabled) }
+            }
+        }
     }
 
     fun togglePauseMusicOnRecord(enabled: Boolean) {
@@ -50,6 +56,12 @@ class ChatSettingsViewModel @Inject constructor(
     fun togglePauseMusicOnMedia(enabled: Boolean) {
         viewModelScope.launch {
             dataStoreManager.savePauseMusicOnMedia(enabled)
+        }
+    }
+
+    fun toggleRaiseToListen(enabled: Boolean) {
+        viewModelScope.launch {
+            dataStoreManager.saveRaiseToListen(enabled)
         }
     }
 }

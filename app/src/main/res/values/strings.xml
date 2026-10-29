@@ -673,4 +673,6 @@
     <string name="pause_music_on_record_description">Stop music while recording a voice message</string>
     <string name="pause_music_on_media">Pause music when media starts</string>
     <string name="pause_music_on_media_description">Stop music while media is playing</string>
+    <string name="raise_to_listen">Raise to listen</string>
+    <string name="raise_to_listen_description">Switch to the top speaker when you hold the phone to your ear</string>
 </resources>

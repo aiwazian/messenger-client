@@ -91,6 +91,7 @@ data class ChatUiState(
     val isBlockedByThem: Boolean = false,
     val showBlockDialog: Boolean = false,
     val keyboardHeight: Float = DataStoreManager.DEFAULT_KEYBOARD_HEIGHT,
+    val raiseToListen: Boolean = true,
 
     val replyToMessage: MessageReplyPreview? = null,
 

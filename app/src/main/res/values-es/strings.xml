@@ -677,4 +677,6 @@
     <string name="pause_music_on_record_description">Detener la música mientras se graba un mensaje de voz</string>
     <string name="pause_music_on_media">Pausar la música al reproducir multimedia</string>
     <string name="pause_music_on_media_description">Detener la música mientras se reproduce contenido multimedia</string>
+    <string name="raise_to_listen">Acercar para escuchar</string>
+    <string name="raise_to_listen_description">Cambiar al altavoz superior cuando acercas el teléfono a la oreja</string>
 </resources>

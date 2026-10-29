@@ -699,4 +699,6 @@
     <string name="pause_music_on_record_description">Останавливать музыку на время записи голосового сообщения</string>
     <string name="pause_music_on_media">Пауза музыки при запуске медиа</string>
     <string name="pause_music_on_media_description">Останавливать музыку на время воспроизведения медиа</string>
+    <string name="raise_to_listen">Поднести и слушать</string>
+    <string name="raise_to_listen_description">Переключаться на верхний динамик, когда вы подносите телефон к уху</string>
 </resources>

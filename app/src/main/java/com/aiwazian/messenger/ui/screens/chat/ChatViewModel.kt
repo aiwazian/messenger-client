@@ -269,6 +269,11 @@ class ChatViewModel @Inject constructor(
                 _uiState.update { it.copy(keyboardHeight = height) }
             }
         }
+        viewModelScope.launch {
+            dataStoreManager.getRaiseToListen().collect { enabled ->
+                _uiState.update { it.copy(raiseToListen = enabled) }
+            }
+        }
     }
 
     override fun onKeyboardHeightChanged(height: Float) {
