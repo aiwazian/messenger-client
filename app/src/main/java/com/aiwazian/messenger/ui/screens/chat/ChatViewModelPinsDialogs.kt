@@ -183,44 +183,14 @@ internal fun ChatViewModel.unblockUser() {
 }
 
 internal fun ChatViewModel.onLinkClicked(url: String) {
-    val match = RegexPatterns.INVITE_LINK.find(url)
-    if (match == null) {
-        val normalized = if (url.startsWith("http")) url else "https://$url"
-        viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenUrl(normalized)) }
-        return
-    }
-
-    val code = match.groupValues[2]
-    viewModelScope.launch {
-        _uiState.update { it.copy(isProcessingInvite = true) }
-        inviteLinkRepository.getInviteLinkInfo(code).onSuccess { linkInfo ->
-            _uiState.update { it.copy(isProcessingInvite = false) }
-            when {
-                _uiState.value.chatId == linkInfo.chatId -> {
-                    _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.you_are_already_in_this_chat)))
-                    vibrationManager.vibrate(VibrationPattern.Error)
-                }
-
-                linkInfo.isJoined != null -> _uiEffect.emit(ChatUiEffect.NavigateToChat(linkInfo.chatId))
-                linkInfo.isBanned != null -> {
-                    _uiState.update { s -> s.copy(showBannedDialog = true) }
-                    vibrationManager.vibrate(VibrationPattern.Error)
-                }
-
-                else -> _uiState.update { s ->
-                    s.copy(
-                        inviteLinkInfo = linkInfo,
-                        inviteLinkCode = code,
-                        showInviteBottomSheet = true
-                    )
-                }
-            }
-        }.onFailure {
-            _uiState.update { it.copy(isProcessingInvite = false) }
-            _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.invalid_link)))
-            vibrationManager.vibrate(VibrationPattern.Error)
-        }
-    }
+    globalBottomSheetManager.handleInviteLink(
+        url = url,
+        currentChatId = _uiState.value.chatId,
+        scope = viewModelScope,
+        onNavigateToChat = { chatId -> viewModelScope.launch { _uiEffect.emit(ChatUiEffect.NavigateToChat(chatId)) } },
+        onOpenUrl = { normalized -> viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenUrl(normalized)) } },
+        onShowSnackbar = { uiText -> viewModelScope.launch { _uiEffect.emit(ChatUiEffect.ShowSnackbar(uiText)) } }
+    )
 }
 
 internal fun ChatViewModel.onUsernameClicked(username: String) {
@@ -230,7 +200,7 @@ internal fun ChatViewModel.onUsernameClicked(username: String) {
                 _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.chat_not_found)))
                 vibrationManager.vibrate(VibrationPattern.Error)
             } else if (result.isBanned) {
-                _uiState.update { it.copy(showBannedDialog = true) }
+                _uiState.update { s -> s.copy(showBannedDialog = true) }
                 vibrationManager.vibrate(VibrationPattern.Error)
             } else {
                 _uiEffect.emit(ChatUiEffect.NavigateToChat(result.chatId))
@@ -240,21 +210,17 @@ internal fun ChatViewModel.onUsernameClicked(username: String) {
 }
 
 internal fun ChatViewModel.onSubscribeViaInviteLink() {
-    val info = _uiState.value.inviteLinkInfo ?: return
-    val code = _uiState.value.inviteLinkCode ?: return
-    viewModelScope.launch {
-        _uiState.update { it.copy(isProcessingInvite = true) }
-        joinViaInviteLinkUseCase(code, info.chatId).onSuccess {
-            dismissInviteBottomSheet()
-            if (info.requireApproval) {
-                _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.join_request_sent)))
-            } else {
-                _uiEffect.emit(ChatUiEffect.NavigateToChat(info.chatId))
-            }
-        }.onFailure {
-            _uiState.update { it.copy(isProcessingInvite = false) }
-            _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_join)))
-            vibrationManager.vibrate(VibrationPattern.Error)
-        }
-    }
+    globalBottomSheetManager.subscribeViaInviteLink(
+        scope = viewModelScope,
+        onNavigateToChat = { chatId -> viewModelScope.launch { _uiEffect.emit(ChatUiEffect.NavigateToChat(chatId)) } },
+        onShowSnackbar = { uiText -> viewModelScope.launch { _uiEffect.emit(ChatUiEffect.ShowSnackbar(uiText)) } }
+    )
+}
+
+internal fun ChatViewModel.dismissInviteBottomSheet() {
+    globalBottomSheetManager.dismissInviteBottomSheet()
+}
+
+internal fun ChatViewModel.dismissBannedDialog() {
+    globalBottomSheetManager.hideBannedDialog()
 }

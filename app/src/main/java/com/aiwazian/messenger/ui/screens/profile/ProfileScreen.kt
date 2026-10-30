@@ -321,19 +321,7 @@ fun ProfileScreen(
         )
     }
     
-    if (uiState.showInviteBottomSheet && uiState.inviteLinkInfo != null) {
-        val info = uiState.inviteLinkInfo!!
-        InviteLinkBottomSheet(
-            chatId = info.chatId,
-            name = info.name.orEmpty(),
-            description = info.description,
-            count = info.membersCount ?: 0,
-            requireApproval = info.requireApproval,
-            isLoading = uiState.isProcessingInvite,
-            onDismiss = viewModel::dismissInviteBottomSheet,
-            onJoin = viewModel::onSubscribeViaInviteLink
-        )
-    }
+
     
     if (uiState.showBannedDialog) {
         AppDialog(

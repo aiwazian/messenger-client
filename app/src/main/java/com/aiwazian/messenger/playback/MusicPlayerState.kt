@@ -15,6 +15,7 @@ data class MusicPlayerState(
     val fileId: String? = null,
     val title: String = "",
     val artist: String? = null,
+    val artworkData: ByteArray? = null,
     val isPlaying: Boolean = false,
     val positionMs: Int = 0,
     val durationMs: Int = 0

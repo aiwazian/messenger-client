@@ -25,6 +25,7 @@ import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.repository.channel.ChannelAdminsRepository
 import com.aiwazian.messenger.repository.group.GroupAdminsRepository
 import com.aiwazian.messenger.socket.OnlineUsersTracker
+import com.aiwazian.messenger.ui.app.GlobalBottomSheetManager
 import com.aiwazian.messenger.ui.components.topBar.DropdownMenuAction
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
 import com.aiwazian.messenger.usecase.DownloadAvatarUseCase
@@ -76,7 +77,8 @@ class ProfileViewModel @Inject constructor(
     private val joinChannelUseCase: com.aiwazian.messenger.usecase.JoinChannelUseCase,
     private val joinGroupUseCase: com.aiwazian.messenger.usecase.JoinGroupUseCase,
     private val leaveChatUseCase: LeaveChatUseCase,
-    private val onlineUsersTracker: OnlineUsersTracker
+    private val onlineUsersTracker: OnlineUsersTracker,
+    private val globalBottomSheetManager: GlobalBottomSheetManager
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -625,55 +627,14 @@ class ProfileViewModel @Inject constructor(
     }
     
     fun onLinkClicked(url: String) {
-        val inviteLinkRegex = RegexPatterns.INVITE_LINK
-        val match = inviteLinkRegex.find(url)
-        
-        if (match == null) {
-            val normalizedUrl =
-                if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"
-            viewModelScope.launch {
-                _uiEffect.emit(ProfileUiEffect.OpenUrl(normalizedUrl))
-            }
-            return
-        }
-        
-        val code = match.groupValues[2]
-        
-        viewModelScope.launch {
-            _uiState.update { it.copy(isProcessingInvite = true) }
-            
-            inviteLinkRepository.getInviteLinkInfo(code).onSuccess { linkInfo ->
-                if (_uiState.value.id == linkInfo.chatId) {
-                    _uiState.update { it.copy(isProcessingInvite = false) }
-                    _uiEffect.emit(ProfileUiEffect.ShowSnackbar(UiText.StringResource(R.string.you_are_already_in_this_chat)))
-                    vibrationManager.vibrate(VibrationPattern.Error)
-                } else if (linkInfo.isJoined != null) {
-                    _uiState.update { it.copy(isProcessingInvite = false) }
-                    _uiEffect.emit(ProfileUiEffect.NavigateToChat(linkInfo.chatId))
-                } else if (linkInfo.isBanned != null) {
-                    _uiState.update {
-                        it.copy(
-                            showBannedDialog = true,
-                            isProcessingInvite = false
-                        )
-                    }
-                    vibrationManager.vibrate(VibrationPattern.Error)
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            inviteLinkInfo = linkInfo,
-                            inviteLinkCode = code,
-                            showInviteBottomSheet = true,
-                            isProcessingInvite = false
-                        )
-                    }
-                }
-            }.onFailure {
-                _uiState.update { it.copy(isProcessingInvite = false) }
-                _uiEffect.emit(ProfileUiEffect.ShowSnackbar(UiText.StringResource(R.string.invalid_link)))
-                vibrationManager.vibrate(VibrationPattern.Error)
-            }
-        }
+        globalBottomSheetManager.handleInviteLink(
+            url = url,
+            currentChatId = _uiState.value.id,
+            scope = viewModelScope,
+            onNavigateToChat = { chatId -> viewModelScope.launch { _uiEffect.emit(ProfileUiEffect.NavigateToChat(chatId)) } },
+            onOpenUrl = { normalized -> viewModelScope.launch { _uiEffect.emit(ProfileUiEffect.OpenUrl(normalized)) } },
+            onShowSnackbar = { uiText -> viewModelScope.launch { _uiEffect.emit(ProfileUiEffect.ShowSnackbar(uiText)) } }
+        )
     }
     
     fun onUsernameClicked(username: String) {
@@ -697,44 +658,19 @@ class ProfileViewModel @Inject constructor(
     }
     
     fun onSubscribeViaInviteLink() {
-        val info = _uiState.value.inviteLinkInfo ?: return
-        val code = _uiState.value.inviteLinkCode ?: return
-        
-        viewModelScope.launch {
-            _uiState.update { it.copy(isProcessingInvite = true) }
-            
-            val result = joinViaInviteLinkUseCase(code, info.chatId)
-            if (result.isSuccess) {
-                _uiState.update {
-                    it.copy(
-                        isProcessingInvite = false,
-                        showInviteBottomSheet = false,
-                        inviteLinkInfo = null,
-                        inviteLinkCode = null
-                    )
-                }
-                _uiEffect.emit(ProfileUiEffect.NavigateToChat(info.chatId))
-            } else {
-                _uiState.update { it.copy(isProcessingInvite = false) }
-                _uiEffect.emit(ProfileUiEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_join)))
-                vibrationManager.vibrate(VibrationPattern.Error)
-            }
-        }
+        globalBottomSheetManager.subscribeViaInviteLink(
+            scope = viewModelScope,
+            onNavigateToChat = { chatId -> viewModelScope.launch { _uiEffect.emit(ProfileUiEffect.NavigateToChat(chatId)) } },
+            onShowSnackbar = { uiText -> viewModelScope.launch { _uiEffect.emit(ProfileUiEffect.ShowSnackbar(uiText)) } }
+        )
     }
     
     fun dismissInviteBottomSheet() {
-        _uiState.update {
-            it.copy(
-                showInviteBottomSheet = false,
-                inviteLinkInfo = null,
-                inviteLinkCode = null,
-                isProcessingInvite = false
-            )
-        }
+        globalBottomSheetManager.dismissInviteBottomSheet()
     }
     
     fun dismissBannedDialog() {
-        _uiState.update { it.copy(showBannedDialog = false) }
+        globalBottomSheetManager.hideBannedDialog()
     }
     
     fun onChatButtonClicked() {

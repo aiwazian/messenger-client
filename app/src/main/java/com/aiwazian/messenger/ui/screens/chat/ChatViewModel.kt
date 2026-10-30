@@ -31,6 +31,7 @@ import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.repository.WallpaperRepository
 import com.aiwazian.messenger.repository.channel.ChannelAdminsRepository
 import com.aiwazian.messenger.repository.group.GroupAdminsRepository
+import com.aiwazian.messenger.ui.app.GlobalBottomSheetManager
 import com.aiwazian.messenger.socket.OutgoingSocketEvent
 import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.socket.WebSocketClient
@@ -112,8 +113,13 @@ class ChatViewModel @Inject constructor(
     private val messageSendQueue: MessageSendQueue,
     internal val wallpaperRepository: WallpaperRepository,
     private val sendStickerUseCase: SendStickerUseCase,
-    private val sendContactUseCase: SendContactUseCase
+    private val sendContactUseCase: SendContactUseCase,
+    internal val globalBottomSheetManager: GlobalBottomSheetManager
 ) : ViewModel(), ChatInputActions {
+
+    fun showMusicPlayerSheet() {
+        globalBottomSheetManager.showMusicPlayerSheet()
+    }
 
     private val audioRecorderManager = AudioRecorderManager(context)
     private var recordingTimerJob: Job? = null

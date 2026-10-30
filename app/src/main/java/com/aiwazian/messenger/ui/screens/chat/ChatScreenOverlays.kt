@@ -9,7 +9,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
@@ -27,7 +26,6 @@ import com.aiwazian.messenger.ui.screens.chat.components.ChatDialogs
 import com.aiwazian.messenger.ui.screens.chat.components.ChatWallpaperSheet
 import com.aiwazian.messenger.ui.screens.chat.components.ContactViewBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.EmojiPackBottomSheet
-import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MediaPickerBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MicrophonePermissionBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MusicPlayerSheet
@@ -105,19 +103,7 @@ internal fun ChatScreenOverlays(
             })
     }
     
-    if (uiState.showInviteBottomSheet && uiState.inviteLinkInfo != null) {
-        val info = uiState.inviteLinkInfo
-        InviteLinkBottomSheet(
-            chatId = info.chatId,
-            name = info.name.orEmpty(),
-            description = info.description,
-            count = info.membersCount ?: 0,
-            requireApproval = info.requireApproval,
-            isLoading = uiState.isProcessingInvite,
-            onDismiss = chatViewModel::dismissInviteBottomSheet,
-            onJoin = chatViewModel::onSubscribeViaInviteLink
-        )
-    }
+    
     
     if (uiState.showMicrophonePermissionSheet) {
         MicrophonePermissionBottomSheet(
@@ -213,7 +199,7 @@ internal fun ChatScreenOverlays(
         } else {
             null
         }
-
+        
         ShareBottomSheet(
             items = uiState.forwardCandidates.map { chat ->
                 ShareItem(
