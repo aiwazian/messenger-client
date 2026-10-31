@@ -101,6 +101,7 @@ import com.aiwazian.messenger.ui.screens.chat.components.ChatTopBar
 import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.MessageSearchResultsList
 import com.aiwazian.messenger.ui.screens.chat.components.PinnedMessageBar
+import com.aiwazian.messenger.ui.screens.chat.components.ScheduleSendBottomSheet
 import com.aiwazian.messenger.utils.ActiveChatTracker
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
@@ -652,7 +653,14 @@ fun ChatScreen(
                 onJoin = chatViewModel::onSubscribeViaInviteLink
             )
         }
-        
+
+        if (uiState.showScheduleSendSheet) {
+            ScheduleSendBottomSheet(
+                onDismissRequest = chatViewModel::dismissScheduleSendSheet,
+                onConfirm = chatViewModel::onSendScheduledClicked
+            )
+        }
+
         ChatScreenOverlays(
             uiState = uiState,
             chatViewModel = chatViewModel,

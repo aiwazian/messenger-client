@@ -47,6 +47,7 @@ data class Message(
     val chatId: Long,
     val text: String?,
     val sendTime: Long,
+    val scheduledAt: Long? = null,
     val editedAt: Long? = null,
     val isRead: Boolean,
     val status: MessageStatus = MessageStatus.SENT,

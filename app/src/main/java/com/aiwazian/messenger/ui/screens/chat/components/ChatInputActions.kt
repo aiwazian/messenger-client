@@ -15,6 +15,12 @@ interface ChatInputActions {
 
     fun onSendWithoutSoundClicked()
 
+    fun onScheduleSendOptionsClicked()
+
+    fun onSendScheduledClicked(scheduledAt: Long)
+
+    fun onScheduledMessagesClicked()
+
     fun onJoinClicked()
 
     fun sendFiles(uris: List<Uri>)

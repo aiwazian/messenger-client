@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.NotificationsOff
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MenuAnchorPosition
@@ -40,6 +41,7 @@ fun SendMessageOptionsButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     optionsEnabled: Boolean = true,
+    onSendScheduled: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     var optionsExpanded by remember { mutableStateOf(false) }
@@ -76,6 +78,22 @@ fun SendMessageOptionsButton(
             ),
             scrimColor = Color.Black.copy(alpha = 0.1f)
         ) {
+            if (onSendScheduled != null) {
+                AppDropdownMenuItem(
+                    text = stringResource(R.string.send_later),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Rounded.Schedule,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = {
+                        optionsExpanded = false
+                        onSendScheduled()
+                    }
+                )
+            }
+
             AppDropdownMenuItem(
                 text = stringResource(R.string.send_without_sound),
                 leadingIcon = {

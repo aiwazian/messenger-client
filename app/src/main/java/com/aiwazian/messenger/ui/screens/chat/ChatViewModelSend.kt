@@ -85,20 +85,24 @@ private fun ChatViewModel.isInCurrentChat(preview: MessageReplyPreview): Boolean
 internal fun ChatViewModel.onSendMessageInternal(
     text: String,
     replyTo: MessageReplyPreview? = null,
-    silent: Boolean = false
+    silent: Boolean = false,
+    scheduledAt: Long? = null
 ) {
     val tempId = -System.currentTimeMillis()
     val job = viewModelScope.launch {
         try {
-            if (!_uiState.value.isAtLiveEdge) jumpToLatestInternal()
+            if (scheduledAt == null && !_uiState.value.isAtLiveEdge) jumpToLatestInternal()
             sendMessageUseCase(
                 _uiState.value.chatId,
                 message = text,
                 tempId = tempId,
                 replyTo = replyTo,
-                silent = silent
+                silent = silent,
+                scheduledAt = scheduledAt
             )
-            requestScrollTo(messageId = null, highlight = false, animate = true)
+            if (scheduledAt == null) {
+                requestScrollTo(messageId = null, highlight = false, animate = true)
+            }
         } catch (e: Exception) {
             Log.e("ChatViewModel", "Error sending message", e)
         } finally {

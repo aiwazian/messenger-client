@@ -152,6 +152,16 @@ internal fun ChatViewModel.observePinnedMessages() {
     }
 }
 
+internal fun ChatViewModel.observeScheduledMessages() {
+    val chatId = _uiState.value.chatId
+
+    viewModelScope.launch {
+        chatRepository.observeScheduledMessages(chatId).collect { messages ->
+            _uiState.update { it.copy(hasScheduledMessages = messages.isNotEmpty()) }
+        }
+    }
+}
+
 internal fun ChatViewModel.updateChatItems(messages: List<Message>) {
     lastMessages = messages
     val state = _uiState.value

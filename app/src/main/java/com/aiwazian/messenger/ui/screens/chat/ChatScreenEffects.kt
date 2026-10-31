@@ -80,6 +80,10 @@ internal fun ChatScreenEffects(
                     )
                 }
 
+                is ChatUiEffect.OpenScheduledMessages -> {
+                    navBackStack.add(AppRoute.ScheduledMessages(effect.chatId))
+                }
+
                 is ChatUiEffect.OpenUrl -> {
                     CustomTabsIntent.Builder()
                         .setShowTitle(true)

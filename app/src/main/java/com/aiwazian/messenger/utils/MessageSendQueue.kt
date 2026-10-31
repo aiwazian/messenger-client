@@ -40,7 +40,8 @@ class MessageSendQueue @Inject constructor(
         text: String,
         tempId: Long = nextTempId(),
         replyTo: MessageReplyPreview? = null,
-        silent: Boolean = false
+        silent: Boolean = false,
+        scheduledAt: Long? = null
     ): Long {
         enqueue(tempId) {
             sendMessageUseCase(
@@ -48,7 +49,8 @@ class MessageSendQueue @Inject constructor(
                 message = text,
                 tempId = tempId,
                 replyTo = replyTo,
-                silent = silent
+                silent = silent,
+                scheduledAt = scheduledAt
             )
         }
 
@@ -66,7 +68,8 @@ class MessageSendQueue @Inject constructor(
         mediaDrawings: Map<Uri, Bitmap> = emptyMap(),
         viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap(),
         spoilerUris: Set<Uri> = emptySet(),
-        silent: Boolean = false
+        silent: Boolean = false,
+        scheduledAt: Long? = null
     ): Long {
         enqueue(tempId) {
             sendMessageWithFilesUseCase(
@@ -80,7 +83,8 @@ class MessageSendQueue @Inject constructor(
                 mediaDrawings = mediaDrawings,
                 viewOnceOptions = viewOnceOptions,
                 spoilerUris = spoilerUris,
-                silent = silent
+                silent = silent,
+                scheduledAt = scheduledAt
             )
         }
 
