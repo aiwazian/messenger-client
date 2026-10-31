@@ -52,6 +52,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Backspace
 import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.rounded.AttachFile
@@ -81,6 +82,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -133,8 +135,9 @@ fun ChatInputSection(
     alwaysShowInput: Boolean = false,
     isVoiceEnabled: Boolean = true,
     sendOptionsEnabled: Boolean = true,
-    onMediaSheetSend: ((Boolean) -> Unit)? = null,
-    onContactSend: ((MessageContact) -> Unit)? = null
+    onMediaSheetSend: ((silent: Boolean, scheduledAt: Long?) -> Unit)? = null,
+    onContactSend: ((MessageContact) -> Unit)? = null,
+    sendIcon: ImageVector = Icons.AutoMirrored.Rounded.Send
 ) {
     val density = LocalDensity.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -269,9 +272,10 @@ fun ChatInputSection(
                                 keyboardHeight = keyboardHeight,
                                 onShowStickerPanel = showStickerPanel,
                                 onInputViewReady = onInputViewReady,
-                                onResolveEmoji = customEmojiViewModel::resolveEmoji
+                                onResolveEmoji = customEmojiViewModel::resolveEmoji,
+                                sendIcon = sendIcon
                             )
-
+                            
                             "join" -> JoinButton(onClick = actions::onJoinClicked)
                             "none" -> Unit
                         }
@@ -297,7 +301,8 @@ fun ChatInputSection(
                                 keyboardHeight = keyboardHeight,
                                 onShowStickerPanel = showStickerPanel,
                                 onInputViewReady = onInputViewReady,
-                                onResolveEmoji = customEmojiViewModel::resolveEmoji
+                                onResolveEmoji = customEmojiViewModel::resolveEmoji,
+                                sendIcon = sendIcon
                             )
                         } else {
                             JoinButton(onClick = actions::onJoinClicked)
@@ -376,7 +381,8 @@ fun ChatInputSection(
                                     keyboardHeight = keyboardHeight,
                                     onShowStickerPanel = showStickerPanel,
                                     onInputViewReady = onInputViewReady,
-                                    onResolveEmoji = customEmojiViewModel::resolveEmoji
+                                    onResolveEmoji = customEmojiViewModel::resolveEmoji,
+                                    sendIcon = sendIcon
                                 )
                             }
                         }
@@ -492,8 +498,9 @@ private fun InputMessage(
     actions: ChatInputActions,
     isVoiceEnabled: Boolean,
     sendOptionsEnabled: Boolean,
-    onMediaSheetSend: ((Boolean) -> Unit)?,
+    onMediaSheetSend: ((silent: Boolean, scheduledAt: Long?) -> Unit)?,
     onContactSend: ((MessageContact) -> Unit)?,
+    sendIcon: ImageVector,
     isStickerPanelVisible: Boolean,
     isKeyboardVisible: Boolean,
     keyboardHeight: Dp,
@@ -504,9 +511,9 @@ private fun InputMessage(
     var attachmentModal by remember { mutableStateOf(DialogController()) }
     var micTranslationX by remember { mutableFloatStateOf(0f) }
     var micTranslationY by remember { mutableFloatStateOf(0f) }
-
+    
     var inputView by remember { mutableStateOf<EditText?>(null) }
-
+    
     val inputHint = stringResource(R.string.message)
     
     LaunchedEffect(uiState.editingMessageId) {
@@ -519,18 +526,18 @@ private fun InputMessage(
         contract = ActivityResultContracts.OpenMultipleDocuments(), onResult = { uris: List<Uri> ->
             if (uris.isNotEmpty()) {
                 attachmentModal.hide()
-
+                
                 actions.sendMediaUris(
                     uris = uris,
                     caption = uiState.messageText,
                     replyTo = uiState.replyToMessage
                 )
-
+                
                 actions.changeText("")
                 actions.cancelReply()
             }
         })
-
+    
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -726,6 +733,23 @@ private fun InputMessage(
             }
             
             AnimatedVisibility(
+                visible = uiState.hasScheduledMessages &&
+                        uiState.messageText.trim().isEmpty() &&
+                        !uiState.isRecording &&
+                        uiState.editingMessageId == null,
+                enter = expressiveScaleIn,
+                exit = expressiveScaleOut
+            ) {
+                IconButton(onClick = actions::onScheduledMessagesClicked) {
+                    Icon(
+                        imageVector = Icons.Outlined.CalendarToday,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            
+            AnimatedVisibility(
                 visible = !uiState.isRecording && uiState.editingMessageId == null,
                 enter = expressiveScaleIn,
                 exit = expressiveScaleOut
@@ -901,24 +925,17 @@ private fun InputMessage(
                     SendMessageOptionsButton(
                         onClick = actions::onSendMessageClicked,
                         onSendSilently = actions::onSendWithoutSoundClicked,
+                        onSendScheduled = actions::onScheduleSendOptionsClicked,
                         optionsEnabled = sendOptionsEnabled && uiState.editingMessageId == null
                     ) {
                         AnimatedContent(
                             targetState = uiState.editingMessageId != null,
                             transitionSpec = { expressiveScaleIn togetherWith expressiveScaleOut }) { isEditing ->
-                            if (isEditing) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Done,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.Send,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
+                            Icon(
+                                imageVector = if (isEditing) Icons.Rounded.Done else sendIcon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }
@@ -951,7 +968,8 @@ private fun InputMessage(
                 actions.cancelReply()
             },
             silentSendEnabled = sendOptionsEnabled,
-            onSend = onMediaSheetSend)
+            onSend = onMediaSheetSend
+        )
     }
 }
 

@@ -225,6 +225,7 @@ class ChatViewModel @Inject constructor(
         observeRealtimeEvents()
         observeMessages()
         observePinnedMessages()
+        observeScheduledMessages()
         viewModelScope.launch {
             chatRepository.reconcileViewOnceAttachments(chatId)
         }
@@ -355,6 +356,34 @@ class ChatViewModel @Inject constructor(
         changeText("")
         clearReply()
         onSendMessageInternal(text, replyTo, silent = true)
+    }
+
+    override fun onScheduleSendOptionsClicked() {
+        if (_uiState.value.editingMessageId != null) return
+
+        _uiState.update { it.copy(showScheduleSendSheet = true) }
+    }
+
+    override fun onSendScheduledClicked(scheduledAt: Long) {
+        _uiState.update { it.copy(showScheduleSendSheet = false) }
+
+        val text = _uiState.value.messageText.trim()
+        if (text.isEmpty()) return
+
+        val replyTo = _uiState.value.replyToMessage
+        changeText("")
+        clearReply()
+        onSendMessageInternal(text, replyTo, scheduledAt = scheduledAt)
+    }
+
+    fun dismissScheduleSendSheet() {
+        _uiState.update { it.copy(showScheduleSendSheet = false) }
+    }
+
+    override fun onScheduledMessagesClicked() {
+        viewModelScope.launch {
+            _uiEffect.emit(ChatUiEffect.OpenScheduledMessages(_uiState.value.chatId))
+        }
     }
 
     override fun sendFiles(uris: List<Uri>) {

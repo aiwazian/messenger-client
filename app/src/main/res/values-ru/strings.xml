@@ -150,6 +150,14 @@
     <string name="new_link">Новая ссылка</string>
     <string name="send">Отправить</string>
     <string name="send_without_sound">Отправить без звука</string>
+    <string name="send_later">Отправить позже</string>
+    <string name="send_now">Отправить сейчас</string>
+    <string name="send_scheduled_at">Отправить %1$s в %2$s</string>
+    <string name="scheduled_messages_title">Отложенная отправка</string>
+    <string name="no_scheduled_messages">Отложенных сообщений пока нет</string>
+    <string name="edit_schedule_time">Изменить время</string>
+    <string name="delete_scheduled_message_title">Удалить отложенное сообщение</string>
+    <string name="delete_scheduled_message_confirm">Сообщение будет удалено и не будет отправлено.</string>
     <string name="subscribe">Подписаться</string>
     <string name="request_to_join">Подать заявку</string>
     <string name="group_type">Тип группы</string>

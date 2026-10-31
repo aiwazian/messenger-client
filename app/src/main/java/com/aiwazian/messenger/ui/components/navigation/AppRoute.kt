@@ -38,6 +38,9 @@ sealed interface AppRoute : NavKey {
     data class PinnedMessages(val chatId: Long) : AppRoute
 
     @Serializable
+    data class ScheduledMessages(val chatId: Long) : AppRoute
+
+    @Serializable
     data object Equalizer : AppRoute
 
     @Serializable

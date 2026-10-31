@@ -282,15 +282,17 @@ fun PostCommentsScreen(
                         alwaysShowInput = true,
                         isVoiceEnabled = false,
                         sendOptionsEnabled = false,
-                        onMediaSheetSend = { _ ->
-                            val picker = mediaPickerViewModel.uiState.value
-                            viewModel.sendCommentFiles(
-                                uris = picker.selected,
-                                videoQualities = picker.videoQualities,
-                                mediaTransforms = picker.mediaTransforms,
-                                mediaDrawings = picker.mediaDrawings.mapValues { it.value.bitmap }
-                            )
-                            mediaPickerViewModel.reset()
+                        onMediaSheetSend = { _, scheduledAt ->
+                            if (scheduledAt == null) {
+                                val picker = mediaPickerViewModel.uiState.value
+                                viewModel.sendCommentFiles(
+                                    uris = picker.selected,
+                                    videoQualities = picker.videoQualities,
+                                    mediaTransforms = picker.mediaTransforms,
+                                    mediaDrawings = picker.mediaDrawings.mapValues { it.value.bitmap }
+                                )
+                                mediaPickerViewModel.reset()
+                            }
                         }
                     )
                 } else {

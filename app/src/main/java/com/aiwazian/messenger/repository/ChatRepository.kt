@@ -45,6 +45,7 @@ import com.aiwazian.messenger.network.dto.MarkReadRequestDto
 import com.aiwazian.messenger.network.dto.PinChatsRequestDto
 import com.aiwazian.messenger.network.dto.PinMessageRequestDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
+import com.aiwazian.messenger.network.dto.UpdateScheduledMessageRequestDto
 import com.aiwazian.messenger.network.dto.ViewOnceViewedDto
 import com.aiwazian.messenger.socket.OnlineUsersTracker
 import com.aiwazian.messenger.socket.WebSocketClient
@@ -52,6 +53,7 @@ import com.aiwazian.messenger.ui.screens.chat.paging.MessageWindowBounds
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -375,7 +377,8 @@ class ChatRepository @Inject constructor(
         message: String,
         tempId: Long = -System.currentTimeMillis(),
         replyTo: MessageReplyPreview? = null,
-        silent: Boolean = false
+        silent: Boolean = false,
+        scheduledAt: Long? = null
     ): Result<Message> {
         val senderId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
@@ -385,7 +388,8 @@ class ChatRepository @Inject constructor(
             senderId = senderId,
             chatId = chatId,
             text = message,
-            sendTime = System.currentTimeMillis(),
+            sendTime = scheduledAt ?: System.currentTimeMillis(),
+            scheduledAt = scheduledAt,
             isRead = false,
             status = MessageStatus.SENDING,
             messageType = MessageType.TEXT,
@@ -401,7 +405,8 @@ class ChatRepository @Inject constructor(
             val request = TextMessageRequestDto(
                 text = message,
                 replyToId = replyTo?.messageId?.toString(),
-                silent = silent
+                silent = silent,
+                scheduledAt = scheduledAt
             )
             val response = messageApi.sendTextMessage(chatId, request, socket.socketId.orEmpty())
             if (response.isSuccessful) {
@@ -421,6 +426,110 @@ class ChatRepository @Inject constructor(
         } catch (e: Exception) {
             Log.e("ChatRepository", "Error sending message", e)
             updateMessageStatus(tempId, MessageStatus.ERROR)
+            Result.failure(e)
+        }
+    }
+
+    fun observeScheduledMessages(chatId: Long): Flow<List<Message>> {
+        return messageDao.observeScheduledMessages(chatId).map { rows ->
+            rows.map { messageWithAttachments ->
+                val attachments = messageWithAttachments.attachments
+                    .sortedBy { it.attachment.sortOrder }
+                    .map { it.toDomain() }
+                messageWithAttachments.message.toDomain(attachments)
+            }
+        }
+    }
+
+    suspend fun syncScheduledMessages(chatId: Long) {
+        val messages = try {
+            val response = messageApi.getScheduledMessages(chatId)
+            if (response.isSuccessful) {
+                response.body()?.map { it.toDomain() }.orEmpty()
+            } else {
+                Log.e("ChatRepository", "Failed to get scheduled messages: ${response.message()}")
+                return
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error getting scheduled messages", e)
+            return
+        }
+
+        val fetchedIds = messages.map { it.id }.toSet()
+        messageDao.getScheduledMessageIds(chatId)
+            .filter { it !in fetchedIds }
+            .forEach { messageDao.deleteMessageById(it) }
+
+        saveMessagesToDb(messages)
+    }
+
+    suspend fun updateScheduledMessageTime(
+        chatId: Long,
+        messageId: Long,
+        scheduledAt: Long
+    ): Result<Message> {
+        return try {
+            val response = messageApi.updateScheduledMessage(
+                chatId,
+                messageId,
+                UpdateScheduledMessageRequestDto(scheduledAt),
+                socket.socketId.orEmpty()
+            )
+            if (response.isSuccessful) {
+                val message = response.body()?.toDomain()
+                if (message == null) {
+                    Result.failure(Exception("Empty body"))
+                } else {
+                    messageDao.updateMessageScheduledTime(messageId, scheduledAt)
+                    Result.success(message)
+                }
+            } else {
+                Log.e("ChatRepository", "Failed to update scheduled message: ${response.message()}")
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error updating scheduled message", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteScheduledMessage(chatId: Long, messageId: Long): Result<Unit> {
+        return try {
+            val response = messageApi.deleteScheduledMessage(
+                chatId,
+                messageId,
+                socket.socketId.orEmpty()
+            )
+            if (response.isSuccessful) {
+                deleteLocalMessage(messageId)
+                Result.success(Unit)
+            } else {
+                Log.e("ChatRepository", "Failed to delete scheduled message: ${response.message()}")
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error deleting scheduled message", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun sendScheduledMessageNow(chatId: Long, messageId: Long): Result<Message> {
+        return try {
+            val response = messageApi.sendScheduledMessageNow(chatId, messageId)
+            if (response.isSuccessful) {
+                val message = response.body()?.toDomain()
+                if (message == null) {
+                    Result.failure(Exception("Empty body"))
+                } else {
+                    saveMessagesToDb(listOf(message))
+                    Result.success(message)
+                }
+            } else {
+                Log.e("ChatRepository", "Failed to send scheduled message: ${response.message()}")
+                Result.failure(Exception("Unsuccessful request ${response.errorBody()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("ChatRepository", "Error sending scheduled message", e)
             Result.failure(e)
         }
     }
@@ -520,14 +629,16 @@ class ChatRepository @Inject constructor(
         attachments: List<AttachmentInputDto>,
         text: String? = null,
         replyToId: Long? = null,
-        silent: Boolean = false
+        silent: Boolean = false,
+        scheduledAt: Long? = null
     ): Result<Message> {
         return try {
             val dto = FileConfirmRequestDto(
                 attachments = attachments,
                 text = text,
                 replyToId = replyToId?.toString(),
-                silent = silent
+                silent = silent,
+                scheduledAt = scheduledAt
             )
             val response = messageApi.confirmFileUpload(chatId, dto, socket.socketId.orEmpty())
             if (response.isSuccessful) {

@@ -129,7 +129,10 @@ data class ChatUiState(
     val isMessageSearchTotalExact: Boolean = true,
     val messageSearchIndex: Int = -1,
     val isMessageSearchListMode: Boolean = false,
-    val messageSearchSenders: Map<Long, MessageSearchSender> = emptyMap()
+    val messageSearchSenders: Map<Long, MessageSearchSender> = emptyMap(),
+
+    val hasScheduledMessages: Boolean = false,
+    val showScheduleSendSheet: Boolean = false
 ) {
 
     val copyPolicy: ChatCopyPolicy

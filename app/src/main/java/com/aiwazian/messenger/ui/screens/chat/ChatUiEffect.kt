@@ -21,4 +21,6 @@ sealed interface ChatUiEffect {
     data class OpenEmail(val email: String) : ChatUiEffect
 
     data class OpenPhone(val phone: String) : ChatUiEffect
+
+    data class OpenScheduledMessages(val chatId: Long) : ChatUiEffect
 }

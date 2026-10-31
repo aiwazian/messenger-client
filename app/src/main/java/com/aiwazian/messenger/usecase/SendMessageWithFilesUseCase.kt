@@ -78,7 +78,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         mediaDrawings: Map<Uri, Bitmap> = emptyMap(),
         viewOnceOptions: Map<Uri, ViewOnceOption> = emptyMap(),
         spoilerUris: Set<Uri> = emptySet(),
-        silent: Boolean = false
+        silent: Boolean = false,
+        scheduledAt: Long? = null
     ): Result<Message> {
         val chunks = chunkByMediaLimit(uris)
 
@@ -95,7 +96,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                     mediaDrawings,
                     viewOnceOptions,
                     spoilerUris,
-                    silent
+                    silent,
+                    scheduledAt
                 )
             } else {
                 sendInChunks(
@@ -109,22 +111,23 @@ class SendMessageWithFilesUseCase @Inject constructor(
                     mediaDrawings,
                     viewOnceOptions,
                     spoilerUris,
-                    silent
+                    silent,
+                    scheduledAt
                 )
             }
         }
-        
+
         running.put(tempId, sending)?.cancel()
         sending.invokeOnCompletion { running.remove(tempId, sending) }
         sending.start()
-        
+
         return sending.await()
     }
-    
+
     fun cancel(tempId: Long) {
         running.remove(tempId)?.cancel()
     }
-    
+
     private suspend fun sendInChunks(
         chatId: Long,
         chunks: List<List<Uri>>,
@@ -136,7 +139,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         mediaDrawings: Map<Uri, Bitmap>,
         viewOnceOptions: Map<Uri, ViewOnceOption>,
         spoilerUris: Set<Uri>,
-        silent: Boolean
+        silent: Boolean,
+        scheduledAt: Long?
     ): Result<Message> {
         var firstResult: Result<Message>? = null
 
@@ -153,14 +157,15 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 mediaDrawings,
                 viewOnceOptions,
                 spoilerUris,
-                silent
+                silent,
+                if (index == 0) scheduledAt else null
             )
-            
+
             if (index == 0) firstResult = result
-            
+
             if (result.exceptionOrNull() is SendCancelledException) return result
         }
-        
+
         return firstResult ?: Result.failure(IllegalStateException("No media chunks to send"))
     }
     
@@ -205,7 +210,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
         mediaDrawings: Map<Uri, Bitmap>,
         viewOnceOptions: Map<Uri, ViewOnceOption>,
         spoilerUris: Set<Uri>,
-        silent: Boolean
+        silent: Boolean,
+        scheduledAt: Long?
     ): Result<Message> {
         val myId = if (ChatType.fromId(chatId) == ChatType.CHANNEL) chatId
         else userRepository.getMe().first().id
@@ -249,7 +255,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
             text = text,
             senderId = myId,
             chatId = chatId,
-            sendTime = System.currentTimeMillis(),
+            sendTime = scheduledAt ?: System.currentTimeMillis(),
+            scheduledAt = scheduledAt,
             isRead = false,
             status = MessageStatus.SENDING,
             messageType = MessageType.TEXT,
@@ -406,7 +413,8 @@ class SendMessageWithFilesUseCase @Inject constructor(
                 uploadResults,
                 text,
                 replyTo?.messageId,
-                silent
+                silent,
+                scheduledAt
             )
             
             if (attempt.isFailure) {

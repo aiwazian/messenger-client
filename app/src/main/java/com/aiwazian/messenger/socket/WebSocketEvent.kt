@@ -18,6 +18,7 @@ import com.aiwazian.messenger.domain.NewCommentPayload
 import com.aiwazian.messenger.domain.PinChatPayload
 import com.aiwazian.messenger.domain.PresencePayload
 import com.aiwazian.messenger.domain.ReadMessagePayload
+import com.aiwazian.messenger.domain.ScheduledMessagesPayload
 import com.aiwazian.messenger.domain.ViewOnceAttachmentDeletedPayload
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.network.dto.ChatFolderDto
@@ -61,6 +62,13 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
         override val eventName = "message:delete"
         override val deserializer = DeleteMessagePayload.serializer()
         override val mapper: (DeleteMessagePayload) -> DeleteMessagePayload = { it }
+    }
+
+    data object ScheduledMessagesChanged :
+        WebSocketEvent<ScheduledMessagesPayload, ScheduledMessagesPayload> {
+        override val eventName = "message:scheduled"
+        override val deserializer = ScheduledMessagesPayload.serializer()
+        override val mapper: (ScheduledMessagesPayload) -> ScheduledMessagesPayload = { it }
     }
     
     data object ViewOnceAttachmentDeleted :

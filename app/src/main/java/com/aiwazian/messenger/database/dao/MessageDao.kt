@@ -59,29 +59,32 @@ interface MessageDao {
         "SELECT * FROM message " +
                 "WHERE ((senderId = :userId AND chatId = :chatId) " +
                 "OR (chatId = :userId AND senderId = :chatId)) " +
+                "AND scheduledAt IS NULL " +
                 "AND ownerId = " +
                 "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "ORDER BY sendTime DESC " +
                 "LIMIT 1"
     )
     fun getChatLastMessageFlow(userId: Long, chatId: Long): Flow<MessageWithAttachments?>
-    
+
     @Transaction
     @Query(
         "SELECT * FROM message " +
                 "WHERE chatId = :chatId " +
+                "AND scheduledAt IS NULL " +
                 "AND ownerId = " +
                 "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "ORDER BY sendTime DESC " +
                 "LIMIT 1"
     )
     fun getChatLastMessageFlow(chatId: Long): Flow<MessageWithAttachments?>
-    
+
     @Query(
         "DELETE FROM message " +
                 "WHERE ((senderId = :userId AND chatId = :chatId) " +
                 "OR (senderId = :chatId AND chatId = :userId) " +
                 "OR (senderId = :chatId AND chatId = :chatId)) " +
+                "AND scheduledAt IS NULL " +
                 "AND ownerId = " +
                 "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
     )
@@ -206,6 +209,7 @@ interface MessageDao {
         "SELECT * FROM message " +
                 "WHERE ((senderId = :senderId AND chatId = :chatId) " +
                 "OR (senderId = :chatId AND chatId = :senderId)) " +
+                "AND scheduledAt IS NULL " +
                 "AND ownerId = " +
                 "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "AND ((id >= :fromId AND id <= :toId) OR (:includePending = 1 AND id < 0)) " +
@@ -214,11 +218,12 @@ interface MessageDao {
     fun getPrivateMessagesWindow(
         senderId: Long, chatId: Long, fromId: Long, toId: Long, includePending: Int
     ): Flow<List<MessageWithAttachments>>
-    
+
     @Transaction
     @Query(
         "SELECT * FROM message " +
                 "WHERE (chatId = :chatId OR senderId = :chatId) " +
+                "AND scheduledAt IS NULL " +
                 "AND ownerId = " +
                 "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "AND ((id >= :fromId AND id <= :toId) OR (:includePending = 1 AND id < 0)) " +
@@ -227,21 +232,52 @@ interface MessageDao {
     fun getChatMessagesWindow(
         chatId: Long, fromId: Long, toId: Long, includePending: Int
     ): Flow<List<MessageWithAttachments>>
-    
+
+    @Transaction
+    @Query(
+        "SELECT * FROM message " +
+                "WHERE chatId = :chatId " +
+                "AND scheduledAt IS NOT NULL " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
+                "ORDER BY sendTime ASC, id ASC"
+    )
+    fun observeScheduledMessages(chatId: Long): Flow<List<MessageWithAttachments>>
+
+    @Query(
+        "SELECT id FROM message " +
+                "WHERE chatId = :chatId " +
+                "AND scheduledAt IS NOT NULL " +
+                "AND id > 0 " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
+    )
+    suspend fun getScheduledMessageIds(chatId: Long): List<Long>
+
+    @Query(
+        "UPDATE message SET scheduledAt = :scheduledAt, sendTime = :scheduledAt " +
+                "WHERE id = :id " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1)"
+    )
+    suspend fun updateMessageScheduledTime(id: Long, scheduledAt: Long)
+
     @Query(
         "SELECT id FROM message " +
                 "WHERE ((senderId = :senderId AND chatId = :chatId) " +
                 "OR (senderId = :chatId AND chatId = :senderId)) " +
+                "AND scheduledAt IS NULL " +
                 "AND ownerId = " +
                 "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "AND id > 0 " +
                 "ORDER BY sendTime DESC, id DESC LIMIT :limit"
     )
     suspend fun getLastPrivateMessageIds(senderId: Long, chatId: Long, limit: Int): List<Long>
-    
+
     @Query(
         "SELECT id FROM message " +
                 "WHERE (chatId = :chatId OR senderId = :chatId) " +
+                "AND scheduledAt IS NULL " +
                 "AND ownerId = " +
                 "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
                 "AND id > 0 " +

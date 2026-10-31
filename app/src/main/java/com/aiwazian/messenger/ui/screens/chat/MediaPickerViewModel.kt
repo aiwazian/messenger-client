@@ -191,14 +191,27 @@ class MediaPickerViewModel @Inject constructor(
         }
     }
     
-    fun send(chatId: Long, replyTo: MessageReplyPreview?, caption: String, silent: Boolean = false) {
+    fun send(
+        chatId: Long,
+        replyTo: MessageReplyPreview?,
+        caption: String,
+        silent: Boolean = false,
+        scheduledAt: Long? = null
+    ) {
         val selected = _uiState.value.selected
 
         if (selected.isEmpty()) {
             return
         }
 
-        sendUris(chatId = chatId, uris = selected, caption = caption, replyTo = replyTo, silent = silent)
+        sendUris(
+            chatId = chatId,
+            uris = selected,
+            caption = caption,
+            replyTo = replyTo,
+            silent = silent,
+            scheduledAt = scheduledAt
+        )
 
         _uiState.update {
             it.copy(
@@ -217,7 +230,8 @@ class MediaPickerViewModel @Inject constructor(
         uris: List<Uri>,
         caption: String,
         replyTo: MessageReplyPreview?,
-        silent: Boolean = false
+        silent: Boolean = false,
+        scheduledAt: Long? = null
     ) {
         if (uris.isEmpty()) {
             return
@@ -237,7 +251,8 @@ class MediaPickerViewModel @Inject constructor(
             mediaDrawings = mediaDrawings,
             viewOnceOptions = _uiState.value.viewOnceOptions.filterKeys { it in uris },
             spoilerUris = _uiState.value.spoilerUris.filter { it in uris }.toSet(),
-            silent = silent
+            silent = silent,
+            scheduledAt = scheduledAt
         )
     }
 

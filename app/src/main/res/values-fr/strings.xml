@@ -146,6 +146,14 @@
     <string name="new_link">Nouveau lien</string>
     <string name="send">Envoyer</string>
     <string name="send_without_sound">Envoyer sans son</string>
+    <string name="send_later">Envoyer plus tard</string>
+    <string name="send_now">Envoyer maintenant</string>
+    <string name="send_scheduled_at">Envoyer le %1$s à %2$s</string>
+    <string name="scheduled_messages_title">Messages programmés</string>
+    <string name="no_scheduled_messages">Aucun message programmé pour le moment</string>
+    <string name="edit_schedule_time">Modifier l\'heure</string>
+    <string name="delete_scheduled_message_title">Supprimer le message programmé</string>
+    <string name="delete_scheduled_message_confirm">Le message sera supprimé et ne sera pas envoyé.</string>
     <string name="subscribe">S\'abonner</string>
     <string name="request_to_join">Demander à rejoindre</string>
     <string name="group_type">Type de groupe</string>

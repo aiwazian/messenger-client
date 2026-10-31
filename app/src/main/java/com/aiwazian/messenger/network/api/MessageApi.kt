@@ -18,6 +18,7 @@ import com.aiwazian.messenger.network.dto.MessagesWindowDto
 import com.aiwazian.messenger.network.dto.PinMessageRequestDto
 import com.aiwazian.messenger.network.dto.StickerMessageRequestDto
 import com.aiwazian.messenger.network.dto.TextMessageRequestDto
+import com.aiwazian.messenger.network.dto.UpdateScheduledMessageRequestDto
 import com.aiwazian.messenger.network.dto.ViewOnceFileIdsDto
 import com.aiwazian.messenger.network.dto.ViewOnceViewedDto
 import retrofit2.Response
@@ -178,4 +179,30 @@ interface MessageApi {
         @Path("messageId") messageId: Long,
         @Header("x-socket-id") socketId: String
     ): Response<Unit>
+
+    @GET("chats/{chatId}/messages/scheduled")
+    suspend fun getScheduledMessages(
+        @Path("chatId") chatId: Long
+    ): Response<List<MessageDto>>
+
+    @retrofit2.http.PATCH("chats/{chatId}/messages/{messageId}/schedule")
+    suspend fun updateScheduledMessage(
+        @Path("chatId") chatId: Long,
+        @Path("messageId") messageId: Long,
+        @Body request: UpdateScheduledMessageRequestDto,
+        @Header("x-socket-id") socketId: String
+    ): Response<MessageDto>
+
+    @DELETE("chats/{chatId}/messages/{messageId}/schedule")
+    suspend fun deleteScheduledMessage(
+        @Path("chatId") chatId: Long,
+        @Path("messageId") messageId: Long,
+        @Header("x-socket-id") socketId: String
+    ): Response<Unit>
+
+    @POST("chats/{chatId}/messages/{messageId}/schedule/send-now")
+    suspend fun sendScheduledMessageNow(
+        @Path("chatId") chatId: Long,
+        @Path("messageId") messageId: Long
+    ): Response<MessageDto>
 }
