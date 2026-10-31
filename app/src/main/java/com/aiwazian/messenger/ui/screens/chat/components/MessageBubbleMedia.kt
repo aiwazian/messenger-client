@@ -11,7 +11,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -31,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -43,7 +41,6 @@ import coil3.request.ImageRequest
 import coil3.video.VideoFrameDecoder
 import coil3.video.videoFrameMillis
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.components.PhotoSpoilerEffect
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.DownloadStatus
@@ -51,6 +48,7 @@ import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.extensions.getDuration
 import com.aiwazian.messenger.extensions.sharedElement
+import com.aiwazian.messenger.ui.components.PhotoSpoilerEffect
 import com.aiwazian.messenger.ui.components.formatDuration
 import com.aiwazian.messenger.ui.components.mediaTransitionOrigin
 import kotlinx.coroutines.Dispatchers
@@ -77,7 +75,7 @@ internal fun MediaPlaceholder(
             fontSize = 12.sp,
             lineHeight = 12.sp
         )
-
+        
         MediaStatusIndicator(attachment.status)
     }
 }
@@ -98,7 +96,7 @@ internal fun MediaThumbnail(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .blur(if (isConcealed && canBlur) 18.dp else 0.dp)
+                .blur(if (isConcealed && canBlur) 44.dp else 0.dp)
         ) {
             if (concealMedia) {
                 Box(
@@ -133,7 +131,7 @@ internal fun MediaThumbnail(
                 }
             }
         }
-
+        
         if (isConcealed) {
             PhotoSpoilerEffect(
                 modifier = Modifier
@@ -141,7 +139,7 @@ internal fun MediaThumbnail(
                     .clickable { onFileAction(attachment, FileAction.OPEN) }
             )
         }
-
+        
         if (attachment.status.isTransferring()) {
             Box(
                 modifier = Modifier
@@ -164,16 +162,16 @@ internal fun MediaStatusIndicator(status: DownloadStatus) {
             CircularWavyProgressIndicator()
             Icon(Icons.Rounded.Pause, null)
         }
-
+        
         DownloadStatus.UPLOADING -> {
             CircularWavyProgressIndicator()
             Icon(Icons.Rounded.Close, null)
         }
-
+        
         DownloadStatus.PAUSED -> {
             Icon(Icons.Rounded.Downloading, null)
         }
-
+        
         else -> {
             Icon(Icons.Rounded.Download, null)
         }
@@ -189,7 +187,7 @@ private fun VideoThumbnail(
 ) {
     val context = LocalContext.current
     val decoderFactory = remember { VideoFrameDecoder.Factory() }
-
+    
     val request = remember(context, videoUri, cacheKey, decoderFactory) {
         ImageRequest.Builder(context)
             .data(videoUri)
@@ -199,11 +197,11 @@ private fun VideoThumbnail(
             .placeholderMemoryCacheKey(cacheKey)
             .build()
     }
-
+    
     val duration by produceState(0L, videoUri) {
         value = withContext(Dispatchers.IO) { videoUri.getDuration(context) }
     }
-
+    
     Box(
         modifier = Modifier
             .clickable(onClick = onClick)
@@ -248,7 +246,7 @@ private fun ImageThumbnail(
 ) {
     val context = LocalContext.current
     val decoderFactory = remember { GifDecoder.Factory() }
-
+    
     val request = remember(context, imageUri, cacheKey, decoderFactory) {
         ImageRequest.Builder(context)
             .data(imageUri)
@@ -257,7 +255,7 @@ private fun ImageThumbnail(
             .placeholderMemoryCacheKey(cacheKey)
             .build()
     }
-
+    
     Box(
         modifier = Modifier
             .clickable(onClick = onClick)
