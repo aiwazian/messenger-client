@@ -139,7 +139,8 @@ interface MessageApi {
     suspend fun deleteMessage(
         @Path("chatId") chatId: Long,
         @Path("messageId") messageId: Long,
-        @Body request: DeleteMessageRequestDto = DeleteMessageRequestDto()
+        @Body request: DeleteMessageRequestDto = DeleteMessageRequestDto(),
+        @Header("x-socket-id") socketId: String
     ): Response<Unit>
     
     @HTTP(

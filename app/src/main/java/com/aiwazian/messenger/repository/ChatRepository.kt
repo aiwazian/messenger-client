@@ -294,6 +294,7 @@ class ChatRepository @Inject constructor(
                     saveMessagesToDb(page.messages)
                     readInfoCache.update(page.messages)
                     applyUnreadState(chatId, page.unreadCount, page.firstUnreadMessageId)
+                    pruneMessagesMissingOnServer(chatId, page.messages)
                     Result.success(page)
                 }
             } else {
@@ -309,6 +310,30 @@ class ChatRepository @Inject constructor(
         }
     }
     
+
+    private suspend fun pruneMessagesMissingOnServer(chatId: Long, messages: List<Message>) {
+        val serverIds = messages.map { it.id }.filter { it > 0 }
+        if (serverIds.isEmpty()) {
+            return
+        }
+
+        val fromId = serverIds.min()
+        val toId = serverIds.max()
+        val localIds = when (ChatType.fromId(chatId)) {
+            ChatType.CHANNEL -> messageDao.getPrivateMessageIdsInRange(chatId, chatId, fromId, toId)
+            ChatType.GROUP -> messageDao.getChatMessageIdsInRange(chatId, fromId, toId)
+            ChatType.PRIVATE -> {
+                val myId = userRepository.getMe().firstOrNull()?.id ?: return
+                messageDao.getPrivateMessageIdsInRange(myId, chatId, fromId, toId)
+            }
+
+            else -> return
+        }
+
+        val serverIdSet = serverIds.toSet()
+        localIds.filter { it !in serverIdSet }.forEach { deleteLocalMessage(it) }
+    }
+
 
     suspend fun searchMessages(
         chatId: Long,
@@ -867,7 +892,8 @@ class ChatRepository @Inject constructor(
             val response = messageApi.deleteMessage(
                 chatId,
                 messageId,
-                DeleteMessageRequestDto(deleteForRecipient)
+                DeleteMessageRequestDto(deleteForRecipient),
+                socket.socketId.orEmpty()
             )
             if (response.isSuccessful) {
                 deleteLocalMessage(messageId)

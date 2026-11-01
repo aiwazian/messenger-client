@@ -233,6 +233,31 @@ interface MessageDao {
         chatId: Long, fromId: Long, toId: Long, includePending: Int
     ): Flow<List<MessageWithAttachments>>
 
+    @Query(
+        "SELECT id FROM message " +
+                "WHERE ((senderId = :senderId AND chatId = :chatId) " +
+                "OR (senderId = :chatId AND chatId = :senderId)) " +
+                "AND scheduledAt IS NULL " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
+                "AND id >= :fromId AND id <= :toId"
+    )
+    suspend fun getPrivateMessageIdsInRange(
+        senderId: Long, chatId: Long, fromId: Long, toId: Long
+    ): List<Long>
+
+    @Query(
+        "SELECT id FROM message " +
+                "WHERE (chatId = :chatId OR senderId = :chatId) " +
+                "AND scheduledAt IS NULL " +
+                "AND ownerId = " +
+                "(SELECT userId FROM account WHERE isCurrent = 1 ORDER BY id DESC LIMIT 1) " +
+                "AND id >= :fromId AND id <= :toId"
+    )
+    suspend fun getChatMessageIdsInRange(
+        chatId: Long, fromId: Long, toId: Long
+    ): List<Long>
+
     @Transaction
     @Query(
         "SELECT * FROM message " +
