@@ -134,6 +134,7 @@
     <string name="other">Другое</string>
     <string name="files">Файлы</string>
     <string name="audio">Аудио</string>
+    <string name="music">Музыка</string>
     <string name="storage_usage">Использование хранилища</string>
     <string name="media_stay_in_cloud">Все медиа останутся в облаке, при необходимости Вы сможете загрузить их.</string>
     <string name="group_name">Название группы</string>
