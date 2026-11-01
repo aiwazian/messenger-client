@@ -39,13 +39,14 @@ import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.extensions.formatFileSize
 import com.aiwazian.messenger.extensions.getFileIcon
+import com.aiwazian.messenger.extensions.isPdfFile
 
 @Composable
 fun MessageFile(file: MessageAttachment, onAction: (FileAction) -> Unit) {
     Row(
         modifier = Modifier
             .clickable {
-                if (file.localUri != null) {
+                if (file.extension.isPdfFile() || file.localUri != null) {
                     onAction(FileAction.OPEN)
                     return@clickable
                 }

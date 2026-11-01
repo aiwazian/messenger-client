@@ -4,13 +4,11 @@
 
 package com.aiwazian.messenger.ui.screens.chat
 
-import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.MessageType
-import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationPattern
 import kotlinx.coroutines.flow.update
@@ -215,12 +213,4 @@ internal fun ChatViewModel.onSubscribeViaInviteLink() {
         onNavigateToChat = { chatId -> viewModelScope.launch { _uiEffect.emit(ChatUiEffect.NavigateToChat(chatId)) } },
         onShowSnackbar = { uiText -> viewModelScope.launch { _uiEffect.emit(ChatUiEffect.ShowSnackbar(uiText)) } }
     )
-}
-
-internal fun ChatViewModel.dismissInviteBottomSheet() {
-    globalBottomSheetManager.dismissInviteBottomSheet()
-}
-
-internal fun ChatViewModel.dismissBannedDialog() {
-    globalBottomSheetManager.hideBannedDialog()
 }

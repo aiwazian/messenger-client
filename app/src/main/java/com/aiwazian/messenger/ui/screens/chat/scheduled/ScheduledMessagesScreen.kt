@@ -51,6 +51,7 @@ import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.MessageContact
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.FileAction
+import com.aiwazian.messenger.extensions.isPdfFile
 import com.aiwazian.messenger.enums.MessageType
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppSnackbar
@@ -204,6 +205,7 @@ fun ScheduledMessagesScreen(
                 }
             } else {
                 ScheduledMessagesList(
+                    chatId = chatId,
                     items = uiState.items,
                     uiState = uiState,
                     viewModel = viewModel,
@@ -339,6 +341,7 @@ fun ScheduledMessagesScreen(
 
 @Composable
 private fun ScheduledMessagesList(
+    chatId: Long,
     items: List<ChatItem>,
     uiState: ScheduledMessagesUiState,
     viewModel: ScheduledMessagesViewModel,
@@ -347,6 +350,8 @@ private fun ScheduledMessagesList(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier
 ) {
+    val navBackStack = LocalNavBackStack.current
+
     LazyColumn(
         state = rememberLazyListState(),
         modifier = modifier,
@@ -379,10 +384,21 @@ private fun ScheduledMessagesList(
                     item = item,
                     mediaKeyScope = SCHEDULED_MEDIA_KEY_SCOPE,
                     onFileAction = { file, action ->
-                        if (action == FileAction.OPEN) {
-                            onTappedMediaChanged(file)
+                        if (action == FileAction.OPEN && file.extension.isPdfFile()) {
+                            navBackStack.add(
+                                AppRoute.PdfViewer(
+                                    chatId = chatId,
+                                    messageId = item.message.id,
+                                    fileId = file.fileId,
+                                    fileName = file.name
+                                )
+                            )
+                        } else {
+                            if (action == FileAction.OPEN) {
+                                onTappedMediaChanged(file)
+                            }
+                            viewModel.onFileAction(item.message, file, action)
                         }
-                        viewModel.onFileAction(item.message, file, action)
                     },
                     currentPlayingVoiceFileId = uiState.currentPlayingVoiceFileId,
                     isVoicePlaying = uiState.isVoicePlaying,

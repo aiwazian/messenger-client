@@ -41,6 +41,15 @@ sealed interface AppRoute : NavKey {
     data class ScheduledMessages(val chatId: Long) : AppRoute
 
     @Serializable
+    data class PdfViewer(
+        val chatId: Long,
+        val messageId: Long,
+        val fileId: String,
+        val fileName: String,
+        val postId: Long? = null
+    ) : AppRoute
+
+    @Serializable
     data object Equalizer : AppRoute
 
     @Serializable

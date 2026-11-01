@@ -14,6 +14,7 @@ import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.DownloadStatus
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.extensions.isAudioFile
+import com.aiwazian.messenger.extensions.isPdfFile
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationPattern
 import kotlinx.coroutines.flow.update
@@ -25,7 +26,7 @@ internal fun ChatViewModel.onFileAction(message: Message, file: MessageAttachmen
         FileAction.PAUSE -> viewModelScope.launch { downloaderManager.pause(file.fileId) }
         FileAction.RESUME -> viewModelScope.launch { downloaderManager.resume(file.fileId) }
         FileAction.CANCEL -> viewModelScope.launch { downloaderManager.cancel(file.fileId) }
-        FileAction.OPEN -> handleOpenFile(file)
+        FileAction.OPEN -> handleOpenFile(message, file)
         FileAction.PLAY -> {
             if (file.type == AttachmentType.VOICE) {
                 playbackConnector.handlePlayVoice(file)
@@ -45,13 +46,26 @@ private fun ChatViewModel.downloadFile(message: Message, file: MessageAttachment
     }
 }
 
-private fun ChatViewModel.handleOpenFile(file: MessageAttachment) {
+private fun ChatViewModel.handleOpenFile(message: Message, file: MessageAttachment) {
     if (file.type == AttachmentType.IMAGE || file.type == AttachmentType.VIDEO || file.type == AttachmentType.GIF) {
         val index = _uiState.value.mediaItems.indexOfFirst { it.fileId == file.fileId }
         _uiState.update {
             it.copy(
                 showFullScreenViewer = true,
                 initialMediaIndex = index.coerceAtLeast(0)
+            )
+        }
+    } else if (file.extension.isPdfFile()) {
+        if (file.status == DownloadStatus.UPLOADING) return
+
+        viewModelScope.launch {
+            _uiEffect.emit(
+                ChatUiEffect.OpenPdfViewer(
+                    chatId = message.chatId,
+                    messageId = message.id,
+                    fileId = file.fileId,
+                    fileName = file.name
+                )
             )
         }
     } else {

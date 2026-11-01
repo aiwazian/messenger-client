@@ -685,5 +685,6 @@
     <string name="raise_to_listen_description">Switch to the top speaker when you hold the phone to your ear</string>
     <string name="kick_subscriber_confirmation">Are you sure you want to remove this user from the channel?</string>
     <string name="block_subscriber_confirmation">Are you sure you want to block this subscriber?</string>
+    <string name="failed_to_load_file">Failed to load file</string>
     <string name="failed_to_load_list">Failed to load list</string>
 </resources>

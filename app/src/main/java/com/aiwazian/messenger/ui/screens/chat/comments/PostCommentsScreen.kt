@@ -65,6 +65,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.FileAction
+import com.aiwazian.messenger.extensions.isPdfFile
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.chatMediaKey
@@ -339,7 +340,19 @@ fun PostCommentsScreen(
                             modifier = Modifier.animateItem(),
                             item = item,
                             onFileAction = { file, action ->
-                                viewModel.onFileAction(item.message, file, action)
+                                if (action == FileAction.OPEN && file.extension.isPdfFile()) {
+                                    navBackStack.add(
+                                        AppRoute.PdfViewer(
+                                            chatId = chatId,
+                                            messageId = item.message.id,
+                                            fileId = file.fileId,
+                                            fileName = file.name,
+                                            postId = postId
+                                        )
+                                    )
+                                } else {
+                                    viewModel.onFileAction(item.message, file, action)
+                                }
                             },
                             onSenderNameClick = {
                                 navBackStack.add(

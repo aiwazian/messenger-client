@@ -23,4 +23,11 @@ sealed interface ChatUiEffect {
     data class OpenPhone(val phone: String) : ChatUiEffect
 
     data class OpenScheduledMessages(val chatId: Long) : ChatUiEffect
+
+    data class OpenPdfViewer(
+        val chatId: Long,
+        val messageId: Long,
+        val fileId: String,
+        val fileName: String
+    ) : ChatUiEffect
 }

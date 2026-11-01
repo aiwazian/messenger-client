@@ -685,5 +685,6 @@
     <string name="raise_to_listen_description">Passa all\'altoparlante superiore quando avvicini il telefono all\'orecchio</string>
     <string name="kick_subscriber_confirmation">Sei sicuro di voler rimuovere questo utente dal canale?</string>
     <string name="block_subscriber_confirmation">Sei sicuro di voler bloccare questo iscritto?</string>
+    <string name="failed_to_load_file">Impossibile caricare il file</string>
     <string name="failed_to_load_list">Impossibile caricare l\'elenco</string>
 </resources>

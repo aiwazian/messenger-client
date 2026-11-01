@@ -60,6 +60,7 @@ import com.aiwazian.messenger.ui.screens.group.settings.type.GroupTypeSettingsSc
 import com.aiwazian.messenger.ui.screens.logout.LogoutScreen
 import com.aiwazian.messenger.ui.screens.main.MainScreen
 import com.aiwazian.messenger.ui.screens.newmessage.NewMessageScreen
+import com.aiwazian.messenger.ui.screens.pdf.PdfViewerScreen
 import com.aiwazian.messenger.ui.screens.profile.ProfileScreen
 import com.aiwazian.messenger.ui.screens.settings.SettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.ChatAppearanceScreen
@@ -181,6 +182,15 @@ fun AppNavDisplay(
                     }
                     entry<AppRoute.ScheduledMessages> {
                         ScheduledMessagesScreen(chatId = it.chatId)
+                    }
+                    entry<AppRoute.PdfViewer> {
+                        PdfViewerScreen(
+                            chatId = it.chatId,
+                            messageId = it.messageId,
+                            fileId = it.fileId,
+                            fileName = it.fileName,
+                            postId = it.postId
+                        )
                     }
                     entry<AppRoute.Equalizer> { EqualizerScreen() }
                     entry<AppRoute.Profile>(metadata = PredictiveBackMetadata) {

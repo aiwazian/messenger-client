@@ -9,6 +9,7 @@ import androidx.room3.Query
 import androidx.room3.Upsert
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.enums.DownloadStatus
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FileDao {
@@ -17,6 +18,9 @@ interface FileDao {
 
     @Query("SELECT * FROM file WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): FileEntity?
+
+    @Query("SELECT * FROM file WHERE id = :id LIMIT 1")
+    fun observeById(id: String): Flow<FileEntity?>
 
     @Query("UPDATE file SET status = :status WHERE id = :id")
     suspend fun updateStatus(id: String, status: DownloadStatus)

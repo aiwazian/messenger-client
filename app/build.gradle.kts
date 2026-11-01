@@ -104,7 +104,10 @@ dependencies {
     implementation(libs.androidx.exifinterface)
     
     implementation(libs.libphonenumber)
-    
+
+    implementation(libs.androidx.pdf.compose)
+    implementation(libs.androidx.pdf.document.service)
+
     implementation(libs.androidx.datastore.preferences)
     
     implementation(libs.androidx.credentials)

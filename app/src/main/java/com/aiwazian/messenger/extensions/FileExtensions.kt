@@ -36,6 +36,8 @@ private val VoiceRecordingExtensions = setOf("ogg", "oga", "opus")
 
 fun String.isAudioFile() = trim().lowercase() in AudioFileExtensions
 
+fun String.isPdfFile() = trim().equals("pdf", ignoreCase = true)
+
 fun String.isVoiceRecordingExtension() = trim().lowercase() in VoiceRecordingExtensions
 
 fun String.isMusicFile() = isAudioFile() && !isVoiceRecordingExtension()

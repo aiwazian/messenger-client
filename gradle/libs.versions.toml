@@ -45,6 +45,7 @@ serialization = "2.4.21"
 hilt = "2.60.1"
 ksp = "2.3.10"
 libphonenumber = "9.0.42"
+androidxPdf = "1.0.0-beta01"
 
 [libraries]
 androidx-animation = { module = "androidx.compose.animation:animation", version.ref = "animation" }
@@ -97,6 +98,8 @@ firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltCompiler" }
 libphonenumber = { module = "com.googlecode.libphonenumber:libphonenumber", version.ref = "libphonenumber" }
+androidx-pdf-compose = { module = "androidx.pdf:pdf-compose", version.ref = "androidxPdf" }
+androidx-pdf-document-service = { module = "androidx.pdf:pdf-document-service", version.ref = "androidxPdf" }
 ketch = { module = "com.github.khushpanchal:Ketch", version.ref = "ketch" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 

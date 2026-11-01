@@ -48,6 +48,8 @@ class Application : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        if (android.app.Application.getProcessName().contains(PdfSandboxProcessMarker)) return
+
         SessionManager.init(authRepository, restoreCredentialManager)
 
         appScope.launch {
@@ -110,5 +112,9 @@ class Application : Application() {
         manager.createNotificationChannel(messagesChannel)
         manager.createNotificationChannel(groupsChannel)
         manager.createNotificationChannel(systemChannel)
+    }
+
+    private companion object {
+        const val PdfSandboxProcessMarker = "androidx.pdf"
     }
 }
