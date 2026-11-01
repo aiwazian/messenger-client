@@ -156,6 +156,10 @@ internal fun ChatViewModel.observeScheduledMessages() {
     val chatId = _uiState.value.chatId
 
     viewModelScope.launch {
+        chatRepository.syncScheduledMessages(chatId)
+    }
+
+    viewModelScope.launch {
         chatRepository.observeScheduledMessages(chatId).collect { messages ->
             _uiState.update { it.copy(hasScheduledMessages = messages.isNotEmpty()) }
         }
