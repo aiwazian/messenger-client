@@ -61,7 +61,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 @Composable
-fun StorageScreen(viewModel: StorageViewModel = hiltViewModel()) {
+fun StorageScreen(onBackClick: (() -> Unit)? = null, viewModel: StorageViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
     
     val context = LocalContext.current
@@ -83,6 +83,7 @@ fun StorageScreen(viewModel: StorageViewModel = hiltViewModel()) {
     AppScaffold(
         topBar = {
             PageTopBar(
+                onBackClick = onBackClick,
                 actions = listOf(
                     TopBarAction(
                         icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
