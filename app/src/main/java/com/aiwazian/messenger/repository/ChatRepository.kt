@@ -6,7 +6,10 @@ package com.aiwazian.messenger.repository
 
 import android.net.Uri
 import android.util.Log
+import androidx.room3.Transactor
+import androidx.room3.useWriterConnection
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.database.AppDatabase
 import com.aiwazian.messenger.database.dao.AttachmentDao
 import com.aiwazian.messenger.database.dao.ChatDao
 import com.aiwazian.messenger.database.dao.ChatMediaDao
@@ -70,6 +73,7 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 class ChatRepository @Inject constructor(
+    private val appDatabase: AppDatabase,
     private val chatApi: ChatApi,
     private val messageApi: MessageApi,
     private val messageDao: MessageDao,
@@ -593,44 +597,48 @@ class ChatRepository @Inject constructor(
     }
     
     private suspend fun saveMessagesToDb(messages: List<Message>) {
-        messageDao.saveMessages(messages.map { it.toEntity() })
-        messages.forEach { message ->
-            val attachments = message.attachments.map { attachment ->
-                val existingFile = fileRepository.getById(attachment.fileId)
-                
-                val file = if (existingFile != null) {
+        appDatabase.useWriterConnection { transactor ->
+            transactor.withTransaction(Transactor.SQLiteTransactionType.IMMEDIATE) {
+                messageDao.saveMessages(messages.map { it.toEntity() })
+                messages.forEach { message ->
+                    val attachments = message.attachments.map { attachment ->
+                        val existingFile = fileRepository.getById(attachment.fileId)
 
-                    if (
-                        attachment.width != null &&
-                        attachment.height != null &&
-                        (existingFile.width != attachment.width ||
-                                existingFile.height != attachment.height)
-                    ) {
-                        fileRepository.updateFileDimensions(
-                            existingFile.id,
-                            attachment.width,
-                            attachment.height
-                        )
+                        val file = if (existingFile != null) {
+
+                            if (
+                                attachment.width != null &&
+                                attachment.height != null &&
+                                (existingFile.width != attachment.width ||
+                                        existingFile.height != attachment.height)
+                            ) {
+                                fileRepository.updateFileDimensions(
+                                    existingFile.id,
+                                    attachment.width,
+                                    attachment.height
+                                )
+                            }
+
+                            existingFile
+                        } else {
+                            val newFile = FileEntity(
+                                id = attachment.fileId,
+                                name = attachment.name,
+                                size = attachment.size,
+                                path = attachment.localUri?.toString(),
+                                status = attachment.status,
+                                width = attachment.width,
+                                height = attachment.height
+                            )
+                            fileRepository.upsert(newFile)
+                            newFile
+                        }
+
+                        attachment.toEntity(file)
                     }
-                    
-                    existingFile
-                } else {
-                    val newFile = FileEntity(
-                        id = attachment.fileId,
-                        name = attachment.name,
-                        size = attachment.size,
-                        path = attachment.localUri?.toString(),
-                        status = attachment.status,
-                        width = attachment.width,
-                        height = attachment.height
-                    )
-                    fileRepository.upsert(newFile)
-                    newFile
+                    attachmentDao.upsertAttachments(attachments)
                 }
-                
-                attachment.toEntity(file)
             }
-            attachmentDao.upsertAttachments(attachments)
         }
     }
     
