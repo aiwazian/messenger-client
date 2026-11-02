@@ -39,6 +39,7 @@
     <string name="group_create_error">Ошибка при создании группы</string>
     <string name="channel_create_error">Ошибка при создании канала</string>
     <string name="common_unknown_error">Неизвестная ошибка</string>
+    <string name="voice_recording_start_failed">Не удалось начать запись аудио</string>
     <string name="data_and_storage">Данные и память</string>
     <string name="proxy_settings">Прокси</string>
     <string name="connections">Подключения</string>

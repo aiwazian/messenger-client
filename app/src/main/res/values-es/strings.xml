@@ -35,6 +35,7 @@
     <string name="group_create_error">No se pudo crear el grupo</string>
     <string name="channel_create_error">No se pudo crear el canal</string>
     <string name="common_unknown_error">Error desconocido</string>
+    <string name="voice_recording_start_failed">No se pudo iniciar la grabación</string>
     <string name="data_and_storage">Datos y almacenamiento</string>
     <string name="proxy_settings">Proxy</string>
     <string name="connections">Conexiones</string>

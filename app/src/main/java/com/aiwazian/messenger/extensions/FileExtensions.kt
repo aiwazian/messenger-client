@@ -49,7 +49,7 @@ fun String.getFileIcon() = when (this.trim().lowercase()) {
     "php" -> Icons.Rounded.Php
     "pdf" -> Icons.Rounded.PictureAsPdf
     "exe", "msi", "dmg", "deb", "rpm" -> Icons.Rounded.DesktopWindows
-    "json", "yaml", "yml", "xml " -> Icons.Rounded.DataObject
+    "json", "yaml", "yml", "xml" -> Icons.Rounded.DataObject
     "toml" -> Icons.Rounded.DataArray
     "gif" -> Icons.Rounded.Gif
     "heic", "heif", "avif", "tif", "tiff", "ico", "png", "jpg", "jpeg", "webp", "bmp", "svg" -> Icons.Rounded.Image
