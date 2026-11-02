@@ -34,7 +34,6 @@ class PushRegistrar @Inject constructor(
     @Volatile
     private var lastKnownInstallationId: String? = null
     
-    /** Токен прежнего активного аккаунта. Читается только внутри коллектора. */
     private var lastActiveToken: String? = null
     
     init {

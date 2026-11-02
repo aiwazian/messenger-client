@@ -6,13 +6,6 @@ import androidx.room3.Upsert
 import com.aiwazian.messenger.database.entity.MessagePinEntity
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Закрепления сообщений, разделённые по аккаунтам.
- *
- * Условие по владельцу берётся подзапросом из таблицы account — как и в
- * MessageDao: активный аккаунт там уже хранится, и это единственный источник
- * правды.
- */
 @Dao
 interface MessagePinDao {
 

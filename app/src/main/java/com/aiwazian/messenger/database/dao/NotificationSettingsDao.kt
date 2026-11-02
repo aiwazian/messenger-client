@@ -15,12 +15,7 @@ interface NotificationSettingsDao {
     
     @Query("SELECT * FROM notification_settings WHERE userId = :userId LIMIT 1")
     fun observe(userId: Long): Flow<NotificationSettingsEntity?>
-    
-    /**
-     * Разовое чтение для проверки перед показом уведомления.
-     *
-     * Подписка тут не нужна: решение принимается один раз в момент прихода сообщения.
-     */
+ 
     @Query("SELECT * FROM notification_settings WHERE userId = :userId LIMIT 1")
     suspend fun get(userId: Long): NotificationSettingsEntity?
     

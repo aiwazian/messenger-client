@@ -79,7 +79,6 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
             { it }
     }
     
-    /** Новый комментарий под постом канала. */
     data object NewComment : WebSocketEvent<NewCommentPayloadDto, NewCommentPayload> {
         override val eventName = "comment:new"
         override val deserializer = NewCommentPayloadDto.serializer()
@@ -87,7 +86,6 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
             NewCommentPayload::fromDto
     }
     
-    /** Все комментарии канала удалены владельцем. */
     data object CommentsCleared :
         WebSocketEvent<CommentsClearedPayloadDto, CommentsClearedPayload> {
         override val eventName = "comments:cleared"
@@ -96,7 +94,6 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
             CommentsClearedPayload::fromDto
     }
     
-    /** Комментарий под постом канала отредактирован. */
     data object CommentEdited : WebSocketEvent<NewCommentPayloadDto, NewCommentPayload> {
         override val eventName = "comment:edit"
         override val deserializer = NewCommentPayloadDto.serializer()
@@ -104,7 +101,6 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
             NewCommentPayload::fromDto
     }
     
-    /** Комментарий под постом канала удалён. */
     data object CommentDeleted :
         WebSocketEvent<DeleteCommentPayloadDto, CommentDeletedPayload> {
         override val eventName = "comment:delete"

@@ -40,6 +40,7 @@ import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionButtonDefaults
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
@@ -157,7 +158,7 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
                         onClick = {
                             viewModel.onChangeDateOfBirth(null)
                         },
-                        contentColor = MaterialTheme.colorScheme.primary,
+                        colors = SectionButtonDefaults.colors(contentColor = MaterialTheme.colorScheme.primary),
                     )
                 }
             }

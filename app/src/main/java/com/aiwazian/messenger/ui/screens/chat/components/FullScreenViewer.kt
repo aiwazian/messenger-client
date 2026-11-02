@@ -115,7 +115,6 @@ data class ViewerMediaItem(
     val viewOnce: Boolean = false,
     val viewOnceSeconds: Int? = null,
     val isSender: Boolean = false,
-    /** Ключ миниатюры-источника для обратной анимации. */
     val originKey: String
 )
 
@@ -581,7 +580,6 @@ fun FullScreenViewer(
                                 if (isCurrentPage) {
                                     isVideoFastForwarding = fastForwarding
                                     
-                                    // После отпускания контролы возвращаются и снова уходят по таймеру
                                     if (!fastForwarding) {
                                         lastInteractionTime = System.currentTimeMillis()
                                     }

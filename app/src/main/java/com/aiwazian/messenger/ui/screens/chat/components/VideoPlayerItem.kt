@@ -38,7 +38,6 @@ import com.aiwazian.messenger.playback.musicAutoPauseController
 import com.aiwazian.messenger.ui.components.PlayerBottomControls
 import com.aiwazian.messenger.ui.components.PlayerCenterControls
 
-// Шаг перемотки для seekBack/seekForward: двойной тап меняет позицию на 10 секунд
 private const val SEEK_INCREMENT_MS = 10_000L
 
 @Composable
@@ -141,7 +140,6 @@ fun VideoPlayerItem(
         }
         player.addListener(listener)
 
-        // Плеер нужен снаружи: жесты перемотки и ускорения живут на уровне страницы
         currentOnPlayerReady(player)
         currentOnContentSizeChanged(player.videoSize.toContentSize())
 
@@ -154,8 +152,6 @@ fun VideoPlayerItem(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Слоты Player оставлены пустыми: зум и поворот приходят в modifier, а он применяется
-        // ко всему Player сразу, поэтому контролы рисуем отдельным слоем без трансформаций
         Media3Player(
             player = player,
             modifier = Modifier

@@ -170,10 +170,6 @@ class UserRepository @Inject constructor(
                     Result.failure(Exception("Empty body"))
                 }
             } else if (response.code() == 404 || response.code() == 410) {
-                /*
-                 * Аватарку уже заменили или удалили: это не сбой, а повод выбросить
-                 * строку из кэша — этим занимается DownloadAvatarUseCase.
-                 */
                 Result.failure(AvatarNotFoundException(fileId))
             } else {
                 Result.failure(Exception("Unsuccessful request: ${response.errorBody()}"))

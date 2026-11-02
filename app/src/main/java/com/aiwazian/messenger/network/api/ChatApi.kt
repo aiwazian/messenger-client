@@ -53,7 +53,6 @@ interface ChatApi {
     @POST("chats/unpin")
     suspend fun unpinChats(@Body body: PinChatsRequestDto): Response<Unit>
     
-    /** Прочитать чаты целиком. Свой сокет уходит в заголовке, чтобы не получить своё же событие. */
     @POST("chats/read")
     suspend fun markChatsRead(
         @Body body: MarkChatsRequestDto,

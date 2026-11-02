@@ -20,7 +20,6 @@ data class AccountEntity(
     val userId: Long,
     val isCurrent: Boolean,
     val token: String = "",
-    /** Последний Firebase Installation ID, который уже отправлен на сервер. */
     val installationId: String? = null,
     val createdAt: Long = 0
 )

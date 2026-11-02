@@ -122,10 +122,6 @@ fun ChatVoiceCard(
                 lineHeight = 16.sp
             )
             
-            /*
-             * Пока файла нет, длины тоже нет: вторая строка обходится одним автором,
-             * а не показывает прочерк вместо времени.
-             */
             val details = listOfNotNull(
                 author?.takeIf { it.isNotBlank() },
                 voice.durationMs?.let { formatVoiceDuration(it) })

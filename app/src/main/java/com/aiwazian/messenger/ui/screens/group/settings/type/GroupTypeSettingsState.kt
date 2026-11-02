@@ -15,8 +15,6 @@ data class GroupTypeSettingsUiState(
     val isError: Boolean = false,
     val canSave: Boolean = false,
     val statusText: UiText? = null,
-    /** Запрет копирования контента группы. */
     val noCopy: Boolean = false,
-    /** Доступен ли переключатель запрета копирования (только для владельца). */
     val canChangeNoCopy: Boolean = false
 )

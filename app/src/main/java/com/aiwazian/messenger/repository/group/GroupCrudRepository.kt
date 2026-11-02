@@ -49,11 +49,6 @@ class GroupCrudRepository @Inject constructor(
                     
                     val avatars = dto.avatars.map { it.toGroupEntity(group.id) }
                     
-                    /*
-                     * Сервер отдал полный список аватарок: пропавшие уберёт сам DAO, а
-                     * случай «аватарку удалили совсем» приходит пустым списком и требует
-                     * явной чистки: иначе в кэше осталась бы старая картинка.
-                     */
                     if (avatars.isEmpty()) {
                         avatarDao.deleteAvatarsByGroupId(group.id)
                     } else {
@@ -214,7 +209,6 @@ class GroupCrudRepository @Inject constructor(
                     Result.failure(Exception("Empty body"))
                 }
             } else if (response.code() == 404 || response.code() == 410) {
-                /* Файла больше нет: DownloadAvatarUseCase уберёт аватарку из Room. */
                 Result.failure(AvatarNotFoundException(fileId))
             } else {
                 Result.failure(Exception("Unsuccessful request: ${response.errorBody()}"))

@@ -20,7 +20,6 @@ data class ChannelEntity(
     val removedUsers: Int?,
     val username: String?,
     val isSubscribed: Boolean,
-    /** Запрет копирования контента канала. */
     @ColumnInfo(defaultValue = "false") val noCopy: Boolean = false,
     @ColumnInfo(defaultValue = "false") val commentsEnabled: Boolean = false,
     @ColumnInfo(defaultValue = "1") val commentsRestrictedToSubscribers: Boolean = true
