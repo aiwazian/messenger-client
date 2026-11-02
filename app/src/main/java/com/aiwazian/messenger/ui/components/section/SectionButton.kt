@@ -8,8 +8,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.isUnspecified
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -29,7 +27,7 @@ fun SectionButton(
     leadingIcon: ImageVector? = null,
     trailingText: String? = null,
     trailingContent: @Composable () -> Unit = {},
-    contentColor: Color = Color.Unspecified,
+    colors: SectionButtonColors = SectionButtonDefaults.colors(),
     enabled: Boolean = true,
     onLinkClicked: ((String) -> Unit)? = null,
     onUsernameClicked: ((String) -> Unit)? = null,
@@ -41,45 +39,41 @@ fun SectionButton(
             Icon(
                 imageVector = leadingIcon,
                 contentDescription = null,
-                tint = if (contentColor.isUnspecified) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    contentColor
-                }
+                tint = colors.leadingContentColor
             )
         }
     } else {
         null
     }
-    
+
     SectionItem(
         headlineContent = {
             val annotatedString = buildAnnotatedString {
                 var lastIndex = 0
-                
+
                 val urlMatches = RegexPatterns.URL.findAll(headlineText).map { it to "url" }
                 val usernameMatches =
                     RegexPatterns.MENTION.findAll(headlineText).map { it to "username" }
-                
+
                 val allMatches = (urlMatches + usernameMatches)
                     .sortedBy { it.first.range.first }
                     .toList()
-                
+
                 if (allMatches.isEmpty()) {
                     append(headlineText)
                 } else {
                     allMatches.forEach { (matchResult, type) ->
                         val startIndex = matchResult.range.first
                         val endIndex = matchResult.range.last + 1
-                        
+
                         if (startIndex < lastIndex) return@forEach
-                        
+
                         if (startIndex > lastIndex) {
                             append(headlineText.substring(lastIndex, startIndex))
                         }
-                        
+
                         val matchedValue = matchResult.value
-                        
+
                         when (type) {
                             "url" if onLinkClicked != null -> {
                                 withLink(
@@ -104,7 +98,7 @@ fun SectionButton(
                                     append(matchedValue)
                                 }
                             }
-                            
+
                             "username" if onUsernameClicked != null -> {
                                 withLink(
                                     link = LinkAnnotation.Clickable(
@@ -127,37 +121,35 @@ fun SectionButton(
                                     append(matchedValue)
                                 }
                             }
-                            
+
                             else -> {
                                 append(matchedValue)
                             }
                         }
-                        
+
                         lastIndex = endIndex
                     }
-                    
+
                     if (lastIndex < headlineText.length) {
                         append(headlineText.substring(lastIndex))
                     }
                 }
             }
-            
+
             Text(
                 text = annotatedString,
-                color = if (contentColor.isUnspecified) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    contentColor
-                },
+                color = colors.contentColor,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Normal
             )
         },
         supportingText = supportingText,
+        supportingTextColor = colors.supportColor,
         leadingIcon = leading,
         trailingIcon = trailingContent,
         trailingText = trailingText,
-        contentColor = contentColor,
+        contentColor = colors.contentColor,
+        containerColor = colors.containerColor,
         enabled = enabled,
         onClick = onClick,
         onLongClick = onLongClick

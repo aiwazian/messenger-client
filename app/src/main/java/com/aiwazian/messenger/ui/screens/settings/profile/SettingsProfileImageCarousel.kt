@@ -141,7 +141,7 @@ fun SettingsProfileImageCarousel(
                                 ), horizontalAlignment = Alignment.End
                             ) {
                                 Text(
-                                    text = "Удалить это фото?",
+                                    text = stringResource(R.string.profile_photo_delete_confirm_message),
                                     modifier = Modifier.padding(6.dp)
                                 )
                                 Row {

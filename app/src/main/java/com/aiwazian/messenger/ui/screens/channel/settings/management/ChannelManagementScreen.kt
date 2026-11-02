@@ -29,6 +29,7 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionButtonDefaults
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -95,7 +96,7 @@ fun ChannelManagementScreen(
             
             SectionButton(
                 headlineText = stringResource(R.string.delete_channel),
-                contentColor = MaterialTheme.colorScheme.error,
+                colors = SectionButtonDefaults.colors(contentColor = MaterialTheme.colorScheme.error),
                 onClick = viewModel::showDeleteDialog
             )
         }

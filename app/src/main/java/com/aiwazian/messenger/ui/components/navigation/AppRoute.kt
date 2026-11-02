@@ -157,7 +157,16 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data object SettingsDataAndStorage : AppRoute
-    
+
+    @Serializable
+    data object SettingsProxy : AppRoute
+
+    @Serializable
+    data class SettingsProxyAdd(val proxyId: Long? = null) : AppRoute
+
+    @Serializable
+    data object SettingsDns : AppRoute
+
     @Serializable
     data object SettingsStorage : AppRoute
     

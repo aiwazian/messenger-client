@@ -6,10 +6,12 @@ package com.aiwazian.messenger.socket
 
 import android.util.Log
 import com.aiwazian.messenger.BuildConfig
+import com.aiwazian.messenger.di.ApiClient
 import com.aiwazian.messenger.enums.ConnectionState
 import com.aiwazian.messenger.utils.SessionManager
 import io.socket.client.IO
 import io.socket.client.Socket
+import okhttp3.OkHttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,7 +34,8 @@ import javax.inject.Singleton
 
 @Singleton
 class WebSocketClient @Inject constructor(
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    @ApiClient private val apiClient: OkHttpClient
 ) {
     companion object {
         private const val TAG = "WebSocketClient"
@@ -136,6 +139,9 @@ class WebSocketClient @Inject constructor(
             .setReconnectionDelay(RECONNECTION_DELAY_MS)
             .setReconnectionDelayMax(MAX_RECONNECT_DELAY_MS)
             .build()
+
+        opts.callFactory = apiClient
+        opts.webSocketFactory = apiClient
         
         socket = IO.socket(BuildConfig.WS_URL, opts).apply {
             on(Socket.EVENT_CONNECT) { onConnect() }
@@ -170,11 +176,6 @@ class WebSocketClient @Inject constructor(
         _connectionState.value = ConnectionState.DISCONNECTED
     }
     
-    /*
-     * Сессия больше не действительна. Что делать дальше, решает SessionManager: если
-     * на устройстве есть другой аккаунт, приложение переключится на него, а экран
-     * авторизации откроется только когда аккаунтов не осталось.
-     */
     private fun onSessionRejected() {
         Log.e(TAG, "Сессия отклонена сервером, текущий токен больше не действителен")
         SessionManager.notifyUnauthorized()

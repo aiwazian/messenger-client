@@ -63,6 +63,7 @@ import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.screens.auth.components.ConnectionSettingsTopBar
 import com.aiwazian.messenger.ui.screens.auth.components.PasswordField
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -119,6 +120,9 @@ fun PasswordScreen(
         modifier = Modifier
             .fillMaxSize()
             .imePadding(),
+        topBar = {
+            ConnectionSettingsTopBar()
+        },
         bottomBar = {
             BottomAppBar(
                 containerColor = Color.Transparent,

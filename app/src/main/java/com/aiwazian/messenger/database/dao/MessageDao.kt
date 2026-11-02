@@ -44,7 +44,6 @@ interface MessageDao {
     )
     suspend fun getMessageById(messageId: Long): MessageWithAttachments?
 
-    /** Сообщения по списку id — для панели закреплённых сообщений. */
     @Transaction
     @Query(
         "SELECT * FROM message " +

@@ -8,7 +8,15 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Looper
+import coil3.ImageLoader
+import coil3.PlatformContext
+import coil3.SingletonImageLoader
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import com.aiwazian.messenger.di.ApplicationScope
+import com.aiwazian.messenger.network.dns.DnsApplier
+import com.aiwazian.messenger.network.dns.DnsController
+import com.aiwazian.messenger.network.proxy.ProxyApplier
+import com.aiwazian.messenger.network.proxy.applyAppProxy
 import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.utils.FailedSendRetrier
@@ -22,10 +30,11 @@ import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 
 @HiltAndroidApp
-class Application : Application() {
-    
+class Application : Application(), SingletonImageLoader.Factory {
+
     @Inject
     lateinit var authRepository: AuthRepository
 
@@ -42,15 +51,29 @@ class Application : Application() {
     lateinit var failedSendRetrier: Lazy<FailedSendRetrier>
 
     @Inject
+    lateinit var dnsApplier: Lazy<DnsApplier>
+
+    @Inject
+    lateinit var proxyApplier: Lazy<ProxyApplier>
+
+    @Inject
     @ApplicationScope
     lateinit var appScope: CoroutineScope
-    
+
     override fun onCreate() {
         super.onCreate()
 
         if (android.app.Application.getProcessName().contains(PdfSandboxProcessMarker)) return
 
         SessionManager.init(authRepository, restoreCredentialManager)
+
+        appScope.launch {
+            dnsApplier.get().start()
+        }
+
+        appScope.launch {
+            proxyApplier.get().start()
+        }
 
         appScope.launch {
             realtimeEventSyncService.get()
@@ -76,6 +99,23 @@ class Application : Application() {
         createNotificationChannels()
     }
     
+    override fun newImageLoader(context: PlatformContext): ImageLoader {
+        return ImageLoader.Builder(context)
+            .components {
+                add(
+                    OkHttpNetworkFetcherFactory(
+                        callFactory = {
+                            OkHttpClient.Builder()
+                                .dns(DnsController)
+                                .applyAppProxy()
+                                .build()
+                        }
+                    )
+                )
+            }
+            .build()
+    }
+
     private fun createNotificationChannels() {
         val manager = getSystemService(NotificationManager::class.java)
         

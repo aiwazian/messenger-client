@@ -108,10 +108,6 @@ private const val FOCUS_SCALE = 2.5f
 private const val SCRIM_ALPHA = 0.6f
 private const val EMOJI_FIELD_WIDTH_FRACTION = 0.8f
 private const val PRESSED_CELL_SCALE = 0.9f
-private const val COVER_BUTTON_LABEL = "Выбрать обложку"
-private const val PICK_STICKER_LABEL = "Выбрать стикер"
-private const val PICK_FILE_LABEL = "Выбрать файл"
-private const val REMOVE_COVER_LABEL = "Удалить обложку"
 
 private val FOCUS_OPEN_SPEC: AnimationSpec<Float> =
     tween(durationMillis = 260, easing = FastOutSlowInEasing)
@@ -346,27 +342,27 @@ fun StickerPackEditorScreen(
                                     expanded = isCoverMenuExpanded,
                                     onDismissRequest = { isCoverMenuExpanded = false }) {
                                     AppDropdownMenuItem(
-                                        text = PICK_STICKER_LABEL,
+                                        text = stringResource(R.string.sticker_pack_sticker_choose),
                                         onClick = {
                                             isCoverMenuExpanded = false
-                                            
+
                                             stickerPickerTarget = StickerPickTarget.Cover
                                         })
-                                    
+
                                     AppDropdownMenuItem(
-                                        text = PICK_FILE_LABEL,
+                                        text = stringResource(R.string.sticker_pack_file_choose),
                                         onClick = {
                                             isCoverMenuExpanded = false
-                                            
+
                                             photoPickerTarget = StickerPickTarget.Cover
                                         })
-                                    
+
                                     if (uiState.cover != null) {
                                         AppDropdownMenuItem(
-                                            text = REMOVE_COVER_LABEL,
+                                            text = stringResource(R.string.sticker_pack_cover_remove),
                                             onClick = {
                                                 isCoverMenuExpanded = false
-                                                
+
                                                 viewModel.removeCover()
                                             })
                                     }
@@ -420,18 +416,18 @@ fun StickerPackEditorScreen(
                                 expanded = isAddMenuExpanded,
                                 onDismissRequest = { isAddMenuExpanded = false }) {
                                 AppDropdownMenuItem(
-                                    text = PICK_STICKER_LABEL,
+                                    text = stringResource(R.string.sticker_pack_sticker_choose),
                                     onClick = {
                                         isAddMenuExpanded = false
-                                        
+
                                         stickerPickerTarget = StickerPickTarget.Sticker
                                     })
-                                
+
                                 AppDropdownMenuItem(
-                                    text = PICK_FILE_LABEL,
+                                    text = stringResource(R.string.sticker_pack_file_choose),
                                     onClick = {
                                         isAddMenuExpanded = false
-                                        
+
                                         photoPickerTarget = StickerPickTarget.Sticker
                                     })
                             }
@@ -514,7 +510,7 @@ fun StickerPackEditorScreen(
     
     if (isExitDialogVisible) {
         AppDialog(
-            title = "Несохраненные изменения",
+            title = stringResource(R.string.sticker_pack_unsaved_title),
             onDismissRequest = { isExitDialogVisible = false },
             buttons = {
                 TextButton(onClick = {
@@ -555,7 +551,7 @@ private fun CoverPicker(
                     modifier = Modifier.size(18.dp)
                 )
             } else {
-                Text(COVER_BUTTON_LABEL)
+                Text(stringResource(R.string.sticker_pack_cover_choose))
             }
         }
         
@@ -578,7 +574,7 @@ private fun CoverPicker(
             AnimatedStickerImage(
                 data = data,
                 isVideo = isVideoMediaUrl(data.toString()),
-                contentDescription = COVER_BUTTON_LABEL,
+                contentDescription = stringResource(R.string.sticker_pack_cover_choose),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )

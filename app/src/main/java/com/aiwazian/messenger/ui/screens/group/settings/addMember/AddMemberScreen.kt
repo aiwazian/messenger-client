@@ -106,7 +106,7 @@ fun AddMemberScreen(
         ) {
             if (state.users.isEmpty()) {
                 Text(
-                    text = "Нет доступных пользователей",
+                    text = stringResource(R.string.add_member_users_empty),
                     modifier = Modifier.align(Alignment.Center),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface

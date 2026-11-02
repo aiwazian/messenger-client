@@ -20,6 +20,8 @@ import com.aiwazian.messenger.network.api.SessionApi
 import com.aiwazian.messenger.network.api.StickerApi
 import com.aiwazian.messenger.network.api.UserApi
 import com.aiwazian.messenger.network.api.WallpaperApi
+import com.aiwazian.messenger.network.dns.DnsController
+import com.aiwazian.messenger.network.proxy.applyAppProxy
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -45,6 +47,8 @@ object RetrofitInstance {
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(20, TimeUnit.SECONDS)
         .callTimeout(60, TimeUnit.SECONDS)
+        .dns(DnsController)
+        .applyAppProxy()
         .addInterceptor(
             AuthInterceptor(
                 shouldSkipAuth = { path ->

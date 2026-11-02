@@ -1095,13 +1095,6 @@ class ChatRepository @Inject constructor(
         }
     }
 
-    /**
-     * Закрепления чата для текущего пользователя, отсортированные от свежих к старым.
-     *
-     * Поток объединяет таблицу закреплений с сообщениями по id: правка текста
-     * закреплённого сообщения обновляет панель без перезагрузки чата.
-     */
-    @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun clearLocalHistory(chatId: Long) {
         userRepository.getMe().firstOrNull()?.id?.let { userId ->
             messageDao.clearChatHistory(userId, chatId)

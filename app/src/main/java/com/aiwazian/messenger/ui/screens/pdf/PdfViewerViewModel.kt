@@ -125,6 +125,14 @@ class PdfViewerViewModel @Inject constructor(
             }
         }
     }
+
+    fun openExternally() {
+        viewModelScope.launch {
+            val path = _uiState.value.filePath ?: return@launch
+
+            fileHandler.openFile(path)
+        }
+    }
 }
 
 data class PdfViewerUiState(

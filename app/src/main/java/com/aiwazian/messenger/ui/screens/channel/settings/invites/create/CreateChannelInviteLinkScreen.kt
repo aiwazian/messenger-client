@@ -39,6 +39,7 @@ import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionButtonDefaults
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
@@ -157,7 +158,7 @@ fun CreateInviteLinkScreen(
                     if (date != null) {
                         SectionButton(
                             headlineText = stringResource(R.string.reset_expiration_date),
-                            contentColor = MaterialTheme.colorScheme.error,
+                            colors = SectionButtonDefaults.colors(contentColor = MaterialTheme.colorScheme.error),
                             onClick = { viewModel.onExpirationDateChange(null) })
                     }
                 }

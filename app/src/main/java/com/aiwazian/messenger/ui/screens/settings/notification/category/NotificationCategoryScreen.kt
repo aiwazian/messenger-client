@@ -42,6 +42,7 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionButtonDefaults
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.Job
@@ -108,10 +109,6 @@ fun NotificationCategoryScreen(
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState())
                     ) {
-                        /*
-                         * Кнопка добавления стоит выше списка и не прячется, когда исключений
-                         * нет: пустой экран без неё оставляет пользователя ни с чем.
-                         */
                         SectionContainer {
                             SectionButton(
                                 headlineText = stringResource(R.string.notification_exception_add),
@@ -153,7 +150,7 @@ fun NotificationCategoryScreen(
                             SectionContainer {
                                 SectionButton(
                                     headlineText = stringResource(R.string.delete_all_exceptions),
-                                    contentColor = MaterialTheme.colorScheme.error,
+                                    colors = SectionButtonDefaults.colors(contentColor = MaterialTheme.colorScheme.error),
                                     onClick = viewModel::showDeleteAllDialog
                                 )
                             }

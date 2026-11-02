@@ -9,9 +9,12 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -39,7 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.pdf.ExperimentalPdfApi
@@ -126,9 +129,8 @@ fun PdfViewerScreen(
         topBar = {
             PdfViewerTopBar(
                 name = uiState.fileName,
-                pageCount = loadedDocument?.pageCount ?: 0,
-                currentPage = pdfViewerState.firstVisiblePage + 1,
-                onSaveToDownloads = viewModel::saveToDownloads
+                onSaveToDownloads = viewModel::saveToDownloads,
+                onOpenExternally = viewModel::openExternally
             )
         }
     ) { innerPadding ->
@@ -163,26 +165,29 @@ fun PdfViewerScreen(
 @Composable
 private fun PdfViewerTopBar(
     name: String,
-    pageCount: Int,
-    currentPage: Int,
-    onSaveToDownloads: () -> Unit
+    onSaveToDownloads: () -> Unit,
+    onOpenExternally: () -> Unit
 ) {
     val navBackStack = LocalNavBackStack.current
     var showMoreActions by remember { mutableStateOf(false) }
     
     TopAppBar(
         title = {
-            Box(
-                modifier = Modifier.background(
-                    color = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = CircleShape
-                )
-            ) {
-                Text(
-                    text = name,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            shape = CircleShape
+                        )
+                ) {
+                    Text(
+                        text = name,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                    )
+                }
             }
         },
         navigationIcon = {
@@ -201,14 +206,6 @@ private fun PdfViewerTopBar(
             }
         },
         actions = {
-            if (pageCount > 0) {
-                Text(
-                    text = "$currentPage / $pageCount",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            
             Box(
                 modifier = Modifier.background(
                     color = MaterialTheme.colorScheme.surfaceContainer,
@@ -226,6 +223,20 @@ private fun PdfViewerTopBar(
                     expanded = showMoreActions,
                     onDismissRequest = { showMoreActions = false }
                 ) {
+                    AppDropdownMenuItem(
+                        text = stringResource(R.string.open_with),
+                        onClick = {
+                            showMoreActions = false
+                            onOpenExternally()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+                                contentDescription = null
+                            )
+                        }
+                    )
+                    
                     AppDropdownMenuItem(
                         text = stringResource(R.string.save_to_downloads),
                         onClick = {

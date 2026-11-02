@@ -9,7 +9,10 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.aiwazian.messenger.domain.DnsConfig
+import com.aiwazian.messenger.domain.ProxyRoutingConfig
 import com.aiwazian.messenger.enums.AppPrimaryColor
+import com.aiwazian.messenger.enums.DnsProviderType
 import com.aiwazian.messenger.enums.ThemeOption
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -40,6 +43,11 @@ private object Keys {
     val PAUSE_MUSIC_ON_RECORD = booleanPreferencesKey("pause_music_on_record")
     val PAUSE_MUSIC_ON_MEDIA = booleanPreferencesKey("pause_music_on_media")
     val RAISE_TO_LISTEN = booleanPreferencesKey("raise_to_listen")
+    val DNS_TYPE = stringPreferencesKey("dns_type")
+    val DNS_PRIMARY = stringPreferencesKey("dns_primary")
+    val DNS_SECONDARY = stringPreferencesKey("dns_secondary")
+    val PROXY_USE = booleanPreferencesKey("proxy_use")
+    val PROXY_ACTIVE_ID = longPreferencesKey("proxy_active_id")
 }
 
 @Singleton
@@ -110,6 +118,44 @@ class DataStoreManager @Inject constructor(
 
     suspend fun saveRaiseToListen(enabled: Boolean) =
         setValue(Keys.RAISE_TO_LISTEN, enabled)
+
+    fun observeDnsConfig(): Flow<DnsConfig> {
+        return context.dataStore.data.map { preferences ->
+            DnsConfig(
+                type = preferences[Keys.DNS_TYPE]
+                    ?.let { storedType ->
+                        runCatching { DnsProviderType.valueOf(storedType) }.getOrNull()
+                    }
+                    ?: DnsProviderType.SYSTEM,
+                primaryDns = preferences[Keys.DNS_PRIMARY].orEmpty(),
+                secondaryDns = preferences[Keys.DNS_SECONDARY].orEmpty()
+            )
+        }
+    }
+
+    suspend fun saveDnsConfig(config: DnsConfig) {
+        context.dataStore.edit { settings ->
+            settings[Keys.DNS_TYPE] = config.type.name
+            settings[Keys.DNS_PRIMARY] = config.primaryDns
+            settings[Keys.DNS_SECONDARY] = config.secondaryDns
+        }
+    }
+
+    fun observeProxyRouting(): Flow<ProxyRoutingConfig> {
+        return context.dataStore.data.map { preferences ->
+            ProxyRoutingConfig(
+                use = preferences[Keys.PROXY_USE] ?: false,
+                activeProxyId = preferences[Keys.PROXY_ACTIVE_ID] ?: -1L
+            )
+        }
+    }
+
+    suspend fun saveProxyRouting(config: ProxyRoutingConfig) {
+        context.dataStore.edit { settings ->
+            settings[Keys.PROXY_USE] = config.use
+            settings[Keys.PROXY_ACTIVE_ID] = config.activeProxyId
+        }
+    }
 
     fun getPasscode() = getValue(Keys.PASSCODE, "")
     

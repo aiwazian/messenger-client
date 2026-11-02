@@ -29,6 +29,7 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionButtonDefaults
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.flow.collectLatest
 
@@ -82,7 +83,7 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
         SectionContainer {
             SectionButton(
                 headlineText = stringResource(R.string.logout),
-                contentColor = MaterialTheme.colorScheme.error,
+                colors = SectionButtonDefaults.colors(contentColor = MaterialTheme.colorScheme.error),
                 onClick = viewModel::showLogoutDialog
             )
         }

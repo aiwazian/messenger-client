@@ -70,6 +70,7 @@ import com.aiwazian.messenger.ui.screens.settings.chats.ChatSettingsScreen
 import com.aiwazian.messenger.ui.screens.wallpaper.WallpaperPreviewScreen
 import com.aiwazian.messenger.ui.screens.settings.data_storage.AutoDownloadMediaScreen
 import com.aiwazian.messenger.ui.screens.settings.data_storage.DataAndStorageScreen
+import com.aiwazian.messenger.ui.screens.settings.dns.DnsSettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.emoji.added.AddedEmojiPacksScreen
 import com.aiwazian.messenger.ui.screens.settings.emoji.created.CreatedEmojiPacksScreen
 import com.aiwazian.messenger.ui.screens.settings.emoji.created.EmojiPackEditorScreen
@@ -87,6 +88,8 @@ import com.aiwazian.messenger.ui.screens.settings.privacy.bio.SettingsBioScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.blockedUsers.BlockedUserListScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.forwardedProfile.SettingsForwardedProfileScreen
+import com.aiwazian.messenger.ui.screens.settings.proxy.ProxyAddScreen
+import com.aiwazian.messenger.ui.screens.settings.proxy.ProxySettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.exceptions.SelectPrivacyExceptionUsersScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.invites.SettingsInvitesScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.lastSeen.SettingsLastSeenScreen
@@ -244,6 +247,9 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsDataAndStorage> { DataAndStorageScreen() }
                     entry<AppRoute.SettingsStorage> { StorageScreen() }
                     entry<AppRoute.SettingsAutoDownloadMedia> { AutoDownloadMediaScreen() }
+                    entry<AppRoute.SettingsProxy> { ProxySettingsScreen() }
+                    entry<AppRoute.SettingsProxyAdd> { ProxyAddScreen(proxyId = it.proxyId) }
+                    entry<AppRoute.SettingsDns> { DnsSettingsScreen() }
                     entry<AppRoute.SettingsStickers> { SettingsStickersScreen() }
                     entry<AppRoute.CreatedStickerPacks> { CreatedStickerPacksScreen() }
                     entry<AppRoute.AddedStickerPacks> { AddedStickerPacksScreen() }

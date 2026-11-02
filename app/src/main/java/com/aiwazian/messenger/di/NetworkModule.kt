@@ -5,6 +5,8 @@
 package com.aiwazian.messenger.di
 
 import com.aiwazian.messenger.network.RetrofitInstance
+import com.aiwazian.messenger.network.dns.DnsController
+import com.aiwazian.messenger.network.proxy.applyAppProxy
 import com.aiwazian.messenger.network.api.AuthApi
 import com.aiwazian.messenger.network.api.ChannelApi
 import com.aiwazian.messenger.network.api.ChatApi
@@ -41,8 +43,10 @@ object NetworkModule {
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(20, TimeUnit.SECONDS)
         .callTimeout(60, TimeUnit.SECONDS)
+        .dns(DnsController)
+        .applyAppProxy()
         .build()
-    
+
     @Provides
     @Singleton
     @FileClient
@@ -51,6 +55,8 @@ object NetworkModule {
         .readTimeout(10, TimeUnit.MINUTES)
         .writeTimeout(10, TimeUnit.MINUTES)
         .callTimeout(0, TimeUnit.MILLISECONDS)
+        .dns(DnsController)
+        .applyAppProxy()
         .build()
     
     @Provides

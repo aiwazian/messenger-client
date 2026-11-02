@@ -26,6 +26,7 @@ import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionButtonDefaults
 import com.aiwazian.messenger.ui.components.section.SectionToggle
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -102,7 +103,7 @@ fun NotificationExceptionScreen(
             SectionContainer {
                 SectionButton(
                     headlineText = stringResource(R.string.delete_exception),
-                    contentColor = MaterialTheme.colorScheme.error,
+                    colors = SectionButtonDefaults.colors(contentColor = MaterialTheme.colorScheme.error),
                     onClick = viewModel::removeException
                 )
             }

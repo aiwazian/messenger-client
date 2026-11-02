@@ -45,6 +45,7 @@ import com.aiwazian.messenger.ui.components.NumberKeyboard
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionButtonDefaults
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionToggle
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
@@ -279,7 +280,7 @@ private fun SettingsPasscodeLockScreen(
                     })
                 SectionButton(
                     headlineText = stringResource(R.string.turn_passcode_off),
-                    contentColor = MaterialTheme.colorScheme.error,
+                    colors = SectionButtonDefaults.colors(contentColor = MaterialTheme.colorScheme.error),
                     onClick = disablePasscodeDialog::show
                 )
             }

@@ -5,6 +5,7 @@
 package com.aiwazian.messenger.ui.screens.group.create
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -30,6 +31,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.R
+import com.aiwazian.messenger.ui.animations.expressiveScaleIn
+import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.FramelessTextBox
@@ -82,21 +85,27 @@ fun CreateGroupScreen(viewModel: CreateGroupViewModel = hiltViewModel()) {
             }
         )
     }, floatingActionButton = {
-        FloatingActionButton(
-            modifier = Modifier.imePadding(),
-            onClick = viewModel::createGroup,
-            shape = CircleShape
+        AnimatedVisibility(
+            visible = uiState.name.isNotBlank(),
+            enter = expressiveScaleIn,
+            exit = expressiveScaleOut
         ) {
-            AnimatedContent(targetState = uiState.isLoading) { isLoading ->
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(20.dp)
-                    )
-                } else {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.ArrowForward, null
-                    )
+            FloatingActionButton(
+                modifier = Modifier.imePadding(),
+                onClick = viewModel::createGroup,
+                shape = CircleShape
+            ) {
+                AnimatedContent(targetState = uiState.isLoading) { isLoading ->
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    } else {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowForward, null
+                        )
+                    }
                 }
             }
         }

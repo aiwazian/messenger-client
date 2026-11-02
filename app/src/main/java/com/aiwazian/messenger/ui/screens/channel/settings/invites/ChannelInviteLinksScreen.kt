@@ -48,6 +48,7 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionButtonDefaults
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -94,7 +95,7 @@ fun ChannelInviteLinksScreen(
                 }
             },
             content = {
-                Text("Вы уверены, что хотите удалить эту ссылку?")
+                Text(stringResource(R.string.invite_link_delete_confirm_message))
             }
         )
     }
@@ -132,7 +133,7 @@ fun ChannelInviteLinksScreen(
                     SectionButton(
                         headlineText = stringResource(R.string.new_link),
                         leadingIcon = Icons.Rounded.AddLink,
-                        contentColor = MaterialTheme.colorScheme.primary,
+                        colors = SectionButtonDefaults.colors(contentColor = MaterialTheme.colorScheme.primary),
                         onClick = {
                             navBackStack.add(AppRoute.CreateInviteLink(channelId))
                         }
@@ -178,14 +179,18 @@ private fun InviteLinkItem(
     } else {
         (link.maxUses - link.uses).toString()
     }
-    
+
     val expirationText = if (link.expiresAt == null) {
-        "Бессрочна"
+        stringResource(R.string.invite_link_never_expires)
     } else {
         link.expiresAt.toInstance().toPrettyDateWithYear()
     }
-    
-    val supportingText = "Осталось $remainingUsesText • $expirationText"
+
+    val supportingText = stringResource(
+        R.string.invite_link_remaining,
+        remainingUsesText,
+        expirationText
+    )
     
     SectionButton(
         headlineText = "aiwazian.ru/" + link.code,

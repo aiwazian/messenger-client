@@ -50,6 +50,7 @@ import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionButtonDefaults
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.LottieAnimation
 
@@ -97,7 +98,7 @@ fun ChatFoldersScreen(viewModel: ChatFoldersViewModel = hiltViewModel()) {
             SectionButton(
                 leadingIcon = Icons.Rounded.Add,
                 headlineText = stringResource(R.string.create_new_folder),
-                contentColor = MaterialTheme.colorScheme.primary,
+                colors = SectionButtonDefaults.colors(contentColor = MaterialTheme.colorScheme.primary),
                 onClick = {
                     navBackStack.add(AppRoute.ChatFolderEditor())
                 })
