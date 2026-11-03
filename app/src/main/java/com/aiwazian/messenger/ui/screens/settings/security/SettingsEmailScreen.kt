@@ -111,8 +111,8 @@ fun SettingsEmailScreen(viewModel: EmailViewModel = hiltViewModel()) {
                 isError = errorMessage != null,
                 supportingText = {
                     AnimatedContent(targetState = errorMessage) { error ->
-                        if (!error.isNullOrBlank()) {
-                            Text(error)
+                        if (error != null) {
+                            Text(error.asString())
                         }
                     }
                 },

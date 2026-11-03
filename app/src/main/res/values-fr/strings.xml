@@ -35,6 +35,7 @@
     <string name="group_create_error">Impossible de créer le groupe</string>
     <string name="channel_create_error">Impossible de créer la chaîne</string>
     <string name="common_unknown_error">Erreur inconnue</string>
+    <string name="common_error">Erreur</string>
     <string name="voice_recording_start_failed">Impossible de démarrer l\'enregistrement</string>
     <string name="data_and_storage">Données et stockage</string>
     <string name="proxy_settings">Proxy</string>
@@ -257,6 +258,7 @@
     <string name="unexpected_error">Erreur inattendue</string>
     <string name="username_taken">Nom d’utilisateur déjà pris</string>
     <string name="username_available">Nom d’utilisateur disponible</string>
+    <string name="checking">Vérification</string>
     <string name="username_not_allowed">Nom d’utilisateur non autorisé</string>
     <string name="authorization">Autorisation</string>
     <string name="group">Groupe</string>
@@ -320,6 +322,8 @@
     <string name="pending_join_requests_description">Vos demandes pour rejoindre des chaînes et des groupes sont affichées ici.</string>
     <string name="pending_join_requests_empty">Il n’y a aucune demande d’adhésion en attente.</string>
     <string name="join_request_sent">Demande envoyée</string>
+    <string name="join_request_accept_error">Impossible d\'accepter la demande</string>
+    <string name="join_request_reject_error">Impossible de refuser la demande</string>
     <string name="draft">Brouillon</string>
     <string name="clear_drafts">Effacer les brouillons</string>
     <string name="clear_drafts_confirm_message"><![CDATA[Êtes-vous sûr de vouloir supprimer tous les brouillons de toutes les discussions \?]]></string>
@@ -736,4 +740,31 @@
     <string name="block_subscriber_confirmation">Êtes-vous sûr de vouloir bloquer cet abonné ?</string>
     <string name="failed_to_load_file">Échec du chargement du fichier</string>
     <string name="failed_to_load_list">Échec du chargement de la liste</string>
+    <string name="members_added">Membres ajoutés</string>
+    <string name="add_members_error">Échec de l\'ajout des membres</string>
+    <string name="session_terminated">Session terminée</string>
+    <string name="failed_to_terminate_session">Échec de la fermeture de la session</string>
+    <string name="all_other_sessions_terminated">Sessions terminées</string>
+    <string name="failed_to_terminate_sessions">Échec de la fermeture des sessions</string>
+    <string name="invalid_characters">Caractères non valides</string>
+    <string name="change_login_error">Échec de la modification de l\'identifiant</string>
+    <string name="send_email_error">Échec de l\'envoi de l\'e-mail</string>
+    <string name="enter_email_address">Saisissez l\'adresse e-mail</string>
+    <string name="invalid_email_format">Format d\'e-mail non valide</string>
+    <string name="confirm_email">Confirmer l\'e-mail</string>
+    <string name="six_digit_code">Code à 6 chiffres</string>
+    <string name="status_time_today">%1$s à %2$s</string>
+    <string name="status_time_yesterday">Hier à %1$s</string>
+    <string name="status_time_other">%1$s à %2$s</string>
+    <string name="read_status">Lu</string>
+    <string name="today">Aujourd\'hui</string>
+    <string name="back">Retour</string>
+    <plurals name="views_count">
+        <item quantity="one">%1$d vue</item>
+        <item quantity="other">%1$d vues</item>
+    </plurals>
+    <plurals name="link_sent_to_chats_count">
+        <item quantity="one">Lien envoyé à %1$d chat</item>
+        <item quantity="other">Lien envoyé à %1$d chats</item>
+    </plurals>
 </resources>

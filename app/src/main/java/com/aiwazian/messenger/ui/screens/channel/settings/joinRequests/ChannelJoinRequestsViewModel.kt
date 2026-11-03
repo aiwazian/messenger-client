@@ -64,7 +64,7 @@ class ChannelJoinRequestsViewModel @Inject constructor(
                     state.copy(requests = state.requests.filter { it.id != userId })
                 }
             } else {
-                _effect.emit(ChannelJoinRequestsEffect.ShowSnackbar(UiText.DynamicString("Ошибка при принятии заявки")))
+                _effect.emit(ChannelJoinRequestsEffect.ShowSnackbar(UiText.StringResource(R.string.join_request_accept_error)))
             }
         }
     }
@@ -77,7 +77,7 @@ class ChannelJoinRequestsViewModel @Inject constructor(
                     state.copy(requests = state.requests.filter { it.id != userId })
                 }
             } else {
-                _effect.emit(ChannelJoinRequestsEffect.ShowSnackbar(UiText.DynamicString("Ошибка при отклонении заявки")))
+                _effect.emit(ChannelJoinRequestsEffect.ShowSnackbar(UiText.StringResource(R.string.join_request_reject_error)))
             }
         }
     }

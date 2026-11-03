@@ -39,6 +39,7 @@
     <string name="group_create_error">Ошибка при создании группы</string>
     <string name="channel_create_error">Ошибка при создании канала</string>
     <string name="common_unknown_error">Неизвестная ошибка</string>
+    <string name="common_error">Ошибка</string>
     <string name="voice_recording_start_failed">Не удалось начать запись аудио</string>
     <string name="data_and_storage">Данные и память</string>
     <string name="proxy_settings">Прокси</string>
@@ -263,6 +264,7 @@
     <string name="unexpected_error">Непредвиденная ошибка</string>
     <string name="username_taken">Имя пользователя занято</string>
     <string name="username_available">Имя пользователя доступно</string>
+    <string name="checking">Проверка</string>
     <string name="username_not_allowed">Недопустимое имя пользователя</string>
     <string name="authorization">Авторизация</string>
     <string name="group">Группа</string>
@@ -326,6 +328,8 @@
     <string name="pending_join_requests_description">Здесь отображаются ваши заявки на вступление в каналы и группы.</string>
     <string name="pending_join_requests_empty">Отправленных заявок на вступление нет.</string>
     <string name="join_request_sent">Заявка отправлена</string>
+    <string name="join_request_accept_error">Не удалось принять заявку</string>
+    <string name="join_request_reject_error">Не удалось отклонить заявку</string>
     <string name="draft">Черновик</string>
     <string name="clear_drafts">Очистить черновики</string>
     <string name="clear_drafts_confirm_message">Вы уверены, что хотите удалить все черновики во всех чатах?</string>
@@ -759,4 +763,35 @@
     <string name="block_subscriber_confirmation">Вы точно хотите заблокировать подписчика?</string>
     <string name="failed_to_load_file">Не удалось загрузить файл</string>
     <string name="failed_to_load_list">Не удалось загрузить список</string>
+    <string name="members_added">Участники добавлены</string>
+    <string name="add_members_error">Ошибка при добавлении</string>
+    <string name="session_terminated">Сессия завершена</string>
+    <string name="failed_to_terminate_session">Не удалось завершить сессию</string>
+    <string name="all_other_sessions_terminated">Сессии завершены</string>
+    <string name="failed_to_terminate_sessions">Не удалось завершить сессии</string>
+    <string name="invalid_characters">Недопустимые символы</string>
+    <string name="change_login_error">Ошибка при смене логина</string>
+    <string name="send_email_error">Ошибка при отправке почты</string>
+    <string name="enter_email_address">Введите электронный адрес</string>
+    <string name="invalid_email_format">Некорректный формат электронного адреса</string>
+    <string name="confirm_email">Подтверждение почты</string>
+    <string name="six_digit_code">6-значный код</string>
+    <string name="status_time_today">%1$s в %2$s</string>
+    <string name="status_time_yesterday">вчера в %1$s</string>
+    <string name="status_time_other">%1$s в %2$s</string>
+    <string name="read_status">Прочитано</string>
+    <string name="today">сегодня</string>
+    <string name="back">Назад</string>
+    <plurals name="views_count">
+        <item quantity="one">%1$d просмотр</item>
+        <item quantity="few">%1$d просмотра</item>
+        <item quantity="many">%1$d просмотров</item>
+        <item quantity="other">%1$d просмотров</item>
+    </plurals>
+    <plurals name="link_sent_to_chats_count">
+        <item quantity="one">Ссылка отправлена в %1$d чат</item>
+        <item quantity="few">Ссылка отправлена в %1$d чата</item>
+        <item quantity="many">Ссылка отправлена в %1$d чатов</item>
+        <item quantity="other">Ссылка отправлена в %1$d чатов</item>
+    </plurals>
 </resources>

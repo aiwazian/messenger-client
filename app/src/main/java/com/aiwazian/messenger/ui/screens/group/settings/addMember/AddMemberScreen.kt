@@ -35,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -52,6 +53,7 @@ fun AddMemberScreen(
     groupId: Long, viewModel: AddMemberViewModel = hiltViewModel()
 ) {
     val navBackStack = LocalNavBackStack.current
+    val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -67,7 +69,7 @@ fun AddMemberScreen(
                 is AddMemberSideEffect.ShowSnackbar -> {
                     snackbarJob?.cancel()
                     snackbarJob = scope.launch {
-                        snackbarHostState.showSnackbar(effect.message)
+                        snackbarHostState.showSnackbar(effect.message.asString(context))
                     }
                 }
             }

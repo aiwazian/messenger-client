@@ -164,7 +164,15 @@ class GroupInviteLinksViewModel @Inject constructor(
                     selectedChatIds = emptySet()
                 )
             }
-            _uiEffect.emit(GroupInviteLinkUiEffect.ShowSnackbar(UiText.DynamicString("Ссылка отправлена в $count чата")))
+            _uiEffect.emit(
+                GroupInviteLinkUiEffect.ShowSnackbar(
+                    UiText.PluralResource(
+                        R.plurals.link_sent_to_chats_count,
+                        count,
+                        count
+                    )
+                )
+            )
         }
     }
     

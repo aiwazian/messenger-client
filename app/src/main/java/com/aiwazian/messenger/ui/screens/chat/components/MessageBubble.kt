@@ -147,6 +147,7 @@ fun MessageBubble(
     mediaKeyScope: String = "chat",
     onCommentsClick: (() -> Unit)? = null
 ) {
+    val context = LocalContext.current
     val message = item.message
     var expanded by remember { mutableStateOf(false) }
     var showReadersDropdown by remember { mutableStateOf(false) }
@@ -584,7 +585,7 @@ fun MessageBubble(
                 MessageDropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
-                    actions = buildDropdownActions(item, isSavedMessages, onSaveToDownloads) {
+                    actions = buildDropdownActions(context, item, isSavedMessages, onSaveToDownloads) {
                         onReadersRequested?.invoke(readers.map { it.userId })
                         showReadersDropdown = true
                     }
@@ -600,7 +601,7 @@ fun MessageBubble(
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                    contentDescription = "Назад"
+                                    contentDescription = stringResource(R.string.back)
                                 )
                             },
                             text = "",
@@ -620,7 +621,7 @@ fun MessageBubble(
                                 .filter { it.isNotBlank() }
                                 .joinToString(" ")
                                 .ifBlank { reader.userId.toString() }
-                            val readTime = formatStatusTime(reader.readAt, todayVerb = "сегодня")
+                            val readTime = formatStatusTime(context, reader.readAt, todayVerbRes = R.string.today)
                             AppDropdownMenuItem(
                                 leadingIcon = {
                                     ChatAvatar(

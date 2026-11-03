@@ -35,6 +35,7 @@
     <string name="group_create_error">Couldn\'t create the group</string>
     <string name="channel_create_error">Couldn\'t create the channel</string>
     <string name="common_unknown_error">Unknown error</string>
+    <string name="common_error">Error</string>
     <string name="voice_recording_start_failed">Couldn\'t start recording</string>
     <string name="data_and_storage">Data and Storage</string>
     <string name="proxy_settings">Proxy</string>
@@ -263,6 +264,7 @@
     <string name="unexpected_error">Unexpected error</string>
     <string name="username_taken">Username taken</string>
     <string name="username_available">Username available</string>
+    <string name="checking">Checking</string>
     <string name="username_not_allowed">Username is not allowed</string>
     <string name="authorization">Authorization</string>
     <string name="group">Group</string>
@@ -326,6 +328,8 @@
     <string name="pending_join_requests_description">Your requests to join channels and groups are displayed here.</string>
     <string name="pending_join_requests_empty">There are no pending requests to join.</string>
     <string name="join_request_sent">Request sent</string>
+    <string name="join_request_accept_error">Couldn\'t accept the request</string>
+    <string name="join_request_reject_error">Couldn\'t decline the request</string>
     <string name="draft">Draft</string>
     <string name="clear_drafts">Clear Drafts</string>
     <string name="clear_drafts_confirm_message">Are you sure you want to delete all drafts from all chats?</string>
@@ -733,4 +737,31 @@
     <string name="block_subscriber_confirmation">Are you sure you want to block this subscriber?</string>
     <string name="failed_to_load_file">Failed to load file</string>
     <string name="failed_to_load_list">Failed to load list</string>
+    <string name="members_added">Members added</string>
+    <string name="add_members_error">Failed to add members</string>
+    <string name="session_terminated">Session terminated</string>
+    <string name="failed_to_terminate_session">Failed to terminate session</string>
+    <string name="all_other_sessions_terminated">Sessions terminated</string>
+    <string name="failed_to_terminate_sessions">Failed to terminate sessions</string>
+    <string name="invalid_characters">Invalid characters</string>
+    <string name="change_login_error">Failed to change login</string>
+    <string name="send_email_error">Failed to send email</string>
+    <string name="enter_email_address">Enter email address</string>
+    <string name="invalid_email_format">Invalid email address format</string>
+    <string name="confirm_email">Confirm email</string>
+    <string name="six_digit_code">6-digit code</string>
+    <string name="status_time_today">%1$s at %2$s</string>
+    <string name="status_time_yesterday">Yesterday at %1$s</string>
+    <string name="status_time_other">%1$s at %2$s</string>
+    <string name="read_status">Read</string>
+    <string name="today">Today</string>
+    <string name="back">Back</string>
+    <plurals name="views_count">
+        <item quantity="one">%1$d view</item>
+        <item quantity="other">%1$d views</item>
+    </plurals>
+    <plurals name="link_sent_to_chats_count">
+        <item quantity="one">Link sent to %1$d chat</item>
+        <item quantity="other">Link sent to %1$d chats</item>
+    </plurals>
 </resources>

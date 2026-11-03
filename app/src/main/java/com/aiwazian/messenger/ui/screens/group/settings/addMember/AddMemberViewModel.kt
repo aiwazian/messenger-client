@@ -6,7 +6,9 @@ package com.aiwazian.messenger.ui.screens.group.settings.addMember
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.repository.GroupRepository
+import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,15 +64,15 @@ class AddMemberViewModel @Inject constructor(
         viewModelScope.launch {
             val result = groupRepository.addMembers(_groupId, selectedIds.toList())
             if (result.isSuccess) {
-                _sideEffect.emit(AddMemberSideEffect.ShowSnackbar("Участники добавлены"))
+                _sideEffect.emit(AddMemberSideEffect.ShowSnackbar(UiText.StringResource(R.string.members_added)))
                 onDone()
             } else {
-                _sideEffect.emit(AddMemberSideEffect.ShowSnackbar("Ошибка при добавлении"))
+                _sideEffect.emit(AddMemberSideEffect.ShowSnackbar(UiText.StringResource(R.string.add_members_error)))
             }
         }
     }
 }
 
 sealed interface AddMemberSideEffect {
-    data class ShowSnackbar(val message: String) : AddMemberSideEffect
+    data class ShowSnackbar(val message: UiText) : AddMemberSideEffect
 }

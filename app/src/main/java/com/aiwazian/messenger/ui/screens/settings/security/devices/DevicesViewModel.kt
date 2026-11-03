@@ -94,9 +94,9 @@ class DevicesViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(sessions = state.sessions.filter { it.id != sessionId })
                 }
-                _sideEffect.emit(DevicesSideEffect.ShowSnackbar(UiText.DynamicString("Сессия завершена")))
+                _sideEffect.emit(DevicesSideEffect.ShowSnackbar(UiText.StringResource(R.string.session_terminated)))
             }.onFailure {
-                handleError("Не удалось завершить сессию")
+                handleError(UiText.StringResource(R.string.failed_to_terminate_session))
             }
         }
     }
@@ -108,9 +108,9 @@ class DevicesViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(sessions = state.sessions.filter { it.isCurrent })
                 }
-                _sideEffect.emit(DevicesSideEffect.ShowSnackbar(UiText.DynamicString("Сессии завершены")))
+                _sideEffect.emit(DevicesSideEffect.ShowSnackbar(UiText.StringResource(R.string.all_other_sessions_terminated)))
             }.onFailure {
-                handleError("Не удалось завершить сессии")
+                handleError(UiText.StringResource(R.string.failed_to_terminate_sessions))
             }
         }
     }
@@ -132,8 +132,8 @@ class DevicesViewModel @Inject constructor(
         return true
     }
     
-    private suspend fun handleError(message: String) {
+    private suspend fun handleError(message: UiText) {
         vibrationManager.vibrate(VibrationPattern.Error)
-        _sideEffect.emit(DevicesSideEffect.ShowSnackbar(UiText.DynamicString(message)))
+        _sideEffect.emit(DevicesSideEffect.ShowSnackbar(message))
     }
 }

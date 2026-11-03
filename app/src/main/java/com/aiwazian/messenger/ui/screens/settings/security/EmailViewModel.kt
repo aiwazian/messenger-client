@@ -7,8 +7,10 @@ package com.aiwazian.messenger.ui.screens.settings.security
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.utils.RegexPatterns
+import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,7 +31,7 @@ class EmailViewModel @Inject constructor(
     private val _email = MutableStateFlow("")
     val email = _email.asStateFlow()
     
-    private val _errorMessage = MutableStateFlow<String?>(null)
+    private val _errorMessage = MutableStateFlow<UiText?>(null)
     val errorMessage = _errorMessage.asStateFlow()
     
     private val _isLoading = MutableStateFlow(false)
@@ -60,12 +62,12 @@ class EmailViewModel @Inject constructor(
                 if (result.isSuccess) {
                     _sideEffect.emit(EmailSideEffect.NavigateToVerify)
                 } else {
-                    _errorMessage.update { "Ошибка при отправке почты" }
+                    _errorMessage.update { UiText.StringResource(R.string.send_email_error) }
                     vibrationManager.vibrate(VibrationPattern.Error)
                 }
             } catch (e: Exception) {
                 Log.e("EmailViewModel", e.message.toString())
-                _errorMessage.update { "Ошибка при отправке почты" }
+                _errorMessage.update { UiText.StringResource(R.string.send_email_error) }
                 vibrationManager.vibrate(VibrationPattern.Error)
             } finally {
                 _isLoading.update { false }
@@ -75,12 +77,12 @@ class EmailViewModel @Inject constructor(
     
     private fun checkValidEmail(): Boolean {
         if (_email.value.isEmpty()) {
-            _errorMessage.update { "Введите электронный адрес" }
+            _errorMessage.update { UiText.StringResource(R.string.enter_email_address) }
             return false
         }
         
         if (!RegexPatterns.EMAIL.matches(_email.value)) {
-            _errorMessage.update { "Некорректный формат электронного адреса" }
+            _errorMessage.update { UiText.StringResource(R.string.invalid_email_format) }
             return false
         }
         

@@ -22,9 +22,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
@@ -55,7 +57,7 @@ fun SettingsEmailVerifyScreen(viewModel: EmailVerifyViewModel = hiltViewModel())
     Scaffold(
         topBar = {
             PageTopBar(
-                title = { Text("Подтверждение почты") },
+                title = { Text(stringResource(R.string.confirm_email)) },
             )
         }) { innerPadding ->
         Column(
@@ -73,7 +75,7 @@ fun SettingsEmailVerifyScreen(viewModel: EmailVerifyViewModel = hiltViewModel())
                 value = code,
                 onValueChange = viewModel::onInputCode,
                 label = {
-                    Text(errorMessage ?: "6-значный код")
+                    Text(errorMessage?.asString() ?: stringResource(R.string.six_digit_code))
                 },
                 isError = errorMessage != null,
                 keyboardOptions = KeyboardOptions(

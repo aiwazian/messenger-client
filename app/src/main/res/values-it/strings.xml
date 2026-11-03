@@ -35,6 +35,7 @@
     <string name="group_create_error">Impossibile creare il gruppo</string>
     <string name="channel_create_error">Impossibile creare il canale</string>
     <string name="common_unknown_error">Errore sconosciuto</string>
+    <string name="common_error">Errore</string>
     <string name="voice_recording_start_failed">Impossibile avviare la registrazione</string>
     <string name="data_and_storage">Dati e Archiviazione</string>
     <string name="proxy_settings">Proxy</string>
@@ -257,6 +258,7 @@
     <string name="unexpected_error">Errore inaspettato</string>
     <string name="username_taken">Nome utente già occupato</string>
     <string name="username_available">Nome utente disponibile</string>
+    <string name="checking">Verifica</string>
     <string name="username_not_allowed">Nome utente non consentito</string>
     <string name="authorization">Autorizzazione</string>
     <string name="group">Gruppo</string>
@@ -320,6 +322,8 @@
     <string name="pending_join_requests_description">Le tue richieste di adesione a canali e gruppi vengono visualizzate qui.</string>
     <string name="pending_join_requests_empty">Non ci sono richieste di adesione in sospeso.</string>
     <string name="join_request_sent">Richiesta inviata</string>
+    <string name="join_request_accept_error">Impossibile accettare la richiesta</string>
+    <string name="join_request_reject_error">Impossibile rifiutare la richiesta</string>
     <string name="draft">Bozza</string>
     <string name="clear_drafts">Cancella bozze</string>
     <string name="clear_drafts_confirm_message">Sei sicuro di voler eliminare tutte le bozze da tutte le chat\?</string>
@@ -733,4 +737,31 @@
     <string name="block_subscriber_confirmation">Sei sicuro di voler bloccare questo iscritto?</string>
     <string name="failed_to_load_file">Impossibile caricare il file</string>
     <string name="failed_to_load_list">Impossibile caricare l\'elenco</string>
+    <string name="members_added">Membri aggiunti</string>
+    <string name="add_members_error">Impossibile aggiungere i membri</string>
+    <string name="session_terminated">Sessione terminata</string>
+    <string name="failed_to_terminate_session">Impossibile terminare la sessione</string>
+    <string name="all_other_sessions_terminated">Sessioni terminate</string>
+    <string name="failed_to_terminate_sessions">Impossibile terminare le sessioni</string>
+    <string name="invalid_characters">Caratteri non validi</string>
+    <string name="change_login_error">Impossibile modificare l\'accesso</string>
+    <string name="send_email_error">Impossibile inviare l\'e-mail</string>
+    <string name="enter_email_address">Inserisci l\'indirizzo e-mail</string>
+    <string name="invalid_email_format">Formato e-mail non valido</string>
+    <string name="confirm_email">Conferma e-mail</string>
+    <string name="six_digit_code">Codice a 6 cifre</string>
+    <string name="status_time_today">%1$s alle %2$s</string>
+    <string name="status_time_yesterday">Ieri alle %1$s</string>
+    <string name="status_time_other">%1$s alle %2$s</string>
+    <string name="read_status">Letto</string>
+    <string name="today">Oggi</string>
+    <string name="back">Indietro</string>
+    <plurals name="views_count">
+        <item quantity="one">%1$d visualizzazione</item>
+        <item quantity="other">%1$d visualizzazioni</item>
+    </plurals>
+    <plurals name="link_sent_to_chats_count">
+        <item quantity="one">Link inviato a %1$d chat</item>
+        <item quantity="other">Link inviato a %1$d chat</item>
+    </plurals>
 </resources>

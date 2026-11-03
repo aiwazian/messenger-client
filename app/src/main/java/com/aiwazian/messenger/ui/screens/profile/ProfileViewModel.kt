@@ -36,7 +36,6 @@ import com.aiwazian.messenger.utils.ActiveChatTracker
 import com.aiwazian.messenger.utils.ClipboardService
 import com.aiwazian.messenger.utils.LastSeenHelper
 import com.aiwazian.messenger.utils.MessageSendQueue
-import com.aiwazian.messenger.utils.RegexPatterns
 import com.aiwazian.messenger.utils.ShortcutManager
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
@@ -726,7 +725,7 @@ class ProfileViewModel @Inject constructor(
                     )
                 )
             } else {
-                _uiEffect.tryEmit(ProfileUiEffect.ShowSnackbar(UiText.DynamicString("Ошибка")))
+                _uiEffect.tryEmit(ProfileUiEffect.ShowSnackbar(UiText.StringResource(R.string.common_error)))
             }
             dismissBlockDialog()
         }

@@ -4,6 +4,8 @@
 
 package com.aiwazian.messenger.ui.screens.chat.components
 
+import android.content.Context
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -24,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aiwazian.messenger.R
@@ -40,16 +41,17 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-internal fun formatStatusTime(timestamp: Long, todayVerb: String): String {
+internal fun formatStatusTime(context: Context, timestamp: Long, @StringRes todayVerbRes: Int): String {
     val instant = timestamp.toInstance()
     val date = instant.atZone(ZoneId.systemDefault())
     val today = LocalDate.now()
     val time = instant.toPrettyTime()
+    val todayVerb = context.getString(todayVerbRes)
 
     return when (date.toLocalDate()) {
-        today -> "$todayVerb в $time"
-        today.minusDays(1) -> "вчера в $time"
-        else -> date.format(DateTimeFormatter.ofPattern("d MMMM")) + " в " + time
+        today -> context.getString(R.string.status_time_today, todayVerb, time)
+        today.minusDays(1) -> context.getString(R.string.status_time_yesterday, time)
+        else -> context.getString(R.string.status_time_other, date.format(DateTimeFormatter.ofPattern("d MMMM")), time)
     }
 }
 
@@ -87,6 +89,7 @@ internal fun CommentCountBadge(
 }
 
 internal fun buildDropdownActions(
+    context: Context,
     item: ChatItem.MessageItem,
     isSavedMessages: Boolean,
     onSaveToDownloads: (() -> Unit)? = null,
@@ -99,7 +102,7 @@ internal fun buildDropdownActions(
             DropdownMenuAction(
                 icon = Icons.Rounded.EditCalendar,
                 text = UiText.DynamicString(
-                    formatStatusTime(item.message.editedAt, todayVerb = "Изменено")
+                    formatStatusTime(context, item.message.editedAt, todayVerbRes = R.string.edited)
                 ),
                 onClick = null
             )
@@ -117,7 +120,7 @@ internal fun buildDropdownActions(
                     DropdownMenuAction(
                         icon = Icons.Rounded.DoneAll,
                         text = UiText.DynamicString(
-                            formatStatusTime(readAt, todayVerb = "Прочитано")
+                            formatStatusTime(context, readAt, todayVerbRes = R.string.read_status)
                         ),
                         onClick = null
                     )
@@ -125,15 +128,10 @@ internal fun buildDropdownActions(
             }
         } else if (item.chatType == ChatType.GROUP && !readInfo.isNullOrEmpty()) {
             val count = readInfo.size
-            val word = when {
-                count % 10 == 1 && count % 100 != 11 -> "просмотр"
-                count % 10 in 2..4 && count % 100 !in 12..14 -> "просмотра"
-                else -> "просмотров"
-            }
             actions.add(
                 DropdownMenuAction(
                     icon = Icons.Rounded.DoneAll,
-                    text = UiText.DynamicString("$count $word"),
+                    text = UiText.PluralResource(R.plurals.views_count, count, count),
                     onClick = onReadCountClick
                 )
             )

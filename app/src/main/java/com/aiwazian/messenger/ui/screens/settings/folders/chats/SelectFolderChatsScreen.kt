@@ -5,7 +5,6 @@
 package com.aiwazian.messenger.ui.screens.settings.folders.chats
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -14,8 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -36,6 +32,7 @@ import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.FramelessTextBox
 import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.section.SectionCheckbox
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
@@ -87,27 +84,33 @@ fun SelectFolderChatsScreen(
             )
         }
         
-        SectionContainer {
-            uiState.visibleCategories.forEach { category ->
-                CategoryRow(
-                    category = category,
-                    isSelected = category in uiState.selectedCategories,
-                    onClick = { viewModel.toggleCategory(category) })
+        if (uiState.visibleCategories.isNotEmpty()) {
+            SectionContainer {
+                uiState.visibleCategories.forEach { category ->
+                    CategoryRow(
+                        category = category,
+                        isSelected = category in uiState.selectedCategories,
+                        onClick = { viewModel.toggleCategory(category) })
+                }
             }
-            
-            uiState.chats.forEach { chat ->
-                ProfileCard(
-                    id = chat.id,
-                    headlineText = chat.chatName.asString(),
-                    avatarUri = chat.avatarUri,
-                    trailingContent = {
-                        Checkbox(
-                            checked = chat.id in uiState.selectedChatIds,
-                            onCheckedChange = null,
-                            modifier = Modifier.padding(vertical = 14.dp, horizontal = 4.dp)
-                        )
-                    },
-                    onClick = { viewModel.toggleChat(chat.id) })
+        }
+        
+        if (uiState.chats.isNotEmpty()) {
+            SectionContainer {
+                uiState.chats.forEach { chat ->
+                    ProfileCard(
+                        id = chat.id,
+                        headlineText = chat.chatName.asString(),
+                        avatarUri = chat.avatarUri,
+                        trailingContent = {
+                            Checkbox(
+                                checked = chat.id in uiState.selectedChatIds,
+                                onCheckedChange = null,
+                                modifier = Modifier.padding(vertical = 14.dp, horizontal = 4.dp)
+                            )
+                        },
+                        onClick = { viewModel.toggleChat(chat.id) })
+                }
             }
         }
     }
@@ -117,11 +120,10 @@ fun SelectFolderChatsScreen(
 private fun CategoryRow(
     category: ChatFolderCategory, isSelected: Boolean, onClick: () -> Unit
 ) {
-    ListItem(
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.clickable(onClick = onClick),
-        content = { Text(category.titleText().asString()) },
-        leadingContent = {
+    SectionCheckbox(
+        headlineText = category.titleText().asString(),
+        checked = isSelected,
+        leadingIcon = {
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -136,11 +138,6 @@ private fun CategoryRow(
                 )
             }
         },
-        trailingContent = {
-            Checkbox(
-                checked = isSelected,
-                onCheckedChange = null,
-                modifier = Modifier.padding(vertical = 14.dp, horizontal = 4.dp)
-            )
-        })
+        onClick = onClick
+    )
 }

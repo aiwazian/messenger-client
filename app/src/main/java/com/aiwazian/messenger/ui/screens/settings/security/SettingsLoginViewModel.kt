@@ -7,9 +7,11 @@ package com.aiwazian.messenger.ui.screens.settings.security
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.ChangeLoginRequest
 import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.utils.RegexPatterns
+import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,7 +32,7 @@ class SettingsLoginViewModel @Inject constructor(
     private val _newLogin = MutableStateFlow("")
     val newLogin = _newLogin.asStateFlow()
     
-    private val _errorMessage = MutableStateFlow<String?>(null)
+    private val _errorMessage = MutableStateFlow<UiText?>(null)
     val errorMessage = _errorMessage.asStateFlow()
     
     private val _isLoading = MutableStateFlow(false)
@@ -62,12 +64,12 @@ class SettingsLoginViewModel @Inject constructor(
                 if (result.isSuccess) {
                     _sideEffect.emit(SettingsLoginSideEffect.NavigateBack)
                 } else {
-                    _errorMessage.update { "Логин уже занят" }
+                    _errorMessage.update { UiText.StringResource(R.string.login_user_exists) }
                     vibrationManager.vibrate(VibrationPattern.Error)
                 }
             } catch (e: Exception) {
                 Log.e("SettingsLoginViewModel", e.message.toString())
-                _errorMessage.update { "Ошибка при смене логина" }
+                _errorMessage.update { UiText.StringResource(R.string.change_login_error) }
                 vibrationManager.vibrate(VibrationPattern.Error)
             } finally {
                 _isLoading.update { false }
@@ -77,17 +79,17 @@ class SettingsLoginViewModel @Inject constructor(
     
     private fun checkValidLogin(): Boolean {
         if (_newLogin.value.isEmpty()) {
-            _errorMessage.update { "Введите логин" }
+            _errorMessage.update { UiText.StringResource(R.string.enter_login) }
             return false
         }
         
         if (_newLogin.value.length < 5) {
-            _errorMessage.update { "Минимум 5 символов" }
+            _errorMessage.update { UiText.StringResource(R.string.min_length_5_characters) }
             return false
         }
         
         if (!RegexPatterns.LOGIN.matches(_newLogin.value)) {
-            _errorMessage.update { "Недопустимые символы" }
+            _errorMessage.update { UiText.StringResource(R.string.invalid_characters) }
             return false
         }
         
