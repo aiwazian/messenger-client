@@ -166,6 +166,7 @@
     <string name="files">Fichiers</string>
     <string name="audio">Audio</string>
     <string name="music">Musique</string>
+    <string name="emoji_and_stickers">Émojis et stickers</string>
     <string name="storage_usage">Utilisation du stockage</string>
     <string name="media_stay_in_cloud">Tous les médias resteront dans le cloud et pourront être retéléchargés si vous en avez besoin.</string>
     <string name="group_name">Nom du groupe</string>

@@ -117,8 +117,7 @@ class StorageViewModel @Inject constructor(
             }
             
             val result = try {
-                val filesToDelete = storageRepository.getFilesForCategories(selectedCategories)
-                storageRepository.clearFiles(filesToDelete)
+                storageRepository.clearCache(selectedCategories)
             } catch (e: Exception) {
                 Log.e(TAG, "Unable to clear cache", e)
                 _uiEvent.emit(

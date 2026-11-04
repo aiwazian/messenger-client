@@ -34,6 +34,10 @@ enum class FileCategory(
     OTHER(
         title = R.string.other,
         extensions = setOf("apk", "zip", "rar", "7z", "tar", "gz", "exe", "dmg", "iso")
+    ),
+    EMOJI_STICKERS(
+        title = R.string.emoji_and_stickers,
+        extensions = emptySet()
     );
     
     companion object {
