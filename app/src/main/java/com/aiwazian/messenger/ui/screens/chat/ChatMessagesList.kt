@@ -138,6 +138,8 @@ internal fun BoxScope.ChatMessagesList(
                             )
                         }
                     } else null,
+                    isTextSelectionEnabled = copyPolicy.canCopyText(),
+                    onCopySelected = { chatViewModel.copyToClipboard(it) },
                     onReplyPreviewClick = {
                         chatViewModel.onReplyPreviewClicked(item.message)
                     },

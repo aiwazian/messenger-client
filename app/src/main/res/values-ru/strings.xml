@@ -794,4 +794,13 @@
         <item quantity="many">Ссылка отправлена в %1$d чатов</item>
         <item quantity="other">Ссылка отправлена в %1$d чатов</item>
     </plurals>
+    <string name="selection_cut">Вырезать</string>
+    <string name="selection_copy">Копировать</string>
+    <string name="selection_select_all">Выделить всё</string>
+    <string name="format_bold">Жирный</string>
+    <string name="format_italic">Курсив</string>
+    <string name="format_underline">Подчеркнутый</string>
+    <string name="format_strikethrough">Зачеркнутый</string>
+    <string name="format_monospace">Моноширинный</string>
+    <string name="format_plain">Обычный</string>
 </resources>

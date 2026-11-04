@@ -768,4 +768,13 @@
         <item quantity="one">Enlace enviado a %1$d chat</item>
         <item quantity="other">Enlace enviado a %1$d chats</item>
     </plurals>
+    <string name="selection_cut">Cortar</string>
+    <string name="selection_copy">Copiar</string>
+    <string name="selection_select_all">Seleccionar todo</string>
+    <string name="format_bold">Negrita</string>
+    <string name="format_italic">Cursiva</string>
+    <string name="format_underline">Subrayado</string>
+    <string name="format_strikethrough">Tachado</string>
+    <string name="format_monospace">Monoespaciado</string>
+    <string name="format_plain">Normal</string>
 </resources>

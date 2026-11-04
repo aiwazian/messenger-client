@@ -664,6 +664,10 @@ class ChatViewModel @Inject constructor(
         interactions.copyText(message)
     }
 
+    fun copyToClipboard(value: String) {
+        interactions.copyValue(value)
+    }
+
     fun copyContactPhone(message: Message) {
         interactions.copyContactPhone(message)
     }

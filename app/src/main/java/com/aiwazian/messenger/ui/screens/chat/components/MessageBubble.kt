@@ -143,6 +143,8 @@ fun MessageBubble(
     onSenderNameClick: (() -> Unit)? = null,
     onReaderClick: ((MessageReadInfo) -> Unit)? = null,
     showContextMenu: Boolean = true,
+    isTextSelectionEnabled: Boolean = false,
+    onCopySelected: ((String) -> Unit)? = null,
     isPinned: Boolean = false,
     mediaKeyScope: String = "chat",
     onCommentsClick: (() -> Unit)? = null
@@ -516,6 +518,8 @@ fun MessageBubble(
                                     .flex {
                                         grow(1f)
                                     },
+                                isTextSelectionEnabled = isTextSelectionEnabled,
+                                onCopySelected = onCopySelected,
                                 onLinkClicked = handleLinkClicked,
                                 onUsernameClicked = onUsernameClicked,
                                 onEmailClicked = onEmailClicked,

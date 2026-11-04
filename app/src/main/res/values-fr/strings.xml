@@ -767,4 +767,13 @@
         <item quantity="one">Lien envoyé à %1$d chat</item>
         <item quantity="other">Lien envoyé à %1$d chats</item>
     </plurals>
+    <string name="selection_cut">Couper</string>
+    <string name="selection_copy">Copier</string>
+    <string name="selection_select_all">Tout sélectionner</string>
+    <string name="format_bold">Gras</string>
+    <string name="format_italic">Italique</string>
+    <string name="format_underline">Souligné</string>
+    <string name="format_strikethrough">Barré</string>
+    <string name="format_monospace">Monospace</string>
+    <string name="format_plain">Normal</string>
 </resources>

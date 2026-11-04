@@ -125,7 +125,7 @@ fun ChatCard(
                     withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.error)) {
                         append(stringResource(R.string.draft) + ": ")
                     }
-                    appendCustomEmojiText(chat.draftText.trim())
+                    appendFormattedCustomEmojiText(chat.draftText.trim())
                 }
             } else if (chat.lastMessage != null) {
                 val sticker = chat.lastMessage.sticker
@@ -185,7 +185,7 @@ fun ChatCard(
                         if (showMyPrefix) {
                             append(stringResource(R.string.you) + ": ")
                         }
-                        appendCustomEmojiText(chat.lastMessage.text.trim())
+                        appendFormattedCustomEmojiText(chat.lastMessage.text.trim())
                     }
                 } else if (chat.lastMessage.systemMessageEventType != null) {
                     text = buildAnnotatedString {
