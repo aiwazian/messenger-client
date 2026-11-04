@@ -11,6 +11,7 @@ import android.os.Looper
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
+import coil3.disk.DiskCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import com.aiwazian.messenger.di.ApplicationScope
 import com.aiwazian.messenger.network.dns.DnsApplier
@@ -23,6 +24,7 @@ import com.aiwazian.messenger.utils.FailedSendRetrier
 import com.aiwazian.messenger.utils.PendingSendResumer
 import com.aiwazian.messenger.utils.RestoreCredentialManager
 import com.aiwazian.messenger.utils.SessionManager
+import com.aiwazian.messenger.utils.media.StickerVideoCache
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.yandex.mobile.ads.common.YandexAds
 import dagger.Lazy
@@ -31,6 +33,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
+import okio.Path.Companion.toOkioPath
 
 @HiltAndroidApp
 class Application : Application(), SingletonImageLoader.Factory {
@@ -63,7 +66,7 @@ class Application : Application(), SingletonImageLoader.Factory {
     override fun onCreate() {
         super.onCreate()
 
-        if (android.app.Application.getProcessName().contains(PdfSandboxProcessMarker)) return
+        if (getProcessName().contains(PDF_SANDBOX_PROCESS_MARKER)) return
 
         SessionManager.init(authRepository, restoreCredentialManager)
 
@@ -85,6 +88,10 @@ class Application : Application(), SingletonImageLoader.Factory {
 
         appScope.launch {
             failedSendRetrier.get().start()
+        }
+
+        appScope.launch {
+            StickerVideoCache.get(this@Application)
         }
 
         appScope.launch {
@@ -112,6 +119,12 @@ class Application : Application(), SingletonImageLoader.Factory {
                         }
                     )
                 )
+            }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(context.cacheDir.toOkioPath() / IMAGE_DISK_CACHE_DIRECTORY)
+                    .maxSizeBytes(IMAGE_DISK_CACHE_MAX_BYTES)
+                    .build()
             }
             .build()
     }
@@ -155,6 +168,10 @@ class Application : Application(), SingletonImageLoader.Factory {
     }
 
     private companion object {
-        const val PdfSandboxProcessMarker = "androidx.pdf"
+        const val PDF_SANDBOX_PROCESS_MARKER = "androidx.pdf"
+
+        const val IMAGE_DISK_CACHE_DIRECTORY = "image_cache"
+
+        const val IMAGE_DISK_CACHE_MAX_BYTES = 256L * 1024 * 1024
     }
 }

@@ -179,9 +179,13 @@ class ChatStickersViewModel @Inject constructor(
     
     private fun loadAddedPacks() {
         isAddedPacksRequested = true
-        
+
         viewModelScope.launch {
-            stickerRepository.getAddedPacks().onSuccess { packs ->
+            stickerRepository.getCachedInstalledPacks()
+                .takeIf { it.isNotEmpty() }
+                ?.let { packs -> applyPacks(packs) }
+
+            stickerRepository.getAddedPacks(includeStickers = true).onSuccess { packs ->
                 val detailed = packs.map { pack ->
                     if (pack.stickers.isNotEmpty()) {
                         pack
@@ -189,16 +193,20 @@ class ChatStickersViewModel @Inject constructor(
                         stickerRepository.getPack(pack.id).getOrNull() ?: pack
                     }
                 }
-                
-                _uiState.update { state ->
-                    state.copy(
-                        addedPacks = detailed,
-                        packsById = state.packsById + detailed.associateBy { it.id }
-                    )
-                }
+
+                applyPacks(detailed)
             }.onFailure {
                 isAddedPacksRequested = false
             }
+        }
+    }
+
+    private fun applyPacks(packs: List<StickerPack>) {
+        _uiState.update { state ->
+            state.copy(
+                addedPacks = packs,
+                packsById = state.packsById + packs.associateBy { it.id }
+            )
         }
     }
 }
