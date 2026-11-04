@@ -650,7 +650,6 @@ fun MediaPickerPreview(
                         if (onSend != null) {
                             Row(
                                 modifier = Modifier
-                                    .fillMaxWidth()
                                     .background(
                                         color = MaterialTheme.colorScheme.surfaceContainer,
                                         shape = CircleShape
