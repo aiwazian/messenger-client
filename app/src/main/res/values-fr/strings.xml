@@ -89,6 +89,10 @@
     <string name="clear_cache">Effacer le cache</string>
     <string name="add_account">Ajouter un compte</string>
     <string name="date_of_birth">Date de naissance</string>
+    <plurals name="age_years">
+        <item quantity="one">%1$d an</item>
+        <item quantity="other">%1$d ans</item>
+    </plurals>
     <string name="specify">Indiquer</string>
     <string name="connecting">Connexion</string>
     <string name="invites">Invitations</string>

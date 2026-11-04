@@ -60,6 +60,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -77,6 +78,7 @@ import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.extensions.parallax
 import com.aiwazian.messenger.extensions.sharedBounds
+import com.aiwazian.messenger.extensions.toAgeYears
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
 import com.aiwazian.messenger.ui.app.AppDialog
@@ -668,10 +670,18 @@ private fun UserProfile(
             }
             
             if (user.dateOfBirth != null) {
-                val dateOfBirthText = user.dateOfBirth.toInstance().toPrettyDateWithYear()
+                val instant = user.dateOfBirth.toInstance()
+                val dateOfBirthText = instant.toPrettyDateWithYear()
+                val age = instant.toAgeYears()
+
+                val headline = if (age >= 0) {
+                    "$dateOfBirthText (${pluralStringResource(R.plurals.age_years, age, age)})"
+                } else {
+                    dateOfBirthText
+                }
 
                 SectionButton(
-                    headlineText = dateOfBirthText,
+                    headlineText = headline,
                     supportingText = stringResource(R.string.date_of_birth),
                     onLongClick = { onCopyClick(dateOfBirthText) }
                 )
