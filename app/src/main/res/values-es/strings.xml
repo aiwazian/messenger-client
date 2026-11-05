@@ -87,6 +87,8 @@
     <string name="enable_passcode">Habilitar contraseña</string>
     <string name="set_passcode">Establecer contraseña</string>
     <string name="set_passcode_description">Habilita una contraseña para desbloquear la aplicación en tu dispositivo</string>
+    <string name="language_download_stop_title">Detener la descarga</string>
+    <string name="language_download_stop_message">¿Quieres cancelar la descarga del idioma\?</string>
     <string name="alternative_options">Opciones alternativas</string>
     <string name="clear_cache">Borrar caché</string>
     <string name="add_account">Agregar cuenta</string>

@@ -160,6 +160,7 @@ dependencies {
     implementation(libs.firebase.analytics)
     
     implementation(libs.play.app.update)
+    implementation(libs.play.feature.delivery)
     
     implementation(libs.bundles.media3)
     

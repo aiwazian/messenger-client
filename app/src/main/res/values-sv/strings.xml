@@ -91,6 +91,8 @@
     <string name="enable_passcode">Aktivera lösenkod</string>
     <string name="set_passcode">Ställ in lösenkod</string>
     <string name="set_passcode_description">Aktivera en lösenkod för att låsa upp appen på din enhet</string>
+    <string name="language_download_stop_title">Avbryt nedladdningen</string>
+    <string name="language_download_stop_message">Vill du avbryta nedladdningen av språket?</string>
     <string name="alternative_options">Alternativa val</string>
     <string name="clear_cache">Rensa cache</string>
     <string name="add_account">Lägg till konto</string>

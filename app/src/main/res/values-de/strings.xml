@@ -91,6 +91,8 @@
     <string name="enable_passcode">Code-Sperre aktivieren</string>
     <string name="set_passcode">Code-Sperre einrichten</string>
     <string name="set_passcode_description">Aktiviere eine Code-Sperre, um die App auf deinem Gerät zu entsperren</string>
+    <string name="language_download_stop_title">Download stoppen</string>
+    <string name="language_download_stop_message">Möchtest du den Sprachdownload abbrechen?</string>
     <string name="alternative_options">Alternative Optionen</string>
     <string name="clear_cache">Cache leeren</string>
     <string name="add_account">Konto hinzufügen</string>

@@ -87,6 +87,8 @@
     <string name="enable_passcode">Abilita il codice</string>
     <string name="set_passcode">Imposta il codice</string>
     <string name="set_passcode_description">Abilita un codice per sbloccare l\'app sul tuo dispositivo</string>
+    <string name="language_download_stop_title">Interrompi il download</string>
+    <string name="language_download_stop_message">Vuoi annullare il download della lingua\?</string>
     <string name="alternative_options">Opzioni alternative</string>
     <string name="clear_cache">Svuota la cache</string>
     <string name="add_account">Aggiungi account</string>
