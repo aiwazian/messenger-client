@@ -85,6 +85,8 @@
     <string name="first_name">Nombre de pila</string>
     <string name="last_name">Apellido</string>
     <string name="enable_passcode">Habilitar contraseña</string>
+    <string name="set_passcode">Establecer contraseña</string>
+    <string name="set_passcode_description">Habilita una contraseña para desbloquear la aplicación en tu dispositivo</string>
     <string name="alternative_options">Opciones alternativas</string>
     <string name="clear_cache">Borrar caché</string>
     <string name="add_account">Agregar cuenta</string>

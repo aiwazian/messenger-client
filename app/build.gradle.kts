@@ -23,8 +23,8 @@ android {
         applicationId = "com.aiwazian.messenger"
         minSdk = 30
         targetSdk = 37
-        versionCode = 72
-        versionName = "1.28.0"
+        versionCode = 73
+        versionName = "1.29.0"
     }
     
     buildTypes {

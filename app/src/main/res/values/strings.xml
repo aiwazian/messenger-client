@@ -85,6 +85,8 @@
     <string name="first_name">First name</string>
     <string name="last_name">Last name</string>
     <string name="enable_passcode">Enable Passcode</string>
+    <string name="set_passcode">Set Passcode</string>
+    <string name="set_passcode_description">Enable a passcode to unlock the app on your device</string>
     <string name="alternative_options">Alternative options</string>
     <string name="clear_cache">Clear Cache</string>
     <string name="add_account">Add Account</string>

@@ -3,5 +3,5 @@
   -->
 
 <resources>
-    <string name="app_name" translatable="false">Debug</string>
+    <string name="app_name" translatable="false">Messenger</string>
 </resources>

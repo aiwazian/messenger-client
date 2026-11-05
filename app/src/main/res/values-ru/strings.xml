@@ -88,6 +88,8 @@
     <string name="first_name">Имя</string>
     <string name="last_name">Фамилия</string>
     <string name="enable_passcode">Включить код-пароль</string>
+    <string name="set_passcode">Установить код-пароль</string>
+    <string name="set_passcode_description">Включите код-пароль для разблокировки приложения на Вашем устройстве</string>
     <string name="alternative_options">Другие возможности</string>
     <string name="clear_cache">Очистить кэш</string>
     <string name="add_account">Добавить аккаунт</string>

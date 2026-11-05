@@ -14,6 +14,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,6 +47,8 @@ import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
+import java.time.LocalDate
+import java.time.ZoneOffset
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -176,7 +179,21 @@ fun SettingsProfileScreen(viewModel: SettingsProfileViewModel = hiltViewModel())
         }
         
         if (uiState.showDatePicker) {
-            val datePickerState = rememberDatePickerState(uiState.user.dateOfBirth)
+            val today = remember { LocalDate.now() }
+            val datePickerState = rememberDatePickerState(
+                uiState.user.dateOfBirth,
+                selectableDates = object : SelectableDates {
+                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                        return utcTimeMillis <= today.atStartOfDay(ZoneOffset.UTC)
+                            .toInstant()
+                            .toEpochMilli()
+                    }
+
+                    override fun isSelectableYear(year: Int): Boolean {
+                        return year <= today.year
+                    }
+                }
+            )
             DatePickerDialog(onDismissRequest = viewModel::hideDatePicker, confirmButton = {
                 TextButton(
                     onClick = {

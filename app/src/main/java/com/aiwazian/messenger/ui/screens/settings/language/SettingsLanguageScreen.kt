@@ -29,7 +29,7 @@ fun SettingsLanguageScreen(languageViewModel: LanguageViewModel = hiltViewModel(
         }
     ) {
         SectionContainer {
-            AppLanguage.entries.forEach { language ->
+            AppLanguage.entries.sortedBy { it.displayName.lowercase() }.forEach { language ->
                 SectionRadio(
                     headlineText = language.nativeName,
                     selected = currentLanguage == language,

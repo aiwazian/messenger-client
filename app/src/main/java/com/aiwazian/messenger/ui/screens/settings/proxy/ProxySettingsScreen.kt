@@ -68,7 +68,11 @@ fun ProxySettingsScreen(
                 headlineText = stringResource(R.string.use_proxy),
                 isChecked = uiState.useProxy,
                 onCheckedChange = {
-                    viewModel.setProxyUse(!uiState.useProxy)
+                    if (uiState.proxies.isEmpty()) {
+                        navBackStack.add(AppRoute.SettingsProxyAdd())
+                    } else {
+                        viewModel.setProxyUse(!uiState.useProxy)
+                    }
                 }
             )
         }
