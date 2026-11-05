@@ -23,6 +23,9 @@ interface StickerDao {
     
     @Query("SELECT * FROM sticker WHERE packId = :packId ORDER BY sortOrder ASC")
     suspend fun getStickers(packId: Long): List<StickerEntity>
+
+    @Query("SELECT fileId FROM sticker")
+    suspend fun getAllFileIds(): List<String>
     
     @Upsert
     suspend fun upsertPacks(packs: List<StickerPackEntity>)

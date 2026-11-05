@@ -36,7 +36,7 @@ fun ProfileImageCarousel(
     val carouselState = rememberCarouselState { avatars.size }
     
     BoxWithConstraints {
-        val itemWidth = if (maxWidth < 500.dp) maxWidth else 300.dp
+        val itemWidth = if (maxWidth < 500.dp) maxWidth else 500.dp
         
         HorizontalUncontainedCarousel(
             state = carouselState,

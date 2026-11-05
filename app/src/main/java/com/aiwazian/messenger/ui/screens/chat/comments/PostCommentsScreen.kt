@@ -65,6 +65,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.FileAction
+import com.aiwazian.messenger.extensions.isPdfFile
 import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.chatMediaKey
@@ -282,15 +283,17 @@ fun PostCommentsScreen(
                         alwaysShowInput = true,
                         isVoiceEnabled = false,
                         sendOptionsEnabled = false,
-                        onMediaSheetSend = { _ ->
-                            val picker = mediaPickerViewModel.uiState.value
-                            viewModel.sendCommentFiles(
-                                uris = picker.selected,
-                                videoQualities = picker.videoQualities,
-                                mediaTransforms = picker.mediaTransforms,
-                                mediaDrawings = picker.mediaDrawings.mapValues { it.value.bitmap }
-                            )
-                            mediaPickerViewModel.reset()
+                        onMediaSheetSend = { _, scheduledAt ->
+                            if (scheduledAt == null) {
+                                val picker = mediaPickerViewModel.uiState.value
+                                viewModel.sendCommentFiles(
+                                    uris = picker.selected,
+                                    videoQualities = picker.videoQualities,
+                                    mediaTransforms = picker.mediaTransforms,
+                                    mediaDrawings = picker.mediaDrawings.mapValues { it.value.bitmap }
+                                )
+                                mediaPickerViewModel.reset()
+                            }
                         }
                     )
                 } else {
@@ -337,7 +340,19 @@ fun PostCommentsScreen(
                             modifier = Modifier.animateItem(),
                             item = item,
                             onFileAction = { file, action ->
-                                viewModel.onFileAction(item.message, file, action)
+                                if (action == FileAction.OPEN && file.extension.isPdfFile()) {
+                                    navBackStack.add(
+                                        AppRoute.PdfViewer(
+                                            chatId = chatId,
+                                            messageId = item.message.id,
+                                            fileId = file.fileId,
+                                            fileName = file.name,
+                                            postId = postId
+                                        )
+                                    )
+                                } else {
+                                    viewModel.onFileAction(item.message, file, action)
+                                }
                             },
                             onSenderNameClick = {
                                 navBackStack.add(
@@ -397,20 +412,7 @@ fun PostCommentsScreen(
         )
     }
 
-    if (uiState.showInviteBottomSheet && uiState.inviteLinkInfo != null) {
-        val info = uiState.inviteLinkInfo!!
 
-        InviteLinkBottomSheet(
-            chatId = info.chatId,
-            name = info.name.orEmpty(),
-            description = info.description,
-            count = info.membersCount ?: 0,
-            requireApproval = info.requireApproval,
-            isLoading = uiState.isProcessingInvite,
-            onDismiss = viewModel::dismissInviteBottomSheet,
-            onJoin = viewModel::onSubscribeViaInviteLink
-        )
-    }
 
     if (uiState.showBannedDialog) {
         AppDialog(

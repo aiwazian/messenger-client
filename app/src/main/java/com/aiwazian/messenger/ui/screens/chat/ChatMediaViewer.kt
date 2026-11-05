@@ -31,7 +31,7 @@ internal fun ChatMediaViewer(
 ) {
     if (!uiState.showFullScreenViewer) return
 
-    val viewerSnapshot = remember(uiState.showFullScreenViewer) {
+    val viewerSnapshot = remember {
         val senderByMessageId = uiState.chatItems
             .filterIsInstance<ChatItem.MessageItem>()
             .associate { it.message.id to it.message.senderId }
@@ -47,15 +47,14 @@ internal fun ChatMediaViewer(
                                 attachment.type == AttachmentType.GIF
                         )
             }
-
-        val tapped = tappedMedia
+        
         val viewerAttachments = when {
-            tapped == null -> downloadedMedia
+            tappedMedia == null -> downloadedMedia
             downloadedMedia.any {
-                it.messageId == tapped.messageId && it.fileId == tapped.fileId
+                it.messageId == tappedMedia.messageId && it.fileId == tappedMedia.fileId
             } -> downloadedMedia
 
-            tapped.localUri != null -> listOf(tapped)
+            tappedMedia.localUri != null -> listOf(tappedMedia)
             else -> downloadedMedia
         }
 
@@ -75,9 +74,9 @@ internal fun ChatMediaViewer(
         }
         val initialPage = entries
             .indexOfFirst { (attachment, _) ->
-                tapped != null &&
-                        attachment.messageId == tapped.messageId &&
-                        attachment.fileId == tapped.fileId
+                tappedMedia != null &&
+                        attachment.messageId == tappedMedia.messageId &&
+                        attachment.fileId == tappedMedia.fileId
             }
             .coerceAtLeast(0)
 

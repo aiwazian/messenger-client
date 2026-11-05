@@ -7,6 +7,7 @@ package com.aiwazian.messenger.repository
 import com.aiwazian.messenger.database.dao.FileDao
 import com.aiwazian.messenger.database.entity.FileEntity
 import com.aiwazian.messenger.enums.DownloadStatus
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class FileRepository @Inject constructor(
@@ -35,6 +36,10 @@ class FileRepository @Inject constructor(
     
     suspend fun getById(id: String): FileEntity? {
         return fileDao.getById(id)
+    }
+
+    fun observeById(id: String): Flow<FileEntity?> {
+        return fileDao.observeById(id)
     }
     
     suspend fun getAllFiles(): List<FileEntity> {

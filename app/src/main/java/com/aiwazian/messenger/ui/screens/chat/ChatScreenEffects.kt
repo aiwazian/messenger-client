@@ -80,6 +80,21 @@ internal fun ChatScreenEffects(
                     )
                 }
 
+                is ChatUiEffect.OpenScheduledMessages -> {
+                    navBackStack.add(AppRoute.ScheduledMessages(effect.chatId))
+                }
+
+                is ChatUiEffect.OpenPdfViewer -> {
+                    navBackStack.add(
+                        AppRoute.PdfViewer(
+                            chatId = effect.chatId,
+                            messageId = effect.messageId,
+                            fileId = effect.fileId,
+                            fileName = effect.fileName
+                        )
+                    )
+                }
+
                 is ChatUiEffect.OpenUrl -> {
                     CustomTabsIntent.Builder()
                         .setShowTitle(true)

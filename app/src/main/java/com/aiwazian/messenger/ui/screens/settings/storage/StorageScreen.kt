@@ -61,7 +61,10 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 @Composable
-fun StorageScreen(viewModel: StorageViewModel = hiltViewModel()) {
+fun StorageScreen(
+    onBackClick: (() -> Unit)? = null,
+    viewModel: StorageViewModel = hiltViewModel()
+) {
     val uiState by viewModel.uiState.collectAsState()
     
     val context = LocalContext.current
@@ -83,6 +86,7 @@ fun StorageScreen(viewModel: StorageViewModel = hiltViewModel()) {
     AppScaffold(
         topBar = {
             PageTopBar(
+                onBackClick = onBackClick,
                 actions = listOf(
                     TopBarAction(
                         icon = Icons.Rounded.MoreVert, dropdownActions = listOf(
@@ -138,45 +142,46 @@ fun StorageScreen(viewModel: StorageViewModel = hiltViewModel()) {
         
         val hasSelection = uiState.selectedCategories.isNotEmpty()
         
-        Button(
-            onClick = viewModel::showConfirmDialog,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp),
-            shape = MaterialTheme.shapes.medium,
-            colors = ButtonDefaults.buttonColors(
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                containerColor = MaterialTheme.colorScheme.primary
-            ),
-            enabled = hasSelection
-        ) {
-            Row(
-                modifier = Modifier.padding(8.dp),
+        SectionContainer(footer = {
+            SectionDescription(stringResource(R.string.media_stay_in_cloud))
+        }) {
+            Button(
+                onClick = viewModel::showConfirmDialog,
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.small,
+                colors = ButtonDefaults.buttonColors(
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                enabled = hasSelection
             ) {
-                Text(
-                    text = "${stringResource(R.string.clear_cache)} (",
-                    fontSize = 16.sp,
-                    lineHeight = 18.sp
-                )
-                AnimatedContent(
-                    targetState = selectedSizeMbRounded, transitionSpec = {
-                        if (targetState > initialState) {
-                            slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
-                        } else {
-                            slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
-                        }
-                    }) { size ->
+                Row(
+                    modifier = Modifier.padding(8.dp),
+                ) {
                     Text(
-                        text = "$size", fontSize = 16.sp, lineHeight = 18.sp
+                        text = stringResource(R.string.clear_cache),
+                        fontSize = 16.sp,
+                        lineHeight = 18.sp
+                    )
+                    Text(" (", fontSize = 16.sp, lineHeight = 18.sp)
+                    AnimatedContent(
+                        targetState = selectedSizeMbRounded, transitionSpec = {
+                            if (targetState > initialState) {
+                                slideInVertically { -it } + fadeIn() + scaleIn() togetherWith slideOutVertically { it } + fadeOut() + scaleOut()
+                            } else {
+                                slideInVertically { it } + fadeIn() + scaleIn() togetherWith slideOutVertically { -it } + fadeOut() + scaleOut()
+                            }
+                        }) { size ->
+                        Text(
+                            text = "$size", fontSize = 16.sp, lineHeight = 18.sp
+                        )
+                    }
+                    Text(
+                        text = "MB)", fontSize = 16.sp, lineHeight = 18.sp
                     )
                 }
-                Text(
-                    text = "MB)", fontSize = 16.sp, lineHeight = 18.sp
-                )
             }
         }
-        
-        SectionDescription(stringResource(R.string.media_stay_in_cloud))
     }
     
     if (uiState.showConfirmDialog) {

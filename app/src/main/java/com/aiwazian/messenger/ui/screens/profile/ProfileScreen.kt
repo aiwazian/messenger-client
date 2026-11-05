@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.profile
 
 import android.app.Activity
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -55,11 +57,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -69,6 +73,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -77,6 +82,7 @@ import com.aiwazian.messenger.domain.Chat
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.extensions.parallax
 import com.aiwazian.messenger.extensions.sharedBounds
+import com.aiwazian.messenger.extensions.toAgeYears
 import com.aiwazian.messenger.extensions.toInstance
 import com.aiwazian.messenger.extensions.toPrettyDateWithYear
 import com.aiwazian.messenger.ui.app.AppDialog
@@ -86,13 +92,11 @@ import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.BottomBarScrim
 import com.aiwazian.messenger.ui.components.ChatCard
 import com.aiwazian.messenger.ui.components.ShareBottomSheet
-import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.TopBarAction
-import com.aiwazian.messenger.ui.screens.chat.components.InviteLinkBottomSheet
 import com.aiwazian.messenger.utils.UiText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -189,19 +193,19 @@ fun ProfileScreen(
     val hasAvatars = uiState.avatars.isNotEmpty()
     val view = LocalView.current
     val isLightSurface = MaterialTheme.colorScheme.surface.luminance() > 0.5f
-
+    
     DisposableEffect(view, hasAvatars, isLightSurface) {
         val window = (view.context as Activity).window
             ?: return@DisposableEffect onDispose { }
         val insetsController = WindowCompat.getInsetsController(window, view)
-
+        
         insetsController.isAppearanceLightStatusBars = !hasAvatars && isLightSurface
-
+        
         onDispose {
             insetsController.isAppearanceLightStatusBars = isLightSurface
         }
     }
-
+    
     Scaffold(snackbarHost = {
         AppSnackbar(snackbarHostState)
     }, topBar = {
@@ -285,13 +289,27 @@ fun ProfileScreen(
                 }
             }
             
-            TopBarScrim(
-                height = innerPadding.calculateTopPadding() + 10.dp,
-                color = if (hasAvatars) {
-                    Color.Black
-                } else {
-                    MaterialTheme.colorScheme.surface
-                }
+            val color = if (hasAvatars) {
+                Color.Black
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+            
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .fillMaxWidth()
+                    .height(innerPadding.calculateTopPadding() + 10.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                color.copy(alpha = 0.5f),
+                                color.copy(alpha = 0.3f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+                    .zIndex(10f)
             )
             
             BottomBarScrim(height = innerPadding.calculateBottomPadding())
@@ -321,19 +339,7 @@ fun ProfileScreen(
         )
     }
     
-    if (uiState.showInviteBottomSheet && uiState.inviteLinkInfo != null) {
-        val info = uiState.inviteLinkInfo!!
-        InviteLinkBottomSheet(
-            chatId = info.chatId,
-            name = info.name.orEmpty(),
-            description = info.description,
-            count = info.membersCount ?: 0,
-            requireApproval = info.requireApproval,
-            isLoading = uiState.isProcessingInvite,
-            onDismiss = viewModel::dismissInviteBottomSheet,
-            onJoin = viewModel::onSubscribeViaInviteLink
-        )
-    }
+    
     
     if (uiState.showBannedDialog) {
         AppDialog(
@@ -680,10 +686,18 @@ private fun UserProfile(
             }
             
             if (user.dateOfBirth != null) {
-                val dateOfBirthText = user.dateOfBirth.toInstance().toPrettyDateWithYear()
-
+                val instant = user.dateOfBirth.toInstance()
+                val dateOfBirthText = instant.toPrettyDateWithYear()
+                val age = instant.toAgeYears()
+                
+                val headline = if (age >= 0) {
+                    "$dateOfBirthText (${pluralStringResource(R.plurals.age_years, age, age)})"
+                } else {
+                    dateOfBirthText
+                }
+                
                 SectionButton(
-                    headlineText = dateOfBirthText,
+                    headlineText = headline,
                     supportingText = stringResource(R.string.date_of_birth),
                     onLongClick = { onCopyClick(dateOfBirthText) }
                 )

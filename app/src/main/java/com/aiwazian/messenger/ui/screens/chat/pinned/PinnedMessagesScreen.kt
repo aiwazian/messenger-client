@@ -77,6 +77,7 @@ import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.enums.MessageType
+import com.aiwazian.messenger.extensions.isPdfFile
 import com.aiwazian.messenger.ui.app.AppPrimaryScrollableTabRow
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.app.AppTab
@@ -91,9 +92,9 @@ import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.chat.ChatItem
 import com.aiwazian.messenger.ui.screens.chat.MessageReadersViewModel
+import com.aiwazian.messenger.ui.screens.chat.components.ContactViewBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
 import com.aiwazian.messenger.ui.screens.chat.components.DeleteMessageDialog
-import com.aiwazian.messenger.ui.screens.chat.components.ContactViewBottomSheet
 import com.aiwazian.messenger.ui.screens.chat.components.FullScreenViewer
 import com.aiwazian.messenger.ui.screens.chat.components.MessageBubble
 import com.aiwazian.messenger.ui.screens.chat.components.PinMessageBottomSheet
@@ -118,19 +119,19 @@ fun PinnedMessagesScreen(
     val readerAvatars by readersViewModel.avatars.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
+    
     var tappedMedia by remember { mutableStateOf<MessageAttachment?>(null) }
     var snackbarJob by remember { mutableStateOf<Job?>(null) }
-
+    
     LaunchedEffect(chatId) {
         viewModel.init(chatId)
     }
-
+    
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is PinnedMessagesUiEffect.NavigateBack -> navBackStack.removeLastOrNull()
-
+                
                 is PinnedMessagesUiEffect.ShowSnackbar -> {
                     snackbarJob?.cancel()
                     snackbarJob = scope.launch {
@@ -140,7 +141,7 @@ fun PinnedMessagesScreen(
                         )
                     }
                 }
-
+                
                 is PinnedMessagesUiEffect.OpenUrl -> {
                     CustomTabsIntent.Builder()
                         .setShowTitle(true)
@@ -148,7 +149,7 @@ fun PinnedMessagesScreen(
                         .build()
                         .launchUrl(context, effect.url.toUri())
                 }
-
+                
                 is PinnedMessagesUiEffect.OpenEmail -> {
                     val mailIntent = Intent(
                         Intent.ACTION_SENDTO,
@@ -158,7 +159,7 @@ fun PinnedMessagesScreen(
                         mailIntent,
                         UiText.StringResource(R.string.open_email_with).asString(context)
                     )
-
+                    
                     val launched = runCatching { context.startActivity(chooser) }.isSuccess
                     if (!launched) {
                         snackbarJob?.cancel()
@@ -171,7 +172,7 @@ fun PinnedMessagesScreen(
                         }
                     }
                 }
-
+                
                 is PinnedMessagesUiEffect.OpenPhone -> {
                     val dialIntent = Intent(
                         Intent.ACTION_DIAL,
@@ -181,7 +182,7 @@ fun PinnedMessagesScreen(
                         dialIntent,
                         UiText.StringResource(R.string.open_phone_with).asString(context)
                     )
-
+                    
                     val launched = runCatching { context.startActivity(chooser) }.isSuccess
                     if (!launched) {
                         snackbarJob?.cancel()
@@ -194,7 +195,7 @@ fun PinnedMessagesScreen(
                         }
                     }
                 }
-
+                
                 is PinnedMessagesUiEffect.NavigateToChat -> {
                     navBackStack.add(
                         AppRoute.Chat(
@@ -203,7 +204,7 @@ fun PinnedMessagesScreen(
                         )
                     )
                 }
-
+                
                 is PinnedMessagesUiEffect.OpenInChat -> {
                     resultBus.sendResult<PinnedMessageResult>(
                         result = PinnedMessageResult(effect.message, effect.action)
@@ -213,7 +214,7 @@ fun PinnedMessagesScreen(
             }
         }
     }
-
+    
     val tabs = remember(
         uiState.forEveryoneItems.isEmpty(),
         uiState.forMeItems.isEmpty()
@@ -240,13 +241,13 @@ fun PinnedMessagesScreen(
         PinnedTab.FOR_ME -> forMeScrollState
         null -> forEveryoneScrollState
     }
-
+    
     LaunchedEffect(tabs) {
         if (pagerState.currentPage > tabs.lastIndex) {
             pagerState.scrollToPage(tabs.lastIndex.coerceAtLeast(0))
         }
     }
-
+    
     Scaffold(snackbarHost = {
         AppSnackbar(snackbarHostState)
     }, topBar = {
@@ -264,7 +265,7 @@ fun PinnedMessagesScreen(
                     )
                 }
             )
-
+            
             if (tabs.size > 1) {
                 AppPrimaryScrollableTabRow(selectedTabIndex = selectedTabIndex) {
                     tabs.forEachIndexed { index, tab ->
@@ -308,47 +309,59 @@ fun PinnedMessagesScreen(
                     top = innerPadding.calculateTopPadding(),
                     bottom = innerPadding.calculateBottomPadding()
                 )
-
+                
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize()
                 ) { page ->
                     when (tabs.getOrNull(page)) {
-                        PinnedTab.FOR_EVERYONE -> PinnedMessagesPage(
-                            items = uiState.forEveryoneItems,
-                            isLoading = uiState.isLoading,
-                            uiState = uiState,
-                            listState = forEveryoneListState,
-                            readerAvatars = readerAvatars,
-                            onReadersRequested = readersViewModel::onReadersRequested,
-                            onTappedMediaChanged = { tappedMedia = it },
-                            viewModel = viewModel,
-                            contentPadding = pageContentPadding
-                        )
-
-                        PinnedTab.FOR_ME -> PinnedMessagesPage(
-                            items = uiState.forMeItems,
-                            isLoading = uiState.isLoading,
-                            uiState = uiState,
-                            listState = forMeListState,
-                            readerAvatars = readerAvatars,
-                            onReadersRequested = readersViewModel::onReadersRequested,
-                            onTappedMediaChanged = { tappedMedia = it },
-                            viewModel = viewModel,
-                            contentPadding = pageContentPadding
-                        )
-
+                        PinnedTab.FOR_EVERYONE -> Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            PinnedMessagesPage(
+                                chatId = chatId,
+                                items = uiState.forEveryoneItems,
+                                isLoading = uiState.isLoading,
+                                uiState = uiState,
+                                listState = forEveryoneListState,
+                                readerAvatars = readerAvatars,
+                                onReadersRequested = readersViewModel::onReadersRequested,
+                                onTappedMediaChanged = { tappedMedia = it },
+                                viewModel = viewModel,
+                                contentPadding = pageContentPadding
+                            )
+                        }
+                        
+                        PinnedTab.FOR_ME -> Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            PinnedMessagesPage(
+                                chatId = chatId,
+                                items = uiState.forMeItems,
+                                isLoading = uiState.isLoading,
+                                uiState = uiState,
+                                listState = forMeListState,
+                                readerAvatars = readerAvatars,
+                                onReadersRequested = readersViewModel::onReadersRequested,
+                                onTappedMediaChanged = { tappedMedia = it },
+                                viewModel = viewModel,
+                                contentPadding = pageContentPadding
+                            )
+                        }
+                        
                         null -> Unit
                     }
                 }
             }
-
+            
             TopBarScrim(height = innerPadding.calculateTopPadding())
-
+            
             BottomBarScrim(height = innerPadding.calculateBottomPadding())
         }
     }
-
+    
     if (uiState.pinSheetMessage != null) {
         PinMessageBottomSheet(
             chatType = uiState.chatType,
@@ -360,7 +373,7 @@ fun PinnedMessagesScreen(
             onDismiss = viewModel::dismissPinSheet
         )
     }
-
+    
     if (uiState.deleteMessage != null) {
         DeleteMessageDialog(
             onDismissRequest = viewModel::hideDeleteMessageDialog,
@@ -370,7 +383,7 @@ fun PinnedMessagesScreen(
             isPrivateChat = uiState.chatType == ChatType.PRIVATE
         )
     }
-
+    
     if (uiState.isForwardSheetVisible) {
         val forwardingMessage = uiState.forwardingMessage
         val forwardOptions = if (forwardingMessage != null) {
@@ -384,7 +397,7 @@ fun PinnedMessagesScreen(
         } else {
             null
         }
-
+        
         ShareBottomSheet(
             items = uiState.forwardCandidates.map { chat ->
                 ShareItem(
@@ -404,7 +417,7 @@ fun PinnedMessagesScreen(
             forwardOptions = forwardOptions
         )
     }
-
+    
     if (uiState.showFullScreenViewer) {
         val downloadedMedia = remember(uiState.forEveryoneItems, uiState.forMeItems) {
             (uiState.forEveryoneItems + uiState.forMeItems)
@@ -419,18 +432,18 @@ fun PinnedMessagesScreen(
                 }
                 .distinctBy { it.messageId to it.fileId }
         }
-
+        
         val tapped = tappedMedia
         val viewerAttachments = when {
             tapped == null -> downloadedMedia
             downloadedMedia.any {
                 it.messageId == tapped.messageId && it.fileId == tapped.fileId
             } -> downloadedMedia
-
+            
             tapped.localUri != null -> listOf(tapped)
             else -> downloadedMedia
         }
-
+        
         val viewerEntries = viewerAttachments.mapNotNull { attachment ->
             val uri = attachment.localUri ?: return@mapNotNull null
             attachment to ViewerMediaItem(
@@ -452,7 +465,7 @@ fun PinnedMessagesScreen(
                         attachment.fileId == tapped.fileId
             }
             .coerceAtLeast(0)
-
+        
         FullScreenViewer(
             media = viewerMedia,
             initialPage = viewerInitialPage,
@@ -469,6 +482,7 @@ fun PinnedMessagesScreen(
 
 @Composable
 private fun PinnedMessagesPage(
+    chatId: Long,
     items: List<ChatItem>,
     isLoading: Boolean,
     uiState: PinnedMessagesUiState,
@@ -481,7 +495,7 @@ private fun PinnedMessagesPage(
 ) {
     val navBackStack = LocalNavBackStack.current
     var viewingContact by remember { mutableStateOf<MessageContact?>(null) }
-
+    
     if (isLoading && items.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -491,10 +505,9 @@ private fun PinnedMessagesPage(
         }
         return
     }
-
+    
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize(),
         reverseLayout = true,
         verticalArrangement = Arrangement.spacedBy(2.dp),
         overscrollEffect = rememberOverscrollEffect(),
@@ -512,24 +525,35 @@ private fun PinnedMessagesPage(
                 is ChatItem.DateSeparator -> DateSeparatorItem(
                     item.text, Modifier.animateItem()
                 )
-
+                
                 is ChatItem.UnreadSeparator -> UnreadSeparatorItem(
                     Modifier.animateItem()
                 )
-
+                
                 is ChatItem.SystemMessage -> SystemMessageBubble(
                     item.text.asString(), Modifier.animateItem()
                 )
-
+                
                 is ChatItem.MessageItem -> MessageBubble(
                     modifier = Modifier.animateItem(),
                     item = item,
                     mediaKeyScope = PINNED_MEDIA_KEY_SCOPE,
                     onFileAction = { file, action ->
-                        if (action == FileAction.OPEN) {
-                            onTappedMediaChanged(file)
+                        if (action == FileAction.OPEN && file.extension.isPdfFile()) {
+                            navBackStack.add(
+                                AppRoute.PdfViewer(
+                                    chatId = chatId,
+                                    messageId = item.message.id,
+                                    fileId = file.fileId,
+                                    fileName = file.name
+                                )
+                            )
+                        } else {
+                            if (action == FileAction.OPEN) {
+                                onTappedMediaChanged(file)
+                            }
+                            viewModel.onFileAction(item.message, file, action)
                         }
-                        viewModel.onFileAction(item.message, file, action)
                     },
                     currentPlayingVoiceFileId = uiState.currentPlayingVoiceFileId,
                     isVoicePlaying = uiState.isVoicePlaying,
@@ -592,7 +616,7 @@ private fun PinnedMessagesPage(
             }
         }
     }
-
+    
     viewingContact?.let { contact ->
         ContactViewBottomSheet(
             contact = contact,
@@ -660,11 +684,11 @@ private fun rememberChatListScrollState(listState: LazyListState): ChatListScrol
     val isScrollingUp = remember { mutableStateOf(false) }
     val scrollAccumulator = remember { mutableFloatStateOf(0f) }
     val scrollThresholdPx = with(LocalDensity.current) { 20.dp.toPx() }
-
+    
     LaunchedEffect(listState) {
         var lastIndex = listState.firstVisibleItemIndex
         var lastOffset = listState.firstVisibleItemScrollOffset
-
+        
         snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }.collect { (index, offset) ->
             val delta = if (index == lastIndex) {
                 (offset - lastOffset).toFloat()
@@ -673,27 +697,27 @@ private fun rememberChatListScrollState(listState: LazyListState): ChatListScrol
             } else {
                 -(scrollThresholdPx + 1f)
             }
-
+            
             val newAccumulator = scrollAccumulator.floatValue + delta
             scrollAccumulator.floatValue = newAccumulator
-
+            
             when {
                 newAccumulator > scrollThresholdPx -> {
                     isScrollingUp.value = true
                     scrollAccumulator.floatValue = 0f
                 }
-
+                
                 newAccumulator < -scrollThresholdPx -> {
                     isScrollingUp.value = false
                     scrollAccumulator.floatValue = 0f
                 }
             }
-
+            
             lastIndex = index
             lastOffset = offset
         }
     }
-
+    
     return ChatListScrollState(isAtBottom, isScrollingUp)
 }
 

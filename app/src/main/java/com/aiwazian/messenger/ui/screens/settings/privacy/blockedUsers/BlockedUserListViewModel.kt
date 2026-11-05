@@ -6,8 +6,10 @@ package com.aiwazian.messenger.ui.screens.settings.privacy.blockedUsers
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.User
 import com.aiwazian.messenger.repository.UserRepository
+import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -44,7 +46,7 @@ class BlockedUserListViewModel @Inject constructor(
                 }
                 .onFailure {
                     _uiState.update { it.copy(isLoading = false) }
-                    _sideEffect.emit(BlockedUserListSideEffect.ShowSnackbar("Не удалось загрузить список"))
+                    _sideEffect.emit(BlockedUserListSideEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_load_list)))
                     vibrationManager.vibrate(VibrationPattern.Error)
                 }
         }
@@ -67,10 +69,10 @@ class BlockedUserListViewModel @Inject constructor(
                     _uiState.update { state ->
                         state.copy(blockedUsers = state.blockedUsers.filter { it.id != user.id })
                     }
-                    _sideEffect.emit(BlockedUserListSideEffect.ShowSnackbar("Пользователь разблокирован"))
+                    _sideEffect.emit(BlockedUserListSideEffect.ShowSnackbar(UiText.StringResource(R.string.user_unblocked)))
                 }
                 .onFailure {
-                    _sideEffect.emit(BlockedUserListSideEffect.ShowSnackbar("Не удалось разблокировать пользователя"))
+                    _sideEffect.emit(BlockedUserListSideEffect.ShowSnackbar(UiText.StringResource(R.string.failed_to_unblock_user)))
                     vibrationManager.vibrate(VibrationPattern.Error)
                 }
         }

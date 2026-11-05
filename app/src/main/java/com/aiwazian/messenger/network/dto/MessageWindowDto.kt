@@ -29,7 +29,6 @@ data class MessageSearchResponseDto(
     @SerialName("items") val items: List<MessageSearchHitDto> = emptyList(),
     @SerialName("nextCursorId") val nextCursorId: Long? = null,
     @SerialName("scannedAll") val scannedAll: Boolean = true,
-    /** Всего совпадений в чате. Сервер считает его только для первой страницы. */
     @SerialName("total") val total: Int? = null,
     @SerialName("totalIsExact") val totalIsExact: Boolean = true
 )

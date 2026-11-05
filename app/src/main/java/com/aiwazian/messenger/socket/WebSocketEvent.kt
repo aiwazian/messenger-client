@@ -18,6 +18,7 @@ import com.aiwazian.messenger.domain.NewCommentPayload
 import com.aiwazian.messenger.domain.PinChatPayload
 import com.aiwazian.messenger.domain.PresencePayload
 import com.aiwazian.messenger.domain.ReadMessagePayload
+import com.aiwazian.messenger.domain.ScheduledMessagesPayload
 import com.aiwazian.messenger.domain.ViewOnceAttachmentDeletedPayload
 import com.aiwazian.messenger.mappers.toDomain
 import com.aiwazian.messenger.network.dto.ChatFolderDto
@@ -62,6 +63,13 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
         override val deserializer = DeleteMessagePayload.serializer()
         override val mapper: (DeleteMessagePayload) -> DeleteMessagePayload = { it }
     }
+
+    data object ScheduledMessagesChanged :
+        WebSocketEvent<ScheduledMessagesPayload, ScheduledMessagesPayload> {
+        override val eventName = "message:scheduled"
+        override val deserializer = ScheduledMessagesPayload.serializer()
+        override val mapper: (ScheduledMessagesPayload) -> ScheduledMessagesPayload = { it }
+    }
     
     data object ViewOnceAttachmentDeleted :
         WebSocketEvent<ViewOnceAttachmentDeletedPayload, ViewOnceAttachmentDeletedPayload> {
@@ -71,7 +79,6 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
             { it }
     }
     
-    /** Новый комментарий под постом канала. */
     data object NewComment : WebSocketEvent<NewCommentPayloadDto, NewCommentPayload> {
         override val eventName = "comment:new"
         override val deserializer = NewCommentPayloadDto.serializer()
@@ -79,7 +86,6 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
             NewCommentPayload::fromDto
     }
     
-    /** Все комментарии канала удалены владельцем. */
     data object CommentsCleared :
         WebSocketEvent<CommentsClearedPayloadDto, CommentsClearedPayload> {
         override val eventName = "comments:cleared"
@@ -88,7 +94,6 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
             CommentsClearedPayload::fromDto
     }
     
-    /** Комментарий под постом канала отредактирован. */
     data object CommentEdited : WebSocketEvent<NewCommentPayloadDto, NewCommentPayload> {
         override val eventName = "comment:edit"
         override val deserializer = NewCommentPayloadDto.serializer()
@@ -96,7 +101,6 @@ sealed interface WebSocketEvent<Dto : Any, Domain : Any> {
             NewCommentPayload::fromDto
     }
     
-    /** Комментарий под постом канала удалён. */
     data object CommentDeleted :
         WebSocketEvent<DeleteCommentPayloadDto, CommentDeletedPayload> {
         override val eventName = "comment:delete"

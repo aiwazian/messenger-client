@@ -7,9 +7,11 @@ package com.aiwazian.messenger.ui.screens.settings.security
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.ChangePasswordRequest
 import com.aiwazian.messenger.repository.AuthRepository
 import com.aiwazian.messenger.utils.RegexPatterns
+import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,7 +32,7 @@ class CloudPasswordViewModel @Inject constructor(
     private val _newPassword = MutableStateFlow("")
     val newPassword = _newPassword.asStateFlow()
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
+    private val _errorMessage = MutableStateFlow<UiText?>(null)
     val errorMessage = _errorMessage.asStateFlow()
     
     private val _isLoading = MutableStateFlow(false)
@@ -72,17 +74,17 @@ class CloudPasswordViewModel @Inject constructor(
     
     private fun checkValidPassword(): Boolean {
         if (_newPassword.value.isEmpty()) {
-            _errorMessage.update { "Введите пароль" }
+            _errorMessage.update { UiText.StringResource(R.string.enter_password) }
             return false
         }
 
         if (_newPassword.value.length < 5) {
-            _errorMessage.update { "Минимум 5 символов" }
+            _errorMessage.update { UiText.StringResource(R.string.min_length_5_characters) }
             return false
         }
         
         if (!RegexPatterns.PASSWORD.matches(_newPassword.value)) {
-            _errorMessage.update { "Недопустимые символы" }
+            _errorMessage.update { UiText.StringResource(R.string.invalid_characters) }
             return false
         }
 

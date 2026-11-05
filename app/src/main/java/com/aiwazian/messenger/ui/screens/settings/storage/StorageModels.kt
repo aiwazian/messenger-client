@@ -20,16 +20,24 @@ enum class FileCategory(
         extensions = setOf("mp4", "avi", "mkv", "mov", "wmv", "flv", "webm", "3gp", "m4v")
     ),
     DOCUMENTS(
-        title = R.string.documents,
+        title = R.string.files,
         extensions = setOf("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "rtf", "odt", "ods", "odp")
+    ),
+    MUSIC(
+        title = R.string.music,
+        extensions = setOf("mp3", "wav", "flac", "aac", "m4a", "wma")
     ),
     AUDIO(
         title = R.string.audio,
-        extensions = setOf("mp3", "wav", "ogg", "flac", "aac", "m4a", "wma", "opus")
+        extensions = setOf("ogg", "oga", "opus")
     ),
     OTHER(
         title = R.string.other,
         extensions = setOf("apk", "zip", "rar", "7z", "tar", "gz", "exe", "dmg", "iso")
+    ),
+    EMOJI_STICKERS(
+        title = R.string.emoji_and_stickers,
+        extensions = emptySet()
     );
     
     companion object {

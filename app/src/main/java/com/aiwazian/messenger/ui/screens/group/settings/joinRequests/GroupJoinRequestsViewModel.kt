@@ -64,7 +64,7 @@ class GroupJoinRequestsViewModel @Inject constructor(
                     state.copy(requests = state.requests.filter { it.id != userId })
                 }
             } else {
-                _effect.emit(GroupJoinRequestsEffect.ShowSnackbar(UiText.DynamicString("Ошибка при принятии заявки")))
+                _effect.emit(GroupJoinRequestsEffect.ShowSnackbar(UiText.StringResource(R.string.join_request_accept_error)))
             }
         }
     }
@@ -77,7 +77,7 @@ class GroupJoinRequestsViewModel @Inject constructor(
                     state.copy(requests = state.requests.filter { it.id != userId })
                 }
             } else {
-                _effect.emit(GroupJoinRequestsEffect.ShowSnackbar(UiText.DynamicString("Ошибка при отклонении заявки")))
+                _effect.emit(GroupJoinRequestsEffect.ShowSnackbar(UiText.StringResource(R.string.join_request_reject_error)))
             }
         }
     }

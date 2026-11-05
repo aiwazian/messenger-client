@@ -17,7 +17,6 @@ data class SelectFolderChatsUiState(
     val hasSelection: Boolean
         get() = selectedChatIds.isNotEmpty() || selectedCategories.isNotEmpty()
     
-    /** Заготовки прячутся во время поиска: искать по ним нечего. */
     val visibleCategories: List<ChatFolderCategory>
         get() = if (query.isBlank()) ChatFolderCategory.entries.toList() else emptyList()
 }

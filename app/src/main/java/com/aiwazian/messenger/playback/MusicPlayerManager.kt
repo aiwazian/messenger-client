@@ -205,6 +205,7 @@ class MusicPlayerManager @Inject constructor(
                 fileId = track.fileId,
                 title = track.title,
                 artist = track.artist,
+                artworkData = track.artworkData,
                 isPlaying = true,
                 positionMs = startPositionMs,
                 durationMs = 0

@@ -136,7 +136,7 @@ fun MediaPickerBottomSheet(
     onFileSystemClick: () -> Unit = {},
     onContactSend: ((MessageContact) -> Unit)? = null,
     onSent: () -> Unit = {},
-    onSend: ((Boolean) -> Unit)? = null,
+    onSend: ((silent: Boolean, scheduledAt: Long?) -> Unit)? = null,
     allowViewOnce: Boolean = false,
     allowSpoiler: Boolean = false,
     silentSendEnabled: Boolean = true,
@@ -172,6 +172,7 @@ fun MediaPickerBottomSheet(
     var measuredKeyboardHeight by remember { mutableStateOf(keyboardHeight) }
     var isContactMode by remember { mutableStateOf(false) }
     var selectedContact by remember { mutableStateOf<DeviceContact?>(null) }
+    var showScheduleSendSheet by remember { mutableStateOf(false) }
     
     val imeInsets = WindowInsets.ime
     val imeHeight = with(density) {
@@ -300,18 +301,22 @@ fun MediaPickerBottomSheet(
                                             }
                                         },
                                         onInputViewReady = { view -> captionInputView = view },
-                                        onSendClick = { silent ->
-                                            if (onSend != null) {
-                                                onSend(silent)
+                                        onSendClick = { silent, scheduleRequested ->
+                                            if (scheduleRequested) {
+                                                showScheduleSendSheet = true
                                             } else {
-                                                viewModel.send(
-                                                    chatId = chatId,
-                                                    replyTo = replyTo,
-                                                    caption = caption,
-                                                    silent = silent
-                                                )
+                                                if (onSend != null) {
+                                                    onSend(silent, null)
+                                                } else {
+                                                    viewModel.send(
+                                                        chatId = chatId,
+                                                        replyTo = replyTo,
+                                                        caption = caption,
+                                                        silent = silent
+                                                    )
+                                                }
+                                                onSent()
                                             }
-                                            onSent()
                                         },
                                         silentSendEnabled = silentSendEnabled)
                                 } else {
@@ -560,6 +565,29 @@ fun MediaPickerBottomSheet(
                 onContactSend?.invoke(messageContact)
             })
     }
+
+    if (showScheduleSendSheet) {
+        ScheduleSendBottomSheet(
+            onDismissRequest = { showScheduleSendSheet = false },
+            onConfirm = { scheduledAt ->
+                showScheduleSendSheet = false
+
+                if (onSend != null) {
+                    onSend(false, scheduledAt)
+                } else {
+                    viewModel.send(
+                        chatId = chatId,
+                        replyTo = replyTo,
+                        caption = caption,
+                        silent = false,
+                        scheduledAt = scheduledAt
+                    )
+                }
+
+                onSent()
+            }
+        )
+    }
 }
 
 @Composable
@@ -800,7 +828,7 @@ private fun CaptionRow(
     onResolveEmoji: suspend (Long) -> CustomEmoji?,
     onEmojiClick: () -> Unit,
     onInputViewReady: (EditText) -> Unit,
-    onSendClick: (Boolean) -> Unit,
+    onSendClick: (silent: Boolean, scheduleRequested: Boolean) -> Unit,
     silentSendEnabled: Boolean
 ) {
     Row(
@@ -840,8 +868,9 @@ private fun CaptionRow(
         )
         
         SendMessageOptionsButton(
-            onClick = { onSendClick(false) },
-            onSendSilently = { onSendClick(true) },
+            onClick = { onSendClick(false, false) },
+            onSendSilently = { onSendClick(true, false) },
+            onSendScheduled = { onSendClick(false, true) },
             optionsEnabled = silentSendEnabled
         ) {
             Icon(

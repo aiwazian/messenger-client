@@ -51,6 +51,7 @@ import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.CountdownTextButton
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionButtonDefaults
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
 import com.aiwazian.messenger.ui.components.section.SectionHeader
@@ -113,7 +114,7 @@ fun SettingsDevicesScreen(viewModel: DevicesViewModel = hiltViewModel()) {
                     SectionButton(
                         leadingIcon = Icons.Outlined.BackHand,
                         headlineText = stringResource(R.string.terminate_all_other_sessions),
-                        contentColor = MaterialTheme.colorScheme.error,
+                        colors = SectionButtonDefaults.colors(contentColor = MaterialTheme.colorScheme.error),
                         onClick = viewModel::showTerminateAllOtherSessionsDialog
                     )
                 }

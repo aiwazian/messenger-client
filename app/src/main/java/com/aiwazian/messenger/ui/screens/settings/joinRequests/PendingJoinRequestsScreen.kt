@@ -138,7 +138,12 @@ fun PendingJoinRequestsScreen(
                     Text(stringResource(R.string.no))
                 }
             }) {
-            Text("Вы уверены, что хотите отменить заявку на вступление в ${request.chatName}?")
+            Text(
+                stringResource(
+                    R.string.join_request_cancel_confirm_message,
+                    request.chatName
+                )
+            )
         }
     }
 }

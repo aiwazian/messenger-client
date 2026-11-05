@@ -124,8 +124,12 @@ class ChatEmojiViewModel @Inject constructor(
     
     private fun loadAddedPacks() {
         isAddedPacksRequested = true
-        
+
         viewModelScope.launch {
+            emojiRepository.getCachedInstalledPacks()
+                .takeIf { it.isNotEmpty() }
+                ?.let { packs -> applyPacks(packs) }
+
             emojiRepository.getAddedPacks(includeEmojis = true).onSuccess { packs ->
                 val detailed = packs.map { pack ->
                     if (pack.emojis.isNotEmpty()) {
@@ -134,16 +138,20 @@ class ChatEmojiViewModel @Inject constructor(
                         emojiRepository.getPack(pack.id).getOrNull() ?: pack
                     }
                 }
-                
-                _uiState.update { state ->
-                    state.copy(
-                        addedPacks = detailed,
-                        packsById = state.packsById + detailed.associateBy { it.id }
-                    )
-                }
+
+                applyPacks(detailed)
             }.onFailure {
                 isAddedPacksRequested = false
             }
+        }
+    }
+
+    private fun applyPacks(packs: List<EmojiPack>) {
+        _uiState.update { state ->
+            state.copy(
+                addedPacks = packs,
+                packsById = state.packsById + packs.associateBy { it.id }
+            )
         }
     }
 }

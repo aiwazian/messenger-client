@@ -368,6 +368,15 @@ class PostCommentsViewModel @Inject constructor(
     override fun onSendWithoutSoundClicked() {
     }
 
+    override fun onScheduleSendOptionsClicked() {
+    }
+
+    override fun onSendScheduledClicked(scheduledAt: Long) {
+    }
+
+    override fun onScheduledMessagesClicked() {
+    }
+
     override fun changeText(text: String) {
         _uiState.update { it.copy(commentText = text) }
     }

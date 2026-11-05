@@ -7,12 +7,6 @@ package com.aiwazian.messenger.network.dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/**
- * Тело POST /chats/{chatId}/messages/read.
- *
- * upToMessageId — максимальный id, который реально показался на экране.
- * null — «прочитан весь чат» (кнопка «вниз»).
- */
 @Serializable
 data class MarkReadRequestDto(
     @SerialName("upToMessageId") val upToMessageId: String? = null

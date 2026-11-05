@@ -91,6 +91,12 @@ class RealtimeEventSyncService @Inject constructor(
             }
         }
 
+        webSocketClient.subscribeToEvent(WebSocketEvent.ScheduledMessagesChanged) { payload ->
+            serviceScope.launch {
+                chatRepository.syncScheduledMessages(payload.chatId)
+            }
+        }
+
         webSocketClient.subscribeToEvent(WebSocketEvent.ViewOnceAttachmentDeleted) { payload ->
             serviceScope.launch {
                 chatRepository.deleteLocalAttachment(

@@ -5,5 +5,6 @@
 package com.aiwazian.messenger.ui.screens.logout
 
 data class LogoutUiState(
-    val isLogoutDialogVisible: Boolean = false
+    val isLogoutDialogVisible: Boolean = false,
+    val passcodeEnabled: Boolean = false
 )

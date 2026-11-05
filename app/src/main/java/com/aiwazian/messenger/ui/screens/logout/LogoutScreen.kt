@@ -6,8 +6,8 @@ package com.aiwazian.messenger.ui.screens.logout
 
 import android.app.Activity
 import android.content.Intent
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material3.MaterialTheme
@@ -26,16 +26,16 @@ import com.aiwazian.messenger.ui.app.AppDialog
 import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionButtonDefaults
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionHeader
-import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
     val navBackStack = LocalNavBackStack.current
-    val scrollState = rememberScrollState()
     val context = LocalContext.current
     
     val uiState by viewModel.uiState.collectAsState()
@@ -70,6 +70,15 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
                 onClick = {
                     navBackStack.add(AppRoute.Login)
                 })
+            if (!uiState.passcodeEnabled) {
+                SectionButton(
+                    leadingIcon = Icons.Outlined.Key,
+                    headlineText = stringResource(R.string.set_passcode),
+                    supportingText = stringResource(R.string.set_passcode_description),
+                    onClick = {
+                        navBackStack.add(AppRoute.SettingsPasscode)
+                    })
+            }
             SectionButton(
                 leadingIcon = Icons.Rounded.DeleteOutline,
                 headlineText = stringResource(R.string.clear_cache),
@@ -82,7 +91,7 @@ fun LogoutScreen(viewModel: LogoutViewModel = hiltViewModel()) {
         SectionContainer {
             SectionButton(
                 headlineText = stringResource(R.string.logout),
-                contentColor = MaterialTheme.colorScheme.error,
+                colors = SectionButtonDefaults.colors(contentColor = MaterialTheme.colorScheme.error),
                 onClick = viewModel::showLogoutDialog
             )
         }

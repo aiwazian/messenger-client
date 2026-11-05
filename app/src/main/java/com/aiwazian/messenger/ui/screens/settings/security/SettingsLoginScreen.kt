@@ -105,7 +105,7 @@ fun SettingsLoginScreen(viewModel: SettingsLoginViewModel = hiltViewModel()) {
                 value = newLogin,
                 onValueChange = viewModel::onInputNewLogin,
                 label = {
-                    Text(errorMessage ?: stringResource(R.string.login))
+                    Text(errorMessage?.asString() ?: stringResource(R.string.login))
                 },
                 isError = errorMessage != null,
                 keyboardOptions = KeyboardOptions(

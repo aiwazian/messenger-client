@@ -4,7 +4,6 @@
 
 package com.aiwazian.messenger.ui.screens.group.settings.admins
 
-/** По умолчанию все разрешения выключены. */
 data class GroupAdminPermissionsUiState(
     val canManageInviteLinks: Boolean = false,
     val canEditProfile: Boolean = false,
@@ -12,6 +11,5 @@ data class GroupAdminPermissionsUiState(
     val canPinMessages: Boolean = false,
     val tag: String = "",
     val isSaving: Boolean = false,
-    /** Свои разрешения администратор только смотрит: переключатели выключены. */
     val isReadOnly: Boolean = false
 )

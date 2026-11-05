@@ -136,7 +136,7 @@ class GroupTypeSettingsViewModel @Inject constructor(
             it.copy(
                 isError = false,
                 canSave = false,
-                statusText = UiText.DynamicString("Проверка")
+                statusText = UiText.StringResource(R.string.checking)
             )
         }
         

@@ -24,11 +24,6 @@ import com.aiwazian.messenger.enums.SystemMessageEventType
 import com.aiwazian.messenger.extensions.isMusicFile
 import com.aiwazian.messenger.utils.AudioMetadataCache
 
-/**
- * Однострочный превью-текст сообщения: то же правило, что и у последнего
- * сообщения в списке чатов — вложение подписывается («Фото», «Голосовое
- * сообщение»), кастомные эмодзи отображаются внутри текста.
- */
 data class MessagePreview(
     val text: AnnotatedString,
     val inlineContent: Map<String, InlineTextContent>

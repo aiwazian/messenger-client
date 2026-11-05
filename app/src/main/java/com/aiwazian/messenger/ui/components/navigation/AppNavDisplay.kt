@@ -41,6 +41,7 @@ import com.aiwazian.messenger.ui.screens.chat.ChatScreen
 import com.aiwazian.messenger.ui.screens.chat.comments.PostCommentsScreen
 import com.aiwazian.messenger.ui.screens.chat.media.ChatMediaScreen
 import com.aiwazian.messenger.ui.screens.chat.pinned.PinnedMessagesScreen
+import com.aiwazian.messenger.ui.screens.chat.scheduled.ScheduledMessagesScreen
 import com.aiwazian.messenger.ui.screens.equalizer.EqualizerScreen
 import com.aiwazian.messenger.ui.screens.group.create.CreateGroupScreen
 import com.aiwazian.messenger.ui.screens.group.settings.GroupSettingsScreen
@@ -59,14 +60,17 @@ import com.aiwazian.messenger.ui.screens.group.settings.type.GroupTypeSettingsSc
 import com.aiwazian.messenger.ui.screens.logout.LogoutScreen
 import com.aiwazian.messenger.ui.screens.main.MainScreen
 import com.aiwazian.messenger.ui.screens.newmessage.NewMessageScreen
+import com.aiwazian.messenger.ui.screens.pdf.PdfViewerScreen
 import com.aiwazian.messenger.ui.screens.profile.ProfileScreen
 import com.aiwazian.messenger.ui.screens.settings.SettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.ChatAppearanceScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsAppearanceScreen
 import com.aiwazian.messenger.ui.screens.settings.appearance.SettingsDarkThemeScreen
+import com.aiwazian.messenger.ui.screens.settings.chats.ChatSettingsScreen
 import com.aiwazian.messenger.ui.screens.wallpaper.WallpaperPreviewScreen
 import com.aiwazian.messenger.ui.screens.settings.data_storage.AutoDownloadMediaScreen
 import com.aiwazian.messenger.ui.screens.settings.data_storage.DataAndStorageScreen
+import com.aiwazian.messenger.ui.screens.settings.dns.DnsSettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.emoji.added.AddedEmojiPacksScreen
 import com.aiwazian.messenger.ui.screens.settings.emoji.created.CreatedEmojiPacksScreen
 import com.aiwazian.messenger.ui.screens.settings.emoji.created.EmojiPackEditorScreen
@@ -84,6 +88,8 @@ import com.aiwazian.messenger.ui.screens.settings.privacy.bio.SettingsBioScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.blockedUsers.BlockedUserListScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.dateOfBirth.SettingsDateOfBirthScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.forwardedProfile.SettingsForwardedProfileScreen
+import com.aiwazian.messenger.ui.screens.settings.proxy.ProxyAddScreen
+import com.aiwazian.messenger.ui.screens.settings.proxy.ProxySettingsScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.exceptions.SelectPrivacyExceptionUsersScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.invites.SettingsInvitesScreen
 import com.aiwazian.messenger.ui.screens.settings.privacy.lastSeen.SettingsLastSeenScreen
@@ -177,6 +183,18 @@ fun AppNavDisplay(
                     entry<AppRoute.PinnedMessages> {
                         PinnedMessagesScreen(chatId = it.chatId)
                     }
+                    entry<AppRoute.ScheduledMessages> {
+                        ScheduledMessagesScreen(chatId = it.chatId)
+                    }
+                    entry<AppRoute.PdfViewer> {
+                        PdfViewerScreen(
+                            chatId = it.chatId,
+                            messageId = it.messageId,
+                            fileId = it.fileId,
+                            fileName = it.fileName,
+                            postId = it.postId
+                        )
+                    }
                     entry<AppRoute.Equalizer> { EqualizerScreen() }
                     entry<AppRoute.Profile>(metadata = PredictiveBackMetadata) {
                         ProfileScreen(
@@ -189,6 +207,7 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsLanguage> { SettingsLanguageScreen() }
                     entry<AppRoute.SettingsDarkTheme> { SettingsDarkThemeScreen() }
                     entry<AppRoute.SettingsChat> { SettingsAppearanceScreen() }
+                    entry<AppRoute.SettingsChats> { ChatSettingsScreen() }
                     entry<AppRoute.ChatAppearance> { ChatAppearanceScreen(target = it.target) }
                     entry<AppRoute.WallpaperPreview> {
                         WallpaperPreviewScreen(imagePath = it.imagePath, target = it.target)
@@ -228,6 +247,9 @@ fun AppNavDisplay(
                     entry<AppRoute.SettingsDataAndStorage> { DataAndStorageScreen() }
                     entry<AppRoute.SettingsStorage> { StorageScreen() }
                     entry<AppRoute.SettingsAutoDownloadMedia> { AutoDownloadMediaScreen() }
+                    entry<AppRoute.SettingsProxy> { ProxySettingsScreen() }
+                    entry<AppRoute.SettingsProxyAdd> { ProxyAddScreen(proxyId = it.proxyId) }
+                    entry<AppRoute.SettingsDns> { DnsSettingsScreen() }
                     entry<AppRoute.SettingsStickers> { SettingsStickersScreen() }
                     entry<AppRoute.CreatedStickerPacks> { CreatedStickerPacksScreen() }
                     entry<AppRoute.AddedStickerPacks> { AddedStickerPacksScreen() }

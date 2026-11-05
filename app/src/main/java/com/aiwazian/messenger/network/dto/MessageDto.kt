@@ -72,6 +72,7 @@ data class MessageDto(
     @SerialName("chatId") val chatId: Long,
     @SerialName("text") val text: String? = null,
     @SerialName("sendTime") val sendTime: Long,
+    @SerialName("scheduledAt") val scheduledAt: Long? = null,
     @SerialName("editedAt") val editedAt: Long? = null,
     @SerialName("isEdited") val isEdited: Boolean? = null,
     @SerialName("commentsCount") val commentsCount: Int = 0,
@@ -94,13 +95,15 @@ data class MessageDto(
 data class TextMessageRequestDto(
     @SerialName("text") val text: String,
     @SerialName("replyToId") val replyToId: String? = null,
-    @SerialName("silent") val silent: Boolean = false
+    @SerialName("silent") val silent: Boolean = false,
+    @SerialName("scheduledAt") val scheduledAt: Long? = null
 )
 
 @Serializable
 data class StickerMessageRequestDto(
     @SerialName("stickerId") val stickerId: String,
-    @SerialName("replyToId") val replyToId: String? = null
+    @SerialName("replyToId") val replyToId: String? = null,
+    @SerialName("scheduledAt") val scheduledAt: Long? = null
 )
 
 @Serializable
@@ -118,6 +121,11 @@ data class ContactMessageRequestDto(
 @Serializable
 data class EditMessageRequestDto(
     @SerialName("text") val text: String
+)
+
+@Serializable
+data class UpdateScheduledMessageRequestDto(
+    @SerialName("scheduledAt") val scheduledAt: Long
 )
 
 @Serializable
@@ -152,7 +160,8 @@ data class FileConfirmRequestDto(
     @SerialName("attachments") val attachments: List<AttachmentInputDto>,
     @SerialName("text") val text: String? = null,
     @SerialName("replyToId") val replyToId: String? = null,
-    @SerialName("silent") val silent: Boolean = false
+    @SerialName("silent") val silent: Boolean = false,
+    @SerialName("scheduledAt") val scheduledAt: Long? = null
 )
 
 @Serializable

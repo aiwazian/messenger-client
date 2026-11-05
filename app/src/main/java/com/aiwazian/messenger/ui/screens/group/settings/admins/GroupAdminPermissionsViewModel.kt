@@ -73,7 +73,6 @@ class GroupAdminPermissionsViewModel @Inject constructor(
         _uiState.update { it.copy(canEditProfile = !it.canEditProfile) }
     }
 
-    /** Право на управление администраторами выдаёт только владелец: это проверяет сервер. */
     fun toggleManageAdmins() {
         if (_uiState.value.isReadOnly) return
         _uiState.update { it.copy(canManageAdmins = !it.canManageAdmins) }

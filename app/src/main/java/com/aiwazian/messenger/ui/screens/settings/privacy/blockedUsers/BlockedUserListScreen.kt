@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,6 +49,7 @@ import kotlinx.coroutines.launch
 fun BlockedUserListScreen(
     viewModel: BlockedUserListViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val navBackStack = LocalNavBackStack.current
     val uiState by viewModel.uiState.collectAsState()
     
@@ -66,7 +68,7 @@ fun BlockedUserListScreen(
                     snackbarJob = launch {
                         snackbarHostState.currentSnackbarData?.dismiss()
                         snackbarHostState.showSnackbar(
-                            message = effect.message,
+                            message = effect.message.asString(context),
                             duration = SnackbarDuration.Short
                         )
                     }

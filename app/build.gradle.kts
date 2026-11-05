@@ -23,8 +23,8 @@ android {
         applicationId = "com.aiwazian.messenger"
         minSdk = 30
         targetSdk = 37
-        versionCode = 72
-        versionName = "1.28.0"
+        versionCode = 73
+        versionName = "1.29.0"
     }
     
     buildTypes {
@@ -104,7 +104,10 @@ dependencies {
     implementation(libs.androidx.exifinterface)
     
     implementation(libs.libphonenumber)
-    
+
+    implementation(libs.androidx.pdf.compose)
+    implementation(libs.androidx.pdf.document.service)
+
     implementation(libs.androidx.datastore.preferences)
     
     implementation(libs.androidx.credentials)
@@ -157,6 +160,7 @@ dependencies {
     implementation(libs.firebase.analytics)
     
     implementation(libs.play.app.update)
+    implementation(libs.play.feature.delivery)
     
     implementation(libs.bundles.media3)
     

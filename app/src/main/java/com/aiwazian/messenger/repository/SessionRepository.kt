@@ -31,10 +31,6 @@ class SessionRepository @Inject constructor(
         }
     }
     
-    /**
-     * Привязывает Firebase Installation ID к текущей сессии: в новом API FCM
-     * именно FID, а не registration token, является адресатом уведомления.
-     */
     suspend fun updateInstallationId(installationId: String): Result<Unit> {
         return try {
             val response = sessionApi.updateInstallationId(UpdateInstallationIdDto(installationId))

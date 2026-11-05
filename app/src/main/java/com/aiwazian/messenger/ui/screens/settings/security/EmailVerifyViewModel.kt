@@ -7,7 +7,9 @@ package com.aiwazian.messenger.ui.screens.settings.security
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.repository.AuthRepository
+import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
 import com.aiwazian.messenger.utils.VibrationPattern
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,7 +30,7 @@ class EmailVerifyViewModel @Inject constructor(
     private val _code = MutableStateFlow("")
     val code = _code.asStateFlow()
     
-    private val _errorMessage = MutableStateFlow<String?>(null)
+    private val _errorMessage = MutableStateFlow<UiText?>(null)
     val errorMessage = _errorMessage.asStateFlow()
     
     private val _isLoading = MutableStateFlow(false)
@@ -58,12 +60,12 @@ class EmailVerifyViewModel @Inject constructor(
                 if (result.isSuccess) {
                     _sideEffect.emit(EmailVerifySideEffect.NavigateToConfig)
                 } else {
-                    _errorMessage.update { "Неверный код" }
+                    _errorMessage.update { UiText.StringResource(R.string.invalid_code) }
                     vibrationManager.vibrate(VibrationPattern.Error)
                 }
             } catch (e: Exception) {
                 Log.e("EmailVerifyViewModel", e.message.toString())
-                _errorMessage.update { "Неверный код" }
+                _errorMessage.update { UiText.StringResource(R.string.invalid_code) }
                 vibrationManager.vibrate(VibrationPattern.Error)
             } finally {
                 _isLoading.update { false }

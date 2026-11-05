@@ -88,6 +88,8 @@ import com.aiwazian.messenger.ui.components.ShareForwardOptions
 import com.aiwazian.messenger.ui.components.ShareItem
 import com.aiwazian.messenger.ui.components.TopBarScrim
 import com.aiwazian.messenger.ui.components.chatMediaKey
+import com.aiwazian.messenger.extensions.isPdfFile
+import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.ui.screens.chat.components.ContactViewBottomSheet
@@ -296,7 +298,20 @@ fun ChatMediaScreen(
                         ChatMediaTab.FILES -> FilesTab(
                             items = uiState.files,
                             selectedIds = uiState.selectedAttachmentIds,
-                            onItemClick = viewModel::onFileClick,
+                            onItemClick = { item ->
+                                if (item.extension.isPdfFile()) {
+                                    navBackStack.add(
+                                        AppRoute.PdfViewer(
+                                            chatId = chatId,
+                                            messageId = item.messageId,
+                                            fileId = item.fileId,
+                                            fileName = item.name
+                                        )
+                                    )
+                                } else {
+                                    viewModel.onFileClick(item)
+                                }
+                            },
                             onToggleSelection = viewModel::toggleAttachmentSelection,
                             onLoadMore = viewModel::loadMoreFiles,
                             contentPadding = innerPadding

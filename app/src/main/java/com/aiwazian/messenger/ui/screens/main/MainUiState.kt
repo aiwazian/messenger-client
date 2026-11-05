@@ -42,6 +42,5 @@ data class ChatFolderPage(
     val id: Int,
     val name: UiText,
     val chats: List<Chat>,
-    /** Сколько чатов папки выглядят непрочитанными: бейдж у названия таба. */
     val unreadChatCount: Int = 0
 )

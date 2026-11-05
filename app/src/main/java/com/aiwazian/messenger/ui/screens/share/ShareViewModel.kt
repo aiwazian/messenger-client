@@ -71,11 +71,7 @@ class ShareViewModel @Inject constructor(
             )
         }
     }
-    
-    /**
-     * Отправка уходит в [MessageSendQueue], а не в viewModelScope: окно закроется
-     * сразу, и вместе с ним умер бы каждый незаконченный запрос.
-     */
+   
     fun send(silent: Boolean = false) {
         val state = _uiState.value
         val text = state.messageText
@@ -101,8 +97,6 @@ class ShareViewModel @Inject constructor(
                 if (cachedFiles.isEmpty()) {
                     messageSendQueue.enqueueText(chatId = chatId, text = text, silent = silent)
                 } else {
-                    // Подпись из системного шара уезжает вместе с файлами одним
-                    // сообщением, а не отдельно.
                     messageSendQueue.enqueueFiles(
                         chatId = chatId,
                         uris = cachedFiles,

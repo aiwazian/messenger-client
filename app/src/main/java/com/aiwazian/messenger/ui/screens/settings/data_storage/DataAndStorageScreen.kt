@@ -110,5 +110,19 @@ fun DataAndStorageScreen(
                 onClick = viewModel::showClearDraftsDialog
             )
         }
+        SectionContainer {
+            SectionButton(
+                headlineText = stringResource(R.string.proxy_settings),
+                onClick = {
+                    navBackStack.add(AppRoute.SettingsProxy)
+                }
+            )
+            SectionButton(
+                headlineText = stringResource(R.string.dns),
+                onClick = {
+                    navBackStack.add(AppRoute.SettingsDns)
+                }
+            )
+        }
     }
 }

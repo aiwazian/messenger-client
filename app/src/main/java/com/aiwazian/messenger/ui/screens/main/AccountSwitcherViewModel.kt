@@ -80,11 +80,6 @@ class AccountSwitcherViewModel @Inject constructor(
     
     fun switchAccount(userId: Long) {
         viewModelScope.launch {
-            /*
-             * Шторка и списки просмотров относятся к прежнему аккаунту. Уведомления живут
-             * вне процесса, а кэш просмотров — в памяти Application, поэтому
-             * перезапуск Activity их не сбросит: чистим вручную до смены сессии.
-             */
             notificationHelper.clearAllNotifications()
             messageReadInfoCache.clear()
             

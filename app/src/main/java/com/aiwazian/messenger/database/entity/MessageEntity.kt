@@ -19,6 +19,7 @@ data class MessageEntity(
     val chatId: Long,
     val text: String?,
     val sendTime: Long,
+    val scheduledAt: Long? = null,
     val editedAt: Long? = null,
     val messageType: MessageType,
     val systemMessageEventType: SystemMessageEventType?,

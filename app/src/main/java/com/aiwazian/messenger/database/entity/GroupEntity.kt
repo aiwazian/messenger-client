@@ -20,6 +20,5 @@ data class GroupEntity(
     val members: Int,
     val removedUsers: Int?,
     val isMember: Boolean,
-    /** Запрет копирования контента группы. */
     @ColumnInfo(defaultValue = "false") val noCopy: Boolean = false
 )

@@ -38,6 +38,18 @@ sealed interface AppRoute : NavKey {
     data class PinnedMessages(val chatId: Long) : AppRoute
 
     @Serializable
+    data class ScheduledMessages(val chatId: Long) : AppRoute
+
+    @Serializable
+    data class PdfViewer(
+        val chatId: Long,
+        val messageId: Long,
+        val fileId: String,
+        val fileName: String,
+        val postId: Long? = null
+    ) : AppRoute
+
+    @Serializable
     data object Equalizer : AppRoute
 
     @Serializable
@@ -58,6 +70,9 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data object SettingsChat : AppRoute
+
+    @Serializable
+    data object SettingsChats : AppRoute
 
     @Serializable
     data class ChatAppearance(val target: WallpaperTarget) : AppRoute
@@ -142,7 +157,16 @@ sealed interface AppRoute : NavKey {
     
     @Serializable
     data object SettingsDataAndStorage : AppRoute
-    
+
+    @Serializable
+    data object SettingsProxy : AppRoute
+
+    @Serializable
+    data class SettingsProxyAdd(val proxyId: Long? = null) : AppRoute
+
+    @Serializable
+    data object SettingsDns : AppRoute
+
     @Serializable
     data object SettingsStorage : AppRoute
     

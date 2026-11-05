@@ -23,7 +23,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -34,6 +36,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,29 +48,37 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Backspace
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.EmojiEmotions
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -80,8 +91,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -89,15 +103,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -117,6 +142,7 @@ import com.aiwazian.messenger.ui.screens.chat.ChatEmojiViewModel
 import com.aiwazian.messenger.ui.screens.chat.ChatStickersViewModel
 import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 import com.aiwazian.messenger.utils.DialogController
+import com.aiwazian.messenger.utils.MessageFormatAction
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -133,8 +159,9 @@ fun ChatInputSection(
     alwaysShowInput: Boolean = false,
     isVoiceEnabled: Boolean = true,
     sendOptionsEnabled: Boolean = true,
-    onMediaSheetSend: ((Boolean) -> Unit)? = null,
-    onContactSend: ((MessageContact) -> Unit)? = null
+    onMediaSheetSend: ((silent: Boolean, scheduledAt: Long?) -> Unit)? = null,
+    onContactSend: ((MessageContact) -> Unit)? = null,
+    sendIcon: ImageVector = Icons.AutoMirrored.Rounded.Send
 ) {
     val density = LocalDensity.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -150,10 +177,11 @@ fun ChatInputSection(
     
     var messageInputView by remember { mutableStateOf<EditText?>(null) }
     
+    var selectionBounds by remember { mutableStateOf<IntRect?>(null) }
+    var isFormattingMenuShown by remember { mutableStateOf(false) }
+    
     val panelPagerState = rememberPagerState(
-        initialPage = EMOJI_PANEL_PAGE,
-        pageCount = { PANEL_PAGE_COUNT }
-    )
+        initialPage = EMOJI_PANEL_PAGE, pageCount = { PANEL_PAGE_COUNT })
     
     val bottomPadding = with(density) {
         WindowInsets.navigationBars.getBottom(density).toDp()
@@ -176,8 +204,7 @@ fun ChatInputSection(
     }
     
     LaunchedEffect(imeInsets, density) {
-        snapshotFlow { imeInsets.getBottom(density) }
-            .debounce(KEYBOARD_MEASURE_DELAY_MS.milliseconds)
+        snapshotFlow { imeInsets.getBottom(density) }.debounce(KEYBOARD_MEASURE_DELAY_MS.milliseconds)
             .distinctUntilChanged()
             .collect { imeBottomPx ->
                 if (imeBottomPx <= 0) return@collect
@@ -220,6 +247,37 @@ fun ChatInputSection(
         scope.launch {
             stickerPanelHeight.animateTo(bottomPadding)
             isStickersVisible = false
+        }
+    }
+    
+    val onSelectionBoundsChanged: (IntRect?) -> Unit = { bounds ->
+        if (bounds != null && selectionBounds == null) {
+            isFormattingMenuShown = false
+        }
+        
+        selectionBounds = bounds
+    }
+    
+    val onCutSelectionClicked: () -> Unit = {
+        messageInputView?.onTextContextMenuItem(android.R.id.cut)
+    }
+    
+    val onCopySelectionClicked: () -> Unit = {
+        messageInputView?.onTextContextMenuItem(android.R.id.copy)
+    }
+    
+    val onFormatAction: (MessageFormatAction) -> Unit = { action ->
+        messageInputView?.let { view ->
+            val applied = applyMessageFormatAction(
+                editText = view,
+                action = action,
+                onTextChange = actions::changeText
+            )
+            
+            if (applied) {
+                isFormattingMenuShown = false
+                selectionBounds = null
+            }
         }
     }
     
@@ -269,9 +327,11 @@ fun ChatInputSection(
                                 keyboardHeight = keyboardHeight,
                                 onShowStickerPanel = showStickerPanel,
                                 onInputViewReady = onInputViewReady,
-                                onResolveEmoji = customEmojiViewModel::resolveEmoji
+                                onResolveEmoji = customEmojiViewModel::resolveEmoji,
+                                onSelectionChanged = onSelectionBoundsChanged,
+                                sendIcon = sendIcon
                             )
-
+                            
                             "join" -> JoinButton(onClick = actions::onJoinClicked)
                             "none" -> Unit
                         }
@@ -297,7 +357,9 @@ fun ChatInputSection(
                                 keyboardHeight = keyboardHeight,
                                 onShowStickerPanel = showStickerPanel,
                                 onInputViewReady = onInputViewReady,
-                                onResolveEmoji = customEmojiViewModel::resolveEmoji
+                                onResolveEmoji = customEmojiViewModel::resolveEmoji,
+                                onSelectionChanged = onSelectionBoundsChanged,
+                                sendIcon = sendIcon
                             )
                         } else {
                             JoinButton(onClick = actions::onJoinClicked)
@@ -376,7 +438,9 @@ fun ChatInputSection(
                                     keyboardHeight = keyboardHeight,
                                     onShowStickerPanel = showStickerPanel,
                                     onInputViewReady = onInputViewReady,
-                                    onResolveEmoji = customEmojiViewModel::resolveEmoji
+                                    onResolveEmoji = customEmojiViewModel::resolveEmoji,
+                                    onSelectionChanged = onSelectionBoundsChanged,
+                                    sendIcon = sendIcon
                                 )
                             }
                         }
@@ -401,8 +465,7 @@ fun ChatInputSection(
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
-                        ) {}
-                ) {
+                        ) {}) {
                     HorizontalPager(
                         state = panelPagerState
                     ) { page ->
@@ -424,8 +487,7 @@ fun ChatInputSection(
                                 })
                         } else {
                             StickerInputPanel(
-                                packs = stickersState.addedPacks,
-                                onStickerClick = { sticker ->
+                                packs = stickersState.addedPacks, onStickerClick = { sticker ->
                                     actions.sendSticker(sticker.id)
                                 })
                         }
@@ -483,6 +545,26 @@ fun ChatInputSection(
                 }
             }
         }
+        
+        selectionBounds?.let { bounds ->
+            MessageSelectionToolbar(
+                selectionBoundsProvider = { selectionBounds ?: bounds },
+                isFormattingShown = isFormattingMenuShown,
+                onSelectAllClick = { messageInputView?.selectAll() },
+                onCutClick = onCutSelectionClicked,
+                onCopyClick = onCopySelectionClicked,
+                onMoreClick = { isFormattingMenuShown = true },
+                onFormatAction = onFormatAction,
+                onBackClick = { isFormattingMenuShown = false })
+        }
+    }
+    
+    BackHandler(enabled = selectionBounds != null) {
+        if (isFormattingMenuShown) {
+            isFormattingMenuShown = false
+        } else {
+            selectionBounds = null
+        }
     }
 }
 
@@ -492,21 +574,23 @@ private fun InputMessage(
     actions: ChatInputActions,
     isVoiceEnabled: Boolean,
     sendOptionsEnabled: Boolean,
-    onMediaSheetSend: ((Boolean) -> Unit)?,
+    onMediaSheetSend: ((silent: Boolean, scheduledAt: Long?) -> Unit)?,
     onContactSend: ((MessageContact) -> Unit)?,
+    sendIcon: ImageVector,
     isStickerPanelVisible: Boolean,
     isKeyboardVisible: Boolean,
     keyboardHeight: Dp,
     onShowStickerPanel: () -> Unit,
     onInputViewReady: (EditText) -> Unit,
-    onResolveEmoji: suspend (Long) -> CustomEmoji?
+    onResolveEmoji: suspend (Long) -> CustomEmoji?,
+    onSelectionChanged: (IntRect?) -> Unit
 ) {
     var attachmentModal by remember { mutableStateOf(DialogController()) }
     var micTranslationX by remember { mutableFloatStateOf(0f) }
     var micTranslationY by remember { mutableFloatStateOf(0f) }
-
+    
     var inputView by remember { mutableStateOf<EditText?>(null) }
-
+    
     val inputHint = stringResource(R.string.message)
     
     LaunchedEffect(uiState.editingMessageId) {
@@ -519,18 +603,16 @@ private fun InputMessage(
         contract = ActivityResultContracts.OpenMultipleDocuments(), onResult = { uris: List<Uri> ->
             if (uris.isNotEmpty()) {
                 attachmentModal.hide()
-
+                
                 actions.sendMediaUris(
-                    uris = uris,
-                    caption = uiState.messageText,
-                    replyTo = uiState.replyToMessage
+                    uris = uris, caption = uiState.messageText, replyTo = uiState.replyToMessage
                 )
-
+                
                 actions.changeText("")
                 actions.cancelReply()
             }
         })
-
+    
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -596,8 +678,7 @@ private fun InputMessage(
             if (preview != null) {
                 val previewText = replyPreviewText(preview)
                 val previewInlineContent = rememberCustomEmojiInlineContent(
-                    text = previewText,
-                    emojiSize = REPLY_PREVIEW_EMOJI_SIZE
+                    text = previewText, emojiSize = REPLY_PREVIEW_EMOJI_SIZE
                 )
                 
                 Row(
@@ -638,11 +719,9 @@ private fun InputMessage(
         }
         Row(verticalAlignment = Alignment.Bottom) {
             AnimatedContent(
-                targetState = uiState.isRecording,
-                transitionSpec = {
+                targetState = uiState.isRecording, transitionSpec = {
                     expressiveScaleIn togetherWith expressiveScaleOut
-                },
-                contentAlignment = Alignment.Center
+                }, contentAlignment = Alignment.Center
             ) { isRecording ->
                 if (isRecording) {
                     val infiniteTransition =
@@ -694,8 +773,7 @@ private fun InputMessage(
             
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
                 Box(
-                    modifier = Modifier.heightIn(min = 48.dp),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.heightIn(min = 48.dp), contentAlignment = Alignment.Center
                 ) {
                     val textFieldAlpha by animateFloatAsState(
                         targetValue = if (uiState.isRecording) 0f else 1f,
@@ -715,12 +793,30 @@ private fun InputMessage(
                             inputView = view
                             
                             onInputViewReady(view)
-                        })
+                        },
+                        onSelectionChanged = onSelectionChanged,
+                        isFormattingEnabled = true
+                    )
                     
                     VoiceRecordingStatus(
                         uiState = uiState,
                         micTranslationX = micTranslationX,
                         onCancelRecording = actions::cancelRecording
+                    )
+                }
+            }
+            
+            AnimatedVisibility(
+                visible = uiState.hasScheduledMessages && uiState.messageText.trim()
+                    .isEmpty() && !uiState.isRecording && uiState.editingMessageId == null,
+                enter = expressiveScaleIn,
+                exit = expressiveScaleOut
+            ) {
+                IconButton(onClick = actions::onScheduledMessagesClicked) {
+                    Icon(
+                        imageVector = Icons.Outlined.CalendarToday,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -744,8 +840,7 @@ private fun InputMessage(
                 targetState = uiState.messageText.trim().isEmpty() || uiState.isRecording,
                 transitionSpec = {
                     expressiveScaleIn togetherWith expressiveScaleOut
-                }
-            ) { showMic ->
+                }) { showMic ->
                 if (showMic && isVoiceEnabled) {
                     Box(
                         modifier = Modifier
@@ -901,24 +996,17 @@ private fun InputMessage(
                     SendMessageOptionsButton(
                         onClick = actions::onSendMessageClicked,
                         onSendSilently = actions::onSendWithoutSoundClicked,
+                        onSendScheduled = actions::onScheduleSendOptionsClicked,
                         optionsEnabled = sendOptionsEnabled && uiState.editingMessageId == null
                     ) {
                         AnimatedContent(
                             targetState = uiState.editingMessageId != null,
                             transitionSpec = { expressiveScaleIn togetherWith expressiveScaleOut }) { isEditing ->
-                            if (isEditing) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Done,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.Send,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
+                            Icon(
+                                imageVector = if (isEditing) Icons.Rounded.Done else sendIcon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }
@@ -931,9 +1019,7 @@ private fun InputMessage(
             chatId = uiState.chatId,
             replyTo = uiState.replyToMessage,
             caption = uiState.messageText,
-            allowViewOnce = uiState.chatId != uiState.myId &&
-                    ChatType.fromId(uiState.chatId) == ChatType.PRIVATE &&
-                    uiState.myId > 0,
+            allowViewOnce = uiState.chatId != uiState.myId && ChatType.fromId(uiState.chatId) == ChatType.PRIVATE && uiState.myId > 0,
             allowSpoiler = true,
             keyboardHeight = keyboardHeight,
             onCaptionChange = actions::changeText,
@@ -951,7 +1037,244 @@ private fun InputMessage(
                 actions.cancelReply()
             },
             silentSendEnabled = sendOptionsEnabled,
-            onSend = onMediaSheetSend)
+            onSend = onMediaSheetSend
+        )
+    }
+}
+
+@Composable
+private fun MessageSelectionToolbar(
+    selectionBoundsProvider: () -> IntRect,
+    isFormattingShown: Boolean,
+    onSelectAllClick: () -> Unit,
+    onCutClick: () -> Unit,
+    onCopyClick: () -> Unit,
+    onMoreClick: () -> Unit,
+    onFormatAction: (MessageFormatAction) -> Unit,
+    onBackClick: () -> Unit
+) {
+    val density = LocalDensity.current
+    val gapPx = with(density) { SELECTION_MENU_GAP_DP.dp.roundToPx() }
+    val marginPx = with(density) { SELECTION_MENU_MARGIN_DP.dp.roundToPx() }
+    
+    val positionProvider = remember(gapPx, marginPx) {
+        SelectionMenuPositionProvider(
+            selectionBounds = selectionBoundsProvider, gapPx = gapPx, marginPx = marginPx
+        )
+    }
+    
+    Popup(
+        popupPositionProvider = positionProvider, properties = PopupProperties(focusable = false)
+    ) {
+        Box(modifier = Modifier.padding(SELECTION_MENU_SHADOW_PADDING_DP.dp)) {
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                shadowElevation = SELECTION_MENU_SHADOW_ELEVATION_DP.dp
+            ) {
+                AnimatedContent(
+                    targetState = isFormattingShown, transitionSpec = {
+                        if (targetState) {
+                            slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
+                        } else {
+                            slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
+                        }
+                    }, label = "selection_menu_content", contentAlignment = Alignment.BottomCenter
+                ) { formatting ->
+                    if (formatting) {
+                        SelectionFormatItems(
+                            onFormatAction = onFormatAction, onBackClick = onBackClick
+                        )
+                    } else {
+                        SelectionActionItems(
+                            onSelectAllClick = onSelectAllClick,
+                            onCutClick = onCutClick,
+                            onCopyClick = onCopyClick,
+                            onMoreClick = onMoreClick
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SelectionActionItems(
+    onSelectAllClick: () -> Unit,
+    onCutClick: () -> Unit,
+    onCopyClick: () -> Unit,
+    onMoreClick: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        SelectionActionItem(
+            labelRes = R.string.selection_select_all, onClick = onSelectAllClick
+        )
+        
+        SelectionActionItem(
+            labelRes = R.string.selection_cut, onClick = onCutClick
+        )
+        
+        SelectionActionItem(
+            labelRes = R.string.selection_copy,
+            onClick = onCopyClick
+        )
+        
+        IconButton(
+            onClick = onMoreClick, modifier = Modifier.size(36.dp), shape = RectangleShape
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.MoreVert,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun SelectionActionItem(
+    labelRes: Int, onClick: () -> Unit
+) {
+    Text(
+        text = stringResource(labelRes),
+        color = MaterialTheme.colorScheme.onSurface,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp)
+    )
+}
+
+@Composable
+private fun SelectionFormatItems(
+    onFormatAction: (MessageFormatAction) -> Unit, onBackClick: () -> Unit
+) {
+    val density = LocalDensity.current
+    var backAreaHeightPx by remember { mutableIntStateOf(0) }
+    
+    Box(
+        modifier = Modifier.width(IntrinsicSize.Max)
+    ) {
+        Column(
+            modifier = Modifier
+                .width(IntrinsicSize.Max)
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = with(density) { backAreaHeightPx.toDp() })
+        ) {
+            SelectionFormatItem(
+                labelRes = R.string.format_bold,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                onClick = { onFormatAction(MessageFormatAction.ToggleBold) }
+            )
+            
+            SelectionFormatItem(
+                labelRes = R.string.format_italic,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    fontStyle = FontStyle.Italic
+                ),
+                onClick = { onFormatAction(MessageFormatAction.ToggleItalic) }
+            )
+            
+            SelectionFormatItem(
+                labelRes = R.string.format_underline,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    textDecoration = TextDecoration.Underline
+                ),
+                onClick = { onFormatAction(MessageFormatAction.ToggleUnderline) }
+            )
+            
+            SelectionFormatItem(
+                labelRes = R.string.format_strikethrough,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    textDecoration = TextDecoration.LineThrough
+                ),
+                onClick = { onFormatAction(MessageFormatAction.ToggleStrikethrough) }
+            )
+
+            SelectionFormatItem(
+                labelRes = R.string.format_monospace,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = FontFamily.Monospace
+                ),
+                onClick = { onFormatAction(MessageFormatAction.ToggleMono) }
+            )
+
+            SelectionFormatItem(
+                labelRes = R.string.format_plain,
+                textStyle = MaterialTheme.typography.bodyMedium,
+                onClick = { onFormatAction(MessageFormatAction.Clear) }
+            )
+        }
+        
+        SelectionFormatBackButton(
+            labelRes = R.string.back,
+            onClick = onBackClick,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .onSizeChanged { size -> backAreaHeightPx = size.height })
+    }
+}
+
+@Composable
+private fun SelectionFormatBackButton(
+    labelRes: Int, onClick: () -> Unit, modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.padding(vertical = 8.dp, horizontal = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.AutoMirrored.Rounded.ArrowBack, null)
+            Text(
+                text = stringResource(labelRes),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
+    }
+}
+
+@Composable
+private fun SelectionFormatItem(
+    labelRes: Int, textStyle: TextStyle, onClick: () -> Unit
+) {
+    Text(
+        text = stringResource(labelRes),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        color = MaterialTheme.colorScheme.onSurface,
+        style = textStyle
+    )
+}
+
+internal class SelectionMenuPositionProvider(
+    private val selectionBounds: () -> IntRect, private val gapPx: Int, private val marginPx: Int
+) : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize
+    ): IntOffset {
+        val bounds = selectionBounds()
+        val maxLeft = (windowSize.width - popupContentSize.width - marginPx).coerceAtLeast(marginPx)
+        val left = (bounds.center.x - popupContentSize.width / 2).coerceIn(marginPx, maxLeft)
+        val aboveTop = bounds.top - popupContentSize.height - gapPx
+        val top = if (aboveTop < marginPx) bounds.bottom + gapPx else aboveTop
+        
+        return IntOffset(left, top)
     }
 }
 
@@ -960,3 +1283,7 @@ private const val KEYBOARD_MEASURE_DELAY_MS = 300L
 private const val EMOJI_PANEL_PAGE = 0
 private const val STICKER_PANEL_PAGE = 1
 private const val PANEL_PAGE_COUNT = 2
+private const val SELECTION_MENU_GAP_DP = 4
+private const val SELECTION_MENU_MARGIN_DP = 8
+private const val SELECTION_MENU_SHADOW_PADDING_DP = 8
+private const val SELECTION_MENU_SHADOW_ELEVATION_DP = 6

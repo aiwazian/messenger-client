@@ -103,7 +103,7 @@ fun SettingsCloudPasswordScreen(viewModel: CloudPasswordViewModel = hiltViewMode
                 value = newPassword,
                 onValueChange = viewModel::onInputNewPassword,
                 label = {
-                    Text(errorMessage ?: stringResource(R.string.enter_password))
+                    Text(errorMessage?.asString() ?: stringResource(R.string.enter_password))
                 },
                 isError = errorMessage != null,
                 keyboardOptions = KeyboardOptions(

@@ -111,10 +111,6 @@ private const val FOCUS_SCALE = 4f
 private const val SCRIM_ALPHA = 0.6f
 private const val EMOJI_FIELD_WIDTH_FRACTION = 0.8f
 private const val PRESSED_CELL_SCALE = 0.9f
-private const val COVER_BUTTON_LABEL = "Выбрать обложку"
-private const val PICK_EMOJI_LABEL = "Выбрать эмодзи"
-private const val PICK_FILE_LABEL = "Выбрать файл"
-private const val REMOVE_COVER_LABEL = "Удалить обложку"
 
 private val FOCUS_OPEN_SPEC: AnimationSpec<Float> =
     tween(durationMillis = 260, easing = FastOutSlowInEasing)
@@ -349,27 +345,27 @@ fun EmojiPackEditorScreen(
                                     expanded = isCoverMenuExpanded,
                                     onDismissRequest = { isCoverMenuExpanded = false }) {
                                     AppDropdownMenuItem(
-                                        text = PICK_EMOJI_LABEL,
+                                        text = stringResource(R.string.emoji_pack_emoji_choose),
                                         onClick = {
                                             isCoverMenuExpanded = false
-                                            
+
                                             emojiPickerTarget = EmojiPickTarget.Cover
                                         })
-                                    
+
                                     AppDropdownMenuItem(
-                                        text = PICK_FILE_LABEL,
+                                        text = stringResource(R.string.emoji_pack_file_choose),
                                         onClick = {
                                             isCoverMenuExpanded = false
-                                            
+
                                             photoPickerTarget = EmojiPickTarget.Cover
                                         })
-                                    
+
                                     if (uiState.cover != null) {
                                         AppDropdownMenuItem(
-                                            text = REMOVE_COVER_LABEL,
+                                            text = stringResource(R.string.emoji_pack_cover_remove),
                                             onClick = {
                                                 isCoverMenuExpanded = false
-                                                
+
                                                 viewModel.removeCover()
                                             })
                                     }
@@ -423,18 +419,18 @@ fun EmojiPackEditorScreen(
                                 expanded = isAddMenuExpanded,
                                 onDismissRequest = { isAddMenuExpanded = false }) {
                                 AppDropdownMenuItem(
-                                    text = PICK_EMOJI_LABEL,
+                                    text = stringResource(R.string.emoji_pack_emoji_choose),
                                     onClick = {
                                         isAddMenuExpanded = false
-                                        
+
                                         emojiPickerTarget = EmojiPickTarget.Emoji
                                     })
-                                
+
                                 AppDropdownMenuItem(
-                                    text = PICK_FILE_LABEL,
+                                    text = stringResource(R.string.emoji_pack_file_choose),
                                     onClick = {
                                         isAddMenuExpanded = false
-                                        
+
                                         photoPickerTarget = EmojiPickTarget.Emoji
                                     })
                             }
@@ -513,7 +509,7 @@ fun EmojiPackEditorScreen(
     
     if (isExitDialogVisible) {
         AppDialog(
-            title = "Несохраненные изменения",
+            title = stringResource(R.string.emoji_pack_unsaved_title),
             onDismissRequest = { isExitDialogVisible = false },
             buttons = {
                 TextButton(onClick = {
@@ -546,8 +542,6 @@ private fun CoverPicker(
     isBusy: Boolean,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
-    
     if (cover == null) {
         Button(onClick = onClick, enabled = !isBusy) {
             if (isBusy) {
@@ -556,7 +550,7 @@ private fun CoverPicker(
                     modifier = Modifier.size(18.dp)
                 )
             } else {
-                Text(COVER_BUTTON_LABEL)
+                Text(stringResource(R.string.emoji_pack_cover_choose))
             }
         }
         
@@ -579,7 +573,7 @@ private fun CoverPicker(
             AnimatedStickerImage(
                 data = data,
                 isVideo = isVideoMediaUrl(data.toString()),
-                contentDescription = COVER_BUTTON_LABEL,
+                contentDescription = stringResource(R.string.emoji_pack_cover_choose),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
@@ -629,8 +623,6 @@ private fun EmojiSlotCell(
     onBoundsChange: (Rect) -> Unit,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
-    
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     
@@ -678,7 +670,6 @@ private fun EmojiFocusOverlay(
     onDismiss: () -> Unit,
     onClosed: () -> Unit
 ) {
-    val context = LocalContext.current
     val density = LocalDensity.current
     
     val scrimInteractionSource = remember { MutableInteractionSource() }

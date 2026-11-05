@@ -17,10 +17,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object CoroutineModule {
     
-    /**
-     * SupervisorJob обязателен: упавшая отправка одного сообщения не должна
-     * уносить с собой очередь остальных.
-     */
     @Provides
     @Singleton
     @ApplicationScope

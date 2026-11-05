@@ -35,36 +35,38 @@ class SendMessageUseCase @Inject constructor(
         message: String,
         tempId: Long? = null,
         replyTo: MessageReplyPreview? = null,
-        silent: Boolean = false
+        silent: Boolean = false,
+        scheduledAt: Long? = null
     ): Result<Message> {
         val localId = tempId ?: -System.currentTimeMillis()
 
         val sending = appScope.async(start = CoroutineStart.LAZY) {
-            send(chatId, message, localId, replyTo, silent)
+            send(chatId, message, localId, replyTo, silent, scheduledAt)
         }
-        
+
         running.put(localId, sending)?.cancel()
         sending.invokeOnCompletion { running.remove(localId, sending) }
         sending.start()
-        
+
         return sending.await()
     }
-    
+
     fun cancel(tempId: Long) {
         running.remove(tempId)?.cancel()
     }
 
     fun isRunning(tempId: Long): Boolean = running[tempId]?.isActive == true
-    
+
     private suspend fun send(
         chatId: Long,
         message: String,
         localId: Long,
         replyTo: MessageReplyPreview?,
-        silent: Boolean
+        silent: Boolean,
+        scheduledAt: Long?
     ): Result<Message> {
         var attempted = false
-        
+
         val result = RetryPolicy.retryForever(
             operation = "sendText#$localId",
             isPermanent = { it is SendCancelledException }
@@ -72,15 +74,15 @@ class SendMessageUseCase @Inject constructor(
             if (attempted && isCancelled(localId)) {
                 return@retryForever Result.failure(SendCancelledException(localId))
             }
-            
+
             attempted = true
-            
-            val attempt = chatRepository.sendMessage(chatId, message, localId, replyTo, silent)
-            
+
+            val attempt = chatRepository.sendMessage(chatId, message, localId, replyTo, silent, scheduledAt)
+
             if (attempt.isFailure) {
                 chatRepository.updateMessageStatus(localId, MessageStatus.SENDING)
             }
-            
+
             attempt
         }
         

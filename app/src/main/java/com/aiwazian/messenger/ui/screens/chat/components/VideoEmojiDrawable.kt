@@ -29,7 +29,7 @@ import java.lang.ref.WeakReference
 private const val FRAME_INTERVAL_MS = 66L
 private const val FRAME_STEP_US = 66_000L
 private const val RETRY_DELAY_MS = 2_000L
-private const val EMOJI_VIDEO_CACHE_DIRECTORY = "emoji_videos"
+const val EMOJI_VIDEO_CACHE_DIRECTORY = "emoji_videos"
 private const val EMOJI_VIDEO_MAX_AGE_MS = 6L * 60 * 60 * 1000
 private const val DOWNLOAD_BUFFER_SIZE = 8 * 1024
 private const val TAG = "VideoEmojiDrawable"

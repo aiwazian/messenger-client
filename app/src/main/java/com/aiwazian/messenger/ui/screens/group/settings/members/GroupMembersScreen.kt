@@ -148,7 +148,7 @@ fun GroupMembersScreen(
                 }
             }
         ) {
-            Text("Вы уверены, что хотите выгнать этого пользователя?")
+            Text(stringResource(R.string.group_member_kick_confirm_message))
         }
     }
     

@@ -14,6 +14,7 @@ import com.aiwazian.messenger.network.dto.StickerUploadInitRequestDto
 import com.aiwazian.messenger.network.dto.UpdateStickerPackRequestDto
 import com.aiwazian.messenger.utils.media.EncodedSticker
 import com.aiwazian.messenger.utils.media.MediaCompressionConfig
+import com.aiwazian.messenger.utils.media.StickerMediaPreheater
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -29,9 +30,10 @@ import javax.inject.Singleton
 class StickerRepository @Inject constructor(
     private val stickerApi: StickerApi,
     private val stickerDao: StickerDao,
+    private val mediaPreheater: StickerMediaPreheater,
     @param:FileClient private val fileClient: OkHttpClient
 ) {
-    
+
     suspend fun getCreatedPacks(): Result<List<StickerPack>> = withContext(Dispatchers.IO) {
         val result = request("created packs") {
             stickerApi.getCreatedPacks()
@@ -63,6 +65,10 @@ class StickerRepository @Inject constructor(
             result
         }
     
+    suspend fun getCachedInstalledPacks(): List<StickerPack> = withContext(Dispatchers.IO) {
+        cachedInstalledPacks()
+    }
+
     suspend fun getPack(packId: Long): Result<StickerPack> = withContext(Dispatchers.IO) {
         val result = request("pack $packId") {
             stickerApi.getPack(packId.toString())
@@ -273,6 +279,8 @@ class StickerRepository @Inject constructor(
         }
     
     private suspend fun cachePack(pack: StickerPack, sortOrder: Int? = null) {
+        mediaPreheater.preheatStickerPack(pack)
+
         val order = sortOrder ?: stickerDao.getPack(pack.id)?.sortOrder ?: 0
         
         stickerDao.upsertPacks(listOf(pack.toEntity(order)))

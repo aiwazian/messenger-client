@@ -143,9 +143,6 @@ class SettingsProfileViewModel @Inject constructor(
     
     fun uploadAvatar(uri: Uri) {
         viewModelScope.launch {
-            // Аватарка уходит сжатой и без метаданных, и сжать её нужно до выдачи
-            // формы: сервер подписывает её под заявленный размер и тип. Сжать не
-            // удалось — уйдёт исходник: без аватарки хуже, чем с тяжёлой.
             val avatarUri = imageCompressor.compressAvatar(uri) ?: uri
             
             userRepository.initUploadAvatar(

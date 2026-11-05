@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.group.create
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.usecase.CreateGroupUseCase
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
@@ -43,31 +44,21 @@ class CreateGroupViewModel @Inject constructor(
     
     fun createGroup() {
         viewModelScope.launch {
-            if (!checkValid()) {
-                _createEffect.emit(CreateGroupEffect.ShowSnackbar(UiText.DynamicString("Введите название группы")))
-                vibrationManager.vibrate(VibrationPattern.Error)
-                return@launch
-            }
-            
             _uiState.update { it.copy(isLoading = true) }
-            
+
             try {
                 createGroupUseCase(_uiState.value.name, _uiState.value.bio)
                     .onSuccess { createdId ->
                         _createEffect.emit(CreateGroupEffect.NavigateToChat(createdId))
                     }
                     .onFailure {
-                        _createEffect.emit(CreateGroupEffect.ShowSnackbar(UiText.DynamicString("Ошибка при создании группы")))
+                        _createEffect.emit(CreateGroupEffect.ShowSnackbar(UiText.StringResource(R.string.group_create_error)))
                         vibrationManager.vibrate(VibrationPattern.Error)
                     }
             } catch (_: Exception) {
-                _createEffect.emit(CreateGroupEffect.ShowSnackbar(UiText.DynamicString("Неизвестная ошибка")))
+                _createEffect.emit(CreateGroupEffect.ShowSnackbar(UiText.StringResource(R.string.common_unknown_error)))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }
-    }
-    
-    private fun checkValid(): Boolean {
-        return _uiState.value.name.isNotBlank()
     }
 }

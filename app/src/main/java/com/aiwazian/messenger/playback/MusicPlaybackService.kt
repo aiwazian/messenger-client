@@ -49,6 +49,7 @@ class MusicPlaybackService : MediaSessionService() {
 
         val sessionActivityIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("open_music_player", true)
         }
         val sessionActivityPendingIntent = PendingIntent.getActivity(
             this,

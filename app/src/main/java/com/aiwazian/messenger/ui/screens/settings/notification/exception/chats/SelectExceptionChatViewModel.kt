@@ -34,12 +34,7 @@ class SelectExceptionChatViewModel @Inject constructor(
     private var allChats: List<Chat> = emptyList()
     
     private var observeJob: Job? = null
-    
-    /**
-     * Список ограничен категорией, из которой открыт экран: исключение по чату
-     * другого типа в этот список потом не попадёт, и выглядело бы это так, будто
-     * добавление не сработало.
-     */
+
     fun init(category: ChatFolderCategory) {
         if (this.category == category) {
             return

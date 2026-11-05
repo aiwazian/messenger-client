@@ -20,14 +20,16 @@ class SendStickerUseCase @Inject constructor(
     suspend operator fun invoke(
         chatId: Long,
         stickerId: Long,
-        replyToId: Long? = null
+        replyToId: Long? = null,
+        scheduledAt: Long? = null
     ): Result<Message> = withContext(Dispatchers.IO) {
         try {
             val response = messageApi.sendStickerMessage(
                 chatId = chatId,
                 request = StickerMessageRequestDto(
                     stickerId = stickerId.toString(),
-                    replyToId = replyToId?.toString()
+                    replyToId = replyToId?.toString(),
+                    scheduledAt = scheduledAt
                 ),
                 socketId = ""
             )

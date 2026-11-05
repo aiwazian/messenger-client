@@ -152,6 +152,20 @@ internal fun ChatViewModel.observePinnedMessages() {
     }
 }
 
+internal fun ChatViewModel.observeScheduledMessages() {
+    val chatId = _uiState.value.chatId
+
+    viewModelScope.launch {
+        chatRepository.syncScheduledMessages(chatId)
+    }
+
+    viewModelScope.launch {
+        chatRepository.observeScheduledMessages(chatId).collect { messages ->
+            _uiState.update { it.copy(hasScheduledMessages = messages.isNotEmpty()) }
+        }
+    }
+}
+
 internal fun ChatViewModel.updateChatItems(messages: List<Message>) {
     lastMessages = messages
     val state = _uiState.value
@@ -347,15 +361,7 @@ private fun ChatViewModel.handleNewestMessage(messages: List<Message>, isAtLive:
 }
 
 internal fun ChatViewModel.loadUserName(userId: Long) {
-    if (_uiState.value.userNamesCache.containsKey(userId)) return
-    viewModelScope.launch {
-        try {
-            userRepository.getById(userId).collect { user ->
-                val name = "${user.firstName} ${user.lastName.orEmpty()}".trim()
-                _uiState.update { it.copy(userNamesCache = it.userNamesCache + (userId to name)) }
-            }
-        } catch (e: Exception) {
-            Log.e("ChatViewModel", "Error loading user name", e)
-        }
+    userNameCache.load(userId) { id, name ->
+        _uiState.update { it.copy(userNamesCache = it.userNamesCache + (id to name)) }
     }
 }

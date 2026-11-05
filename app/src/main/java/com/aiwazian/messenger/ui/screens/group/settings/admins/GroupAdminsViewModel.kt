@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** Список администраторов группы: доступен владельцу и админам с правом на управление. */
 @HiltViewModel
 class GroupAdminsViewModel @Inject constructor(
     private val groupAdminsRepository: GroupAdminsRepository,
@@ -42,7 +41,6 @@ class GroupAdminsViewModel @Inject constructor(
         loadAdmins()
     }
     
-    /** Своего администратора нельзя ни уволить, ни отредактировать: это решает сервер. */
     private fun loadCurrentUserId() {
         viewModelScope.launch {
             val me = userRepository.getMe().firstOrNull()
@@ -50,7 +48,6 @@ class GroupAdminsViewModel @Inject constructor(
         }
     }
     
-    /** Перезагружается при каждом возврате на экран, чтобы показать нового администратора. */
     fun loadAdmins() {
         if (_groupId == -1L) return
         

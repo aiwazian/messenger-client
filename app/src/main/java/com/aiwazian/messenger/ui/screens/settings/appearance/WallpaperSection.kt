@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionButtonDefaults
 import com.aiwazian.messenger.ui.screens.chat.components.MediaPickerBottomSheet
 import com.aiwazian.messenger.ui.screens.wallpaper.WallpaperViewModel
 
@@ -33,7 +34,7 @@ internal fun WallpaperSection(viewModel: WallpaperViewModel) {
         if (wallpaper != null) {
             SectionButton(
                 headlineText = stringResource(R.string.reset_wallpaper),
-                contentColor = MaterialTheme.colorScheme.error,
+                colors = SectionButtonDefaults.colors(contentColor = MaterialTheme.colorScheme.error),
                 onClick = viewModel::resetWallpaper
             )
         }

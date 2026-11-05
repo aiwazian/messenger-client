@@ -46,7 +46,6 @@ class AudioRecorderManager(private val context: Context) {
         try {
             recorder?.stop()
         } catch (e: RuntimeException) {
-            // Handle cases where stop() is called immediately after start()
             e.printStackTrace()
             currentFile?.delete()
             currentFile = null

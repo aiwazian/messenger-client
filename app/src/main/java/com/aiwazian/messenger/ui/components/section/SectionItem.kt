@@ -35,6 +35,8 @@ fun SectionItem(
     trailingIcon: (@Composable () -> Unit)? = null,
     trailingText: String? = null,
     contentColor: Color = Color.Unspecified,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    supportingTextColor: Color = Color.Unspecified,
     enabled: Boolean = true,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
@@ -49,7 +51,7 @@ fun SectionItem(
                 onLongClick = onLongClick
             ),
         shape = MaterialTheme.shapes.extraSmall,
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = containerColor,
         contentColor = if (contentColor.isUnspecified) {
             MaterialTheme.colorScheme.onSurface
         } else {
@@ -90,10 +92,10 @@ fun SectionItem(
                                     fontSize = 12.sp,
                                     lineHeight = 14.sp,
                                     fontWeight = FontWeight.Normal,
-                                    color = if (enabled) {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    } else {
-                                        Color.Unspecified
+                                    color = when {
+                                        !supportingTextColor.isUnspecified -> supportingTextColor
+                                        enabled -> MaterialTheme.colorScheme.onSurfaceVariant
+                                        else -> Color.Unspecified
                                     }
                                 )
                             }

@@ -44,10 +44,6 @@ interface ChatDao {
     @Query("UPDATE chats SET isPinned = :isPinned WHERE userId = :userId AND chatId IN (:chatIds)")
     suspend fun updatePinnedStatus(userId: Long, chatIds: List<Long>, isPinned: Boolean)
     
-    /**
-     * Пришло chat:unread — берём счётчик с сервера как есть.
-     * Сервер — единственный источник истины, иначе два устройства разъедутся.
-     */
     @Query(
         """
         UPDATE chats 

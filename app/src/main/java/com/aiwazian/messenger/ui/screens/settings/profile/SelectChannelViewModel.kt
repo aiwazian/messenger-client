@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.settings.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.utils.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -62,13 +63,13 @@ class SelectChannelViewModel @Inject constructor(
             }.onFailure {
                 _sideEffect.emit(
                     SelectChannelSideEffect.ShowSnackbar(
-                        UiText.DynamicString("Не удалось выбрать канал")
+                        UiText.StringResource(R.string.profile_channel_select_error)
                     )
                 )
             }
         }
     }
-    
+
     fun removeProfileChannel() {
         viewModelScope.launch {
             userRepository.removeProfileChannel().onSuccess {
@@ -77,7 +78,7 @@ class SelectChannelViewModel @Inject constructor(
             }.onFailure {
                 _sideEffect.emit(
                     SelectChannelSideEffect.ShowSnackbar(
-                        UiText.DynamicString("Не удалось скрыть канал")
+                        UiText.StringResource(R.string.profile_channel_hide_error)
                     )
                 )
             }

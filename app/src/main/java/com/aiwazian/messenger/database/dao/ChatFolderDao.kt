@@ -46,11 +46,6 @@ interface ChatFolderDao {
     @Query("DELETE FROM chat_folder_chats WHERE userId = :userId AND folderId = :folderId")
     suspend fun deleteFolderChats(userId: Long, folderId: Int)
     
-    /**
-     * Сервер отдаёт список папок целиком, поэтому ответ замещает папки этого
-     * аккаунта целиком: удалённая на другом устройстве папка исчезает сама.
-     * Кэш остальных учёток при этом не трогается.
-     */
     @Transaction
     suspend fun replaceFolders(
         userId: Long,

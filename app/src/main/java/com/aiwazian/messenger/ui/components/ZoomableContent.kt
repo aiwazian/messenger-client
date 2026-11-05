@@ -315,7 +315,6 @@ fun Modifier.zoomableGestures(
                     try {
                         tryAwaitRelease()
                     } catch (_: CancellationException) {
-                        // Жест перехватил зум или панорамирование
                     } finally {
                         if (isLongPressActive) {
                             isLongPressActive = false

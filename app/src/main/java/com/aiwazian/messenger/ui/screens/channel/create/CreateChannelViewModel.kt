@@ -6,6 +6,7 @@ package com.aiwazian.messenger.ui.screens.channel.create
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.usecase.CreateChannelUseCase
 import com.aiwazian.messenger.utils.UiText
 import com.aiwazian.messenger.utils.VibrationManager
@@ -43,31 +44,21 @@ class CreateChannelViewModel @Inject constructor(
     
     fun createChannel() {
         viewModelScope.launch {
-            if (!checkValid()) {
-                _createEffect.emit(CreateChannelEffect.ShowSnackbar(UiText.DynamicString("Заполните название канала")))
-                vibrationManager.vibrate(VibrationPattern.Error)
-                return@launch
-            }
-            
             _uiState.update { it.copy(isLoading = true) }
-            
+
             try {
                 createChannelUseCase(_uiState.value.name, _uiState.value.bio)
                     .onSuccess { createdId ->
                         _createEffect.emit(CreateChannelEffect.NavigateToChat(createdId))
                     }
                     .onFailure {
-                        _createEffect.emit(CreateChannelEffect.ShowSnackbar(UiText.DynamicString("Ошибка при создании канала")))
+                        _createEffect.emit(CreateChannelEffect.ShowSnackbar(UiText.StringResource(R.string.channel_create_error)))
                         vibrationManager.vibrate(VibrationPattern.Error)
                     }
             } catch (_: Exception) {
-                _createEffect.emit(CreateChannelEffect.ShowSnackbar(UiText.DynamicString("Неизвестная ошибка")))
+                _createEffect.emit(CreateChannelEffect.ShowSnackbar(UiText.StringResource(R.string.common_unknown_error)))
                 vibrationManager.vibrate(VibrationPattern.Error)
             }
         }
-    }
-    
-    private fun checkValid(): Boolean {
-        return _uiState.value.name.isNotBlank()
     }
 }

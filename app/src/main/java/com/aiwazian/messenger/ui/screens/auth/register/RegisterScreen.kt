@@ -64,6 +64,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.aiwazian.messenger.MainActivity
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.ui.app.AppSnackbar
+import com.aiwazian.messenger.ui.screens.auth.components.ConnectionSettingsTopBar
 import com.aiwazian.messenger.ui.screens.auth.components.InputTextField
 import com.aiwazian.messenger.ui.screens.auth.components.PasswordField
 import kotlinx.coroutines.Job
@@ -116,6 +117,9 @@ fun RegisterScreen(login: String, viewModel: RegisterViewModel = hiltViewModel()
         modifier = Modifier
             .fillMaxSize()
             .imePadding(),
+        topBar = {
+            ConnectionSettingsTopBar()
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = viewModel::signUp,

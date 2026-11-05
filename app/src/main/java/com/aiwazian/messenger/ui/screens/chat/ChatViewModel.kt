@@ -8,6 +8,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.Message
 import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.domain.CustomEmoji
@@ -15,6 +16,7 @@ import com.aiwazian.messenger.domain.MessageContact
 import com.aiwazian.messenger.domain.MessageReplyPreview
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.ConnectionState
+import com.aiwazian.messenger.playback.MusicAutoPauseController
 import com.aiwazian.messenger.playback.MusicPlayerManager
 import com.aiwazian.messenger.playback.VoicePlayerManager
 import com.aiwazian.messenger.repository.ChatPinnedMessagesRepository
@@ -30,9 +32,14 @@ import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.repository.WallpaperRepository
 import com.aiwazian.messenger.repository.channel.ChannelAdminsRepository
 import com.aiwazian.messenger.repository.group.GroupAdminsRepository
+import com.aiwazian.messenger.ui.app.GlobalBottomSheetManager
 import com.aiwazian.messenger.socket.OutgoingSocketEvent
 import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.socket.WebSocketClient
+import com.aiwazian.messenger.ui.screens.chat.common.MediaSettingsController
+import com.aiwazian.messenger.ui.screens.chat.common.MessageInteractionsController
+import com.aiwazian.messenger.ui.screens.chat.common.UserNameCache
+import com.aiwazian.messenger.ui.screens.chat.common.VoiceRecordingController
 import com.aiwazian.messenger.ui.screens.chat.components.ChatInputActions
 import com.aiwazian.messenger.ui.screens.chat.components.CustomEmojiText
 import com.aiwazian.messenger.ui.screens.chat.components.CustomEmojiTextPart
@@ -103,6 +110,7 @@ class ChatViewModel @Inject constructor(
     private val dataStoreManager: DataStoreManager,
     private val voicePlayerManager: VoicePlayerManager,
     private val musicPlayerManager: MusicPlayerManager,
+    private val musicAutoPauseController: MusicAutoPauseController,
     private val equalizerManager: EqualizerManager,
     internal val onlineUsersTracker: OnlineUsersTracker,
     internal val realtimeEventSyncService: RealtimeEventSyncService,
@@ -110,11 +118,15 @@ class ChatViewModel @Inject constructor(
     private val messageSendQueue: MessageSendQueue,
     internal val wallpaperRepository: WallpaperRepository,
     private val sendStickerUseCase: SendStickerUseCase,
-    private val sendContactUseCase: SendContactUseCase
+    private val sendContactUseCase: SendContactUseCase,
+    internal val globalBottomSheetManager: GlobalBottomSheetManager
 ) : ViewModel(), ChatInputActions {
 
+    fun showMusicPlayerSheet() {
+        globalBottomSheetManager.showMusicPlayerSheet()
+    }
+
     private val audioRecorderManager = AudioRecorderManager(context)
-    private var recordingTimerJob: Job? = null
     private var draftSaveJob: Job? = null
 
     internal val sendingJobs = mutableMapOf<Long, Job>()
@@ -133,6 +145,104 @@ class ChatViewModel @Inject constructor(
         voicePlayerManager = voicePlayerManager,
         musicPlayerManager = musicPlayerManager,
         equalizerManager = equalizerManager
+    )
+
+    internal val interactions = MessageInteractionsController(
+        scope = viewModelScope,
+        fileRepository = fileRepository,
+        chatRepository = chatRepository,
+        downloaderManager = downloaderManager,
+        fileHandler = fileHandler,
+        clipboardService = clipboardService,
+        emojiRepository = emojiRepository,
+        searchRepository = searchRepository,
+        onSnackbar = { text ->
+            viewModelScope.launch { _uiEffect.emit(ChatUiEffect.ShowSnackbar(text)) }
+        },
+        onOpenUrl = { url ->
+            viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenUrl(url)) }
+        },
+        onOpenEmail = { email ->
+            viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenEmail(email)) }
+        },
+        onOpenPhone = { phone ->
+            viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenPhone(phone)) }
+        },
+        onNavigateToChat = { targetChatId, scrollToMessageId ->
+            viewModelScope.launch {
+                _uiEffect.emit(
+                    ChatUiEffect.NavigateToChat(
+                        chatId = targetChatId,
+                        scrollToMessageId = scrollToMessageId
+                    )
+                )
+            }
+        },
+        onOpenMediaViewer = { file ->
+            val index = _uiState.value.mediaItems.indexOfFirst { it.fileId == file.fileId }
+            _uiState.update {
+                it.copy(
+                    showFullScreenViewer = true,
+                    initialMediaIndex = index.coerceAtLeast(0)
+                )
+            }
+        },
+        onOpenPdf = { message, file ->
+            viewModelScope.launch {
+                _uiEffect.emit(
+                    ChatUiEffect.OpenPdfViewer(
+                        chatId = message.chatId,
+                        messageId = message.id,
+                        fileId = file.fileId,
+                        fileName = file.name
+                    )
+                )
+            }
+        },
+        onPlayVoice = { file -> playbackConnector.handlePlayVoice(file) },
+        onPlayMusic = { file -> playbackConnector.handlePlayMusic(file) },
+        canCopyText = { copyPolicy.canCopyText() },
+        canSaveMedia = { copyPolicy.canSaveMedia },
+        isAttachmentAllowed = { attachment -> !attachment.viewOnce },
+        onSaveAllFailed = { vibrationManager.vibrate(VibrationPattern.Error) }
+    )
+
+    internal val voiceRecording = VoiceRecordingController(
+        scope = viewModelScope,
+        recorder = audioRecorderManager,
+        vibration = vibrationManager,
+        musicAutoPauseController = musicAutoPauseController,
+        isRecording = { _uiState.value.isRecording },
+        updateRecordingState = { isRecording, isLocked, durationMs, amplitude ->
+            _uiState.update {
+                it.copy(
+                    isRecording = isRecording,
+                    isRecordingLocked = isLocked,
+                    recordingDurationMs = durationMs,
+                    recordingAmplitude = amplitude
+                )
+            }
+        },
+        onRecordStartFailed = {
+            viewModelScope.launch {
+                _uiEffect.emit(
+                    ChatUiEffect.ShowSnackbar(
+                        UiText.StringResource(R.string.voice_recording_start_failed)
+                    )
+                )
+            }
+        },
+        onRecordedFile = { file -> sendFiles(listOf(file)) }
+    )
+
+    internal val userNameCache = UserNameCache(
+        scope = viewModelScope,
+        userRepository = userRepository
+    )
+
+    internal val mediaSettings = MediaSettingsController(
+        scope = viewModelScope,
+        dataStoreManager = dataStoreManager
     )
 
     internal var isFirstLoadDone = false
@@ -217,6 +327,7 @@ class ChatViewModel @Inject constructor(
         observeRealtimeEvents()
         observeMessages()
         observePinnedMessages()
+        observeScheduledMessages()
         viewModelScope.launch {
             chatRepository.reconcileViewOnceAttachments(chatId)
         }
@@ -252,19 +363,20 @@ class ChatViewModel @Inject constructor(
             autoDownloadVideos = dataStoreManager.getAutoDownloadVideos().firstOrNull() ?: true
             autoDownloadFiles = dataStoreManager.getAutoDownloadFiles().firstOrNull() ?: true
         }
-        viewModelScope.launch {
-            dataStoreManager.getVideoLooping().collect { isLooping ->
-                _uiState.update { it.copy(isVideoLooping = isLooping) }
-            }
+        mediaSettings.observeVideoLooping { isLooping ->
+            _uiState.update { it.copy(isVideoLooping = isLooping) }
         }
-        viewModelScope.launch {
-            dataStoreManager.getVideoPlaybackSpeed().collect { speed ->
-                _uiState.update { it.copy(videoPlaybackSpeed = speed) }
-            }
+        mediaSettings.observeVideoPlaybackSpeed { speed ->
+            _uiState.update { it.copy(videoPlaybackSpeed = speed) }
         }
         viewModelScope.launch {
             dataStoreManager.getKeyboardHeight().collect { height ->
                 _uiState.update { it.copy(keyboardHeight = height) }
+            }
+        }
+        viewModelScope.launch {
+            dataStoreManager.getRaiseToListen().collect { enabled ->
+                _uiState.update { it.copy(raiseToListen = enabled) }
             }
         }
     }
@@ -272,13 +384,7 @@ class ChatViewModel @Inject constructor(
     override fun onKeyboardHeightChanged(height: Float) {
         if (height <= 0f) return
 
-        viewModelScope.launch {
-            val savedHeight = dataStoreManager.getKeyboardHeight().first()
-
-            if (savedHeight != height) {
-                dataStoreManager.saveKeyboardHeight(height)
-            }
-        }
+        mediaSettings.persistKeyboardHeight(height)
     }
 
     private fun setupSocketConnectionObserver() {
@@ -342,6 +448,34 @@ class ChatViewModel @Inject constructor(
         changeText("")
         clearReply()
         onSendMessageInternal(text, replyTo, silent = true)
+    }
+
+    override fun onScheduleSendOptionsClicked() {
+        if (_uiState.value.editingMessageId != null) return
+
+        _uiState.update { it.copy(showScheduleSendSheet = true) }
+    }
+
+    override fun onSendScheduledClicked(scheduledAt: Long) {
+        _uiState.update { it.copy(showScheduleSendSheet = false) }
+
+        val text = _uiState.value.messageText.trim()
+        if (text.isEmpty()) return
+
+        val replyTo = _uiState.value.replyToMessage
+        changeText("")
+        clearReply()
+        onSendMessageInternal(text, replyTo, scheduledAt = scheduledAt)
+    }
+
+    fun dismissScheduleSendSheet() {
+        _uiState.update { it.copy(showScheduleSendSheet = false) }
+    }
+
+    override fun onScheduledMessagesClicked() {
+        viewModelScope.launch {
+            _uiEffect.emit(ChatUiEffect.OpenScheduledMessages(_uiState.value.chatId))
+        }
     }
 
     override fun sendFiles(uris: List<Uri>) {
@@ -421,71 +555,19 @@ class ChatViewModel @Inject constructor(
     }
 
     override fun startRecording() {
-        if (_uiState.value.isRecording) return
-        val file = audioRecorderManager.startRecording()
-        if (file != null) {
-            _uiState.update {
-                it.copy(
-                    isRecording = true,
-                    isRecordingLocked = false,
-                    recordingDurationMs = 0L,
-                    recordingAmplitude = 0f
-                )
-            }
-            recordingTimerJob?.cancel()
-            recordingTimerJob = viewModelScope.launch {
-                val startTime = System.currentTimeMillis()
-                while (true) {
-                    delay(100.milliseconds)
-                    val amplitude =
-                        (audioRecorderManager.getMaxAmplitude() / 32767f).coerceIn(0f, 1f)
-                    _uiState.update {
-                        it.copy(
-                            recordingDurationMs = System.currentTimeMillis() - startTime,
-                            recordingAmplitude = amplitude
-                        )
-                    }
-                }
-            }
-            vibrationManager.vibrate(VibrationPattern.TactileResponse)
-        } else {
-            viewModelScope.launch { _uiEffect.emit(ChatUiEffect.ShowSnackbar(UiText.DynamicString("Не удалось начать запись аудио"))) }
-        }
+        voiceRecording.start()
     }
 
     override fun lockRecording() {
-        if (_uiState.value.isRecording) {
-            _uiState.update { it.copy(isRecordingLocked = true) }
-            vibrationManager.vibrate(VibrationPattern.TactileResponse)
-        }
+        voiceRecording.lock()
     }
 
     override fun stopRecordingAndSend() {
-        if (!_uiState.value.isRecording) return
-        val file = audioRecorderManager.stopRecording()
-        recordingTimerJob?.cancel()
-        _uiState.update {
-            it.copy(
-                isRecording = false,
-                isRecordingLocked = false,
-                recordingDurationMs = 0L
-            )
-        }
-        if (file != null) sendFiles(listOf(Uri.fromFile(file)))
+        voiceRecording.stopAndDeliver()
     }
 
     override fun cancelRecording() {
-        if (!_uiState.value.isRecording) return
-        audioRecorderManager.cancelRecording()
-        recordingTimerJob?.cancel()
-        _uiState.update {
-            it.copy(
-                isRecording = false,
-                isRecordingLocked = false,
-                recordingDurationMs = 0L
-            )
-        }
-        vibrationManager.vibrate(VibrationPattern.TactileResponse)
+        voiceRecording.cancel()
     }
 
     override fun onMicrophonePermissionDenied() =
@@ -579,43 +661,19 @@ class ChatViewModel @Inject constructor(
     }
 
     fun copyToClipboard(message: Message) {
-        if (!copyPolicy.canCopyText()) return
+        interactions.copyText(message)
+    }
 
-        val text = message.text ?: return
-
-        viewModelScope.launch {
-            val emojiIds = CustomEmojiText.parse(text)
-                .filterIsInstance<CustomEmojiTextPart.Emoji>()
-                .map { it.emojiId }
-                .distinct()
-
-            val emojis = if (emojiIds.isEmpty()) {
-                emptyMap<Long, CustomEmoji>()
-            } else {
-                emojiRepository.resolveEmojis(emojiIds)
-                    .getOrNull()
-                    .orEmpty()
-                    .associateBy { it.id }
-            }
-
-            clipboardService.copy(
-                CustomEmojiText.toPlainText(text) { emojiId ->
-                    emojis[emojiId]?.emojis?.firstOrNull()
-                }
-            )
-        }
+    fun copyToClipboard(value: String) {
+        interactions.copyValue(value)
     }
 
     fun copyContactPhone(message: Message) {
-        val phone = message.contact?.firstPhone ?: return
-
-        viewModelScope.launch {
-            clipboardService.copy(phone)
-        }
+        interactions.copyContactPhone(message)
     }
 
     fun copyContactValue(value: String) {
-        clipboardService.copy(value)
+        interactions.copyValue(value)
     }
 
     fun vibrate() = vibrationManager.vibrate(VibrationPattern.Error)
@@ -626,10 +684,10 @@ class ChatViewModel @Inject constructor(
         _uiState.update { it.copy(selectedMessages = it.selectedMessages + message) }
 
     fun setVideoLooping(isLooping: Boolean) =
-        viewModelScope.launch { dataStoreManager.saveVideoLooping(isLooping) }
+        mediaSettings.saveVideoLooping(isLooping)
 
     fun setVideoPlaybackSpeed(speed: Float) =
-        viewModelScope.launch { dataStoreManager.saveVideoPlaybackSpeed(speed) }
+        mediaSettings.saveVideoPlaybackSpeed(speed)
 
     internal suspend fun markViewOnceViewed(chatId: Long, messageId: Long, fileId: String): Boolean {
         val key = viewOnceMediaKey(messageId, fileId)
@@ -677,11 +735,11 @@ class ChatViewModel @Inject constructor(
         _uiState.update { it.copy(showMicrophonePermissionSheet = false) }
 
     fun onEmailClicked(email: String) {
-        viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenEmail(email)) }
+        interactions.openEmail(email)
     }
 
     fun onPhoneClicked(phone: String) {
-        viewModelScope.launch { _uiEffect.emit(ChatUiEffect.OpenPhone(phone)) }
+        interactions.openPhone(phone)
     }
 
     fun dismissInviteBottomSheet() = _uiState.update {

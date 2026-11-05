@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -35,9 +35,10 @@ import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.app.AppSnackbar
 import com.aiwazian.messenger.ui.components.ProfileCard
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
+import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionButtonDefaults
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.section.SectionDescription
-import com.aiwazian.messenger.ui.components.section.SectionButton
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -82,7 +83,7 @@ fun SelectChannelScreen(viewModel: SelectChannelViewModel = hiltViewModel()) {
                 SectionButton(
                     headlineText = stringResource(R.string.hide_channel),
                     onClick = viewModel::removeProfileChannel,
-                    contentColor = MaterialTheme.colorScheme.error
+                    colors = SectionButtonDefaults.colors(contentColor = MaterialTheme.colorScheme.error)
                 )
             }
         }
@@ -119,7 +120,7 @@ fun SelectChannelScreen(viewModel: SelectChannelViewModel = hiltViewModel()) {
                         .padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    CircularWavyProgressIndicator()
                 }
             }
         }

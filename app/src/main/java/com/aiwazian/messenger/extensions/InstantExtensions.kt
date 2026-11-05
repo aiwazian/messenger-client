@@ -8,6 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.aiwazian.messenger.R
 import java.time.Instant
+import java.time.LocalDate
+import java.time.Period
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -18,6 +20,9 @@ fun Instant.toPrettyTime(): String {
         .withLocale(Locale.getDefault())
     return this.atZone(ZoneId.systemDefault()).format(formatter)
 }
+
+fun Instant.toAgeYears(): Int =
+    Period.between(atZone(ZoneId.systemDefault()).toLocalDate(), LocalDate.now()).years
 
 fun Instant.toPrettyDateWithYear(): String {
     val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy")

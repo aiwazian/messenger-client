@@ -91,6 +91,7 @@ data class ChatUiState(
     val isBlockedByThem: Boolean = false,
     val showBlockDialog: Boolean = false,
     val keyboardHeight: Float = DataStoreManager.DEFAULT_KEYBOARD_HEIGHT,
+    val raiseToListen: Boolean = true,
 
     val replyToMessage: MessageReplyPreview? = null,
 
@@ -128,7 +129,10 @@ data class ChatUiState(
     val isMessageSearchTotalExact: Boolean = true,
     val messageSearchIndex: Int = -1,
     val isMessageSearchListMode: Boolean = false,
-    val messageSearchSenders: Map<Long, MessageSearchSender> = emptyMap()
+    val messageSearchSenders: Map<Long, MessageSearchSender> = emptyMap(),
+
+    val hasScheduledMessages: Boolean = false,
+    val showScheduleSendSheet: Boolean = false
 ) {
 
     val copyPolicy: ChatCopyPolicy

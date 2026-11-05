@@ -15,6 +15,7 @@ import com.aiwazian.messenger.network.dto.EmojiUploadInitRequestDto
 import com.aiwazian.messenger.network.dto.UpdateEmojiPackRequestDto
 import com.aiwazian.messenger.utils.media.EncodedEmoji
 import com.aiwazian.messenger.utils.media.MediaCompressionConfig
+import com.aiwazian.messenger.utils.media.StickerMediaPreheater
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -30,9 +31,10 @@ import javax.inject.Singleton
 class EmojiRepository @Inject constructor(
     private val emojiApi: EmojiApi,
     private val emojiDao: EmojiDao,
+    private val mediaPreheater: StickerMediaPreheater,
     @param:FileClient private val fileClient: OkHttpClient
 ) {
-    
+
     suspend fun getCreatedPacks(): Result<List<EmojiPack>> = withContext(Dispatchers.IO) {
         val result = request("created emoji packs") {
             emojiApi.getCreatedPacks()
@@ -64,6 +66,10 @@ class EmojiRepository @Inject constructor(
             result
         }
     
+    suspend fun getCachedInstalledPacks(): List<EmojiPack> = withContext(Dispatchers.IO) {
+        cachedInstalledPacks()
+    }
+
     suspend fun getPack(packId: Long): Result<EmojiPack> = withContext(Dispatchers.IO) {
         val result = request("emoji pack $packId") {
             emojiApi.getPack(packId.toString())
@@ -128,8 +134,12 @@ class EmojiRepository @Inject constructor(
             if (loaded.isNotEmpty()) {
                 emojiDao.upsertEmojis(loaded.map { it.toEntity() })
             }
-            
-            Result.success(cached + loaded.map { it.toDomain() })
+
+            val loadedEmojis = loaded.map { it.toDomain() }
+
+            mediaPreheater.preheatEmojis(loadedEmojis)
+
+            Result.success(cached + loadedEmojis)
         }
     
     suspend fun isUsernameAvailable(username: String, packId: Long? = null): Result<Boolean> =
@@ -313,6 +323,8 @@ class EmojiRepository @Inject constructor(
         }
     
     private suspend fun cachePack(pack: EmojiPack, sortOrder: Int? = null) {
+        mediaPreheater.preheatEmojiPack(pack)
+
         val order = sortOrder ?: emojiDao.getPack(pack.id)?.sortOrder ?: 0
         
         emojiDao.upsertPacks(listOf(pack.toEntity(order)))

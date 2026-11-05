@@ -39,6 +39,7 @@ import com.aiwazian.messenger.ui.app.AppScaffold
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.components.section.SectionButton
+import com.aiwazian.messenger.ui.components.section.SectionButtonDefaults
 import com.aiwazian.messenger.ui.components.section.SectionContainer
 import com.aiwazian.messenger.ui.components.topBar.PageTopBar
 import com.aiwazian.messenger.utils.LottieAnimation
@@ -136,7 +137,7 @@ fun SettingsEmailConfigScreen(viewModel: EmailConfigViewModel = hiltViewModel())
             )
             SectionButton(
                 headlineText = stringResource(R.string.remove_email),
-                contentColor = MaterialTheme.colorScheme.error,
+                colors = SectionButtonDefaults.colors(contentColor = MaterialTheme.colorScheme.error),
                 onClick = viewModel::onDisableEmailClick
             )
         }

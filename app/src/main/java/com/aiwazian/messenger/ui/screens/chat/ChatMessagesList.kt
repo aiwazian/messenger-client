@@ -29,6 +29,7 @@ import com.aiwazian.messenger.domain.MessageAttachment
 import com.aiwazian.messenger.enums.ChatType
 import com.aiwazian.messenger.enums.FileAction
 import com.aiwazian.messenger.enums.MessageType
+import com.aiwazian.messenger.extensions.isPdfFile
 import com.aiwazian.messenger.ui.components.navigation.AppRoute
 import com.aiwazian.messenger.ui.components.navigation.LocalNavBackStack
 import com.aiwazian.messenger.ui.screens.chat.components.DateSeparatorItem
@@ -105,7 +106,7 @@ internal fun BoxScope.ChatMessagesList(
                         if (action == FileAction.CANCEL) {
                             onFileCancel(item.message.id)
                         } else {
-                            if (action == FileAction.OPEN) {
+                            if (action == FileAction.OPEN && !file.extension.isPdfFile()) {
                                 onMediaOpen(file)
                             }
                             chatViewModel.onFileAction(
@@ -137,6 +138,8 @@ internal fun BoxScope.ChatMessagesList(
                             )
                         }
                     } else null,
+                    isTextSelectionEnabled = copyPolicy.canCopyText(),
+                    onCopySelected = { chatViewModel.copyToClipboard(it) },
                     onReplyPreviewClick = {
                         chatViewModel.onReplyPreviewClicked(item.message)
                     },

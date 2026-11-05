@@ -41,7 +41,6 @@ class SelectFolderChatsViewModel @Inject constructor(
         }
     }
     
-    /** Экран открывается с уже выбранным составом папки, чтобы выбор не терялся. */
     fun restoreSelection(chatIds: List<Long>, categories: List<ChatFolderCategory>) {
         if (selectionRestored) {
             return

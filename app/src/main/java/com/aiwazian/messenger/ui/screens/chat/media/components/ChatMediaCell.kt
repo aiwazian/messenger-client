@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -38,6 +39,7 @@ import coil3.request.crossfade
 import coil3.video.VideoFrameDecoder
 import coil3.video.videoFrameMillis
 import com.aiwazian.messenger.domain.ChatMediaItem
+import com.aiwazian.messenger.ui.components.PhotoSpoilerEffect
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.ui.components.chatMediaKey
 import com.aiwazian.messenger.ui.components.mediaTransitionOrigin
@@ -137,6 +139,12 @@ fun ChatMediaCell(
                         .fillMaxSize()
                         .blur(if (item.spoiler) 18.dp else 0.dp)
                         .mediaTransitionOrigin(chatMediaKey(item.messageId, localUri))
+                )
+            }
+
+            if (item.spoiler) {
+                PhotoSpoilerEffect(
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 
