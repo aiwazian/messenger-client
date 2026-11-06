@@ -19,13 +19,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.aiwazian.messenger.R
 import com.aiwazian.messenger.domain.EmojiPack
 import com.aiwazian.messenger.ui.app.AppBottomSheet
+import com.aiwazian.messenger.ui.app.AppBottomSheetFooterActions
 import com.aiwazian.messenger.ui.app.AppDropdownMenu
 import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.components.AnimatedStickerImage
@@ -59,7 +58,19 @@ fun EmojiPackBottomSheet(
 ) {
     var isMenuExpanded by remember { mutableStateOf(false) }
     
-    AppBottomSheet(onDismissRequest = onDismiss) { padding ->
+    AppBottomSheet(onDismissRequest = onDismiss, stickyFooter = {
+        if (pack.isInstalled) {
+            AppBottomSheetFooterActions.DestructiveButton(
+                text = stringResource(R.string.emoji_delete),
+                onClick = onUninstall,
+            )
+        } else {
+            AppBottomSheetFooterActions.PrimaryButton(
+                text = stringResource(R.string.emoji_add),
+                onClick = onInstall
+            )
+        }
+    }) { padding ->
         Column(modifier = Modifier.padding(padding)) {
             Row(
                 modifier = Modifier
@@ -67,98 +78,75 @@ fun EmojiPackBottomSheet(
                     .padding(start = 12.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-            Text(
-                text = pack.name,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+                Text(
+                    text = pack.name,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
+                Box {
+                    IconButton(onClick = { isMenuExpanded = true }) {
+                        Icon(
+                            imageVector = Icons.Rounded.MoreVert,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    
+                    AppDropdownMenu(
+                        expanded = isMenuExpanded,
+                        onDismissRequest = { isMenuExpanded = false }) {
+                        AppDropdownMenuItem(
+                            text = stringResource(R.string.share),
+                            onClick = {
+                                isMenuExpanded = false
+                                onShare()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Rounded.Share,
+                                    contentDescription = null
+                                )
+                            })
+                        
+                        AppDropdownMenuItem(
+                            text = stringResource(R.string.copy_link),
+                            onClick = {
+                                isMenuExpanded = false
+                                onCopyLink()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Rounded.ContentCopy,
+                                    contentDescription = null
+                                )
+                            })
+                    }
+                }
+            }
             
-            Box {
-                IconButton(onClick = { isMenuExpanded = true }) {
-                    Icon(
-                        imageVector = Icons.Rounded.MoreVert,
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = EMOJI_CELL_MIN_SIZE),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = EMOJI_GRID_MAX_HEIGHT),
+                horizontalArrangement = Arrangement.spacedBy(EMOJI_GRID_SPACING),
+                verticalArrangement = Arrangement.spacedBy(EMOJI_GRID_SPACING)
+            ) {
+                items(
+                    items = pack.emojis,
+                    key = { it.id }) { emoji ->
+                    AnimatedStickerImage(
+                        data = emoji.url,
+                        isVideo = isVideoMediaUrl(emoji.url),
+                        cacheKey = emoji.fileId,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        modifier = Modifier.aspectRatio(1f)
                     )
                 }
-                
-                AppDropdownMenu(
-                    expanded = isMenuExpanded,
-                    onDismissRequest = { isMenuExpanded = false }) {
-                    AppDropdownMenuItem(
-                        text = stringResource(R.string.share),
-                        onClick = {
-                            isMenuExpanded = false
-                            onShare()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.Share,
-                                contentDescription = null
-                            )
-                        })
-                    
-                    AppDropdownMenuItem(
-                        text = stringResource(R.string.copy_link),
-                        onClick = {
-                            isMenuExpanded = false
-                            onCopyLink()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.ContentCopy,
-                                contentDescription = null
-                            )
-                        })
-                }
             }
-        }
-        
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = EMOJI_CELL_MIN_SIZE),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = EMOJI_GRID_MAX_HEIGHT),
-            horizontalArrangement = Arrangement.spacedBy(EMOJI_GRID_SPACING),
-            verticalArrangement = Arrangement.spacedBy(EMOJI_GRID_SPACING)
-        ) {
-            items(
-                items = pack.emojis,
-                key = { it.id }) { emoji ->
-                AnimatedStickerImage(
-                    data = emoji.url,
-                    isVideo = isVideoMediaUrl(emoji.url),
-                    cacheKey = emoji.fileId,
-                    contentDescription = null,
-                    modifier = Modifier.aspectRatio(1f)
-                )
-            }
-        }
-        
-        TextButton(
-            onClick = if (pack.isInstalled) onUninstall else onInstall,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            colors = ButtonDefaults.textButtonColors(
-                contentColor = if (pack.isInstalled) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.primary
-                },
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
-        ) {
-            Text(
-                text = if (pack.isInstalled) {
-                    stringResource(R.string.emoji_delete)
-                } else {
-                    stringResource(R.string.emoji_add)
-                }
-            )
         }
     }
-}
 }

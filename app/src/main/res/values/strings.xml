@@ -776,6 +776,8 @@
     <string name="selection_cut">Cut</string>
     <string name="selection_copy">Copy</string>
     <string name="selection_select_all">Select all</string>
+    <string name="input_method">Input method</string>
+    <string name="paste">Paste</string>
     <string name="format_bold">Bold</string>
     <string name="format_italic">Italic</string>
     <string name="format_underline">Underline</string>

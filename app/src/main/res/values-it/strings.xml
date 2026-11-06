@@ -776,6 +776,8 @@
     <string name="selection_cut">Taglia</string>
     <string name="selection_copy">Copia</string>
     <string name="selection_select_all">Seleziona tutto</string>
+    <string name="input_method">Metodo di immissione</string>
+    <string name="paste">Incolla</string>
     <string name="format_bold">Grassetto</string>
     <string name="format_italic">Corsivo</string>
     <string name="format_underline">Sottolineato</string>

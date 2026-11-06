@@ -779,6 +779,8 @@
     <string name="selection_cut">Couper</string>
     <string name="selection_copy">Copier</string>
     <string name="selection_select_all">Tout sélectionner</string>
+    <string name="input_method">Méthode de saisie</string>
+    <string name="paste">Coller</string>
     <string name="format_bold">Gras</string>
     <string name="format_italic">Italique</string>
     <string name="format_underline">Souligné</string>

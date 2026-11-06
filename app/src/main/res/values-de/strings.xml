@@ -768,6 +768,8 @@
     <string name="selection_cut">Ausschneiden</string>
     <string name="selection_copy">Kopieren</string>
     <string name="selection_select_all">Alles auswählen</string>
+    <string name="input_method">Eingabemethode</string>
+    <string name="paste">Einfügen</string>
     <string name="format_bold">Fett</string>
     <string name="format_italic">Kursiv</string>
     <string name="format_underline">Unterstrichen</string>
