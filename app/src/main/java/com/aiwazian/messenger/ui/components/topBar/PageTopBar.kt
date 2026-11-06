@@ -27,6 +27,7 @@ fun PageTopBar(
     modifier: Modifier = Modifier,
     title: @Composable () -> Unit = { },
     actions: List<TopBarAction> = emptyList(),
+    trailingActions: (@Composable () -> Unit)? = null,
     onBackClick: (() -> Unit)? = null,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(
         containerColor = Color.Transparent
@@ -84,6 +85,8 @@ fun PageTopBar(
                     }
                 }
             }
+            
+            trailingActions?.invoke()
         },
         colors = colors
     )

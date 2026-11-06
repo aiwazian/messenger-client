@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.plus
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -44,7 +45,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Forward
 import androidx.compose.material.icons.outlined.RemoveRedEye
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -80,6 +83,8 @@ import com.aiwazian.messenger.domain.ChatMediaItem
 import com.aiwazian.messenger.enums.AttachmentType
 import com.aiwazian.messenger.ui.animations.expressiveScaleIn
 import com.aiwazian.messenger.ui.animations.expressiveScaleOut
+import com.aiwazian.messenger.ui.app.AppDropdownMenu
+import com.aiwazian.messenger.ui.app.AppDropdownMenuItem
 import com.aiwazian.messenger.ui.app.AppPrimaryScrollableTabRow
 import com.aiwazian.messenger.ui.app.AppTab
 import com.aiwazian.messenger.ui.components.BottomBarScrim
@@ -163,6 +168,15 @@ fun ChatMediaScreen(
     val resolvedChatName = chatName?.takeIf { it.isNotBlank() }
     val counts = uiState.counts
     
+    var showPhotos by remember { mutableStateOf(true) }
+    var showVideos by remember { mutableStateOf(true) }
+    
+    val visibleMedia = remember(uiState.media, showPhotos, showVideos) {
+        filterChatMedia(uiState.media, showPhotos, showVideos)
+    }
+    
+    val isMediaPageSelected = tabs.getOrNull(pagerState.currentPage) == ChatMediaTab.MEDIA
+    
     val selectionCount = uiState.selectedAttachmentIds.size + uiState.selectedContactMessageIds.size
     val hasSelection = selectionCount > 0
     val selectedMessageId: Long? = when {
@@ -206,12 +220,32 @@ fun ChatMediaScreen(
                             }
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                    trailingActions = if (isMediaPageSelected && !hasSelection) {
+                        {
+                            ChatMediaFilterMenu(
+                                showPhotos = showPhotos,
+                                showVideos = showVideos,
+                                onTogglePhotos = {
+                                    if (showVideos || !showPhotos) {
+                                        showPhotos = !showPhotos
+                                    }
+                                },
+                                onToggleVideos = {
+                                    if (showPhotos || !showVideos) {
+                                        showVideos = !showVideos
+                                    }
+                                }
+                            )
+                        }
+                    } else {
+                        null
+                    }
                 )
                 
                 AnimatedContent(
                     targetState = hasSelection,
-                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    transitionSpec = { expressiveScaleIn togetherWith expressiveScaleOut },
                     label = "chat_media_selection_bar"
                 ) { selecting ->
                     if (selecting) {
@@ -281,7 +315,7 @@ fun ChatMediaScreen(
                 ) { page ->
                     when (tabs.getOrNull(page)) {
                         ChatMediaTab.MEDIA -> MediaTab(
-                            items = uiState.media,
+                            items = visibleMedia,
                             selectedIds = uiState.selectedAttachmentIds,
                             onItemClick = viewModel::onMediaClick,
                             onToggleSelection = viewModel::toggleAttachmentSelection,
@@ -424,6 +458,77 @@ fun ChatMediaScreen(
                 onHideCaptionClick = viewModel::toggleForwardHideCaption
             )
         )
+    }
+}
+
+private fun filterChatMedia(
+    items: List<ChatMediaItem>,
+    showPhotos: Boolean,
+    showVideos: Boolean
+): List<ChatMediaItem> {
+    if (showPhotos && showVideos) {
+        return items
+    }
+    
+    return items.filter { item ->
+        when (item.type) {
+            AttachmentType.VIDEO -> showVideos
+            else -> showPhotos
+        }
+    }
+}
+
+@Composable
+private fun ChatMediaFilterMenu(
+    showPhotos: Boolean,
+    showVideos: Boolean,
+    onTogglePhotos: () -> Unit,
+    onToggleVideos: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Icon(
+                imageVector = Icons.Rounded.MoreVert,
+                contentDescription = null
+            )
+        }
+        
+        AppDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            AppDropdownMenuItem(
+                text = stringResource(R.string.photos),
+                leadingIcon = { ChatMediaFilterCheckmark(showPhotos) },
+                enabled = !showPhotos || showVideos,
+                onClick = onTogglePhotos
+            )
+            
+            AppDropdownMenuItem(
+                text = stringResource(R.string.videos),
+                leadingIcon = { ChatMediaFilterCheckmark(showVideos) },
+                enabled = !showVideos || showPhotos,
+                onClick = onToggleVideos
+            )
+        }
+    }
+}
+
+@Composable
+private fun ChatMediaFilterCheckmark(isVisible: Boolean) {
+    Box(
+        modifier = Modifier.size(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (isVisible) {
+            Icon(
+                imageVector = Icons.Rounded.Check,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }
 
