@@ -14,6 +14,7 @@ import android.util.TypedValue
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
@@ -30,6 +31,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.viewinterop.AndroidView
@@ -38,6 +40,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.aiwazian.messenger.domain.CustomEmoji
 import com.aiwazian.messenger.extensions.findActivity
+import kotlin.math.roundToInt
 
 @Composable
 internal fun CustomEmojiTextField(
@@ -49,6 +52,7 @@ internal fun CustomEmojiTextField(
     onReceiveUris: ((List<Uri>) -> Unit)? = null,
     onViewReady: (EditText) -> Unit = {},
     onSelectionChanged: ((IntRect?) -> Unit)? = null,
+    onEmptySpaceLongPress: ((IntOffset) -> Unit)? = null,
     isFormattingEnabled: Boolean = false
 ) {
     val density = LocalDensity.current
@@ -60,6 +64,7 @@ internal fun CustomEmojiTextField(
     val currentOnReceiveUris by rememberUpdatedState(onReceiveUris)
     val currentOnViewReady by rememberUpdatedState(onViewReady)
     val currentOnSelectionChanged by rememberUpdatedState(onSelectionChanged)
+    val currentOnEmptySpaceLongPress by rememberUpdatedState(onEmptySpaceLongPress)
     val currentIsFormattingEnabled by rememberUpdatedState(isFormattingEnabled)
     
     val textColor = MaterialTheme.colorScheme.onSurface.toArgb()
@@ -221,6 +226,7 @@ internal fun CustomEmojiTextField(
             view.textSelectHandleRight?.mutate()?.setTint(cursorColor)
             view.isSelectionToolbarSuppressed = currentOnSelectionChanged != null
             view.onSelectionBoundsChanged = currentOnSelectionChanged
+            view.onEmptySpaceLongPress = currentOnEmptySpaceLongPress
         })
 }
 
@@ -243,12 +249,86 @@ internal fun hideKeyboardKeepFocus(view: EditText) {
 internal class MessageInputEditText(context: Context) : EditText(context) {
     var onSelectionBoundsChanged: ((IntRect?) -> Unit)? = null
 
+    var onEmptySpaceLongPress: ((IntOffset) -> Unit)? = null
+
     var isSelectionToolbarSuppressed = false
+
+    private var lastDownX = 0f
+
+    private var lastDownY = 0f
 
     init {
         addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             reportSelectionBounds()
         }
+
+        setOnLongClickListener {
+            when {
+                isPositionOnText(lastDownX, lastDownY) -> false
+
+                onEmptySpaceLongPress != null -> {
+                    val layoutOffset = getOffsetForPosition(lastDownX, lastDownY)
+                    val targetOffset = if (layoutOffset in 0..text.length) layoutOffset else selectionEnd
+
+                    setSelection(targetOffset)
+
+                    val currentLayout = layout
+                    val location = IntArray(2)
+
+                    getLocationInWindow(location)
+
+                    val anchor = if (currentLayout != null) {
+                        val line = currentLayout.getLineForOffset(targetOffset)
+
+                        IntOffset(
+                            x = (location[0] + totalPaddingLeft +
+                                    currentLayout.getPrimaryHorizontal(targetOffset) - scrollX).roundToInt(),
+                            y = location[1] + totalPaddingTop +
+                                    currentLayout.getLineTop(line) - scrollY
+                        )
+                    } else {
+                        IntOffset(
+                            x = (lastDownX + location[0]).roundToInt(),
+                            y = (lastDownY + location[1]).roundToInt()
+                        )
+                    }
+
+                    onEmptySpaceLongPress?.invoke(anchor)
+
+                    true
+                }
+
+                else -> false
+            }
+        }
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+            lastDownX = event.x
+            lastDownY = event.y
+        }
+
+        return super.onTouchEvent(event)
+    }
+
+    private fun isPositionOnText(x: Float, y: Float): Boolean {
+        val currentLayout = layout ?: return false
+
+        if (currentLayout.lineCount == 0) {
+            return false
+        }
+
+        val coordinateY = (y - totalPaddingTop)
+            .coerceAtLeast(0f)
+            .coerceAtMost((height - totalPaddingBottom - 1).coerceAtLeast(0).toFloat()) + scrollY
+        val localX = (x - totalPaddingLeft)
+            .coerceAtLeast(0f)
+            .coerceAtMost((width - totalPaddingRight - 1).coerceAtLeast(0).toFloat()) + scrollX
+        val line = currentLayout.getLineForVertical(coordinateY.toInt())
+            .coerceIn(0, currentLayout.lineCount - 1)
+
+        return localX >= currentLayout.getLineLeft(line) && localX <= currentLayout.getLineRight(line)
     }
 
     override fun startActionMode(callback: ActionMode.Callback?, type: Int): ActionMode? {

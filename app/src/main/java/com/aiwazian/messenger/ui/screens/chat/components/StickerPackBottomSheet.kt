@@ -107,94 +107,96 @@ fun StickerPackBottomSheet(
                 onClick = onInstall
             )
         }
-    }) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 12.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = pack.name,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            
-            Box {
-                IconButton(onClick = { isMenuExpanded = true }) {
-                    Icon(
-                        imageVector = Icons.Rounded.MoreVert,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+    }) { innerPadding ->
+        Column(Modifier.padding(innerPadding)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = pack.name,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 
-                AppDropdownMenu(
-                    expanded = isMenuExpanded,
-                    onDismissRequest = { isMenuExpanded = false }) {
-                    AppDropdownMenuItem(
-                        text = stringResource(R.string.share),
-                        onClick = {
-                            isMenuExpanded = false
-                            onShare()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.Share,
-                                contentDescription = null
-                            )
-                        })
+                Box {
+                    IconButton(onClick = { isMenuExpanded = true }) {
+                        Icon(
+                            imageVector = Icons.Rounded.MoreVert,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     
-                    AppDropdownMenuItem(
-                        text = stringResource(R.string.copy_link),
-                        onClick = {
-                            isMenuExpanded = false
-                            onCopyLink()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Rounded.ContentCopy,
-                                contentDescription = null
-                            )
+                    AppDropdownMenu(
+                        expanded = isMenuExpanded,
+                        onDismissRequest = { isMenuExpanded = false }) {
+                        AppDropdownMenuItem(
+                            text = stringResource(R.string.share),
+                            onClick = {
+                                isMenuExpanded = false
+                                onShare()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Rounded.Share,
+                                    contentDescription = null
+                                )
+                            })
+                        
+                        AppDropdownMenuItem(
+                            text = stringResource(R.string.copy_link),
+                            onClick = {
+                                isMenuExpanded = false
+                                onCopyLink()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Rounded.ContentCopy,
+                                    contentDescription = null
+                                )
+                            })
+                    }
+                }
+            }
+            
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(SHEET_GRID_COLUMNS),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = SHEET_GRID_MAX_HEIGHT),
+                contentPadding = PaddingValues(horizontal = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                items(
+                    items = pack.stickers,
+                    key = { it.id }) { sticker ->
+                    StickerGridCell(
+                        sticker = sticker,
+                        isHidden = focusedSticker?.id == sticker.id,
+                        onClick = { bounds ->
+                            focusedBounds = bounds
+                            focusedSticker = sticker
                         })
                 }
             }
         }
         
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(SHEET_GRID_COLUMNS),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = SHEET_GRID_MAX_HEIGHT),
-            contentPadding = PaddingValues(horizontal = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            items(
-                items = pack.stickers,
-                key = { it.id }) { sticker ->
-                StickerGridCell(
-                    sticker = sticker,
-                    isHidden = focusedSticker?.id == sticker.id,
-                    onClick = { bounds ->
-                        focusedBounds = bounds
-                        focusedSticker = sticker
-                    })
-            }
+        focusedSticker?.let { sticker ->
+            StickerFocusOverlay(
+                sticker = sticker,
+                origin = focusedBounds,
+                onClose = { focusedSticker = null },
+                onSend = {
+                    focusedSticker = null
+                    onSendSticker(sticker)
+                })
         }
-    }
-    
-    focusedSticker?.let { sticker ->
-        StickerFocusOverlay(
-            sticker = sticker,
-            origin = focusedBounds,
-            onClose = { focusedSticker = null },
-            onSend = {
-                focusedSticker = null
-                onSendSticker(sticker)
-            })
     }
 }
 

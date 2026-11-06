@@ -768,6 +768,8 @@
     <string name="selection_cut">Klipp ut</string>
     <string name="selection_copy">Kopiera</string>
     <string name="selection_select_all">Markera allt</string>
+    <string name="input_method">Inmatningsmetod</string>
+    <string name="paste">Klistra in</string>
     <string name="format_bold">Fet</string>
     <string name="format_italic">Kursiv</string>
     <string name="format_underline">Understruken</string>

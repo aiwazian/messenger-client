@@ -1,7 +1,11 @@
 package com.aiwazian.messenger.ui.screens.chat.components
 
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.SystemClock
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -23,9 +27,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -144,6 +146,7 @@ import com.aiwazian.messenger.ui.screens.chat.ChatUiState
 import com.aiwazian.messenger.utils.DialogController
 import com.aiwazian.messenger.utils.MessageFormatAction
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -179,6 +182,28 @@ fun ChatInputSection(
     
     var selectionBounds by remember { mutableStateOf<IntRect?>(null) }
     var isFormattingMenuShown by remember { mutableStateOf(false) }
+    var inputMethodMenuPoint by remember { mutableStateOf<IntOffset?>(null) }
+    var isSelectionDragging by remember { mutableStateOf(false) }
+    var lastSelectionUpdateAt by remember { mutableStateOf(0L) }
+    
+    LaunchedEffect(selectionBounds) {
+        if (selectionBounds == null) {
+            isSelectionDragging = false
+            
+            return@LaunchedEffect
+        }
+        
+        val now = SystemClock.elapsedRealtime()
+        
+        if (now - lastSelectionUpdateAt < SELECTION_DRAG_DETECT_MS) {
+            isSelectionDragging = true
+        }
+        
+        lastSelectionUpdateAt = now
+        delay(SELECTION_TOOLBAR_RESHOW_DELAY_MS)
+        
+        isSelectionDragging = false
+    }
     
     val panelPagerState = rememberPagerState(
         initialPage = EMOJI_PANEL_PAGE, pageCount = { PANEL_PAGE_COUNT })
@@ -327,6 +352,7 @@ fun ChatInputSection(
                                 onInputViewReady = onInputViewReady,
                                 onResolveEmoji = customEmojiViewModel::resolveEmoji,
                                 onSelectionChanged = onSelectionBoundsChanged,
+                                onInputMethodMenu = { inputMethodMenuPoint = it },
                                 sendIcon = sendIcon
                             )
                             
@@ -357,6 +383,7 @@ fun ChatInputSection(
                                 onInputViewReady = onInputViewReady,
                                 onResolveEmoji = customEmojiViewModel::resolveEmoji,
                                 onSelectionChanged = onSelectionBoundsChanged,
+                                onInputMethodMenu = { inputMethodMenuPoint = it },
                                 sendIcon = sendIcon
                             )
                         } else {
@@ -438,6 +465,7 @@ fun ChatInputSection(
                                     onInputViewReady = onInputViewReady,
                                     onResolveEmoji = customEmojiViewModel::resolveEmoji,
                                     onSelectionChanged = onSelectionBoundsChanged,
+                                    onInputMethodMenu = { inputMethodMenuPoint = it },
                                     sendIcon = sendIcon
                                 )
                             }
@@ -545,15 +573,17 @@ fun ChatInputSection(
         }
         
         selectionBounds?.let { bounds ->
-            MessageSelectionToolbar(
-                selectionBoundsProvider = { selectionBounds ?: bounds },
-                isFormattingShown = isFormattingMenuShown,
-                onSelectAllClick = { messageInputView?.selectAll() },
-                onCutClick = onCutSelectionClicked,
-                onCopyClick = onCopySelectionClicked,
-                onMoreClick = { isFormattingMenuShown = true },
-                onFormatAction = onFormatAction,
-                onBackClick = { isFormattingMenuShown = false })
+            if (!isSelectionDragging) {
+                MessageSelectionToolbar(
+                    selectionBoundsProvider = { selectionBounds ?: bounds },
+                    isFormattingShown = isFormattingMenuShown,
+                    onSelectAllClick = { messageInputView?.selectAll() },
+                    onCutClick = onCutSelectionClicked,
+                    onCopyClick = onCopySelectionClicked,
+                    onMoreClick = { isFormattingMenuShown = true },
+                    onFormatAction = onFormatAction,
+                    onBackClick = { isFormattingMenuShown = false })
+            }
         }
     }
     
@@ -564,6 +594,98 @@ fun ChatInputSection(
             selectionBounds = null
         }
     }
+    
+    inputMethodMenuPoint?.let { point ->
+        InputMethodMenu(
+            pressPoint = point,
+            onPasteClick = {
+                messageInputView?.onTextContextMenuItem(android.R.id.paste)
+            },
+            onDismiss = { inputMethodMenuPoint = null }
+        )
+    }
+    
+    BackHandler(enabled = inputMethodMenuPoint != null) {
+        inputMethodMenuPoint = null
+    }
+}
+
+@Composable
+private fun InputMethodMenu(
+    pressPoint: IntOffset,
+    onPasteClick: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val density = LocalDensity.current
+    val gapPx = with(density) { SELECTION_MENU_GAP_DP.dp.roundToPx() }
+    val marginPx = with(density) { SELECTION_MENU_MARGIN_DP.dp.roundToPx() }
+    val clipboardManager =
+        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val canPaste = clipboardManager.hasPrimaryClip() &&
+            (clipboardManager.primaryClipDescription?.mimeTypeCount ?: 0) > 0
+    
+    Popup(
+        popupPositionProvider = WindowTopLeftPositionProvider,
+        properties = PopupProperties(focusable = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures { onDismiss() }
+                }
+        )
+    }
+    
+    Popup(
+        popupPositionProvider = SelectionMenuPositionProvider(
+            selectionBounds = { IntRect(pressPoint, IntSize.Zero) },
+            gapPx = gapPx,
+            marginPx = marginPx
+        ),
+        properties = PopupProperties(focusable = false)
+    ) {
+        Box(modifier = Modifier.padding(SELECTION_MENU_SHADOW_PADDING_DP.dp)) {
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                shadowElevation = SELECTION_MENU_SHADOW_ELEVATION_DP.dp
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (canPaste) {
+                        SelectionActionItem(
+                            labelRes = R.string.paste,
+                            onClick = {
+                                onPasteClick()
+                                onDismiss()
+                            }
+                        )
+                    }
+                    
+                    SelectionActionItem(
+                        labelRes = R.string.input_method,
+                        onClick = {
+                            val manager = context.getSystemService(Context.INPUT_METHOD_SERVICE)
+                                    as InputMethodManager
+                            
+                            manager.showInputMethodPicker()
+                            onDismiss()
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+private object WindowTopLeftPositionProvider : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize
+    ) = IntOffset.Zero
 }
 
 @Composable
@@ -581,7 +703,8 @@ private fun InputMessage(
     onShowStickerPanel: () -> Unit,
     onInputViewReady: (EditText) -> Unit,
     onResolveEmoji: suspend (Long) -> CustomEmoji?,
-    onSelectionChanged: (IntRect?) -> Unit
+    onSelectionChanged: (IntRect?) -> Unit,
+    onInputMethodMenu: (IntOffset) -> Unit
 ) {
     var attachmentModal by remember { mutableStateOf(DialogController()) }
     var micTranslationX by remember { mutableFloatStateOf(0f) }
@@ -793,6 +916,7 @@ private fun InputMessage(
                             onInputViewReady(view)
                         },
                         onSelectionChanged = onSelectionChanged,
+                        onEmptySpaceLongPress = onInputMethodMenu,
                         isFormattingEnabled = true
                     )
                     
@@ -1070,27 +1194,17 @@ private fun MessageSelectionToolbar(
                 color = MaterialTheme.colorScheme.surfaceContainer,
                 shadowElevation = SELECTION_MENU_SHADOW_ELEVATION_DP.dp
             ) {
-                AnimatedContent(
-                    targetState = isFormattingShown, transitionSpec = {
-                        if (targetState) {
-                            slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
-                        } else {
-                            slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
-                        }
-                    }, label = "selection_menu_content", contentAlignment = Alignment.BottomEnd
-                ) { formatting ->
-                    if (formatting) {
-                        SelectionFormatItems(
-                            onFormatAction = onFormatAction, onBackClick = onBackClick
-                        )
-                    } else {
-                        SelectionActionItems(
-                            onSelectAllClick = onSelectAllClick,
-                            onCutClick = onCutClick,
-                            onCopyClick = onCopyClick,
-                            onMoreClick = onMoreClick
-                        )
-                    }
+                if (isFormattingShown) {
+                    SelectionFormatItems(
+                        onFormatAction = onFormatAction, onBackClick = onBackClick
+                    )
+                } else {
+                    SelectionActionItems(
+                        onSelectAllClick = onSelectAllClick,
+                        onCutClick = onCutClick,
+                        onCopyClick = onCopyClick,
+                        onMoreClick = onMoreClick
+                    )
                 }
             }
         }
@@ -1104,7 +1218,11 @@ private fun SelectionActionItems(
     onCopyClick: () -> Unit,
     onMoreClick: () -> Unit
 ) {
+    val density = LocalDensity.current
+    var panelHeightPx by remember { mutableIntStateOf(0) }
+    
     Row(
+        modifier = Modifier.onSizeChanged { size -> panelHeightPx = size.height },
         verticalAlignment = Alignment.CenterVertically
     ) {
         SelectionActionItem(
@@ -1121,6 +1239,7 @@ private fun SelectionActionItems(
         
         Box(
             modifier = Modifier
+                .height(with(density) { panelHeightPx.toDp() })
                 .aspectRatio(1f)
                 .clickable(onClick = onMoreClick),
             contentAlignment = Alignment.Center
@@ -1128,7 +1247,7 @@ private fun SelectionActionItems(
             Icon(
                 imageVector = Icons.Rounded.MoreVert,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -1161,7 +1280,7 @@ private fun SelectionFormatItems(
         Column(
             modifier = Modifier
                 .width(IntrinsicSize.Max)
-                .heightIn(max = 240.dp)
+                .heightIn(max = 260.dp)
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = with(density) { backAreaHeightPx.toDp() })
         ) {
@@ -1226,7 +1345,7 @@ private fun SelectionFormatBackButton(
             .clickable(onClick = onClick)
     ) {
         Row(
-            modifier = Modifier.padding(vertical = 8.dp, horizontal = 14.dp),
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1281,3 +1400,5 @@ private const val SELECTION_MENU_GAP_DP = 4
 private const val SELECTION_MENU_MARGIN_DP = 8
 private const val SELECTION_MENU_SHADOW_PADDING_DP = 8
 private const val SELECTION_MENU_SHADOW_ELEVATION_DP = 6
+private const val SELECTION_DRAG_DETECT_MS = 120L
+private const val SELECTION_TOOLBAR_RESHOW_DELAY_MS = 250L

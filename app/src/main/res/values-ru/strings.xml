@@ -808,6 +808,8 @@
     <string name="selection_cut">Вырезать</string>
     <string name="selection_copy">Копировать</string>
     <string name="selection_select_all">Выделить всё</string>
+    <string name="input_method">Способ ввода</string>
+    <string name="paste">Вставить</string>
     <string name="format_bold">Жирный</string>
     <string name="format_italic">Курсив</string>
     <string name="format_underline">Подчеркнутый</string>
