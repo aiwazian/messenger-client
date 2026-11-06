@@ -253,7 +253,7 @@ internal class MessageInputEditText(context: Context) : EditText(context) {
 
     override fun startActionMode(callback: ActionMode.Callback?, type: Int): ActionMode? {
         if (isSelectionToolbarSuppressed && type == ActionMode.TYPE_FLOATING && hasSelection()) {
-            return EmptyActionMode(context)
+            return EmptyActionMode(context, callback)
         }
 
         return super.startActionMode(callback, type)
@@ -315,9 +315,13 @@ internal class MessageInputEditText(context: Context) : EditText(context) {
     }
 }
 
-private class EmptyActionMode(context: Context) : ActionMode() {
+private class EmptyActionMode(
+    context: Context,
+    private val callback: ActionMode.Callback?
+) : ActionMode() {
     private val emptyMenu = PopupMenu(context, null).menu
     private val menuInflater = MenuInflater(context)
+    private var isDestroyed = false
 
     override fun setTitle(title: CharSequence) = Unit
 
@@ -331,7 +335,15 @@ private class EmptyActionMode(context: Context) : ActionMode() {
 
     override fun invalidate() = Unit
 
-    override fun finish() = Unit
+    override fun finish() {
+        if (isDestroyed) {
+            return
+        }
+
+        isDestroyed = true
+
+        callback?.onDestroyActionMode(this)
+    }
 
     override fun getMenu(): Menu = emptyMenu
 

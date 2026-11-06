@@ -39,6 +39,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -91,7 +92,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -269,9 +269,7 @@ fun ChatInputSection(
     val onFormatAction: (MessageFormatAction) -> Unit = { action ->
         messageInputView?.let { view ->
             val applied = applyMessageFormatAction(
-                editText = view,
-                action = action,
-                onTextChange = actions::changeText
+                editText = view, action = action, onTextChange = actions::changeText
             )
             
             if (applied) {
@@ -1079,7 +1077,7 @@ private fun MessageSelectionToolbar(
                         } else {
                             slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
                         }
-                    }, label = "selection_menu_content", contentAlignment = Alignment.BottomCenter
+                    }, label = "selection_menu_content", contentAlignment = Alignment.BottomEnd
                 ) { formatting ->
                     if (formatting) {
                         SelectionFormatItems(
@@ -1118,12 +1116,14 @@ private fun SelectionActionItems(
         )
         
         SelectionActionItem(
-            labelRes = R.string.selection_copy,
-            onClick = onCopyClick
+            labelRes = R.string.selection_copy, onClick = onCopyClick
         )
         
-        IconButton(
-            onClick = onMoreClick, modifier = Modifier.size(36.dp), shape = RectangleShape
+        Box(
+            modifier = Modifier
+                .aspectRatio(1f)
+                .clickable(onClick = onMoreClick),
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Rounded.MoreVert,
@@ -1161,6 +1161,7 @@ private fun SelectionFormatItems(
         Column(
             modifier = Modifier
                 .width(IntrinsicSize.Max)
+                .heightIn(max = 240.dp)
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = with(density) { backAreaHeightPx.toDp() })
         ) {
@@ -1169,46 +1170,40 @@ private fun SelectionFormatItems(
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold
                 ),
-                onClick = { onFormatAction(MessageFormatAction.ToggleBold) }
-            )
+                onClick = { onFormatAction(MessageFormatAction.ToggleBold) })
             
             SelectionFormatItem(
                 labelRes = R.string.format_italic,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
                     fontStyle = FontStyle.Italic
                 ),
-                onClick = { onFormatAction(MessageFormatAction.ToggleItalic) }
-            )
+                onClick = { onFormatAction(MessageFormatAction.ToggleItalic) })
             
             SelectionFormatItem(
                 labelRes = R.string.format_underline,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
                     textDecoration = TextDecoration.Underline
                 ),
-                onClick = { onFormatAction(MessageFormatAction.ToggleUnderline) }
-            )
+                onClick = { onFormatAction(MessageFormatAction.ToggleUnderline) })
             
             SelectionFormatItem(
                 labelRes = R.string.format_strikethrough,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
                     textDecoration = TextDecoration.LineThrough
                 ),
-                onClick = { onFormatAction(MessageFormatAction.ToggleStrikethrough) }
-            )
-
+                onClick = { onFormatAction(MessageFormatAction.ToggleStrikethrough) })
+            
             SelectionFormatItem(
                 labelRes = R.string.format_monospace,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
                     fontFamily = FontFamily.Monospace
                 ),
-                onClick = { onFormatAction(MessageFormatAction.ToggleMono) }
-            )
-
+                onClick = { onFormatAction(MessageFormatAction.ToggleMono) })
+            
             SelectionFormatItem(
                 labelRes = R.string.format_plain,
                 textStyle = MaterialTheme.typography.bodyMedium,
-                onClick = { onFormatAction(MessageFormatAction.Clear) }
-            )
+                onClick = { onFormatAction(MessageFormatAction.Clear) })
         }
         
         SelectionFormatBackButton(
@@ -1216,7 +1211,8 @@ private fun SelectionFormatItems(
             onClick = onBackClick,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .onSizeChanged { size -> backAreaHeightPx = size.height })
+                .onSizeChanged { size -> backAreaHeightPx = size.height }
+                .background(MaterialTheme.colorScheme.surfaceContainer))
     }
 }
 
@@ -1236,9 +1232,7 @@ private fun SelectionFormatBackButton(
         ) {
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, null)
             Text(
-                text = stringResource(labelRes),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelLarge
+                text = stringResource(labelRes), style = MaterialTheme.typography.bodyMedium
             )
         }
     }
