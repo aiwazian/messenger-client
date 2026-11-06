@@ -8,8 +8,6 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.util.TypedValue
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -29,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -77,8 +76,6 @@ import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.content.ContextCompat
 import com.aiwazian.messenger.R
-import com.aiwazian.messenger.ui.animations.expressiveScaleIn
-import com.aiwazian.messenger.ui.animations.expressiveScaleOut
 import com.aiwazian.messenger.ui.components.appendFormattedMessageRange
 import com.aiwazian.messenger.ui.components.rememberCustomEmojiInlineContent
 import com.aiwazian.messenger.utils.LinkNormalizer
@@ -86,7 +83,7 @@ import com.aiwazian.messenger.utils.MessageFormatSpan
 import com.aiwazian.messenger.utils.MessageTextFormatter
 import com.aiwazian.messenger.utils.PhoneLinks
 import com.aiwazian.messenger.utils.RegexPatterns
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 @Composable
@@ -171,6 +168,7 @@ fun MessageText(
     
     val selection = selectionRange
     val selectionColor = MaterialTheme.colorScheme.primary.copy(alpha = MESSAGE_SELECTION_ALPHA)
+    var isHandleDragging by remember { mutableStateOf(false) }
     
     Text(
         text = annotatedString,
@@ -207,30 +205,30 @@ fun MessageText(
                 if (!isTextSelectionEnabled) {
                     return@pointerInput
                 }
-
+                
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
                     val longPress = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
                         awaitLongPressOrCancellation(down.id)
                     }
-
+                    
                     if (longPress != null) {
                         longPress.consume()
-
+                        
                         val layout = textLayout ?: return@awaitEachGesture
                         val position = layout.getOffsetForPosition(longPress.position)
                         val word = layout.getWordBoundary(position)
                         val trimmed = trimmedSelectionRange(annotatedString.text, word)
-
+                        
                         if (!trimmed.collapsed) {
                             selectTextRange(trimmed)
                         }
-
+                        
                         while (true) {
                             val event = awaitPointerEvent()
-
+                            
                             event.changes.forEach { it.consume() }
-
+                            
                             if (event.changes.all { !it.pressed }) {
                                 break
                             }
@@ -277,10 +275,31 @@ fun MessageText(
             IntOffset.Zero
         }
         
-        val handleTapBounds = listOf(
-            IntRect(startHandlePosition, handleSize),
-            IntRect(endHandlePosition, handleSize)
-        )
+        val handleTapBounds = run {
+            val touchMarginPx = with(density) { MESSAGE_HANDLE_TOUCH_MARGIN_DP.dp.roundToPx() }
+            val touchExpandPx = with(density) { MESSAGE_HANDLE_TOUCH_EXPAND_DP.dp.roundToPx() }
+            val touchSize = IntSize(
+                width = handleSize.width + touchMarginPx * 2,
+                height = handleSize.height + touchExpandPx
+            )
+            
+            listOf(
+                IntRect(
+                    IntOffset(
+                        startHandlePosition.x - touchMarginPx,
+                        startHandlePosition.y - touchExpandPx
+                    ),
+                    touchSize
+                ),
+                IntRect(
+                    IntOffset(
+                        endHandlePosition.x - touchMarginPx,
+                        endHandlePosition.y - touchExpandPx
+                    ),
+                    touchSize
+                )
+            )
+        }
         
         val onCatcherTap: (Offset) -> Unit = { offset ->
             val tapped = IntOffset(offset.x.roundToInt(), offset.y.roundToInt())
@@ -317,6 +336,7 @@ fun MessageText(
                                 textLayout = layout,
                                 selectionRange = selection,
                                 isStartHandle = true,
+                                onDraggingChange = { isHandleDragging = it },
                                 onSelectionChange = { range ->
                                     val trimmed = trimmedSelectionRange(annotatedString.text, range)
                                     
@@ -333,6 +353,7 @@ fun MessageText(
                                 textLayout = layout,
                                 selectionRange = selection,
                                 isStartHandle = false,
+                                onDraggingChange = { isHandleDragging = it },
                                 onSelectionChange = { range ->
                                     val trimmed = trimmedSelectionRange(annotatedString.text, range)
                                     
@@ -346,37 +367,39 @@ fun MessageText(
             )
         }
         
-        MessageTextSelectionMenu(
-            selectionBoundsProvider = {
-                messageSelectionWindowRect(textOrigin, textLayout, selection)
-            },
-            canSelectAll = selection.min > 0 || selection.max < annotatedString.length,
-            onSelectAllClick = {
-                val trimmed =
-                    trimmedSelectionRange(
-                        annotatedString.text,
-                        TextRange(0, annotatedString.length)
-                    )
-                
-                if (!trimmed.collapsed) {
-                    selectTextRange(trimmed)
-                }
-            },
-            onCopyClick = {
-                val range = selectionRange
-                
-                if (range != null) {
-                    onCopySelected?.invoke(
-                        annotatedString.text.substring(
-                            range.min,
-                            range.max.coerceAtMost(annotatedString.length)
+        if (!isHandleDragging) {
+            MessageTextSelectionMenu(
+                selectionBoundsProvider = {
+                    messageSelectionWindowRect(textOrigin, textLayout, selection)
+                },
+                canSelectAll = selection.min > 0 || selection.max < annotatedString.length,
+                onSelectAllClick = {
+                    val trimmed =
+                        trimmedSelectionRange(
+                            annotatedString.text,
+                            TextRange(0, annotatedString.length)
                         )
-                    )
+                    
+                    if (!trimmed.collapsed) {
+                        selectTextRange(trimmed)
+                    }
+                },
+                onCopyClick = {
+                    val range = selectionRange
+                    
+                    if (range != null) {
+                        onCopySelected?.invoke(
+                            annotatedString.text.substring(
+                                range.min,
+                                range.max.coerceAtMost(annotatedString.length)
+                            )
+                        )
+                    }
+                    
+                    selectionRange = null
                 }
-                
-                selectionRange = null
-            }
-        )
+            )
+        }
     }
 }
 
@@ -390,33 +413,76 @@ private fun MessageSelectionHandle(
     textLayout: TextLayoutResult,
     selectionRange: TextRange,
     isStartHandle: Boolean,
+    onDraggingChange: (Boolean) -> Unit,
     onSelectionChange: (TextRange) -> Unit
 ) {
     val density = LocalDensity.current
-    val widthDp = with(density) { handleSize.width.toDp() }
-    val heightDp = with(density) { handleSize.height.toDp() }
+    val touchMarginPx = with(density) { MESSAGE_HANDLE_TOUCH_MARGIN_DP.dp.roundToPx() }
+    val touchExpandPx = with(density) { MESSAGE_HANDLE_TOUCH_EXPAND_DP.dp.roundToPx() }
+    val touchWidthDp = with(density) { (handleSize.width + touchMarginPx * 2).toDp() }
+    val touchHeightDp = with(density) { (handleSize.height + touchExpandPx).toDp() }
     val tintedDrawable = remember(drawable, tint) {
         drawable?.mutate()?.apply { setTint(tint.toArgb()) }
     }
+    val anchorOffset = Offset(
+        x = touchMarginPx + handleSize.width / 2f,
+        y = touchExpandPx.toFloat()
+    )
     val currentPosition by rememberUpdatedState(position)
     val currentTextOrigin by rememberUpdatedState(textOrigin)
     val currentTextLayout by rememberUpdatedState(textLayout)
     val currentSelection by rememberUpdatedState(selectionRange)
     val currentOnSelectionChange by rememberUpdatedState(onSelectionChange)
+    val currentOnDraggingChange by rememberUpdatedState(onDraggingChange)
+    val grabOffset = remember { mutableStateOf(Offset.Zero) }
+    var previousLine by remember { mutableIntStateOf(-1) }
     
     Box(
         modifier = Modifier
-            .offset { position }
-            .size(widthDp, heightDp)
-            .pointerInput(isStartHandle) {
+            .offset {
+                IntOffset(position.x - touchMarginPx, position.y - touchExpandPx)
+            }
+            .size(touchWidthDp, touchHeightDp)
+            .pointerInput(isStartHandle, handleSize) {
                 detectDragGestures(
+                    onDragStart = { start ->
+                        grabOffset.value = start - anchorOffset
+                        previousLine = currentTextLayout.getLineForOffset(
+                            if (isStartHandle) currentSelection.min else currentSelection.max
+                        )
+                        
+                        currentOnDraggingChange(true)
+                    },
                     onDrag = { change, _ ->
                         change.consume()
                         
-                        val windowX = currentPosition.x + change.position.x
-                        val windowY = currentPosition.y + change.position.y
+                        val finger = Offset(
+                            x = currentPosition.x + change.position.x,
+                            y = currentPosition.y + change.position.y
+                        )
+                        val anchor = finger - grabOffset.value
+                        val anchorX = anchor.x - currentTextOrigin.x
+                        val anchorY = anchor.y - currentTextOrigin.y
+                        val trueLine = currentTextLayout.getLineForVerticalPosition(anchorY)
+                            .coerceIn(0, currentTextLayout.lineCount - 1)
+                        val lineHeight = currentTextLayout.getLineBottom(previousLine) -
+                                currentTextLayout.getLineTop(previousLine)
+                        val lineChangeSlop = lineHeight * LINE_CHANGE_SLOP_RATIO
+                        val line = when {
+                            abs(trueLine - previousLine) >= 2 -> trueLine
+                            trueLine > previousLine &&
+                                    anchorY >= currentTextLayout.getLineBottom(previousLine) + lineChangeSlop -> trueLine
+                            
+                            trueLine < previousLine &&
+                                    anchorY <= currentTextLayout.getLineTop(previousLine) - lineChangeSlop -> trueLine
+                            
+                            else -> previousLine
+                        }
+                        previousLine = line
+                        val lineCenterY = (currentTextLayout.getLineTop(line) +
+                                currentTextLayout.getLineBottom(line)) / 2f
                         val offset = currentTextLayout.getOffsetForPosition(
-                            Offset(windowX - currentTextOrigin.x, windowY - currentTextOrigin.y)
+                            Offset(x = anchorX, y = lineCenterY)
                         )
                         val range = currentSelection
                         val newRange = if (isStartHandle) {
@@ -428,12 +494,19 @@ private fun MessageSelectionHandle(
                         if (newRange != range) {
                             currentOnSelectionChange(newRange)
                         }
-                    }
+                    },
+                    onDragEnd = { currentOnDraggingChange(false) },
+                    onDragCancel = { currentOnDraggingChange(false) }
                 )
             }
             .drawBehind {
                 tintedDrawable?.let { handle ->
-                    handle.setBounds(0, 0, size.width.roundToInt(), size.height.roundToInt())
+                    handle.setBounds(
+                        touchMarginPx,
+                        touchExpandPx,
+                        touchMarginPx + handleSize.width,
+                        touchExpandPx + handleSize.height
+                    )
                     handle.draw(drawContext.canvas.nativeCanvas)
                 }
             }
@@ -529,15 +602,11 @@ private fun MessageTextSelectionMenu(
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            AnimatedContent(targetState = canSelectAll, transitionSpec = {
-                                expressiveScaleIn togetherWith expressiveScaleOut
-                            }, contentAlignment = Alignment.Center) { canSelectAll ->
-                                if (canSelectAll) {
-                                    MessageSelectionMenuItem(
-                                        labelRes = R.string.selection_select_all,
-                                        onClick = onSelectAllClick
-                                    )
-                                }
+                            if (canSelectAll) {
+                                MessageSelectionMenuItem(
+                                    labelRes = R.string.selection_select_all,
+                                    onClick = onSelectAllClick
+                                )
                             }
                             
                             MessageSelectionMenuItem(
@@ -817,3 +886,6 @@ private const val MESSAGE_MENU_SHADOW_PADDING_DP = 8
 private const val MESSAGE_MENU_SHADOW_ELEVATION_DP = 6
 private const val MESSAGE_HANDLE_WIDTH_DP = 22
 private const val MESSAGE_HANDLE_HEIGHT_DP = 30
+private const val MESSAGE_HANDLE_TOUCH_MARGIN_DP = 8
+private const val MESSAGE_HANDLE_TOUCH_EXPAND_DP = 16
+private const val LINE_CHANGE_SLOP_RATIO = 0.8f
