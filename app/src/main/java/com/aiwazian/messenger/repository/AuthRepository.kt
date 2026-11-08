@@ -93,22 +93,27 @@ class AuthRepository @Inject constructor(
     suspend fun saveAccount(account: AccountEntity) {
         try {
             val existingAccount = accountDao.getById(account.userId)
-            
+
             if (existingAccount == null) {
-                if (account.isCurrent) {
-                    accountDao.resetCurrent()
-                }
-                accountDao.add(account)
+                accountDao.add(account.copy(isCurrent = false))
                 Log.d(
                     "AuthRepository",
                     "saveAccount: ADDED new account"
                 )
             } else {
-                accountDao.update(account)
+                accountDao.updateCredentials(
+                    userId = account.userId,
+                    token = account.token,
+                    createdAt = account.createdAt
+                )
                 Log.d(
                     "AuthRepository",
                     "saveAccount: UPDATED existing account"
                 )
+            }
+
+            if (account.isCurrent) {
+                accountDao.setCurrent(account.userId)
             }
         } catch (e: Exception) {
             Log.e(
@@ -118,10 +123,21 @@ class AuthRepository @Inject constructor(
             )
         }
     }
-    
+
+    suspend fun ensureSingleCurrentAccount() {
+        try {
+            accountDao.clearStaleCurrentFlags()
+        } catch (e: Exception) {
+            Log.e(
+                "AuthRepository",
+                "Ошибка при очистке дублирующихся текущих аккаунтов",
+                e
+            )
+        }
+    }
+
     suspend fun switchAccount(id: Long) {
         try {
-            accountDao.resetCurrent()
             accountDao.setCurrent(id)
         } catch (e: Exception) {
             Log.e(

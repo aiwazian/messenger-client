@@ -216,7 +216,6 @@ class ScheduledMessagesViewModel @Inject constructor(
         recorder = audioRecorderManager,
         vibration = vibrationManager,
         musicAutoPauseController = musicAutoPauseController,
-        isRecording = { _chatState.value.isRecording },
         updateRecordingState = { isRecording, isLocked, durationMs, amplitude ->
             _chatState.update {
                 it.copy(
@@ -790,4 +789,8 @@ class ScheduledMessagesViewModel @Inject constructor(
     }
 
     override fun showBlockDialog() {}
+
+    override fun onCleared() {
+        voiceRecording.cancel()
+    }
 }

@@ -20,18 +20,18 @@ class VoiceRecordingController(
     private val recorder: AudioRecorderManager,
     private val vibration: VibrationManager,
     private val musicAutoPauseController: MusicAutoPauseController,
-    private val isRecording: () -> Boolean,
     private val updateRecordingState: (isRecording: Boolean, isLocked: Boolean, durationMs: Long, amplitude: Float) -> Unit,
     private val onRecordStartFailed: () -> Unit,
     private val onRecordedFile: (Uri) -> Unit
 ) {
     private var timerJob: Job? = null
+    private var recording = false
     private var locked = false
     private var durationMs = 0L
     private var amplitude = 0f
 
     fun start() {
-        if (isRecording()) return
+        if (recording) return
         val file = recorder.startRecording()
         if (file == null) {
             scope.launch { onRecordStartFailed() }
@@ -39,6 +39,7 @@ class VoiceRecordingController(
         }
 
         musicAutoPauseController.onRecordingStarted()
+        recording = true
         locked = false
         durationMs = 0L
         amplitude = 0f
@@ -58,26 +59,28 @@ class VoiceRecordingController(
     }
 
     fun lock() {
-        if (!isRecording()) return
+        if (!recording) return
         locked = true
         emitState()
         vibration.vibrate(VibrationPattern.TactileResponse)
     }
 
     fun stopAndDeliver() {
-        if (!isRecording()) return
+        if (!recording) return
         val file = recorder.stopRecording()
         musicAutoPauseController.onRecordingStopped()
         timerJob?.cancel()
+        recording = false
         reset()
         if (file != null) onRecordedFile(Uri.fromFile(file))
     }
 
     fun cancel() {
-        if (!isRecording()) return
+        if (!recording) return
         recorder.cancelRecording()
         musicAutoPauseController.onRecordingStopped()
         timerJob?.cancel()
+        recording = false
         reset()
         vibration.vibrate(VibrationPattern.TactileResponse)
     }
@@ -90,6 +93,6 @@ class VoiceRecordingController(
     }
 
     private fun emitState() {
-        updateRecordingState(isRecording(), locked, durationMs, amplitude)
+        updateRecordingState(recording, locked, durationMs, amplitude)
     }
 }

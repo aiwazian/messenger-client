@@ -18,11 +18,17 @@ interface UserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(userEntity: UserEntity)
 
-    @Query("SELECT * FROM user WHERE id = (SELECT userId FROM account WHERE isCurrent = TRUE)")
+    @Query(
+        "SELECT * FROM user WHERE id = " +
+            "(SELECT userId FROM account WHERE isCurrent = TRUE ORDER BY id DESC LIMIT 1)"
+    )
     fun getMe(): Flow<UserEntity?>
 
     @Transaction
-    @Query("SELECT * FROM user WHERE id = (SELECT userId FROM account WHERE isCurrent = TRUE)")
+    @Query(
+        "SELECT * FROM user WHERE id = " +
+            "(SELECT userId FROM account WHERE isCurrent = TRUE ORDER BY id DESC LIMIT 1)"
+    )
     fun getMeWithAvatars(): Flow<UserWithAvatars?>
 
     @Transaction

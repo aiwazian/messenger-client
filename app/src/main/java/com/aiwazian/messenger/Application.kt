@@ -19,6 +19,7 @@ import com.aiwazian.messenger.network.dns.DnsController
 import com.aiwazian.messenger.network.proxy.ProxyApplier
 import com.aiwazian.messenger.network.proxy.applyAppProxy
 import com.aiwazian.messenger.repository.AuthRepository
+import com.aiwazian.messenger.repository.UserRepository
 import com.aiwazian.messenger.socket.RealtimeEventSyncService
 import com.aiwazian.messenger.utils.FailedSendRetrier
 import com.aiwazian.messenger.utils.PendingSendResumer
@@ -40,6 +41,9 @@ class Application : Application(), SingletonImageLoader.Factory {
 
     @Inject
     lateinit var authRepository: AuthRepository
+
+    @Inject
+    lateinit var userRepository: UserRepository
 
     @Inject
     lateinit var restoreCredentialManager: RestoreCredentialManager
@@ -68,7 +72,7 @@ class Application : Application(), SingletonImageLoader.Factory {
 
         if (getProcessName().contains(PDF_SANDBOX_PROCESS_MARKER)) return
 
-        SessionManager.init(authRepository, restoreCredentialManager)
+        SessionManager.init(authRepository, restoreCredentialManager, userRepository)
 
         appScope.launch {
             dnsApplier.get().start()

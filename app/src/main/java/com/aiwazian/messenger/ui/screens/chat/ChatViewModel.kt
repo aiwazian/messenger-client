@@ -212,7 +212,6 @@ class ChatViewModel @Inject constructor(
         recorder = audioRecorderManager,
         vibration = vibrationManager,
         musicAutoPauseController = musicAutoPauseController,
-        isRecording = { _uiState.value.isRecording },
         updateRecordingState = { isRecording, isLocked, durationMs, amplitude ->
             _uiState.update {
                 it.copy(
@@ -749,6 +748,10 @@ class ChatViewModel @Inject constructor(
             inviteLinkCode = null,
             isProcessingInvite = false
         )
+    }
+
+    override fun onCleared() {
+        voiceRecording.cancel()
     }
 
     internal companion object {

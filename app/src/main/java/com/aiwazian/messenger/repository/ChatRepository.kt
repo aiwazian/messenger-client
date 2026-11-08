@@ -195,7 +195,7 @@ class ChatRepository @Inject constructor(
         try {
             val response = chatApi.getAllChats()
             if (response.isSuccessful) {
-                val myId = userRepository.getMe().first().id
+                val myId = userRepository.getMe().firstOrNull()?.id ?: return
                 val dtos = response.body().orEmpty()
                 val chatIds = dtos.map { it.id }
                 
