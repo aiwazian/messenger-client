@@ -247,36 +247,37 @@ private fun AccountSwitcherBottomSheet(
             )
         }
     ) { padding ->
-        currentUser?.let { user ->
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(padding)
-                    .padding(vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                ChatAvatar(
-                    id = user.id,
-                    chatName = user.firstName,
-                    avatarUri = user.avatars.firstOrNull()?.uri,
-                    size = 64.dp,
-                    sharedTransition = false
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+        Column(modifier = Modifier.padding(padding)) {
+            currentUser?.let { user ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    ChatAvatar(
+                        id = user.id,
+                        chatName = user.firstName,
+                        avatarUri = user.avatars.firstOrNull()?.uri,
+                        size = 64.dp,
+                        sharedTransition = false
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "${user.firstName} ${user.lastName.orEmpty()}".trim(),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
-        }
-        
-        SectionContainer(contentPadding = PaddingValues.Zero) {
-            otherAccounts.forEach { account ->
-                AccountRow(
-                    user = account,
-                    onClick = { onAccountClick(account.id) }
-                )
+            
+            SectionContainer(contentPadding = PaddingValues.Zero) {
+                otherAccounts.forEach { account ->
+                    AccountRow(
+                        user = account,
+                        onClick = { onAccountClick(account.id) }
+                    )
+                }
             }
         }
     }

@@ -19,7 +19,19 @@ interface AccountDao {
     
     @Update
     suspend fun update(account: AccountEntity)
-    
+
+    @Query("UPDATE account SET token = :token, createdAt = :createdAt WHERE userId = :userId")
+    suspend fun updateCredentials(userId: Long, token: String, createdAt: Long)
+
+    @Query("UPDATE account SET installationId = :installationId WHERE userId = :userId")
+    suspend fun updateInstallationId(userId: Long, installationId: String?)
+
+    @Query(
+        "UPDATE account SET isCurrent = FALSE " +
+            "WHERE id NOT IN (SELECT MAX(id) FROM account WHERE isCurrent = TRUE)"
+    )
+    suspend fun clearStaleCurrentFlags()
+
     @Query("SELECT * FROM account WHERE userId = :id LIMIT 1")
     suspend fun getById(id: Long): AccountEntity?
     

@@ -89,7 +89,7 @@ class PushRegistrar @Inject constructor(
             }
             
             sessionRepository.updateInstallationId(installationId).onSuccess {
-                accountDao.update(account.copy(installationId = installationId))
+                accountDao.updateInstallationId(account.userId, installationId)
                 Log.d(TAG, "Installation id updated")
             }.onFailure { e ->
                 Log.e(TAG, "Error saving installation id", e)

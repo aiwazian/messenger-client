@@ -7,6 +7,7 @@ package com.aiwazian.messenger.utils
 import android.util.Log
 import com.aiwazian.messenger.database.entity.AccountEntity
 import com.aiwazian.messenger.repository.AuthRepository
+import com.aiwazian.messenger.repository.UserRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,6 +33,7 @@ object SessionManager {
     private var _isAuthorized = false
     private var sessionEndCallback: ((SessionEndResolution) -> Unit)? = null
     private var authRepository: AuthRepository? = null
+    private var userRepository: UserRepository? = null
     private var restoreCredentialManager: RestoreCredentialManager? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -48,9 +50,14 @@ object SessionManager {
     var isInit = false
         private set
 
-    fun init(repository: AuthRepository, restoreManager: RestoreCredentialManager) {
+    fun init(
+        repository: AuthRepository,
+        restoreManager: RestoreCredentialManager,
+        meRepository: UserRepository
+    ) {
         authRepository = repository
         restoreCredentialManager = restoreManager
+        userRepository = meRepository
         isInit = true
     }
 
@@ -63,6 +70,8 @@ object SessionManager {
     }
 
     suspend fun loadSession() {
+        authRepository?.ensureSingleCurrentAccount()
+
         var currentToken = authRepository?.getCurrentToken() ?: ""
         
         if (currentToken.isEmpty()) {
@@ -83,13 +92,9 @@ object SessionManager {
         token: String,
         createdAt: Long
     ) {
-        _token.update { token }
-        _isAuthorized = token.isNotEmpty()
-        lastInvalidatedToken = null
-
         val repository = authRepository
             ?: throw IllegalStateException("AuthRepository not initialized. Call init() first.")
-        
+
         repository.saveAccount(
             AccountEntity(
                 userId = userId,
@@ -98,6 +103,12 @@ object SessionManager {
                 createdAt = createdAt
             )
         )
+
+        _token.update { token }
+        _isAuthorized = token.isNotEmpty()
+        lastInvalidatedToken = null
+
+        userRepository?.fetchMe()
 
         scope.launch {
             restoreCredentialManager?.registerAfterSignIn()
@@ -119,6 +130,7 @@ object SessionManager {
     suspend fun switchAccount(userId: Long) {
         authRepository?.switchAccount(userId)
         loadSession()
+        userRepository?.fetchMe()
 
         scope.launch {
             restoreCredentialManager?.registerAfterSignIn()
